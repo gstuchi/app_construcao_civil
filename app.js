@@ -424,8 +424,47 @@ function formGasto(obraId, gasto){
   };
 }
 
-/* stub preenchido na Task 6 */
-function renderAjustes(){}
+/* ===== AJUSTES ===== */
+function renderAjustes(){
+  const inp = $('#ajTaxa');
+  if(document.activeElement !== inp)
+    inp.value = String(db.config.taxaMensal).replace('.',',');
+  inp.onchange = ()=>{
+    const v = parseNum(inp.value);
+    db.config.taxaMensal = (v>0 && v<=20) ? v : 1;
+    inp.value = String(db.config.taxaMensal).replace('.',',');
+    save(); renderAll();
+  };
+
+  const ul = $('#ajTopicos');
+  ul.innerHTML = db.config.topicosCustom.length ? '' : emptyBlock('🏷️','Nenhum tópico próprio ainda.');
+  db.config.topicosCustom.forEach(t=>{
+    const li = el('li');
+    li.innerHTML = `<div class="av ic-brand">🏷️</div>
+      <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
+    const del = el('button','li-del','×');
+    del.onclick = ()=>{
+      const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
+      if(emUso){ alert('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
+      if(confirm(`Remover o tópico “${t.nm}”?`)){
+        db.config.topicosCustom = db.config.topicosCustom.filter(x=>x.id!==t.id);
+        save(); renderAll();
+      }
+    };
+    li.appendChild(del);
+    ul.appendChild(li);
+  });
+
+  $('#ajAddTopico').onclick = ()=>{
+    const nm = $('#ajNovoTopico').value.trim();
+    if(!nm){ $('#ajNovoTopico').focus(); return; }
+    db.config.topicosCustom.push({ id:'c_'+uid(), nm, ic:'🏷️' });
+    $('#ajNovoTopico').value = '';
+    save(); renderAll();
+  };
+
+  $('#ajSair').onclick = ()=>$('#btnSair').click();
+}
 
 /* ---------- modal / formulários ---------- */
 const backdrop = $('#backdrop'), sheet = $('#sheet');

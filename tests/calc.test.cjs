@@ -74,4 +74,18 @@ t('mesesDeObra usa venda como fim quando vendida', () => {
   perto(C.mesesDeObra(vendida, '2027-01-01'), 90 / 30.44, 0.01);
 });
 
+t('taxaEquivalenteMensal: dobrar em 24 meses ≈ 2,93% a.m.', () => {
+  perto(C.taxaEquivalenteMensal(2000000, 1000000, 24), 2.9302, 0.001);
+});
+
+t('taxaEquivalenteMensal: sem lucro = 0%', () => {
+  perto(C.taxaEquivalenteMensal(1000, 1000, 12), 0, 1e-9);
+});
+
+t('taxaEquivalenteMensal: entradas inválidas viram null', () => {
+  assert.strictEqual(C.taxaEquivalenteMensal(0, 1000, 12), null);
+  assert.strictEqual(C.taxaEquivalenteMensal(1000, 0, 12), null);
+  assert.strictEqual(C.taxaEquivalenteMensal(1000, 1000, 0), null);
+});
+
 console.log(`OK: ${n} testes`);

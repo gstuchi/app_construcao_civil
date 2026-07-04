@@ -34,7 +34,14 @@
     return diasEntre(obra.dataInicio, fimCorrecao(obra, hojeISO)) / DIAS_MES;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra };
+  /* % ao mês composto equivalente: quanto o dinheiro "rendeu" por mês
+     ao transformar custoBruto em venda ao longo de N meses. */
+  function taxaEquivalenteMensal(venda, custoBruto, meses){
+    if(venda <= 0 || custoBruto <= 0 || meses <= 0) return null;
+    return (Math.pow(venda / custoBruto, 1 / meses) - 1) * 100;
+  }
+
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

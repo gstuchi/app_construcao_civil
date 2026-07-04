@@ -95,6 +95,7 @@ function openObra(id){ obraAberta=id; showView('obra'); renderObra(); }
 function renderAll(){
   renderInicio();
   renderAjustes();
+  renderSimula();
   if(obraAberta) renderObra();
 }
 
@@ -217,6 +218,7 @@ function renderObra(){
     <button class="btn primary" id="oVender">🤝 Registrar venda</button>
     <button class="btn ghost" id="oVoltarConstr">↩ Voltar pra construção</button>`;
   if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">↩ Desfazer venda</button>`;
+  if(o.gastos.length) acoes += `<button class="btn ghost" id="oRel">📄 Relatório</button>`;
   acoes += '</div>';
 
   const byTop = {};
@@ -250,6 +252,7 @@ function renderObra(){
 
   $('#oEdit').onclick = ()=>formEditarObra(o);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
+  on('#oRel',          ()=>{ showView('relatorio'); renderRelatorio(); });
   on('#oPronta',       ()=>mudarFase(o,'pronta'));
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o,'construcao'));
@@ -427,6 +430,138 @@ function formGasto(obraId, gasto){
     save(); closeSheet(); renderAll();
   };
 }
+
+/* ===== RELATÓRIO BRUTO × CORRIGIDO ===== */
+$('#btnRelVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
+
+function renderRelatorio(){
+  const o = obraById(obraAberta);
+  if(!o){ showView('inicio'); renderAll(); return; }
+  const hoje = todayISO();
+  const fim = (o.venda && o.venda.data) || hoje;
+  const tx = taxa();
+  const map = TOP_MAP();
+
+  const byTop = {};
+  o.gastos.forEach(g=>{ (byTop[g.topico] = byTop[g.topico] || []).push(g); });
+  const groups = Object.entries(byTop).map(([id,gs])=>({
+    id,
+    gs: [...gs].sort((a,b)=>a.data.localeCompare(b.data)),
+    bruto: gs.reduce((s,g)=>s+g.valor,0),
+    corr:  gs.reduce((s,g)=>s+OBRA_CALC.corrigido(g.valor,g.data,fim,tx),0),
+  })).sort((a,b)=>b.bruto-a.bruto);
+
+  const totB = OBRA_CALC.totalBruto(o);
+  const totC = OBRA_CALC.totalCorrigido(o, tx, hoje);
+  const lucro = OBRA_CALC.lucroVenda(o, tx);
+
+  let rows = '';
+  groups.forEach(gr=>{
+    const t = map[gr.id] || {nm:gr.id, ic:'🏷️'};
+    rows += `<tr class="rt-top"><td>${t.ic} ${t.nm}</td><td></td>
+      <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
+    gr.gs.forEach(g=>{
+      const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
+      rows += `<tr><td class="rt-desc">&nbsp;&nbsp;${escapeHtml(g.descricao||t.nm)}</td><td>${fmtData(g.data)}</td>
+        <td>${money(g.valor)}</td><td>${money(c)}</td><td>+${money(c-g.valor)}</td></tr>`;
+    });
+  });
+
+  let venda = '';
+  if(o.venda && lucro){
+    venda = `
+      <tr class="rep-total"><td>🤝 Venda em ${fmtData(o.venda.data)}</td><td></td><td colspan="3">${money(o.venda.valor)}</td></tr>
+      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${lucro.bruto>=0?'pos':'neg'}">${money(lucro.bruto)}</td></tr>
+      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${lucro.vsBanco>=0?'pos':'neg'}">${money(lucro.vsBanco)}</td></tr>`;
+  } else if(o.valorEstimadoVenda){
+    venda = `
+      <tr class="rep-total"><td>🎯 Venda estimada</td><td></td><td colspan="3">${money(o.valorEstimadoVenda)}</td></tr>
+      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${o.valorEstimadoVenda-totC>=0?'pos':'neg'}">${money(o.valorEstimadoVenda-totC)}</td></tr>`;
+  }
+
+  $('#relBody').innerHTML = `
+    <div class="panel">
+      <h2>📄 Relatório — ${escapeHtml(o.nome)}</h2>
+      <div class="rep-head">
+        ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
+        Correção de ${String(tx).replace('.',',')}% ao mês, da data de cada gasto até ${o.venda?'a venda ('+fmtData(o.venda.data)+')':'hoje ('+fmtData(hoje)+')'}.
+      </div>
+      <div class="rep-scroll">
+        <table class="rep-table">
+          <thead><tr><th>Tópico / gasto</th><th>Data</th><th>Bruto</th><th>Corrigido</th><th>Juros</th></tr></thead>
+          <tbody>
+            ${rows}
+            <tr class="rep-total"><td>TOTAL</td><td></td><td>${money(totB)}</td><td>${money(totC)}</td><td>+${money(totC-totB)}</td></tr>
+            ${venda}
+          </tbody>
+        </table>
+      </div>
+      <button class="btn primary no-print" id="relPrint" style="width:100%;margin-top:14px">🖨️ Imprimir / salvar PDF</button>
+    </div>`;
+  $('#relPrint').onclick = ()=>window.print();
+}
+
+/* ===== SERÁ QUE VALE A PENA? ===== */
+function renderSimula(){
+  const sel = $('#simObra');
+  const cands = db.obras.filter(o=>o.fase!=='vendida' && o.gastos.length);
+  const cur = sel.value;
+  sel.innerHTML = cands.length
+    ? cands.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')
+    : '<option value="">— crie uma obra com gastos —</option>';
+  if(cands.some(o=>o.id===cur)) sel.value = cur;
+  simulaCompute();
+}
+
+function simulaCompute(){
+  const out = $('#simOut');
+  const o = obraById($('#simObra').value);
+  if(!o){ out.innerHTML = ''; return; }
+
+  const vInp = $('#simValor');
+  if(!vInp.value && o.valorEstimadoVenda && !vInp.dataset.touched) vInp.value = o.valorEstimadoVenda;
+  const venda = parseNum(vInp.value);
+  const meses = Math.max(0, parseInt($('#simMeses').value,10) || 0);
+
+  const alvo = new Date(); alvo.setMonth(alvo.getMonth()+meses);
+  const alvoISO = alvo.toISOString().slice(0,10);
+  const bruto = OBRA_CALC.totalBruto(o);
+  const corr  = OBRA_CALC.totalCorrigido(o, taxa(), alvoISO);
+
+  if(venda<=0){
+    out.innerHTML = `<div class="panel"><p class="muted-note">Digite o preço de venda pra ver a conta.</p></div>`;
+    return;
+  }
+  const mesesTot = Math.max(1, OBRA_CALC.mesesDeObra(o, alvoISO));
+  const rate = OBRA_CALC.taxaEquivalenteMensal(venda, bruto, mesesTot);
+  const bate = venda > corr;
+  const mult = (rate!=null && taxa()>0) ? rate/taxa() : 0;
+  const quando = meses===0 ? 'vendendo hoje' : `vendendo daqui a ${meses} ${meses===1?'mês':'meses'}`;
+
+  out.innerHTML = `
+    <div class="card saldo big" style="${bate?'':'background:linear-gradient(140deg,#8a2438,#4a1a2a);border-color:rgba(255,120,140,.35);box-shadow:0 8px 32px rgba(220,60,90,.25)'}">
+      <div class="k-label"><span class="k-ic">${bate?'✅':'⚠️'}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
+      <div class="k-val" style="font-size:30px">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
+      <div class="k-sub">${quando} · banco paga ${String(taxa()).replace('.',',')}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}</div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="k-label"><span class="k-ic ic-green">↑</span> Lucro bruto</div>
+        <div class="k-val sm ${venda-bruto>=0?'pos':'neg'}">${moneyShort(venda-bruto)}</div>
+      </div>
+      <div class="card">
+        <div class="k-label"><span class="k-ic ic-blue">🏦</span> Acima do banco</div>
+        <div class="k-val sm ${venda-corr>=0?'pos':'neg'}">${moneyShort(venda-corr)}</div>
+      </div>
+      <div class="card big">
+        <div class="k-label"><span class="k-ic ic-brand">🧮</span> Custo até lá</div>
+        <div class="k-val sm">${money(bruto)} bruto · ${money(corr)} corrigido</div>
+      </div>
+    </div>`;
+}
+$('#simObra').onchange = simulaCompute;
+$('#simValor').addEventListener('input', ()=>{ $('#simValor').dataset.touched='1'; simulaCompute(); });
+$('#simMeses').addEventListener('input', simulaCompute);
 
 /* ===== AJUSTES ===== */
 function renderAjustes(){

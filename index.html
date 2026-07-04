@@ -186,6 +186,27 @@
   .mb i{width:100%;max-width:34px;background:var(--brand);border-radius:5px 5px 2px 2px;min-height:3px}
   .mb b{font-size:9.5px;color:var(--muted);font-weight:600;white-space:nowrap}
   .mb span{font-size:10.5px;color:var(--muted)}
+  /* ===== relatório bruto × corrigido ===== */
+  .rep-scroll{overflow-x:auto}
+  .rep-table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  .rep-table th,.rep-table td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+  .rep-table th:first-child,.rep-table td:first-child{text-align:left}
+  .rep-table th{color:var(--muted);font-weight:600;font-size:12px}
+  .rep-table .rt-top td{font-weight:700;background:var(--surface-2)}
+  .rep-table .rt-desc{color:var(--muted)}
+  .rep-table .rep-total td{font-weight:750;border-top:2px solid var(--border);font-size:14px}
+  .rep-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+  @media print{
+    body{background:#fff!important;padding:0}
+    body *{visibility:hidden}
+    #v-relatorio,#v-relatorio *{visibility:visible}
+    #v-relatorio{position:absolute;left:0;top:0;width:100%;display:block}
+    #v-relatorio .no-print{display:none!important}
+    #v-relatorio .panel{background:#fff;border:0;box-shadow:none}
+    #v-relatorio h2,#v-relatorio th,#v-relatorio td,#v-relatorio p,#v-relatorio div,#v-relatorio b{color:#000!important}
+    .rep-table th,.rep-table td{border-color:#999}
+    .rep-table .rt-top td{background:#eee}
+  }
 
   /* ===== sidebar desktop (estilo app-shell) ===== */
   .side{display:none}
@@ -258,6 +279,7 @@
 <aside class="side">
   <div class="s-logo"><span class="logo">🏗️</span> Minhas Obras</div>
   <button data-tab="inicio" class="on"><span class="ti">🏗️</span>Obras</button>
+  <button data-tab="simula"><span class="ti">🤔</span>Vale a pena?</button>
   <button data-tab="ajustes"><span class="ti">⚙️</span>Ajustes</button>
   <button id="btnSairSide" class="s-sair"><span class="ti">🚪</span>Sair da conta</button>
 </aside>
@@ -308,6 +330,29 @@
     <div id="obraBody"></div>
   </section>
 
+  <!-- ============ RELATÓRIO ============ -->
+  <section class="view" id="v-relatorio">
+    <button class="back no-print" id="btnRelVoltar">‹ Voltar pra obra</button>
+    <div id="relBody"></div>
+  </section>
+
+  <!-- ============ SERÁ QUE VALE A PENA? ============ -->
+  <section class="view" id="v-simula">
+    <div class="panel">
+      <h2>🤔 Será que vale a pena?</h2>
+      <div class="field"><label for="simObra">Obra</label><select id="simObra"></select></div>
+      <div class="row2">
+        <div class="field"><label for="simValor">Se eu vender por</label>
+          <input id="simValor" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+        <div class="field"><label for="simMeses">Daqui a (meses)</label>
+          <input id="simMeses" type="number" min="0" max="120" value="0"></div>
+      </div>
+      <p class="muted-note">A conta considera que não haverá mais gastos até a venda.
+      Mude o preço e os meses pra comparar cenários: vender mais barato agora × esperar mais.</p>
+    </div>
+    <div id="simOut"></div>
+  </section>
+
   <!-- ============ AJUSTES ============ -->
   <section class="view" id="v-ajustes">
     <div class="panel">
@@ -337,6 +382,7 @@
 
 <nav class="tabs">
   <button data-tab="inicio" class="on"><span class="ti">🏗️</span>Obras</button>
+  <button data-tab="simula"><span class="ti">🤔</span>Vale a pena?</button>
   <button data-tab="ajustes"><span class="ti">⚙️</span>Ajustes</button>
 </nav>
 

@@ -1,0 +1,77 @@
+'use strict';
+const assert = require('assert');
+const C = require('../calc.js');
+
+let n = 0;
+function t(nome, fn){ fn(); n++; console.log('ok -', nome); }
+const perto = (a, b, tol) => assert.ok(Math.abs(a - b) <= tol, `esperado ~${b}, veio ${a}`);
+
+t('diasEntre básico', () => {
+  assert.strictEqual(C.diasEntre('2026-07-04', '2026-07-04'), 0);
+  assert.strictEqual(C.diasEntre('2026-07-04', '2026-07-05'), 1);
+  assert.strictEqual(C.diasEntre('2026-07-05', '2026-07-04'), 0); // nunca negativo
+});
+
+t('corrigido: mesmo dia = valor bruto', () => {
+  assert.strictEqual(C.corrigido(10000, '2026-07-04', '2026-07-04', 1), 10000);
+});
+
+t('corrigido: taxa zero = valor bruto', () => {
+  assert.strictEqual(C.corrigido(10000, '2026-07-04', '2027-07-04', 0), 10000);
+});
+
+t('corrigido: 30 dias a 1% ≈ +0,986%', () => {
+  // 1.01^(30/30.44) = 1.0098551
+  perto(C.corrigido(10000, '2026-07-04', '2026-08-03', 1), 10098.55, 0.05);
+});
+
+t('corrigido: exemplo canônico da spec (~6 meses)', () => {
+  // 04/07/2026 → 04/01/2027 = 184 dias = 6.0447 meses → 1.01^6.0447
+  perto(C.corrigido(10000, '2026-07-04', '2027-01-04', 1), 10619.93, 0.5);
+});
+
+t('corrigido cresce com o tempo', () => {
+  const a = C.corrigido(5000, '2026-01-01', '2026-06-01', 1);
+  const b = C.corrigido(5000, '2026-01-01', '2026-12-01', 1);
+  assert.ok(b > a && a > 5000);
+});
+
+const obraAberta = {
+  dataInicio: '2026-01-01',
+  gastos: [
+    { valor: 100000, data: '2026-01-01' },
+    { valor:  50000, data: '2026-06-01' },
+  ],
+};
+
+t('totalBruto soma gastos', () => {
+  assert.strictEqual(C.totalBruto(obraAberta), 150000);
+});
+
+t('totalCorrigido > totalBruto quando há tempo passado', () => {
+  const tc = C.totalCorrigido(obraAberta, 1, '2026-07-04');
+  assert.ok(tc > 150000);
+});
+
+t('totalCorrigido congela na venda', () => {
+  const vendida = { ...obraAberta, venda: { data: '2026-07-01', valor: 300000 } };
+  const noDiaDaVenda = C.totalCorrigido(vendida, 1, '2026-07-01');
+  const muitoDepois  = C.totalCorrigido(vendida, 1, '2027-07-01'); // hoje não importa
+  perto(muitoDepois, noDiaDaVenda, 0.001);
+});
+
+t('lucroVenda: null sem venda, bruto e vsBanco com venda', () => {
+  assert.strictEqual(C.lucroVenda(obraAberta, 1), null);
+  const vendida = { ...obraAberta, venda: { data: '2026-07-01', valor: 300000 } };
+  const l = C.lucroVenda(vendida, 1);
+  assert.strictEqual(l.bruto, 150000);
+  assert.ok(l.vsBanco < l.bruto && l.vsBanco > 0);
+});
+
+t('mesesDeObra usa venda como fim quando vendida', () => {
+  perto(C.mesesDeObra(obraAberta, '2026-07-04'), 184 / 30.44, 0.01);
+  const vendida = { ...obraAberta, venda: { data: '2026-04-01', valor: 1 } };
+  perto(C.mesesDeObra(vendida, '2027-01-01'), 90 / 30.44, 0.01);
+});
+
+console.log(`OK: ${n} testes`);

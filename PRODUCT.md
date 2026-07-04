@@ -6,11 +6,11 @@ product
 
 ## Users
 
-Pai do Giovani — usuário não técnico, meia-idade, usa principalmente no celular (Android, PWA instalado) e às vezes no computador. Prefere letra maior (óculos de leitura). Contexto: conferir as finanças do dia a dia em momentos rápidos — fim do dia, ao pagar uma conta, ao fechar uma venda. Giovani (filho) mantém o app e também o usa.
+Pai do Giovani — construtor de casas de alto padrão, não técnico, meia-idade, usa principalmente no celular (Android, PWA instalado). Prefere letra maior (óculos de leitura). Contexto: lançar gastos da obra no dia a dia (ao pagar fornecedor, fechar compra) e conferir o total gasto e a margem. Giovani (filho) mantém o app.
 
 ## Product Purpose
 
-Dashboard financeiro pessoal offline-first: gastos e receitas do mês, contas a pagar, faturamento do pequeno negócio e investimentos. Tudo digitado manualmente, salvo no aparelho (localStorage), por usuário (login local CPF+senha). Sucesso = o pai abre todo dia, entende o saldo em 5 segundos e confia no que vê.
+Controle de custos de obras offline-first: gastos por obra separados por tópico (terreno, fundação, acabamento...), valor bruto e valor corrigido (quanto renderia no banco, taxa configurável, padrão 1% a.m.) e lucro real na venda — bruto e acima do banco. Obras têm 3 fases: em construção → pronta (à venda) → vendida. Tudo digitado manualmente, salvo no aparelho (localStorage), por usuário (login local CPF+senha). Sucesso = o pai abre o app, entende em 5 segundos quanto cada obra custou e, ao vender, confia no número do lucro.
 
 ## Brand Personality
 

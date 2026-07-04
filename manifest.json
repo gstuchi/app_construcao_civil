@@ -1,7 +1,7 @@
 {
-  "name": "Minhas Finanças",
-  "short_name": "Finanças",
-  "description": "Controle de gastos, contas, negócio e investimentos.",
+  "name": "Minhas Obras",
+  "short_name": "Obras",
+  "description": "Controle de custos e lucro por obra, na ponta do lápis.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

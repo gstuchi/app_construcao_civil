@@ -1,6 +1,6 @@
 /* Service worker — cache offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'financas-v6';
-const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './manifest.json', './icon.svg'];
+const CACHE = 'obras-v1';
+const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -163,6 +163,11 @@
 
   /* ===== obras ===== */
   .tag.blue{background:var(--blue-soft);color:var(--blue)}
+  /* bruto × corrigido lado a lado dentro do card */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  .duo .d-cell{background:rgba(255,255,255,.13);border-radius:12px;padding:10px 12px;min-width:0}
+  .duo .d-lbl{font-size:12.5px;opacity:.88;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .duo .d-val{font-size:clamp(16px,4.6vw,22px);font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
   .back{border:0;background:transparent;color:var(--brand);font-size:15.5px;font-weight:650;cursor:pointer;padding:8px 4px;margin-bottom:8px;display:flex;align-items:center;gap:4px;min-height:44px}
   .obra-actions{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
   .obra-actions .btn{flex:1;min-width:150px}
@@ -275,7 +280,10 @@
     <div class="cards">
       <div class="card saldo big">
         <div class="k-label"><span class="k-ic">💰</span> Total gasto nas obras</div>
-        <div class="k-val" id="kTotal">R$ 0,00</div>
+        <div class="duo">
+          <div class="d-cell"><div class="d-lbl">Bruto</div><div class="d-val" id="kTotalBruto">R$ 0,00</div></div>
+          <div class="d-cell"><div class="d-lbl">Corrigido pelo banco</div><div class="d-val" id="kTotalCorr">R$ 0,00</div></div>
+        </div>
         <div class="k-sub" id="kTotalSub">—</div>
       </div>
     </div>

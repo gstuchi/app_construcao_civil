@@ -104,9 +104,10 @@ function renderInicio(){
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   const bruto = abertas.reduce((s,o)=>s+OBRA_CALC.totalBruto(o),0);
   const corr  = abertas.reduce((s,o)=>s+OBRA_CALC.totalCorrigido(o,taxa(),hoje),0);
-  $('#kTotal').textContent = money(bruto);
+  $('#kTotalBruto').textContent = money(bruto);
+  $('#kTotalCorr').textContent = money(corr);
   $('#kTotalSub').textContent = abertas.length
-    ? `Corrigido: ${money(corr)} · ${abertas.length} obra${abertas.length>1?'s':''} em andamento`
+    ? `Juros embutidos: +${money(corr-bruto)} · ${abertas.length} obra${abertas.length>1?'s':''} em andamento`
     : 'Nenhuma obra em andamento';
 
   const arr = [...db.obras].sort((a,b)=>
@@ -177,8 +178,11 @@ function renderObra(){
     <div class="cards">
       <div class="card saldo big">
         <div class="k-label"><span class="k-ic">💸</span> Total gasto</div>
-        <div class="k-val">${money(bruto)}</div>
-        <div class="k-sub">Corrigido pelo banco: ${money(corr)}</div>
+        <div class="duo">
+          <div class="d-cell"><div class="d-lbl">Bruto</div><div class="d-val">${money(bruto)}</div></div>
+          <div class="d-cell"><div class="d-lbl">Corrigido pelo banco</div><div class="d-val" id="oCorr">${money(corr)}</div></div>
+        </div>
+        <div class="k-sub">Juros embutidos até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
       </div>`;
   if(o.fase==='vendida' && lucro){
     resumo += `

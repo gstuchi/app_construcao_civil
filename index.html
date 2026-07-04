@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070c18">
+<title>Minhas Finanças</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  /* Tema único: dark premium (decisão de identidade — PRODUCT.md) */
+  :root{
+    --bg:#070c18;
+    --surface:rgba(17,26,46,.92); --surface-solid:#111a2e; --surface-2:#182338; --border:#243250;
+    --text:#eef4fb; --muted:#a3b4ca; --brand:#5b8cff; --brand-soft:#16244a;
+    --green:#4ade80; --green-soft:#0c2b1c; --red:#fb7185; --red-soft:#33151f;
+    --amber:#fbbf24; --amber-soft:#33280f; --blue:#60a5fa; --blue-soft:#122238;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 28px rgba(2,8,24,.45);
+    --radius:16px; --radius-sm:11px;
+    --c1:#5b8cff; --c2:#22d3ee; --c3:#a78bfa; --c4:#f472b6; --c5:#fbbf24; --c6:#4ade80; --c7:#fb923c; --c8:#94a3b8;
+    /* série do gráfico — validada p/ daltonismo (dataviz) */
+    --chart-rec:#2eae5e; --chart-desp:#e0507f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(1100px 750px at 85% -5%, rgba(37,72,180,.32), transparent 62%),
+      radial-gradient(900px 700px at -10% 105%, rgba(84,38,160,.22), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text); line-height:1.5; font-size:16.5px;
+    padding-bottom:calc(76px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color:transparent;
+  }
+  #globe{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px 16px 8px}
+  header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-top:env(safe-area-inset-top)}
+  header.top h1{font-size:20px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--c2));display:grid;place-items:center;color:#fff;font-size:16px}
+  .month-pill{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 8px;box-shadow:var(--shadow)}
+  .month-pill button{border:0;background:transparent;color:var(--muted);width:26px;height:26px;border-radius:50%;font-size:16px;cursor:pointer;display:grid;place-items:center}
+  .month-pill button:active{background:var(--surface-2)}
+  .month-pill span{font-size:13px;font-weight:600;min-width:96px;text-align:center;text-transform:capitalize}
+
+  section.view{display:none;animation:fade .25s ease}
+  section.view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow)}
+  .card .k-label{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--muted);font-weight:500;margin-bottom:7px}
+  .card .k-ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px}
+  .card .k-val{font-size:25px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .card .k-val.sm{font-size:21px}
+  .card.big{grid-column:1 / -1}
+  .card.saldo{background:linear-gradient(140deg,#2450c9,#5b2fd1);border:1px solid rgba(120,150,255,.35);color:#fff;box-shadow:0 8px 32px rgba(48,80,220,.35)}
+  .card.saldo .k-label{color:rgba(255,255,255,.88)}
+  .card.saldo .k-ic{background:rgba(255,255,255,.2)}
+  .card.saldo .k-val{font-size:36px}
+  .card.saldo .k-sub{font-size:13.5px;color:rgba(255,255,255,.88);margin-top:4px}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .ic-green{background:var(--green-soft);color:var(--green)}
+  .ic-red{background:var(--red-soft);color:var(--red)}
+  .ic-amber{background:var(--amber-soft);color:var(--amber)}
+  .ic-blue{background:var(--blue-soft);color:var(--blue)}
+  .ic-brand{background:var(--brand-soft);color:var(--brand)}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px;margin-bottom:14px}
+  .panel h2{font-size:15.5px;font-weight:650;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between}
+  .panel h2 .muted{font-size:13px;font-weight:500;color:var(--muted)}
+
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .donut{position:relative;width:132px;height:132px;flex:0 0 auto}
+  .donut .center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+  .donut .center small{font-size:11px;color:var(--muted);display:block}
+  .donut .center b{font-size:15px;font-variant-numeric:tabular-nums}
+  .legend{flex:1;min-width:150px;display:flex;flex-direction:column;gap:8px}
+  .legend .row{display:flex;align-items:center;gap:8px;font-size:13px}
+  .legend .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+  .legend .row .nm{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .legend .row .vl{color:var(--muted);font-variant-numeric:tabular-nums}
+
+  ul.list{list-style:none;display:flex;flex-direction:column;gap:2px}
+  ul.list li{display:flex;align-items:center;gap:11px;padding:10px 4px;border-bottom:1px solid var(--border)}
+  ul.list li:last-child{border-bottom:0}
+  .av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:16px;flex:0 0 auto}
+  .li-main{flex:1;min-width:0}
+  .li-main .t{font-size:15.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .li-main .s{font-size:13px;color:var(--muted)}
+  .li-val{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .li-del{border:0;background:transparent;color:var(--muted);font-size:17px;cursor:pointer;padding:4px 6px;border-radius:8px}
+  .li-del:active{background:var(--surface-2);color:var(--red)}
+  .tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px}
+  .tag.ok{background:var(--green-soft);color:var(--green)}
+  .tag.pend{background:var(--amber-soft);color:var(--amber)}
+  .tag.late{background:var(--red-soft);color:var(--red)}
+
+  .empty{text-align:center;padding:30px 16px;color:var(--muted)}
+  .empty .big{font-size:34px;margin-bottom:8px}
+  .empty p{font-size:13.5px}
+
+  /* bottom nav */
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--surface) 92%, transparent);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:40}
+  nav.tabs button{flex:1;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;cursor:pointer;font-size:11.5px;font-weight:500;border-radius:12px}
+  nav.tabs button .ti{font-size:21px;line-height:1}
+  nav.tabs button.on{color:var(--brand)}
+  nav.tabs button.on .ti{transform:translateY(-1px)}
+
+  /* FAB */
+  .fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(140deg,#3b6cf0,#5b2fd1);color:#fff;font-size:28px;box-shadow:0 6px 24px rgba(70,100,240,.5);cursor:pointer;z-index:41;display:grid;place-items:center}
+  .fab:active{transform:scale(.94)}
+
+  /* modal */
+  .backdrop{position:fixed;inset:0;background:rgba(8,15,20,.5);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
+  .backdrop.show{display:flex}
+  .sheet{background:var(--surface-solid);width:100%;max-width:760px;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+  .sheet h3{font-size:17px;font-weight:700;margin-bottom:16px}
+  .seg{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:12px;margin-bottom:14px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .seg button.on[data-k="receita"]{color:var(--green)}
+  .seg button.on[data-k="despesa"]{color:var(--red)}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:6px}
+  .field input,.field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:12px 13px;font-size:15px;font-family:inherit;outline:none}
+  .field input:focus,.field select:focus{border-color:var(--brand)}
+  .field.big input{font-size:26px;font-weight:700;text-align:center;padding:16px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .sheet-actions{display:flex;gap:10px;margin-top:6px}
+  .btn{flex:1;border:0;border-radius:12px;padding:14px;font-size:15px;font-weight:650;cursor:pointer;font-family:inherit}
+  .btn.ghost{background:var(--surface-2);color:var(--muted)}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn:active{transform:scale(.98)}
+  .hidden{display:none!important}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px}
+  .chip{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13.5px;cursor:pointer;font-weight:500}
+  .chip.on{background:var(--brand-soft);color:#a8c2ff;border-color:#3a56a0;font-weight:600}
+  .install-hint{background:var(--blue-soft);color:var(--blue);border-radius:12px;padding:11px 13px;font-size:12.5px;display:flex;gap:9px;align-items:center;margin-bottom:14px}
+  .install-hint button{margin-left:auto;border:0;background:var(--blue);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+
+  /* ===== tela de entrada (login/cadastro) ===== */
+  #auth{position:fixed;inset:0;z-index:100}
+  #auth.hidden{display:none}
+  body.locked{overflow:hidden}
+  body.locked .app,body.locked nav.tabs,body.locked .fab{visibility:hidden}
+  .auth-scroll{height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .auth-stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:11vh 18px 0;perspective:1000px}
+  .auth-title{text-align:center;margin-bottom:32px;will-change:transform}
+  .auth-title h1{font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--text)}
+  .auth-title h1 span{display:block;font-size:42px;font-weight:800;color:var(--brand);line-height:1.12;margin-top:4px}
+  .auth-hint{margin-top:14px;font-size:13px;color:var(--muted)}
+  .auth-card{width:100%;max-width:440px;border:4px solid #6C6C6C;background:#222;border-radius:30px;padding:9px;transform-origin:center top;will-change:transform;
+    box-shadow:0 0 #0000004d,0 9px 20px #0000004a,0 37px 37px #00000042,0 84px 50px #00000026,0 149px 60px #0000000a}
+  .auth-card.boost,.auth-title.boost{transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s ease}
+  .auth-inner{background:var(--surface-solid);border-radius:21px;padding:22px 20px 18px}
+  .auth-spacer{height:52vh}
+  .auth-msg{font-size:12.5px;color:var(--red);min-height:18px;margin:-4px 0 8px}
+  .pw-wrap{position:relative}
+  .pw-wrap input{padding-right:52px}
+  .pw-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:16px;cursor:pointer;padding:6px 8px;color:var(--muted)}
+  .sair{border:1px solid var(--border);background:var(--surface);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px;margin-left:8px;box-shadow:var(--shadow)}
+  .sair.hidden{display:none}
+
+  /* ===== delta % (variação vs mês anterior) ===== */
+  .k-delta{font-size:12.5px;font-weight:600;margin-top:4px;display:flex;gap:4px;align-items:center;font-variant-numeric:tabular-nums}
+  .k-delta.up{color:var(--green)} .k-delta.down{color:var(--red)} .k-delta.flat{color:var(--muted)}
+  .card.saldo .k-delta{color:rgba(255,255,255,.92)}
+
+  /* ===== gráfico de área ===== */
+  .seg.mini{margin:0;padding:3px;gap:3px}
+  .seg.mini button{padding:5px 11px;font-size:12px}
+  .area-wrap{position:relative}
+  .area-wrap svg{display:block;width:100%}
+  .area-tip{position:absolute;pointer-events:none;background:var(--surface-solid);border:1px solid var(--border);border-radius:10px;padding:8px 11px;font-size:12.5px;box-shadow:var(--shadow);opacity:0;transition:opacity .15s ease;white-space:nowrap;z-index:5}
+  .area-tip b{font-variant-numeric:tabular-nums}
+  .area-tip .tr{display:flex;align-items:center;gap:6px}
+  .area-tip .dot{width:8px;height:8px;border-radius:2px}
+
+  /* ===== sidebar desktop (estilo app-shell) ===== */
+  .side{display:none}
+  @media (min-width:900px){
+    nav.tabs{display:none}
+    body{padding-bottom:28px}
+    .fab{bottom:28px}
+    .side{display:flex;position:fixed;left:0;top:0;bottom:0;width:224px;flex-direction:column;gap:3px;padding:22px 14px;background:rgba(11,18,36,.78);border-right:1px solid var(--border);backdrop-filter:blur(12px);z-index:30}
+    .side .s-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;margin-bottom:20px;padding:0 8px}
+    .side button[data-tab]{display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--muted);padding:11px 12px;border-radius:11px;font-size:14.5px;font-weight:550;cursor:pointer;text-align:left;width:100%}
+    .side button[data-tab] .ti{font-size:17px}
+    .side button[data-tab]:hover{background:var(--surface-2);color:var(--text)}
+    .side button[data-tab].on{background:var(--brand-soft);color:#cfe0ff}
+    .side .s-sair{margin-top:auto;display:flex;align-items:center;gap:11px;border:1px solid var(--border);background:transparent;color:var(--muted);padding:11px 12px;border-radius:11px;font-size:14px;cursor:pointer;width:100%}
+    .side .s-sair:hover{background:var(--surface-2);color:var(--text)}
+    .app{margin:0 auto 0 248px;max-width:880px}
+    .cards{grid-template-columns:repeat(4,1fr)}
+    header.top .sair{display:none}
+    body.locked .side{visibility:hidden}
+  }
+</style>
+</head>
+<body>
+<canvas id="globe" aria-hidden="true"></canvas>
+<!-- ===== TELA DE ENTRADA ===== -->
+<div id="auth" class="hidden">
+  <div class="auth-scroll" id="authScroll">
+    <div class="auth-stage">
+      <div class="auth-title" id="authTitle">
+        <h1>Controle o seu dinheiro com<br><span>Minhas Finanças</span></h1>
+        <p class="auth-hint" id="authHint">Role para entrar ↓</p>
+      </div>
+      <div class="auth-card" id="authCard">
+        <div class="auth-inner">
+          <div class="seg" id="authTabs">
+            <button type="button" data-k="login" class="on">Entrar</button>
+            <button type="button" data-k="cad">Criar conta</button>
+          </div>
+          <form id="fLogin" novalidate>
+            <div class="field"><label for="lCpf">CPF</label>
+              <input id="lCpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00"></div>
+            <div class="field"><label for="lSenha">Senha</label>
+              <div class="pw-wrap">
+                <input id="lSenha" type="password" autocomplete="current-password" placeholder="Sua senha">
+                <button type="button" class="pw-eye" data-eye="lSenha" aria-label="Mostrar senha">👁</button>
+              </div></div>
+            <div class="auth-msg" id="lMsg" role="alert"></div>
+            <button class="btn primary" style="width:100%" type="submit">Entrar</button>
+          </form>
+          <form id="fCad" class="hidden" novalidate>
+            <div class="field"><label for="cEmail">E-mail</label>
+              <input id="cEmail" type="email" autocomplete="email" placeholder="voce@email.com"></div>
+            <div class="field"><label for="cCpf">CPF</label>
+              <input id="cCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
+            <div class="field"><label for="cSenha">Senha</label>
+              <div class="pw-wrap">
+                <input id="cSenha" type="password" autocomplete="new-password" placeholder="Mínimo 4 caracteres">
+                <button type="button" class="pw-eye" data-eye="cSenha" aria-label="Mostrar senha">👁</button>
+              </div></div>
+            <div class="auth-msg" id="cMsg" role="alert"></div>
+            <button class="btn primary" style="width:100%" type="submit">Criar conta</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="auth-spacer"></div>
+  </div>
+</div>
+
+<aside class="side">
+  <div class="s-logo"><span class="logo">₿</span> Minhas Finanças</div>
+  <button data-tab="inicio" class="on"><span class="ti">🏠</span>Início</button>
+  <button data-tab="lancamentos"><span class="ti">📋</span>Lançamentos</button>
+  <button data-tab="contas"><span class="ti">🧾</span>Contas a pagar</button>
+  <button data-tab="negocio"><span class="ti">🏪</span>Meu negócio</button>
+  <button data-tab="invest"><span class="ti">📈</span>Investimentos</button>
+  <button id="btnSairSide" class="s-sair"><span class="ti">🚪</span>Sair da conta</button>
+</aside>
+
+<div class="app">
+  <header class="top">
+    <h1><span class="logo">₿</span> Minhas Finanças</h1>
+    <div style="display:flex;align-items:center">
+      <div class="month-pill">
+        <button id="mPrev" aria-label="Mês anterior">‹</button>
+        <span id="mLabel">—</span>
+        <button id="mNext" aria-label="Próximo mês">›</button>
+      </div>
+      <button id="btnSair" class="sair hidden" title="Sair da conta" aria-label="Sair da conta">🚪</button>
+    </div>
+  </header>
+
+  <div id="installHint" class="install-hint hidden">
+    <span>📲</span><span>Instale no celular pra abrir como app.</span>
+    <button id="installBtn">Instalar</button>
+  </div>
+
+  <!-- ============ INÍCIO ============ -->
+  <section class="view active" id="v-inicio">
+    <div class="cards">
+      <div class="card saldo big">
+        <div class="k-label"><span class="k-ic">💰</span> Saldo do mês</div>
+        <div class="k-val" id="kSaldo">R$ 0,00</div>
+        <div class="k-sub" id="kSaldoSub">Receitas − despesas</div>
+      </div>
+      <div class="card">
+        <div class="k-label"><span class="k-ic ic-green">↑</span> Receitas</div>
+        <div class="k-val sm pos" id="kRec">R$ 0,00</div>
+        <div id="kRecDelta"></div>
+      </div>
+      <div class="card">
+        <div class="k-label"><span class="k-ic ic-red">↓</span> Despesas</div>
+        <div class="k-val sm neg" id="kDesp">R$ 0,00</div>
+        <div id="kDespDelta"></div>
+      </div>
+      <div class="card">
+        <div class="k-label"><span class="k-ic ic-amber">🧾</span> Contas a pagar</div>
+        <div class="k-val sm" id="kContas">R$ 0,00</div>
+      </div>
+      <div class="card">
+        <div class="k-label"><span class="k-ic ic-blue">📈</span> Investido</div>
+        <div class="k-val sm" id="kInvest">R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="panel" id="panelDonut">
+      <h2>Despesas por categoria <span class="muted" id="donutMonth"></span></h2>
+      <div class="donut-wrap">
+        <div class="donut">
+          <svg viewBox="0 0 36 36" width="132" height="132" id="donutSvg"></svg>
+          <div class="center"><small>Total</small><b id="donutTotal">R$ 0</b></div>
+        </div>
+        <div class="legend" id="donutLegend"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Receitas × Despesas
+        <span class="seg mini" id="rangeSeg">
+          <button data-r="3">3m</button><button data-r="6" class="on">6m</button><button data-r="12">12m</button>
+        </span>
+      </h2>
+      <div class="area-wrap" id="areaWrap">
+        <div class="area-tip" id="areaTip"></div>
+      </div>
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:12.5px;color:var(--muted)">
+        <span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--chart-rec);display:inline-block"></i>Receitas</span>
+        <span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--chart-desp);display:inline-block"></i>Despesas</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Últimos lançamentos</h2>
+      <ul class="list" id="recentList"></ul>
+    </div>
+  </section>
+
+  <!-- ============ LANÇAMENTOS ============ -->
+  <section class="view" id="v-lancamentos">
+    <div class="panel">
+      <h2>Lançamentos do mês <span class="muted" id="lancCount"></span></h2>
+      <ul class="list" id="lancList"></ul>
+    </div>
+  </section>
+
+  <!-- ============ CONTAS ============ -->
+  <section class="view" id="v-contas">
+    <div class="cards">
+      <div class="card"><div class="k-label"><span class="k-ic ic-amber">⏳</span> Pendente</div><div class="k-val sm" id="kContasPend">R$ 0,00</div></div>
+      <div class="card"><div class="k-label"><span class="k-ic ic-green">✓</span> Pago no mês</div><div class="k-val sm pos" id="kContasPago">R$ 0,00</div></div>
+    </div>
+    <div class="panel">
+      <h2>Contas a pagar</h2>
+      <ul class="list" id="contasList"></ul>
+    </div>
+  </section>
+
+  <!-- ============ NEGÓCIO ============ -->
+  <section class="view" id="v-negocio">
+    <div class="cards">
+      <div class="card big saldo"><div class="k-label"><span class="k-ic">🏪</span> Faturamento do mês</div><div class="k-val" id="kFatMes">R$ 0,00</div><div class="k-sub" id="kFatQtd">0 vendas</div><div id="kFatDelta"></div></div>
+      <div class="card"><div class="k-label"><span class="k-ic ic-brand">📅</span> Ticket médio</div><div class="k-val sm" id="kTicket">R$ 0,00</div></div>
+      <div class="card"><div class="k-label"><span class="k-ic ic-blue">Σ</span> Total geral</div><div class="k-val sm" id="kFatTotal">R$ 0,00</div></div>
+    </div>
+    <div class="panel">
+      <h2>Vendas do mês</h2>
+      <ul class="list" id="vendasList"></ul>
+    </div>
+  </section>
+
+  <!-- ============ INVESTIMENTOS ============ -->
+  <section class="view" id="v-invest">
+    <div class="cards">
+      <div class="card big saldo"><div class="k-label"><span class="k-ic">📈</span> Patrimônio investido</div><div class="k-val" id="kPatr">R$ 0,00</div><div class="k-sub" id="kRend">Rendimento —</div></div>
+      <div class="card"><div class="k-label"><span class="k-ic ic-blue">💵</span> Aplicado</div><div class="k-val sm" id="kAplicado">R$ 0,00</div></div>
+      <div class="card"><div class="k-label"><span class="k-ic ic-green">↑</span> Ganho</div><div class="k-val sm pos" id="kGanho">R$ 0,00</div></div>
+    </div>
+    <div class="panel">
+      <h2>Meus investimentos</h2>
+      <ul class="list" id="investList"></ul>
+    </div>
+  </section>
+</div>
+
+<button class="fab" id="fab" aria-label="Adicionar">+</button>
+
+<nav class="tabs">
+  <button data-tab="inicio" class="on"><span class="ti">🏠</span>Início</button>
+  <button data-tab="lancamentos"><span class="ti">📋</span>Lançar</button>
+  <button data-tab="contas"><span class="ti">🧾</span>Contas</button>
+  <button data-tab="negocio"><span class="ti">🏪</span>Negócio</button>
+  <button data-tab="invest"><span class="ti">📈</span>Investir</button>
+</nav>
+
+<!-- MODAL -->
+<div class="backdrop" id="backdrop">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script src="globe.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>

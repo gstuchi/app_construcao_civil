@@ -312,12 +312,120 @@ function gastoRow(o, g){
   return li;
 }
 
-/* stubs preenchidos na Task 5 */
+/* ===== FASES E VENDA ===== */
+function mudarFase(o, f){ o.fase = f; save(); renderAll(); }
+
+function formVenda(o){
+  openSheet(`
+    <h3>Registrar venda — ${escapeHtml(o.nome)}</h3>
+    <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="field"><label>Data da venda</label><input id="fData" type="date" value="${todayISO()}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cCancel">Cancelar</button>
+      <button class="btn primary" id="cSave">Confirmar venda</button>
+    </div>`);
+  $('#fVal').focus();
+  $('#cCancel').onclick = closeSheet;
+  $('#cSave').onclick = ()=>{
+    const valor = parseNum($('#fVal').value);
+    if(valor<=0){ $('#fVal').focus(); return; }
+    o.venda = { valor, data: $('#fData').value || todayISO() };
+    o.fase = 'vendida';
+    save(); closeSheet(); renderAll();
+  };
+}
+
+function formEditarObra(o){
+  openSheet(`
+    <h3>Editar obra</h3>
+    <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
+    <div class="field"><label>Começou em</label><input id="fData" type="date" value="${o.dataInicio}"></div>
+    <div class="field"><label>Valor estimado de venda (opcional)</label>
+      <input id="fEst" inputmode="decimal" value="${o.valorEstimadoVenda||''}" autocomplete="off"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
+      <button class="btn primary" id="cSave">Salvar</button>
+    </div>`);
+  $('#cSave').onclick = ()=>{
+    const nome = $('#fNome').value.trim();
+    if(!nome){ $('#fNome').focus(); return; }
+    o.nome = nome;
+    o.dataInicio = $('#fData').value || o.dataInicio;
+    const est = parseNum($('#fEst').value);
+    o.valorEstimadoVenda = est>0 ? est : null;
+    save(); closeSheet(); renderAll();
+  };
+  $('#cDel').onclick = ()=>{
+    const n = o.gastos.length;
+    if(confirm(`Apagar “${o.nome}”?` + (n?` Os ${n} lançamento(s) dela serão perdidos.`:''))){
+      db.obras = db.obras.filter(x=>x.id!==o.id);
+      obraAberta = null;
+      save(); closeSheet(); showView('inicio'); renderAll();
+    }
+  };
+}
+
+/* ===== GASTO (novo/editar) ===== */
+function formGasto(obraId, gasto){
+  const abertas = db.obras.filter(o=>o.fase!=='vendida');
+  if(!abertas.length && !gasto){ formNovaObra(); return; }
+  const isEdit = !!gasto;
+  // na edição a obra é fixa (a que está aberta); na criação pode escolher
+  const oFix = isEdit ? obraById(obraAberta) : (obraId ? obraById(obraId) : null);
+
+  const selObra = oFix
+    ? `<div class="field"><label>Obra</label><input value="${escapeHtml(oFix.nome)}" disabled></div>`
+    : `<div class="field"><label>Obra</label><select id="fObra">
+        ${abertas.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')}
+       </select></div>`;
+
+  openSheet(`
+    <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
+    <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00"
+      value="${isEdit?String(gasto.valor).replace('.',','):''}" autocomplete="off"></div>
+    ${selObra}
+    <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
+    <div class="field"><label>Descrição (opcional)</label>
+      <input id="fDesc" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
+    <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?gasto.data:todayISO()}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cCancel">Cancelar</button>
+      <button class="btn primary" id="cSave">Salvar</button>
+    </div>`);
+
+  let top = isEdit ? gasto.topico : topicos()[0].id;
+  const chips = $('#fChips');
+  const paint = ()=>{
+    chips.innerHTML = '';
+    topicos().forEach(t=>{
+      const ch = el('button','chip'+(t.id===top?' on':''),`${t.ic} ${t.nm}`);
+      ch.type = 'button';
+      ch.onclick = ()=>{ top=t.id; paint(); };
+      chips.appendChild(ch);
+    });
+  };
+  paint();
+  $('#fVal').focus();
+  $('#cCancel').onclick = closeSheet;
+  $('#cSave').onclick = ()=>{
+    const valor = parseNum($('#fVal').value);
+    if(valor<=0){ $('#fVal').focus(); return; }
+    const o = oFix || obraById($('#fObra').value);
+    if(!o) return;
+    if(isEdit){
+      gasto.valor = valor; gasto.topico = top;
+      gasto.descricao = $('#fDesc').value.trim();
+      gasto.data = $('#fData').value || gasto.data;
+    } else {
+      o.gastos.push({ id:uid(), valor, topico:top,
+        descricao:$('#fDesc').value.trim(), data:$('#fData').value || todayISO() });
+    }
+    save(); closeSheet(); renderAll();
+  };
+}
+
+/* stub preenchido na Task 6 */
 function renderAjustes(){}
-function formGasto(obraId, gasto){}
-function formVenda(o){}
-function mudarFase(o,f){}
-function formEditarObra(o){}
 
 /* ---------- modal / formulários ---------- */
 const backdrop = $('#backdrop'), sheet = $('#sheet');

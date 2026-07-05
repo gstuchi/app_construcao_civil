@@ -31,6 +31,7 @@
     auth.classList.toggle('hidden',!on);
     document.body.classList.toggle('locked',on);
     sair.classList.toggle('hidden',on);
+    if(on){ mostrarAba('login'); $('#lSenha').value=''; $('#cSenha').value=''; }
   }
   locked(true); // começa travado até o CLOUD dizer quem é
 
@@ -62,12 +63,13 @@
   apply();
 
   /* ---------- tabs ---------- */
-  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
-    $('#fLogin').classList.toggle('hidden',b.dataset.k!=='login');
-    $('#fCad').classList.toggle('hidden',b.dataset.k!=='cad');
+  function mostrarAba(k){
+    $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
+    $('#fLogin').classList.toggle('hidden',k!=='login');
+    $('#fCad').classList.toggle('hidden',k!=='cad');
     $('#lMsg').textContent=''; $('#cMsg').textContent='';
-  });
+  }
+  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>mostrarAba(b.dataset.k));
 
   /* ---------- máscara CPF (cadastro) e olho ---------- */
   const cCpf=document.getElementById('cCpf');

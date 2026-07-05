@@ -37,12 +37,13 @@ onAuthStateChanged(auth, u => {
   authCbs.forEach(cb => cb(currentUser));
 });
 
-let saveTimer = null, pendingBlob = null;
+let saveTimer = null, pendingBlob = null, dirty = false;
 function flushSave(){
   if(!pendingBlob || !currentUser) return;
   const blob = pendingBlob; pendingBlob = null;
-  setDoc(doc(db, 'dados', currentUser.uid),
-    { ...blob, _atualizado: serverTimestamp() }).catch(()=>{ pendingBlob = pendingBlob || blob; });
+  setDoc(doc(db, 'dados', currentUser.uid), { ...blob, _atualizado: serverTimestamp() })
+    .then(()=>{ if(!pendingBlob) dirty = false; })
+    .catch(()=>{ pendingBlob = pendingBlob || blob; });
 }
 
 window.CLOUD = {
@@ -56,7 +57,7 @@ window.CLOUD = {
       { email, cpf, criado: new Date().toISOString() });
   },
   login: (email, senha) => signInWithEmailAndPassword(auth, email, senha).then(()=>{}),
-  logout: () => { pendingBlob = null; return signOut(auth); },
+  logout: () => { pendingBlob = null; dirty = false; return signOut(auth); },
   resetSenha: email => sendPasswordResetEmail(auth, email),
 
   watchDados(cb){
@@ -66,11 +67,13 @@ window.CLOUD = {
         const d = snap.data();
         if(d) delete d._atualizado;
         cb(d || null, { fromCache: snap.metadata.fromCache,
-                        pendingWrites: snap.metadata.hasPendingWrites });
+                        pendingWrites: snap.metadata.hasPendingWrites,
+                        localDirty: dirty });
       });
   },
   saveDados(blob){
     pendingBlob = JSON.parse(JSON.stringify(blob));
+    dirty = true;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flushSave, 300);
   },

@@ -304,11 +304,14 @@ function mbarsHtml(o){
 function gastoRow(o, g){
   const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'🏷️'};
   const li = el('li');
+  const suf = g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '';
+  const futura = g.data > todayISO(); // ISO ordena lexicograficamente
+  const pIc = g.pagamento==='cartao' ? '💳 ' : g.pagamento==='pix' ? '⚡ ' : '';
   li.innerHTML = `
     <div class="av ic-brand">${t.ic}</div>
     <div class="li-main">
-      <div class="t">${escapeHtml(g.descricao || t.nm)}</div>
-      <div class="s">${t.nm} · ${fmtData(g.data)}</div>
+      <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
+      <div class="s">${pIc}${t.nm} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';

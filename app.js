@@ -317,7 +317,24 @@ function gastoRow(o, g){
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g);
   const del = el('button','li-del','×');
-  del.onclick = ()=>{ if(confirm('Excluir este gasto?')){ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); renderAll(); } };
+  del.onclick = ()=>{
+    if(!g.grupoId){
+      if(confirm('Excluir este gasto?')){ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); renderAll(); }
+      return;
+    }
+    const irmas = o.gastos.filter(x=>x.grupoId===g.grupoId);
+    openSheet(`
+      <h3>Excluir parcela ${g.parcela.n}/${g.parcela.de}</h3>
+      <p class="muted-note">Esta parcela faz parte de uma compra em ${g.parcela.de}x no cartão.</p>
+      <div class="sheet-actions" style="flex-direction:column">
+        <button class="btn primary" id="dUma" style="width:100%">Excluir só esta parcela</button>
+        <button class="btn ghost" id="dTodas" style="width:100%;color:var(--red)">Excluir a compra toda (${irmas.length} parcela${irmas.length>1?'s':''})</button>
+        <button class="btn ghost" id="dCancel" style="width:100%">Cancelar</button>
+      </div>`);
+    $('#dCancel').onclick = closeSheet;
+    $('#dUma').onclick = ()=>{ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); closeSheet(); renderAll(); };
+    $('#dTodas').onclick = ()=>{ o.gastos = o.gastos.filter(x=>x.grupoId!==g.grupoId); save(); closeSheet(); renderAll(); };
+  };
   li.appendChild(del);
   return li;
 }

@@ -304,17 +304,37 @@ function mbarsHtml(o){
 function gastoRow(o, g){
   const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'🏷️'};
   const li = el('li');
+  const suf = g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '';
+  const futura = g.data > todayISO(); // ISO ordena lexicograficamente
+  const pIc = g.pagamento==='cartao' ? '💳 ' : g.pagamento==='pix' ? '⚡ ' : '';
   li.innerHTML = `
     <div class="av ic-brand">${t.ic}</div>
     <div class="li-main">
-      <div class="t">${escapeHtml(g.descricao || t.nm)}</div>
-      <div class="s">${t.nm} · ${fmtData(g.data)}</div>
+      <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
+      <div class="s">${pIc}${t.nm} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g);
   const del = el('button','li-del','×');
-  del.onclick = ()=>{ if(confirm('Excluir este gasto?')){ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); renderAll(); } };
+  del.onclick = ()=>{
+    if(!g.grupoId){
+      if(confirm('Excluir este gasto?')){ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); renderAll(); }
+      return;
+    }
+    const irmas = o.gastos.filter(x=>x.grupoId===g.grupoId);
+    openSheet(`
+      <h3>Excluir parcela ${g.parcela.n}/${g.parcela.de}</h3>
+      <p class="muted-note">Esta parcela faz parte de uma compra em ${g.parcela.de}x no cartão.</p>
+      <div class="sheet-actions" style="flex-direction:column">
+        <button class="btn primary" id="dUma" style="width:100%">Excluir só esta parcela</button>
+        <button class="btn ghost" id="dTodas" style="width:100%;color:var(--red)">Excluir a compra toda (${irmas.length} parcela${irmas.length>1?'s':''})</button>
+        <button class="btn ghost" id="dCancel" style="width:100%">Cancelar</button>
+      </div>`);
+    $('#dCancel').onclick = closeSheet;
+    $('#dUma').onclick = ()=>{ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); closeSheet(); renderAll(); };
+    $('#dTodas').onclick = ()=>{ o.gastos = o.gastos.filter(x=>x.grupoId!==g.grupoId); save(); closeSheet(); renderAll(); };
+  };
   li.appendChild(del);
   return li;
 }
@@ -386,12 +406,22 @@ function formGasto(obraId, gasto){
         ${abertas.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')}
        </select></div>`;
 
+  // parcela de compra parcelada: pagamento/parcelas fixos, edita só esta parcela
+  const isParcela = isEdit && !!gasto.grupoId;
+  const pagtoHtml = isParcela
+    ? `<p class="muted-note">💳 Parcela ${gasto.parcela.n}/${gasto.parcela.de} de uma compra no cartão — a edição vale só pra esta parcela.</p>`
+    : `<div class="field"><label>Pagamento</label><div class="chips" id="fPagto"></div></div>
+       <div class="field hidden" id="fParcWrap"><label>Parcelas</label>
+         <select id="fParc">${Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x${i?'':' (à vista)'}</option>`).join('')}</select>
+       </div>`;
+
   openSheet(`
     <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
     <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00"
       value="${isEdit?String(gasto.valor).replace('.',','):''}" autocomplete="off"></div>
     ${selObra}
     <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
+    ${pagtoHtml}
     <div class="field"><label>Descrição (opcional)</label>
       <input id="fDesc" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
     <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?gasto.data:todayISO()}"></div>
@@ -412,6 +442,24 @@ function formGasto(obraId, gasto){
     });
   };
   paint();
+
+  let pagto = isEdit ? (gasto.pagamento || 'pix') : 'pix';
+  if(!isParcela){
+    const pchips = $('#fPagto');
+    const paintPagto = ()=>{
+      pchips.innerHTML = '';
+      [['pix','⚡ Pix'],['cartao','💳 Cartão']].forEach(([id,nm])=>{
+        const ch = el('button','chip'+(id===pagto?' on':''),nm);
+        ch.type = 'button';
+        ch.onclick = ()=>{ pagto=id; paintPagto(); };
+        pchips.appendChild(ch);
+      });
+      // parcelar só faz sentido no cartão e ao criar
+      $('#fParcWrap').classList.toggle('hidden', pagto!=='cartao' || isEdit);
+    };
+    paintPagto();
+  }
+
   $('#fVal').focus();
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
@@ -423,9 +471,20 @@ function formGasto(obraId, gasto){
       gasto.valor = valor; gasto.topico = top;
       gasto.descricao = $('#fDesc').value.trim();
       gasto.data = $('#fData').value || gasto.data;
+      if(!isParcela) gasto.pagamento = pagto;
     } else {
-      o.gastos.push({ id:uid(), valor, topico:top,
-        descricao:$('#fDesc').value.trim(), data:$('#fData').value || todayISO() });
+      const nParc = pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
+      const data0 = $('#fData').value || todayISO();
+      const desc = $('#fDesc').value.trim();
+      if(nParc > 1){
+        const grupoId = uid();
+        OBRA_CALC.gerarParcelas(valor, nParc, data0).forEach((p,i)=>{
+          o.gastos.push({ id:uid(), valor:p.valor, topico:top, descricao:desc,
+            data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc} });
+        });
+      } else {
+        o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto });
+      }
     }
     save(); closeSheet(); renderAll();
   };

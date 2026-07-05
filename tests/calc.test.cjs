@@ -88,4 +88,36 @@ t('taxaEquivalenteMensal: entradas inválidas viram null', () => {
   assert.strictEqual(C.taxaEquivalenteMensal(1000, 1000, 0), null);
 });
 
+t('addMesesClampado: mês normal e clamp no fim do mês', () => {
+  assert.strictEqual(C.addMesesClampado('2026-07-17', 0), '2026-07-17');
+  assert.strictEqual(C.addMesesClampado('2026-07-17', 1), '2026-08-17');
+  assert.strictEqual(C.addMesesClampado('2026-07-17', 6), '2027-01-17'); // vira o ano
+  assert.strictEqual(C.addMesesClampado('2026-01-31', 1), '2026-02-28'); // fev clampa
+  assert.strictEqual(C.addMesesClampado('2028-01-31', 1), '2028-02-29'); // bissexto
+  assert.strictEqual(C.addMesesClampado('2026-08-31', 1), '2026-09-30'); // 31 → 30
+});
+
+t('gerarParcelas: 10.000 em 10x = 10 de 1.000, dia 17 todo mês', () => {
+  const ps = C.gerarParcelas(10000, 10, '2026-07-17');
+  assert.strictEqual(ps.length, 10);
+  ps.forEach(p => assert.strictEqual(p.valor, 1000));
+  assert.strictEqual(ps[0].data, '2026-07-17');
+  assert.strictEqual(ps[1].data, '2026-08-17');
+  assert.strictEqual(ps[9].data, '2027-04-17');
+});
+
+t('gerarParcelas: centavos de arredondamento vão na última', () => {
+  const ps = C.gerarParcelas(1000, 3, '2026-07-05');
+  assert.strictEqual(ps[0].valor, 333.33);
+  assert.strictEqual(ps[1].valor, 333.33);
+  assert.strictEqual(ps[2].valor, 333.34);
+  const soma = ps.reduce((s, p) => s + p.valor, 0);
+  perto(soma, 1000, 1e-9);
+});
+
+t('gerarParcelas: 1x = um item com o total na data', () => {
+  const ps = C.gerarParcelas(500.5, 1, '2026-07-05');
+  assert.deepStrictEqual(ps, [{ valor: 500.5, data: '2026-07-05' }]);
+});
+
 console.log(`OK: ${n} testes`);

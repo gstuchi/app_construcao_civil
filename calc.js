@@ -41,7 +41,30 @@
     return (Math.pow(venda / custoBruto, 1 / meses) - 1) * 100;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal };
+  /* Soma meses a uma data ISO; dia inexistente clampa no último dia do mês
+     (31/01 + 1 mês = 28 ou 29/02). */
+  function addMesesClampado(dataISO, meses){
+    const [y, m, d] = dataISO.split('-').map(Number);
+    const tot = (m - 1) + meses;
+    const ano = y + Math.floor(tot / 12);
+    const mes = tot % 12; // 0-based
+    const ultimo = new Date(ano, mes + 1, 0).getDate();
+    const dia = Math.min(d, ultimo);
+    return ano + '-' + String(mes + 1).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+  }
+
+  /* Divide total em n parcelas mensais a partir de dataISO.
+     Conta em centavos; a diferença de arredondamento fica na última. */
+  function gerarParcelas(total, n, dataISO){
+    const cents = Math.round(total * 100);
+    const base = Math.floor(cents / n);
+    return Array.from({length: n}, (_, i) => ({
+      valor: (i === n - 1 ? cents - base * (n - 1) : base) / 100,
+      data: addMesesClampado(dataISO, i),
+    }));
+  }
+
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, addMesesClampado, gerarParcelas };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

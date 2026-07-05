@@ -2,8 +2,6 @@
 'use strict';
 
 /* ---------- estado ---------- */
-const SESSION_CPF = localStorage.getItem('finance_session_v1');
-const KEY = SESSION_CPF ? 'obras_data_v1::' + SESSION_CPF : 'obras_data_v1';
 
 const TOPICOS = [
   {id:'terreno',    nm:'Terreno',       ic:'🗺️'},
@@ -29,19 +27,17 @@ const FASES = {
 };
 
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
-let db = load();
+let db = empty();
 let obraAberta = null;   // id da obra no detalhe
 let tab = 'inicio';
+let unwatch = null;
 
-function load(){
-  try{
-    const d = JSON.parse(localStorage.getItem(KEY));
-    return d && typeof d==='object'
-      ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
-      : empty();
-  }catch{ return empty(); }
+function normaliza(d){
+  return d && typeof d==='object'
+    ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
+    : empty();
 }
-function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function save(){ CLOUD.saveDados(db); }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
 const topicos = () => [...TOPICOS, ...db.config.topicosCustom];
@@ -715,5 +711,35 @@ $('#installBtn').onclick = async()=>{
 };
 window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidden'));
 
-/* ---------- go ---------- */
-renderAll();
+/* ---------- go: espera auth e liga o tempo real ---------- */
+function bootCloud(){
+  CLOUD.onAuth(user=>{
+    if(unwatch){ unwatch(); unwatch=null; }
+    if(!user){ db = empty(); obraAberta = null; showView('inicio'); renderAll(); return; }
+
+    // dados antigos deste aparelho (era localStorage por CPF)
+    const flagKey = 'obras_migrado_v1::' + user.uid;
+    if(!localStorage.getItem(flagKey)){
+      const legada = Object.keys(localStorage).filter(k=>k.startsWith('obras_data_v1'))
+        .map(k=>{ try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } })
+        .find(d=>d && d.obras && d.obras.length);
+      if(legada){
+        CLOUD.importarSeVazio(normaliza(legada)).then(ok=>{
+          localStorage.setItem(flagKey,'1');
+          if(ok) alert('Encontramos obras salvas neste aparelho e importamos pra sua conta na nuvem. ✅');
+        });
+      } else {
+        localStorage.setItem(flagKey,'1');
+      }
+    }
+
+    unwatch = CLOUD.watchDados((blob, meta)=>{
+      if(meta.pendingWrites) return;      // eco da própria escrita
+      db = normaliza(blob);
+      renderAll();
+    });
+  });
+}
+if(window.CLOUD) bootCloud();
+else window.addEventListener('cloud-pronto', bootCloud);
+renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

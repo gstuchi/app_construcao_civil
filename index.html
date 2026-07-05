@@ -155,6 +155,7 @@
   .auth-inner{background:var(--surface-solid);border-radius:21px;padding:22px 20px 18px}
   .auth-spacer{height:52vh}
   .auth-msg{font-size:12.5px;color:var(--red);min-height:18px;margin:-4px 0 8px}
+  .linklike{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;width:100%;margin-top:10px;text-decoration:underline}
   .pw-wrap{position:relative}
   .pw-wrap input{padding-right:52px}
   .pw-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:16px;cursor:pointer;padding:6px 8px;color:var(--muted)}
@@ -246,8 +247,8 @@
             <button type="button" data-k="cad">Criar conta</button>
           </div>
           <form id="fLogin" novalidate>
-            <div class="field"><label for="lCpf">CPF</label>
-              <input id="lCpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00"></div>
+            <div class="field"><label for="lEmail">E-mail</label>
+              <input id="lEmail" type="email" autocomplete="username" placeholder="voce@email.com"></div>
             <div class="field"><label for="lSenha">Senha</label>
               <div class="pw-wrap">
                 <input id="lSenha" type="password" autocomplete="current-password" placeholder="Sua senha">
@@ -255,6 +256,7 @@
               </div></div>
             <div class="auth-msg" id="lMsg" role="alert"></div>
             <button class="btn primary" style="width:100%" type="submit">Entrar</button>
+            <button class="linklike" type="button" id="lEsqueci">Esqueci minha senha</button>
           </form>
           <form id="fCad" class="hidden" novalidate>
             <div class="field"><label for="cEmail">E-mail</label>
@@ -263,7 +265,7 @@
               <input id="cCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
             <div class="field"><label for="cSenha">Senha</label>
               <div class="pw-wrap">
-                <input id="cSenha" type="password" autocomplete="new-password" placeholder="Mínimo 4 caracteres">
+                <input id="cSenha" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
                 <button type="button" class="pw-eye" data-eye="cSenha" aria-label="Mostrar senha">👁</button>
               </div></div>
             <div class="auth-msg" id="cMsg" role="alert"></div>
@@ -392,9 +394,10 @@
 </div>
 
 <script src="globe.js"></script>
-<script src="auth.js"></script>
-<script src="calc.js"></script>
-<script src="app.js"></script>
+<script type="module" src="cloud.js"></script>
+<script defer src="auth.js"></script>
+<script defer src="calc.js"></script>
+<script defer src="app.js"></script>
 <script>
   if('serviceWorker' in navigator){
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

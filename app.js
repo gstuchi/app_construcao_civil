@@ -2,8 +2,6 @@
 'use strict';
 
 /* ---------- estado ---------- */
-const SESSION_CPF = localStorage.getItem('finance_session_v1');
-const KEY = SESSION_CPF ? 'obras_data_v1::' + SESSION_CPF : 'obras_data_v1';
 
 const TOPICOS = [
   {id:'terreno',    nm:'Terreno',       ic:'🗺️'},
@@ -29,19 +27,17 @@ const FASES = {
 };
 
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
-let db = load();
+let db = empty();
 let obraAberta = null;   // id da obra no detalhe
 let tab = 'inicio';
+let unwatch = null;
 
-function load(){
-  try{
-    const d = JSON.parse(localStorage.getItem(KEY));
-    return d && typeof d==='object'
-      ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
-      : empty();
-  }catch{ return empty(); }
+function normaliza(d){
+  return d && typeof d==='object'
+    ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
+    : empty();
 }
-function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function save(){ CLOUD.saveDados(db); }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
 const topicos = () => [...TOPICOS, ...db.config.topicosCustom];
@@ -76,6 +72,11 @@ function fmtMeses(m){
   return r + (r===1 ? ' mês' : ' meses');
 }
 const obraById = id => db.obras.find(o=>o.id===id);
+/* stringify com chaves ordenadas — comparar estados independente da ordem do Firestore */
+function canon(x){
+  return JSON.stringify(x, (k,v)=> v && typeof v==='object' && !Array.isArray(v)
+    ? Object.keys(v).sort().reduce((a,c)=>{ a[c]=v[c]; return a; },{}) : v);
+}
 
 /* ---------- navegação ---------- */
 function showView(v){
@@ -253,10 +254,10 @@ function renderObra(){
   $('#oEdit').onclick = ()=>formEditarObra(o);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
   on('#oRel',          ()=>{ showView('relatorio'); renderRelatorio(); });
-  on('#oPronta',       ()=>mudarFase(o,'pronta'));
+  on('#oPronta',       ()=>mudarFase(o.id,'pronta'));
   on('#oVender',       ()=>formVenda(o));
-  on('#oVoltarConstr', ()=>mudarFase(o,'construcao'));
-  on('#oDesfazer',     ()=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ delete o.venda; o.fase='pronta'; save(); renderAll(); } });
+  on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
+  on('#oDesfazer',     ()=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
 }
 
 function drawDonutObra(entries, total){
@@ -318,11 +319,12 @@ function gastoRow(o, g){
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g);
   const del = el('button','li-del','×');
   del.onclick = ()=>{
+    const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
-      if(confirm('Excluir este gasto?')){ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); renderAll(); }
+      if(confirm('Excluir este gasto?')){ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); }
       return;
     }
-    const irmas = o.gastos.filter(x=>x.grupoId===g.grupoId);
+    const irmas = oo.gastos.filter(x=>x.grupoId===g.grupoId);
     openSheet(`
       <h3>Excluir parcela ${g.parcela.n}/${g.parcela.de}</h3>
       <p class="muted-note">Esta parcela faz parte de uma compra em ${g.parcela.de}x no cartão.</p>
@@ -332,15 +334,17 @@ function gastoRow(o, g){
         <button class="btn ghost" id="dCancel" style="width:100%">Cancelar</button>
       </div>`);
     $('#dCancel').onclick = closeSheet;
-    $('#dUma').onclick = ()=>{ o.gastos = o.gastos.filter(x=>x.id!==g.id); save(); closeSheet(); renderAll(); };
-    $('#dTodas').onclick = ()=>{ o.gastos = o.gastos.filter(x=>x.grupoId!==g.grupoId); save(); closeSheet(); renderAll(); };
+    $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); closeSheet(); renderAll(); };
+    $('#dTodas').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(); closeSheet(); renderAll(); };
   };
   li.appendChild(del);
   return li;
 }
 
 /* ===== FASES E VENDA ===== */
-function mudarFase(o, f){ o.fase = f; save(); renderAll(); }
+/* handlers sempre re-resolvem a obra por id na hora do clique: o snapshot da
+   nuvem pode ter trocado os objetos de db desde o render */
+function mudarFase(id, f){ const o=obraById(id); if(!o) return; o.fase = f; save(); renderAll(); }
 
 function formVenda(o){
   openSheet(`
@@ -356,8 +360,9 @@ function formVenda(o){
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ $('#fVal').focus(); return; }
-    o.venda = { valor, data: $('#fData').value || todayISO() };
-    o.fase = 'vendida';
+    const oo = obraById(o.id); if(!oo) return;
+    oo.venda = { valor, data: $('#fData').value || todayISO() };
+    oo.fase = 'vendida';
     save(); closeSheet(); renderAll();
   };
 }
@@ -376,10 +381,11 @@ function formEditarObra(o){
   $('#cSave').onclick = ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
-    o.nome = nome;
-    o.dataInicio = $('#fData').value || o.dataInicio;
+    const oo = obraById(o.id); if(!oo) return;
+    oo.nome = nome;
+    oo.dataInicio = $('#fData').value || oo.dataInicio;
     const est = parseNum($('#fEst').value);
-    o.valorEstimadoVenda = est>0 ? est : null;
+    oo.valorEstimadoVenda = est>0 ? est : null;
     save(); closeSheet(); renderAll();
   };
   $('#cDel').onclick = ()=>{
@@ -465,13 +471,14 @@ function formGasto(obraId, gasto){
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ $('#fVal').focus(); return; }
-    const o = oFix || obraById($('#fObra').value);
+    const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
     if(isEdit){
-      gasto.valor = valor; gasto.topico = top;
-      gasto.descricao = $('#fDesc').value.trim();
-      gasto.data = $('#fData').value || gasto.data;
-      if(!isParcela) gasto.pagamento = pagto;
+      const g = o.gastos.find(x=>x.id===gasto.id); if(!g) return;
+      g.valor = valor; g.topico = top;
+      g.descricao = $('#fDesc').value.trim();
+      g.data = $('#fData').value || g.data;
+      if(!isParcela) g.pagamento = pagto;
     } else {
       const nParc = pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
       const data0 = $('#fData').value || todayISO();
@@ -715,5 +722,39 @@ $('#installBtn').onclick = async()=>{
 };
 window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidden'));
 
-/* ---------- go ---------- */
-renderAll();
+/* ---------- go: espera auth e liga o tempo real ---------- */
+function bootCloud(){
+  CLOUD.onAuth(user=>{
+    if(unwatch){ unwatch(); unwatch=null; }
+    if(!user){ db = empty(); obraAberta = null; showView('inicio'); renderAll(); return; }
+
+    // dados antigos deste aparelho (era localStorage por CPF)
+    const flagKey = 'obras_migrado_v1::' + user.uid;
+    if(!localStorage.getItem(flagKey)){
+      const legada = Object.keys(localStorage).filter(k=>k.startsWith('obras_data_v1'))
+        .map(k=>{ try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } })
+        .find(d=>d && d.obras && d.obras.length);
+      if(legada){
+        CLOUD.importarSeVazio(normaliza(legada)).then(ok=>{
+          localStorage.setItem(flagKey,'1');
+          if(ok) alert('Encontramos obras salvas neste aparelho e importamos pra sua conta na nuvem. ✅');
+        });
+      } else {
+        localStorage.setItem(flagKey,'1');
+      }
+    }
+
+    unwatch = CLOUD.watchDados((blob, meta)=>{
+      if(meta.pendingWrites || meta.localDirty) return; // eco da própria escrita
+      const novo = normaliza(blob);
+      // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
+      if(canon(novo) === canon(db)) return;
+      db = novo;
+      if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
+      renderAll();
+    });
+  });
+}
+if(window.CLOUD) bootCloud();
+else window.addEventListener('cloud-pronto', bootCloud);
+renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

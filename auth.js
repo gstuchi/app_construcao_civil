@@ -1,17 +1,11 @@
-/* Tela de entrada — cadastro (e-mail, CPF, senha) e login (CPF + senha).
-   Contas locais (localStorage). Senha guardada como hash+salt, nunca em texto puro.
+/* Tela de entrada — Firebase (e-mail + senha via window.CLOUD).
+   CPF vira dado de perfil (validado no cadastro).
    Efeito visual: card 3D que desentorta ao rolar (recriação vanilla do ContainerScroll). */
 'use strict';
 (function(){
-  const USERS_KEY   = 'finance_users_v1';
-  const SESSION_KEY = 'finance_session_v1';
   const $ = s => document.querySelector(s);
 
-  const loadUsers = () => { try{ return JSON.parse(localStorage.getItem(USERS_KEY)) || []; }catch{ return []; } };
-  const saveUsers = u => localStorage.setItem(USERS_KEY, JSON.stringify(u));
-  const session   = () => localStorage.getItem(SESSION_KEY);
-
-  /* ---------- CPF ---------- */
+  /* ---------- CPF (máscara + validação) ---------- */
   const onlyDigits = s => (s||'').replace(/\D/g,'');
   function maskCPF(v){
     v = onlyDigits(v).slice(0,11);
@@ -31,50 +25,22 @@
     return true;
   }
 
-  /* ---------- hash de senha ---------- */
-  async function sha256hex(str){
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  // fallback quando crypto.subtle não existe (http sem ser localhost)
-  function fallbackHash(str){
-    let h1=0xdeadbeef, h2=0x41c6ce57;
-    for(let i=0;i<str.length;i++){
-      const c=str.charCodeAt(i);
-      h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677);
-    }
-    h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
-    h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
-    return (h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0');
-  }
-  async function hashSenha(salt,senha){
-    const str = salt+'::'+senha;
-    if(window.crypto && crypto.subtle){ try{ return await sha256hex(str); }catch{} }
-    return 'fb_'+fallbackHash(str);
-  }
-  function newSalt(){
-    const a=new Uint8Array(16); crypto.getRandomValues(a);
-    return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-
-  /* ---------- estado inicial ---------- */
+  /* ---------- trava/destrava ---------- */
   const auth=$('#auth'), sair=$('#btnSair');
   function locked(on){
     auth.classList.toggle('hidden',!on);
     document.body.classList.toggle('locked',on);
     sair.classList.toggle('hidden',on);
+    if(on){ mostrarAba('login'); $('#lSenha').value=''; $('#cSenha').value=''; }
   }
-  const doSair=()=>{
-    if(confirm('Sair da conta?')){ localStorage.removeItem(SESSION_KEY); location.reload(); }
-  };
+  locked(true); // começa travado até o CLOUD dizer quem é
+
+  const doSair=()=>{ if(confirm('Sair da conta?')) CLOUD.logout(); };
   sair.onclick=doSair;
   const sairSide=$('#btnSairSide'); if(sairSide) sairSide.onclick=doSair;
 
-  const users=loadUsers();
-  const logged = session() && users.some(u=>u.cpf===session());
-  if(!logged && session()) localStorage.removeItem(SESSION_KEY);
-  locked(!logged);
-  if(logged) return;   // já autenticado — nada mais a fazer
+  if(window.CLOUD) CLOUD.onAuth(u => locked(!u));
+  else window.addEventListener('cloud-pronto', ()=>CLOUD.onAuth(u => locked(!u)));
 
   /* ---------- efeito scroll 3D (ContainerScroll vanilla) ---------- */
   const scroller=$('#authScroll'), card=$('#authCard'), title=$('#authTitle');
@@ -97,42 +63,55 @@
   apply();
 
   /* ---------- tabs ---------- */
-  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
-    $('#fLogin').classList.toggle('hidden',b.dataset.k!=='login');
-    $('#fCad').classList.toggle('hidden',b.dataset.k!=='cad');
+  function mostrarAba(k){
+    $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
+    $('#fLogin').classList.toggle('hidden',k!=='login');
+    $('#fCad').classList.toggle('hidden',k!=='cad');
     $('#lMsg').textContent=''; $('#cMsg').textContent='';
-  });
+  }
+  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>mostrarAba(b.dataset.k));
 
-  /* ---------- máscaras e olho ---------- */
-  ['lCpf','cCpf'].forEach(id=>{
-    const i=document.getElementById(id);
-    i.addEventListener('input',()=>{ i.value=maskCPF(i.value); });
-  });
+  /* ---------- máscara CPF (cadastro) e olho ---------- */
+  const cCpf=document.getElementById('cCpf');
+  cCpf.addEventListener('input',()=>{ cCpf.value=maskCPF(cCpf.value); });
   document.querySelectorAll('.pw-eye').forEach(b=>b.onclick=()=>{
     const i=document.getElementById(b.dataset.eye);
     i.type = i.type==='password' ? 'text' : 'password';
     b.textContent = i.type==='password' ? '👁' : '🙈';
   });
 
-  function entrar(cpf){
-    localStorage.setItem(SESSION_KEY,cpf);
-    location.reload();
+  /* ---------- erros do Firebase em português ---------- */
+  function msgErro(e){
+    const c = (e && e.code) || '';
+    if(c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found'))
+      return 'E-mail ou senha incorretos.';
+    if(c.includes('email-already-in-use')) return 'Este e-mail já tem conta. Use "Entrar".';
+    if(c.includes('invalid-email'))        return 'E-mail inválido.';
+    if(c.includes('weak-password'))        return 'Senha fraca: use pelo menos 6 caracteres.';
+    if(c.includes('too-many-requests'))    return 'Muitas tentativas. Espere um pouco.';
+    if(c.includes('network-request-failed')) return 'Sem internet. Conecte pra entrar.';
+    return 'Não deu certo. Tente de novo.';
   }
 
   /* ---------- login ---------- */
   $('#fLogin').addEventListener('submit',async e=>{
     e.preventDefault();
     const msg=$('#lMsg'); msg.textContent='';
-    const cpf=onlyDigits($('#lCpf').value), senha=$('#lSenha').value;
-    if(cpf.length!==11){ msg.textContent='Digite o CPF completo.'; return; }
+    const email=$('#lEmail').value.trim(), senha=$('#lSenha').value;
+    if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='Digite seu e-mail.'; return; }
     if(!senha){ msg.textContent='Digite a senha.'; return; }
-    const u=loadUsers().find(x=>x.cpf===cpf);
-    if(!u){ msg.textContent='CPF não cadastrado. Toque em "Criar conta".'; return; }
-    const h=await hashSenha(u.salt,senha);
-    if(h!==u.hash){ msg.textContent='Senha incorreta.'; return; }
-    entrar(cpf);
+    try{ await CLOUD.login(email, senha); }
+    catch(err){ msg.textContent=msgErro(err); }
   });
+
+  /* ---------- esqueci minha senha ---------- */
+  $('#lEsqueci').onclick=async()=>{
+    const msg=$('#lMsg'); msg.textContent='';
+    const email=$('#lEmail').value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='Digite seu e-mail no campo acima primeiro.'; return; }
+    try{ await CLOUD.resetSenha(email); msg.textContent='Enviamos um link de redefinição pro seu e-mail.'; }
+    catch(err){ msg.textContent=msgErro(err); }
+  };
 
   /* ---------- cadastro ---------- */
   $('#fCad').addEventListener('submit',async e=>{
@@ -141,13 +120,8 @@
     const email=$('#cEmail').value.trim(), cpf=onlyDigits($('#cCpf').value), senha=$('#cSenha').value;
     if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='E-mail inválido.'; return; }
     if(!validCPF(cpf)){ msg.textContent='CPF inválido. Confira os números.'; return; }
-    if(senha.length<4){ msg.textContent='Senha precisa de pelo menos 4 caracteres.'; return; }
-    const us=loadUsers();
-    if(us.some(x=>x.cpf===cpf)){ msg.textContent='Este CPF já tem conta. Use "Entrar".'; return; }
-    const salt=newSalt();
-    us.push({email,cpf,salt,hash:await hashSenha(salt,senha),criado:new Date().toISOString()});
-    saveUsers(us);
-    entrar(cpf);
+    if(senha.length<6){ msg.textContent='Senha precisa de pelo menos 6 caracteres.'; return; }
+    try{ await CLOUD.signup(email, senha, cpf); }
+    catch(err){ msg.textContent=msgErro(err); }
   });
-
 })();

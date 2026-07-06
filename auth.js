@@ -77,7 +77,7 @@
   document.querySelectorAll('.pw-eye').forEach(b=>b.onclick=()=>{
     const i=document.getElementById(b.dataset.eye);
     i.type = i.type==='password' ? 'text' : 'password';
-    b.textContent = i.type==='password' ? '👁' : '🙈';
+    b.innerHTML = ICON(i.type==='password' ? 'olho' : 'olhoFechado');
   });
 
   /* ---------- erros do Firebase em português ---------- */

@@ -41,6 +41,19 @@
     return (Math.pow(venda / custoBruto, 1 / meses) - 1) * 100;
   }
 
+  /* Conta da venda numa base de custo (bruto OU corrigido):
+     lucro em R$, % sobre o custo, % sobre a venda, % ao mês composto. */
+  function resumoVenda(venda, custo, meses){
+    if(venda <= 0 || custo <= 0)
+      return { lucro:null, pctCusto:null, pctVenda:null, taxaMes:null };
+    return {
+      lucro: venda - custo,
+      pctCusto: (venda / custo - 1) * 100,
+      pctVenda: (venda - custo) / venda * 100,
+      taxaMes: taxaEquivalenteMensal(venda, custo, meses),
+    };
+  }
+
   /* Soma meses a uma data ISO; dia inexistente clampa no último dia do mês
      (31/01 + 1 mês = 28 ou 29/02). */
   function addMesesClampado(dataISO, meses){
@@ -97,7 +110,7 @@
     const n = parseFloat(v); return isNaN(n) ? 0 : n;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

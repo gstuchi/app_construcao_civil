@@ -609,25 +609,32 @@ function simulaCompute(){
   const mult = (rate!=null && taxa()>0) ? rate/taxa() : 0;
   const quando = meses===0 ? 'vendendo hoje' : `vendendo daqui a ${meses} ${meses===1?'mês':'meses'}`;
 
+  const rb = OBRA_CALC.resumoVenda(venda, bruto, mesesTot);
+  const rc = OBRA_CALC.resumoVenda(venda, corr,  mesesTot);
+  const pct1  = v => v==null ? '—' : v.toFixed(1).replace('.',',')+'%';
+  const taxa2 = v => v==null ? '—' : v.toFixed(2).replace('.',',')+'% a.m.';
+  const din   = v => v==null ? '—' : money(v);
+  const sinal = v => v==null ? '' : (v>=0 ? 'pos' : 'neg');
+
   out.innerHTML = `
     <div class="card saldo big" style="${bate?'':'background:linear-gradient(140deg,#8a2438,#4a1a2a);border-color:rgba(255,120,140,.35);box-shadow:0 8px 32px rgba(220,60,90,.25)'}">
       <div class="k-label"><span class="k-ic">${ICON(bate?'check':'alerta')}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
       <div class="k-val" style="font-size:30px">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
       <div class="k-sub">${quando} · banco paga ${String(taxa()).replace('.',',')}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}</div>
     </div>
-    <div class="cards">
-      <div class="card">
-        <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Lucro bruto</div>
-        <div class="k-val sm ${venda-bruto>=0?'pos':'neg'}">${moneyShort(venda-bruto)}</div>
-      </div>
-      <div class="card">
-        <div class="k-label"><span class="k-ic ic-blue">${ICON('banco')}</span> Acima do banco</div>
-        <div class="k-val sm ${venda-corr>=0?'pos':'neg'}">${moneyShort(venda-corr)}</div>
-      </div>
-      <div class="card big">
-        <div class="k-label"><span class="k-ic ic-brand">${ICON('calculadora')}</span> Custo até lá</div>
-        <div class="k-val sm">${money(bruto)} bruto · ${money(corr)} corrigido</div>
-      </div>
+    <div class="panel">
+      <h2 style="justify-content:flex-start;gap:8px">${ICON('documento')} Relatório da simulação</h2>
+      <div class="rep-scroll"><table class="rep-table">
+        <thead><tr><th></th><th>Pelo bruto</th><th>Pelo corrigido</th></tr></thead>
+        <tbody>
+          <tr><td>Custo até a venda</td><td>${money(bruto)}</td><td>${money(corr)}</td></tr>
+          <tr><td>Venda</td><td>${money(venda)}</td><td>${money(venda)}</td></tr>
+          <tr class="rep-total"><td>Lucro</td><td class="${sinal(rb.lucro)}">${din(rb.lucro)}</td><td class="${sinal(rc.lucro)}">${din(rc.lucro)}</td></tr>
+          <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
+          <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
+          <tr><td>Rendimento ao mês</td><td>${taxa2(rb.taxaMes)}</td><td>${taxa2(rc.taxaMes)}</td></tr>
+        </tbody>
+      </table></div>
     </div>`;
 }
 $('#simObra').onchange = simulaCompute;

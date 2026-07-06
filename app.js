@@ -87,6 +87,7 @@ function showView(v){
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
   $('#v-'+v).classList.add('active');
   document.querySelectorAll('button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
+  $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
   window.scrollTo({top:0});
 }
 document.querySelectorAll('button[data-tab]').forEach(b=>{

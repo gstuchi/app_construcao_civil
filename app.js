@@ -29,6 +29,7 @@ const FASES = {
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
 let db = empty();
 let obraAberta = null;   // id da obra no detalhe
+let filtroTexto = '', filtroMes = ''; // busca dos lançamentos (só memória)
 let tab = 'inicio';
 let unwatch = null;
 
@@ -92,7 +93,7 @@ document.querySelectorAll('button[data-tab]').forEach(b=>{
   b.onclick = ()=>{ obraAberta=null; showView(b.dataset.tab); renderAll(); };
 });
 $('#btnVoltar').onclick = ()=>{ obraAberta=null; showView('inicio'); renderAll(); };
-function openObra(id){ obraAberta=id; showView('obra'); renderObra(); }
+function openObra(id){ obraAberta=id; evoSel=-1; filtroTexto=''; filtroMes=''; showView('obra'); renderObra(); }
 
 /* ---------- render ---------- */
 function renderAll(){
@@ -238,20 +239,27 @@ function renderObra(){
         <div class="legend" id="oDonutLeg"></div>
       </div>
     </div>
-    <div class="panel"><h2>Gasto mês a mês</h2>${mbarsHtml(o)}</div>`;
+    ${evoChartHtml(o)}`;
 
+  const mesesComGasto = [...new Set(o.gastos.map(g=>g.data.slice(0,7)))].sort().reverse();
   const lanc = `
-    <div class="panel"><h2>Lançamentos <span class="muted">${o.gastos.length||''}</span></h2>
+    <div class="panel"><h2>Lançamentos <span class="muted" id="lanCount"></span></h2>
+      <div class="filter-row">
+        <input id="fBusca" placeholder="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}">
+        <select id="fMes"><option value="">Todos os meses</option>
+          ${mesesComGasto.map(m=>`<option value="${m}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
+        </select>
+      </div>
       <ul class="list" id="oGastos"></ul>
     </div>`;
 
   $('#obraBody').innerHTML = head + resumo + acoes + graficos + lanc;
 
   drawDonutObra(entries, bruto);
-  const list = $('#oGastos');
-  list.innerHTML = o.gastos.length ? '' : emptyBlock(ICON('recibo'),'Nenhum gasto lançado.<br>Toque no + pra lançar o primeiro.');
-  [...o.gastos].sort((a,b)=>(b.data+b.id).localeCompare(a.data+a.id))
-    .forEach(g=>list.appendChild(gastoRow(o,g)));
+  bindEvoChart(o);
+  $('#fBusca').addEventListener('input', ()=>{ filtroTexto = $('#fBusca').value; renderGastosFiltrados(obraById(obraAberta)); });
+  $('#fMes').onchange = ()=>{ filtroMes = $('#fMes').value; renderGastosFiltrados(obraById(obraAberta)); };
+  renderGastosFiltrados(o);
 
   $('#oEdit').onclick = ()=>formEditarObra(o);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
@@ -289,19 +297,91 @@ function drawDonutObra(entries, total){
   });
 }
 
-function mbarsHtml(o){
-  const by = {};
-  o.gastos.forEach(g=>{ const k=g.data.slice(0,7); by[k]=(by[k]||0)+g.valor; });
-  const keys = Object.keys(by).sort().slice(-12);
-  if(!keys.length) return emptyBlock(ICON('calendario'),'Sem gastos ainda.');
-  const max = Math.max(...keys.map(k=>by[k]));
-  return '<div class="mbars">' + keys.map(k=>{
-    const m = +k.split('-')[1];
-    return `<div class="mb">
-      <b>${moneyShort(by[k])}</b>
-      <i style="height:${Math.max(3, by[k]/max*100).toFixed(0)}%"></i>
-      <span>${MESAB[m-1]}</span></div>`;
-  }).join('') + '</div>';
+/* Gráfico de evolução: área suave do acumulado corrigido + linha do bruto.
+   Toque num mês mostra os valores no topo (sem tooltip flutuante).
+   Cores validadas p/ daltonismo (dataviz): --brand × --chart-rec. */
+let evoSel = -1; // mês selecionado (índice); -1 = último
+function smoothPath(pts){
+  if(pts.length < 2) return pts.length ? `M${pts[0].x} ${pts[0].y} L${pts[0].x+1} ${pts[0].y}` : '';
+  let d = `M${pts[0].x} ${pts[0].y}`;
+  for(let i = 0; i < pts.length - 1; i++){
+    const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || p2;
+    d += ` C${(p1.x+(p2.x-p0.x)/6).toFixed(1)} ${(p1.y+(p2.y-p0.y)/6).toFixed(1)}`
+       + ` ${(p2.x-(p3.x-p1.x)/6).toFixed(1)} ${(p2.y-(p3.y-p1.y)/6).toFixed(1)}`
+       + ` ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+function evoChartHtml(o){
+  const serie = OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
+  if(!serie.length) return `<div class="panel"><h2>Evolução da obra</h2>${emptyBlock(ICON('calendario'),'Sem gastos ainda.')}</div>`;
+  const W = 360, H = 170, L = 44, R = 6, T = 12, B = 22;
+  const max = Math.max(...serie.map(p => p.corrigido)) * 1.08 || 1;
+  const x = i => serie.length === 1 ? (L+W-R)/2 : L + (W-L-R) * i / (serie.length-1);
+  const y = v => T + (H-T-B) * (1 - v/max);
+  const pc = serie.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.corrigido).toFixed(1)}));
+  const pb = serie.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.bruto).toFixed(1)}));
+  const grade = [0.25,0.5,0.75,1].map(f => {
+    const gy = y(max*f).toFixed(1);
+    return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--border)" stroke-dasharray="3 4"/>
+            <text x="${L-4}" y="${+gy+3}" text-anchor="end">${moneyShort(max*f)}</text>`;
+  }).join('');
+  const passo = Math.ceil(serie.length / 8); // no máx ~8 rótulos de mês
+  const rotulos = serie.map((p,i) => (i % passo && i !== serie.length-1) ? '' :
+    `<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+p.mes.slice(5)-1]}</text>`).join('');
+  const cols = serie.map((p,i) => {
+    const x0 = i ? (x(i-1)+x(i))/2 : L, x1 = i < serie.length-1 ? (x(i)+x(i+1))/2 : W-R;
+    return `<rect class="evo-col" data-i="${i}" x="${x0.toFixed(1)}" y="${T}" width="${(x1-x0).toFixed(1)}" height="${H-T-B}" fill="transparent"/>`;
+  }).join('');
+  const sel = evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1;
+  const marca = `<circle cx="${pc[sel].x}" cy="${pc[sel].y}" r="3.5" fill="var(--brand)"/>
+                 <circle cx="${pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-rec)"/>`;
+  return `
+    <div class="panel"><h2>Evolução da obra</h2>
+      <div class="evo-head"><span class="evo-val" id="evoVal"></span></div>
+      <svg class="evo-svg" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg" role="img" aria-label="Evolução do gasto bruto e corrigido por mês">
+        <defs><linearGradient id="evoGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--brand)" stop-opacity=".38"/>
+          <stop offset="100%" stop-color="var(--brand)" stop-opacity=".02"/>
+        </linearGradient></defs>
+        ${grade}
+        <path d="${smoothPath(pc)} L ${W-R} ${H-B} L ${L} ${H-B} Z" fill="url(#evoGrad)" stroke="none"/>
+        <path d="${smoothPath(pc)}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="${smoothPath(pb)}" fill="none" stroke="var(--chart-rec)" stroke-width="2" stroke-linecap="round"/>
+        ${marca}${rotulos}${cols}
+      </svg>
+      <div class="evo-leg">
+        <span><i style="background:var(--chart-rec)"></i>Gasto</span>
+        <span><i style="background:var(--brand)"></i>Corrigido pelo banco</span>
+      </div>
+    </div>`;
+}
+function bindEvoChart(o){
+  const svg = $('#evoSvg');
+  if(!svg) return;
+  const serie = OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
+  const mostra = i => {
+    const p = serie[i]; if(!p) return;
+    const [yy, mm] = p.mes.split('-');
+    $('#evoVal').textContent =
+      `${MESAB[+mm-1]}/${yy.slice(2)} · gasto ${moneyShort(p.bruto)} · corrigido ${moneyShort(p.corrigido)}`;
+  };
+  svg.querySelectorAll('.evo-col').forEach(r => r.onclick = () => { evoSel = +r.dataset.i; renderObra(); });
+  mostra(evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1);
+}
+
+/* repinta só a lista de lançamentos + contador (não perde o foco do teclado) */
+function renderGastosFiltrados(o){
+  if(!o) return;
+  const list = $('#oGastos');
+  const filtrados = OBRA_CALC.filtraGastos(o.gastos, TOP_MAP(), { texto: filtroTexto, mes: filtroMes });
+  const filtrando = !!(filtroTexto || filtroMes);
+  $('#lanCount').textContent = o.gastos.length ? (filtrando ? `${filtrados.length}/${o.gastos.length}` : o.gastos.length) : '';
+  list.innerHTML = '';
+  if(!o.gastos.length){ list.innerHTML = emptyBlock(ICON('recibo'),'Nenhum gasto lançado.<br>Toque no + pra lançar o primeiro.'); return; }
+  if(!filtrados.length){ list.innerHTML = emptyBlock(ICON('recibo'),'Nada encontrado com esse filtro.'); return; }
+  [...filtrados].sort((a,b)=>(b.data+b.id).localeCompare(a.data+a.id))
+    .forEach(g=>list.appendChild(gastoRow(o,g)));
 }
 
 function gastoRow(o, g){

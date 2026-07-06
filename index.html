@@ -182,11 +182,6 @@
   .hb-bruto{background:var(--brand)}
   .hbar-vl{font-size:12.5px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
   /* barras verticais (gasto mês a mês) */
-  .mbars{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:16px}
-  .mb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;min-width:0}
-  .mb i{width:100%;max-width:34px;background:var(--brand);border-radius:5px 5px 2px 2px;min-height:3px}
-  .mb b{font-size:9.5px;color:var(--muted);font-weight:600;white-space:nowrap}
-  .mb span{font-size:10.5px;color:var(--muted)}
   /* ===== relatório bruto × corrigido ===== */
   .rep-scroll{overflow-x:auto}
   .rep-table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
@@ -228,6 +223,24 @@
     header.top .sair{display:none}
     body.locked .side{visibility:hidden}
   }
+  /* busca dos lançamentos + respiro mobile */
+  .filter-row{display:flex;gap:8px;margin-bottom:12px}
+  .filter-row input,.filter-row select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 11px;font-size:14px}
+  .filter-row input{flex:1;min-width:0}
+  .filter-row select{flex:0 0 auto;max-width:44%}
+  @media (max-width:768px){
+    ul.list li{padding:14px 4px;gap:13px}
+    .li-del{padding:10px 12px;font-size:18px}
+    .panel{margin-bottom:14px}
+    .cards{gap:12px}
+  }
+  /* gráfico de evolução (SVG, cores validadas p/ daltonismo — dataviz) */
+  .evo-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-height:22px}
+  .evo-val{font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
+  .evo-leg{display:flex;gap:14px;margin-top:6px;font-size:12px;color:var(--muted)}
+  .evo-leg i{width:10px;height:3px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:5px}
+  .evo-svg text{font-size:9px;fill:var(--muted)}
+  .evo-col{cursor:pointer}
   /* ícones SVG (icons.js) e campo de dinheiro com prefixo R$ */
   .ico{width:1.15em;height:1.15em;display:inline-block;vertical-align:-0.2em;flex-shrink:0}
   .money{display:flex;align-items:center;gap:8px}

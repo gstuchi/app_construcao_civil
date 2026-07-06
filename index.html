@@ -228,6 +228,11 @@
     header.top .sair{display:none}
     body.locked .side{visibility:hidden}
   }
+  /* ícones SVG (icons.js) e campo de dinheiro com prefixo R$ */
+  .ico{width:1.15em;height:1.15em;display:inline-block;vertical-align:-0.2em;flex-shrink:0}
+  .money{display:flex;align-items:center;gap:8px}
+  .money>b{font-weight:600;color:var(--muted);font-size:.95em}
+  .money>input{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -238,7 +243,7 @@
     <div class="auth-stage">
       <div class="auth-title" id="authTitle">
         <h1>Controle os custos das suas obras com<br><span>Minhas Obras</span></h1>
-        <p class="auth-hint" id="authHint">Role para entrar ↓</p>
+        <p class="auth-hint" id="authHint">Role para entrar <span data-ico="setaBaixo"></span></p>
       </div>
       <div class="auth-card" id="authCard">
         <div class="auth-inner">
@@ -252,7 +257,7 @@
             <div class="field"><label for="lSenha">Senha</label>
               <div class="pw-wrap">
                 <input id="lSenha" type="password" autocomplete="current-password" placeholder="Sua senha">
-                <button type="button" class="pw-eye" data-eye="lSenha" aria-label="Mostrar senha">👁</button>
+                <button type="button" class="pw-eye" data-eye="lSenha" data-ico="olho" aria-label="Mostrar senha"></button>
               </div></div>
             <div class="auth-msg" id="lMsg" role="alert"></div>
             <button class="btn primary" style="width:100%" type="submit">Entrar</button>
@@ -266,7 +271,7 @@
             <div class="field"><label for="cSenha">Senha</label>
               <div class="pw-wrap">
                 <input id="cSenha" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
-                <button type="button" class="pw-eye" data-eye="cSenha" aria-label="Mostrar senha">👁</button>
+                <button type="button" class="pw-eye" data-eye="cSenha" data-ico="olho" aria-label="Mostrar senha"></button>
               </div></div>
             <div class="auth-msg" id="cMsg" role="alert"></div>
             <button class="btn primary" style="width:100%" type="submit">Criar conta</button>
@@ -279,23 +284,23 @@
 </div>
 
 <aside class="side">
-  <div class="s-logo"><span class="logo">🏗️</span> Minhas Obras</div>
-  <button data-tab="inicio" class="on"><span class="ti">🏗️</span>Obras</button>
-  <button data-tab="simula"><span class="ti">🤔</span>Vale a pena?</button>
-  <button data-tab="ajustes"><span class="ti">⚙️</span>Ajustes</button>
-  <button id="btnSairSide" class="s-sair"><span class="ti">🚪</span>Sair da conta</button>
+  <div class="s-logo"><span class="logo" data-ico="guindaste"></span> Minhas Obras</div>
+  <button data-tab="inicio" class="on"><span class="ti" data-ico="predio"></span>Obras</button>
+  <button data-tab="simula"><span class="ti" data-ico="balanca"></span>Vale a pena?</button>
+  <button data-tab="ajustes"><span class="ti" data-ico="engrenagem"></span>Ajustes</button>
+  <button id="btnSairSide" class="s-sair"><span class="ti" data-ico="sair"></span>Sair da conta</button>
 </aside>
 
 <div class="app">
   <header class="top">
-    <h1><span class="logo">🏗️</span> Minhas Obras</h1>
+    <h1><span class="logo" data-ico="guindaste"></span> Minhas Obras</h1>
     <div style="display:flex;align-items:center">
-      <button id="btnSair" class="sair hidden" title="Sair da conta" aria-label="Sair da conta">🚪</button>
+      <button id="btnSair" class="sair hidden" title="Sair da conta" aria-label="Sair da conta" data-ico="sair"></button>
     </div>
   </header>
 
   <div id="installHint" class="install-hint hidden">
-    <span>📲</span><span>Instale no celular pra abrir como app.</span>
+    <span data-ico="instalar"></span><span>Instale no celular pra abrir como app.</span>
     <button id="installBtn">Instalar</button>
   </div>
 
@@ -303,7 +308,7 @@
   <section class="view active" id="v-inicio">
     <div class="cards">
       <div class="card saldo big">
-        <div class="k-label"><span class="k-ic">💰</span> Total gasto nas obras</div>
+        <div class="k-label"><span class="k-ic" data-ico="moedas"></span> Total gasto nas obras</div>
         <div class="duo">
           <div class="d-cell"><div class="d-lbl">Bruto</div><div class="d-val" id="kTotalBruto">R$ 0,00</div></div>
           <div class="d-cell"><div class="d-lbl">Corrigido pelo banco</div><div class="d-val" id="kTotalCorr">R$ 0,00</div></div>
@@ -341,11 +346,11 @@
   <!-- ============ SERÁ QUE VALE A PENA? ============ -->
   <section class="view" id="v-simula">
     <div class="panel">
-      <h2>🤔 Será que vale a pena?</h2>
+      <h2 style="justify-content:flex-start;gap:8px"><span data-ico="balanca"></span> Será que vale a pena?</h2>
       <div class="field"><label for="simObra">Obra</label><select id="simObra"></select></div>
       <div class="row2">
         <div class="field"><label for="simValor">Se eu vender por</label>
-          <input id="simValor" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+          <div class="money"><b>R$</b><input id="simValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
         <div class="field"><label for="simMeses">Daqui a (meses)</label>
           <input id="simMeses" type="number" min="0" max="120" value="0"></div>
       </div>
@@ -375,7 +380,7 @@
     </div>
     <div class="panel">
       <h2>Conta</h2>
-      <button class="btn ghost" id="ajSair" style="width:100%">🚪 Sair da conta</button>
+      <button class="btn ghost" id="ajSair" style="width:100%"><span data-ico="sair"></span> Sair da conta</button>
     </div>
   </section>
 </div>
@@ -383,9 +388,9 @@
 <button class="fab" id="fab" aria-label="Adicionar">+</button>
 
 <nav class="tabs">
-  <button data-tab="inicio" class="on"><span class="ti">🏗️</span>Obras</button>
-  <button data-tab="simula"><span class="ti">🤔</span>Vale a pena?</button>
-  <button data-tab="ajustes"><span class="ti">⚙️</span>Ajustes</button>
+  <button data-tab="inicio" class="on"><span class="ti" data-ico="predio"></span>Obras</button>
+  <button data-tab="simula"><span class="ti" data-ico="balanca"></span>Vale a pena?</button>
+  <button data-tab="ajustes"><span class="ti" data-ico="engrenagem"></span>Ajustes</button>
 </nav>
 
 <!-- MODAL -->
@@ -395,6 +400,7 @@
 
 <script src="globe.js"></script>
 <script type="module" src="cloud.js"></script>
+<script defer src="icons.js"></script>
 <script defer src="auth.js"></script>
 <script defer src="calc.js"></script>
 <script defer src="app.js"></script>

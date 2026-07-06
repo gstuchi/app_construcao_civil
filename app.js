@@ -4,26 +4,26 @@
 /* ---------- estado ---------- */
 
 const TOPICOS = [
-  {id:'terreno',    nm:'Terreno',       ic:'🗺️'},
-  {id:'projeto',    nm:'Projeto/Docs',  ic:'📐'},
-  {id:'fundacao',   nm:'Fundação',      ic:'⛏️'},
-  {id:'estrutura',  nm:'Estrutura',     ic:'🏗️'},
-  {id:'alvenaria',  nm:'Alvenaria',     ic:'🧱'},
-  {id:'telhado',    nm:'Telhado',       ic:'🏠'},
-  {id:'eletrica',   nm:'Elétrica',      ic:'⚡'},
-  {id:'hidraulica', nm:'Hidráulica',    ic:'🚿'},
-  {id:'esquadrias', nm:'Esquadrias',    ic:'🚪'},
-  {id:'revest',     nm:'Revestimentos', ic:'🪨'},
-  {id:'pintura',    nm:'Pintura',       ic:'🎨'},
-  {id:'paisagismo', nm:'Paisagismo',    ic:'🌳'},
-  {id:'maoobra',    nm:'Mão de obra',   ic:'👷'},
-  {id:'outros',     nm:'Outros',        ic:'📦'},
+  {id:'terreno',    nm:'Terreno',       ic:'mapa'},
+  {id:'projeto',    nm:'Projeto/Docs',  ic:'regua'},
+  {id:'fundacao',   nm:'Fundação',      ic:'pa'},
+  {id:'estrutura',  nm:'Estrutura',     ic:'guindaste'},
+  {id:'alvenaria',  nm:'Alvenaria',     ic:'tijolos'},
+  {id:'telhado',    nm:'Telhado',       ic:'casa'},
+  {id:'eletrica',   nm:'Elétrica',      ic:'raio'},
+  {id:'hidraulica', nm:'Hidráulica',    ic:'gota'},
+  {id:'esquadrias', nm:'Esquadrias',    ic:'porta'},
+  {id:'revest',     nm:'Revestimentos', ic:'camadas'},
+  {id:'pintura',    nm:'Pintura',       ic:'rolo'},
+  {id:'paisagismo', nm:'Paisagismo',    ic:'arvore'},
+  {id:'maoobra',    nm:'Mão de obra',   ic:'capacete'},
+  {id:'outros',     nm:'Outros',        ic:'caixa'},
 ];
 const PIE = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
 const FASES = {
-  construcao: {nm:'Em construção',    ic:'🏗️', cls:'pend'},
-  pronta:     {nm:'Pronta · à venda', ic:'🏠', cls:'blue'},
-  vendida:    {nm:'Vendida',          ic:'✅', cls:'ok'},
+  construcao: {nm:'Em construção',    ic:'guindaste', cls:'pend'},
+  pronta:     {nm:'Pronta · à venda', ic:'casa',      cls:'blue'},
+  vendida:    {nm:'Vendida',          ic:'check',     cls:'ok'},
 };
 
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
@@ -56,12 +56,14 @@ const moneyShort = n => {
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const todayISO = () => new Date().toISOString().slice(0,10);
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
-const parseNum = v => {
-  if(typeof v==='number') return v;
-  v = (v||'').toString().trim().replace(/[^\d,.-]/g,'');
-  if(v.includes(',')) v = v.replace(/\./g,'').replace(',','.');
-  const n = parseFloat(v); return isNaN(n) ? 0 : n;
-};
+const parseNum = OBRA_CALC.parseNum;
+/* máscara de dinheiro: formata ao digitar, completa centavos ao sair */
+function maskMoney(sel){
+  const inp = typeof sel==='string' ? $(sel) : sel;
+  if(!inp) return;
+  inp.addEventListener('input', ()=>{ inp.value = OBRA_CALC.fmtDigitado(inp.value); });
+  inp.addEventListener('blur',  ()=>{ inp.value = OBRA_CALC.fmtCompleto(inp.value); });
+}
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -116,13 +118,13 @@ function renderInicio(){
     ((a.fase==='vendida')-(b.fase==='vendida')) || b.dataInicio.localeCompare(a.dataInicio));
   $('#obraCount').textContent = arr.length ? `${arr.length} obra${arr.length>1?'s':''}` : '';
   const list = $('#obrasList');
-  list.innerHTML = arr.length ? '' : emptyBlock('🏗️','Nenhuma obra ainda.<br>Toque em “+ Nova obra” pra começar.');
+  list.innerHTML = arr.length ? '' : emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque em “+ Nova obra” pra começar.');
   arr.forEach(o=>{
     const f = FASES[o.fase];
     const li = el('li');
     li.style.cursor = 'pointer';
     li.innerHTML = `
-      <div class="av ic-brand">${f.ic}</div>
+      <div class="av ic-brand">${ICON(f.ic)}</div>
       <div class="li-main">
         <div class="t">${escapeHtml(o.nome)}</div>
         <div class="s"><span class="tag ${f.cls}">${f.nm}</span> · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</div>
@@ -168,8 +170,8 @@ function renderObra(){
 
   let head = `
     <div class="panel">
-      <h2 style="font-size:19px">${f.ic} ${escapeHtml(o.nome)}
-        <button class="li-del" id="oEdit" title="Editar obra" style="font-size:15px">✏️</button></h2>
+      <h2 style="font-size:19px"><span style="display:flex;align-items:center;gap:8px">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
+        <button class="li-del" id="oEdit" title="Editar obra" style="font-size:15px">${ICON('lapis')}</button></h2>
       <div style="font-size:13.5px;color:var(--muted)">
         <span class="tag ${f.cls}">${f.nm}</span> ·
         começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}
@@ -179,7 +181,7 @@ function renderObra(){
   let resumo = `
     <div class="cards">
       <div class="card saldo big">
-        <div class="k-label"><span class="k-ic">💸</span> Total gasto</div>
+        <div class="k-label"><span class="k-ic">${ICON('notas')}</span> Total gasto</div>
         <div class="duo">
           <div class="d-cell"><div class="d-lbl">Bruto</div><div class="d-val">${money(bruto)}</div></div>
           <div class="d-cell"><div class="d-lbl">Corrigido pelo banco</div><div class="d-val" id="oCorr">${money(corr)}</div></div>
@@ -189,37 +191,37 @@ function renderObra(){
   if(o.fase==='vendida' && lucro){
     resumo += `
       <div class="card">
-        <div class="k-label"><span class="k-ic ic-green">↑</span> Lucro da venda</div>
+        <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Lucro da venda</div>
         <div class="k-val sm ${lucro.bruto>=0?'pos':'neg'}">${money(lucro.bruto)}</div>
       </div>
       <div class="card">
-        <div class="k-label"><span class="k-ic ic-blue">🏦</span> Acima do banco</div>
+        <div class="k-label"><span class="k-ic ic-blue">${ICON('banco')}</span> Acima do banco</div>
         <div class="k-val sm ${lucro.vsBanco>=0?'pos':'neg'}">${money(lucro.vsBanco)}</div>
       </div>
       <div class="card big">
-        <div class="k-label"><span class="k-ic ic-brand">🤝</span> Vendida em ${fmtData(o.venda.data)}</div>
+        <div class="k-label"><span class="k-ic ic-brand">${ICON('acordo')}</span> Vendida em ${fmtData(o.venda.data)}</div>
         <div class="k-val sm">${money(o.venda.valor)}</div>
       </div>`;
   } else if(o.valorEstimadoVenda){
     resumo += `
       <div class="card">
-        <div class="k-label"><span class="k-ic ic-brand">🎯</span> Venda estimada</div>
+        <div class="k-label"><span class="k-ic ic-brand">${ICON('alvo')}</span> Venda estimada</div>
         <div class="k-val sm">${moneyShort(o.valorEstimadoVenda)}</div>
       </div>
       <div class="card">
-        <div class="k-label"><span class="k-ic ic-green">↑</span> Margem estimada</div>
+        <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Margem estimada</div>
         <div class="k-val sm ${o.valorEstimadoVenda-corr>=0?'pos':'neg'}">${moneyShort(o.valorEstimadoVenda-corr)}</div>
       </div>`;
   }
   resumo += `</div>`;
 
   let acoes = '<div class="obra-actions">';
-  if(o.fase==='construcao') acoes += `<button class="btn primary" id="oPronta">🏠 Marcar como pronta</button>`;
+  if(o.fase==='construcao') acoes += `<button class="btn primary" id="oPronta">${ICON('casa')} Marcar como pronta</button>`;
   if(o.fase==='pronta') acoes += `
-    <button class="btn primary" id="oVender">🤝 Registrar venda</button>
-    <button class="btn ghost" id="oVoltarConstr">↩ Voltar pra construção</button>`;
-  if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">↩ Desfazer venda</button>`;
-  if(o.gastos.length) acoes += `<button class="btn ghost" id="oRel">📄 Relatório</button>`;
+    <button class="btn primary" id="oVender">${ICON('acordo')} Registrar venda</button>
+    <button class="btn ghost" id="oVoltarConstr">${ICON('voltar')} Voltar pra construção</button>`;
+  if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">${ICON('voltar')} Desfazer venda</button>`;
+  if(o.gastos.length) acoes += `<button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
   acoes += '</div>';
 
   const byTop = {};
@@ -247,7 +249,7 @@ function renderObra(){
 
   drawDonutObra(entries, bruto);
   const list = $('#oGastos');
-  list.innerHTML = o.gastos.length ? '' : emptyBlock('🧾','Nenhum gasto lançado.<br>Toque no + pra lançar o primeiro.');
+  list.innerHTML = o.gastos.length ? '' : emptyBlock(ICON('recibo'),'Nenhum gasto lançado.<br>Toque no + pra lançar o primeiro.');
   [...o.gastos].sort((a,b)=>(b.data+b.id).localeCompare(a.data+a.id))
     .forEach(g=>list.appendChild(gastoRow(o,g)));
 
@@ -278,11 +280,11 @@ function drawDonutObra(entries, total){
   leg.innerHTML = '';
   const map = TOP_MAP();
   entries.slice(0,7).forEach(([id,val],i)=>{
-    const t = map[id] || {nm:id, ic:'🏷️'};
+    const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     leg.appendChild(el('div','row',
       `<span class="dot" style="background:${color}"></span>
-       <span class="nm">${t.ic} ${t.nm}</span>
+       <span class="nm">${ICON(t.ic)} ${t.nm}</span>
        <span class="vl">${Math.round(val/total*100)}% · ${moneyShort(val)}</span>`));
   });
 }
@@ -291,7 +293,7 @@ function mbarsHtml(o){
   const by = {};
   o.gastos.forEach(g=>{ const k=g.data.slice(0,7); by[k]=(by[k]||0)+g.valor; });
   const keys = Object.keys(by).sort().slice(-12);
-  if(!keys.length) return emptyBlock('📅','Sem gastos ainda.');
+  if(!keys.length) return emptyBlock(ICON('calendario'),'Sem gastos ainda.');
   const max = Math.max(...keys.map(k=>by[k]));
   return '<div class="mbars">' + keys.map(k=>{
     const m = +k.split('-')[1];
@@ -303,13 +305,13 @@ function mbarsHtml(o){
 }
 
 function gastoRow(o, g){
-  const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'🏷️'};
+  const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'etiqueta'};
   const li = el('li');
   const suf = g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '';
   const futura = g.data > todayISO(); // ISO ordena lexicograficamente
-  const pIc = g.pagamento==='cartao' ? '💳 ' : g.pagamento==='pix' ? '⚡ ' : '';
+  const pIc = g.pagamento==='cartao' ? ICON('cartao')+' ' : g.pagamento==='pix' ? ICON('raio')+' ' : '';
   li.innerHTML = `
-    <div class="av ic-brand">${t.ic}</div>
+    <div class="av ic-brand">${ICON(t.ic)}</div>
     <div class="li-main">
       <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
       <div class="s">${pIc}${t.nm} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
@@ -349,12 +351,13 @@ function mudarFase(id, f){ const o=obraById(id); if(!o) return; o.fase = f; save
 function formVenda(o){
   openSheet(`
     <h3>Registrar venda — ${escapeHtml(o.nome)}</h3>
-    <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
     <div class="field"><label>Data da venda</label><input id="fData" type="date" value="${todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Confirmar venda</button>
     </div>`);
+  maskMoney('#fVal');
   $('#fVal').focus();
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
@@ -373,11 +376,12 @@ function formEditarObra(o){
     <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${o.dataInicio}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label>
-      <input id="fEst" inputmode="decimal" value="${o.valorEstimadoVenda||''}" autocomplete="off"></div>
+      <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
+  maskMoney('#fEst');
   $('#cSave').onclick = ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
@@ -415,7 +419,7 @@ function formGasto(obraId, gasto){
   // parcela de compra parcelada: pagamento/parcelas fixos, edita só esta parcela
   const isParcela = isEdit && !!gasto.grupoId;
   const pagtoHtml = isParcela
-    ? `<p class="muted-note">💳 Parcela ${gasto.parcela.n}/${gasto.parcela.de} de uma compra no cartão — a edição vale só pra esta parcela.</p>`
+    ? `<p class="muted-note">${ICON('cartao')} Parcela ${gasto.parcela.n}/${gasto.parcela.de} de uma compra no cartão — a edição vale só pra esta parcela.</p>`
     : `<div class="field"><label>Pagamento</label><div class="chips" id="fPagto"></div></div>
        <div class="field hidden" id="fParcWrap"><label>Parcelas</label>
          <select id="fParc">${Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x${i?'':' (à vista)'}</option>`).join('')}</select>
@@ -423,8 +427,8 @@ function formGasto(obraId, gasto){
 
   openSheet(`
     <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
-    <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00"
-      value="${isEdit?String(gasto.valor).replace('.',','):''}" autocomplete="off"></div>
+    <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00"
+      value="${isEdit?OBRA_CALC.numParaCampo(gasto.valor):''}" autocomplete="off"></div></div>
     ${selObra}
     <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
     ${pagtoHtml}
@@ -436,12 +440,13 @@ function formGasto(obraId, gasto){
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
 
+  maskMoney('#fVal');
   let top = isEdit ? gasto.topico : topicos()[0].id;
   const chips = $('#fChips');
   const paint = ()=>{
     chips.innerHTML = '';
     topicos().forEach(t=>{
-      const ch = el('button','chip'+(t.id===top?' on':''),`${t.ic} ${t.nm}`);
+      const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${t.nm}`);
       ch.type = 'button';
       ch.onclick = ()=>{ top=t.id; paint(); };
       chips.appendChild(ch);
@@ -454,7 +459,7 @@ function formGasto(obraId, gasto){
     const pchips = $('#fPagto');
     const paintPagto = ()=>{
       pchips.innerHTML = '';
-      [['pix','⚡ Pix'],['cartao','💳 Cartão']].forEach(([id,nm])=>{
+      [['pix',ICON('raio')+' Pix'],['cartao',ICON('cartao')+' Cartão']].forEach(([id,nm])=>{
         const ch = el('button','chip'+(id===pagto?' on':''),nm);
         ch.type = 'button';
         ch.onclick = ()=>{ pagto=id; paintPagto(); };
@@ -523,8 +528,8 @@ function renderRelatorio(){
 
   let rows = '';
   groups.forEach(gr=>{
-    const t = map[gr.id] || {nm:gr.id, ic:'🏷️'};
-    rows += `<tr class="rt-top"><td>${t.ic} ${t.nm}</td><td></td>
+    const t = map[gr.id] || {nm:gr.id, ic:'etiqueta'};
+    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${t.nm}</td><td></td>
       <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
     gr.gs.forEach(g=>{
       const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
@@ -536,18 +541,18 @@ function renderRelatorio(){
   let venda = '';
   if(o.venda && lucro){
     venda = `
-      <tr class="rep-total"><td>🤝 Venda em ${fmtData(o.venda.data)}</td><td></td><td colspan="3">${money(o.venda.valor)}</td></tr>
+      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(o.venda.data)}</td><td></td><td colspan="3">${money(o.venda.valor)}</td></tr>
       <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${lucro.bruto>=0?'pos':'neg'}">${money(lucro.bruto)}</td></tr>
       <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${lucro.vsBanco>=0?'pos':'neg'}">${money(lucro.vsBanco)}</td></tr>`;
   } else if(o.valorEstimadoVenda){
     venda = `
-      <tr class="rep-total"><td>🎯 Venda estimada</td><td></td><td colspan="3">${money(o.valorEstimadoVenda)}</td></tr>
+      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(o.valorEstimadoVenda)}</td></tr>
       <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${o.valorEstimadoVenda-totC>=0?'pos':'neg'}">${money(o.valorEstimadoVenda-totC)}</td></tr>`;
   }
 
   $('#relBody').innerHTML = `
     <div class="panel">
-      <h2>📄 Relatório — ${escapeHtml(o.nome)}</h2>
+      <h2 style="justify-content:flex-start;gap:8px">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
       <div class="rep-head">
         ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
         Correção de ${String(tx).replace('.',',')}% ao mês, da data de cada gasto até ${o.venda?'a venda ('+fmtData(o.venda.data)+')':'hoje ('+fmtData(hoje)+')'}.
@@ -562,7 +567,7 @@ function renderRelatorio(){
           </tbody>
         </table>
       </div>
-      <button class="btn primary no-print" id="relPrint" style="width:100%;margin-top:14px">🖨️ Imprimir / salvar PDF</button>
+      <button class="btn primary no-print" id="relPrint" style="width:100%;margin-top:14px">${ICON('impressora')} Imprimir / salvar PDF</button>
     </div>`;
   $('#relPrint').onclick = ()=>window.print();
 }
@@ -606,26 +611,27 @@ function simulaCompute(){
 
   out.innerHTML = `
     <div class="card saldo big" style="${bate?'':'background:linear-gradient(140deg,#8a2438,#4a1a2a);border-color:rgba(255,120,140,.35);box-shadow:0 8px 32px rgba(220,60,90,.25)'}">
-      <div class="k-label"><span class="k-ic">${bate?'✅':'⚠️'}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
+      <div class="k-label"><span class="k-ic">${ICON(bate?'check':'alerta')}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
       <div class="k-val" style="font-size:30px">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
       <div class="k-sub">${quando} · banco paga ${String(taxa()).replace('.',',')}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}</div>
     </div>
     <div class="cards">
       <div class="card">
-        <div class="k-label"><span class="k-ic ic-green">↑</span> Lucro bruto</div>
+        <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Lucro bruto</div>
         <div class="k-val sm ${venda-bruto>=0?'pos':'neg'}">${moneyShort(venda-bruto)}</div>
       </div>
       <div class="card">
-        <div class="k-label"><span class="k-ic ic-blue">🏦</span> Acima do banco</div>
+        <div class="k-label"><span class="k-ic ic-blue">${ICON('banco')}</span> Acima do banco</div>
         <div class="k-val sm ${venda-corr>=0?'pos':'neg'}">${moneyShort(venda-corr)}</div>
       </div>
       <div class="card big">
-        <div class="k-label"><span class="k-ic ic-brand">🧮</span> Custo até lá</div>
+        <div class="k-label"><span class="k-ic ic-brand">${ICON('calculadora')}</span> Custo até lá</div>
         <div class="k-val sm">${money(bruto)} bruto · ${money(corr)} corrigido</div>
       </div>
     </div>`;
 }
 $('#simObra').onchange = simulaCompute;
+maskMoney('#simValor'); // antes do listener de cálculo: reformata, depois calcula
 $('#simValor').addEventListener('input', ()=>{ $('#simValor').dataset.touched='1'; simulaCompute(); });
 $('#simMeses').addEventListener('input', simulaCompute);
 
@@ -642,10 +648,10 @@ function renderAjustes(){
   };
 
   const ul = $('#ajTopicos');
-  ul.innerHTML = db.config.topicosCustom.length ? '' : emptyBlock('🏷️','Nenhum tópico próprio ainda.');
+  ul.innerHTML = db.config.topicosCustom.length ? '' : emptyBlock(ICON('etiqueta'),'Nenhum tópico próprio ainda.');
   db.config.topicosCustom.forEach(t=>{
     const li = el('li');
-    li.innerHTML = `<div class="av ic-brand">🏷️</div>
+    li.innerHTML = `<div class="av ic-brand">${ICON('etiqueta')}</div>
       <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
     const del = el('button','li-del','×');
     del.onclick = ()=>{
@@ -663,7 +669,7 @@ function renderAjustes(){
   $('#ajAddTopico').onclick = ()=>{
     const nm = $('#ajNovoTopico').value.trim();
     if(!nm){ $('#ajNovoTopico').focus(); return; }
-    db.config.topicosCustom.push({ id:'c_'+uid(), nm, ic:'🏷️' });
+    db.config.topicosCustom.push({ id:'c_'+uid(), nm, ic:'etiqueta' });
     $('#ajNovoTopico').value = '';
     save(); renderAll();
   };
@@ -682,11 +688,12 @@ function formNovaObra(){
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${todayISO()}"></div>
-    <div class="field"><label>Valor estimado de venda (opcional)</label><input id="fEst" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="field"><label>Valor estimado de venda (opcional)</label><div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Criar obra</button>
     </div>`);
+  maskMoney('#fEst');
   $('#fNome').focus();
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
@@ -737,7 +744,7 @@ function bootCloud(){
       if(legada){
         CLOUD.importarSeVazio(normaliza(legada)).then(ok=>{
           localStorage.setItem(flagKey,'1');
-          if(ok) alert('Encontramos obras salvas neste aparelho e importamos pra sua conta na nuvem. ✅');
+          if(ok) alert('Encontramos obras salvas neste aparelho e importamos pra sua conta na nuvem.');
         });
       } else {
         localStorage.setItem(flagKey,'1');

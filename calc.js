@@ -64,7 +64,40 @@
     }));
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, addMesesClampado, gerarParcelas };
+  /* ---- dinheiro digitado (máscara dos campos R$) ---- */
+  /* Formata enquanto digita: só dígitos e 1 vírgula; milhar com pontos. */
+  function fmtDigitado(v){
+    v = (v == null ? '' : String(v)).replace(/[^\d,]/g, '');
+    const i = v.indexOf(',');
+    let int = (i < 0 ? v : v.slice(0, i)).replace(/^0+(?=\d)/, '');
+    const cent = i < 0 ? null : v.slice(i + 1).replace(/,/g, '').slice(0, 2);
+    if(!int && cent === null) return '';
+    int = (int || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return cent === null ? int : int + ',' + cent;
+  }
+  /* No blur: completa os centavos (2.000.000 -> 2.000.000,00). */
+  function fmtCompleto(v){
+    v = fmtDigitado(v);
+    if(!v) return '';
+    const [int, cent = ''] = v.split(',');
+    return int + ',' + (cent + '00').slice(0, 2);
+  }
+  /* Número salvo -> texto do campo já formatado. */
+  function numParaCampo(n){
+    return (n == null || n === '') ? '' : fmtCompleto(String(n).replace('.', ','));
+  }
+  /* Texto de campo -> número. Com vírgula, pontos são milhar; sem vírgula,
+     remove só pontos em posição de milhar (o campo ao vivo do simulador),
+     preservando decimais tipo "1.5" na taxa. */
+  function parseNum(v){
+    if(typeof v === 'number') return v;
+    v = (v || '').toString().trim().replace(/[^\d,.-]/g, '');
+    if(v.includes(',')) v = v.replace(/\./g, '').replace(',', '.');
+    else v = v.replace(/\.(?=\d{3}(\.|$))/g, '');
+    const n = parseFloat(v); return isNaN(n) ? 0 : n;
+  }
+
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

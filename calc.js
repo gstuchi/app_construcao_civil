@@ -54,6 +54,53 @@
     };
   }
 
+  /* Série mensal acumulada da obra (pro gráfico de evolução):
+     um ponto por mês-calendário, do 1º gasto até o fim da correção
+     (hoje ou a venda), cortando no fim de cada mês. Máx 24 últimos. */
+  function serieEvolucao(obra, taxaPct, hojeISO){
+    if(!obra.gastos.length) return [];
+    const fim = fimCorrecao(obra, hojeISO);
+    const gs = [...obra.gastos].sort((a, b) => a.data.localeCompare(b.data));
+    const ini = gs[0].data.slice(0, 7);
+    const ultimo = fim.slice(0, 7) > ini ? fim.slice(0, 7) : ini;
+    const meses = [];
+    let [y, m] = ini.split('-').map(Number);
+    for(let guard = 0; guard < 600; guard++){
+      const key = y + '-' + String(m).padStart(2, '0');
+      meses.push(key);
+      if(key === ultimo) break;
+      m++; if(m > 12){ m = 1; y++; }
+    }
+    return meses.map(mes => {
+      const ultimoDia = new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate();
+      let corte = mes + '-' + String(ultimoDia).padStart(2, '0');
+      if(corte > fim) corte = fim;
+      const ate = gs.filter(g => g.data <= corte);
+      return {
+        mes,
+        bruto: ate.reduce((s, g) => s + g.valor, 0),
+        corrigido: ate.reduce((s, g) => s + corrigido(g.valor, g.data, corte, taxaPct), 0),
+      };
+    }).slice(-24);
+  }
+
+  /* Busca dos lançamentos: texto (descrição OU nome do tópico, sem acento)
+     e/ou mês ('2026-06'). Filtros combinam em E. */
+  function semAcento(s){
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+  function filtraGastos(gastos, topicosMap, f){
+    const texto = semAcento(f && f.texto);
+    const mes = (f && f.mes) || '';
+    return gastos.filter(g => {
+      if(mes && g.data.slice(0, 7) !== mes) return false;
+      if(!texto) return true;
+      const top = topicosMap[g.topico];
+      return semAcento(g.descricao).includes(texto)
+          || semAcento(top ? top.nm : g.topico).includes(texto);
+    });
+  }
+
   /* Soma meses a uma data ISO; dia inexistente clampa no último dia do mês
      (31/01 + 1 mês = 28 ou 29/02). */
   function addMesesClampado(dataISO, meses){
@@ -110,7 +157,7 @@
     const n = parseFloat(v); return isNaN(n) ? 0 : n;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

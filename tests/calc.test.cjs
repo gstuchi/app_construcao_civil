@@ -142,4 +142,54 @@ t('resumoVenda: base inválida vira null', () => {
   assert.strictEqual(C.resumoVenda(3000000, 2000000, 0).taxaMes, null);
 });
 
+const obraEvo = {
+  dataInicio: '2026-01-10',
+  gastos: [
+    { valor: 100000, data: '2026-01-15', topico: 'terreno',  descricao: 'Sinal do terreno' },
+    { valor:  50000, data: '2026-03-10', topico: 'pintura',  descricao: 'Tinta acrílica' },
+  ],
+};
+
+t('serieEvolucao: um ponto por mês, acumulado certo', () => {
+  const s = C.serieEvolucao(obraEvo, 1, '2026-04-20');
+  assert.deepStrictEqual(s.map(p => p.mes), ['2026-01', '2026-02', '2026-03', '2026-04']);
+  assert.strictEqual(s[0].bruto, 100000);
+  assert.strictEqual(s[1].bruto, 100000);          // fev sem gasto repete
+  assert.strictEqual(s[2].bruto, 150000);
+  assert.ok(s[1].corrigido > s[0].corrigido);      // corrigido segue rendendo
+  s.forEach(p => assert.ok(p.corrigido >= p.bruto));
+});
+
+t('serieEvolucao: vendida congela no mês da venda', () => {
+  const vend = { ...obraEvo, venda: { data: '2026-03-20', valor: 1 } };
+  const s = C.serieEvolucao(vend, 1, '2026-12-25');
+  assert.strictEqual(s[s.length - 1].mes, '2026-03');
+});
+
+t('serieEvolucao: sem gastos = vazio; janela máx 24 meses', () => {
+  assert.deepStrictEqual(C.serieEvolucao({ dataInicio: '2026-01-01', gastos: [] }, 1, '2026-06-01'), []);
+  const antiga = { dataInicio: '2020-01-01', gastos: [{ valor: 1000, data: '2020-01-05' }] };
+  const s = C.serieEvolucao(antiga, 1, '2026-07-06');
+  assert.strictEqual(s.length, 24);
+  assert.strictEqual(s[s.length - 1].mes, '2026-07');
+});
+
+const mapaTop = { terreno: { nm: 'Terreno' }, pintura: { nm: 'Pintura' } };
+
+t('filtraGastos: texto acha descrição e tópico, sem acento', () => {
+  const g = obraEvo.gastos;
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: 'tinta' }).length, 1);
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: 'PINTURA' }).length, 1);
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: 'acrilica' }).length, 1); // sem acento
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: 'piscina' }).length, 0);
+});
+
+t('filtraGastos: mês, combinado e vazio', () => {
+  const g = obraEvo.gastos;
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { mes: '2026-01' }).length, 1);
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: 'terreno', mes: '2026-03' }).length, 0);
+  assert.strictEqual(C.filtraGastos(g, mapaTop, {}).length, 2);
+  assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: '' }).length, 2);
+});
+
 console.log(`OK: ${n} testes`);

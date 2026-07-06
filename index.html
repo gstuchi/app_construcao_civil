@@ -108,8 +108,8 @@
   .empty p{font-size:13.5px}
 
   /* bottom nav */
-  /* fundo reserva primeiro: iOS < 16.2 não entende color-mix e deixava a barra invisível */
-  nav.tabs{position:fixed;bottom:0;left:0;right:0;background:rgba(17,26,46,.94);background:color-mix(in srgb,var(--surface) 92%, transparent);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:40}
+  /* fundo sólido: transparência/blur deixava a barra "flutuando" no iPhone */
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--surface-solid);border-top:1px solid var(--border);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:40}
   nav.tabs button{flex:1;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;cursor:pointer;font-size:11.5px;font-weight:500;border-radius:12px}
   nav.tabs button .ti{font-size:21px;line-height:1}
   nav.tabs button.on{color:var(--brand)}
@@ -244,6 +244,12 @@
     .panel{margin-bottom:14px}
     .cards{gap:12px}
   }
+  /* tela Gráficos da obra */
+  .graf-donut{display:grid;place-items:center;margin:10px 0 18px}
+  .graf-donut .donut{width:240px;height:240px} /* sobrepõe os 132px do detalhe */
+  .graf-donut .donut .center b{font-size:20px}
+  .graf-leg li .dot{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
+  .evo-big text{font-size:11px}
   /* gráfico de evolução (SVG, cores validadas p/ daltonismo — dataviz) */
   .evo-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-height:22px}
   .evo-val{font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
@@ -364,6 +370,12 @@
   <section class="view" id="v-relatorio">
     <button class="back no-print" id="btnRelVoltar">‹ Voltar pra obra</button>
     <div id="relBody"></div>
+  </section>
+
+  <!-- ============ GRÁFICOS DA OBRA ============ -->
+  <section class="view" id="v-graficos">
+    <button class="back no-print" id="btnGrafVoltar">‹ Voltar pra obra</button>
+    <div id="grafBody"></div>
   </section>
 
   <!-- ============ SERÁ QUE VALE A PENA? ============ -->

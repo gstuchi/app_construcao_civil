@@ -120,4 +120,26 @@ t('gerarParcelas: 1x = um item com o total na data', () => {
   assert.deepStrictEqual(ps, [{ valor: 500.5, data: '2026-07-05' }]);
 });
 
+t('resumoVenda: exemplo canônico (3mi/2mi em 24 meses)', () => {
+  const r = C.resumoVenda(3000000, 2000000, 24);
+  assert.strictEqual(r.lucro, 1000000);
+  perto(r.pctCusto, 50, 0.001);
+  perto(r.pctVenda, 33.333, 0.001);
+  perto(r.taxaMes, 1.7037, 0.001); // 1.5^(1/24)-1
+});
+
+t('resumoVenda: prejuízo fica negativo', () => {
+  const r = C.resumoVenda(1500000, 2000000, 12);
+  assert.strictEqual(r.lucro, -500000);
+  assert.ok(r.pctCusto < 0 && r.pctVenda < 0 && r.taxaMes < 0);
+});
+
+t('resumoVenda: base inválida vira null', () => {
+  const z = C.resumoVenda(0, 2000000, 12);
+  assert.deepStrictEqual(z, { lucro:null, pctCusto:null, pctVenda:null, taxaMes:null });
+  const c = C.resumoVenda(3000000, 0, 12);
+  assert.deepStrictEqual(c, { lucro:null, pctCusto:null, pctVenda:null, taxaMes:null });
+  assert.strictEqual(C.resumoVenda(3000000, 2000000, 0).taxaMes, null);
+});
+
 console.log(`OK: ${n} testes`);

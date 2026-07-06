@@ -56,12 +56,7 @@ const moneyShort = n => {
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const todayISO = () => new Date().toISOString().slice(0,10);
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
-const parseNum = v => {
-  if(typeof v==='number') return v;
-  v = (v||'').toString().trim().replace(/[^\d,.-]/g,'');
-  if(v.includes(',')) v = v.replace(/\./g,'').replace(',','.');
-  const n = parseFloat(v); return isNaN(n) ? 0 : n;
-};
+const parseNum = OBRA_CALC.parseNum;
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

@@ -57,6 +57,13 @@ const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'
 const todayISO = () => new Date().toISOString().slice(0,10);
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
 const parseNum = OBRA_CALC.parseNum;
+/* máscara de dinheiro: formata ao digitar, completa centavos ao sair */
+function maskMoney(sel){
+  const inp = typeof sel==='string' ? $(sel) : sel;
+  if(!inp) return;
+  inp.addEventListener('input', ()=>{ inp.value = OBRA_CALC.fmtDigitado(inp.value); });
+  inp.addEventListener('blur',  ()=>{ inp.value = OBRA_CALC.fmtCompleto(inp.value); });
+}
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -344,12 +351,13 @@ function mudarFase(id, f){ const o=obraById(id); if(!o) return; o.fase = f; save
 function formVenda(o){
   openSheet(`
     <h3>Registrar venda — ${escapeHtml(o.nome)}</h3>
-    <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
     <div class="field"><label>Data da venda</label><input id="fData" type="date" value="${todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Confirmar venda</button>
     </div>`);
+  maskMoney('#fVal');
   $('#fVal').focus();
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
@@ -368,11 +376,12 @@ function formEditarObra(o){
     <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${o.dataInicio}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label>
-      <input id="fEst" inputmode="decimal" value="${o.valorEstimadoVenda||''}" autocomplete="off"></div>
+      <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
+  maskMoney('#fEst');
   $('#cSave').onclick = ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
@@ -418,8 +427,8 @@ function formGasto(obraId, gasto){
 
   openSheet(`
     <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
-    <div class="field big"><input id="fVal" inputmode="decimal" placeholder="R$ 0,00"
-      value="${isEdit?String(gasto.valor).replace('.',','):''}" autocomplete="off"></div>
+    <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00"
+      value="${isEdit?OBRA_CALC.numParaCampo(gasto.valor):''}" autocomplete="off"></div></div>
     ${selObra}
     <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
     ${pagtoHtml}
@@ -431,6 +440,7 @@ function formGasto(obraId, gasto){
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
 
+  maskMoney('#fVal');
   let top = isEdit ? gasto.topico : topicos()[0].id;
   const chips = $('#fChips');
   const paint = ()=>{
@@ -621,6 +631,7 @@ function simulaCompute(){
     </div>`;
 }
 $('#simObra').onchange = simulaCompute;
+maskMoney('#simValor'); // antes do listener de cálculo: reformata, depois calcula
 $('#simValor').addEventListener('input', ()=>{ $('#simValor').dataset.touched='1'; simulaCompute(); });
 $('#simMeses').addEventListener('input', simulaCompute);
 
@@ -677,11 +688,12 @@ function formNovaObra(){
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${todayISO()}"></div>
-    <div class="field"><label>Valor estimado de venda (opcional)</label><input id="fEst" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="field"><label>Valor estimado de venda (opcional)</label><div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Criar obra</button>
     </div>`);
+  maskMoney('#fEst');
   $('#fNome').focus();
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{

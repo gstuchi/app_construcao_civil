@@ -170,7 +170,7 @@ function renderObra(){
 
   let head = `
     <div class="panel">
-      <h2 style="font-size:19px">${ICON(f.ic)} ${escapeHtml(o.nome)}
+      <h2 style="font-size:19px"><span style="display:flex;align-items:center;gap:8px">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
         <button class="li-del" id="oEdit" title="Editar obra" style="font-size:15px">${ICON('lapis')}</button></h2>
       <div style="font-size:13.5px;color:var(--muted)">
         <span class="tag ${f.cls}">${f.nm}</span> ·
@@ -552,7 +552,7 @@ function renderRelatorio(){
 
   $('#relBody').innerHTML = `
     <div class="panel">
-      <h2>${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
+      <h2 style="justify-content:flex-start;gap:8px">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
       <div class="rep-head">
         ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
         Correção de ${String(tx).replace('.',',')}% ao mês, da data de cada gasto até ${o.venda?'a venda ('+fmtData(o.venda.data)+')':'hoje ('+fmtData(hoje)+')'}.

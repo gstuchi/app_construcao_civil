@@ -223,7 +223,9 @@ function renderObra(){
     <button class="btn primary" id="oVender">${ICON('acordo')} Registrar venda</button>
     <button class="btn ghost" id="oVoltarConstr">${ICON('voltar')} Voltar pra construção</button>`;
   if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">${ICON('voltar')} Desfazer venda</button>`;
-  if(o.gastos.length) acoes += `<button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
+  if(o.gastos.length) acoes += `
+    <button class="btn ghost" id="oGraf">${ICON('calculadora')} Ver gráficos</button>
+    <button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
   acoes += '</div>';
 
   const byTop = {};
@@ -232,7 +234,7 @@ function renderObra(){
 
   const graficos = `
     <div class="panel"><h2>Gastos por tópico</h2>
-      <div class="donut-wrap">
+      <div class="donut-wrap" id="oDonutWrap" style="cursor:pointer" title="Ver gráficos grandes">
         <div class="donut">
           <svg viewBox="0 0 36 36" width="132" height="132" id="oDonut"></svg>
           <div class="center"><small>Total</small><b id="oDonutTotal"></b></div>
@@ -265,6 +267,8 @@ function renderObra(){
   $('#oEdit').onclick = ()=>formEditarObra(o);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
   on('#oRel',          ()=>{ showView('relatorio'); renderRelatorio(); });
+  on('#oGraf',         ()=>{ showView('graficos'); renderGraficos(); });
+  on('#oDonutWrap',    ()=>{ if(o.gastos.length){ showView('graficos'); renderGraficos(); } });
   on('#oPronta',       ()=>mudarFase(o.id,'pronta'));
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
@@ -313,40 +317,47 @@ function smoothPath(pts){
   }
   return d;
 }
-function evoChartHtml(o){
+function evoChartHtml(o, opts = {}){
+  const suf = opts.sufixo || '';
   const serie = OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
   if(!serie.length) return `<div class="panel"><h2>Evolução da obra</h2>${emptyBlock(ICON('calendario'),'Sem gastos ainda.')}</div>`;
-  const W = 360, H = 170, L = 44, R = 6, T = 12, B = 22;
-  const max = Math.max(...serie.map(p => p.corrigido)) * 1.08 || 1;
-  const x = i => serie.length === 1 ? (L+W-R)/2 : L + (W-L-R) * i / (serie.length-1);
+  const W = 360, H = opts.H || 170, L = 44, R = 6, T = 12, B = 22;
+  const so1 = serie.length === 1;               // 1 mês só: linha reta atravessada
+  const s = so1 ? [serie[0], serie[0]] : serie;
+  const max = Math.max(...s.map(p => p.corrigido)) * 1.08 || 1;
+  const x = i => L + (W-L-R) * i / (s.length-1);
   const y = v => T + (H-T-B) * (1 - v/max);
-  const pc = serie.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.corrigido).toFixed(1)}));
-  const pb = serie.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.bruto).toFixed(1)}));
+  const pc = s.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.corrigido).toFixed(1)}));
+  const pb = s.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.bruto).toFixed(1)}));
   const grade = [0.25,0.5,0.75,1].map(f => {
     const gy = y(max*f).toFixed(1);
     return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--border)" stroke-dasharray="3 4"/>
             <text x="${L-4}" y="${+gy+3}" text-anchor="end">${moneyShort(max*f)}</text>`;
   }).join('');
   const passo = Math.ceil(serie.length / 8); // no máx ~8 rótulos de mês
-  const rotulos = serie.map((p,i) => (i % passo && i !== serie.length-1) ? '' :
-    `<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+p.mes.slice(5)-1]}</text>`).join('');
+  const rotulos = so1
+    ? `<text x="${((L+W-R)/2).toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+serie[0].mes.slice(5)-1]}</text>`
+    : serie.map((p,i) => (i % passo && i !== serie.length-1) ? '' :
+        `<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+p.mes.slice(5)-1]}</text>`).join('');
   const cols = serie.map((p,i) => {
-    const x0 = i ? (x(i-1)+x(i))/2 : L, x1 = i < serie.length-1 ? (x(i)+x(i+1))/2 : W-R;
+    const x0 = so1 ? L : (i ? (x(i-1)+x(i))/2 : L);
+    const x1 = so1 ? W-R : (i < serie.length-1 ? (x(i)+x(i+1))/2 : W-R);
     return `<rect class="evo-col" data-i="${i}" x="${x0.toFixed(1)}" y="${T}" width="${(x1-x0).toFixed(1)}" height="${H-T-B}" fill="transparent"/>`;
   }).join('');
   const sel = evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1;
-  const marca = `<circle cx="${pc[sel].x}" cy="${pc[sel].y}" r="3.5" fill="var(--brand)"/>
-                 <circle cx="${pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-rec)"/>`;
+  const mx = so1 ? (L+W-R)/2 : pc[sel].x;
+  const marca = `<circle cx="${mx}" cy="${pc[sel].y}" r="3.5" fill="var(--brand)"/>
+                 <circle cx="${so1 ? mx : pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-rec)"/>`;
   return `
     <div class="panel"><h2>Evolução da obra</h2>
-      <div class="evo-head"><span class="evo-val" id="evoVal"></span></div>
-      <svg class="evo-svg" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg" role="img" aria-label="Evolução do gasto bruto e corrigido por mês">
-        <defs><linearGradient id="evoGrad" x1="0" y1="0" x2="0" y2="1">
+      <div class="evo-head"><span class="evo-val" id="evoVal${suf}"></span></div>
+      <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg${suf}" role="img" aria-label="Evolução do gasto bruto e corrigido por mês">
+        <defs><linearGradient id="evoGrad${suf}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="var(--brand)" stop-opacity=".38"/>
           <stop offset="100%" stop-color="var(--brand)" stop-opacity=".02"/>
         </linearGradient></defs>
         ${grade}
-        <path d="${smoothPath(pc)} L ${W-R} ${H-B} L ${L} ${H-B} Z" fill="url(#evoGrad)" stroke="none"/>
+        <path d="${smoothPath(pc)} L ${W-R} ${H-B} L ${L} ${H-B} Z" fill="url(#evoGrad${suf})" stroke="none"/>
         <path d="${smoothPath(pc)}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linecap="round"/>
         <path d="${smoothPath(pb)}" fill="none" stroke="var(--chart-rec)" stroke-width="2" stroke-linecap="round"/>
         ${marca}${rotulos}${cols}
@@ -357,17 +368,17 @@ function evoChartHtml(o){
       </div>
     </div>`;
 }
-function bindEvoChart(o){
-  const svg = $('#evoSvg');
+function bindEvoChart(o, suf = '', rerender = renderObra){
+  const svg = $('#evoSvg' + suf);
   if(!svg) return;
   const serie = OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
   const mostra = i => {
     const p = serie[i]; if(!p) return;
     const [yy, mm] = p.mes.split('-');
-    $('#evoVal').textContent =
+    $('#evoVal' + suf).textContent =
       `${MESAB[+mm-1]}/${yy.slice(2)} · gasto ${moneyShort(p.bruto)} · corrigido ${moneyShort(p.corrigido)}`;
   };
-  svg.querySelectorAll('.evo-col').forEach(r => r.onclick = () => { evoSel = +r.dataset.i; renderObra(); });
+  svg.querySelectorAll('.evo-col').forEach(r => r.onclick = () => { evoSel = +r.dataset.i; rerender(); });
   mostra(evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1);
 }
 
@@ -585,6 +596,55 @@ function formGasto(obraId, gasto){
 
 /* ===== RELATÓRIO BRUTO × CORRIGIDO ===== */
 $('#btnRelVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
+$('#btnGrafVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
+
+/* ===== GRÁFICOS DA OBRA (tela cheia, legível, imprime em PDF) ===== */
+function renderGraficos(){
+  const o = obraById(obraAberta);
+  if(!o){ showView('inicio'); renderAll(); return; }
+  const bruto = OBRA_CALC.totalBruto(o);
+  const byTop = {};
+  o.gastos.forEach(g=>{ byTop[g.topico]=(byTop[g.topico]||0)+g.valor; });
+  const entries = Object.entries(byTop).sort((a,b)=>b[1]-a[1]);
+  const cs = getComputedStyle(document.documentElement);
+  const map = TOP_MAP();
+
+  let donut = emptyBlock(ICON('recibo'),'Sem gastos ainda.');
+  let legenda = '';
+  if(bruto > 0){
+    const R = 15.915, C = 2*Math.PI*R;
+    let off = 0, paths = '';
+    entries.forEach(([id,val],i)=>{
+      const len = val/bruto*C;
+      const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
+      paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
+        stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
+      off += len;
+    });
+    donut = `<div class="graf-donut"><div class="donut">
+      <svg viewBox="0 0 36 36" width="240" height="240">${paths}</svg>
+      <div class="center"><small>Total</small><b>${moneyShort(bruto)}</b></div>
+    </div></div>`;
+    legenda = '<ul class="list graf-leg">' + entries.map(([id,val],i)=>{
+      const t = map[id] || {nm:id, ic:'etiqueta'};
+      const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
+      return `<li><span class="dot" style="background:${color}"></span>
+        <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
+        <div class="li-val">${Math.round(val/bruto*100)}% · ${moneyShort(val)}</div></li>`;
+    }).join('') + '</ul>';
+  }
+
+  $('#grafBody').innerHTML = `
+    <div class="panel">
+      <h2 style="justify-content:flex-start;gap:8px">${ICON('calculadora')} Gráficos — ${escapeHtml(o.nome)}</h2>
+      <h2 style="margin-top:10px">Gastos por tópico</h2>
+      ${donut}${legenda}
+    </div>
+    ${evoChartHtml(o, { sufixo:'G', H:300 })}
+    <button class="btn primary no-print" id="grafPrint" style="width:100%;margin-top:2px">${ICON('impressora')} Imprimir / salvar PDF</button>`;
+  bindEvoChart(o, 'G', renderGraficos);
+  $('#grafPrint').onclick = ()=>window.print();
+}
 
 function renderRelatorio(){
   const o = obraById(obraAberta);

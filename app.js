@@ -104,71 +104,9 @@ function renderAll(){
   if(obraAberta) renderObra();
 }
 
-/* ===== INÍCIO (dashboard) ===== */
+/* ===== INÍCIO (lista de obras; o dashboard vive no detalhe) ===== */
 function renderInicio(){
   const hoje = todayISO();
-  const abertas = db.obras.filter(o=>o.fase!=='vendida');
-  const bruto = abertas.reduce((s,o)=>s+OBRA_CALC.totalBruto(o),0);
-  const corr  = abertas.reduce((s,o)=>s+OBRA_CALC.totalCorrigido(o,taxa(),hoje),0);
-
-  const venc = OBRA_CALC.aPagar(db.obras, hoje);
-  const comEst = db.obras.filter(o=>o.valorEstimadoVenda>0);
-  const estTotal = comEst.reduce((s,o)=>s+o.valorEstimadoVenda,0);
-  $('#kpiRow').innerHTML = `
-    <div class="kpi">
-      <div class="k-top"><span class="k-nome">Total gasto</span>
-        <span class="chip2 brand">${abertas.length ? abertas.length+' obra'+(abertas.length>1?'s':'') : 'sem obras'}</span></div>
-      <div class="k-num">${money(bruto)}</div>
-      <div class="k-obs">${abertas.length?'em andamento':'nenhuma em andamento'}</div>
-    </div>
-    <div class="kpi">
-      <div class="k-top"><span class="k-nome">Corrigido pelo banco</span></div>
-      <div class="k-num">${money(corr)}</div>
-      <div class="k-obs">Juros embutidos: +${money(corr-bruto)}</div>
-    </div>
-    <div class="kpi amber">
-      <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
-        <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada a vencer'}</span></div>
-      <div class="k-num">${money(venc.total)}</div>
-      <div class="k-obs">parcelas e gastos futuros</div>
-    </div>
-    <div class="kpi green">
-      <div class="k-top"><span class="k-nome">Venda estimada</span>
-        <span class="chip2 green">${comEst.length ? comEst.length+' obra'+(comEst.length>1?'s':'')+' avaliada'+(comEst.length>1?'s':'') : 'sem estimativas'}</span></div>
-      <div class="k-num">${comEst.length ? money(estTotal) : '—'}</div>
-      <div class="k-obs">${comEst.length ? 'soma dos valores estimados' : 'cadastre no editar obra'}</div>
-    </div>`;
-
-  const todosGastos = db.obras.flatMap(o=>o.gastos);
-  const brutoTotal = todosGastos.reduce((s,g)=>s+g.valor,0);
-  const serieAgg = OBRA_CALC.serieEvolucaoAgregada(db.obras, taxa(), hoje);
-  $('#iniEvo').innerHTML = todosGastos.length
-    ? evoChartHtml(null, { sufixo:'A', serie:serieAgg, titulo:'Evolução geral' }) : '';
-  bindEvoChart(null, 'A', renderInicio, serieAgg);
-
-  $('#iniCat').innerHTML = todosGastos.length
-    ? `<div class="panel"><h2>Gastos por categoria</h2>${donutComLegendaHtml(byTopico(todosGastos), brutoTotal, 200)}</div>` : '';
-
-  const rec = OBRA_CALC.gastosRecentes(db.obras, 5);
-  $('#iniRec').innerHTML = rec.length
-    ? `<div class="panel"><h2>Lançamentos recentes</h2><ul class="list" id="recList"></ul></div>` : '';
-  if(rec.length){
-    const map = TOP_MAP(), lista = $('#recList');
-    rec.forEach(({obraId, obraNome, gasto:g})=>{
-      const t = map[g.topico] || {nm:g.topico||'Outros', ic:'etiqueta'};
-      const li = el('li');
-      li.style.cursor = 'pointer';
-      li.innerHTML = `
-        <div class="av ic-brand">${ICON(t.ic)}</div>
-        <div class="li-main">
-          <div class="t">${escapeHtml(g.descricao || t.nm)}</div>
-          <div class="s">${escapeHtml(obraNome)} · ${fmtData(g.data)}</div>
-        </div>
-        <div class="li-val neg">−${money(g.valor)}</div>`;
-      li.onclick = ()=>openObra(obraId);
-      lista.appendChild(li);
-    });
-  }
 
   const arr = [...db.obras].sort((a,b)=>
     ((a.fase==='vendida')-(b.fase==='vendida')) || b.dataInicio.localeCompare(a.dataInicio));
@@ -234,43 +172,55 @@ function renderObra(){
       </div>
     </div>`;
 
-  let resumo = `
-    <div class="cards">
-      <div class="card saldo big">
-        <div class="k-label"><span class="k-ic">${ICON('notas')}</span> Total gasto</div>
-        <div class="duo">
-          <div class="d-cell"><div class="d-lbl">Bruto</div><div class="d-val">${money(bruto)}</div></div>
-          <div class="d-cell"><div class="d-lbl">Corrigido pelo banco</div><div class="d-val" id="oCorr">${money(corr)}</div></div>
-        </div>
-        <div class="k-sub">Juros embutidos até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
-      </div>`;
+  // 4 KPIs estilo dashboard (o início ficou só com a lista)
+  const venc = OBRA_CALC.aPagar([o], hoje);
+  const ppm2 = OBRA_CALC.precoPorM2(o.valorEstimadoVenda, o.areaM2);
+  let kpiVenda;
   if(o.fase==='vendida' && lucro){
-    resumo += `
-      <div class="card">
-        <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Lucro da venda</div>
-        <div class="k-val sm ${lucro.bruto>=0?'pos':'neg'}">${money(lucro.bruto)}</div>
-      </div>
-      <div class="card">
-        <div class="k-label"><span class="k-ic ic-blue">${ICON('banco')}</span> Acima do banco</div>
-        <div class="k-val sm ${lucro.vsBanco>=0?'pos':'neg'}">${money(lucro.vsBanco)}</div>
-      </div>
-      <div class="card big">
-        <div class="k-label"><span class="k-ic ic-brand">${ICON('acordo')}</span> Vendida em ${fmtData(o.venda.data)}</div>
-        <div class="k-val sm">${money(o.venda.valor)}</div>
+    kpiVenda = `
+      <div class="kpi green">
+        <div class="k-top"><span class="k-nome">Venda</span>
+          <span class="chip2 green">Vendida em ${fmtData(o.venda.data)}</span></div>
+        <div class="k-num">${money(o.venda.valor)}</div>
+        <div class="k-obs" style="color:${lucro.bruto>=0?'var(--green)':'var(--red)'}">lucro ${moneyShort(lucro.bruto)} · ${lucro.vsBanco>=0?'+':''}${moneyShort(lucro.vsBanco)} vs banco</div>
       </div>`;
   } else if(o.valorEstimadoVenda){
-    resumo += `
-      <div class="card">
-        <div class="k-label"><span class="k-ic ic-brand">${ICON('alvo')}</span> Venda estimada</div>
-        <div class="k-val sm">${moneyShort(o.valorEstimadoVenda)}</div>
-        ${OBRA_CALC.precoPorM2(o.valorEstimadoVenda, o.areaM2) ? `<div class="k-sub">${moneyShort(OBRA_CALC.precoPorM2(o.valorEstimadoVenda, o.areaM2))}/m² · ${String(o.areaM2).replace('.',',')} m²</div>` : ''}
-      </div>
-      <div class="card">
-        <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Margem estimada</div>
-        <div class="k-val sm ${o.valorEstimadoVenda-corr>=0?'pos':'neg'}">${moneyShort(o.valorEstimadoVenda-corr)}</div>
+    kpiVenda = `
+      <div class="kpi green">
+        <div class="k-top"><span class="k-nome">Venda estimada</span>
+          <span class="chip2 green">estimativa</span></div>
+        <div class="k-num">${money(o.valorEstimadoVenda)}</div>
+        <div class="k-obs">${ppm2 ? `${moneyShort(ppm2)}/m² · ${String(o.areaM2).replace('.',',')} m²` : `margem ${moneyShort(o.valorEstimadoVenda-corr)}`}</div>
+      </div>`;
+  } else {
+    kpiVenda = `
+      <div class="kpi green">
+        <div class="k-top"><span class="k-nome">Venda estimada</span></div>
+        <div class="k-num">—</div>
+        <div class="k-obs">cadastre no editar obra</div>
       </div>`;
   }
-  resumo += `</div>`;
+  const resumo = `
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k-top"><span class="k-nome">Total gasto</span>
+          <span class="chip2 brand">${o.gastos.length ? o.gastos.length+' lançamento'+(o.gastos.length>1?'s':'') : 'sem gastos'}</span></div>
+        <div class="k-num">${money(bruto)}</div>
+        <div class="k-obs">bruto, sem correção</div>
+      </div>
+      <div class="kpi">
+        <div class="k-top"><span class="k-nome">Corrigido pelo banco</span></div>
+        <div class="k-num" id="oCorr">${money(corr)}</div>
+        <div class="k-obs">Juros embutidos até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
+      </div>
+      <div class="kpi amber">
+        <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
+          <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada a vencer'}</span></div>
+        <div class="k-num">${money(venc.total)}</div>
+        <div class="k-obs">parcelas e gastos futuros</div>
+      </div>
+      ${kpiVenda}
+    </div>`;
 
   let acoes = '<div class="obra-actions">';
   if(o.fase==='construcao') acoes += `<button class="btn primary" id="oPronta">${ICON('casa')} Marcar como pronta</button>`;

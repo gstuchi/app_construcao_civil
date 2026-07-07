@@ -1,5 +1,5 @@
 /* Service worker — cache offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v12'; // v11 foi usado por dois merges paralelos (dashboard + splash)
+const CACHE = 'obras-v13';
 const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {

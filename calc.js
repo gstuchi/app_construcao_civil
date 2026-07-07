@@ -84,6 +84,47 @@
     }).slice(-24);
   }
 
+  /* Série agregada de todas as obras: união dos meses; cada obra contribui
+     com o acumulado dela no corte do mês (vendida fica congelada). */
+  function serieEvolucaoAgregada(obras, taxaPct, hojeISO){
+    const series = obras.map(o => serieEvolucao(o, taxaPct, hojeISO)).filter(s => s.length);
+    if(!series.length) return [];
+    const meses = [...new Set(series.flat().map(p => p.mes))].sort();
+    return meses.map(mes => {
+      let bruto = 0, corr = 0;
+      series.forEach(s => {
+        let p = null;
+        for(const q of s){ if(q.mes <= mes) p = q; else break; }
+        if(p){ bruto += p.bruto; corr += p.corrigido; }
+      });
+      return { mes, bruto, corrigido: corr };
+    }).slice(-24);
+  }
+
+  /* Gastos com vencimento nos próximos `dias` (parcelas a vencer). */
+  function aPagar(obras, hojeISO, dias = 30){
+    const fim = new Date(hojeISO + 'T00:00:00');
+    fim.setDate(fim.getDate() + dias);
+    const limISO = fim.toISOString().slice(0, 10);
+    let total = 0, qtd = 0;
+    obras.forEach(o => o.gastos.forEach(g => {
+      if(g.data > hojeISO && g.data <= limISO){ total += g.valor; qtd++; }
+    }));
+    return { total, qtd };
+  }
+
+  /* Últimos n gastos de todas as obras (data desc, desempate por id). */
+  function gastosRecentes(obras, n = 5){
+    return obras
+      .flatMap(o => o.gastos.map(g => ({ obraId: o.id, obraNome: o.nome, gasto: g })))
+      .sort((a, b) => (b.gasto.data + b.gasto.id).localeCompare(a.gasto.data + a.gasto.id))
+      .slice(0, n);
+  }
+
+  function precoPorM2(valor, areaM2){
+    return (valor > 0 && areaM2 > 0) ? valor / areaM2 : null;
+  }
+
   /* Busca dos lançamentos: texto (descrição OU nome do tópico, sem acento)
      e/ou mês ('2026-06'). Filtros combinam em E. */
   function semAcento(s){
@@ -157,7 +198,7 @@
     const n = parseFloat(v); return isNaN(n) ? 0 : n;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

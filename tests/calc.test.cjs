@@ -192,4 +192,47 @@ t('filtraGastos: mês, combinado e vazio', () => {
   assert.strictEqual(C.filtraGastos(g, mapaTop, { texto: '' }).length, 2);
 });
 
+const obrasAgg = [
+  { dataInicio:'2026-01-10', gastos:[{ valor:100000, data:'2026-01-15', topico:'terreno' }] },
+  { dataInicio:'2026-02-01', venda:{ data:'2026-03-10', valor:1 },
+    gastos:[{ valor:50000, data:'2026-02-05', topico:'pintura' }] },
+];
+
+t('serieEvolucaoAgregada: união de meses e soma', () => {
+  const s = C.serieEvolucaoAgregada(obrasAgg, 1, '2026-04-20');
+  assert.deepStrictEqual(s.map(p=>p.mes), ['2026-01','2026-02','2026-03','2026-04']);
+  assert.strictEqual(s[0].bruto, 100000);
+  assert.strictEqual(s[1].bruto, 150000);
+  assert.ok(s[3].corrigido > s[3].bruto);
+  // obra 2 vendida em mar: corrigido dela congela, mas o da obra 1 segue subindo
+  assert.ok(s[3].corrigido > s[2].corrigido);
+});
+
+t('aPagar: janela de 30 dias', () => {
+  const os = [{ dataInicio:'2026-07-01', gastos:[
+    { valor:100, data:'2026-07-10' },  // +4d: dentro
+    { valor:200, data:'2026-08-04' },  // +29d: dentro
+    { valor:400, data:'2026-08-10' },  // +35d: fora
+    { valor:800, data:'2026-07-01' },  // passado: fora
+  ]}];
+  assert.deepStrictEqual(C.aPagar(os, '2026-07-06'), { total:300, qtd:2 });
+});
+
+t('gastosRecentes: ordena e limita', () => {
+  const os = [
+    { id:'a', nome:'A', dataInicio:'2026-01-01', gastos:[{ id:'g1', valor:1, data:'2026-01-02' },{ id:'g3', valor:3, data:'2026-03-01' }] },
+    { id:'b', nome:'B', dataInicio:'2026-01-01', gastos:[{ id:'g2', valor:2, data:'2026-02-01' }] },
+  ];
+  const r = C.gastosRecentes(os, 2);
+  assert.deepStrictEqual(r.map(x=>x.gasto.id), ['g3','g2']);
+  assert.strictEqual(r[0].obraNome, 'A');
+});
+
+t('precoPorM2', () => {
+  assert.strictEqual(C.precoPorM2(3000000, 300), 10000);
+  assert.strictEqual(C.precoPorM2(3000000, 0), null);
+  assert.strictEqual(C.precoPorM2(3000000, null), null);
+  assert.strictEqual(C.precoPorM2(0, 300), null);
+});
+
 console.log(`OK: ${n} testes`);

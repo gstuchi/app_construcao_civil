@@ -104,17 +104,71 @@ function renderAll(){
   if(obraAberta) renderObra();
 }
 
-/* ===== INÍCIO ===== */
+/* ===== INÍCIO (dashboard) ===== */
 function renderInicio(){
   const hoje = todayISO();
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   const bruto = abertas.reduce((s,o)=>s+OBRA_CALC.totalBruto(o),0);
   const corr  = abertas.reduce((s,o)=>s+OBRA_CALC.totalCorrigido(o,taxa(),hoje),0);
-  $('#kTotalBruto').textContent = money(bruto);
-  $('#kTotalCorr').textContent = money(corr);
-  $('#kTotalSub').textContent = abertas.length
-    ? `Juros embutidos: +${money(corr-bruto)} · ${abertas.length} obra${abertas.length>1?'s':''} em andamento`
-    : 'Nenhuma obra em andamento';
+
+  const venc = OBRA_CALC.aPagar(db.obras, hoje);
+  const comEst = db.obras.filter(o=>o.valorEstimadoVenda>0);
+  const estTotal = comEst.reduce((s,o)=>s+o.valorEstimadoVenda,0);
+  $('#kpiRow').innerHTML = `
+    <div class="kpi">
+      <div class="k-top"><span class="k-nome">Total gasto</span>
+        <span class="chip2 brand">${abertas.length ? abertas.length+' obra'+(abertas.length>1?'s':'') : 'sem obras'}</span></div>
+      <div class="k-num">${money(bruto)}</div>
+      <div class="k-obs">${abertas.length?'em andamento':'nenhuma em andamento'}</div>
+    </div>
+    <div class="kpi">
+      <div class="k-top"><span class="k-nome">Corrigido pelo banco</span></div>
+      <div class="k-num">${money(corr)}</div>
+      <div class="k-obs">Juros embutidos: +${money(corr-bruto)}</div>
+    </div>
+    <div class="kpi amber">
+      <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
+        <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada a vencer'}</span></div>
+      <div class="k-num">${money(venc.total)}</div>
+      <div class="k-obs">parcelas e gastos futuros</div>
+    </div>
+    <div class="kpi green">
+      <div class="k-top"><span class="k-nome">Venda estimada</span>
+        <span class="chip2 green">${comEst.length ? comEst.length+' obra'+(comEst.length>1?'s':'')+' avaliada'+(comEst.length>1?'s':'') : 'sem estimativas'}</span></div>
+      <div class="k-num">${comEst.length ? money(estTotal) : '—'}</div>
+      <div class="k-obs">${comEst.length ? 'soma dos valores estimados' : 'cadastre no editar obra'}</div>
+    </div>`;
+
+  const todosGastos = db.obras.flatMap(o=>o.gastos);
+  const brutoTotal = todosGastos.reduce((s,g)=>s+g.valor,0);
+  const serieAgg = OBRA_CALC.serieEvolucaoAgregada(db.obras, taxa(), hoje);
+  $('#iniEvo').innerHTML = todosGastos.length
+    ? evoChartHtml(null, { sufixo:'A', serie:serieAgg, titulo:'Evolução geral' }) : '';
+  bindEvoChart(null, 'A', renderInicio, serieAgg);
+
+  $('#iniCat').innerHTML = todosGastos.length
+    ? `<div class="panel"><h2>Gastos por categoria</h2>${donutComLegendaHtml(byTopico(todosGastos), brutoTotal, 200)}</div>` : '';
+
+  const rec = OBRA_CALC.gastosRecentes(db.obras, 5);
+  $('#iniRec').innerHTML = rec.length
+    ? `<div class="panel"><h2>Lançamentos recentes</h2><ul class="list" id="recList"></ul></div>` : '';
+  if(rec.length){
+    const map = TOP_MAP(), lista = $('#recList');
+    rec.forEach(({obraId, obraNome, gasto:g})=>{
+      const t = map[g.topico] || {nm:g.topico||'Outros', ic:'etiqueta'};
+      const li = el('li');
+      li.style.cursor = 'pointer';
+      li.innerHTML = `
+        <div class="av ic-brand">${ICON(t.ic)}</div>
+        <div class="li-main">
+          <div class="t">${escapeHtml(g.descricao || t.nm)}</div>
+          <div class="s">${escapeHtml(obraNome)} · ${fmtData(g.data)}</div>
+        </div>
+        <div class="li-val neg">−${money(g.valor)}</div>`;
+      li.onclick = ()=>openObra(obraId);
+      lista.appendChild(li);
+    });
+  }
 
   const arr = [...db.obras].sort((a,b)=>
     ((a.fase==='vendida')-(b.fase==='vendida')) || b.dataInicio.localeCompare(a.dataInicio));
@@ -209,6 +263,7 @@ function renderObra(){
       <div class="card">
         <div class="k-label"><span class="k-ic ic-brand">${ICON('alvo')}</span> Venda estimada</div>
         <div class="k-val sm">${moneyShort(o.valorEstimadoVenda)}</div>
+        ${OBRA_CALC.precoPorM2(o.valorEstimadoVenda, o.areaM2) ? `<div class="k-sub">${moneyShort(OBRA_CALC.precoPorM2(o.valorEstimadoVenda, o.areaM2))}/m² · ${String(o.areaM2).replace('.',',')} m²</div>` : ''}
       </div>
       <div class="card">
         <div class="k-label"><span class="k-ic ic-green">${ICON('setaCima')}</span> Margem estimada</div>
@@ -319,8 +374,9 @@ function smoothPath(pts){
 }
 function evoChartHtml(o, opts = {}){
   const suf = opts.sufixo || '';
-  const serie = OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
-  if(!serie.length) return `<div class="panel"><h2>Evolução da obra</h2>${emptyBlock(ICON('calendario'),'Sem gastos ainda.')}</div>`;
+  const titulo = opts.titulo || 'Evolução da obra';
+  const serie = opts.serie || OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
+  if(!serie.length) return `<div class="panel"><h2>${titulo}</h2>${emptyBlock(ICON('calendario'),'Sem gastos ainda.')}</div>`;
   const W = 360, H = opts.H || 170, L = 44, R = 6, T = 12, B = 22;
   const so1 = serie.length === 1;               // 1 mês só: linha reta atravessada
   const s = so1 ? [serie[0], serie[0]] : serie;
@@ -349,7 +405,7 @@ function evoChartHtml(o, opts = {}){
   const marca = `<circle cx="${mx}" cy="${pc[sel].y}" r="3.5" fill="var(--brand)"/>
                  <circle cx="${so1 ? mx : pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-rec)"/>`;
   return `
-    <div class="panel"><h2>Evolução da obra</h2>
+    <div class="panel"><h2>${titulo}</h2>
       <div class="evo-head"><span class="evo-val" id="evoVal${suf}"></span></div>
       <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg${suf}" role="img" aria-label="Evolução do gasto bruto e corrigido por mês">
         <defs><linearGradient id="evoGrad${suf}" x1="0" y1="0" x2="0" y2="1">
@@ -368,10 +424,10 @@ function evoChartHtml(o, opts = {}){
       </div>
     </div>`;
 }
-function bindEvoChart(o, suf = '', rerender = renderObra){
+function bindEvoChart(o, suf = '', rerender = renderObra, serieOpt = null){
   const svg = $('#evoSvg' + suf);
   if(!svg) return;
-  const serie = OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
+  const serie = serieOpt || OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
   const mostra = i => {
     const p = serie[i]; if(!p) return;
     const [yy, mm] = p.mes.split('-');
@@ -469,6 +525,8 @@ function formEditarObra(o){
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${o.dataInicio}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label>
       <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
+    <div class="field"><label>Área construída em m² (opcional)</label>
+      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${o.areaM2||''}" autocomplete="off"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
@@ -482,6 +540,8 @@ function formEditarObra(o){
     oo.dataInicio = $('#fData').value || oo.dataInicio;
     const est = parseNum($('#fEst').value);
     oo.valorEstimadoVenda = est>0 ? est : null;
+    const area = parseNum($('#fArea').value);
+    oo.areaM2 = area>0 ? area : null;
     save(); closeSheet(); renderAll();
   };
   $('#cDel').onclick = ()=>{
@@ -598,47 +658,52 @@ function formGasto(obraId, gasto){
 $('#btnRelVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
 $('#btnGrafVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
 
+/* donut + legenda largura cheia (nome completo, % e valor) — reusado
+   pela tela Gráficos e pelo dashboard do início */
+function donutComLegendaHtml(entries, total, size){
+  if(!(total > 0)) return emptyBlock(ICON('recibo'),'Sem gastos ainda.');
+  const cs = getComputedStyle(document.documentElement);
+  const map = TOP_MAP();
+  const R = 15.915, C = 2*Math.PI*R;
+  let off = 0, paths = '';
+  entries.forEach(([id,val],i)=>{
+    const len = val/total*C;
+    const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
+    paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
+      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
+    off += len;
+  });
+  const legenda = entries.map(([id,val],i)=>{
+    const t = map[id] || {nm:id, ic:'etiqueta'};
+    const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
+    return `<li><span class="dot" style="background:${color}"></span>
+      <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
+      <div class="li-val">${Math.round(val/total*100)}% · ${moneyShort(val)}</div></li>`;
+  }).join('');
+  return `<div class="graf-donut"><div class="donut" style="width:${size}px;height:${size}px">
+      <svg viewBox="0 0 36 36" width="${size}" height="${size}">${paths}</svg>
+      <div class="center"><small>Total</small><b>${moneyShort(total)}</b></div>
+    </div></div>
+    <ul class="list graf-leg">${legenda}</ul>`;
+}
+const byTopico = gastos => {
+  const by = {};
+  gastos.forEach(g=>{ by[g.topico]=(by[g.topico]||0)+g.valor; });
+  return Object.entries(by).sort((a,b)=>b[1]-a[1]);
+};
+
 /* ===== GRÁFICOS DA OBRA (tela cheia, legível, imprime em PDF) ===== */
 function renderGraficos(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const bruto = OBRA_CALC.totalBruto(o);
-  const byTop = {};
-  o.gastos.forEach(g=>{ byTop[g.topico]=(byTop[g.topico]||0)+g.valor; });
-  const entries = Object.entries(byTop).sort((a,b)=>b[1]-a[1]);
-  const cs = getComputedStyle(document.documentElement);
-  const map = TOP_MAP();
-
-  let donut = emptyBlock(ICON('recibo'),'Sem gastos ainda.');
-  let legenda = '';
-  if(bruto > 0){
-    const R = 15.915, C = 2*Math.PI*R;
-    let off = 0, paths = '';
-    entries.forEach(([id,val],i)=>{
-      const len = val/bruto*C;
-      const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-      paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
-        stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
-      off += len;
-    });
-    donut = `<div class="graf-donut"><div class="donut">
-      <svg viewBox="0 0 36 36" width="240" height="240">${paths}</svg>
-      <div class="center"><small>Total</small><b>${moneyShort(bruto)}</b></div>
-    </div></div>`;
-    legenda = '<ul class="list graf-leg">' + entries.map(([id,val],i)=>{
-      const t = map[id] || {nm:id, ic:'etiqueta'};
-      const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-      return `<li><span class="dot" style="background:${color}"></span>
-        <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
-        <div class="li-val">${Math.round(val/bruto*100)}% · ${moneyShort(val)}</div></li>`;
-    }).join('') + '</ul>';
-  }
+  const donutLeg = donutComLegendaHtml(byTopico(o.gastos), bruto, 240);
 
   $('#grafBody').innerHTML = `
     <div class="panel">
       <h2 style="justify-content:flex-start;gap:8px">${ICON('calculadora')} Gráficos — ${escapeHtml(o.nome)}</h2>
       <h2 style="margin-top:10px">Gastos por tópico</h2>
-      ${donut}${legenda}
+      ${donutLeg}
     </div>
     ${evoChartHtml(o, { sufixo:'G', H:300 })}
     <button class="btn primary no-print" id="grafPrint" style="width:100%;margin-top:2px">${ICON('impressora')} Imprimir / salvar PDF</button>`;
@@ -774,6 +839,7 @@ function simulaCompute(){
           <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
           <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
           <tr><td>Rendimento ao mês</td><td>${taxa2(rb.taxaMes)}</td><td>${taxa2(rc.taxaMes)}</td></tr>
+          ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${String(o.areaM2).replace('.',',')} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
         </tbody>
       </table></div>
     </div>`;
@@ -837,6 +903,7 @@ function formNovaObra(){
     <div class="field"><label>Nome da obra</label><input id="fNome" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${todayISO()}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label><div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
+    <div class="field"><label>Área construída em m² (opcional)</label><input id="fArea" inputmode="decimal" placeholder="Ex: 320" autocomplete="off"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Criar obra</button>
@@ -848,10 +915,12 @@ function formNovaObra(){
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
     const est = parseNum($('#fEst').value);
+    const area = parseNum($('#fArea').value);
     const o = {
       id: uid(), nome, fase: 'construcao',
       dataInicio: $('#fData').value || todayISO(),
       valorEstimadoVenda: est > 0 ? est : null,
+      areaM2: area > 0 ? area : null,
       gastos: [],
     };
     db.obras.push(o); save(); closeSheet(); renderAll(); openObra(o.id);

@@ -570,6 +570,13 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
 <script defer src="app.js"></script>
 <script>
   if('serviceWorker' in navigator){
+    // quando um SW novo assume o controle (após deploy), recarrega 1x pra mostrar a versão nova.
+    // guarda: só recarrega se JÁ havia um SW controlando (update), nunca na 1ª instalação.
+    const jaControlado = !!navigator.serviceWorker.controller;
+    let recarregou = false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(jaControlado && !recarregou){ recarregou = true; location.reload(); }
+    });
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
   }
 </script>

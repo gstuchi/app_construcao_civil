@@ -69,6 +69,19 @@ const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function emptyBlock(icon,msg){ return `<div class="empty"><div class="big">${icon}</div><p>${msg}</p></div>`; }
+// KPIs de milhao estouram a largura do card (overflow:hidden corta o numero).
+// Reduz a fonte do numero so o quanto precisar pra caber; grande quando cabe.
+function fitNums(scope){
+  (scope||document).querySelectorAll('.k-num').forEach(n=>{
+    n.style.whiteSpace = 'nowrap';
+    n.style.fontSize = '';                 // volta pro tamanho base do CSS
+    let fs = parseFloat(getComputedStyle(n).fontSize);
+    let guard = 40;
+    while(n.scrollWidth > n.clientWidth && fs > 13 && guard-- > 0){
+      fs -= 0.5; n.style.fontSize = fs + 'px';
+    }
+  });
+}
 function fmtMeses(m){
   if(m < 1) return 'começando';
   const r = Math.round(m);
@@ -271,6 +284,7 @@ function renderObra(){
     </div>`;
 
   $('#obraBody').innerHTML = head + resumo + acoes + afazeres + graficos + lanc;
+  fitNums($('#obraBody'));
 
   drawDonutObra(entries, bruto);
   bindEvoChart(o);

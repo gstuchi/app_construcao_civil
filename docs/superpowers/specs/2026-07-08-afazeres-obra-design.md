@@ -7,6 +7,7 @@ quando resolve e apagar. Checklist simples por obra, sem prazo nem valor.
 ## Dado
 
 Novo campo na obra: `afazeres: []`. Cada item = `{ id, texto, feito }`:
+
 - `id`: `uid()` (mesmo gerador dos gastos).
 - `texto`: string, o afazer digitado (trim; vazio é ignorado).
 - `feito`: boolean, default `false`.
@@ -26,6 +27,7 @@ Painel "Afazeres" no detalhe da obra, **entre as Ações e os Gráficos**. Os 4
 KPIs continuam no topo (regra "saldo em 5s" — nada compete com eles).
 
 Painel:
+
 - Título com contador: `Afazeres (N pendentes)`; sem pendentes → `Afazeres`.
 - Linha de entrada: `<input>` texto + botão **+**. Enter no input também adiciona.
 - `<ul class="list">` reusando o estilo dos lançamentos.

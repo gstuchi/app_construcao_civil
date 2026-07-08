@@ -233,6 +233,15 @@ function renderObra(){
     <button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
   acoes += '</div>';
 
+  const afazeres = `
+    <div class="panel"><h2>Afazeres <span class="muted" id="afzCount"></span></h2>
+      <div class="filter-row">
+        <input id="afzInput" placeholder="Ex: pagar pedreiro, buscar tinta" autocomplete="off" maxlength="120">
+        <button class="btn primary afz-add" id="afzAdd" aria-label="Adicionar afazer" title="Adicionar">+</button>
+      </div>
+      <ul class="list" id="oAfazeres"></ul>
+    </div>`;
+
   const byTop = {};
   o.gastos.forEach(g=>{ byTop[g.topico]=(byTop[g.topico]||0)+g.valor; });
   const entries = Object.entries(byTop).sort((a,b)=>b[1]-a[1]);
@@ -261,13 +270,24 @@ function renderObra(){
       <ul class="list" id="oGastos"></ul>
     </div>`;
 
-  $('#obraBody').innerHTML = head + resumo + acoes + graficos + lanc;
+  $('#obraBody').innerHTML = head + resumo + acoes + afazeres + graficos + lanc;
 
   drawDonutObra(entries, bruto);
   bindEvoChart(o);
   $('#fBusca').addEventListener('input', ()=>{ filtroTexto = $('#fBusca').value; renderGastosFiltrados(obraById(obraAberta)); });
   $('#fMes').onchange = ()=>{ filtroMes = $('#fMes').value; renderGastosFiltrados(obraById(obraAberta)); };
   renderGastosFiltrados(o);
+
+  renderAfazeres(o);
+  const addAfazer = ()=>{
+    const inp = $('#afzInput'); const txt = inp.value.trim();
+    if(!txt){ inp.focus(); return; }
+    const oo = obraById(obraAberta); if(!oo) return;
+    (oo.afazeres || (oo.afazeres = [])).unshift({ id:uid(), texto:txt, feito:false });
+    save(); inp.value = ''; renderAfazeres(oo); inp.focus();
+  };
+  $('#afzAdd').onclick = addAfazer;
+  $('#afzInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addAfazer(); } });
 
   $('#oEdit').onclick = ()=>formEditarObra(o);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
@@ -278,6 +298,36 @@ function renderObra(){
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
   on('#oDesfazer',     ()=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
+}
+
+function renderAfazeres(o){
+  const list = $('#oAfazeres'); if(!list) return;
+  const items = o.afazeres || [];
+  const pend = items.filter(a=>!a.feito);
+  const done = items.filter(a=>a.feito);
+  $('#afzCount').textContent = pend.length ? `(${pend.length} pendente${pend.length>1?'s':''})` : '';
+  list.innerHTML = '';
+  if(!items.length){ list.innerHTML = emptyBlock(ICON('check'),'Nenhum afazer.<br>Anote o que falta na obra.'); return; }
+  [...pend, ...done].forEach(a=>list.appendChild(afazerRow(o, a)));
+}
+
+function afazerRow(o, a){
+  const li = el('li', a.feito ? 'afz-done' : '');
+  li.innerHTML = `<div class="li-main"><div class="t">${escapeHtml(a.texto)}</div></div>`;
+  const main = li.querySelector('.li-main');
+  main.style.cursor = 'pointer';
+  main.onclick = ()=>{
+    const oo = obraById(o.id); if(!oo) return;
+    const aa = (oo.afazeres||[]).find(x=>x.id===a.id); if(!aa) return;
+    aa.feito = !aa.feito; save(); renderAfazeres(oo);
+  };
+  const del = el('button','li-del','×');
+  del.onclick = ()=>{
+    const oo = obraById(o.id); if(!oo) return;
+    oo.afazeres = (oo.afazeres||[]).filter(x=>x.id!==a.id); save(); renderAfazeres(oo);
+  };
+  li.appendChild(del);
+  return li;
 }
 
 function drawDonutObra(entries, total){

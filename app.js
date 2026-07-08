@@ -101,6 +101,7 @@ function showView(v){
   $('#v-'+v).classList.add('active');
   document.querySelectorAll('button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
   $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
+  document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
   window.scrollTo({top:0});
 }
 document.querySelectorAll('button[data-tab]').forEach(b=>{
@@ -228,7 +229,7 @@ function renderObra(){
       </div>
       <div class="kpi amber">
         <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
-          <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada a vencer'}</span></div>
+          <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada em 30 dias'}</span></div>
         <div class="k-num">${money(venc.total)}</div>
         <div class="k-obs">parcelas e gastos futuros</div>
       </div>
@@ -814,7 +815,7 @@ function simulaCompute(){
   if(!o){ out.innerHTML = ''; return; }
 
   const vInp = $('#simValor');
-  if(!vInp.value && o.valorEstimadoVenda && !vInp.dataset.touched) vInp.value = o.valorEstimadoVenda;
+  if(!vInp.value && o.valorEstimadoVenda && !vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(o.valorEstimadoVenda);
   const venda = parseNum(vInp.value);
   const meses = Math.max(0, parseInt($('#simMeses').value,10) || 0);
 
@@ -828,7 +829,9 @@ function simulaCompute(){
     return;
   }
   const mesesTot = Math.max(1, OBRA_CALC.mesesDeObra(o, alvoISO));
-  const rate = OBRA_CALC.taxaEquivalenteMensal(venda, bruto, mesesTot);
+  // obra com menos de 1 mês: o % ao mês explode (divide por quase zero) e vira número absurdo
+  const novaDemais = OBRA_CALC.mesesDeObra(o, alvoISO) < 1;
+  const rate = novaDemais ? null : OBRA_CALC.taxaEquivalenteMensal(venda, bruto, mesesTot);
   const bate = venda > corr;
   const mult = (rate!=null && taxa()>0) ? rate/taxa() : 0;
   const quando = meses===0 ? 'vendendo hoje' : `vendendo daqui a ${meses} ${meses===1?'mês':'meses'}`;
@@ -844,7 +847,7 @@ function simulaCompute(){
     <div class="card saldo big" style="${bate?'':'background:linear-gradient(140deg,#8a2438,#4a1a2a);border-color:rgba(255,120,140,.35);box-shadow:0 8px 32px rgba(220,60,90,.25)'}">
       <div class="k-label"><span class="k-ic">${ICON(bate?'check':'alerta')}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
       <div class="k-val" style="font-size:30px">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
-      <div class="k-sub">${quando} · banco paga ${String(taxa()).replace('.',',')}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}</div>
+      <div class="k-sub">${quando} · banco paga ${String(taxa()).replace('.',',')}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}${novaDemais ? ' · obra com menos de 1 mês — % ao mês ainda não diz muito' : ''}</div>
     </div>
     <div class="panel">
       <h2 style="justify-content:flex-start;gap:8px">${ICON('documento')} Relatório da simulação</h2>
@@ -856,7 +859,7 @@ function simulaCompute(){
           <tr class="rep-total"><td>Lucro</td><td class="${sinal(rb.lucro)}">${din(rb.lucro)}</td><td class="${sinal(rc.lucro)}">${din(rc.lucro)}</td></tr>
           <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
           <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
-          <tr><td>Rendimento ao mês</td><td>${taxa2(rb.taxaMes)}</td><td>${taxa2(rc.taxaMes)}</td></tr>
+          <tr><td>Rendimento ao mês</td><td>${taxa2(novaDemais ? null : rb.taxaMes)}</td><td>${taxa2(novaDemais ? null : rc.taxaMes)}</td></tr>
           ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${String(o.areaM2).replace('.',',')} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
         </tbody>
       </table></div>
@@ -914,6 +917,7 @@ const backdrop = $('#backdrop'), sheet = $('#sheet');
 function openSheet(html){ sheet.innerHTML = html; backdrop.classList.add('show'); }
 function closeSheet(){ backdrop.classList.remove('show'); }
 backdrop.onclick = e=>{ if(e.target===backdrop) closeSheet(); };
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classList.contains('show')) closeSheet(); });
 
 function formNovaObra(){
   openSheet(`

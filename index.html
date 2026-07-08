@@ -117,6 +117,8 @@
 
   /* FAB */
   .fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(140deg,#3b6cf0,#5b2fd1);color:#fff;font-size:28px;box-shadow:0 6px 24px rgba(70,100,240,.5);cursor:pointer;z-index:41;display:grid;place-items:center}
+  /* na tela da obra o FAB flutua sobre o conteúdo: padding extra pro fim da página nunca ficar preso embaixo dele */
+  body.com-fab{padding-bottom:calc(156px + env(safe-area-inset-bottom))}
   .fab:active{transform:scale(.94)}
 
   /* modal */
@@ -141,6 +143,7 @@
   .btn.ghost{background:var(--surface-2);color:var(--muted)}
   .btn.primary{background:var(--brand);color:#fff}
   .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.6;cursor:default;transform:none}
   .hidden{display:none!important}
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px}
   .chip{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13.5px;cursor:pointer;font-weight:500}
@@ -302,6 +305,7 @@
   @media (min-width:900px){
     nav.tabs{display:none}
     body{padding-bottom:28px}
+    body.com-fab{padding-bottom:104px}
     .fab{bottom:28px}
     .side{display:flex;position:fixed;left:0;top:0;bottom:0;width:224px;flex-direction:column;gap:3px;padding:22px 14px;background:rgba(11,18,36,.78);border-right:1px solid var(--border);backdrop-filter:blur(12px);z-index:30}
     .side .s-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;margin-bottom:20px;padding:0 8px}

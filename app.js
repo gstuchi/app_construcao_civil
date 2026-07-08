@@ -313,20 +313,24 @@ function renderAfazeres(o){
 
 function afazerRow(o, a){
   const li = el('li', a.feito ? 'afz-done' : '');
-  li.innerHTML = `<div class="li-main"><div class="t">${escapeHtml(a.texto)}</div></div>`;
-  const main = li.querySelector('.li-main');
-  main.style.cursor = 'pointer';
-  main.onclick = ()=>{
+  const toggle = ()=>{
     const oo = obraById(o.id); if(!oo) return;
     const aa = (oo.afazeres||[]).find(x=>x.id===a.id); if(!aa) return;
     aa.feito = !aa.feito; save(); renderAfazeres(oo);
   };
+  const check = el('button','afz-check', ICON('check'));
+  check.setAttribute('aria-label', a.feito ? 'Desmarcar afazer' : 'Marcar feito');
+  check.onclick = toggle;
+  const main = el('div','li-main', `<div class="t">${escapeHtml(a.texto)}</div>`);
+  main.style.cursor = 'pointer';
+  main.onclick = toggle;
   const del = el('button','li-del','×');
+  del.setAttribute('aria-label','Apagar afazer');
   del.onclick = ()=>{
     const oo = obraById(o.id); if(!oo) return;
     oo.afazeres = (oo.afazeres||[]).filter(x=>x.id!==a.id); save(); renderAfazeres(oo);
   };
-  li.appendChild(del);
+  li.append(check, main, del);
   return li;
 }
 

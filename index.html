@@ -286,13 +286,13 @@
   .rep-table .rep-total td{font-weight:750;border-top:2px solid var(--border);font-size:14px}
   .rep-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
   @media print{
-    body{background:#fff!important;padding:0}
+    body{background:#fff!important;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     body *{visibility:hidden}
-    #v-relatorio,#v-relatorio *{visibility:visible}
-    #v-relatorio{position:absolute;left:0;top:0;width:100%;display:block}
-    #v-relatorio .no-print{display:none!important}
-    #v-relatorio .panel{background:#fff;border:0;box-shadow:none}
-    #v-relatorio h2,#v-relatorio th,#v-relatorio td,#v-relatorio p,#v-relatorio div,#v-relatorio b{color:#000!important}
+    section.view.active,section.view.active *{visibility:visible}
+    section.view.active{position:absolute;left:0;top:0;width:100%;display:block}
+    .no-print{display:none!important}
+    section.view.active .panel{background:#fff;border:0;box-shadow:none}
+    section.view.active h2,section.view.active th,section.view.active td,section.view.active p,section.view.active div,section.view.active b{color:#000!important}
     .rep-table th,.rep-table td{border-color:#999}
     .rep-table .rt-top td{background:#eee}
   }

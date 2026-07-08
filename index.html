@@ -321,6 +321,13 @@
   .filter-row input,.filter-row select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 11px;font-size:14px}
   .filter-row input{flex:1;min-width:0}
   .filter-row select{flex:0 0 auto;max-width:44%}
+  .filter-row .afz-add{flex:0 0 auto;padding:9px 16px;font-size:20px;line-height:1;font-weight:600}
+  .afz-check{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:2px solid var(--border);background:transparent;color:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .afz-check .ico{width:15px;height:15px}
+  .afz-check:active{border-color:var(--brand)}
+  .afz-done .afz-check{border-color:var(--green);background:var(--green);color:#04140b}
+  .afz-done .li-main{opacity:.5}
+  .afz-done .li-main .t{text-decoration:line-through;color:var(--muted);white-space:normal}
   @media (max-width:768px){
     ul.list li{padding:14px 4px;gap:13px}
     .li-del{padding:10px 12px;font-size:18px}

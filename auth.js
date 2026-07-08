@@ -93,6 +93,15 @@
     return 'Não deu certo. Tente de novo.';
   }
 
+  /* botão em estado "trabalhando": desabilita e troca o texto até a promise resolver
+     (sem isso o login parece travado nos ~3s que o Firebase leva pra responder) */
+  async function comLoading(btn, texto, fn){
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = texto;
+    try{ await fn(); }
+    finally{ btn.disabled = false; btn.textContent = original; }
+  }
+
   /* ---------- login ---------- */
   $('#fLogin').addEventListener('submit',async e=>{
     e.preventDefault();
@@ -100,8 +109,10 @@
     const email=$('#lEmail').value.trim(), senha=$('#lSenha').value;
     if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='Digite seu e-mail.'; return; }
     if(!senha){ msg.textContent='Digite a senha.'; return; }
-    try{ await CLOUD.login(email, senha); }
-    catch(err){ msg.textContent=msgErro(err); }
+    await comLoading(e.target.querySelector('button[type=submit]'), 'Entrando…', async()=>{
+      try{ await CLOUD.login(email, senha); }
+      catch(err){ msg.textContent=msgErro(err); }
+    });
   });
 
   /* ---------- esqueci minha senha ---------- */
@@ -121,7 +132,9 @@
     if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='E-mail inválido.'; return; }
     if(!validCPF(cpf)){ msg.textContent='CPF inválido. Confira os números.'; return; }
     if(senha.length<6){ msg.textContent='Senha precisa de pelo menos 6 caracteres.'; return; }
-    try{ await CLOUD.signup(email, senha, cpf); }
-    catch(err){ msg.textContent=msgErro(err); }
+    await comLoading(e.target.querySelector('button[type=submit]'), 'Criando conta…', async()=>{
+      try{ await CLOUD.signup(email, senha, cpf); }
+      catch(err){ msg.textContent=msgErro(err); }
+    });
   });
 })();

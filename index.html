@@ -19,7 +19,10 @@
 <link rel="apple-touch-startup-image" href="splash/splash-828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)">
 <script>
 /* aplica tema salvo antes da pintura — evita flash do tema errado */
-try{ if(localStorage.getItem('mo_tema')==='claro') document.documentElement.setAttribute('data-theme','light'); }catch(e){}
+try{ if(localStorage.getItem('mo_tema')==='claro'){
+  document.documentElement.setAttribute('data-theme','light');
+  var m=document.querySelector('meta[name="theme-color"]'); if(m) m.content='#eef2f9'; /* = --bg claro */
+} }catch(e){}
 </script>
 <style>
   /* Dark é o padrão; claro é opção (PRODUCT.md) — variáveis do claro em html[data-theme=light] */

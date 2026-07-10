@@ -870,8 +870,29 @@ maskMoney('#simValor'); // antes do listener de cálculo: reformata, depois calc
 $('#simValor').addEventListener('input', ()=>{ $('#simValor').dataset.touched='1'; simulaCompute(); });
 $('#simMeses').addEventListener('input', simulaCompute);
 
+/* ===== TEMA (claro/escuro) — preferência por aparelho, não sincroniza ===== */
+const TEMA_KEY = 'mo_tema';
+const temaClaro = () => document.documentElement.getAttribute('data-theme') === 'light';
+function aplicaTema(claro){
+  if(claro) document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  try{ localStorage.setItem(TEMA_KEY, claro ? 'claro' : 'escuro'); }catch(e){}
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
+}
+
 /* ===== AJUSTES ===== */
 function renderAjustes(){
+  const tg = $('#ajTema');
+  if(tg){
+    const claro = temaClaro();
+    tg.setAttribute('aria-checked', String(claro));
+    tg.setAttribute('aria-label', claro ? 'Modo escuro' : 'Modo claro');
+    tg.querySelector('.bola').innerHTML = ICON(claro ? 'sol' : 'lua');
+    tg.onclick = () => aplicaTema(!temaClaro());
+  }
+
   const inp = $('#ajTaxa');
   if(document.activeElement !== inp)
     inp.value = String(db.config.taxaMensal).replace('.',',');

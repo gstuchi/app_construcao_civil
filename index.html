@@ -17,8 +17,15 @@
 <link rel="apple-touch-startup-image" href="splash/splash-1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)">
 <link rel="apple-touch-startup-image" href="splash/splash-1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3)">
 <link rel="apple-touch-startup-image" href="splash/splash-828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)">
+<script>
+/* aplica tema salvo antes da pintura — evita flash do tema errado */
+try{ if(localStorage.getItem('mo_tema')==='claro'){
+  document.documentElement.setAttribute('data-theme','light');
+  var m=document.querySelector('meta[name="theme-color"]'); if(m) m.content='#eef2f9'; /* = --bg claro */
+} }catch(e){}
+</script>
 <style>
-  /* Tema único: dark premium (decisão de identidade — PRODUCT.md) */
+  /* Dark é o padrão; claro é opção (PRODUCT.md) — variáveis do claro em html[data-theme=light] */
   :root{
     --bg:#070c18;
     --surface:rgba(17,26,46,.92); --surface-solid:#111a2e; --surface-2:#182338; --border:#243250;
@@ -30,6 +37,17 @@
     --c1:#5b8cff; --c2:#22d3ee; --c3:#a78bfa; --c4:#f472b6; --c5:#fbbf24; --c6:#4ade80; --c7:#fb923c; --c8:#94a3b8;
     /* série do gráfico — validada p/ daltonismo (dataviz) */
     --chart-rec:#2eae5e; --chart-desp:#e0507f;
+  }
+  /* Tema claro — mesmo esqueleto de variáveis, valores validados p/ contraste AA */
+  html[data-theme="light"]{
+    --bg:#eef2f9;
+    --surface:rgba(255,255,255,.92); --surface-solid:#ffffff; --surface-2:#e7edf7; --border:#cdd8e8;
+    --text:#16233c; --muted:#556685; --brand:#3560cf; --brand-soft:#dde7fb;
+    --green:#0e7a41; --green-soft:#d7f2e2; --red:#c22e55; --red-soft:#fadde5;
+    --amber:#8a5a06; --amber-soft:#f8ecc9; --blue:#2a63c4; --blue-soft:#dce9fa;
+    --shadow:0 1px 2px rgba(23,43,77,.08),0 8px 24px rgba(23,43,77,.12);
+    --c1:#3560cf; --c2:#0d7f95; --c3:#6d4fc9; --c4:#c23d82; --c5:#8a5a06; --c6:#0e7a41; --c7:#b04e0c; --c8:#5c6b80;
+    --chart-rec:#187a44; --chart-desp:#c22759;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%;touch-action:manipulation} /* mata zoom por duplo-toque (cara de app) */
@@ -45,6 +63,14 @@
     -webkit-tap-highlight-color:transparent;
   }
   #globe{position:fixed;inset:0;z-index:0;pointer-events:none}
+  html[data-theme="light"] body{
+    background:
+      radial-gradient(1100px 750px at 85% -5%, rgba(91,140,255,.14), transparent 62%),
+      radial-gradient(900px 700px at -10% 105%, rgba(140,90,220,.09), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  html[data-theme="light"] #globe{opacity:.4} /* globo é azul fixo (globe.js); no claro vira marca-d'água */
   .app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px 16px 8px}
   header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-top:env(safe-area-inset-top)}
   header.top h1{font-size:20px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
@@ -75,6 +101,22 @@
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px;margin-bottom:14px}
   .panel h2{font-size:15.5px;font-weight:650;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between}
   .panel h2 .muted{font-size:13px;font-weight:500;color:var(--muted)}
+
+  /* toggle de tema — pílula lua/sol */
+  .tema-linha{display:flex;align-items:center;justify-content:space-between;min-height:44px;font-size:15px}
+  .tgl-tema{position:relative;width:64px;height:32px;border-radius:999px;border:1px solid var(--border);
+    background:var(--surface-2);cursor:pointer;padding:0;flex:none}
+  .tgl-tema::before{content:"";position:absolute;inset:-8px} /* alvo de toque ≥44px */
+  .tgl-tema .slot{position:absolute;top:3px;width:24px;height:24px;display:grid;place-items:center;
+    color:var(--muted);opacity:.5}
+  .tgl-tema .slot.esq{left:4px} .tgl-tema .slot.dir{right:4px}
+  .tgl-tema .bola{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+    background:var(--surface-solid);border:1px solid var(--border);display:grid;place-items:center;
+    color:var(--text);transition:transform .3s ease;z-index:1}
+  html[data-theme="light"] .tgl-tema .bola{transform:translateX(32px)}
+  .tgl-tema svg.ico{width:15px;height:15px}
+  .tgl-tema:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){ .tgl-tema .bola{transition:none} }
 
   /* donut */
   .donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -551,6 +593,18 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
       <div class="field" style="margin-top:10px"><label for="ajNovoTopico">Novo tópico</label>
         <input id="ajNovoTopico" placeholder="Ex: Piscina, Automação" autocomplete="off"></div>
       <button class="btn primary" id="ajAddTopico" style="width:100%">Adicionar tópico</button>
+    </div>
+    <div class="panel">
+      <h2>Aparência</h2>
+      <div class="tema-linha">
+        <span>Tema do app</span>
+        <button class="tgl-tema" id="ajTema" role="switch" aria-checked="false" aria-label="Modo claro">
+          <span class="slot esq" data-ico="lua"></span>
+          <span class="slot dir" data-ico="sol"></span>
+          <span class="bola"></span>
+        </button>
+      </div>
+      <p class="muted-note">Escuro é o padrão. A escolha vale só neste aparelho.</p>
     </div>
     <div class="panel">
       <h2>Conta</h2>

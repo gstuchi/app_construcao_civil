@@ -1,0 +1,222 @@
+{
+  "app.js": {
+    "mtime": 1783485304.3320417,
+    "ast_hash": "b5915e50374fffb6b515577336fb20f9",
+    "semantic_hash": "b5915e50374fffb6b515577336fb20f9"
+  },
+  "auth.js": {
+    "mtime": 1783354540.3767285,
+    "ast_hash": "8e6465c6f2c29250dd8b890701bbb195",
+    "semantic_hash": "8e6465c6f2c29250dd8b890701bbb195"
+  },
+  "calc.js": {
+    "mtime": 1783392644.027287,
+    "ast_hash": "8168f9b4d1737cd50b2a961537ab6914",
+    "semantic_hash": "8168f9b4d1737cd50b2a961537ab6914"
+  },
+  "cloud.js": {
+    "mtime": 1783273087.8142922,
+    "ast_hash": "7441052b9929302e749fa2def04f9fdc",
+    "semantic_hash": "7441052b9929302e749fa2def04f9fdc"
+  },
+  "globe.js": {
+    "mtime": 1783090864.1422813,
+    "ast_hash": "a0e92a79aa863cf19f9068c99665e6a8",
+    "semantic_hash": "a0e92a79aa863cf19f9068c99665e6a8"
+  },
+  "icons.js": {
+    "mtime": 1783354540.3788218,
+    "ast_hash": "a2b5be457d0493cb2230918e04345f25",
+    "semantic_hash": "a2b5be457d0493cb2230918e04345f25"
+  },
+  "manifest.json": {
+    "mtime": 1783376172.287192,
+    "ast_hash": "3b06186261645af6427a19ed744c6095",
+    "semantic_hash": "3b06186261645af6427a19ed744c6095"
+  },
+  "splash.js": {
+    "mtime": 1783392680.5895088,
+    "ast_hash": "be0e63f35461eeca62a2b3cc397fe07d",
+    "semantic_hash": "be0e63f35461eeca62a2b3cc397fe07d"
+  },
+  "sw.js": {
+    "mtime": 1783485304.3325574,
+    "ast_hash": "283fb5561e331789ec6dd0955efde216",
+    "semantic_hash": "283fb5561e331789ec6dd0955efde216"
+  },
+  ".clinerules/caveman.md": {
+    "mtime": 1783270623.3860352,
+    "ast_hash": "842f73fb8944c06f82037e6f2deb28dc",
+    "semantic_hash": "842f73fb8944c06f82037e6f2deb28dc"
+  },
+  ".github/copilot-instructions.md": {
+    "mtime": 1783270623.388029,
+    "ast_hash": "842f73fb8944c06f82037e6f2deb28dc",
+    "semantic_hash": "842f73fb8944c06f82037e6f2deb28dc"
+  },
+  ".opencode/AGENTS.md": {
+    "mtime": 1783270623.3890264,
+    "ast_hash": "842f73fb8944c06f82037e6f2deb28dc",
+    "semantic_hash": "842f73fb8944c06f82037e6f2deb28dc"
+  },
+  ".windsurf/rules/caveman.md": {
+    "mtime": 1783270623.3900256,
+    "ast_hash": "0bb5d5aeab0a32a19f2a094a83c1f246",
+    "semantic_hash": "0bb5d5aeab0a32a19f2a094a83c1f246"
+  },
+  "AGENTS.md": {
+    "mtime": 1783270623.3910213,
+    "ast_hash": "842f73fb8944c06f82037e6f2deb28dc",
+    "semantic_hash": "842f73fb8944c06f82037e6f2deb28dc"
+  },
+  "PRODUCT.md": {
+    "mtime": 1783197079.7352653,
+    "ast_hash": "753b526fbe1467168608c5e45adc4545",
+    "semantic_hash": "753b526fbe1467168608c5e45adc4545"
+  },
+  "docs/superpowers/plans/2026-07-04-minhas-obras.md": {
+    "mtime": 1783196473.191277,
+    "ast_hash": "a835262e3649a3c6c58a820dffda0b3f",
+    "semantic_hash": "a835262e3649a3c6c58a820dffda0b3f"
+  },
+  "docs/superpowers/plans/2026-07-05-banco-nuvem-firebase.md": {
+    "mtime": 1783271324.357851,
+    "ast_hash": "e6c5cf166e2ffd2553a24b7704908b5f",
+    "semantic_hash": "e6c5cf166e2ffd2553a24b7704908b5f"
+  },
+  "docs/superpowers/plans/2026-07-05-parcelas-cartao.md": {
+    "mtime": 1783270623.3960094,
+    "ast_hash": "51f8ca51aaac9d540301912b8603aea9",
+    "semantic_hash": "51f8ca51aaac9d540301912b8603aea9"
+  },
+  "docs/superpowers/plans/2026-07-06-dashboard-inicio.md": {
+    "mtime": 1783392644.0283225,
+    "ast_hash": "d6a926febe95000bcfb4a28fe5b53a78",
+    "semantic_hash": "d6a926febe95000bcfb4a28fe5b53a78"
+  },
+  "docs/superpowers/plans/2026-07-06-grafico-evolucao-busca.md": {
+    "mtime": 1783375058.111872,
+    "ast_hash": "92b2d4429fbfe0aa7607fbe7ff2255f3",
+    "semantic_hash": "92b2d4429fbfe0aa7607fbe7ff2255f3"
+  },
+  "docs/superpowers/plans/2026-07-06-icones-mascara-moeda.md": {
+    "mtime": 1783353714.0219,
+    "ast_hash": "a4179ef06d6ebb0391ff6fe6f2eba0f0",
+    "semantic_hash": "a4179ef06d6ebb0391ff6fe6f2eba0f0"
+  },
+  "docs/superpowers/plans/2026-07-06-ios-pwa.md": {
+    "mtime": 1783376172.2840164,
+    "ast_hash": "a3b79a6a1c67e0d223e1f2bac38f479b",
+    "semantic_hash": "a3b79a6a1c67e0d223e1f2bac38f479b"
+  },
+  "docs/superpowers/plans/2026-07-06-relatorio-simulador.md": {
+    "mtime": 1783373622.3786843,
+    "ast_hash": "48ee831837d5e28b3c3097bb66ea474e",
+    "semantic_hash": "48ee831837d5e28b3c3097bb66ea474e"
+  },
+  "docs/superpowers/plans/2026-07-06-tela-graficos.md": {
+    "mtime": 1783377462.0771954,
+    "ast_hash": "4ec2131efef52a2a13d4353fe752bdbf",
+    "semantic_hash": "4ec2131efef52a2a13d4353fe752bdbf"
+  },
+  "docs/superpowers/specs/2026-07-04-obras-design.md": {
+    "mtime": 1783196021.4309964,
+    "ast_hash": "5f87ed4b0f1468b4374b9ab68f04ae2c",
+    "semantic_hash": "5f87ed4b0f1468b4374b9ab68f04ae2c"
+  },
+  "docs/superpowers/specs/2026-07-05-banco-nuvem-firebase-design.md": {
+    "mtime": 1783271133.0161273,
+    "ast_hash": "bf509ed38b7862df9027d139002e9364",
+    "semantic_hash": "bf509ed38b7862df9027d139002e9364"
+  },
+  "docs/superpowers/specs/2026-07-06-dashboard-inicio-design.md": {
+    "mtime": 1783392028.442394,
+    "ast_hash": "6b99c7aa925391114cc8472984970a56",
+    "semantic_hash": "6b99c7aa925391114cc8472984970a56"
+  },
+  "docs/superpowers/specs/2026-07-06-grafico-evolucao-busca-design.md": {
+    "mtime": 1783374912.8651116,
+    "ast_hash": "15bc1e0610c82b67fd0895229ec4bf68",
+    "semantic_hash": "15bc1e0610c82b67fd0895229ec4bf68"
+  },
+  "docs/superpowers/specs/2026-07-06-icones-mascara-moeda-design.md": {
+    "mtime": 1783353247.4962132,
+    "ast_hash": "9f2c627a0141f07e51ad273fa22df94a",
+    "semantic_hash": "9f2c627a0141f07e51ad273fa22df94a"
+  },
+  "docs/superpowers/specs/2026-07-06-ios-pwa-design.md": {
+    "mtime": 1783376050.380941,
+    "ast_hash": "027c576a62672e80ff1e703303a783b0",
+    "semantic_hash": "027c576a62672e80ff1e703303a783b0"
+  },
+  "docs/superpowers/specs/2026-07-06-kpis-na-obra-design.md": {
+    "mtime": 1783393009.2884443,
+    "ast_hash": "3e85dcb0754348a48f14ca9b58f3a92b",
+    "semantic_hash": "3e85dcb0754348a48f14ca9b58f3a92b"
+  },
+  "docs/superpowers/specs/2026-07-06-relatorio-simulador-design.md": {
+    "mtime": 1783365500.7366476,
+    "ast_hash": "54786c40c0015cac453ef22232ea74fe",
+    "semantic_hash": "54786c40c0015cac453ef22232ea74fe"
+  },
+  "docs/superpowers/specs/2026-07-06-tela-graficos-design.md": {
+    "mtime": 1783377427.7411866,
+    "ast_hash": "ab3febffc4b45f999d48d6f14be27cf9",
+    "semantic_hash": "ab3febffc4b45f999d48d6f14be27cf9"
+  },
+  "index.html": {
+    "mtime": 1783484507.4189603,
+    "ast_hash": "e856af43d43f0bd5484d3e7d2c0ad4c2",
+    "semantic_hash": "e856af43d43f0bd5484d3e7d2c0ad4c2"
+  },
+  "apple-touch-icon.png": {
+    "mtime": 1783376172.2829635,
+    "ast_hash": "337bf03b56acf5e464bf24e2c0ea2e66",
+    "semantic_hash": "337bf03b56acf5e464bf24e2c0ea2e66"
+  },
+  "icon-192.png": {
+    "mtime": 1783376172.2845328,
+    "ast_hash": "0169169e3e48784e8dd9f5a797fe1111",
+    "semantic_hash": "0169169e3e48784e8dd9f5a797fe1111"
+  },
+  "icon-512.png": {
+    "mtime": 1783376172.2856233,
+    "ast_hash": "2d0ebbb3e840718f5f1aeb2672eaaf3d",
+    "semantic_hash": "2d0ebbb3e840718f5f1aeb2672eaaf3d"
+  },
+  "icon.svg": {
+    "mtime": 1783089403.2953095,
+    "ast_hash": "15afaadfa877e21720a33a4977e82b74",
+    "semantic_hash": "15afaadfa877e21720a33a4977e82b74"
+  },
+  "splash/splash-1125x2436.png": {
+    "mtime": 1783376172.2877052,
+    "ast_hash": "9828734007efab751cb492a286534f42",
+    "semantic_hash": "9828734007efab751cb492a286534f42"
+  },
+  "splash/splash-1170x2532.png": {
+    "mtime": 1783376172.2887335,
+    "ast_hash": "c6625024c0f98e5c7dae8637a87d1d60",
+    "semantic_hash": "c6625024c0f98e5c7dae8637a87d1d60"
+  },
+  "splash/splash-1179x2556.png": {
+    "mtime": 1783376172.2892406,
+    "ast_hash": "91b938efbe51a3a80389f1c9dc7e4c4f",
+    "semantic_hash": "91b938efbe51a3a80389f1c9dc7e4c4f"
+  },
+  "splash/splash-1290x2796.png": {
+    "mtime": 1783376172.2897596,
+    "ast_hash": "d09438d65b1397dd60fc40577fd09c2a",
+    "semantic_hash": "d09438d65b1397dd60fc40577fd09c2a"
+  },
+  "splash/splash-828x1792.png": {
+    "mtime": 1783376172.2902625,
+    "ast_hash": "a15ab89554fdb6f8fa76561ded0714c0",
+    "semantic_hash": "a15ab89554fdb6f8fa76561ded0714c0"
+  },
+  "docs/superpowers/specs/2026-07-08-afazeres-obra-design.md": {
+    "mtime": 1783482691.1863208,
+    "ast_hash": "ee5eeffad18f1fb88b2656ae01eb2176",
+    "semantic_hash": "ee5eeffad18f1fb88b2656ae01eb2176"
+  }
+}

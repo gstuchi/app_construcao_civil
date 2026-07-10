@@ -190,6 +190,7 @@ try{ if(localStorage.getItem('mo_tema')==='claro'){
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px}
   .chip{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13.5px;cursor:pointer;font-weight:500}
   .chip.on{background:var(--brand-soft);color:#a8c2ff;border-color:#3a56a0;font-weight:600}
+  html[data-theme="light"] .chip.on{color:var(--brand);border-color:var(--brand)}
   .install-hint{background:var(--blue-soft);color:var(--blue);border-radius:12px;padding:11px 13px;font-size:12.5px;display:flex;gap:9px;align-items:center;margin-bottom:14px}
   .install-hint button{margin-left:auto;border:0;background:var(--blue);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 
@@ -357,6 +358,9 @@ try{ if(localStorage.getItem('mo_tema')==='claro'){
     .side button[data-tab].on{background:var(--brand-soft);color:#cfe0ff}
     .side .s-sair{margin-top:auto;display:flex;align-items:center;gap:11px;border:1px solid var(--border);background:transparent;color:var(--muted);padding:11px 12px;border-radius:11px;font-size:14px;cursor:pointer;width:100%}
     .side .s-sair:hover{background:var(--surface-2);color:var(--text)}
+    /* sidebar tem fundo e cor de item ativo próprios (não são variáveis) — precisa do par claro */
+    html[data-theme="light"] .side{background:rgba(255,255,255,.72)}
+    html[data-theme="light"] .side button[data-tab].on{color:var(--brand)}
     .app{margin:0 auto 0 248px;max-width:880px}
     .cards{grid-template-columns:repeat(4,1fr)}
     header.top .sair{display:none}
@@ -372,6 +376,7 @@ try{ if(localStorage.getItem('mo_tema')==='claro'){
   .afz-check .ico{width:15px;height:15px}
   .afz-check:active{border-color:var(--brand)}
   .afz-done .afz-check{border-color:var(--green);background:var(--green);color:#04140b}
+  html[data-theme="light"] .afz-done .afz-check{color:#fff} /* --green claro é escuro; check preto sumia */
   .afz-done .li-main{opacity:.5}
   .afz-done .li-main .t{text-decoration:line-through;color:var(--muted);white-space:normal}
   @media (max-width:768px){
@@ -395,6 +400,7 @@ try{ if(localStorage.getItem('mo_tema')==='claro'){
   .chip2.amber{color:var(--amber);border-color:rgba(251,191,36,.35);background:var(--amber-soft)}
   .chip2.green{color:var(--green);border-color:rgba(74,222,128,.35);background:var(--green-soft)}
   .chip2.brand{color:#9db9ff;border-color:rgba(91,140,255,.35);background:var(--brand-soft)}
+  html[data-theme="light"] .chip2.brand{color:var(--brand)}
   /* tela Gráficos da obra */
   .graf-donut{display:grid;place-items:center;margin:10px 0 18px}
   .graf-donut .donut{width:240px;height:240px} /* sobrepõe os 132px do detalhe */

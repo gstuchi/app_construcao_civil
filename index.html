@@ -99,6 +99,22 @@ try{ if(localStorage.getItem('mo_tema')==='claro') document.documentElement.setA
   .panel h2{font-size:15.5px;font-weight:650;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between}
   .panel h2 .muted{font-size:13px;font-weight:500;color:var(--muted)}
 
+  /* toggle de tema — pílula lua/sol */
+  .tema-linha{display:flex;align-items:center;justify-content:space-between;min-height:44px;font-size:15px}
+  .tgl-tema{position:relative;width:64px;height:32px;border-radius:999px;border:1px solid var(--border);
+    background:var(--surface-2);cursor:pointer;padding:0;flex:none}
+  .tgl-tema::before{content:"";position:absolute;inset:-8px} /* alvo de toque ≥44px */
+  .tgl-tema .slot{position:absolute;top:3px;width:24px;height:24px;display:grid;place-items:center;
+    color:var(--muted);opacity:.5}
+  .tgl-tema .slot.esq{left:4px} .tgl-tema .slot.dir{right:4px}
+  .tgl-tema .bola{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+    background:var(--surface-solid);border:1px solid var(--border);display:grid;place-items:center;
+    color:var(--text);transition:transform .3s ease;z-index:1}
+  html[data-theme="light"] .tgl-tema .bola{transform:translateX(32px)}
+  .tgl-tema svg.ico{width:15px;height:15px}
+  .tgl-tema:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){ .tgl-tema .bola{transition:none} }
+
   /* donut */
   .donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
   .donut{position:relative;width:132px;height:132px;flex:0 0 auto}
@@ -574,6 +590,18 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
       <div class="field" style="margin-top:10px"><label for="ajNovoTopico">Novo tópico</label>
         <input id="ajNovoTopico" placeholder="Ex: Piscina, Automação" autocomplete="off"></div>
       <button class="btn primary" id="ajAddTopico" style="width:100%">Adicionar tópico</button>
+    </div>
+    <div class="panel">
+      <h2>Aparência</h2>
+      <div class="tema-linha">
+        <span>Tema do app</span>
+        <button class="tgl-tema" id="ajTema" role="switch" aria-checked="false" aria-label="Modo claro">
+          <span class="slot esq" data-ico="lua"></span>
+          <span class="slot dir" data-ico="sol"></span>
+          <span class="bola"></span>
+        </button>
+      </div>
+      <p class="muted-note">Escuro é o padrão. A escolha vale só neste aparelho.</p>
     </div>
     <div class="panel">
       <h2>Conta</h2>

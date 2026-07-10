@@ -1,6 +1,6 @@
 /* Service worker — network-first. Online sempre pega a versão nova; o cache
    é só o retrato pra funcionar offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v20';
+const CACHE = 'obras-v21';
 const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
@@ -29,5 +29,26 @@ self.addEventListener('fetch', e => {
       caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       return res;
     }).catch(() => caches.match(e.request).then(hit => hit || caches.match('./index.html')))
+  );
+});
+
+/* Push: o cron diário (GitHub Actions) manda { titulo, corpo } via Web Push. */
+self.addEventListener('push', e => {
+  let d = {};
+  try{ d = e.data.json(); }catch(err){}
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Minhas Obras', {
+    body: d.corpo || '',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
+      for(const w of ws){ if('focus' in w) return w.focus(); }
+      return clients.openWindow('./');
+    })
   );
 });

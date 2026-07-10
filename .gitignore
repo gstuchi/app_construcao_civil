@@ -1,3 +1,5 @@
 # Config local do Claude Code e caches de ferramentas
 .claude/
 .impeccable/
+
+notificacoes/node_modules/

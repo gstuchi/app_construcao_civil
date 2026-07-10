@@ -26,7 +26,7 @@ Premium, calmo, impressionante. Dark tech elegante — profundidade de azul-noit
 1. **Saldo em 5 segundos** — a informação principal de cada tela domina a hierarquia; decoração nunca compete com número.
 2. **Wow que não cansa** — efeitos (globo, glow) vivem no fundo e nas bordas; o conteúdo em si é calmo e estável.
 3. **Letra generosa** — base de texto maior que o padrão; números financeiros sempre tabulares e grandes.
-4. **Dark é a identidade** — tema único dark premium; sem modo claro para manter a assinatura visual consistente.
+4. **Dark é o padrão** — dark premium é a assinatura e o tema inicial; modo claro existe como opção nos Ajustes, com o mesmo rigor de contraste e hierarquia.
 5. **Offline é sagrado** — nenhum efeito pode exigir rede, framework ou build; vanilla only.
 
 ## Accessibility & Inclusion

@@ -93,4 +93,14 @@ t('linhas na ordem: afazeres, parcelas, lembrete', () => {
   assert.ok(linhas[2].includes('Lançou'));
 });
 
+t('valor não numérico não vira NaN no total', () => {
+  const dados = { obras: [ obraCom({ gastos: [
+    { id:'g1', valor: 1000,  data: '2026-08-15' },
+    { id:'g2', valor: null,  data: '2026-08-20' },
+  ]}) ]};
+  const r = montaResumo(dados, '2026-08-01');
+  assert.ok(r.corpo.includes(BRL.format(1000)), r.corpo);
+  assert.ok(!r.corpo.includes('NaN'), r.corpo);
+});
+
 console.log(`\n${n} testes ok`);

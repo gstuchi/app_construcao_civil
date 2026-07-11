@@ -48,3 +48,4 @@ Publicar.
 - GitHub desativa o cron após 60 dias sem atividade no repo (qualquer
   commit reativa).
 - iPhone: só iOS 16.4+ com o PWA instalado na tela inicial.
+- Sair da conta não desliga as notificações do aparelho; desligue o toggle antes de trocar de conta.

@@ -19,7 +19,7 @@ function montaResumo(dados, hojeISO){
     const mes = hojeISO.slice(0, 7);
     let qtd = 0, total = 0;
     for(const o of obras) for(const g of (o.gastos || [])){
-      if(g.data.slice(0, 7) === mes && g.data >= hojeISO){ qtd++; total += g.valor; }
+      if(g.data.slice(0, 7) === mes && g.data >= hojeISO){ qtd++; total += Number(g.valor) || 0; }
     }
     if(qtd > 0) linhas.push((qtd === 1 ? '1 parcela vence' : qtd + ' parcelas vencem')
       + ' este mês (' + BRL.format(total) + ')');

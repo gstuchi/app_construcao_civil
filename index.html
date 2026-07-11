@@ -113,7 +113,7 @@ try{ if(localStorage.getItem('mo_tema')==='claro'){
   .tgl-tema .bola{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
     background:var(--surface-solid);border:1px solid var(--border);display:grid;place-items:center;
     color:var(--text);transition:transform .3s ease;z-index:1}
-  html[data-theme="light"] .tgl-tema .bola{transform:translateX(32px)}
+  html[data-theme="light"] #ajTema .bola{transform:translateX(32px)}
   .tgl-tema svg.ico{width:15px;height:15px}
   .tgl-tema:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   .tgl-tema.on .bola{transform:translateX(32px)}

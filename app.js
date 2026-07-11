@@ -914,8 +914,13 @@ async function ativaPush(){
     applicationServerKey: b64ToU8(VAPID_PUBLICA),
   });
   const j = sub.toJSON();
-  await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
-    { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
+  try{
+    await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
+      { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
+  }catch(err){
+    await sub.unsubscribe().catch(()=>{}); // não deixa o toggle ligado sem a nuvem saber
+    throw err;
+  }
   return true;
 }
 async function desativaPush(){

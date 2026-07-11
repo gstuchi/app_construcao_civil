@@ -6,7 +6,7 @@ product
 
 ## Users
 
-Pai do Giovani — construtor de casas de alto padrão, não técnico, meia-idade, usa principalmente no celular (Android, PWA instalado). Prefere letra maior (óculos de leitura). Contexto: lançar gastos da obra no dia a dia (ao pagar fornecedor, fechar compra) e conferir o total gasto e a margem. Giovani (filho) mantém o app.
+Pai do Giovani — construtor de casas de alto padrão, não técnico, meia-idade, usa principalmente no celular (iPhone, PWA instalado pela Tela de Início; Giovani também usa iPhone). Prefere letra maior (óculos de leitura). Contexto: lançar gastos da obra no dia a dia (ao pagar fornecedor, fechar compra) e conferir o total gasto e a margem. Giovani (filho) mantém o app.
 
 ## Product Purpose
 

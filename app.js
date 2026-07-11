@@ -945,7 +945,13 @@ function renderAjustes(){
   const tgN = $('#ajNotif');
   if(tgN){
     if(!pushSuportado()){
-      $('#painelNotif').style.display = 'none';
+      /* iPhone no Safari (fora do app instalado) não expõe a API de push —
+         em vez de esconder o painel, ensina o caminho */
+      tgN.disabled = true;
+      tgN.style.opacity = '.4';
+      $('#ajNotifNota').textContent = 'Pra receber notificações no iPhone: abra no Safari, '
+        + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
+        + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
     }else{
       pushAtual().then(sub => {
         const on = !!sub && Notification.permission === 'granted';

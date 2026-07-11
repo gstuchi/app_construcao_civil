@@ -8,7 +8,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  doc, setDoc, getDoc, onSnapshot, serverTimestamp,
+  doc, setDoc, getDoc, onSnapshot, serverTimestamp, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -85,6 +85,17 @@ window.CLOUD = {
     await setDoc(doc(db, 'dados', currentUser.uid),
       { ...blob, _atualizado: serverTimestamp() });
     return true;
+  },
+
+  /* Inscrição de push por aparelho. Doc separado de dados/{uid} de propósito:
+     saveDados reescreve o blob inteiro e apagaria a inscrição do outro aparelho. */
+  savePushSub(chave, sub){
+    if(!currentUser) return Promise.resolve();
+    return setDoc(doc(db, 'push', currentUser.uid), { subs: { [chave]: sub } }, { merge: true });
+  },
+  removePushSub(chave){
+    if(!currentUser) return Promise.resolve();
+    return setDoc(doc(db, 'push', currentUser.uid), { subs: { [chave]: deleteField() } }, { merge: true });
   },
 };
 window.dispatchEvent(new Event('cloud-pronto'));

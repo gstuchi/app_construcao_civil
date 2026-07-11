@@ -882,6 +882,55 @@ function aplicaTema(claro){
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
 }
 
+/* ===== NOTIFICAÇÕES PUSH — inscrição por aparelho, resumo diário via cron ===== */
+const VAPID_PUBLICA = 'BEZVfZrOAgzNMnSS4Hpt-PKwchrfEaW5igUoXdZILQqBWdeC9D2RTp_-JfrTagRU4eK2FM0zC3U0GXYS2LUwiyk';
+const NOTIF_NOTA_PADRAO = 'Afazeres pendentes, parcelas do mês e lembrete de lançar gastos. '
+  + 'Chega mesmo com o app fechado. Vale neste aparelho.';
+
+const pushSuportado = () =>
+  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+function b64ToU8(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+/* hash curto do endpoint — vira nome de campo no Firestore (sem . nem /) */
+function hashEndpoint(s){
+  let h = 5381;
+  for(let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+async function pushAtual(){
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+async function ativaPush(){
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted') return false;
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: b64ToU8(VAPID_PUBLICA),
+  });
+  const j = sub.toJSON();
+  try{
+    await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
+      { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
+  }catch(err){
+    await sub.unsubscribe().catch(()=>{}); // não deixa o toggle ligado sem a nuvem saber
+    throw err;
+  }
+  return true;
+}
+async function desativaPush(){
+  const sub = await pushAtual();
+  if(!sub) return;
+  const chave = hashEndpoint(sub.endpoint);
+  await sub.unsubscribe();
+  await CLOUD.removePushSub(chave);
+}
+
 /* ===== AJUSTES ===== */
 function renderAjustes(){
   const tg = $('#ajTema');
@@ -891,6 +940,35 @@ function renderAjustes(){
     tg.setAttribute('aria-label', claro ? 'Modo escuro' : 'Modo claro');
     tg.querySelector('.bola').innerHTML = ICON(claro ? 'sol' : 'lua');
     tg.onclick = () => aplicaTema(!temaClaro());
+  }
+
+  const tgN = $('#ajNotif');
+  if(tgN){
+    if(!pushSuportado()){
+      $('#painelNotif').style.display = 'none';
+    }else{
+      pushAtual().then(sub => {
+        const on = !!sub && Notification.permission === 'granted';
+        tgN.classList.toggle('on', on);
+        tgN.setAttribute('aria-checked', String(on));
+      });
+      tgN.onclick = async () => {
+        const nota = $('#ajNotifNota');
+        nota.textContent = NOTIF_NOTA_PADRAO;
+        try{
+          const sub = await pushAtual();
+          if(sub){
+            await desativaPush();
+          }else{
+            const ok = await ativaPush();
+            if(!ok) nota.textContent = 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
+          }
+        }catch(err){
+          nota.textContent = 'Não deu pra ativar agora. Tente de novo.';
+        }
+        renderAjustes();
+      };
+    }
   }
 
   const inp = $('#ajTaxa');

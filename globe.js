@@ -55,7 +55,20 @@
   window.addEventListener('resize',resize);
   resize();
 
-  function drawSet(pts, sin, cos, bright){
+  /* cores vêm das CSS vars do skin ativo (--globe-*-rgb) — 1 leitura por frame */
+  function cores(){
+    const cs = getComputedStyle(document.documentElement);
+    const v = (n,fb)=>{ const s=cs.getPropertyValue(n).trim(); return s||fb; };
+    return {
+      hi:    v('--globe-hi-rgb','168,255,224'),
+      land:  v('--globe-land-rgb','20,179,154'),
+      ocean: v('--globe-ocean-rgb','15,124,106'),
+      halo:  v('--globe-halo-rgb','20,179,154'),
+      ring:  v('--globe-ring-rgb','58,209,126'),
+    };
+  }
+
+  function drawSet(pts, sin, cos, bright, C){
     for(const p of pts){
       const x=p.x*cos - p.z*sin;
       const z=p.x*sin + p.z*cos;
@@ -66,33 +79,35 @@
       const a=bright ? 0.30+depth*0.62 : 0.10+depth*0.20;
       const s=bright ? 1.5+depth*1.7 : 1.1+depth*1.0;
       ctx.fillStyle = bright
-        ? (depth>0.7 ? `rgba(160,196,255,${a})` : `rgba(96,140,255,${a})`)
-        : `rgba(78,114,224,${a})`;
+        ? (depth>0.7 ? `rgba(${C.hi},${a})` : `rgba(${C.land},${a})`)
+        : `rgba(${C.ocean},${a})`;
       ctx.fillRect(sx-s/2, sy-s/2, s, s);
     }
   }
 
   function draw(t){
+    const C = cores();
     ctx.clearRect(0,0,W,H);
     // halo atmosférico
     const g=ctx.createRadialGradient(cx,cy,R*0.4,cx,cy,R*1.35);
-    g.addColorStop(0,'rgba(58,100,245,0.26)');
-    g.addColorStop(0.7,'rgba(58,100,245,0.08)');
-    g.addColorStop(1,'rgba(58,100,245,0)');
+    g.addColorStop(0,`rgba(${C.halo},0.22)`);
+    g.addColorStop(0.7,`rgba(${C.halo},0.07)`);
+    g.addColorStop(1,`rgba(${C.halo},0)`);
     ctx.fillStyle=g;
     ctx.fillRect(0,0,W,H);
     // aro da esfera — dá a leitura de "planeta"
     ctx.beginPath();
     ctx.arc(cx,cy,R*1.01,0,6.2832);
-    ctx.strokeStyle='rgba(100,140,255,0.20)';
+    ctx.strokeStyle=`rgba(${C.ring},0.18)`;
     ctx.lineWidth=1.2;
     ctx.stroke();
     const sin=Math.sin(t), cos=Math.cos(t);
-    drawSet(ocean,sin,cos,false);
-    drawSet(land,sin,cos,true);
+    drawSet(ocean,sin,cos,false,C);
+    drawSet(land,sin,cos,true,C);
   }
 
-  if(reduced){ draw(1.2); return; }
+  if(reduced){ draw(1.2); window.__globeDraw=()=>draw(1.2); return; }
+  window.__globeDraw=()=>{}; // animando, o próximo frame já pega a cor nova
 
   let angle=1.2, last=performance.now(), running=true;
   function loop(now){

@@ -1,13 +1,13 @@
 {
-  "name": "Minhas Obras",
-  "short_name": "Obras",
+  "name": "ObraControl",
+  "short_name": "ObraControl",
   "description": "Controle de custos e lucro por obra, na ponta do lápis.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#070c18",
-  "theme_color": "#070c18",
+  "background_color": "#04100C",
+  "theme_color": "#04100C",
   "lang": "pt-BR",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },

@@ -1,4 +1,4 @@
-/* Minhas Obras — controle de custos por obra. PWA offline, localStorage, vanilla JS. */
+/* ObraControl — controle de custos por obra. PWA offline, localStorage, vanilla JS. */
 'use strict';
 
 /* ---------- estado ---------- */
@@ -378,7 +378,7 @@ function drawDonutObra(entries, total){
 
 /* Gráfico de evolução: área suave do acumulado corrigido + linha do bruto.
    Toque num mês mostra os valores no topo (sem tooltip flutuante).
-   Cores validadas p/ daltonismo (dataviz): --brand × --chart-rec. */
+   Cores validadas p/ daltonismo (dataviz): --chart-gasto × --chart-rec. */
 let evoSel = -1; // mês selecionado (índice); -1 = último
 function smoothPath(pts){
   if(pts.length < 2) return pts.length ? `M${pts[0].x} ${pts[0].y} L${pts[0].x+1} ${pts[0].y}` : '';
@@ -421,25 +421,25 @@ function evoChartHtml(o, opts = {}){
   }).join('');
   const sel = evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1;
   const mx = so1 ? (L+W-R)/2 : pc[sel].x;
-  const marca = `<circle cx="${mx}" cy="${pc[sel].y}" r="3.5" fill="var(--brand)"/>
-                 <circle cx="${so1 ? mx : pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-rec)"/>`;
+  const marca = `<circle cx="${mx}" cy="${pc[sel].y}" r="3.5" fill="var(--chart-rec)"/>
+                 <circle cx="${so1 ? mx : pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-gasto)"/>`;
   return `
     <div class="panel"><h2>${titulo}</h2>
       <div class="evo-head"><span class="evo-val" id="evoVal${suf}"></span></div>
       <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg${suf}" role="img" aria-label="Evolução do gasto bruto e corrigido por mês">
         <defs><linearGradient id="evoGrad${suf}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--brand)" stop-opacity=".38"/>
-          <stop offset="100%" stop-color="var(--brand)" stop-opacity=".02"/>
+          <stop offset="0%" stop-color="var(--chart-rec)" stop-opacity=".38"/>
+          <stop offset="100%" stop-color="var(--chart-rec)" stop-opacity=".02"/>
         </linearGradient></defs>
         ${grade}
         <path d="${smoothPath(pc)} L ${W-R} ${H-B} L ${L} ${H-B} Z" fill="url(#evoGrad${suf})" stroke="none"/>
-        <path d="${smoothPath(pc)}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linecap="round"/>
-        <path d="${smoothPath(pb)}" fill="none" stroke="var(--chart-rec)" stroke-width="2" stroke-linecap="round"/>
+        <path d="${smoothPath(pc)}" fill="none" stroke="var(--chart-rec)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="${smoothPath(pb)}" fill="none" stroke="var(--chart-gasto)" stroke-width="2" stroke-linecap="round"/>
         ${marca}${rotulos}${cols}
       </svg>
       <div class="evo-leg">
-        <span><i style="background:var(--chart-rec)"></i>Gasto</span>
-        <span><i style="background:var(--brand)"></i>Corrigido pelo banco</span>
+        <span><i style="background:var(--chart-gasto)"></i>Gasto</span>
+        <span><i style="background:var(--chart-rec)"></i>Corrigido pelo banco</span>
       </div>
     </div>`;
 }
@@ -882,6 +882,19 @@ function aplicaTema(claro){
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
 }
 
+/* ===== SKIN (cor do app: esmeralda/azul) — mesma mecânica do tema ===== */
+const SKIN_KEY = 'mo_skin';
+const skinAtual = () => document.documentElement.getAttribute('data-skin') || 'esmeralda';
+function aplicaSkin(skin){
+  if(skin === 'azul') document.documentElement.setAttribute('data-skin','azul');
+  else document.documentElement.removeAttribute('data-skin');
+  try{ localStorage.setItem(SKIN_KEY, skin); }catch(e){}
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if(window.__globeDraw) window.__globeDraw(); // com prefers-reduced-motion o globo é estático — força a cor nova
+  renderAll();
+}
+
 /* ===== NOTIFICAÇÕES PUSH — inscrição por aparelho, resumo diário via cron ===== */
 const VAPID_PUBLICA = 'BEZVfZrOAgzNMnSS4Hpt-PKwchrfEaW5igUoXdZILQqBWdeC9D2RTp_-JfrTagRU4eK2FM0zC3U0GXYS2LUwiyk';
 const NOTIF_NOTA_PADRAO = 'Afazeres pendentes, parcelas do mês e lembrete de lançar gastos. '
@@ -940,6 +953,15 @@ function renderAjustes(){
     tg.setAttribute('aria-label', claro ? 'Modo escuro' : 'Modo claro');
     tg.querySelector('.bola').innerHTML = ICON(claro ? 'sol' : 'lua');
     tg.onclick = () => aplicaTema(!temaClaro());
+  }
+
+  const bEsm = $('#skinEsm'), bAzul = $('#skinAzul');
+  if(bEsm && bAzul){
+    const azul = skinAtual() === 'azul';
+    bEsm.classList.toggle('on', !azul);
+    bAzul.classList.toggle('on', azul);
+    bEsm.onclick  = () => aplicaSkin('esmeralda'); // aplicaSkin → renderAll → volta aqui e marca o chip
+    bAzul.onclick = () => aplicaSkin('azul');
   }
 
   const tgN = $('#ajNotif');

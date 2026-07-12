@@ -1,14 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2450c9"/>
-      <stop offset="1" stop-color="#5b2fd1"/>
+    <!-- degradê 150deg #17B39A → #0D7D78 → #06454A (brief da logo) -->
+    <linearGradient id="bg" x1="0.25" y1="0" x2="0.75" y2="1">
+      <stop offset="0" stop-color="#17B39A"/>
+      <stop offset="0.55" stop-color="#0D7D78"/>
+      <stop offset="1" stop-color="#06454A"/>
     </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#D6FFEF" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#6FEFC4" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#3AD17E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="plat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9BEFDA"/>
+      <stop offset="1" stop-color="#66D6BC"/>
+    </linearGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="2"/>
+    </pattern>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="120,336 216,240 288,312 400,176"/>
-    <polyline points="336,176 400,176 400,240"/>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#grid)"/>
+
+  <!-- glow da plataforma (--accent) -->
+  <ellipse cx="256" cy="426" rx="236" ry="116" fill="url(#glow)"/>
+  <ellipse cx="256" cy="428" rx="160" ry="74" fill="url(#glow)" opacity="0.8"/>
+
+  <!-- plataforma isométrica flutuante -->
+  <g>
+    <polygon points="146,446 256,501 366,446 366,428 256,483 146,428" fill="#41B096"/>
+    <polygon points="256,373 366,428 256,483 146,428" fill="url(#plat)"/>
   </g>
-  <circle cx="256" cy="392" r="16" fill="#ffffff"/>
+  <ellipse cx="256" cy="438" rx="150" ry="62" fill="url(#glow)" opacity="0.55"/>
+
+  <!-- casa isométrica (corpo + telhado, faces claras) -->
+  <g stroke="#0D7D78" stroke-opacity="0.12" stroke-width="1.5" stroke-linejoin="round">
+    <!-- corpo: face esquerda clara, direita teal suave -->
+    <polygon points="172,258 256,300 256,364 172,322" fill="#EAFBF5"/>
+    <polygon points="256,300 340,258 340,322 256,364" fill="#A9E2D2"/>
+    <!-- telhado: pirâmide, esquerda branca, direita pálida -->
+    <polygon points="256,152 172,258 256,300" fill="#FAFFFD"/>
+    <polygon points="256,152 340,258 256,300" fill="#CFF0E6"/>
+  </g>
+
+  <!-- seta de tendência (verde-escuro estático, sem clima de trade) -->
+  <path d="M150 238 C 190 272, 222 278, 246 250 C 268 224, 292 190, 310 164"
+        fill="none" stroke="#0A3F38" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <polygon points="334,142 290,152 320,188" fill="#0A3F38"/>
 </svg>

@@ -4,20 +4,24 @@
 /* ---------- estado ---------- */
 
 const TOPICOS = [
-  {id:'terreno',    nm:'Terreno',       ic:'mapa'},
-  {id:'projeto',    nm:'Projeto/Docs',  ic:'regua'},
-  {id:'fundacao',   nm:'Fundação',      ic:'pa'},
-  {id:'estrutura',  nm:'Estrutura',     ic:'guindaste'},
-  {id:'alvenaria',  nm:'Alvenaria',     ic:'tijolos'},
-  {id:'telhado',    nm:'Telhado',       ic:'casa'},
-  {id:'eletrica',   nm:'Elétrica',      ic:'raio'},
-  {id:'hidraulica', nm:'Hidráulica',    ic:'gota'},
-  {id:'esquadrias', nm:'Esquadrias',    ic:'porta'},
-  {id:'revest',     nm:'Revestimentos', ic:'camadas'},
-  {id:'pintura',    nm:'Pintura',       ic:'rolo'},
-  {id:'paisagismo', nm:'Paisagismo',    ic:'arvore'},
-  {id:'maoobra',    nm:'Mão de obra',   ic:'capacete'},
-  {id:'outros',     nm:'Outros',        ic:'caixa'},
+  {id:'terreno',    nm:'Terreno',           ic:'mapa'},
+  {id:'projeto',    nm:'Documentação',      ic:'documento'},
+  {id:'matbasicos', nm:'Materiais básicos', ic:'tijolos'},
+  {id:'fundacao',   nm:'Fundação',          ic:'pa'},
+  {id:'estrutura',  nm:'Estrutura',         ic:'guindaste'},
+  {id:'alvenaria',  nm:'Alvenaria',         ic:'tijolos'},
+  {id:'telhado',    nm:'Telhado',           ic:'casa'},
+  {id:'eletrica',   nm:'Elétrica',          ic:'raio'},
+  {id:'hidraulica', nm:'Encanamento',       ic:'gota'},
+  {id:'esquadrias', nm:'Esq. de alumínio',  ic:'porta'},
+  {id:'revest',     nm:'Revestimentos',     ic:'camadas'},
+  {id:'pintura',    nm:'Pintura',           ic:'rolo'},
+  {id:'acabamento', nm:'Acabamento',        ic:'rolo'},
+  {id:'paisagismo', nm:'Paisagismo',        ic:'arvore'},
+  {id:'maoobra',    nm:'Mão de obra',       ic:'capacete'},
+  {id:'aluguelmaq', nm:'Aluguel de máquina',ic:'engrenagem'},
+  {id:'matextra',   nm:'Materiais extra',   ic:'caixa'},
+  {id:'outros',     nm:'Outros',            ic:'caixa'},
 ];
 const PIE = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
 const FASES = {

@@ -483,24 +483,37 @@ function mesChartHtml(o, opts = {}){
   const sel = mesSel >= 0 && mesSel < serie.length ? mesSel
     : Math.max(0, serie.map(p=>p.total>0).lastIndexOf(true));
   const passo = Math.ceil(serie.length / 8);
+  const base = H - B;
+  // barra com topo arredondado e base reta no eixo; mês zerado vira um toco
+  const barra = (x0, yTopo) => {
+    const r = Math.min(3, bw/2, Math.max(0, base - yTopo));
+    return `M${x0.toFixed(1)} ${base} V${(yTopo+r).toFixed(1)} Q${x0.toFixed(1)} ${yTopo.toFixed(1)} ${(x0+r).toFixed(1)} ${yTopo.toFixed(1)}`
+         + ` H${(x0+bw-r).toFixed(1)} Q${(x0+bw).toFixed(1)} ${yTopo.toFixed(1)} ${(x0+bw).toFixed(1)} ${(yTopo+r).toFixed(1)} V${base} Z`;
+  };
   const partes = serie.map((p,i) => {
-    const cx = L + slot*i + slot/2;
-    const alt = Math.max(0, (H-T-B) * p.total/max);
+    const cx = L + slot*i + slot/2, x0 = cx - bw/2;
     const rot = (i % passo && i !== serie.length-1) ? '' :
       `<text x="${cx.toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+p.mes.slice(5)-1]}</text>`;
-    return `<rect x="${(cx-bw/2).toFixed(1)}" y="${(H-B-alt).toFixed(1)}" width="${bw.toFixed(1)}" height="${alt.toFixed(1)}"
-        rx="2" fill="var(--chart-gasto)" opacity="${i===sel?'1':'.45'}"/>
-      <rect class="mes-col" data-i="${i}" x="${(L+slot*i).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${H-T-B}" fill="transparent"/>${rot}`;
+    const vis = p.total > 0
+      ? `<path class="mes-bar${i===sel?' on':''}" data-i="${i}" d="${barra(x0, y(p.total))}" fill="url(#mesGrad${suf})"/>`
+      : `<rect x="${x0.toFixed(1)}" y="${base-1.5}" width="${bw.toFixed(1)}" height="1.5" rx=".75" fill="var(--muted)" opacity=".35"/>`;
+    return `${vis}<rect class="mes-col" data-i="${i}" x="${(L+slot*i).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${H-T-B}" fill="transparent"/>${rot}`;
   }).join('');
   return `
     <div class="panel"><h2>Gasto por mês</h2>
       <div class="evo-head"><span class="evo-val" id="mesVal${suf}"></span></div>
       <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="mesSvg${suf}" role="img" aria-label="Gasto bruto por mês">
-        ${grade}${partes}
+        <defs><linearGradient id="mesGrad${suf}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--chart-gasto)" stop-opacity=".95"/>
+          <stop offset="100%" stop-color="var(--chart-gasto)" stop-opacity=".30"/>
+        </linearGradient></defs>
+        ${grade}
+        <line x1="${L}" y1="${base}" x2="${W-R}" y2="${base}" stroke="var(--border)"/>
+        ${partes}
       </svg>
     </div>`;
 }
-function bindMesChart(o, suf = '', rerender = renderObra){
+function bindMesChart(o, suf = ''){
   const svg = $('#mesSvg' + suf);
   if(!svg) return;
   const serie = OBRA_CALC.serieMensal(o.gastos);
@@ -509,7 +522,12 @@ function bindMesChart(o, suf = '', rerender = renderObra){
     const [yy, mm] = p.mes.split('-');
     $('#mesVal' + suf).textContent = `${MESAB[+mm-1]}/${yy.slice(2)} · ${money(p.total)}`;
   };
-  svg.querySelectorAll('.mes-col').forEach(r => r.onclick = () => { mesSel = +r.dataset.i; rerender(); });
+  // seleção troca in-place (classe + texto), sem repintar a tela toda
+  svg.querySelectorAll('.mes-col').forEach(r => r.onclick = () => {
+    mesSel = +r.dataset.i;
+    svg.querySelectorAll('.mes-bar').forEach(b => b.classList.toggle('on', +b.dataset.i === mesSel));
+    mostra(mesSel);
+  });
   mostra(mesSel >= 0 && mesSel < serie.length ? mesSel
     : Math.max(0, serie.map(p=>p.total>0).lastIndexOf(true)));
 }
@@ -785,7 +803,7 @@ function renderGraficos(){
     ${mesChartHtml(o, { sufixo:'G', H:300 })}
     <button class="btn primary no-print" id="grafPrint" style="width:100%;margin-top:2px">${ICON('impressora')} Imprimir / salvar PDF</button>`;
   bindEvoChart(o, 'G', renderGraficos);
-  bindMesChart(o, 'G', renderGraficos);
+  bindMesChart(o, 'G');
   $('#grafPrint').onclick = ()=>window.print();
 }
 

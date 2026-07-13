@@ -174,6 +174,35 @@ t('serieEvolucao: sem gastos = vazio; janela máx 24 meses', () => {
   assert.strictEqual(s[s.length - 1].mes, '2026-07');
 });
 
+t('serieMensal: soma por mês e zera meses vazios', () => {
+  const s = C.serieMensal([
+    { valor: 1000, data: '2026-01-10' },
+    { valor: 500,  data: '2026-01-20' },
+    { valor: 2000, data: '2026-03-05' },
+  ]);
+  assert.deepStrictEqual(s, [
+    { mes: '2026-01', total: 1500 },
+    { mes: '2026-02', total: 0 },
+    { mes: '2026-03', total: 2000 },
+  ]);
+});
+
+t('serieMensal: um gasto só, vazio e virada de ano', () => {
+  assert.deepStrictEqual(C.serieMensal([{ valor: 750, data: '2026-06-05' }]),
+    [{ mes: '2026-06', total: 750 }]);
+  assert.deepStrictEqual(C.serieMensal([]), []);
+  const s = C.serieMensal([{ valor: 100, data: '2025-12-20' }, { valor: 300, data: '2026-02-01' }]);
+  assert.deepStrictEqual(s.map(p => p.mes), ['2025-12', '2026-01', '2026-02']);
+  assert.deepStrictEqual(s.map(p => p.total), [100, 0, 300]);
+});
+
+t('serieMensal: janela máx 24 meses, fica com os últimos', () => {
+  const s = C.serieMensal([{ valor: 100, data: '2020-01-05' }, { valor: 200, data: '2026-07-10' }]);
+  assert.strictEqual(s.length, 24);
+  assert.strictEqual(s[s.length - 1].mes, '2026-07');
+  assert.strictEqual(s[s.length - 1].total, 200);
+});
+
 const mapaTop = { terreno: { nm: 'Terreno' }, pintura: { nm: 'Pintura' } };
 
 t('filtraGastos: texto acha descrição e tópico, sem acento', () => {

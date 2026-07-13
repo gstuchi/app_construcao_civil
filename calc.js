@@ -84,6 +84,26 @@
     }).slice(-24);
   }
 
+  /* Gasto bruto somado por mês-calendário (pro gráfico de barras):
+     meses contínuos do 1º ao último gasto, zeros no meio, sem correção.
+     Máx 24 últimos, mesma janela da serieEvolucao. */
+  function serieMensal(gastos){
+    if(!gastos.length) return [];
+    const por = {};
+    gastos.forEach(g => { const k = g.data.slice(0, 7); por[k] = (por[k] || 0) + g.valor; });
+    const keys = Object.keys(por).sort();
+    const fim = keys[keys.length - 1];
+    const out = [];
+    let [y, m] = keys[0].split('-').map(Number);
+    for(let guard = 0; guard < 600; guard++){
+      const key = y + '-' + String(m).padStart(2, '0');
+      out.push({ mes: key, total: por[key] || 0 });
+      if(key === fim) break;
+      m++; if(m > 12){ m = 1; y++; }
+    }
+    return out.slice(-24);
+  }
+
   /* Série agregada de todas as obras: união dos meses; cada obra contribui
      com o acumulado dela no corte do mês (vendida fica congelada). */
   function serieEvolucaoAgregada(obras, taxaPct, hojeISO){
@@ -198,7 +218,7 @@
     const n = parseFloat(v); return isNaN(n) ? 0 : n;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

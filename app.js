@@ -112,7 +112,7 @@ document.querySelectorAll('button[data-tab]').forEach(b=>{
   b.onclick = ()=>{ obraAberta=null; showView(b.dataset.tab); renderAll(); };
 });
 $('#btnVoltar').onclick = ()=>{ obraAberta=null; showView('inicio'); renderAll(); };
-function openObra(id){ obraAberta=id; evoSel=-1; filtroTexto=''; filtroMes=''; showView('obra'); renderObra(); }
+function openObra(id){ obraAberta=id; evoSel=-1; mesSel=-1; filtroTexto=''; filtroMes=''; showView('obra'); renderObra(); }
 
 /* ---------- render ---------- */
 function renderAll(){
@@ -274,7 +274,8 @@ function renderObra(){
         <div class="legend" id="oDonutLeg"></div>
       </div>
     </div>
-    ${evoChartHtml(o)}`;
+    ${evoChartHtml(o)}
+    ${mesChartHtml(o)}`;
 
   const mesesComGasto = [...new Set(o.gastos.map(g=>g.data.slice(0,7)))].sort().reverse();
   const lanc = `
@@ -293,6 +294,7 @@ function renderObra(){
 
   drawDonutObra(entries, bruto);
   bindEvoChart(o);
+  bindMesChart(o);
   $('#fBusca').addEventListener('input', ()=>{ filtroTexto = $('#fBusca').value; renderGastosFiltrados(obraById(obraAberta)); });
   $('#fMes').onchange = ()=>{ filtroMes = $('#fMes').value; renderGastosFiltrados(obraById(obraAberta)); };
   renderGastosFiltrados(o);
@@ -459,6 +461,57 @@ function bindEvoChart(o, suf = '', rerender = renderObra, serieOpt = null){
   };
   svg.querySelectorAll('.evo-col').forEach(r => r.onclick = () => { evoSel = +r.dataset.i; rerender(); });
   mostra(evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1);
+}
+
+/* Gasto por mês: barras do valor bruto por mês-calendário, sem correção.
+   Complementa o acumulado do evo: mostra ritmo, picos e meses parados. */
+let mesSel = -1; // mês selecionado (índice); -1 = último com gasto
+function mesChartHtml(o, opts = {}){
+  const suf = opts.sufixo || '';
+  const serie = OBRA_CALC.serieMensal(o.gastos);
+  if(!serie.length) return ''; // sem gastos o evo já mostra o vazio; não duplica
+  const W = 360, H = opts.H || 170, L = 44, R = 6, T = 12, B = 22;
+  const max = Math.max(...serie.map(p => p.total)) * 1.08 || 1;
+  const y = v => T + (H-T-B) * (1 - v/max);
+  const slot = (W-L-R) / serie.length;
+  const bw = Math.min(26, slot * 0.62);
+  const grade = [0.25,0.5,0.75,1].map(f => {
+    const gy = y(max*f).toFixed(1);
+    return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--border)" stroke-dasharray="3 4"/>
+            <text x="${L-4}" y="${+gy+3}" text-anchor="end">${moneyShort(max*f)}</text>`;
+  }).join('');
+  const sel = mesSel >= 0 && mesSel < serie.length ? mesSel
+    : Math.max(0, serie.map(p=>p.total>0).lastIndexOf(true));
+  const passo = Math.ceil(serie.length / 8);
+  const partes = serie.map((p,i) => {
+    const cx = L + slot*i + slot/2;
+    const alt = Math.max(0, (H-T-B) * p.total/max);
+    const rot = (i % passo && i !== serie.length-1) ? '' :
+      `<text x="${cx.toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+p.mes.slice(5)-1]}</text>`;
+    return `<rect x="${(cx-bw/2).toFixed(1)}" y="${(H-B-alt).toFixed(1)}" width="${bw.toFixed(1)}" height="${alt.toFixed(1)}"
+        rx="2" fill="var(--chart-gasto)" opacity="${i===sel?'1':'.45'}"/>
+      <rect class="mes-col" data-i="${i}" x="${(L+slot*i).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${H-T-B}" fill="transparent"/>${rot}`;
+  }).join('');
+  return `
+    <div class="panel"><h2>Gasto por mês</h2>
+      <div class="evo-head"><span class="evo-val" id="mesVal${suf}"></span></div>
+      <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="mesSvg${suf}" role="img" aria-label="Gasto bruto por mês">
+        ${grade}${partes}
+      </svg>
+    </div>`;
+}
+function bindMesChart(o, suf = '', rerender = renderObra){
+  const svg = $('#mesSvg' + suf);
+  if(!svg) return;
+  const serie = OBRA_CALC.serieMensal(o.gastos);
+  const mostra = i => {
+    const p = serie[i]; if(!p) return;
+    const [yy, mm] = p.mes.split('-');
+    $('#mesVal' + suf).textContent = `${MESAB[+mm-1]}/${yy.slice(2)} · ${money(p.total)}`;
+  };
+  svg.querySelectorAll('.mes-col').forEach(r => r.onclick = () => { mesSel = +r.dataset.i; rerender(); });
+  mostra(mesSel >= 0 && mesSel < serie.length ? mesSel
+    : Math.max(0, serie.map(p=>p.total>0).lastIndexOf(true)));
 }
 
 /* repinta só a lista de lançamentos + contador (não perde o foco do teclado) */
@@ -729,8 +782,10 @@ function renderGraficos(){
       ${donutLeg}
     </div>
     ${evoChartHtml(o, { sufixo:'G', H:300 })}
+    ${mesChartHtml(o, { sufixo:'G', H:300 })}
     <button class="btn primary no-print" id="grafPrint" style="width:100%;margin-top:2px">${ICON('impressora')} Imprimir / salvar PDF</button>`;
   bindEvoChart(o, 'G', renderGraficos);
+  bindMesChart(o, 'G', renderGraficos);
   $('#grafPrint').onclick = ()=>window.print();
 }
 

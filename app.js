@@ -386,6 +386,12 @@ function drawDonutObra(entries, total){
    Toque num mês mostra os valores no topo (sem tooltip flutuante).
    Cores validadas p/ daltonismo (dataviz): --chart-gasto × --chart-rec. */
 let evoSel = -1; // mês selecionado (índice); -1 = último
+/* margem esquerda que caiba o rótulo mais largo do eixo (~0.58em por caractere) */
+function margemEixo(max, H){
+  const fs = H > 200 ? 11 : 9;
+  const larg = Math.max(...[0.25,0.5,0.75,1].map(f => moneyShort(max*f).length));
+  return Math.ceil(10 + larg * fs * 0.58);
+}
 function smoothPath(pts){
   if(pts.length < 2) return pts.length ? `M${pts[0].x} ${pts[0].y} L${pts[0].x+1} ${pts[0].y}` : '';
   let d = `M${pts[0].x} ${pts[0].y}`;
@@ -402,10 +408,11 @@ function evoChartHtml(o, opts = {}){
   const titulo = opts.titulo || 'Evolução da obra';
   const serie = opts.serie || OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
   if(!serie.length) return `<div class="panel"><h2>${titulo}</h2>${emptyBlock(ICON('calendario'),'Sem gastos ainda.')}</div>`;
-  const W = 360, H = opts.H || 170, L = 44, R = 6, T = 12, B = 22;
+  const W = 360, H = opts.H || 170, R = 6, T = 12, B = 22;
   const so1 = serie.length === 1;               // 1 mês só: linha reta atravessada
   const s = so1 ? [serie[0], serie[0]] : serie;
   const max = Math.max(...s.map(p => p.corrigido)) * 1.08 || 1;
+  const L = margemEixo(max, H);
   const x = i => L + (W-L-R) * i / (s.length-1);
   const y = v => T + (H-T-B) * (1 - v/max);
   const pc = s.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.corrigido).toFixed(1)}));
@@ -470,8 +477,9 @@ function mesChartHtml(o, opts = {}){
   const suf = opts.sufixo || '';
   const serie = OBRA_CALC.serieMensal(o.gastos);
   if(!serie.length) return ''; // sem gastos o evo já mostra o vazio; não duplica
-  const W = 360, H = opts.H || 170, L = 44, R = 6, T = 12, B = 22;
+  const W = 360, H = opts.H || 170, R = 6, T = 12, B = 22;
   const max = Math.max(...serie.map(p => p.total)) * 1.08 || 1;
+  const L = margemEixo(max, H);
   const y = v => T + (H-T-B) * (1 - v/max);
   const slot = (W-L-R) / serie.length;
   const bw = Math.min(26, slot * 0.62);

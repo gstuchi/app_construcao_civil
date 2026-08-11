@@ -82,15 +82,3 @@ Browser (PWA)
 | `notificacoes/` | Backend de notificações push (Node + Firebase) — ver `notificacoes/README.md` |
 | `docs/` | Especificações e notas de design |
 
-## Decisões de projeto
-
-- **Vanilla, sem build** — offline e simplicidade são requisitos de produto; nenhum efeito visual pode exigir rede, framework ou etapa de build.
-- **Dark como padrão** — o tema escuro é a assinatura visual; o modo claro existe nos Ajustes com o mesmo rigor de contraste.
-- **Legibilidade acima de densidade** — texto de corpo ≥16px, números-chave ≥24px, alvos de toque ≥44px; contraste alvo ≥4.5:1.
-- **`prefers-reduced-motion`** — animações do globo e transições são desligadas quando o sistema pede.
-
----
-
-<div align="center">
-<sub>Feito para acompanhar obras reais, no celular, sem depender de conexão.</sub>
-</div>

@@ -63,36 +63,7 @@ Browser (PWA)
 - **`cloud.js`** é o único ponto de contato com o Firebase. As chaves de configuração são públicas por natureza; a segurança é imposta pelas *rules* do Firestore.
 - **`sw.js`** usa estratégia *network-first*: online sempre busca a versão mais recente, e o cache serve apenas como retrato para o modo offline.
 
-## Rodar localmente
 
-Não há dependências nem passo de build para o app. Basta servir a raiz do repositório por HTTP:
-
-```bash
-# com Python
-python -m http.server 8123
-
-# ou com Node
-npx serve -l 8123
-```
-
-Abra `http://localhost:8123/`. Para testar num iPhone na mesma rede Wi-Fi, use `http://IP-DA-MÁQUINA:8123/`.
-
-## Testes
-
-As regras de negócio puras (`calc.js` e utilitários) têm testes em Node, sem dependências externas:
-
-```bash
-node tests/calc.test.cjs
-node tests/moeda.test.cjs
-node tests/icons.test.cjs
-node tests/resumo.test.cjs
-```
-
-## Deploy
-
-Publicação contínua na **Vercel**: um push para a branch `main` dispara o deploy do site estático — não há passo de build.
-
-> **Importante:** ao alterar arquivos do app, incremente a versão do cache em `sw.js` (`const CACHE = 'obras-vNN'`) para que o service worker force a atualização nos aparelhos já instalados.
 
 ## Estrutura do projeto
 

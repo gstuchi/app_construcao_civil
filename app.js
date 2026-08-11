@@ -753,6 +753,7 @@ function formGasto(obraId, gasto){
       }
     }
     save(); closeSheet(); renderAll();
+    toast(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
   };
 }
 
@@ -1128,6 +1129,19 @@ function renderAjustes(){
 const backdrop = $('#backdrop'), sheet = $('#sheet');
 function openSheet(html){ sheet.innerHTML = html; backdrop.classList.add('show'); }
 function closeSheet(){ backdrop.classList.remove('show'); }
+
+/* toast de feedback rápido pós-ação (ex: gasto lançado) */
+const toastWrap = $('#toastWrap');
+function toast(msg){
+  const t = el('div','toast');
+  t.innerHTML = `${ICON('check')}<span></span>`;
+  t.querySelector('span').textContent = msg;
+  toastWrap.appendChild(t);
+  setTimeout(()=>{
+    t.classList.add('out');
+    t.addEventListener('animationend', ()=>t.remove(), {once:true});
+  }, 2200);
+}
 backdrop.onclick = e=>{ if(e.target===backdrop) closeSheet(); };
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classList.contains('show')) closeSheet(); });
 

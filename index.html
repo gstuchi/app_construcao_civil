@@ -230,7 +230,9 @@ try{
   /* modal */
   .backdrop{position:fixed;inset:0;background:rgba(8,15,20,.5);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
   .backdrop.show{display:flex}
-  .sheet{background:var(--surface-solid);width:100%;max-width:760px;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
+  /* sheet precisa de teto de altura + scroll próprio: com muitos tópicos/parcelas o conteúdo
+     passa da viewport e, sem isso, o topo (título, campo Valor) fica inacessível no iPhone. */
+  .sheet{background:var(--surface-solid);width:100%;max-width:760px;max-height:min(88vh,88dvh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes up{from{transform:translateY(100%)}to{transform:none}}
   .sheet h3{font-size:17px;font-weight:700;margin-bottom:16px}
   .seg{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:12px;margin-bottom:14px}
@@ -251,6 +253,16 @@ try{
   .btn:active{transform:scale(.98)}
   .btn:disabled{opacity:.6;cursor:default;transform:none}
   .hidden{display:none!important}
+
+  /* toast de feedback (ex: "Gasto lançado") — empilha acima da tab bar/FAB */
+  /* 150px = acima do FAB (58px + 84px de base), pra não tampar o botão de novo lançamento */
+  .toast-wrap{position:fixed;left:0;right:0;bottom:calc(150px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:80;pointer-events:none;padding:0 16px}
+  .toast{display:flex;align-items:center;gap:9px;background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:var(--shadow);max-width:420px;
+    opacity:0;transform:translateY(10px) scale(.96);animation:toastIn .22s ease-out forwards}
+  .toast svg{width:18px;height:18px;flex:none;color:var(--green)}
+  .toast.out{animation:toastOut .18s ease-in forwards}
+  @keyframes toastIn{to{opacity:1;transform:none}}
+  @keyframes toastOut{to{opacity:0;transform:translateY(6px) scale(.97)}}
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px}
   .chip{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13.5px;cursor:pointer;font-weight:500}
   .chip.on{background:var(--brand-soft);color:var(--chip-on-ink);border-color:var(--line-strong);font-weight:600}
@@ -720,6 +732,9 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
 <div class="backdrop" id="backdrop">
   <div class="sheet" id="sheet"></div>
 </div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
 
 <script src="globe.js"></script>
 <script defer src="splash.js"></script>

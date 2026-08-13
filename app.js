@@ -657,7 +657,7 @@ function formEditarObra(o){
 }
 
 /* ===== GASTO (novo/editar) ===== */
-function formGasto(obraId, gasto){
+function formGasto(obraId, gasto, valorInicial){
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   if(!abertas.length && !gasto){ formNovaObra(); return; }
   const isEdit = !!gasto;
@@ -679,10 +679,19 @@ function formGasto(obraId, gasto){
          <select id="fParc">${Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x${i?'':' (à vista)'}</option>`).join('')}</select>
        </div>`;
 
+  /* no novo gasto o valor já veio da tela de teclado: vira botão pra reabrir ela,
+     e o #fVal fica escondido só pra manter o resto do form igual. Na edição segue
+     campo normal, que é um fluxo raro e não sofre com o teclado do iOS. */
+  const valHtml = isEdit
+    ? `<div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00"
+        value="${OBRA_CALC.numParaCampo(gasto.valor)}" autocomplete="off"></div></div>`
+    : `<button type="button" class="valor-btn" id="cValor">Valor
+        <span class="valor-btn-num">R$ <b>0,00</b></span></button>
+       <input type="hidden" id="fVal" value="${OBRA_CALC.numParaCampo(valorInicial||'')}">`;
+
   openSheet(`
     <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
-    <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00"
-      value="${isEdit?OBRA_CALC.numParaCampo(gasto.valor):''}" autocomplete="off"></div></div>
+    ${valHtml}
     ${selObra}
     <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
     ${pagtoHtml}
@@ -694,7 +703,19 @@ function formGasto(obraId, gasto){
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
 
-  maskMoney('#fVal');
+  const pedirValor = ()=>{
+    TECLADO.abrir({
+      valorInicial: parseNum($('#fVal').value),
+      onConfirm: v => { $('#fVal').value = OBRA_CALC.numParaCampo(v); pintarValor(); }
+    });
+  };
+  const pintarValor = ()=>{
+    $('#cValor').querySelector('b').textContent =
+      TECLADO.fmtCentavos(TECLADO.reaisParaCentavos(parseNum($('#fVal').value)));
+  };
+  if(isEdit) maskMoney('#fVal');
+  else { pintarValor(); $('#cValor').onclick = pedirValor; }
+
   let top = isEdit ? gasto.topico : topicos()[0].id;
   const chips = $('#fChips');
   const paint = ()=>{
@@ -725,11 +746,11 @@ function formGasto(obraId, gasto){
     paintPagto();
   }
 
-  $('#fVal').focus();
+  if(isEdit) $('#fVal').focus();
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
-    if(valor<=0){ $('#fVal').focus(); return; }
+    if(valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
     if(isEdit){
@@ -1127,8 +1148,41 @@ function renderAjustes(){
 
 /* ---------- modal / formulários ---------- */
 const backdrop = $('#backdrop'), sheet = $('#sheet');
-function openSheet(html){ sheet.innerHTML = html; backdrop.classList.add('show'); }
-function closeSheet(){ backdrop.classList.remove('show'); }
+
+/* iPhone: abrir o teclado NÃO encolhe a viewport de elementos fixed, então o sheet
+   continua com a altura da tela cheia e metade dele fica atrás do teclado.
+   visualViewport dá a área realmente visível; o CSS usa --vvh/--vvtop. */
+const vv = window.visualViewport;
+function syncViewport(){
+  if(!vv) return;
+  const r = document.documentElement.style;
+  r.setProperty('--vvh', vv.height + 'px');
+  r.setProperty('--vvtop', vv.offsetTop + 'px');
+}
+if(vv){
+  vv.addEventListener('resize', syncViewport);
+  vv.addEventListener('scroll', syncViewport);
+  syncViewport();
+}
+
+function openSheet(html){
+  sheet.innerHTML = html;
+  backdrop.classList.add('show');
+  document.body.classList.add('sheet-open');
+  sheet.scrollTop = 0;
+  syncViewport();
+}
+function closeSheet(){
+  backdrop.classList.remove('show');
+  document.body.classList.remove('sheet-open');
+}
+
+/* campo focado precisa aparecer acima do teclado: o resize do visualViewport chega
+   depois da animação do teclado, por isso o atraso antes de centralizar. */
+sheet.addEventListener('focusin', e=>{
+  const alvo = e.target.closest('.field') || e.target;
+  setTimeout(()=>alvo.scrollIntoView({block:'center', behavior:'smooth'}), 350);
+});
 
 /* toast de feedback rápido pós-ação (ex: gasto lançado) */
 const toastWrap = $('#toastWrap');
@@ -1181,7 +1235,9 @@ $('#fab').onclick = ()=>{
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   if(!abertas.length){ formNovaObra(); return; }
   const atual = obraAberta && obraById(obraAberta);
-  formGasto(atual && atual.fase!=='vendida' ? obraAberta : null, null);
+  const oid = atual && atual.fase!=='vendida' ? obraAberta : null;
+  // valor primeiro: teclado do app, depois o resto do form
+  TECLADO.abrir({ valorInicial: 0, onConfirm: v => formGasto(oid, null, v) });
 };
 
 /* ---------- instalar PWA ---------- */

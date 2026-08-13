@@ -228,11 +228,14 @@ try{
   .fab:active{transform:scale(.94)}
 
   /* modal */
-  .backdrop{position:fixed;inset:0;background:rgba(8,15,20,.5);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
+  /* --vvh/--vvtop vêm do visualViewport (app.js): no iPhone o teclado NÃO encolhe a
+     viewport de elementos fixed, então sem isso o sheet inteiro fica atrás do teclado. */
+  .backdrop{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));background:rgba(8,15,20,.5);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
   .backdrop.show{display:flex}
+  body.sheet-open{overflow:hidden}
   /* sheet precisa de teto de altura + scroll próprio: com muitos tópicos/parcelas o conteúdo
      passa da viewport e, sem isso, o topo (título, campo Valor) fica inacessível no iPhone. */
-  .sheet{background:var(--surface-solid);width:100%;max-width:760px;max-height:min(88vh,88dvh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
+  .sheet{background:var(--surface-solid);width:100%;max-width:760px;max-height:min(88dvh,100%);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes up{from{transform:translateY(100%)}to{transform:none}}
   .sheet h3{font-size:17px;font-weight:700;margin-bottom:16px}
   .seg{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:12px;margin-bottom:14px}
@@ -253,6 +256,33 @@ try{
   .btn:active{transform:scale(.98)}
   .btn:disabled{opacity:.6;cursor:default;transform:none}
   .hidden{display:none!important}
+
+  /* tela de valor com teclado próprio (teclado.js) — o display é uma div, não um
+     input, então o teclado do iOS nunca abre aqui. Mesma ancoragem do backdrop. */
+  .valor-tela{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));z-index:70;background:var(--surface-solid);display:flex;flex-direction:column;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));animation:up .24s cubic-bezier(.2,.8,.2,1)}
+  .valor-top{display:flex;align-items:center;gap:10px}
+  .valor-x{width:38px;height:38px;border-radius:50%;border:0;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;cursor:pointer;flex:none}
+  .valor-x svg{width:20px;height:20px}
+  .valor-titulo{font-size:15px;font-weight:600;color:var(--muted)}
+  .valor-display{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:8px}
+  .valor-display b{font-size:20px;font-weight:600;color:var(--muted)}
+  .valor-num{font-size:clamp(34px,11vw,54px);font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .valor-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .valor-key{border:0;background:var(--surface-2);color:var(--text);border-radius:14px;padding:15px 0;font-size:24px;font-weight:600;font-family:inherit;cursor:pointer;display:grid;place-items:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .valor-key:active{background:var(--surface);transform:scale(.96)}
+  .valor-key-del svg{width:26px;height:26px}
+  /* .btn tem flex:1 (pras linhas de ação do sheet); aqui o container é coluna,
+     e sem isso o botão estica na vertical e come a tela toda */
+  .valor-ok{flex:none;margin-top:4px}
+  /* no desktop a tela é larguíssima: segura o teclado numa coluna centrada */
+  .valor-tela>*{width:100%;max-width:420px;margin-inline:auto}
+  body.teclado-open{overflow:hidden}
+
+  /* no sheet do novo gasto o valor não é campo: é botão que reabre a tela de valor */
+  .valor-btn{width:100%;margin-bottom:13px;border:1px solid var(--border);background:var(--surface-2);border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;cursor:pointer}
+  .valor-btn-num{display:flex;align-items:baseline;gap:5px;font-size:15px}
+  .valor-btn b{font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+  .valor-btn:active{transform:scale(.99)}
 
   /* toast de feedback (ex: "Gasto lançado") — empilha acima da tab bar/FAB */
   /* 150px = acima do FAB (58px + 84px de base), pra não tampar o botão de novo lançamento */
@@ -742,6 +772,7 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
 <script defer src="icons.js"></script>
 <script defer src="auth.js"></script>
 <script defer src="calc.js"></script>
+<script defer src="teclado.js"></script>
 <script defer src="app.js"></script>
 <script>
   if('serviceWorker' in navigator){

@@ -1,6 +1,6 @@
 <div align="center">
 
-# ObraControl
+# custta.
 
 **Controle de custos e lucro por obra, na ponta do lápis.**
 

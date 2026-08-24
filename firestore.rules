@@ -1,6 +1,6 @@
 rules_version = '2';
 
-/* Fronteira de segurança do ObraControl.
+/* Fronteira de segurança do Custta.
    A apiKey em cloud.js é pública por design — é AQUI que a segurança acontece.
    Editar sempre neste arquivo, nunca no console: `firebase deploy --only firestore:rules`.
    Testes: `firebase emulators:exec --only firestore "node --test tests/rules.test.mjs"` */

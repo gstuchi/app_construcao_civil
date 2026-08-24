@@ -1,8 +1,8 @@
 {
-  "name": "obracontrol",
+  "name": "custta",
   "version": "0.0.0",
   "private": true,
-  "description": "Ferramentas de teste e deploy do ObraControl. O APP em si continua sem build: HTML, CSS e JS servidos como arquivos estáticos. Nada aqui é empacotado no que roda no navegador.",
+  "description": "Ferramentas de teste e deploy do Custta. O APP em si continua sem build: HTML, CSS e JS servidos como arquivos estáticos. Nada aqui é empacotado no que roda no navegador.",
   "scripts": {
     "test": "npm run test:unit && npm run test:rules",
     "test:unit": "node --test tests/calc.test.cjs tests/moeda.test.cjs tests/icons.test.cjs tests/teclado.test.cjs tests/resumo.test.cjs",

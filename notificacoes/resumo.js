@@ -31,7 +31,7 @@ function montaResumo(dados, hojeISO){
   if(emObra && !lancouHoje) linhas.push('Lançou os gastos de hoje?');
 
   if(!linhas.length) return null;
-  return { titulo: 'Minhas Obras', corpo: linhas.join('\n') };
+  return { titulo: 'Custta', corpo: linhas.join('\n') };
 }
 
 module.exports = { montaResumo };

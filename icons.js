@@ -5,6 +5,8 @@
 (function(root){
   const ICONES = {
     guindaste:  '<path d="M3 21h18M6 21V4m0 0H3m3 0h13m-3 0v6"/><circle cx="16" cy="12" r="2"/>',
+    /* A marca: duas colunas e uma viga — o mesmo desenho dos dois "t" do logotipo. */
+    portico:    '<path d="M4.5 9h15"/><path d="M8.5 4v16"/><path d="M15.5 4v16"/>',
     predio:     '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M10 6h1M13 6h1M10 10h1M13 10h1M10 14h1M13 14h1"/>',
     casa:       '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>',
     check:      '<path d="m4 12 5 5L20 7"/>',

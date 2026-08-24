@@ -29,7 +29,7 @@ let env;
 
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'obracontrol-rules-test',
+    projectId: 'custta-rules-test',
     firestore: {
       rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'),
       host: '127.0.0.1',

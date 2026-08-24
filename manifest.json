@@ -1,6 +1,6 @@
 {
-  "name": "ObraControl",
-  "short_name": "ObraControl",
+  "name": "Custta",
+  "short_name": "Custta",
   "description": "Controle de custos e lucro por obra, na ponta do lápis.",
   "start_url": "./index.html",
   "scope": "./",

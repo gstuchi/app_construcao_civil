@@ -22,7 +22,7 @@ t('afazeres pendentes somam entre obras e plural correto', () => {
   ]};
   const r = montaResumo(dados, '2026-07-10');
   assert.ok(r.corpo.includes('2 afazeres pendentes'), r.corpo);
-  assert.strictEqual(r.titulo, 'Minhas Obras');
+  assert.strictEqual(r.titulo, 'Custta');
 });
 
 t('1 afazer pendente no singular', () => {

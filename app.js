@@ -1,4 +1,4 @@
-/* ObraControl — controle de custos por obra. PWA offline-first, vanilla JS.
+/* Custta — controle de custos por obra. PWA offline-first, vanilla JS.
    Dados no Firestore por usuário (cloud.js); localStorage guarda só tema e skin. */
 'use strict';
 

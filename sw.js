@@ -1,7 +1,7 @@
 /* Service worker — network-first. Online sempre pega a versão nova; o cache
    é só o retrato pra funcionar offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v25';
-const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './teclado.js', './manifest.json', './icon.svg'];
+const CACHE = 'obras-v27';
+const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './teclado.js', './manifest.json', './icon.svg', './fontes/hanken-grotesk-800.woff2'];
 
 self.addEventListener('install', e => {
   // {cache:'reload'} garante que o precache pega os arquivos frescos, não o cache HTTP do browser
@@ -36,7 +36,7 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   let d = {};
   try{ d = e.data.json(); }catch(err){}
-  e.waitUntil(self.registration.showNotification(d.titulo || 'Minhas Obras', {
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Custta', {
     body: d.corpo || '',
     icon: './icon-192.png',
     badge: './icon-192.png',

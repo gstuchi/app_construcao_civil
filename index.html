@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#04100C">
-<title>ObraControl</title>
+<title>Custta</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- iOS instalado (Adicionar à Tela de Início): tela cheia + splash escura -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ObraControl">
+<meta name="apple-mobile-web-app-title" content="Custta">
 <link rel="apple-touch-startup-image" href="splash/splash-1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3)">
 <link rel="apple-touch-startup-image" href="splash/splash-1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3)">
 <link rel="apple-touch-startup-image" href="splash/splash-1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)">
@@ -120,6 +120,25 @@ try{
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%;touch-action:manipulation} /* mata zoom por duplo-toque (cara de app) */
+  /* Logotipo — Hanken Grotesk 800, servida do próprio repo (offline é sagrado:
+     nada de CDN de fonte). Subset latino, 14KB, precarregada no sw.js.
+     SIL OFL 1.1 — licença em fontes/OFL.txt. */
+  @font-face{
+    font-family:'Hanken Grotesk';
+    font-style:normal;
+    font-weight:800;
+    font-display:swap;
+    src:url('fontes/hanken-grotesk-800.woff2') format('woff2');
+  }
+  /* A marca é a palavra em caixa baixa com o duplo T em esmeralda — os dois "t"
+     formam o pórtico. text-transform:none é trava: em caixa alta o efeito morre. */
+  .logotipo{
+    font-family:'Hanken Grotesk',system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-weight:800;letter-spacing:-.03em;line-height:1;
+    text-transform:none!important;color:var(--text);
+  }
+  .logotipo .tt,.logotipo .pt{color:var(--brand)}
+
   body{
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     background:
@@ -402,7 +421,8 @@ try{
   .auth-stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:11vh 18px 0;perspective:1000px}
   .auth-title{text-align:center;margin-bottom:32px;will-change:transform}
   .auth-title h1{font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--text)}
-  .auth-title h1 span{display:block;font-size:42px;font-weight:800;color:var(--brand);line-height:1.12;margin-top:4px}
+  /* filho direto só: os spans internos do logotipo (tt e ponto) não podem virar bloco */
+  .auth-title h1 > .logotipo{display:block;font-size:46px;line-height:1.12;margin-top:6px}
   .auth-hint{margin-top:14px;font-size:13px;color:var(--muted)}
   .auth-card{width:100%;max-width:440px;border:4px solid #6C6C6C;background:#222;border-radius:30px;padding:9px;transform-origin:center top;will-change:transform;
     box-shadow:0 0 #0000004d,0 9px 20px #0000004a,0 37px 37px #00000042,0 84px 50px #00000026,0 149px 60px #0000000a}
@@ -572,9 +592,9 @@ try{
   </div>
   <div class="sp-crane"><i class="sp-torre"></i><i class="sp-lanca"></i><i class="sp-cabo"></i><i class="sp-gancho"></i></div>
   <div class="sp-logo">
-    <div class="sp-ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M6 21V4m0 0H3m3 0h13m-3 0v6"/><circle cx="16" cy="12" r="2"/></svg></div>
-    <div class="sp-nome">Obra<span>Control</span></div>
-    <div class="sp-tag">Controle de custos de obras</div>
+    <div class="sp-ic"><svg viewBox="0 0 24 24"><path d="M4.5 9h15"/><path d="M8.5 4v16"/><path d="M15.5 4v16"/></svg></div>
+    <div class="sp-nome logotipo">cus<span>tt</span>a<span>.</span></div>
+    <div class="sp-tag">Custo de obra na ponta do lápis</div>
   </div>
   <div class="sp-load">
     <div class="sp-track"><i id="spBar"></i></div>
@@ -590,7 +610,7 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
   <div class="auth-scroll" id="authScroll">
     <div class="auth-stage">
       <div class="auth-title" id="authTitle">
-        <h1>Controle os custos das suas obras com<br><span>ObraControl</span></h1>
+        <h1>Controle os custos das suas obras com<br><span class="logotipo">cus<span class="tt">tt</span>a<span class="pt">.</span></span></h1>
         <p class="auth-hint" id="authHint">Role para entrar <span data-ico="setaBaixo"></span></p>
       </div>
       <div class="auth-card" id="authCard">
@@ -630,7 +650,7 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
 </div>
 
 <aside class="side">
-  <div class="s-logo"><span class="logo" data-ico="guindaste"></span> ObraControl</div>
+  <div class="s-logo"><span class="logo" data-ico="portico"></span> <span class="logotipo">cus<span class="tt">tt</span>a<span class="pt">.</span></span></div>
   <button data-tab="inicio" class="on"><span class="ti" data-ico="predio"></span>Obras</button>
   <button data-tab="simula"><span class="ti" data-ico="balanca"></span>Vale a pena?</button>
   <button data-tab="ajustes"><span class="ti" data-ico="engrenagem"></span>Ajustes</button>
@@ -639,7 +659,7 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
 
 <div class="app">
   <header class="top">
-    <h1><span class="logo" data-ico="guindaste"></span> ObraControl</h1>
+    <h1><span class="logo" data-ico="portico"></span> <span class="logotipo">cus<span class="tt">tt</span>a<span class="pt">.</span></span></h1>
     <div style="display:flex;align-items:center">
       <button id="btnSair" class="sair hidden" title="Sair da conta" aria-label="Sair da conta" data-ico="sair"></button>
     </div>

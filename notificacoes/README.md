@@ -38,7 +38,7 @@ Publicar.
 1. Fazer deploy (push pro main) e abrir o app no celular (PWA instalado).
 2. Ajustes → Notificações → ligar o toggle → aceitar a permissão.
 3. GitHub → aba Actions → workflow "push-diario" → Run workflow.
-4. Notificação "Minhas Obras" chega no celular, mesmo com o app fechado.
+4. Notificação "Custta" chega no celular, mesmo com o app fechado.
    (Se não houver afazer pendente, parcela nem lembrete, o log do workflow
    mostra "nada a dizer" — criar um afazer antes de testar.)
 

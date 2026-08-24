@@ -1,4 +1,5 @@
-/* ObraControl — controle de custos por obra. PWA offline, localStorage, vanilla JS. */
+/* ObraControl — controle de custos por obra. PWA offline-first, vanilla JS.
+   Dados no Firestore por usuário (cloud.js); localStorage guarda só tema e skin. */
 'use strict';
 
 /* ---------- estado ---------- */
@@ -554,7 +555,11 @@ function renderGastosFiltrados(o){
     .forEach(g=>list.appendChild(gastoRow(o,g)));
 }
 
-function gastoRow(o, g){
+/* opts.voltar: pra quem abre a linha de dentro de outra folha (a do tópico) e
+   quer voltar pra ela depois de editar/excluir, em vez de fechar tudo. */
+function gastoRow(o, g, opts){
+  const voltar = (opts && opts.voltar) || null;
+  const fechar = voltar || closeSheet;
   const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'etiqueta'};
   const li = el('li');
   const suf = g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '';
@@ -568,12 +573,16 @@ function gastoRow(o, g){
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';
-  li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g);
+  li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
   const del = el('button','li-del','×');
   del.onclick = ()=>{
     const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
-      if(confirm('Excluir este gasto?')){ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); }
+      // exclusão simples usa confirm, não abre folha: nada a fechar, só voltar
+      if(confirm('Excluir este gasto?')){
+        oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll();
+        if(voltar) voltar();
+      }
       return;
     }
     const irmas = oo.gastos.filter(x=>x.grupoId===g.grupoId);
@@ -585,9 +594,9 @@ function gastoRow(o, g){
         <button class="btn ghost" id="dTodas" style="width:100%;color:var(--red)">Excluir a compra toda (${irmas.length} parcela${irmas.length>1?'s':''})</button>
         <button class="btn ghost" id="dCancel" style="width:100%">Cancelar</button>
       </div>`);
-    $('#dCancel').onclick = closeSheet;
-    $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); closeSheet(); renderAll(); };
-    $('#dTodas').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(); closeSheet(); renderAll(); };
+    $('#dCancel').onclick = fechar;
+    $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); fechar(); };
+    $('#dTodas').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(); renderAll(); fechar(); };
   };
   li.appendChild(del);
   return li;
@@ -657,7 +666,10 @@ function formEditarObra(o){
 }
 
 /* ===== GASTO (novo/editar) ===== */
-function formGasto(obraId, gasto, valorInicial){
+/* aoFechar: quem abriu o form de dentro de outra folha passa como voltar pra
+   ela no Salvar/Cancelar. Sem isso, fecha a folha — comportamento de sempre. */
+function formGasto(obraId, gasto, valorInicial, aoFechar){
+  const fechar = aoFechar || closeSheet;
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   if(!abertas.length && !gasto){ formNovaObra(); return; }
   const isEdit = !!gasto;
@@ -747,7 +759,7 @@ function formGasto(obraId, gasto, valorInicial){
   }
 
   if(isEdit) $('#fVal').focus();
-  $('#cCancel').onclick = closeSheet;
+  $('#cCancel').onclick = fechar;
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
@@ -773,7 +785,7 @@ function formGasto(obraId, gasto, valorInicial){
         o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto });
       }
     }
-    save(); closeSheet(); renderAll();
+    save(); renderAll(); fechar();
     toast(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
   };
 }
@@ -794,13 +806,14 @@ function donutComLegendaHtml(entries, total, size){
     const len = val/total*C;
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
-      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
+      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"
+      data-top="${escapeHtml(id)}"></circle>`;
     off += len;
   });
   const legenda = entries.map(([id,val],i)=>{
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-    return `<li><span class="dot" style="background:${color}"></span>
+    return `<li data-top="${escapeHtml(id)}"><span class="dot" style="background:${color}"></span>
       <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
       <div class="li-val">${Math.round(val/total*100)}% · ${moneyShort(val)}</div></li>`;
   }).join('');
@@ -815,6 +828,17 @@ const byTopico = gastos => {
   gastos.forEach(g=>{ by[g.topico]=(by[g.topico]||0)+g.valor; });
   return Object.entries(by).sort((a,b)=>b[1]-a[1]);
 };
+
+/* liga o clique da legenda e das fatias do donut. Separado do helper de HTML
+   porque ele devolve string: o bind só existe depois de inserir no DOM —
+   mesmo par de bindEvoChart/bindMesChart. Quem não chamar isso fica sem
+   interação, que é o comportamento antigo. */
+function bindDonutLegenda(container, onPick){
+  if(!container) return;
+  container.querySelectorAll('[data-top]').forEach(el=>{
+    el.onclick = ()=>onPick(el.dataset.top);
+  });
+}
 
 /* ===== GRÁFICOS DA OBRA (tela cheia, legível, imprime em PDF) ===== */
 function renderGraficos(){
@@ -834,7 +858,48 @@ function renderGraficos(){
     <button class="btn primary no-print" id="grafPrint" style="width:100%;margin-top:2px">${ICON('impressora')} Imprimir / salvar PDF</button>`;
   bindEvoChart(o, 'G', renderGraficos);
   bindMesChart(o, 'G');
+  bindDonutLegenda($('#grafBody'), id=>sheetTopico(o.id, id));
   $('#grafPrint').onclick = ()=>window.print();
+}
+
+/* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
+   Só leitura sobre db; editar/excluir sai daqui pelo próprio gastoRow. */
+function sheetTopico(obraId, topicoId){
+  const o = obraById(obraId);
+  if(!o) return;
+  const gs = o.gastos.filter(g=>g.topico===topicoId);
+  if(!gs.length){ closeSheet(); return; } // último gasto do tópico foi excluído
+
+  const t = TOP_MAP()[topicoId] || {nm:topicoId, ic:'etiqueta'};
+  const hoje = todayISO();
+  const fim = (o.venda && o.venda.data) || hoje;
+  const tx = taxa();
+  const bruto = gs.reduce((s,g)=>s+g.valor, 0);
+  const corr  = gs.reduce((s,g)=>s+OBRA_CALC.corrigido(g.valor, g.data, fim, tx), 0);
+  const totalObra = OBRA_CALC.totalBruto(o);
+  // mesmo arredondamento da legenda do donut, senão o número muda ao abrir
+  const pct = totalObra > 0 ? Math.round(bruto/totalObra*100) : 0;
+
+  openSheet(`
+    <div class="top-head">${ICON(t.ic)}<h3>${escapeHtml(t.nm)}</h3></div>
+    <div class="top-resumo">
+      <div class="sub">${gs.length} gasto${gs.length>1?'s':''} · ${pct}% da obra</div>
+      <b>${money(bruto)}</b>
+      <div class="corr">corrigido: ${money(corr)}</div>
+    </div>
+    <ul class="list" id="topGastos"></ul>
+    <div class="sheet-actions"><button class="btn ghost" id="topFechar">Fechar</button></div>`);
+
+  /* renderAll não repinta Gráficos, então editar/excluir daqui deixaria o donut
+     atrás com o número velho. Repinta antes de remontar a folha. */
+  const voltar = ()=>{
+    if(tab==='graficos') renderGraficos();
+    sheetTopico(obraId, topicoId);
+  };
+  const list = $('#topGastos');
+  [...gs].sort((a,b)=>(b.data+b.id).localeCompare(a.data+a.id))
+    .forEach(g=>list.appendChild(gastoRow(o, g, { voltar })));
+  $('#topFechar').onclick = closeSheet;
 }
 
 function renderRelatorio(){
@@ -1050,6 +1115,8 @@ async function desativaPush(){
   await sub.unsubscribe();
   await CLOUD.removePushSub(chave);
 }
+/* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
+window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
 
 /* ===== AJUSTES ===== */
 function renderAjustes(){
@@ -1256,21 +1323,10 @@ function bootCloud(){
     if(unwatch){ unwatch(); unwatch=null; }
     if(!user){ db = empty(); obraAberta = null; showView('inicio'); renderAll(); return; }
 
-    // dados antigos deste aparelho (era localStorage por CPF)
-    const flagKey = 'obras_migrado_v1::' + user.uid;
-    if(!localStorage.getItem(flagKey)){
-      const legada = Object.keys(localStorage).filter(k=>k.startsWith('obras_data_v1'))
-        .map(k=>{ try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } })
-        .find(d=>d && d.obras && d.obras.length);
-      if(legada){
-        CLOUD.importarSeVazio(normaliza(legada)).then(ok=>{
-          localStorage.setItem(flagKey,'1');
-          if(ok) alert('Encontramos obras salvas neste aparelho e importamos pra sua conta na nuvem.');
-        });
-      } else {
-        localStorage.setItem(flagKey,'1');
-      }
-    }
+    /* Aqui existia uma migração dos dados antigos de localStorage pra nuvem.
+       Removida: ela varria as chaves obras_data_v1* de QUALQUER pessoa que já
+       tivesse usado este navegador e copiava pra conta logada no momento —
+       num aparelho compartilhado, isso levava as obras de um pro outro. */
 
     unwatch = CLOUD.watchDados((blob, meta)=>{
       if(meta.pendingWrites || meta.localDirty) return; // eco da própria escrita

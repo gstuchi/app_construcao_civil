@@ -8,7 +8,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  doc, setDoc, getDoc, onSnapshot, serverTimestamp, deleteField,
+  doc, setDoc, onSnapshot, serverTimestamp, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -51,10 +51,13 @@ window.CLOUD = {
   user: () => currentUser,
   onAuth(cb){ authCbs.push(cb); ready.then(()=>cb(currentUser)); },
 
-  async signup(email, senha, cpf){
+  /* perfis/{uid} guarda só o mínimo. Nada de CPF: o app nunca leu de volta,
+     e dado pessoal que não se usa é só responsabilidade sob a LGPD.
+     As rules rejeitam qualquer chave fora de email/criado/tz. */
+  async signup(email, senha){
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
     await setDoc(doc(db, 'perfis', cred.user.uid),
-      { email, cpf, criado: new Date().toISOString() });
+      { email, criado: new Date().toISOString() });
   },
   login: (email, senha) => signInWithEmailAndPassword(auth, email, senha).then(()=>{}),
   logout: () => { pendingBlob = null; dirty = false; return signOut(auth); },
@@ -77,16 +80,6 @@ window.CLOUD = {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flushSave, 300);
   },
-  async importarSeVazio(blob){
-    if(!currentUser) return false;
-    const snap = await getDoc(doc(db, 'dados', currentUser.uid));
-    const d = snap.data();
-    if(d && d.obras && d.obras.length) return false;
-    await setDoc(doc(db, 'dados', currentUser.uid),
-      { ...blob, _atualizado: serverTimestamp() });
-    return true;
-  },
-
   /* Inscrição de push por aparelho. Doc separado de dados/{uid} de propósito:
      saveDados reescreve o blob inteiro e apagaria a inscrição do outro aparelho. */
   savePushSub(chave, sub){

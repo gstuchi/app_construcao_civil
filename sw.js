@@ -1,7 +1,7 @@
 /* Service worker — network-first. Online sempre pega a versão nova; o cache
    é só o retrato pra funcionar offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v23';
-const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './manifest.json', './icon.svg'];
+const CACHE = 'obras-v25';
+const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './teclado.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   // {cache:'reload'} garante que o precache pega os arquivos frescos, não o cache HTTP do browser

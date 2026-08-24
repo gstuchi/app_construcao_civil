@@ -1,29 +1,8 @@
 /* Tela de entrada — Firebase (e-mail + senha via window.CLOUD).
-   CPF vira dado de perfil (validado no cadastro).
    Efeito visual: card 3D que desentorta ao rolar (recriação vanilla do ContainerScroll). */
 'use strict';
 (function(){
   const $ = s => document.querySelector(s);
-
-  /* ---------- CPF (máscara + validação) ---------- */
-  const onlyDigits = s => (s||'').replace(/\D/g,'');
-  function maskCPF(v){
-    v = onlyDigits(v).slice(0,11);
-    if(v.length>9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
-    if(v.length>6) return v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
-    if(v.length>3) return v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
-    return v;
-  }
-  function validCPF(cpf){
-    cpf = onlyDigits(cpf);
-    if(cpf.length!==11 || /^(\d)\1{10}$/.test(cpf)) return false;
-    for(const n of [9,10]){
-      let s=0;
-      for(let i=0;i<n;i++) s += +cpf[i]*(n+1-i);
-      if(((s*10)%11)%10 !== +cpf[n]) return false;
-    }
-    return true;
-  }
 
   /* ---------- trava/destrava ---------- */
   const auth=$('#auth'), sair=$('#btnSair');
@@ -35,7 +14,15 @@
   }
   locked(true); // começa travado até o CLOUD dizer quem é
 
-  const doSair=()=>{ if(confirm('Sair da conta?')) CLOUD.logout(); };
+  /* Cancela o push ANTES do signOut: removePushSub precisa do usuário ainda logado.
+     Sem isso a inscrição fica órfã no aparelho e quem entrar depois recebe
+     notificação montada com os dados de quem saiu. */
+  const doSair=async()=>{
+    if(!confirm('Sair da conta?')) return;
+    try{ if(window.OBRA_PUSH) await window.OBRA_PUSH.desativa(); }
+    catch(err){ console.warn('não deu pra cancelar o push no logout:', err); }
+    CLOUD.logout();
+  };
   sair.onclick=doSair;
   const sairSide=$('#btnSairSide'); if(sairSide) sairSide.onclick=doSair;
 
@@ -71,9 +58,7 @@
   }
   $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>mostrarAba(b.dataset.k));
 
-  /* ---------- máscara CPF (cadastro) e olho ---------- */
-  const cCpf=document.getElementById('cCpf');
-  cCpf.addEventListener('input',()=>{ cCpf.value=maskCPF(cCpf.value); });
+  /* ---------- olho de mostrar senha ---------- */
   document.querySelectorAll('.pw-eye').forEach(b=>b.onclick=()=>{
     const i=document.getElementById(b.dataset.eye);
     i.type = i.type==='password' ? 'text' : 'password';
@@ -128,12 +113,11 @@
   $('#fCad').addEventListener('submit',async e=>{
     e.preventDefault();
     const msg=$('#cMsg'); msg.textContent='';
-    const email=$('#cEmail').value.trim(), cpf=onlyDigits($('#cCpf').value), senha=$('#cSenha').value;
+    const email=$('#cEmail').value.trim(), senha=$('#cSenha').value;
     if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='E-mail inválido.'; return; }
-    if(!validCPF(cpf)){ msg.textContent='CPF inválido. Confira os números.'; return; }
     if(senha.length<6){ msg.textContent='Senha precisa de pelo menos 6 caracteres.'; return; }
     await comLoading(e.target.querySelector('button[type=submit]'), 'Criando conta…', async()=>{
-      try{ await CLOUD.signup(email, senha, cpf); }
+      try{ await CLOUD.signup(email, senha); }
       catch(err){ msg.textContent=msgErro(err); }
     });
   });

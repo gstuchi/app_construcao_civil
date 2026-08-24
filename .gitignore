@@ -1,5 +1,28 @@
 # Config local do Claude Code e caches de ferramentas
 .claude/
 .impeccable/
+.superpowers/
 
+node_modules/
 notificacoes/node_modules/
+
+# Segredos — nada aqui pode entrar num commit.
+# A apiKey do Firebase em cloud.js é pública por design; o que está listado
+# abaixo NÃO é, e um vazamento aqui dá acesso administrativo ao projeto.
+*serviceAccount*.json
+.env
+.env.*
+*.pem
+*.key
+vapid-keys.txt
+
+# Assinatura de app iOS
+*.p8
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+
+# Saída do empacotamento Capacitor (gerada por scripts/build-www.mjs)
+www/
+firestore-debug.log

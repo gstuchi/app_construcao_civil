@@ -10,7 +10,7 @@ Pai do Giovani — construtor de casas de alto padrão, não técnico, meia-idad
 
 ## Product Purpose
 
-Controle de custos de obras offline-first: gastos por obra separados por tópico (terreno, fundação, acabamento...), valor bruto e valor corrigido (quanto renderia no banco, taxa configurável, padrão 1% a.m.) e lucro real na venda — bruto e acima do banco. Obras têm 3 fases: em construção → pronta (à venda) → vendida. Tudo digitado manualmente, salvo no aparelho (localStorage), por usuário (login local CPF+senha). Sucesso = o pai abre o app, entende em 5 segundos quanto cada obra custou e, ao vender, confia no número do lucro.
+Controle de custos de obras offline-first: gastos por obra separados por tópico (terreno, fundação, acabamento...), valor bruto e valor corrigido (quanto renderia no banco, taxa configurável, padrão 1% a.m.) e lucro real na venda — bruto e acima do banco. Obras têm 3 fases: em construção → pronta (à venda) → vendida. Tudo digitado manualmente, salvo na nuvem por usuário (Firestore) e disponível offline, com login por e-mail e senha. Sucesso = o pai abre o app, entende em 5 segundos quanto cada obra custou e, ao vender, confia no número do lucro.
 
 ## Brand Personality
 

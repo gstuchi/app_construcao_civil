@@ -1,0 +1,78 @@
+rules_version = '2';
+
+/* Fronteira de segurança do ObraControl.
+   A apiKey em cloud.js é pública por design — é AQUI que a segurança acontece.
+   Editar sempre neste arquivo, nunca no console: `firebase deploy --only firestore:rules`.
+   Testes: `firebase emulators:exec --only firestore "node --test tests/rules.test.mjs"` */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function meu(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    /* dados/{uid} — o estado inteiro do app num blob só.
+       O limite de 1MB por documento NÃO é verificável aqui: size() conta chaves,
+       não bytes. A guarda de tamanho é no cliente. */
+    match /dados/{uid} {
+      allow get:            if meu(uid);
+      allow list:           if false;
+      allow create, update: if meu(uid) && blobOk();
+      allow delete:         if meu(uid);   // necessário pra exclusão de conta
+
+      function blobOk() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['obras', 'config', '_atualizado'])
+            && d.obras is list
+            && d.obras.size() <= 300
+            && d.config is map
+            && d.config.keys().hasOnly(['taxaMensal', 'topicosCustom'])
+            && d.config.taxaMensal is number
+            && d.config.taxaMensal > 0
+            && d.config.taxaMensal <= 20
+            && d.config.topicosCustom is list
+            && d.config.topicosCustom.size() <= 50;
+      }
+    }
+
+    /* perfis/{uid} — e-mail, fuso horário e (no futuro) o plano.
+       'cpf' é rejeitado estruturalmente: hasOnly não o inclui.
+       'plano' é DELIBERADAMENTE não-gravável pelo cliente — só o Admin SDK escreve.
+       É isso que permite cobrar depois sem migração dolorosa. */
+    match /perfis/{uid} {
+      allow get:    if meu(uid);
+      allow list:   if false;
+      allow create: if meu(uid)
+                    && request.resource.data.keys().hasOnly(['email', 'criado', 'tz'])
+                    && request.resource.data.email == request.auth.token.email;
+      allow update: if meu(uid)
+                    && resource != null
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['email', 'tz']);
+      allow delete: if meu(uid);
+    }
+
+    /* push/{uid} — 'subs' são inscrições Web Push (PWA),
+       'tokens' serão os do FCM quando o app nativo chegar.
+       O cron lê esta coleção pelo Admin SDK, que ignora rules —
+       por isso 'list' pode ser negado sem quebrar o envio. */
+    match /push/{uid} {
+      allow get:    if meu(uid);
+      allow list:   if false;
+      allow write:  if meu(uid)
+                    && request.resource.data.keys().hasOnly(['subs', 'tokens'])
+                    && (!('subs' in request.resource.data)
+                        || (request.resource.data.subs is map
+                            && request.resource.data.subs.size() <= 10))
+                    && (!('tokens' in request.resource.data)
+                        || (request.resource.data.tokens is map
+                            && request.resource.data.tokens.size() <= 10));
+      allow delete: if meu(uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

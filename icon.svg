@@ -1,51 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Ícone do Custta: o pórtico — duas colunas e uma viga, o mesmo desenho
+       dos dois "t" do logotipo e do ícone `portico` em icons.js. A geometria é
+       a mesma malha de 24, só ampliada: viga alta e colunas longas embaixo, que
+       é o que separa o pórtico de um "H". Sangra até a borda de propósito — o
+       manifest declara purpose "any maskable", então quem recorta é o sistema. -->
   <defs>
-    <!-- degradê 150deg #17B39A → #0D7D78 → #06454A (brief da logo) -->
-    <linearGradient id="bg" x1="0.25" y1="0" x2="0.75" y2="1">
-      <stop offset="0" stop-color="#17B39A"/>
-      <stop offset="0.55" stop-color="#0D7D78"/>
-      <stop offset="1" stop-color="#06454A"/>
+    <linearGradient id="bg" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#14B39A"/>
+      <stop offset="0.52" stop-color="#0D8577"/>
+      <stop offset="1" stop-color="#0A3F30"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#D6FFEF" stop-opacity="0.95"/>
-      <stop offset="0.4" stop-color="#6FEFC4" stop-opacity="0.5"/>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.55">
+      <stop offset="0" stop-color="#3AD17E" stop-opacity="0.42"/>
       <stop offset="1" stop-color="#3AD17E" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="plat" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#9BEFDA"/>
-      <stop offset="1" stop-color="#66D6BC"/>
-    </linearGradient>
+    <!-- planta baixa: mesma malha da splash, quase imperceptível -->
     <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
-      <path d="M64 0H0V64" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="2"/>
+      <path d="M64 0H0V64" fill="none" stroke="#EAFFF6" stroke-opacity="0.055" stroke-width="2"/>
     </pattern>
+    <filter id="sombra" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#04100C" flood-opacity="0.28"/>
+    </filter>
   </defs>
 
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect width="512" height="512" rx="112" fill="url(#grid)"/>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#grid)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
 
-  <!-- glow da plataforma (--accent) -->
-  <ellipse cx="256" cy="426" rx="236" ry="116" fill="url(#glow)"/>
-  <ellipse cx="256" cy="428" rx="160" ry="74" fill="url(#glow)" opacity="0.8"/>
-
-  <!-- plataforma isométrica flutuante -->
-  <g>
-    <polygon points="146,446 256,501 366,446 366,428 256,483 146,428" fill="#41B096"/>
-    <polygon points="256,373 366,428 256,483 146,428" fill="url(#plat)"/>
+  <!-- Cabe no círculo central de 80% que as máscaras preservam: o ponto mais
+       distante do centro fica a 177px, e o limite seguro é 205px. -->
+  <g transform="translate(256 256) scale(14) translate(-12 -12)"
+     fill="none" stroke="#EAFFF6" stroke-width="2.4"
+     stroke-linecap="round" filter="url(#sombra)">
+    <path d="M4.5 9h15"/>
+    <path d="M8.5 4v16"/>
+    <path d="M15.5 4v16"/>
   </g>
-  <ellipse cx="256" cy="438" rx="150" ry="62" fill="url(#glow)" opacity="0.55"/>
-
-  <!-- casa isométrica (corpo + telhado, faces claras) -->
-  <g stroke="#0D7D78" stroke-opacity="0.12" stroke-width="1.5" stroke-linejoin="round">
-    <!-- corpo: face esquerda clara, direita teal suave -->
-    <polygon points="172,258 256,300 256,364 172,322" fill="#EAFBF5"/>
-    <polygon points="256,300 340,258 340,322 256,364" fill="#A9E2D2"/>
-    <!-- telhado: pirâmide, esquerda branca, direita pálida -->
-    <polygon points="256,152 172,258 256,300" fill="#FAFFFD"/>
-    <polygon points="256,152 340,258 256,300" fill="#CFF0E6"/>
-  </g>
-
-  <!-- seta de tendência (verde-escuro estático, sem clima de trade) -->
-  <path d="M150 238 C 190 272, 222 278, 246 250 C 268 224, 292 190, 310 164"
-        fill="none" stroke="#0A3F38" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <polygon points="334,142 290,152 320,188" fill="#0A3F38"/>
 </svg>

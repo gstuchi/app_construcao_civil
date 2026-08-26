@@ -43,7 +43,16 @@ function normaliza(d){
     ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
     : empty();
 }
-function save(){ CLOUD.saveDados(db); }
+/* O blob inteiro vai num documento só, e documento do Firestore para em 1MB.
+   Sem esta guarda a escrita falhava calada: a tela mostrava o gasto novo e o
+   dado sumia no próximo carregamento. */
+function save(){
+  if(!OBRA_CALC.blobCabe(db)){
+    toast('Não deu pra salvar: seus dados chegaram no limite. Apague uma obra antiga.');
+    return;
+  }
+  CLOUD.saveDados(db);
+}
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
 const topicos = () => [...TOPICOS, ...db.config.topicosCustom];
@@ -60,7 +69,7 @@ const moneyShort = n => {
   return money(n);
 };
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-const todayISO = () => new Date().toISOString().slice(0,10);
+const todayISO = () => OBRA_CALC.dataLocalISO();
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
 const parseNum = OBRA_CALC.parseNum;
 /* máscara de dinheiro: formata ao digitar, completa centavos ao sair */
@@ -72,7 +81,8 @@ function maskMoney(sel){
 }
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// String() antes do replace: campo numérico do blob (areaM2, valor) também passa por aqui
+function escapeHtml(s){ return (s==null||s===false ? '' : String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function emptyBlock(icon,msg){ return `<div class="empty"><div class="big">${icon}</div><p>${msg}</p></div>`; }
 // KPIs de milhao estouram a largura do card (overflow:hidden corta o numero).
 // Reduz a fonte do numero so o quanto precisar pra caber; grande quando cabe.
@@ -284,7 +294,7 @@ function renderObra(){
       <div class="filter-row">
         <input id="fBusca" placeholder="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}">
         <select id="fMes"><option value="">Todos os meses</option>
-          ${mesesComGasto.map(m=>`<option value="${m}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
+          ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
         </select>
       </div>
       <ul class="list" id="oGastos"></ul>
@@ -378,7 +388,7 @@ function drawDonutObra(entries, total){
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     leg.appendChild(el('div','row',
       `<span class="dot" style="background:${color}"></span>
-       <span class="nm">${ICON(t.ic)} ${t.nm}</span>
+       <span class="nm">${ICON(t.ic)} ${escapeHtml(t.nm)}</span>
        <span class="vl">${Math.round(val/total*100)}% · ${moneyShort(val)}</span>`));
   });
 }
@@ -569,7 +579,7 @@ function gastoRow(o, g, opts){
     <div class="av ic-brand">${ICON(t.ic)}</div>
     <div class="li-main">
       <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
-      <div class="s">${pIc}${t.nm} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
+      <div class="s">${pIc}${escapeHtml(t.nm)} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';
@@ -611,7 +621,7 @@ function formVenda(o){
   openSheet(`
     <h3>Registrar venda — ${escapeHtml(o.nome)}</h3>
     <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
-    <div class="field"><label>Data da venda</label><input id="fData" type="date" value="${todayISO()}"></div>
+    <div class="field"><label>Data da venda</label><input id="fData" type="date" min="${escapeHtml(o.dataInicio)}" max="${todayISO()}" value="${todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Confirmar venda</button>
@@ -622,8 +632,14 @@ function formVenda(o){
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ $('#fVal').focus(); return; }
+    const data = $('#fData').value;
+    if(!OBRA_CALC.dataIgualOuDepois(data, o.dataInicio) || !OBRA_CALC.dataIgualOuDepois(todayISO(), data)){
+      toast('Data da venda precisa ficar entre o início da obra e hoje');
+      $('#fData').focus();
+      return;
+    }
     const oo = obraById(o.id); if(!oo) return;
-    oo.venda = { valor, data: $('#fData').value || todayISO() };
+    oo.venda = { valor, data };
     oo.fase = 'vendida';
     save(); closeSheet(); renderAll();
   };
@@ -633,11 +649,11 @@ function formEditarObra(o){
   openSheet(`
     <h3>Editar obra</h3>
     <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
-    <div class="field"><label>Começou em</label><input id="fData" type="date" value="${o.dataInicio}"></div>
+    <div class="field"><label>Começou em</label><input id="fData" type="date" value="${escapeHtml(o.dataInicio)}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label>
       <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="field"><label>Área construída em m² (opcional)</label>
-      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${o.areaM2||''}" autocomplete="off"></div>
+      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(o.areaM2||'')}" autocomplete="off"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
@@ -679,7 +695,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const selObra = oFix
     ? `<div class="field"><label>Obra</label><input value="${escapeHtml(oFix.nome)}" disabled></div>`
     : `<div class="field"><label>Obra</label><select id="fObra">
-        ${abertas.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')}
+        ${abertas.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')}
        </select></div>`;
 
   // parcela de compra parcelada: pagamento/parcelas fixos, edita só esta parcela
@@ -709,7 +725,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     ${pagtoHtml}
     <div class="field"><label>Descrição (opcional)</label>
       <input id="fDesc" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
-    <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?gasto.data:todayISO()}"></div>
+    <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?escapeHtml(gasto.data):todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Salvar</button>
@@ -733,7 +749,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const paint = ()=>{
     chips.innerHTML = '';
     topicos().forEach(t=>{
-      const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${t.nm}`);
+      const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${escapeHtml(t.nm)}`);
       ch.type = 'button';
       ch.onclick = ()=>{ top=t.id; paint(); };
       chips.appendChild(ch);
@@ -777,7 +793,13 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       const desc = $('#fDesc').value.trim();
       if(nParc > 1){
         const grupoId = uid();
-        OBRA_CALC.gerarParcelas(valor, nParc, data0).forEach((p,i)=>{
+        const parcelas = OBRA_CALC.gerarParcelas(valor, nParc, data0);
+        if(!parcelas.length){
+          toast('O valor precisa ter pelo menos um centavo por parcela');
+          $('#fParc').focus();
+          return;
+        }
+        parcelas.forEach((p,i)=>{
           o.gastos.push({ id:uid(), valor:p.valor, topico:top, descricao:desc,
             data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc} });
         });
@@ -926,7 +948,7 @@ function renderRelatorio(){
   let rows = '';
   groups.forEach(gr=>{
     const t = map[gr.id] || {nm:gr.id, ic:'etiqueta'};
-    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${t.nm}</td><td></td>
+    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
       <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
     gr.gs.forEach(g=>{
       const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
@@ -975,7 +997,7 @@ function renderSimula(){
   const cands = db.obras.filter(o=>o.fase!=='vendida' && o.gastos.length);
   const cur = sel.value;
   sel.innerHTML = cands.length
-    ? cands.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')
+    ? cands.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')
     : '<option value="">— crie uma obra com gastos —</option>';
   if(cands.some(o=>o.id===cur)) sel.value = cur;
   simulaCompute();
@@ -991,8 +1013,7 @@ function simulaCompute(){
   const venda = parseNum(vInp.value);
   const meses = Math.max(0, parseInt($('#simMeses').value,10) || 0);
 
-  const alvo = new Date(); alvo.setMonth(alvo.getMonth()+meses);
-  const alvoISO = alvo.toISOString().slice(0,10);
+  const alvoISO = OBRA_CALC.addMesesClampado(todayISO(), meses);
   const bruto = OBRA_CALC.totalBruto(o);
   const corr  = OBRA_CALC.totalCorrigido(o, taxa(), alvoISO);
 
@@ -1339,6 +1360,16 @@ function bootCloud(){
     });
   });
 }
+/* Escrita que falhou na nuvem tem que aparecer pro usuário — uma vez a cada
+   30s, senão uma queda de rede vira chuva de toast. */
+let ultimoAvisoErro = 0;
+window.addEventListener('cloud-erro', ()=>{
+  const agora = Date.now();
+  if(agora - ultimoAvisoErro < 30000) return;
+  ultimoAvisoErro = agora;
+  toast('Sem salvar na nuvem agora — vamos tentar de novo sozinhos.');
+});
+
 if(window.CLOUD) bootCloud();
 else window.addEventListener('cloud-pronto', bootCloud);
 renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

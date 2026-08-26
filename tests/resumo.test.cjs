@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('assert');
-const { montaResumo } = require('../notificacoes/resumo.js');
+const { montaResumo, endpointPushValido } = require('../notificacoes/resumo.js');
 
 let n = 0;
 function t(nome, fn){ fn(); n++; console.log('ok -', nome); }
@@ -8,6 +8,16 @@ function t(nome, fn){ fn(); n++; console.log('ok -', nome); }
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const obraCom = (extra) => ({ nome: 'Casa 1', fase: 'construcao', gastos: [], ...extra });
+
+t('endpoint push aceita provedores conhecidos e bloqueia SSRF', () => {
+  assert.strictEqual(endpointPushValido('https://fcm.googleapis.com/fcm/send/abc'), true);
+  assert.strictEqual(endpointPushValido('https://updates.push.services.mozilla.com/wpush/v2/abc'), true);
+  assert.strictEqual(endpointPushValido('https://web.push.apple.com/QP/abc'), true);
+  assert.strictEqual(endpointPushValido('http://fcm.googleapis.com/fcm/send/abc'), false);
+  assert.strictEqual(endpointPushValido('https://127.0.0.1/admin'), false);
+  assert.strictEqual(endpointPushValido('https://metadata.google.internal/'), false);
+  assert.strictEqual(endpointPushValido('não é url'), false);
+});
 
 t('sem obras: null (nada a dizer, nem lembrete)', () => {
   assert.strictEqual(montaResumo({ obras: [] }, '2026-07-10'), null);
@@ -36,6 +46,14 @@ t('1 afazer pendente no singular', () => {
 t('obra antiga sem campo afazeres não quebra', () => {
   const dados = { obras: [ obraCom({ gastos: [{ id:'g1', valor: 10, data: '2026-07-10' }] }) ]};
   assert.strictEqual(montaResumo(dados, '2026-07-10'), null);
+});
+
+t('dados malformados de um usuário não derrubam o cron', () => {
+  const dados = { obras: [
+    obraCom({ afazeres: { corrompido: true }, gastos: [{ valor: 10 }] }),
+    null,
+  ]};
+  assert.doesNotThrow(() => montaResumo(dados, '2026-08-01'));
 });
 
 t('parcelas: só no dia 1, gastos do mês com data >= hoje', () => {

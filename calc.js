@@ -5,6 +5,36 @@
   const DIAS_MES = 30.44;
   const MS_DIA = 86400000;
 
+  /* O documento do Firestore para em 1MB e a escrita falha inteira — sem isso o
+     app dizia "salvo" e o dado ficava só na memória. Folga pro nome dos campos. */
+  const LIMITE_BLOB = 900000;
+
+  function tamanhoBlob(blob){
+    return new TextEncoder().encode(JSON.stringify(blob)).length;
+  }
+
+  function blobCabe(blob){
+    return tamanhoBlob(blob) <= LIMITE_BLOB;
+  }
+
+  function dataLocalISO(data = new Date()){
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, '0');
+    const d = String(data.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function dataISOValida(iso){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return false;
+    const [y, m, d] = iso.split('-').map(Number);
+    const data = new Date(Date.UTC(y, m - 1, d));
+    return data.getUTCFullYear() === y && data.getUTCMonth() === m - 1 && data.getUTCDate() === d;
+  }
+
+  function dataIgualOuDepois(data, minimo){
+    return dataISOValida(data) && dataISOValida(minimo) && data >= minimo;
+  }
+
   function diasEntre(deISO, ateISO){
     const de = new Date(deISO + 'T00:00:00');
     const ate = new Date(ateISO + 'T00:00:00');
@@ -178,6 +208,7 @@
      Conta em centavos; a diferença de arredondamento fica na última. */
   function gerarParcelas(total, n, dataISO){
     const cents = Math.round(total * 100);
+    if(!Number.isFinite(cents) || cents <= 0 || !Number.isInteger(n) || n < 1 || n > cents) return [];
     const base = Math.floor(cents / n);
     return Array.from({length: n}, (_, i) => ({
       valor: (i === n - 1 ? cents - base * (n - 1) : base) / 100,
@@ -211,14 +242,14 @@
      remove só pontos em posição de milhar (o campo ao vivo do simulador),
      preservando decimais tipo "1.5" na taxa. */
   function parseNum(v){
-    if(typeof v === 'number') return v;
+    if(typeof v === 'number') return Number.isFinite(v) ? v : 0;
     v = (v || '').toString().trim().replace(/[^\d,.-]/g, '');
     if(v.includes(',')) v = v.replace(/\./g, '').replace(',', '.');
     else v = v.replace(/\.(?=\d{3}(\.|$))/g, '');
-    const n = parseFloat(v); return isNaN(n) ? 0 : n;
+    const n = parseFloat(v); return Number.isFinite(n) ? n : 0;
   }
 
-  const api = { DIAS_MES, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

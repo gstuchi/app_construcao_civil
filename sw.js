@@ -1,7 +1,7 @@
 /* Service worker — network-first. Online sempre pega a versão nova; o cache
    é só o retrato pra funcionar offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v28';
-const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './teclado.js', './manifest.json', './icon.svg', './fontes/hanken-grotesk-800.woff2'];
+const CACHE = 'obras-v30';
+const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './splash-pre.js', './teclado.js', './tema.js', './pwa.js', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './fontes/hanken-grotesk-800.woff2'];
 
 self.addEventListener('install', e => {
   // {cache:'reload'} garante que o precache pega os arquivos frescos, não o cache HTTP do browser
@@ -25,6 +25,7 @@ self.addEventListener('fetch', e => {
   // network-first: tenta a rede (versão atual), guarda uma cópia e cai no cache só se offline
   e.respondWith(
     fetch(e.request).then(res => {
+      if(!res.ok) return res; // não troca cache funcional por 404/500 temporário
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       return res;

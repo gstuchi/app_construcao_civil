@@ -3,7 +3,7 @@
   "private": true,
   "description": "Cron do resumo diario (GitHub Actions). Ferramenta de CI - nao faz parte do app.",
   "dependencies": {
-    "firebase-admin": "^12.7.0",
+    "firebase-admin": "^14.3.0",
     "web-push": "^3.6.7"
   }
 }

@@ -173,6 +173,20 @@ describe('perfis/{uid} — CPF e plano', () => {
     await assertSucceeds(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { tz: 'America/Manaus' }));
   });
 
+  test('cliente NÃO troca e-mail do perfil por valor diferente do token', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), {
+      email: ANA.email, criado: '2026-08-19T00:00:00.000Z',
+    }));
+    await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { email: BENTO.email }));
+  });
+
+  test('cliente NÃO grava fuso horário com tipo inválido', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), {
+      email: ANA.email, criado: '2026-08-19T00:00:00.000Z',
+    }));
+    await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { tz: { admin: true } }));
+  });
+
   test('update num perfil que não existe é negado sem erro de avaliação', async () => {
     await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { tz: 'America/Manaus' }));
   });

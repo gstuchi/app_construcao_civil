@@ -1,15 +1,15 @@
 /* Nuvem (Firebase): auth + Firestore. Único arquivo que fala com o Firebase.
    Expõe window.CLOUD pros scripts clássicos (auth.js, app.js).
    As chaves abaixo são públicas; a segurança vem das rules do Firestore. */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, sendPasswordResetEmail, signOut,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, setDoc, onSnapshot, serverTimestamp, deleteField,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBqhDDa8IpXuXNq2kI2-NzzpjAGPCLNTKU',
@@ -43,7 +43,12 @@ function flushSave(){
   const blob = pendingBlob; pendingBlob = null;
   setDoc(doc(db, 'dados', currentUser.uid), { ...blob, _atualizado: serverTimestamp() })
     .then(()=>{ if(!pendingBlob) dirty = false; })
-    .catch(()=>{ pendingBlob = pendingBlob || blob; });
+    .catch(err=>{
+      // guarda o blob pra próxima tentativa E avisa a UI: falha calada fazia o
+      // usuário achar que estava salvo (ver 'cloud-erro' em app.js)
+      pendingBlob = pendingBlob || blob;
+      window.dispatchEvent(new CustomEvent('cloud-erro', { detail: { code: (err && err.code) || 'desconhecido' } }));
+    });
 }
 
 window.CLOUD = {

@@ -1,7 +1,8 @@
 'use strict';
-/* Cron diário (GitHub Actions): pra cada usuário com inscrição em push/{uid},
-   lê dados/{uid}, monta o resumo e envia via Web Push. Inscrição morta
-   (404/410) é removida. Falha num aparelho não derruba o resto. */
+/* Cron (GitHub Actions, 9h e 18h de Brasília): pra cada usuário com inscrição
+   em push/{uid}, lê dados/{uid}, monta o resumo e envia via Web Push. Inscrição
+   morta (404/410) é removida. Falha num aparelho não derruba o resto.
+   PERIODO ('manha'|'noite') vem do workflow e muda o conteúdo da mensagem. */
 
 const admin = require('firebase-admin');
 const webpush = require('web-push');
@@ -22,9 +23,13 @@ webpush.setVapidDetails(
 const hojeISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
   .format(new Date());
 
+// qualquer valor inesperado cai em 'noite', que é o resumo completo
+const periodo = process.env.PERIODO === 'manha' ? 'manha' : 'noite';
+
 async function main(){
   const pushDocs = await db.collection('push').get();
-  console.log(pushDocs.size + ' usuario(s) com push; hoje = ' + hojeISO);
+  console.log(pushDocs.size + ' usuario(s) com push; hoje = ' + hojeISO
+    + '; periodo = ' + periodo);
 
   for(const pdoc of pushDocs.docs){
     const uid = pdoc.id;
@@ -33,7 +38,7 @@ async function main(){
     if(!chaves.length) continue;
 
     const snap = await db.doc('dados/' + uid).get();
-    const resumo = montaResumo(snap.data(), hojeISO);
+    const resumo = montaResumo(snap.data(), hojeISO, periodo);
     if(!resumo){ console.log(uid + ': nada a dizer'); continue; }
 
     const payload = JSON.stringify(resumo);

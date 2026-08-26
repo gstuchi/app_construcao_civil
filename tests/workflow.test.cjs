@@ -15,4 +15,11 @@ assert.match(workflow, /permissions:\s*\n\s*contents:\s*read/);
 const nodeVersion = Number(workflow.match(/node-version:\s*['"]?(\d+)/)?.[1]);
 assert.ok(nodeVersion >= 22, `Firebase Admin 14 exige Node >=22; workflow usa ${nodeVersion}`);
 
-console.log('ok - GitHub Actions usa SHA imutável e permissão mínima');
+// dois disparos por dia: 12:00 UTC = 9h e 21:00 UTC = 18h de Brasília.
+// Quem mexer aqui tem que mexer no PERIODO junto — é o cron que o escolhe.
+const crons = [...workflow.matchAll(/-\s*cron:\s*'([^']+)'/g)].map(m => m[1]);
+assert.deepStrictEqual(crons, ['0 12 * * *', '0 21 * * *'], `crons inesperados: ${crons}`);
+assert.match(workflow, /PERIODO:.*'0 12 \* \* \*'.*'manha'/,
+  'o PERIODO precisa derivar do cron da manhã');
+
+console.log('ok - GitHub Actions usa SHA imutável, permissão mínima e dois crons');

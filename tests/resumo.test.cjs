@@ -121,4 +121,29 @@ t('valor não numérico não vira NaN no total', () => {
   assert.ok(!r.corpo.includes('NaN'), r.corpo);
 });
 
+t('manhã não cobra lançamento (o dia ainda não aconteceu)', () => {
+  const dados = { obras: [ obraCom({ gastos: [{ id:'g1', valor: 10, data: '2026-07-09' }] }) ]};
+  assert.ok(montaResumo(dados, '2026-07-10', 'noite').corpo.includes('Lançou os gastos de hoje?'));
+  assert.strictEqual(montaResumo(dados, '2026-07-10', 'manha'), null);
+});
+
+t('manhã mantém afazeres e parcelas', () => {
+  const dados = { obras: [ obraCom({
+    afazeres: [{ id:'a', texto:'x', feito:false }],
+    gastos: [{ id:'g1', valor: 1000, data: '2026-08-15' }],
+  }) ]};
+  const r = montaResumo(dados, '2026-08-01', 'manha');
+  const linhas = r.corpo.split('\n');
+  assert.strictEqual(linhas.length, 2, r.corpo);
+  assert.ok(linhas[0].includes('afazer'));
+  assert.ok(linhas[1].includes('parcela'));
+});
+
+t('período ausente ou desconhecido se comporta como noite', () => {
+  const dados = { obras: [ obraCom({ gastos: [{ id:'g1', valor: 10, data: '2026-07-09' }] }) ]};
+  for(const p of [undefined, null, '', 'tarde', 'MANHA']){
+    assert.ok(montaResumo(dados, '2026-07-10', p).corpo.includes('Lançou'), String(p));
+  }
+});
+
 console.log(`\n${n} testes ok`);

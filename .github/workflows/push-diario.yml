@@ -1,10 +1,20 @@
 name: push-diario
-# Resumo diário por Web Push. 21:00 UTC = 18:00 Brasília.
-# workflow_dispatch = botão de teste manual na aba Actions.
+# Resumo por Web Push, duas vezes ao dia. Brasília é UTC-3 o ano todo
+# (horário de verão extinto em 2019), então o deslocamento é fixo.
+#   12:00 UTC = 09:00 Brasília  (manhã: afazeres e parcelas do mês)
+#   21:00 UTC = 18:00 Brasília  (noite: o mesmo, mais "lançou os gastos de hoje?")
+# workflow_dispatch = botão de teste manual na aba Actions, com escolha do período.
 on:
   schedule:
+    - cron: '0 12 * * *'
     - cron: '0 21 * * *'
   workflow_dispatch:
+    inputs:
+      periodo:
+        description: 'Qual mensagem simular'
+        type: choice
+        default: noite
+        options: [noite, manha]
 
 permissions:
   contents: read
@@ -22,6 +32,8 @@ jobs:
       - run: node envia.js
         working-directory: notificacoes
         env:
+          # no disparo agendado `inputs` é nulo, então cai no período do cron
+          PERIODO: ${{ github.event.schedule == '0 12 * * *' && 'manha' || inputs.periodo || 'noite' }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}

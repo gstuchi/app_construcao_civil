@@ -64,7 +64,7 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 ### Notificações push
 
-`notificacoes/` é um cron do GitHub Actions ([.github/workflows/push-diario.yml](.github/workflows/push-diario.yml), 21:00 UTC), roda com Admin SDK (ignora rules) e lê `push/{uid}`. É ferramenta de CI com `package.json` próprio — não faz parte do app. Chave VAPID pública fica hardcoded em `app.js`; a privada é secret do repositório.
+`notificacoes/` é um cron do GitHub Actions ([.github/workflows/push-diario.yml](.github/workflows/push-diario.yml)) que dispara duas vezes ao dia — 12:00 UTC (9h Brasília) e 21:00 UTC (18h). O workflow deriva `PERIODO` (`manha`/`noite`) do cron que disparou, e `montaResumo` usa isso pra omitir o "Lançou os gastos de hoje?" de manhã. Roda com Admin SDK (ignora rules) e lê `push/{uid}`. É ferramenta de CI com `package.json` próprio — não faz parte do app. Chave VAPID pública fica hardcoded em `app.js`; a privada é secret do repositório.
 
 ## UI
 

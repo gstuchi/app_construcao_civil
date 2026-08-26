@@ -37,14 +37,17 @@ Publicar.
 
 1. Fazer deploy (push pro main) e abrir o app no celular (PWA instalado).
 2. Ajustes → Notificações → ligar o toggle → aceitar a permissão.
-3. GitHub → aba Actions → workflow "push-diario" → Run workflow.
+3. GitHub → aba Actions → workflow "push-diario" → Run workflow (o campo
+   "Qual mensagem simular" escolhe entre `noite` e `manha`).
 4. Notificação "Custta" chega no celular, mesmo com o app fechado.
    (Se não houver afazer pendente, parcela nem lembrete, o log do workflow
    mostra "nada a dizer" — criar um afazer antes de testar.)
 
 ## Avisos
 
-- Cron roda 21:00 UTC = 18h Brasília, com variação de alguns minutos.
+- Dois disparos por dia: 12:00 UTC (9h Brasília) e 21:00 UTC (18h), com
+  variação de alguns minutos. A mensagem da manhã omite o "Lançou os gastos
+  de hoje?" — às 9h o dia ainda não aconteceu e a pergunta seria sempre igual.
 - GitHub desativa o cron após 60 dias sem atividade no repo (qualquer
   commit reativa).
 - iPhone: só iOS 16.4+ com o PWA instalado na tela inicial.

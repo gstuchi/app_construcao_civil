@@ -1,7 +1,12 @@
 'use strict';
-/* Resumo diário das notificações push. Função pura: recebe o blob `dados`
-   do Firestore e a data ISO de hoje (fuso America/Sao_Paulo) e devolve
-   { titulo, corpo } ou null quando não há nada a dizer (aí não se envia). */
+/* Resumo das notificações push. Função pura: recebe o blob `dados` do
+   Firestore, a data ISO de hoje (fuso America/Sao_Paulo) e o período do
+   disparo, e devolve { titulo, corpo } ou null quando não há nada a dizer
+   (aí não se envia).
+
+   Período: 'manha' (9h) ou 'noite' (18h, o padrão). A única diferença é o
+   lembrete de lançar — às 9h o dia ainda não aconteceu, então a pergunta
+   seria idêntica toda manhã e o usuário acabaria desligando o push. */
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -20,7 +25,7 @@ function endpointPushValido(endpoint){
   }
 }
 
-function montaResumo(dados, hojeISO){
+function montaResumo(dados, hojeISO, periodo){
   if(!dados || !Array.isArray(dados.obras) || !dados.obras.length) return null;
   const obras = dados.obras.filter(o => o && typeof o === 'object');
   const linhas = [];
@@ -45,11 +50,13 @@ function montaResumo(dados, hojeISO){
       + ' este mês (' + BRL.format(total) + ')');
   }
 
-  // lembrete de lançar: só se há obra em andamento e nada foi lançado com data de hoje
-  const emObra = obras.some(o => o.fase === 'construcao');
-  const lancouHoje = obras.some(o => (Array.isArray(o.gastos) ? o.gastos : [])
-    .some(g => g && g.data === hojeISO));
-  if(emObra && !lancouHoje) linhas.push('Lançou os gastos de hoje?');
+  // lembrete de lançar: só à noite, com obra em andamento e nada lançado hoje
+  if(periodo !== 'manha'){
+    const emObra = obras.some(o => o.fase === 'construcao');
+    const lancouHoje = obras.some(o => (Array.isArray(o.gastos) ? o.gastos : [])
+      .some(g => g && g.data === hojeISO));
+    if(emObra && !lancouHoje) linhas.push('Lançou os gastos de hoje?');
+  }
 
   if(!linhas.length) return null;
   return { titulo: 'Custta', corpo: linhas.join('\n') };

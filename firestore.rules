@@ -45,12 +45,23 @@ service cloud.firestore {
       allow list:   if false;
       allow create: if meu(uid)
                     && request.resource.data.keys().hasOnly(['email', 'criado', 'tz'])
-                    && request.resource.data.email == request.auth.token.email;
+                    && perfilClienteOk();
       allow update: if meu(uid)
                     && resource != null
                     && request.resource.data.diff(resource.data)
-                         .affectedKeys().hasOnly(['email', 'tz']);
+                         .affectedKeys().hasOnly(['email', 'tz'])
+                    && perfilClienteOk();
       allow delete: if meu(uid);
+
+      function perfilClienteOk() {
+        let d = request.resource.data;
+        return d.email is string
+            && d.email == request.auth.token.email
+            && d.email.size() <= 320
+            && d.criado is string
+            && d.criado.size() <= 40
+            && (!('tz' in d) || (d.tz is string && d.tz.size() <= 64));
+      }
     }
 
     /* push/{uid} — 'subs' são inscrições Web Push (PWA),

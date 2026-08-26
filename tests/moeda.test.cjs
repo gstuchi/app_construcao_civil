@@ -41,4 +41,9 @@ t('parseNum: taxa com ponto decimal continua funcionando', () => {
   assert.strictEqual(C.parseNum(7), 7);
 });
 
+t('parseNum: número infinito é rejeitado antes de virar null no JSON', () => {
+  assert.strictEqual(C.parseNum('9'.repeat(400)), 0);
+  assert.strictEqual(C.parseNum(Infinity), 0);
+});
+
 console.log(`\n${n} testes passaram ✔`);

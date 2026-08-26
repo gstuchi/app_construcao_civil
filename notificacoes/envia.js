@@ -5,7 +5,7 @@
 
 const admin = require('firebase-admin');
 const webpush = require('web-push');
-const { montaResumo } = require('./resumo.js');
+const { montaResumo, endpointPushValido } = require('./resumo.js');
 
 admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
@@ -39,12 +39,23 @@ async function main(){
     const payload = JSON.stringify(resumo);
     for(const k of chaves){
       const s = subs[k];
+      if(!s || !endpointPushValido(s.endpoint)){
+        await pdoc.ref.update(
+          new admin.firestore.FieldPath('subs', k),
+          admin.firestore.FieldValue.delete(),
+        );
+        console.warn(uid + '/' + k + ': endpoint inválido, removido');
+        continue;
+      }
       try{
         await webpush.sendNotification({ endpoint: s.endpoint, keys: s.keys }, payload);
         console.log(uid + '/' + k + ': enviado');
       }catch(err){
         if(err.statusCode === 404 || err.statusCode === 410){
-          await pdoc.ref.update({ ['subs.' + k]: admin.firestore.FieldValue.delete() });
+          await pdoc.ref.update(
+            new admin.firestore.FieldPath('subs', k),
+            admin.firestore.FieldValue.delete(),
+          );
           console.log(uid + '/' + k + ': inscricao morta, removida');
         }else{
           console.error(uid + '/' + k + ': falha ' + (err.statusCode || err.message));

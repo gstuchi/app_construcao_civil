@@ -60,7 +60,7 @@ const moneyShort = n => {
   return money(n);
 };
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-const todayISO = () => new Date().toISOString().slice(0,10);
+const todayISO = () => OBRA_CALC.dataLocalISO();
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
 const parseNum = OBRA_CALC.parseNum;
 /* máscara de dinheiro: formata ao digitar, completa centavos ao sair */
@@ -378,7 +378,7 @@ function drawDonutObra(entries, total){
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     leg.appendChild(el('div','row',
       `<span class="dot" style="background:${color}"></span>
-       <span class="nm">${ICON(t.ic)} ${t.nm}</span>
+       <span class="nm">${ICON(t.ic)} ${escapeHtml(t.nm)}</span>
        <span class="vl">${Math.round(val/total*100)}% · ${moneyShort(val)}</span>`));
   });
 }
@@ -569,7 +569,7 @@ function gastoRow(o, g, opts){
     <div class="av ic-brand">${ICON(t.ic)}</div>
     <div class="li-main">
       <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
-      <div class="s">${pIc}${t.nm} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
+      <div class="s">${pIc}${escapeHtml(t.nm)} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';
@@ -611,7 +611,7 @@ function formVenda(o){
   openSheet(`
     <h3>Registrar venda — ${escapeHtml(o.nome)}</h3>
     <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
-    <div class="field"><label>Data da venda</label><input id="fData" type="date" value="${todayISO()}"></div>
+    <div class="field"><label>Data da venda</label><input id="fData" type="date" min="${escapeHtml(o.dataInicio)}" max="${todayISO()}" value="${todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Confirmar venda</button>
@@ -622,8 +622,14 @@ function formVenda(o){
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ $('#fVal').focus(); return; }
+    const data = $('#fData').value;
+    if(!OBRA_CALC.dataIgualOuDepois(data, o.dataInicio) || !OBRA_CALC.dataIgualOuDepois(todayISO(), data)){
+      toast('Data da venda precisa ficar entre o início da obra e hoje');
+      $('#fData').focus();
+      return;
+    }
     const oo = obraById(o.id); if(!oo) return;
-    oo.venda = { valor, data: $('#fData').value || todayISO() };
+    oo.venda = { valor, data };
     oo.fase = 'vendida';
     save(); closeSheet(); renderAll();
   };
@@ -679,7 +685,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const selObra = oFix
     ? `<div class="field"><label>Obra</label><input value="${escapeHtml(oFix.nome)}" disabled></div>`
     : `<div class="field"><label>Obra</label><select id="fObra">
-        ${abertas.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')}
+        ${abertas.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')}
        </select></div>`;
 
   // parcela de compra parcelada: pagamento/parcelas fixos, edita só esta parcela
@@ -733,7 +739,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const paint = ()=>{
     chips.innerHTML = '';
     topicos().forEach(t=>{
-      const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${t.nm}`);
+      const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${escapeHtml(t.nm)}`);
       ch.type = 'button';
       ch.onclick = ()=>{ top=t.id; paint(); };
       chips.appendChild(ch);
@@ -777,7 +783,13 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       const desc = $('#fDesc').value.trim();
       if(nParc > 1){
         const grupoId = uid();
-        OBRA_CALC.gerarParcelas(valor, nParc, data0).forEach((p,i)=>{
+        const parcelas = OBRA_CALC.gerarParcelas(valor, nParc, data0);
+        if(!parcelas.length){
+          toast('O valor precisa ter pelo menos um centavo por parcela');
+          $('#fParc').focus();
+          return;
+        }
+        parcelas.forEach((p,i)=>{
           o.gastos.push({ id:uid(), valor:p.valor, topico:top, descricao:desc,
             data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc} });
         });
@@ -926,7 +938,7 @@ function renderRelatorio(){
   let rows = '';
   groups.forEach(gr=>{
     const t = map[gr.id] || {nm:gr.id, ic:'etiqueta'};
-    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${t.nm}</td><td></td>
+    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
       <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
     gr.gs.forEach(g=>{
       const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
@@ -975,7 +987,7 @@ function renderSimula(){
   const cands = db.obras.filter(o=>o.fase!=='vendida' && o.gastos.length);
   const cur = sel.value;
   sel.innerHTML = cands.length
-    ? cands.map(o=>`<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('')
+    ? cands.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')
     : '<option value="">— crie uma obra com gastos —</option>';
   if(cands.some(o=>o.id===cur)) sel.value = cur;
   simulaCompute();
@@ -991,8 +1003,7 @@ function simulaCompute(){
   const venda = parseNum(vInp.value);
   const meses = Math.max(0, parseInt($('#simMeses').value,10) || 0);
 
-  const alvo = new Date(); alvo.setMonth(alvo.getMonth()+meses);
-  const alvoISO = alvo.toISOString().slice(0,10);
+  const alvoISO = OBRA_CALC.addMesesClampado(todayISO(), meses);
   const bruto = OBRA_CALC.totalBruto(o);
   const corr  = OBRA_CALC.totalCorrigido(o, taxa(), alvoISO);
 

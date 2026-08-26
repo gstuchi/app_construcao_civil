@@ -17,20 +17,7 @@
 <link rel="apple-touch-startup-image" href="splash/splash-1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)">
 <link rel="apple-touch-startup-image" href="splash/splash-1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3)">
 <link rel="apple-touch-startup-image" href="splash/splash-828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)">
-<script>
-/* aplica tema salvo antes da pintura — evita flash do tema errado */
-try{
-  var claro = localStorage.getItem('mo_tema')==='claro';
-  var azul  = localStorage.getItem('mo_skin')==='azul';
-  if(claro) document.documentElement.setAttribute('data-theme','light');
-  if(azul)  document.documentElement.setAttribute('data-skin','azul');
-  if(claro || azul){
-    var m=document.querySelector('meta[name="theme-color"]');
-    /* = --bg de cada combinação skin × tema */
-    if(m) m.content = claro ? (azul ? '#eef2f9' : '#EDF5F1') : '#070c18';
-  }
-}catch(e){}
-</script>
+<script src="tema.js"></script>
 <style>
   /* Dark é o padrão; claro é opção (PRODUCT.md) — variáveis do claro em html[data-theme=light] */
   :root{
@@ -602,8 +589,7 @@ try{
     <div class="sp-status" id="spStatus">Preparando o app…</div>
   </div>
 </div>
-<script>/* recarregou na mesma sessão? some antes de pintar */
-if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remove()</script>
+<script src="splash-pre.js"></script>
 <canvas id="globe" aria-hidden="true"></canvas>
 <!-- ===== TELA DE ENTRADA ===== -->
 <div id="auth" class="hidden">
@@ -802,17 +788,6 @@ if(sessionStorage.getItem('splashVista'))document.getElementById('splash').remov
 <script defer src="calc.js"></script>
 <script defer src="teclado.js"></script>
 <script defer src="app.js"></script>
-<script>
-  if('serviceWorker' in navigator){
-    // quando um SW novo assume o controle (após deploy), recarrega 1x pra mostrar a versão nova.
-    // guarda: só recarrega se JÁ havia um SW controlando (update), nunca na 1ª instalação.
-    const jaControlado = !!navigator.serviceWorker.controller;
-    let recarregou = false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(jaControlado && !recarregou){ recarregou = true; location.reload(); }
-    });
-    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-  }
-</script>
+<script src="pwa.js"></script>
 </body>
 </html>

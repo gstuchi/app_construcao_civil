@@ -12,6 +12,15 @@ t('diasEntre básico', () => {
   assert.strictEqual(C.diasEntre('2026-07-05', '2026-07-04'), 0); // nunca negativo
 });
 
+t('dataLocalISO respeita o dia local em Brasília', () => {
+  const tzAnterior = process.env.TZ;
+  process.env.TZ = 'America/Sao_Paulo';
+  const instante = new Date('2026-08-26T01:30:00.000Z'); // 25/08 22:30 em Brasília
+  assert.strictEqual(C.dataLocalISO(instante), '2026-08-25');
+  if(tzAnterior === undefined) delete process.env.TZ;
+  else process.env.TZ = tzAnterior;
+});
+
 t('corrigido: mesmo dia = valor bruto', () => {
   assert.strictEqual(C.corrigido(10000, '2026-07-04', '2026-07-04', 1), 10000);
 });
@@ -118,6 +127,18 @@ t('gerarParcelas: centavos de arredondamento vão na última', () => {
 t('gerarParcelas: 1x = um item com o total na data', () => {
   const ps = C.gerarParcelas(500.5, 1, '2026-07-05');
   assert.deepStrictEqual(ps, [{ valor: 500.5, data: '2026-07-05' }]);
+});
+
+t('gerarParcelas: não cria parcelas de zero centavo', () => {
+  assert.deepStrictEqual(C.gerarParcelas(0.01, 36, '2026-01-01'), []);
+  assert.deepStrictEqual(C.gerarParcelas(10, 0, '2026-01-01'), []);
+});
+
+t('dataISOValida rejeita datas impossíveis e compara intervalo', () => {
+  assert.strictEqual(C.dataISOValida('2026-02-29'), false);
+  assert.strictEqual(C.dataISOValida('2026-02-28'), true);
+  assert.strictEqual(C.dataIgualOuDepois('2026-08-25', '2026-08-25'), true);
+  assert.strictEqual(C.dataIgualOuDepois('2026-08-24', '2026-08-25'), false);
 });
 
 t('resumoVenda: exemplo canônico (3mi/2mi em 24 meses)', () => {

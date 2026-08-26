@@ -43,7 +43,12 @@ function flushSave(){
   const blob = pendingBlob; pendingBlob = null;
   setDoc(doc(db, 'dados', currentUser.uid), { ...blob, _atualizado: serverTimestamp() })
     .then(()=>{ if(!pendingBlob) dirty = false; })
-    .catch(()=>{ pendingBlob = pendingBlob || blob; });
+    .catch(err=>{
+      // guarda o blob pra próxima tentativa E avisa a UI: falha calada fazia o
+      // usuário achar que estava salvo (ver 'cloud-erro' em app.js)
+      pendingBlob = pendingBlob || blob;
+      window.dispatchEvent(new CustomEvent('cloud-erro', { detail: { code: (err && err.code) || 'desconhecido' } }));
+    });
 }
 
 window.CLOUD = {

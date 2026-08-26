@@ -5,6 +5,18 @@
   const DIAS_MES = 30.44;
   const MS_DIA = 86400000;
 
+  /* O documento do Firestore para em 1MB e a escrita falha inteira — sem isso o
+     app dizia "salvo" e o dado ficava só na memória. Folga pro nome dos campos. */
+  const LIMITE_BLOB = 900000;
+
+  function tamanhoBlob(blob){
+    return new TextEncoder().encode(JSON.stringify(blob)).length;
+  }
+
+  function blobCabe(blob){
+    return tamanhoBlob(blob) <= LIMITE_BLOB;
+  }
+
   function dataLocalISO(data = new Date()){
     const y = data.getFullYear();
     const m = String(data.getMonth() + 1).padStart(2, '0');
@@ -237,7 +249,7 @@
     const n = parseFloat(v); return Number.isFinite(n) ? n : 0;
   }
 
-  const api = { DIAS_MES, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

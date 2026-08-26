@@ -43,7 +43,16 @@ function normaliza(d){
     ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
     : empty();
 }
-function save(){ CLOUD.saveDados(db); }
+/* O blob inteiro vai num documento só, e documento do Firestore para em 1MB.
+   Sem esta guarda a escrita falhava calada: a tela mostrava o gasto novo e o
+   dado sumia no próximo carregamento. */
+function save(){
+  if(!OBRA_CALC.blobCabe(db)){
+    toast('Não deu pra salvar: seus dados chegaram no limite. Apague uma obra antiga.');
+    return;
+  }
+  CLOUD.saveDados(db);
+}
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
 const topicos = () => [...TOPICOS, ...db.config.topicosCustom];
@@ -72,7 +81,8 @@ function maskMoney(sel){
 }
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// String() antes do replace: campo numérico do blob (areaM2, valor) também passa por aqui
+function escapeHtml(s){ return (s==null||s===false ? '' : String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function emptyBlock(icon,msg){ return `<div class="empty"><div class="big">${icon}</div><p>${msg}</p></div>`; }
 // KPIs de milhao estouram a largura do card (overflow:hidden corta o numero).
 // Reduz a fonte do numero so o quanto precisar pra caber; grande quando cabe.
@@ -284,7 +294,7 @@ function renderObra(){
       <div class="filter-row">
         <input id="fBusca" placeholder="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}">
         <select id="fMes"><option value="">Todos os meses</option>
-          ${mesesComGasto.map(m=>`<option value="${m}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
+          ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
         </select>
       </div>
       <ul class="list" id="oGastos"></ul>
@@ -639,11 +649,11 @@ function formEditarObra(o){
   openSheet(`
     <h3>Editar obra</h3>
     <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
-    <div class="field"><label>Começou em</label><input id="fData" type="date" value="${o.dataInicio}"></div>
+    <div class="field"><label>Começou em</label><input id="fData" type="date" value="${escapeHtml(o.dataInicio)}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label>
       <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="field"><label>Área construída em m² (opcional)</label>
-      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${o.areaM2||''}" autocomplete="off"></div>
+      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(o.areaM2||'')}" autocomplete="off"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
@@ -715,7 +725,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     ${pagtoHtml}
     <div class="field"><label>Descrição (opcional)</label>
       <input id="fDesc" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
-    <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?gasto.data:todayISO()}"></div>
+    <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?escapeHtml(gasto.data):todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Salvar</button>
@@ -1350,6 +1360,16 @@ function bootCloud(){
     });
   });
 }
+/* Escrita que falhou na nuvem tem que aparecer pro usuário — uma vez a cada
+   30s, senão uma queda de rede vira chuva de toast. */
+let ultimoAvisoErro = 0;
+window.addEventListener('cloud-erro', ()=>{
+  const agora = Date.now();
+  if(agora - ultimoAvisoErro < 30000) return;
+  ultimoAvisoErro = agora;
+  toast('Sem salvar na nuvem agora — vamos tentar de novo sozinhos.');
+});
+
 if(window.CLOUD) bootCloud();
 else window.addEventListener('cloud-pronto', bootCloud);
 renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

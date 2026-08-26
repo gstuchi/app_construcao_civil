@@ -141,6 +141,19 @@ t('dataISOValida rejeita datas impossíveis e compara intervalo', () => {
   assert.strictEqual(C.dataIgualOuDepois('2026-08-24', '2026-08-25'), false);
 });
 
+t('tamanhoBlob conta bytes UTF-8, não caracteres', () => {
+  assert.strictEqual(C.tamanhoBlob('ç'), 4);            // 2 aspas + 2 bytes
+  assert.strictEqual(C.tamanhoBlob({ a: 1 }), 7);       // {"a":1}
+});
+
+t('blobCabe barra o que o Firestore recusaria', () => {
+  const pequeno = { obras: [], config: { taxaMensal: 1, topicosCustom: [] } };
+  assert.strictEqual(C.blobCabe(pequeno), true);
+  const grande = { obras: [{ id: 'o1', nome: 'x'.repeat(C.LIMITE_BLOB), gastos: [] }], config: {} };
+  assert.strictEqual(C.blobCabe(grande), false);
+  assert.ok(C.LIMITE_BLOB < 1048576, 'limite precisa ter folga pro teto de 1MB do documento');
+});
+
 t('resumoVenda: exemplo canônico (3mi/2mi em 24 meses)', () => {
   const r = C.resumoVenda(3000000, 2000000, 24);
   assert.strictEqual(r.lucro, 1000000);

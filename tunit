@@ -1,0 +1,60 @@
+warning: in the working copy of 'app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/icons.test.cjs', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/app.js b/app.js[m
+[1mindex b535f3c..68856b1 100644[m
+[1m--- a/app.js[m
+[1m+++ b/app.js[m
+[36m@@ -9,19 +9,22 @@[m [mconst TOPICOS = [[m
+   {id:'projeto',    nm:'Documentação',      ic:'documento'},[m
+   {id:'matbasicos', nm:'Materiais básicos', ic:'tijolos'},[m
+   {id:'fundacao',   nm:'Fundação',          ic:'pa'},[m
+[32m+[m[32m  {id:'ferragem',   nm:'Ferragem',          ic:'vergalhao'},[m
+   {id:'estrutura',  nm:'Estrutura',         ic:'guindaste'},[m
+   {id:'alvenaria',  nm:'Alvenaria',         ic:'tijolos'},[m
+   {id:'telhado',    nm:'Telhado',           ic:'casa'},[m
+   {id:'eletrica',   nm:'Elétrica',          ic:'raio'},[m
+   {id:'hidraulica', nm:'Encanamento',       ic:'gota'},[m
+   {id:'esquadrias', nm:'Esq. de alumínio',  ic:'porta'},[m
+[31m-  {id:'revest',     nm:'Revestimentos',     ic:'camadas'},[m
+[32m+[m[32m  {id:'revest',     nm:'Cerâmica',          ic:'ladrilho'},[m
+   {id:'pintura',    nm:'Pintura',           ic:'rolo'},[m
+   {id:'acabamento', nm:'Acabamento',        ic:'rolo'},[m
+[31m-  {id:'paisagismo', nm:'Paisagismo',        ic:'arvore'},[m
+[32m+[m[32m  {id:'piscina',    nm:'Piscina',           ic:'piscina'},[m
+[32m+[m[32m  {id:'paisagismo', nm:'Jardim',            ic:'arvore'},[m
+   {id:'maoobra',    nm:'Mão de obra',       ic:'capacete'},[m
+   {id:'aluguelmaq', nm:'Aluguel de máquina',ic:'engrenagem'},[m
+   {id:'matextra',   nm:'Materiais extra',   ic:'caixa'},[m
+[32m+[m[32m  {id:'extras',     nm:'Extras',            ic:'mais'},[m
+   {id:'outros',     nm:'Outros',            ic:'caixa'},[m
+ ];[m
+ const PIE = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];[m
+[1mdiff --git a/icons.js b/icons.js[m
+[1mindex 8bcbb8c..a028d04 100644[m
+[1m--- a/icons.js[m
+[1m+++ b/icons.js[m
+[36m@@ -29,6 +29,10 @@[m
+     gota:       '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>',[m
+     porta:      '<path d="M4 21h16M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><circle cx="15" cy="12" r="1"/>',[m
+     camadas:    '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>',[m
+[32m+[m[32m    ladrilho:   '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/>',[m
+[32m+[m[32m    vergalhao:  '<path d="M5 4v16M12 4v16M19 4v16"/><path d="M2 9h20M2 15h20"/>',[m
+[32m+[m[32m    piscina:    '<path d="M7 14V5a2 2 0 0 1 4 0M15 14V5a2 2 0 0 1 4 0"/><path d="M7 9h4M15 9h4"/><path d="M2 15c1.7 0 1.7 1.5 3.3 1.5S7 15 8.7 15s1.6 1.5 3.3 1.5S13.7 15 15.3 15s1.7 1.5 3.4 1.5S20.3 15 22 15"/><path d="M2 19.5c1.7 0 1.7 1.5 3.3 1.5S7 19.5 8.7 19.5s1.6 1.5 3.3 1.5 1.7-1.5 3.3-1.5 1.7 1.5 3.4 1.5 1.6-1.5 3.3-1.5"/>',[m
+[32m+[m[32m    mais:       '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',[m
+     rolo:       '<rect x="3" y="4" width="14" height="5" rx="1"/><path d="M17 6h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-8v3"/><rect x="10" y="14" width="4" height="7" rx="1"/>',[m
+     arvore:     '<path d="m12 3 5 7h-3l4 6H6l4-6H7l5-7Z"/><path d="M12 16v5"/>',[m
+     capacete:   '<path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1Z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><path d="M14 6a6 6 0 0 1 6 6v3"/>',[m
+[1mdiff --git a/tests/icons.test.cjs b/tests/icons.test.cjs[m
+[1mindex a924ed9..c7ea1d7 100644[m
+[1m--- a/tests/icons.test.cjs[m
+[1m+++ b/tests/icons.test.cjs[m
+[36m@@ -25,7 +25,8 @@[m [mt('todos os ícones necessários existem', () => {[m
+     'moedas','notas','banco','alvo','acordo','setaCima','setaBaixo','calculadora',[m
+     'mapa','regua','pa','tijolos','raio','gota','porta','camadas','rolo','arvore',[m
+     'capacete','caixa','etiqueta','cartao','lapis','documento','impressora','voltar',[m
+[31m-    'recibo','calendario','alerta','instalar','olho','olhoFechado'];[m
+[32m+[m[32m    'recibo','calendario','alerta','instalar','olho','olhoFechado',[m
+[32m+[m[32m    'ladrilho','vergalhao','piscina','mais'];[m
+   precisa.forEach(k => assert.ok(ICONES[k], 'falta ícone: ' + k));[m
+ });[m
+ [m

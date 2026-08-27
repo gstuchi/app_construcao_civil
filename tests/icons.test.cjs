@@ -25,7 +25,8 @@ t('todos os ícones necessários existem', () => {
     'moedas','notas','banco','alvo','acordo','setaCima','setaBaixo','calculadora',
     'mapa','regua','pa','tijolos','raio','gota','porta','camadas','rolo','arvore',
     'capacete','caixa','etiqueta','cartao','lapis','documento','impressora','voltar',
-    'recibo','calendario','alerta','instalar','olho','olhoFechado'];
+    'recibo','calendario','alerta','instalar','olho','olhoFechado',
+    'ladrilho','vergalhao','piscina','mais'];
   precisa.forEach(k => assert.ok(ICONES[k], 'falta ícone: ' + k));
 });
 

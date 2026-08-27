@@ -1,6 +1,6 @@
 /* Service worker — network-first. Online sempre pega a versão nova; o cache
    é só o retrato pra funcionar offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v30';
+const CACHE = 'obras-v31';
 const ASSETS = ['./', './index.html', './app.js', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './splash-pre.js', './teclado.js', './tema.js', './pwa.js', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './fontes/hanken-grotesk-800.woff2'];
 
 self.addEventListener('install', e => {

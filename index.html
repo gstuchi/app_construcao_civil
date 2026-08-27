@@ -306,6 +306,8 @@
   .toast{display:flex;align-items:center;gap:9px;background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:var(--shadow);max-width:420px;
     opacity:0;transform:translateY(10px) scale(.96);animation:toastIn .22s ease-out forwards}
   .toast svg{width:18px;height:18px;flex:none;color:var(--green)}
+  .toast.erro{border-color:var(--red);color:var(--red)}
+  .toast.erro svg{color:var(--red)}
   .toast.out{animation:toastOut .18s ease-in forwards}
   @keyframes toastIn{to{opacity:1;transform:none}}
   @keyframes toastOut{to{opacity:0;transform:translateY(6px) scale(.97)}}
@@ -422,6 +424,19 @@
   .pw-wrap input{padding-right:52px}
   .pw-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:16px;cursor:pointer;padding:6px 8px;color:var(--muted)}
   .sair{border:1px solid var(--border);background:var(--surface);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px;margin-left:8px;box-shadow:var(--shadow)}
+  /* Pill de sincronização: fica escondida quando está tudo salvo. Só aparece
+     quando há algo por subir, a rede caiu, ou a escrita falhou de vez. */
+  .sync-pill{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    font-size:12.5px;font-weight:600;white-space:nowrap}
+  /* sem fundo tingido: no tema claro o --red sobre --red-soft cai pra 4.33 de contraste */
+  .sync-pill.erro{border-color:var(--red);color:var(--red);cursor:pointer}
+  .sync-pill .spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--border);
+    border-top-color:var(--brand);animation:sync-gira .8s linear infinite}
+  .sync-pill .ponto{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.7}
+  @keyframes sync-gira{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .sync-pill .spin{animation:none} }
+  @media (max-width:400px){ .sync-pill .rotulo{display:none} .sync-pill{padding:0 8px} }
   .sair.hidden{display:none}
 
   /* ===== obras ===== */
@@ -648,6 +663,7 @@
   <header class="top">
     <h1><span class="logo" data-ico="portico"></span> <span class="logotipo">cus<span class="tt">tt</span>a<span class="pt">.</span></span></h1>
     <div style="display:flex;align-items:center">
+      <span id="syncPill" class="sync-pill hidden" role="status" aria-live="polite"></span>
       <button id="btnSair" class="sair hidden" title="Sair da conta" aria-label="Sair da conta" data-ico="sair"></button>
     </div>
   </header>

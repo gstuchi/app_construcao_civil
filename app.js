@@ -52,9 +52,26 @@ function normaliza(d){
 function save(){
   if(!OBRA_CALC.blobCabe(db)){
     toast('Não deu pra salvar: seus dados chegaram no limite. Apague uma obra antiga.');
-    return;
+    const p = Promise.reject(Object.assign(new Error('limite'), { code: 'limite' }));
+    p.catch(()=>{}); // quem quiser tratar trata; sem isto vira unhandledrejection
+    return p;
   }
-  CLOUD.saveDados(db);
+  return CLOUD.saveDados(db);
+}
+
+/* Confirmação honesta: "sucesso" só depois do servidor confirmar. Se em 600ms
+   ele não respondeu (rede ruim ou nenhuma), avisa que ficou salvo no aparelho —
+   deixar o usuário sem resposta nenhuma é pior que avisar o estado real.
+   O erro tem dono próprio: 'cloud-erro' e a pill de sincronização. */
+function salvarComAviso(msgOk){
+  const p = save();
+  let respondeu = false;
+  const avisoLocal = setTimeout(()=>{
+    if(!respondeu) toast('Salvo no aparelho — sobe quando a internet voltar');
+  }, 600);
+  const fim = ()=>{ respondeu = true; clearTimeout(avisoLocal); };
+  p.then(()=>{ fim(); toast(msgOk); }, fim);
+  return p;
 }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
@@ -810,8 +827,8 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
         o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto });
       }
     }
-    save(); renderAll(); fechar();
-    toast(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
+    salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
+    renderAll(); fechar();
   };
 }
 
@@ -1072,7 +1089,7 @@ const temaClaro = () => document.documentElement.getAttribute('data-theme') === 
 function aplicaTema(claro){
   if(claro) document.documentElement.setAttribute('data-theme','light');
   else document.documentElement.removeAttribute('data-theme');
-  try{ localStorage.setItem(TEMA_KEY, claro ? 'claro' : 'escuro'); }catch(e){}
+  try{ localStorage.setItem(TEMA_KEY, claro ? 'claro' : 'escuro'); }catch(e){ registraErro('tema', e && e.message); }
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
@@ -1084,7 +1101,7 @@ const skinAtual = () => document.documentElement.getAttribute('data-skin') || 'e
 function aplicaSkin(skin){
   if(skin === 'azul') document.documentElement.setAttribute('data-skin','azul');
   else document.documentElement.removeAttribute('data-skin');
-  try{ localStorage.setItem(SKIN_KEY, skin); }catch(e){}
+  try{ localStorage.setItem(SKIN_KEY, skin); }catch(e){ registraErro('skin', e && e.message); }
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   if(window.__globeDraw) window.__globeDraw(); // com prefers-reduced-motion o globo é estático — força a cor nova
@@ -1277,9 +1294,9 @@ sheet.addEventListener('focusin', e=>{
 
 /* toast de feedback rápido pós-ação (ex: gasto lançado) */
 const toastWrap = $('#toastWrap');
-function toast(msg){
-  const t = el('div','toast');
-  t.innerHTML = `${ICON('check')}<span></span>`;
+function toast(msg, tipo){
+  const t = el('div', 'toast' + (tipo === 'erro' ? ' erro' : ''));
+  t.innerHTML = `${ICON(tipo === 'erro' ? 'alerta' : 'check')}<span></span>`;
   t.querySelector('span').textContent = msg;
   toastWrap.appendChild(t);
   setTimeout(()=>{
@@ -1366,13 +1383,72 @@ function bootCloud(){
 /* Escrita que falhou na nuvem tem que aparecer pro usuário — uma vez a cada
    30s, senão uma queda de rede vira chuva de toast. */
 let ultimoAvisoErro = 0;
-window.addEventListener('cloud-erro', ()=>{
+function avisoRaro(msg){
   const agora = Date.now();
   if(agora - ultimoAvisoErro < 30000) return;
   ultimoAvisoErro = agora;
-  toast('Sem salvar na nuvem agora — vamos tentar de novo sozinhos.');
+  toast(msg, 'erro');
+}
+window.addEventListener('cloud-erro', ()=>avisoRaro('Sem salvar na nuvem agora — vamos tentar de novo sozinhos.'));
+
+/* ---------- pill de sincronização ----------
+   Fica invisível no caso normal. A fila de escrita mora em cloud.js; aqui só
+   pinta o estado que ela publica. */
+const syncPill = $('#syncPill');
+const SYNC_VISUAL = {
+  salvando:  { rotulo: 'Salvando…',   marca: '<span class="spin"></span>' },
+  repetindo: { rotulo: 'Salvando…',   marca: '<span class="spin"></span>' },
+  offline:   { rotulo: 'Sem conexão', marca: '<span class="ponto"></span>' },
+  erro:      { rotulo: 'Não salvou',  marca: '<span class="ponto"></span>' },
+};
+function renderSync(estado){
+  if(!syncPill) return;
+  const v = SYNC_VISUAL[estado];
+  syncPill.classList.toggle('hidden', !v);
+  syncPill.classList.toggle('erro', estado === 'erro');
+  if(!v) return;
+  syncPill.innerHTML = `${v.marca}<span class="rotulo"></span>`;
+  syncPill.querySelector('.rotulo').textContent = v.rotulo;
+  syncPill.title = estado === 'erro'
+    ? 'Não deu pra salvar na nuvem. Toque pra tentar de novo.'
+    : v.rotulo;
+  syncPill.onclick = estado === 'erro'
+    ? ()=>{ toast('Tentando de novo…'); CLOUD.tentarDeNovo(); }
+    : null;
+}
+window.addEventListener('cloud-estado', e=>{
+  const { estado, origem, code } = e.detail;
+  renderSync(estado);
+  if(estado === 'erro' && origem === 'leitura')
+    avisoRaro('Não consegui ler seus dados da nuvem agora (' + code + ').');
+});
+/* Rede caindo com nada pendente também precisa aparecer: cloud.js publica o
+   estado, mas o primeiro paint acontece antes de qualquer evento. */
+window.addEventListener('offline', ()=>renderSync('offline'));
+window.addEventListener('online',  ()=>renderSync(window.CLOUD ? CLOUD.estado() : 'ocioso'));
+
+/* ---------- rede de segurança de erro ----------
+   Anel dos últimos 20 erros, em memória. É o gancho que o Sentry substitui na
+   fase de endurecimento — por isso fica atrás de um nome estável. */
+const DIAG_MAX = 20;
+const diag = [];
+function registraErro(origem, msg, stack){
+  diag.push({ hora: new Date().toISOString(), origem, msg: String(msg || ''), stack: String(stack || '') });
+  if(diag.length > DIAG_MAX) diag.shift();
+  console.error('[custta]', origem, msg);
+}
+window.OBRA_DIAG = { erros: () => diag.slice(), registra: registraErro };
+window.addEventListener('error', e=>{
+  registraErro('window', e.message, e.error && e.error.stack);
+  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+});
+window.addEventListener('unhandledrejection', e=>{
+  const r = e.reason;
+  registraErro('promise', (r && (r.message || r.code)) || r, r && r.stack);
+  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
 });
 
-if(window.CLOUD) bootCloud();
-else window.addEventListener('cloud-pronto', bootCloud);
+function ligaSync(){ renderSync(CLOUD.estado()); }
+if(window.CLOUD){ bootCloud(); ligaSync(); }
+else window.addEventListener('cloud-pronto', ()=>{ bootCloud(); ligaSync(); });
 renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

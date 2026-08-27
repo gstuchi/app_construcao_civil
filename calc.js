@@ -17,6 +17,28 @@
     return tamanhoBlob(blob) <= LIMITE_BLOB;
   }
 
+  /* Fila de escrita da nuvem (cloud.js). Estas duas ficam aqui, e não lá, porque
+     são puras — dá pra testar sem browser e sem rede. */
+
+  /* Erro terminal é o que não melhora tentando de novo: permissão, sessão morta,
+     documento fora da forma que as rules aceitam. Rede caída não é terminal.
+     Erro sem code é falha de transporte crua — tratar como transitório. */
+  const CODES_TERMINAIS = ['permission-denied', 'unauthenticated', 'invalid-argument',
+    'not-found', 'failed-precondition', 'unimplemented', 'out-of-range'];
+  function erroEhTerminal(err){
+    const code = (err && err.code ? String(err.code) : '')
+      .toLowerCase().replace(/_/g, '-').split('/').pop();
+    return CODES_TERMINAIS.includes(code);
+  }
+
+  /* 1s, 2s, 4s, 8s, 16s e trava em 30s: martelar o servidor com a rede fora só
+     gasta bateria do celular. */
+  const BACKOFF_TETO = 30000;
+  function proximoBackoff(tentativa){
+    const n = Math.max(0, Math.floor(Number(tentativa) || 0));
+    return Math.min(BACKOFF_TETO, 1000 * Math.pow(2, n));
+  }
+
   function dataLocalISO(data = new Date()){
     const y = data.getFullYear();
     const m = String(data.getMonth() + 1).padStart(2, '0');
@@ -249,7 +271,7 @@
     const n = parseFloat(v); return Number.isFinite(n) ? n : 0;
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

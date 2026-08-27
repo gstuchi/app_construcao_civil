@@ -17,17 +17,42 @@
   /* Cancela o push ANTES do signOut: removePushSub precisa do usuário ainda logado.
      Sem isso a inscrição fica órfã no aparelho e quem entrar depois recebe
      notificação montada com os dados de quem saiu. */
+  let saindoDeProposito = false; // separa "ele apertou Sair" de "a sessão caiu"
   const doSair=async()=>{
     if(!confirm('Sair da conta?')) return;
+    saindoDeProposito = true;
     try{ if(window.OBRA_PUSH) await window.OBRA_PUSH.desativa(); }
     catch(err){ console.warn('não deu pra cancelar o push no logout:', err); }
-    CLOUD.logout();
+    /* Sair com lançamento ainda não subido descartava o trabalho em silêncio.
+       CLOUD.logout tenta subir primeiro e recusa com code 'pendente' se não der. */
+    try{ await CLOUD.logout(); }
+    catch(err){
+      if(err && err.code === 'pendente'){
+        if(!confirm('Tem lançamento que ainda não subiu pra nuvem. Sair mesmo assim descarta esse lançamento. Sair?')){
+          saindoDeProposito = false;
+          return;
+        }
+        await CLOUD.logout({ forcar:true });
+      } else { saindoDeProposito = false; throw err; }
+    }
   };
   sair.onclick=doSair;
   const sairSide=$('#btnSairSide'); if(sairSide) sairSide.onclick=doSair;
 
-  if(window.CLOUD) CLOUD.onAuth(u => locked(!u));
-  else window.addEventListener('cloud-pronto', ()=>CLOUD.onAuth(u => locked(!u)));
+  /* Cair da sessão no meio do uso é raro (o refresh token não vence sozinho, e
+     ficar offline não desloga) — acontece quando a conta é apagada/desativada,
+     a senha muda em outro aparelho, ou o token é revogado. Sem esta distinção,
+     a tela de login aparecia do nada e o usuário não sabia o que tinha havido. */
+  let jaLogou = false;
+  function aoTrocarUsuario(u){
+    if(u){ jaLogou = true; locked(false); return; }
+    const expirou = jaLogou && !saindoDeProposito;
+    jaLogou = false; saindoDeProposito = false;
+    locked(true); // limpa #lMsg, então a mensagem vem depois
+    if(expirou) $('#lMsg').textContent = 'Sua sessão expirou por segurança. Entre de novo pra continuar.';
+  }
+  if(window.CLOUD) CLOUD.onAuth(aoTrocarUsuario);
+  else window.addEventListener('cloud-pronto', ()=>CLOUD.onAuth(aoTrocarUsuario));
 
   /* ---------- efeito scroll 3D (ContainerScroll vanilla) ---------- */
   const scroller=$('#authScroll'), card=$('#authCard'), title=$('#authTitle');

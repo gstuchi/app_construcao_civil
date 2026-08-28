@@ -6,9 +6,11 @@ const SAIDA = process.argv[2] || '.';
 
 const FAKE = () => {
   window.__estado = 'ocioso';
+  const sessao = Object.freeze({ uid:'t', geracao:1 });
   window.__emite = (estado, code, origem) => { window.__estado = estado;
     window.dispatchEvent(new CustomEvent('cloud-estado', { detail: { estado, code: code||null, tentativa:0, origem: origem||'escrita' } })); };
-  window.CLOUD = { ready: Promise.resolve(), user: () => ({ uid:'t' }), onAuth(cb){ cb({ uid:'t' }); },
+  window.CLOUD = { ready: Promise.resolve(), user: () => ({ uid:'t' }), sessao: () => sessao,
+    sessaoAtiva: candidata => candidata === sessao, onAuth(cb){ cb({ uid:'t' }); },
     estado: () => window.__estado, watchDados(){ return () => {}; },
     saveDados(){ return new Promise(()=>{}); }, tentarDeNovo(){ return Promise.resolve(); },
     logout(){ return Promise.resolve(); }, savePushSub(){ return Promise.resolve(); }, removePushSub(){ return Promise.resolve(); } };

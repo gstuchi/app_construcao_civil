@@ -10,6 +10,7 @@ const { chromium } = require('playwright');
 const FAKE_CLOUD = () => {
   window.__espera = [];        // {resolve,reject} da escrita em voo
   window.__estado = 'ocioso';
+  const sessao = Object.freeze({ uid: 'teste', geracao: 1 });
   const emite = (estado, code, origem) => {
     window.__estado = estado;
     window.dispatchEvent(new CustomEvent('cloud-estado', { detail: { estado, code: code || null, tentativa: 0, origem: origem || 'escrita' } }));
@@ -18,6 +19,8 @@ const FAKE_CLOUD = () => {
   window.CLOUD = {
     ready: Promise.resolve(),
     user: () => ({ uid: 'teste', email: 'teste@exemplo.com' }),
+    sessao: () => sessao,
+    sessaoAtiva: candidata => candidata === sessao,
     onAuth(cb){ window.__authCb = cb; cb({ uid: 'teste', email: 'teste@exemplo.com' }); },
     estado: () => window.__estado,
     temPendencia: () => window.__espera.length > 0,
@@ -70,7 +73,7 @@ function checa(nome, ok, detalhe){
   checa('pill começa escondida', (await pill(page)).escondida, await pill(page));
 
   /* 1. Escrita que não responde (offline): aviso de "salvo no aparelho" em 600ms */
-  await page.evaluate(() => { salvarComAviso('Gasto lançado com sucesso'); });
+  await page.evaluate(() => { salvarComAviso(sessaoDados, 'Gasto lançado com sucesso'); });
   let p = await pill(page);
   checa('pill mostra "Salvando…" durante a escrita', !p.escondida && /Salvando/.test(p.texto), p);
   await page.waitForTimeout(900);
@@ -85,7 +88,7 @@ function checa(nome, ok, detalhe){
   checa('pill some quando o servidor confirma', (await pill(page)).escondida, await pill(page));
 
   await page.evaluate(() => { document.getElementById('toastWrap').innerHTML = ''; });
-  await page.evaluate(() => { salvarComAviso('Gasto lançado com sucesso'); setTimeout(()=>window.__espera.splice(0).forEach(f=>f.resolve()), 50); });
+  await page.evaluate(() => { salvarComAviso(sessaoDados, 'Gasto lançado com sucesso'); setTimeout(()=>window.__espera.splice(0).forEach(f=>f.resolve()), 50); });
   await page.waitForTimeout(400);
   t = await toasts(page);
   checa('com servidor rápido, mostra sucesso e não mostra o aviso local',

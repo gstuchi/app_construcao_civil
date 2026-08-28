@@ -61,6 +61,9 @@ function checa(nome, ok, detalhe){
   // ele substitui o duplê pelo Firebase de verdade e a tela trava sem login
   await page.route('**/cloud.js', r => r.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.goto('http://localhost:8123/index.html');
+  // bootCloud reconcilia a inscrição origin-wide antes de instalar a capacidade.
+  // Não dirija mutações enquanto essa barreira de segurança ainda está em curso.
+  await page.waitForFunction(() => sessaoDados && CLOUD.sessaoAtiva(sessaoDados));
   await page.evaluate(() => {
     document.getElementById('auth').classList.add('hidden');
     document.body.classList.remove('locked');

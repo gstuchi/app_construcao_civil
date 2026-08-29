@@ -1147,7 +1147,12 @@ async function pushAtual(){
 }
 let filaPush = Promise.resolve();
 let inscricaoPush = null; // { sub, sessao }: ownership só existe após save confirmado
-const PUSH_REMOVE_TIMEOUT_MS = 200;
+// No primeiro boot, pwa.js só registra o service worker depois do evento load.
+// Em celular/rede fria isso passa fácil de 200ms; abortar antes deixava o usuário
+// autenticado preso numa tela vazia. Cleanup remoto continua curto, pois quem
+// realmente invalida a capacidade é unsubscribe() — este nunca é abandonado.
+const PUSH_DISCOVERY_TIMEOUT_MS = 10000;
+const PUSH_REMOTE_TIMEOUT_MS = 200;
 const PUSH_CALLER_TIMEOUT_MS = 400;
 const PUSH_OWNER_KEY = 'custta-push-owner';
 function leDonaPush(){
@@ -1206,10 +1211,10 @@ function erroTimeoutPush(code){
   err.code = code;
   return err;
 }
-function limitaOperacaoPush(promessa, code){
+function limitaOperacaoPush(promessa, code, timeoutMs = PUSH_DISCOVERY_TIMEOUT_MS){
   let timer;
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(erroTimeoutPush(code)), PUSH_REMOVE_TIMEOUT_MS);
+    timer = setTimeout(() => reject(erroTimeoutPush(code)), timeoutMs);
   });
   return Promise.race([promessa, timeout]).finally(() => clearTimeout(timer));
 }
@@ -1222,7 +1227,7 @@ function limitaEsperaCleanupPush(promessa){
   return Promise.race([promessa, timeout]).finally(() => clearTimeout(timer));
 }
 function limitaCleanupPush(promessa){
-  return limitaOperacaoPush(promessa, 'push-remote-timeout');
+  return limitaOperacaoPush(promessa, 'push-remote-timeout', PUSH_REMOTE_TIMEOUT_MS);
 }
 async function unsubscribeConfirmado(sub){
   const removida = await sub.unsubscribe();

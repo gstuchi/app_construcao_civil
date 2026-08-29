@@ -413,6 +413,11 @@ function montaPushApp({ ready, savePushSub, removePushSub, locks = {
   const fonte = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
   const inicio = fonte.indexOf('async function pushAtual(){');
   const fim = fonte.indexOf('/* ===== AJUSTES ===== */', inicio);
+  // Timers curtos mantêm testes de timeout rápidos; valor de produção tem
+  // regressão própria abaixo porque precisa tolerar boot frio do service worker.
+  const fontePush = fonte.slice(inicio, fim)
+    .replace('const PUSH_DISCOVERY_TIMEOUT_MS = 10000;',
+      'const PUSH_DISCOVERY_TIMEOUT_MS = 200;');
   const contexto = {
     sessaoDados: Object.freeze({ uid: 'conta-a', geracao: 1 }),
     navigator: { serviceWorker: { ready }, ...(locks ? { locks } : {}) },
@@ -425,11 +430,18 @@ function montaPushApp({ ready, savePushSub, removePushSub, locks = {
     pushSuportado: () => true,
     window: {}, localStorage, Promise, Uint8Array, setTimeout, clearTimeout,
   };
-  const api = vm.runInNewContext(`${fonte.slice(inicio, fim)};
+  const api = vm.runInNewContext(`${fontePush};
     ({ ativaPush, desativaPush, alternaPush, reconciliaPush, consultaPush,
        duranteSaidaPush });`, contexto);
   return { contexto, ...api };
 }
+
+test('descoberta push tolera boot frio do service worker', () => {
+  const fonte = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+  const valor = Number(fonte.match(/PUSH_DISCOVERY_TIMEOUT_MS = (\d+)/)?.[1]);
+  assert.ok(valor >= 5000,
+    'serviceWorker.ready depende do registro após load e não pode expirar em poucos ms');
+});
 
 function montaLogoutAuth({ sessao, desativa, duranteSaida, logout,
   alert = () => {}, confirm = () => true }){

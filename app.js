@@ -36,6 +36,7 @@ const FASES = {
 
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
 let db = empty();
+let sessaoDados = null;    // capacidade imutável da sessão dona de db
 let obraAberta = null;   // id da obra no detalhe
 let filtroTexto = '', filtroMes = ''; // busca dos lançamentos (só memória)
 let tab = 'inicio';
@@ -49,28 +50,40 @@ function normaliza(d){
 /* O blob inteiro vai num documento só, e documento do Firestore para em 1MB.
    Sem esta guarda a escrita falhava calada: a tela mostrava o gasto novo e o
    dado sumia no próximo carregamento. */
-function save(){
+function comSessaoDados(fn){
+  const sessao = sessaoDados;
+  return comSessao(sessao, (...args) => fn(sessao, ...args));
+}
+function comSessao(sessao, fn){
+  return (...args) => {
+    if(!sessao || sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)) return;
+    return fn(...args);
+  };
+}
+function save(sessao){
   if(!OBRA_CALC.blobCabe(db)){
     toast('Não deu pra salvar: seus dados chegaram no limite. Apague uma obra antiga.');
     const p = Promise.reject(Object.assign(new Error('limite'), { code: 'limite' }));
     p.catch(()=>{}); // quem quiser tratar trata; sem isto vira unhandledrejection
     return p;
   }
-  return CLOUD.saveDados(db);
+  return CLOUD.saveDados(db, sessao);
 }
 
 /* Confirmação honesta: "sucesso" só depois do servidor confirmar. Se em 600ms
    ele não respondeu (rede ruim ou nenhuma), avisa que ficou salvo no aparelho —
    deixar o usuário sem resposta nenhuma é pior que avisar o estado real.
    O erro tem dono próprio: 'cloud-erro' e a pill de sincronização. */
-function salvarComAviso(msgOk){
-  const p = save();
+function salvarComAviso(sessao, msgOk){
+  const p = save(sessao);
   let respondeu = false;
+  const sessaoAindaAtiva = () => sessao === sessaoDados && CLOUD.sessaoAtiva(sessao);
   const avisoLocal = setTimeout(()=>{
-    if(!respondeu) toast('Salvo no aparelho — sobe quando a internet voltar');
+    if(!respondeu && sessaoAindaAtiva())
+      toast('Salvo no aparelho — sobe quando a internet voltar');
   }, 600);
   const fim = ()=>{ respondeu = true; clearTimeout(avisoLocal); };
-  p.then(()=>{ fim(); toast(msgOk); }, fim);
+  p.then(()=>{ fim(); if(sessaoAindaAtiva()) toast(msgOk); }, fim);
   return p;
 }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -331,25 +344,25 @@ function renderObra(){
   renderGastosFiltrados(o);
 
   renderAfazeres(o);
-  const addAfazer = ()=>{
+  const addAfazer = comSessaoDados(sessao=>{
     const inp = $('#afzInput'); const txt = inp.value.trim();
     if(!txt){ inp.focus(); return; }
     const oo = obraById(obraAberta); if(!oo) return;
     (oo.afazeres || (oo.afazeres = [])).unshift({ id:uid(), texto:txt, feito:false });
-    save(); inp.value = ''; renderAfazeres(oo); inp.focus();
-  };
+    save(sessao); inp.value = ''; renderAfazeres(oo); inp.focus();
+  });
   $('#afzAdd').onclick = addAfazer;
   $('#afzInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addAfazer(); } });
 
-  $('#oEdit').onclick = ()=>formEditarObra(o);
+  $('#oEdit').onclick = comSessaoDados(sessao=>formEditarObra(o, sessao));
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
   on('#oRel',          ()=>{ showView('relatorio'); renderRelatorio(); });
   on('#oGraf',         ()=>{ showView('graficos'); renderGraficos(); });
   on('#oDonutWrap',    ()=>{ if(o.gastos.length){ showView('graficos'); renderGraficos(); } });
-  on('#oPronta',       ()=>mudarFase(o.id,'pronta'));
-  on('#oVender',       ()=>formVenda(o));
-  on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
-  on('#oDesfazer',     ()=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
+  on('#oPronta',       comSessaoDados(sessao=>mudarFase(o.id,'pronta',sessao)));
+  on('#oVender',       comSessaoDados(sessao=>formVenda(o,sessao)));
+  on('#oVoltarConstr', comSessaoDados(sessao=>mudarFase(o.id,'construcao',sessao)));
+  on('#oDesfazer',     comSessaoDados(sessao=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(sessao); renderAll(); } }));
 }
 
 function renderAfazeres(o){
@@ -365,11 +378,11 @@ function renderAfazeres(o){
 
 function afazerRow(o, a){
   const li = el('li', a.feito ? 'afz-done' : '');
-  const toggle = ()=>{
+  const toggle = comSessaoDados(sessao=>{
     const oo = obraById(o.id); if(!oo) return;
     const aa = (oo.afazeres||[]).find(x=>x.id===a.id); if(!aa) return;
-    aa.feito = !aa.feito; save(); renderAfazeres(oo);
-  };
+    aa.feito = !aa.feito; save(sessao); renderAfazeres(oo);
+  });
   const check = el('button','afz-check', ICON('check'));
   check.setAttribute('aria-label', a.feito ? 'Desmarcar afazer' : 'Marcar feito');
   check.onclick = toggle;
@@ -378,10 +391,10 @@ function afazerRow(o, a){
   main.onclick = toggle;
   const del = el('button','li-del','×');
   del.setAttribute('aria-label','Apagar afazer');
-  del.onclick = ()=>{
+  del.onclick = comSessaoDados(sessao=>{
     const oo = obraById(o.id); if(!oo) return;
-    oo.afazeres = (oo.afazeres||[]).filter(x=>x.id!==a.id); save(); renderAfazeres(oo);
-  };
+    oo.afazeres = (oo.afazeres||[]).filter(x=>x.id!==a.id); save(sessao); renderAfazeres(oo);
+  });
   li.append(check, main, del);
   return li;
 }
@@ -603,14 +616,14 @@ function gastoRow(o, g, opts){
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';
-  li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
+  li.querySelector('.li-main').onclick = comSessaoDados(sessao=>formGasto(o.id, g, undefined, voltar, sessao));
   const del = el('button','li-del','×');
-  del.onclick = ()=>{
+  del.onclick = comSessaoDados(sessao=>{
     const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
       // exclusão simples usa confirm, não abre folha: nada a fechar, só voltar
       if(confirm('Excluir este gasto?')){
-        oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll();
+        oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(sessao); renderAll();
         if(voltar) voltar();
       }
       return;
@@ -625,9 +638,9 @@ function gastoRow(o, g, opts){
         <button class="btn ghost" id="dCancel" style="width:100%">Cancelar</button>
       </div>`);
     $('#dCancel').onclick = fechar;
-    $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); fechar(); };
-    $('#dTodas').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(); renderAll(); fechar(); };
-  };
+    $('#dUma').onclick = comSessao(sessao, ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(sessao); renderAll(); fechar(); });
+    $('#dTodas').onclick = comSessao(sessao, ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(sessao); renderAll(); fechar(); });
+  });
   li.appendChild(del);
   return li;
 }
@@ -635,9 +648,9 @@ function gastoRow(o, g, opts){
 /* ===== FASES E VENDA ===== */
 /* handlers sempre re-resolvem a obra por id na hora do clique: o snapshot da
    nuvem pode ter trocado os objetos de db desde o render */
-function mudarFase(id, f){ const o=obraById(id); if(!o) return; o.fase = f; save(); renderAll(); }
+function mudarFase(id, f, sessao){ const o=obraById(id); if(!o) return; o.fase = f; save(sessao); renderAll(); }
 
-function formVenda(o){
+function formVenda(o, sessao = sessaoDados){
   openSheet(`
     <h3>Registrar venda — ${escapeHtml(o.nome)}</h3>
     <div class="field big"><div class="money"><b>R$</b><input id="fVal" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
@@ -649,7 +662,7 @@ function formVenda(o){
   maskMoney('#fVal');
   $('#fVal').focus();
   $('#cCancel').onclick = closeSheet;
-  $('#cSave').onclick = ()=>{
+  $('#cSave').onclick = comSessao(sessao, ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ $('#fVal').focus(); return; }
     const data = $('#fData').value;
@@ -661,11 +674,11 @@ function formVenda(o){
     const oo = obraById(o.id); if(!oo) return;
     oo.venda = { valor, data };
     oo.fase = 'vendida';
-    save(); closeSheet(); renderAll();
-  };
+    save(sessao); closeSheet(); renderAll();
+  });
 }
 
-function formEditarObra(o){
+function formEditarObra(o, sessao = sessaoDados){
   openSheet(`
     <h3>Editar obra</h3>
     <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
@@ -679,7 +692,7 @@ function formEditarObra(o){
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
   maskMoney('#fEst');
-  $('#cSave').onclick = ()=>{
+  $('#cSave').onclick = comSessao(sessao, ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
     const oo = obraById(o.id); if(!oo) return;
@@ -689,25 +702,25 @@ function formEditarObra(o){
     oo.valorEstimadoVenda = est>0 ? est : null;
     const area = parseNum($('#fArea').value);
     oo.areaM2 = area>0 ? area : null;
-    save(); closeSheet(); renderAll();
-  };
-  $('#cDel').onclick = ()=>{
+    save(sessao); closeSheet(); renderAll();
+  });
+  $('#cDel').onclick = comSessao(sessao, ()=>{
     const n = o.gastos.length;
     if(confirm(`Apagar “${o.nome}”?` + (n?` Os ${n} lançamento(s) dela serão perdidos.`:''))){
       db.obras = db.obras.filter(x=>x.id!==o.id);
       obraAberta = null;
-      save(); closeSheet(); showView('inicio'); renderAll();
+      save(sessao); closeSheet(); showView('inicio'); renderAll();
     }
-  };
+  });
 }
 
 /* ===== GASTO (novo/editar) ===== */
 /* aoFechar: quem abriu o form de dentro de outra folha passa como voltar pra
    ela no Salvar/Cancelar. Sem isso, fecha a folha — comportamento de sempre. */
-function formGasto(obraId, gasto, valorInicial, aoFechar){
+function formGasto(obraId, gasto, valorInicial, aoFechar, sessao = sessaoDados){
   const fechar = aoFechar || closeSheet;
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
-  if(!abertas.length && !gasto){ formNovaObra(); return; }
+  if(!abertas.length && !gasto){ formNovaObra(sessao); return; }
   const isEdit = !!gasto;
   // na edição a obra é fixa (a que está aberta); na criação pode escolher
   const oFix = isEdit ? obraById(obraAberta) : (obraId ? obraById(obraId) : null);
@@ -796,7 +809,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
 
   if(isEdit) $('#fVal').focus();
   $('#cCancel').onclick = fechar;
-  $('#cSave').onclick = ()=>{
+  $('#cSave').onclick = comSessao(sessao, ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
@@ -827,9 +840,9 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
         o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto });
       }
     }
-    salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
+    salvarComAviso(sessao, isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
     renderAll(); fechar();
-  };
+  });
 }
 
 /* ===== RELATÓRIO BRUTO × CORRIGIDO ===== */
@@ -1128,36 +1141,267 @@ function hashEndpoint(s){
   return h.toString(36);
 }
 async function pushAtual(){
-  const reg = await navigator.serviceWorker.ready;
-  return reg.pushManager.getSubscription();
+  const reg = await limitaOperacaoPush(navigator.serviceWorker.ready, 'push-discovery-timeout');
+  return limitaOperacaoPush(Promise.resolve().then(() => reg.pushManager.getSubscription()),
+    'push-discovery-timeout');
 }
-async function ativaPush(){
-  const perm = await Notification.requestPermission();
-  if(perm !== 'granted') return false;
-  const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: b64ToU8(VAPID_PUBLICA),
+let filaPush = Promise.resolve();
+let inscricaoPush = null; // { sub, sessao }: ownership só existe após save confirmado
+// No primeiro boot, pwa.js só registra o service worker depois do evento load.
+// Em celular/rede fria isso passa fácil de 200ms; abortar antes deixava o usuário
+// autenticado preso numa tela vazia. Cleanup remoto continua curto, pois quem
+// realmente invalida a capacidade é unsubscribe() — este nunca é abandonado.
+const PUSH_DISCOVERY_TIMEOUT_MS = 10000;
+const PUSH_REMOTE_TIMEOUT_MS = 200;
+const PUSH_CALLER_TIMEOUT_MS = 400;
+const PUSH_OWNER_KEY = 'custta-push-owner';
+function leDonaPush(){
+  try{
+    const dona = JSON.parse(localStorage.getItem(PUSH_OWNER_KEY));
+    return dona && typeof dona.uid === 'string' && typeof dona.endpoint === 'string'
+      ? dona : null;
+  }catch(err){ return null; }
+}
+function gravaDonaPush(sub, sessao){
+  try{ localStorage.setItem(PUSH_OWNER_KEY,
+    JSON.stringify({ uid: sessao.uid, endpoint: sub.endpoint })); }
+  catch(err){}
+}
+function limpaDonaPush(sub, sessao){
+  const dona = leDonaPush();
+  if(!dona || dona.endpoint !== sub.endpoint || dona.uid !== sessao.uid) return;
+  try{ localStorage.removeItem(PUSH_OWNER_KEY); }catch(err){}
+}
+function donaPush(sub){
+  const compartilhada = leDonaPush();
+  if(compartilhada && compartilhada.endpoint === sub.endpoint) return compartilhada;
+  if(inscricaoPush && inscricaoPush.sub === sub)
+    return { uid: inscricaoPush.sessao.uid, endpoint: sub.endpoint };
+  return null;
+}
+const webLockPushDisponivel = () =>
+  !!(navigator.locks && typeof navigator.locks.request === 'function');
+function comLockPush(fn){
+  if(webLockPushDisponivel())
+    return navigator.locks.request('custta-push', { mode: 'exclusive' }, fn);
+  return fn();
+}
+function serializaPush(fn, limitarEspera = false){
+  const operacao = filaPush.then(() => comLockPush(fn), () => comLockPush(fn));
+  filaPush = operacao.catch(()=>{});
+  // Timeout informa o chamador, mas filaPush continua ligada à operação real.
+  // Assim logout não fica pendurado e o Web Lock não é liberado enquanto um
+  // unsubscribe tardio ainda pode revogar capacidade origin-wide.
+  return limitarEspera
+    ? limitaEsperaCleanupPush(operacao)
+    : operacao;
+}
+function erroPushAtivo(){
+  const err = new Error('A inscrição push anterior não foi revogada.');
+  err.code = 'push-still-active';
+  return err;
+}
+function erroCleanupPush(){
+  const err = new Error('Não foi possível revogar a inscrição push com segurança.');
+  err.code = 'push-cleanup-failed';
+  return err;
+}
+function erroTimeoutPush(code){
+  const err = new Error(code);
+  err.code = code;
+  return err;
+}
+function limitaOperacaoPush(promessa, code, timeoutMs = PUSH_DISCOVERY_TIMEOUT_MS){
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(erroTimeoutPush(code)), timeoutMs);
   });
+  return Promise.race([promessa, timeout]).finally(() => clearTimeout(timer));
+}
+function limitaEsperaCleanupPush(promessa){
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(erroTimeoutPush('push-cleanup-timeout')),
+      PUSH_CALLER_TIMEOUT_MS);
+  });
+  return Promise.race([promessa, timeout]).finally(() => clearTimeout(timer));
+}
+function limitaCleanupPush(promessa){
+  return limitaOperacaoPush(promessa, 'push-remote-timeout', PUSH_REMOTE_TIMEOUT_MS);
+}
+async function unsubscribeConfirmado(sub){
+  const removida = await sub.unsubscribe();
+  if(removida !== true) throw erroPushAtivo();
+}
+/* Tenta apagar o registro enquanto a capacidade da conta ainda pode ser aceita,
+   mas nunca deixa uma falha de Firestore impedir a revogação local do endpoint.
+   Na troca A→B as rules podem já enxergar B; nesse caso o endpoint morto torna o
+   registro A inofensivo e evita reutilizá-lo na nova conta. */
+async function revogaInscricao(sub, sessaoDona){
+  const remocaoRegistro = sessaoDona
+    ? limitaCleanupPush(Promise.resolve()
+      .then(() => CLOUD.removePushSub(hashEndpoint(sub.endpoint), sessaoDona)))
+    : Promise.reject(new Error('sem sessão dona do registro'));
+  // Nunca limita unsubscribe: liberar o Web Lock antes dessa promise terminar
+  // deixaria a revogação antiga correr junto da próxima conta.
+  const revogacaoLocal = Promise.resolve().then(() => unsubscribeConfirmado(sub))
+    .then(() => {
+      if(inscricaoPush && inscricaoPush.sub === sub) inscricaoPush = null;
+      const donaPersistida = leDonaPush();
+      if(donaPersistida && donaPersistida.endpoint === sub.endpoint){
+        try{ localStorage.removeItem(PUSH_OWNER_KEY); }catch(err){}
+      }
+    });
+
+  const [registro, local] = await Promise.allSettled([remocaoRegistro, revogacaoLocal]);
+  const resultado = {
+    registroRemovido: registro.status === 'fulfilled',
+    localRevogado: local.status === 'fulfilled',
+    seguro: local.status === 'fulfilled',
+  };
+  if(!resultado.localRevogado){
+    if(local.reason && local.reason.code === 'push-still-active') throw local.reason;
+    throw erroCleanupPush();
+  }
+  return resultado;
+}
+async function ativaPushAgora(sessao){
+  // PushSubscription é origin-wide. Sem lock cross-tab, criar/salvar uma nova
+  // capacidade pode vinculá-la à conta errada; limpeza de uma existente continua.
+  if(!webLockPushDisponivel()) return false;
+  if(!sessao || sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)) return false;
+  const perm = await Notification.requestPermission();
+  if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)) return false;
+  if(perm !== 'granted') return false;
+  const reg = await limitaOperacaoPush(navigator.serviceWorker.ready,
+    'push-discovery-timeout');
+  if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)) return false;
+
+  let sub = await limitaOperacaoPush(
+    Promise.resolve().then(() => reg.pushManager.getSubscription()),
+    'push-discovery-timeout');
+  if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)) return false;
+  const ownershipAtual = sub && donaPush(sub);
+  const donaAtual = ownershipAtual && ownershipAtual.uid === sessao.uid
+    ? sessao
+    : (inscricaoPush && inscricaoPush.sub === sub ? inscricaoPush.sessao : null);
+  if(sub && (!ownershipAtual || ownershipAtual.uid !== sessao.uid)){
+    // Inscrição desconhecida (reload) ou de outra conta: só B pode prosseguir
+    // depois de prova positiva de unsubscribe; jamais reaproveita endpoint A.
+    const limpezaAnterior = await revogaInscricao(sub, donaAtual);
+    if(!limpezaAnterior.localRevogado) throw erroPushAtivo();
+    sub = null;
+  }
+  if(!sub){
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: b64ToU8(VAPID_PUBLICA),
+    });
+    if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)){
+      // PushSubscription é origin-wide: outra aba pode ter adotado o resultado
+      // enquanto subscribe aguardava. Operação stale não pode revogá-lo.
+      return false;
+    }
+  }
+
   const j = sub.toJSON();
   try{
     await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
-      { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
+      { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() }, sessao);
   }catch(err){
-    await sub.unsubscribe().catch(()=>{}); // não deixa o toggle ligado sem a nuvem saber
+    // O write pode ter chegado ao servidor antes de rejeitar localmente. Tenta
+    // apagar o registro e, independentemente disso, mata a capacidade.
+    try{ await revogaInscricao(sub, sessao); }
+    catch(erroRevogacao){ throw erroRevogacao; }
     throw err;
   }
+  gravaDonaPush(sub, sessao);
+  if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao)){
+    await revogaInscricao(sub, sessao);
+    return false;
+  }
+  inscricaoPush = { sub, sessao }; // commit somente após write + revalidação
   return true;
 }
-async function desativaPush(){
-  const sub = await pushAtual();
-  if(!sub) return;
-  const chave = hashEndpoint(sub.endpoint);
-  await sub.unsubscribe();
-  await CLOUD.removePushSub(chave);
+function ativaPush(sessao = sessaoDados){
+  return serializaPush(() => ativaPushAgora(sessao));
+}
+async function desativaPushAgora(sessao, subAtual, autorizadaAoEnfileirar = false){
+  if(!sessao) throw erroCleanupPush();
+  const sub = subAtual || await pushAtual();
+  if(!sub) return { seguro: true, semInscricao: true };
+  // O ownership persistido é visível entre abas. Estado só em memória não basta:
+  // teardown A pode adquirir o Web Lock depois que outra aba já confirmou B.
+  const dona = donaPush(sub);
+  if(dona && dona.uid !== sessao.uid) return { seguro: true, pertenceAOutraConta: true };
+  if(!dona && !autorizadaAoEnfileirar
+    && sessao !== sessaoDados && !CLOUD.sessaoAtiva(sessao))
+    throw erroCleanupPush();
+  return revogaInscricao(sub, sessao);
+}
+function desativaPush(sessao = sessaoDados){
+  const autorizada = sessao === sessaoDados && CLOUD.sessaoAtiva(sessao);
+  return serializaPush(() => desativaPushAgora(sessao, undefined, autorizada), true);
+}
+function duranteSaidaPush(sessao, decidir){
+  const autorizada = sessao === sessaoDados && CLOUD.sessaoAtiva(sessao);
+  return serializaPush(async () => {
+    const resultado = await desativaPushAgora(sessao, undefined, autorizada);
+    if(!resultado || resultado.seguro !== true) throw erroCleanupPush();
+    return decidir(resultado);
+  });
+}
+function alternaPush(sessao = sessaoDados){
+  return serializaPush(async()=>{
+    const sub = await pushAtual();
+    if(sub){
+      const dona = donaPush(sub);
+      if(dona && dona.uid === sessao.uid){
+        const limpeza = await desativaPushAgora(sessao, sub);
+        if(!limpeza.seguro) throw erroPushAtivo();
+        return false;
+      }
+      // Endpoint alheio/desconhecido não representa toggle ligado para B. Mata a
+      // capacidade antiga e só então segue para uma assinatura nova de B.
+      const sessaoDona = inscricaoPush && inscricaoPush.sub === sub
+        ? inscricaoPush.sessao : null;
+      await revogaInscricao(sub, sessaoDona);
+    }
+    return ativaPushAgora(sessao);
+  }, true);
+}
+function consultaPush(){
+  return serializaPush(async() => {
+    const sub = await pushAtual();
+    const dona = sub && donaPush(sub);
+    return sub && sessaoDados && dona && dona.uid === sessaoDados.uid ? sub : null;
+  });
+}
+function reconciliaPush(sessao){
+  return serializaPush(async() => {
+    if(!sessao || !CLOUD.sessaoAtiva(sessao)) throw erroCleanupPush();
+    const sub = await pushAtual();
+    const dona = sub && donaPush(sub);
+    if(!sub){
+      try{ localStorage.removeItem(PUSH_OWNER_KEY); }catch(err){}
+      return { seguro: true, semInscricao: true };
+    }
+    if(dona && dona.uid === sessao.uid) return { seguro: true, pertenceASessao: true };
+    const sessaoDona = inscricaoPush && inscricaoPush.sub === sub
+      ? inscricaoPush.sessao : null;
+    return revogaInscricao(sub, sessaoDona);
+  }, true);
 }
 /* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
-window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
+window.OBRA_PUSH = {
+  desativa: sessao => pushSuportado()
+    ? desativaPush(sessao) : Promise.resolve({ seguro: true, naoSuportado: true }),
+  duranteSaida: (sessao, decidir) => pushSuportado()
+    ? duranteSaidaPush(sessao, decidir)
+    : Promise.resolve().then(() => decidir({ seguro: true, naoSuportado: true })),
+  reconcilia: sessao => pushSuportado()
+    ? reconciliaPush(sessao) : Promise.resolve({ seguro: true, naoSuportado: true }),
+};
 
 /* ===== AJUSTES ===== */
 function renderAjustes(){
@@ -1190,39 +1434,56 @@ function renderAjustes(){
         + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
         + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
     }else{
-      pushAtual().then(sub => {
+      tgN.disabled = false;
+      tgN.style.opacity = '';
+      const sessaoConsulta = sessaoDados;
+      const notaInicial = $('#ajNotifNota');
+      const controlesAtuais = () => sessaoConsulta === sessaoDados && tgN.isConnected
+        && notaInicial.isConnected
+        && (!sessaoConsulta || CLOUD.sessaoAtiva(sessaoConsulta));
+      consultaPush().then(sub => {
+        if(!controlesAtuais()) return;
         const on = !!sub && Notification.permission === 'granted';
         tgN.classList.toggle('on', on);
         tgN.setAttribute('aria-checked', String(on));
+        if(!sub && !webLockPushDisponivel()){
+          tgN.disabled = true;
+          notaInicial.textContent = 'Não dá pra ativar notificações neste navegador porque ele não oferece Web Locks. Use um navegador atualizado.';
+        }
+      }, () => {
+        if(!controlesAtuais()) return;
+        tgN.classList.remove('on');
+        tgN.setAttribute('aria-checked', 'false');
+        notaInicial.textContent = 'Não consegui consultar as notificações agora. Tente de novo.';
       });
-      tgN.onclick = async () => {
+      tgN.onclick = comSessaoDados(async sessao => {
         const nota = $('#ajNotifNota');
         nota.textContent = NOTIF_NOTA_PADRAO;
         try{
-          const sub = await pushAtual();
-          if(sub){
-            await desativaPush();
-          }else{
-            const ok = await ativaPush();
-            if(!ok) nota.textContent = 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
-          }
+          const on = await alternaPush(sessao);
+          if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao) || !tgN.isConnected) return;
+          if(!on && !webLockPushDisponivel())
+            nota.textContent = 'A notificação foi desligada. Não dá pra ativar de novo neste navegador porque ele não oferece Web Locks.';
+          else if(!on && Notification.permission !== 'granted')
+            nota.textContent = 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
         }catch(err){
-          nota.textContent = 'Não deu pra ativar agora. Tente de novo.';
+          if(sessao !== sessaoDados || !CLOUD.sessaoAtiva(sessao) || !tgN.isConnected) return;
+          nota.textContent = 'Não deu pra alterar as notificações agora. Tente de novo.';
         }
-        renderAjustes();
-      };
+        if(sessao === sessaoDados && CLOUD.sessaoAtiva(sessao) && tgN.isConnected) renderAjustes();
+      });
     }
   }
 
   const inp = $('#ajTaxa');
   if(document.activeElement !== inp)
     inp.value = String(db.config.taxaMensal).replace('.',',');
-  inp.onchange = ()=>{
+  inp.onchange = comSessaoDados(sessao=>{
     const v = parseNum(inp.value);
     db.config.taxaMensal = (v>0 && v<=20) ? v : 1;
     inp.value = String(db.config.taxaMensal).replace('.',',');
-    save(); renderAll();
-  };
+    save(sessao); renderAll();
+  });
 
   const ul = $('#ajTopicos');
   ul.innerHTML = db.config.topicosCustom.length ? '' : emptyBlock(ICON('etiqueta'),'Nenhum tópico próprio ainda.');
@@ -1231,25 +1492,25 @@ function renderAjustes(){
     li.innerHTML = `<div class="av ic-brand">${ICON('etiqueta')}</div>
       <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
     const del = el('button','li-del','×');
-    del.onclick = ()=>{
+    del.onclick = comSessaoDados(sessao=>{
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
       if(emUso){ alert('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
       if(confirm(`Remover o tópico “${t.nm}”?`)){
         db.config.topicosCustom = db.config.topicosCustom.filter(x=>x.id!==t.id);
-        save(); renderAll();
+        save(sessao); renderAll();
       }
-    };
+    });
     li.appendChild(del);
     ul.appendChild(li);
   });
 
-  $('#ajAddTopico').onclick = ()=>{
+  $('#ajAddTopico').onclick = comSessaoDados(sessao=>{
     const nm = $('#ajNovoTopico').value.trim();
     if(!nm){ $('#ajNovoTopico').focus(); return; }
     db.config.topicosCustom.push({ id:'c_'+uid(), nm, ic:'etiqueta' });
     $('#ajNovoTopico').value = '';
-    save(); renderAll();
-  };
+    save(sessao); renderAll();
+  });
 
   $('#ajSair').onclick = ()=>$('#btnSair').click();
 }
@@ -1307,7 +1568,7 @@ function toast(msg, tipo){
 backdrop.onclick = e=>{ if(e.target===backdrop) closeSheet(); };
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classList.contains('show')) closeSheet(); });
 
-function formNovaObra(){
+function formNovaObra(sessao = sessaoDados){
   openSheet(`
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
@@ -1321,7 +1582,7 @@ function formNovaObra(){
   maskMoney('#fEst');
   $('#fNome').focus();
   $('#cCancel').onclick = closeSheet;
-  $('#cSave').onclick = ()=>{
+  $('#cSave').onclick = comSessao(sessao, ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
     const est = parseNum($('#fEst').value);
@@ -1333,19 +1594,20 @@ function formNovaObra(){
       areaM2: area > 0 ? area : null,
       gastos: [],
     };
-    db.obras.push(o); save(); closeSheet(); renderAll(); openObra(o.id);
-  };
+    db.obras.push(o); save(sessao); closeSheet(); renderAll(); openObra(o.id);
+  });
 }
-$('#btnNovaObra').onclick = formNovaObra;
+$('#btnNovaObra').onclick = ()=>formNovaObra();
 
 /* FAB: lançar gasto (ou criar 1ª obra) */
 $('#fab').onclick = ()=>{
+  const confirmaGasto = comSessaoDados((sessao, oid, valor) => formGasto(oid, null, valor, undefined, sessao));
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   if(!abertas.length){ formNovaObra(); return; }
   const atual = obraAberta && obraById(obraAberta);
   const oid = atual && atual.fase!=='vendida' ? obraAberta : null;
   // valor primeiro: teclado do app, depois o resto do form
-  TECLADO.abrir({ valorInicial: 0, onConfirm: v => formGasto(oid, null, v) });
+  TECLADO.abrir({ valorInicial: 0, onConfirm: v => confirmaGasto(oid, v) });
 };
 
 /* ---------- instalar PWA ---------- */
@@ -1362,21 +1624,62 @@ window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidd
 function bootCloud(){
   CLOUD.onAuth(user=>{
     if(unwatch){ unwatch(); unwatch=null; }
-    if(!user){ db = empty(); obraAberta = null; showView('inicio'); renderAll(); return; }
+    const sessaoAnterior = sessaoDados;
+    const proximaSessao = user ? CLOUD.sessao() : null;
+    db = empty(); obraAberta = null; showView('inicio'); renderAll();
 
-    /* Aqui existia uma migração dos dados antigos de localStorage pra nuvem.
-       Removida: ela varria as chaves obras_data_v1* de QUALQUER pessoa que já
-       tivesse usado este navegador e copiava pra conta logada no momento —
-       num aparelho compartilhado, isso levava as obras de um pro outro. */
+    const instalaSessao = () => {
+      if(proximaSessao !== CLOUD.sessao()) return;
+      sessaoDados = proximaSessao;
+      if(!user) return;
 
-    unwatch = CLOUD.watchDados((blob, meta)=>{
-      if(meta.pendingWrites || meta.localDirty) return; // eco da própria escrita
-      const novo = normaliza(blob);
-      // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
-      if(canon(novo) === canon(db)) return;
-      db = novo;
-      if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
-      renderAll();
+      /* Aqui existia uma migração dos dados antigos de localStorage pra nuvem.
+         Removida: ela varria as chaves obras_data_v1* de QUALQUER pessoa que já
+         tivesse usado este navegador e copiava pra conta logada no momento —
+         num aparelho compartilhado, isso levava as obras de um pro outro. */
+
+      const sessao = sessaoDados;
+      unwatch = CLOUD.watchDados(sessao, (blob, meta)=>{
+        if(sessao !== sessaoDados) return;
+        if(meta.pendingWrites || meta.localDirty) return; // eco da própria escrita
+        const novo = normaliza(blob);
+        // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
+        if(canon(novo) === canon(db)) return;
+        db = novo;
+        if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
+        renderAll();
+      });
+    };
+
+    // PushSubscription é da origem, não da conta. Toda sessão autenticada reconcilia
+    // estado persistido/origin-wide antes de receber db/watch — inclusive boot em que
+    // sessaoDados ainda é null. Só confirmação positiva abre a sessão nova.
+    const push = typeof window !== 'undefined' && window.OBRA_PUSH;
+    if(!push){ instalaSessao(); return; }
+    let preparaPush = Promise.resolve({ seguro: true, indisponivel: true });
+    if(push && sessaoAnterior && sessaoAnterior !== proximaSessao)
+      preparaPush = push.desativa(sessaoAnterior);
+    if(push && user){
+      preparaPush = preparaPush.then(resultado => {
+        if(!resultado || resultado.seguro !== true) throw erroCleanupPush();
+        return push.reconcilia(proximaSessao).catch(err => {
+          // O timeout é só do chamador: a operação real continua na fila/lock.
+          // Uma única nova chamada fica atrás dela e confirma o estado final;
+          // nenhum watch abre enquanto essa retomada não concluir com segurança.
+          if(err && err.code === 'push-cleanup-timeout'
+            && proximaSessao === CLOUD.sessao())
+            return push.reconcilia(proximaSessao);
+          throw err;
+        });
+      });
+    }
+    preparaPush.then(resultado => {
+      if(!resultado || resultado.seguro !== true) throw erroCleanupPush();
+      instalaSessao();
+    }).catch(err => {
+      console.warn('não deu pra reconciliar o push na troca de conta:', err);
+      if(proximaSessao === CLOUD.sessao())
+        toast('Não foi seguro trocar de conta: desligue as notificações e tente de novo.');
     });
   });
 }

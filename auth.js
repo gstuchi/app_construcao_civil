@@ -20,20 +20,51 @@
   let saindoDeProposito = false; // separa "ele apertou Sair" de "a sessão caiu"
   const doSair=async()=>{
     if(!confirm('Sair da conta?')) return;
+    const sessao = CLOUD.sessao();
     saindoDeProposito = true;
-    try{ if(window.OBRA_PUSH) await window.OBRA_PUSH.desativa(); }
-    catch(err){ console.warn('não deu pra cancelar o push no logout:', err); }
-    /* Sair com lançamento ainda não subido descartava o trabalho em silêncio.
-       CLOUD.logout tenta subir primeiro e recusa com code 'pendente' se não der. */
-    try{ await CLOUD.logout(); }
-    catch(err){
-      if(err && err.code === 'pendente'){
-        if(!confirm('Tem lançamento que ainda não subiu pra nuvem. Sair mesmo assim descarta esse lançamento. Sair?')){
-          saindoDeProposito = false;
-          return;
+    let entrouNaDecisao = false;
+    try{
+      if(!window.OBRA_PUSH || typeof window.OBRA_PUSH.duranteSaida !== 'function')
+        throw new Error('cleanup push indisponível');
+      await window.OBRA_PUSH.duranteSaida(sessao, async resultadoPush => {
+        entrouNaDecisao = true;
+        if(!resultadoPush || resultadoPush.seguro !== true)
+          throw new Error('cleanup push sem confirmação');
+        /* Sair com lançamento ainda não subido descartava o trabalho em silêncio.
+           CLOUD.logout tenta subir primeiro e recusa com code 'pendente' se não der. */
+        try{ await CLOUD.logout(sessao); }
+        catch(err){
+          if(err && err.code === 'pendente'){
+            if(!confirm('Tem lançamento que ainda não subiu pra nuvem. Sair mesmo assim descarta esse lançamento. Sair?')){
+              saindoDeProposito = false;
+              return;
+            }
+            try{ await CLOUD.logout(sessao, { forcar:true }); }
+            catch(erroForcado){
+              if(erroForcado && erroForcado.code === 'auth-changed'){
+                saindoDeProposito = false;
+                return;
+              }
+              saindoDeProposito = false;
+              throw erroForcado;
+            }
+          } else if(err && err.code === 'auth-changed'){
+            // A sessão já mudou enquanto o clique aguardava; evento DOM não deve
+            // produzir uma rejeição não tratada nem atingir a conta seguinte.
+            saindoDeProposito = false;
+            return;
+          } else { saindoDeProposito = false; throw err; }
         }
-        await CLOUD.logout({ forcar:true });
-      } else { saindoDeProposito = false; throw err; }
+      });
+    }catch(err){
+      saindoDeProposito = false;
+      if(entrouNaDecisao){
+        console.warn('não deu pra sair da conta:', err);
+        alert('Não deu pra sair da conta agora. Tente de novo.');
+        return;
+      }
+      console.warn('não deu pra cancelar o push no logout:', err);
+      alert('Não foi seguro sair: não consegui desligar as notificações deste aparelho. Tente de novo.');
     }
   };
   sair.onclick=doSair;

@@ -7,6 +7,7 @@ export const __ctrl = {
   signOutChamado: 0,
   authCb: null,
   snapshotErroCb: null,
+  snapshots: [],
 };
 
 export function initializeApp(){ return { nome: 'stub' }; }
@@ -27,11 +28,17 @@ export function persistentMultipleTabManager(){ return {}; }
 export function doc(_db, col, id){ return { path: col + '/' + id }; }
 export function serverTimestamp(){ return '@ts'; }
 export function deleteField(){ return '@del'; }
-export function onSnapshot(_ref, _cb, errCb){ __ctrl.snapshotErroCb = errCb; return () => {}; }
+export function onSnapshot(ref, cb, errCb){
+  const watch = { ref, cb, errCb, ativo: true };
+  __ctrl.snapshots.push(watch);
+  __ctrl.snapshotErroCb = errCb;
+  return () => { watch.ativo = false; };
+}
 
 export function setDoc(ref, dados){
   __ctrl.setDocChamadas.push({ ref, dados });
   const r = __ctrl.respostas.shift();
   if(!r || r === 'ok') return Promise.resolve();
+  if(r instanceof Promise) return r;
   return Promise.reject(Object.assign(new Error(r.code), { code: r.code }));
 }

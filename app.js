@@ -60,14 +60,13 @@ function save(){
 }
 
 /* Confirmação honesta: "sucesso" só depois do servidor confirmar. Se em 600ms
-   ele não respondeu (rede ruim ou nenhuma), avisa que ficou salvo no aparelho —
-   deixar o usuário sem resposta nenhuma é pior que avisar o estado real.
+   ele não respondeu, informa espera sem prometer persistência pelo tempo decorrido.
    O erro tem dono próprio: 'cloud-erro' e a pill de sincronização. */
 function salvarComAviso(msgOk){
   const p = save();
   let respondeu = false;
   const avisoLocal = setTimeout(()=>{
-    if(!respondeu) toast('Salvo no aparelho — sobe quando a internet voltar');
+    if(!respondeu) toast('Aguardando sincronização — mantenha o app aberto até confirmar');
   }, 600);
   const fim = ()=>{ respondeu = true; clearTimeout(avisoLocal); };
   p.then(()=>{ fim(); toast(msgOk); }, fim);
@@ -1370,7 +1369,7 @@ function bootCloud(){
        num aparelho compartilhado, isso levava as obras de um pro outro. */
 
     unwatch = CLOUD.watchDados((blob, meta)=>{
-      if(meta.pendingWrites || meta.localDirty) return; // eco da própria escrita
+      if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
       const novo = normaliza(blob);
       // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
       if(canon(novo) === canon(db)) return;

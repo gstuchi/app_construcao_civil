@@ -69,14 +69,14 @@ function checa(nome, ok, detalhe){
 
   checa('pill começa escondida', (await pill(page)).escondida, await pill(page));
 
-  /* 1. Escrita que não responde (offline): aviso de "salvo no aparelho" em 600ms */
+  /* 1. Escrita que não responde (offline): aviso de "aguardando sincronização" em 600ms */
   await page.evaluate(() => { salvarComAviso('Gasto lançado com sucesso'); });
   let p = await pill(page);
   checa('pill mostra "Salvando…" durante a escrita', !p.escondida && /Salvando/.test(p.texto), p);
   await page.waitForTimeout(900);
   let t = await toasts(page);
-  checa('sem resposta do servidor, avisa que salvou no aparelho',
-    t.some(x => /Salvo no aparelho/.test(x)) && !t.some(x => /sucesso/.test(x)), t);
+  checa('sem resposta do servidor, avisa que aguarda sincronização',
+    t.some(x => /Aguardando sincronização/.test(x)) && !t.some(x => /sucesso/.test(x)), t);
 
   /* 2. Servidor confirma: aí sim "sucesso" */
   await page.evaluate(() => window.__espera.splice(0).forEach(f => f.resolve()));
@@ -89,7 +89,7 @@ function checa(nome, ok, detalhe){
   await page.waitForTimeout(400);
   t = await toasts(page);
   checa('com servidor rápido, mostra sucesso e não mostra o aviso local',
-    t.some(x => /sucesso/.test(x)) && !t.some(x => /Salvo no aparelho/.test(x)), t);
+    t.some(x => /sucesso/.test(x)) && !t.some(x => /Aguardando sincronização/.test(x)), t);
 
   /* 3. Falha terminal: pill de erro, clicável, não some sozinha */
   await page.evaluate(() => window.__emite('erro', 'permission-denied'));

@@ -21,19 +21,14 @@
   const doSair=async()=>{
     if(!confirm('Sair da conta?')) return;
     saindoDeProposito = true;
-    try{ if(window.OBRA_PUSH) await window.OBRA_PUSH.desativa(); }
-    catch(err){ console.warn('não deu pra cancelar o push no logout:', err); }
-    /* Sair com lançamento ainda não subido descartava o trabalho em silêncio.
-       CLOUD.logout tenta subir primeiro e recusa com code 'pendente' se não der. */
-    try{ await CLOUD.logout(); }
+    try{ await CLOUD.logout({ antesDeSair: async()=>{
+      if(window.OBRA_PUSH) await window.OBRA_PUSH.desativa();
+    } }); }
     catch(err){
+      saindoDeProposito = false;
       if(err && err.code === 'pendente'){
-        if(!confirm('Tem lançamento que ainda não subiu pra nuvem. Sair mesmo assim descarta esse lançamento. Sair?')){
-          saindoDeProposito = false;
-          return;
-        }
-        await CLOUD.logout({ forcar:true });
-      } else { saindoDeProposito = false; throw err; }
+        toast('Conecte à internet e aguarde a sincronização antes de sair.', 'erro');
+      } else { toast('Não foi possível sair com segurança. Tente novamente.', 'erro'); }
     }
   };
   sair.onclick=doSair;

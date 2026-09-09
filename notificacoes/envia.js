@@ -7,6 +7,7 @@
 const admin = require('firebase-admin');
 const webpush = require('web-push');
 const { montaResumo, endpointPushValido } = require('./resumo.js');
+const { hojeNoFuso } = require('./fuso.js');
 
 admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
@@ -20,15 +21,14 @@ webpush.setVapidDetails(
 );
 
 // data de hoje no fuso do usuário (cron roda em UTC; en-CA formata YYYY-MM-DD)
-const hojeISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
-  .format(new Date());
+const agora = new Date();
 
 // qualquer valor inesperado cai em 'noite', que é o resumo completo
 const periodo = process.env.PERIODO === 'manha' ? 'manha' : 'noite';
 
 async function main(){
   const pushDocs = await db.collection('push').get();
-  console.log(pushDocs.size + ' usuario(s) com push; hoje = ' + hojeISO
+  console.log(pushDocs.size + ' usuario(s) com push; hoje = ' + hojeNoFuso(null, agora)
     + '; periodo = ' + periodo);
 
   for(const pdoc of pushDocs.docs){
@@ -38,6 +38,8 @@ async function main(){
     if(!chaves.length) continue;
 
     const snap = await db.doc('dados/' + uid).get();
+    const perfil = await db.doc('perfis/' + uid).get();
+    const hojeISO = hojeNoFuso(perfil.data()?.tz, agora);
     const resumo = montaResumo(snap.data(), hojeISO, periodo);
     if(!resumo){ console.log(uid + ': nada a dizer'); continue; }
 

@@ -16,10 +16,20 @@ A Fase 1 foi validada localmente; publicação de v33 ainda não confirmada.
 - Logout sincroniza antes de signOut, terminate, clearIndexedDbPersistence e reload.
   Marcador local permite retomar limpeza após interrupção; falha de cache impede
   novo login e orienta fechar outras abas antes de repetir limpeza.
+- Web Locks mantém trava compartilhada por aba e exige exclusividade durante
+  logout/exclusão. Outra aba aberta impede a operação antes de qualquer delete.
+  Navegador sem essa API recebe orientação de atualização. Não cobre outro aparelho.
+- Cancelamento da inscrição push antecede o batch, pois a implementação web
+  remove um campo com setDoc; executá-la depois recriaria o documento apagado.
 - Novo cadastro grava fuso IANA. Cron usa fuso do perfil para data, mantendo horários
   existentes do agendador. Script de CPF é paginado, dry-run padrão, sem valores nos logs.
 - Privacidade é rascunho nesta fase, com responsável e contato a confirmar; não
   declarar conformidade legal ou publicação antes de validação operacional.
+
+A política já existia com contato pelo Instagram @custta.ai. Esse contato foi
+preservado. Usuário criará e-mail próprio do Custta; lembrete agendado para 10/09,
+9h de Brasília. Fuso é gravado nos novos cadastros; perfis antigos sem tz mantêm
+fallback para Brasília, sem inferir localização de pessoas existentes.
 
 ## Verificação
 

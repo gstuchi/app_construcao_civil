@@ -138,6 +138,8 @@ O `hasOnly(['email','criado','tz'])` em `perfis` faz as próprias rules rejeitar
 
 ## Fase 2 — Conformidade
 
+**Concluída em 2026-09-09**, conforme testes locais e validação de produção relatada pelo usuário. Contato: suportecustta@gmail.com. Confirmação do responsável e revisão definitiva da política seguem para Fase 4, após congelamento dos SDKs.
+
 **Exigências da Apple:** exclusão de conta in-app (Guideline 5.1.1(v)) e política de privacidade em URL viva. **Escolhas de qualidade:** verificação de e-mail, exportação de dados, texto de consentimento.
 
 Termos de uso **não** entram — a EULA padrão da Apple já se aplica a apps gratuitos. Só a política de privacidade é obrigatória.

@@ -1161,6 +1161,13 @@ window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.
 
 /* ===== AJUSTES ===== */
 function renderAjustes(){
+  for(const formato of ['json', 'csv']){
+    const botao = document.getElementById(formato === 'json' ? 'ajJson' : 'ajCsv');
+    botao.onclick = async()=>{
+      try{ await OBRA_SHARE.exportar(db, formato); }
+      catch(err){ if(err.name !== 'AbortError') toast('Não foi possível exportar. Tente novamente.', 'erro'); }
+    };
+  }
   const tg = $('#ajTema');
   if(tg){
     const claro = temaClaro();

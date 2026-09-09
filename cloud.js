@@ -5,10 +5,13 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/fireba
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, sendPasswordResetEmail, signOut, getIdToken,
+  EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
+  sendEmailVerification, reload,
 } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, setDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
+  writeBatch, terminate, clearIndexedDbPersistence,
 } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -22,6 +25,32 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// Cada aba mantém uma trava compartilhada. Saída/exclusão exigem exclusividade:
+// outra aba não pode escrever entre o flush e a limpeza do IndexedDB.
+let liberaAba = null, travaAba = null;
+async function registrarAba(){
+  if(!navigator.locks) return;
+  let pronta;
+  const iniciou = new Promise(r=>{ pronta=r; });
+  travaAba = navigator.locks.request('custta-conta-' + firebaseConfig.projectId, {mode:'shared'}, ()=>{
+    pronta(); return new Promise(r=>{ liberaAba=r; });
+  });
+  await iniciou;
+}
+await registrarAba();
+async function contaExclusiva(acao){
+  if(!navigator.locks){
+    if(typeof document !== 'undefined') throw Object.assign(new Error('Atualize o navegador para gerenciar a conta.'), {code:'navegador'});
+    return acao(); // ambiente de testes sem navegador
+  }
+  liberaAba(); await travaAba;
+  try{
+    return await navigator.locks.request('custta-conta-' + firebaseConfig.projectId, {ifAvailable:true}, async trava=>{
+      if(!trava) throw Object.assign(new Error('Feche outras abas do Custta antes de continuar.'), {code:'outra-aba'});
+      return acao();
+    });
+  }finally{ await registrarAba(); }
+}
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
@@ -141,12 +170,47 @@ window.addEventListener('online', ()=>{
 window.addEventListener('offline', ()=>{
   if(estadoAtual !== 'erro') setEstado('offline');
 });
+
+const CHAVE_LIMPEZA = 'custta-limpar-cache';
+let cacheBloqueado = false, limpezaEmCurso = null;
+function marcaCache(on){
+  // Se não pudermos guardar a recuperação, não iniciar saída destrutiva.
+  if(typeof localStorage === 'undefined') return;
+  if(on) localStorage.setItem(CHAVE_LIMPEZA, '1');
+  else localStorage.removeItem(CHAVE_LIMPEZA);
+}
+function temMarcaCache(){
+  try{ return typeof localStorage !== 'undefined' && localStorage.getItem(CHAVE_LIMPEZA) === '1'; }
+  catch{ return false; }
+}
+function avisaCache(){
+  cacheBloqueado = true;
+  window.dispatchEvent(new Event('cloud-cache-bloqueado'));
+}
+// Antes de qualquer leitura: retoma uma limpeza interrompida pelo fechamento.
+const inicioCache = temMarcaCache()
+  ? clearIndexedDbPersistence(db).then(()=>marcaCache(false)).catch(()=>avisaCache())
+  : Promise.resolve();
+async function limparCache(){
+  if(limpezaEmCurso) return limpezaEmCurso;
+  cacheBloqueado = true;
+  limpezaEmCurso = (async()=>{
+    [...leituras].forEach(l=>l.parar());
+    await terminate(db);
+    await clearIndexedDbPersistence(db);
+    marcaCache(false);
+    if(window.location) window.location.reload();
+  })().catch(err=>{ avisaCache(); throw err; })
+    .finally(()=>{ limpezaEmCurso = null; });
+  return limpezaEmCurso;
+}
 window.addEventListener('focus', ()=>verificarSessao());
 if(typeof document !== 'undefined') document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible') verificarSessao();
 });
 
-onAuthStateChanged(auth, u => {
+onAuthStateChanged(auth, async u => {
+  await inicioCache;
   if(currentUser && currentUser.uid !== (u && u.uid)){
     [...leituras].forEach(l=>l.parar());
     versaoEscrita++;
@@ -157,13 +221,38 @@ onAuthStateChanged(auth, u => {
     terminaEspera('reject', Object.assign(new Error('Sessão alterada.'), { code: 'cancelled' }));
     setEstado(offline() ? 'offline' : 'ocioso');
   }
-  currentUser = u ? { uid: u.uid, email: u.email } : null;
+  currentUser = u ? { uid: u.uid, email: u.email, emailVerificado:!!u.emailVerified } : null;
   readyResolve();
   authCbs.forEach(cb => cb(currentUser));
+  if(!u && temMarcaCache() && !saindo) limparCache().catch(()=>{});
 });
+
+function usuarioOnline(){
+  if(offline()) throw Object.assign(new Error('Conecte à internet para continuar.'), { code:'offline' });
+  if(cacheBloqueado || !auth.currentUser) throw Object.assign(new Error('Entre novamente.'), { code:'cancelled' });
+  return auth.currentUser;
+}
+async function reautenticar(senha){
+  const u = usuarioOnline();
+  await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, senha));
+  if(auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Sessão alterada.'), { code:'cancelled' });
+  return u;
+}
+async function aguardarFila(){
+  let timer;
+  try{
+    const ok = await Promise.race([
+      Promise.all([window.CLOUD.tentarDeNovo(), waitForPendingWrites(db)]).then(()=>true),
+      new Promise(r=>{ timer=setTimeout(()=>r(false),5000); })
+    ]);
+    if(!ok) throw Object.assign(new Error('Aguarde a sincronização antes de continuar.'), { code:'pendente' });
+  }finally{ clearTimeout(timer); }
+}
 
 window.CLOUD = {
   ready,
+  cacheBloqueado:()=>cacheBloqueado,
+  limparCache,
   user: () => currentUser,
   onAuth(cb){ authCbs.push(cb); ready.then(()=>cb(currentUser)); },
 
@@ -171,11 +260,61 @@ window.CLOUD = {
      e dado pessoal que não se usa é só responsabilidade sob a LGPD.
      As rules rejeitam qualquer chave fora de email/criado/tz. */
   async signup(email, senha){
+    if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
     await setDoc(doc(db, 'perfis', cred.user.uid),
-      { email, criado: new Date().toISOString() });
+      { email:cred.user.email, criado: new Date().toISOString(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo' });
   },
-  login: (email, senha) => signInWithEmailAndPassword(auth, email, senha).then(()=>{}),
+  login: (email, senha) => cacheBloqueado
+    ? Promise.reject(Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' }))
+    : signInWithEmailAndPassword(auth, email, senha).then(()=>{}),
+  async enviarVerificacao(){
+    const u = usuarioOnline();
+    await reload(u);
+    if(auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Sessão alterada.'), { code:'cancelled' });
+    if(u.emailVerified){
+      currentUser.emailVerificado = true;
+      window.dispatchEvent(new Event('cloud-conta'));
+      return false;
+    }
+    auth.languageCode = 'pt-BR';
+    await sendEmailVerification(u);
+    return true;
+  },
+  async trocarSenha(atual, nova){
+    if(nova.length < 6) throw Object.assign(new Error('Use pelo menos 6 caracteres.'), { code:'auth/weak-password' });
+    const u = await reautenticar(atual);
+    await updatePassword(u, nova);
+  },
+  async apagarConta(senha, confirmacao, opcoes){
+    if(confirmacao !== 'APAGAR') throw Object.assign(new Error('Digite APAGAR para confirmar.'), { code:'confirmacao' });
+    if(saindo) throw Object.assign(new Error('Operação em andamento.'), { code:'pendente' });
+    const u = usuarioOnline();
+    saindo = true;
+    let dadosApagados = false;
+    try{
+      return await contaExclusiva(async()=>{
+        await reautenticar(senha);
+        await aguardarFila();
+        if(offline() || auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Conexão ou sessão alterada.'), { code:'cancelled' });
+        // Desativa a inscrição antes do batch: removePushSub não pode recriar push depois dele.
+        if(opcoes?.antesDeApagar) await opcoes.antesDeApagar();
+        if(offline() || auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Conexão ou sessão alterada.'), { code:'cancelled' });
+        const lote = writeBatch(db);
+        for(const colecao of ['dados','perfis','push']) lote.delete(doc(db, colecao, u.uid));
+        await lote.commit();
+        dadosApagados = true;
+        marcaCache(true);
+        try{ await deleteUser(u); }catch(err){ marcaCache(false); throw err; }
+        await limparCache();
+        });
+    }catch(err){
+      if(dadosApagados && auth.currentUser?.uid === u.uid){
+        err.dadosApagados = true;
+      }
+      throw err;
+    }finally{ saindo = false; }
+  },
 
   /* Não descarta a fila persistente: aguarda também escritas de sessões
      anteriores. O timeout mantém a conta aberta para reconectar e tentar sair. */
@@ -185,23 +324,27 @@ window.CLOUD = {
     const uid = currentUser && currentUser.uid;
     let limite;
     try{
-      if(offline()) throw Object.assign(new Error('Conecte à internet antes de sair.'), { code: 'pendente' });
-      const subiu = await Promise.race([
-        Promise.all([window.CLOUD.tentarDeNovo(), waitForPendingWrites(db)]).then(()=>true, ()=>false),
-        new Promise(r => { limite = setTimeout(()=>r(false), 5000); }),
-      ]);
-      if(!subiu) throw Object.assign(new Error('Tem lançamento que ainda não subiu.'), { code: 'pendente' });
-      if(!currentUser || currentUser.uid !== uid)
-        throw Object.assign(new Error('Sessão alterada durante a saída.'), { code: 'cancelled' });
-      if(opcoes && opcoes.antesDeSair) await opcoes.antesDeSair();
-      if(!currentUser || currentUser.uid !== uid)
-        throw Object.assign(new Error('Sessão alterada durante a saída.'), { code: 'cancelled' });
-      await signOut(auth);
-      clearTimeout(retryTimer); retryTimer = null;
-      pendingBlob = null; dirty = false; tentativa = 0; emVoo = false; pendenciaCache = false;
-      versaoEscrita++;
-      terminaEspera('reject', Object.assign(new Error('Sessão encerrada.'), { code: 'cancelled' }));
-      setEstado('ocioso');
+      return await contaExclusiva(async()=>{
+        if(offline()) throw Object.assign(new Error('Conecte à internet antes de sair.'), { code: 'pendente' });
+        const subiu = await Promise.race([
+          Promise.all([window.CLOUD.tentarDeNovo(), waitForPendingWrites(db)]).then(()=>true, ()=>false),
+          new Promise(r => { limite = setTimeout(()=>r(false), 5000); }),
+        ]);
+        if(!subiu) throw Object.assign(new Error('Tem lançamento que ainda não subiu.'), { code: 'pendente' });
+        if(!currentUser || currentUser.uid !== uid)
+          throw Object.assign(new Error('Sessão alterada durante a saída.'), { code: 'cancelled' });
+        if(opcoes && opcoes.antesDeSair) await opcoes.antesDeSair();
+        if(!currentUser || currentUser.uid !== uid)
+          throw Object.assign(new Error('Sessão alterada durante a saída.'), { code: 'cancelled' });
+        marcaCache(true);
+        try{ await signOut(auth); }catch(err){ marcaCache(false); throw err; }
+        clearTimeout(retryTimer); retryTimer = null;
+        pendingBlob = null; dirty = false; tentativa = 0; emVoo = false; pendenciaCache = false;
+        versaoEscrita++;
+        terminaEspera('reject', Object.assign(new Error('Sessão encerrada.'), { code: 'cancelled' }));
+        setEstado('ocioso');
+        await limparCache();
+        });
     } finally {
       clearTimeout(limite);
       saindo = false;
@@ -232,7 +375,7 @@ window.CLOUD = {
   },
 
   watchDados(cb){
-    if(!currentUser) return () => {};
+    if(!currentUser || cacheBloqueado) return () => {};
     const uid = currentUser.uid;
     let cancelar = ()=>{}, revisao = 0, resolveLeitura, rejectLeitura;
     const leitura = { erro: null, parar, reiniciar };
@@ -281,7 +424,7 @@ window.CLOUD = {
   },
   /* A promise confirma o servidor, não a mera entrega ao cache do SDK. */
   saveDados(blob){
-    if(!currentUser || saindo){
+    if(!currentUser || saindo || cacheBloqueado){
       window.dispatchEvent(new CustomEvent('cloud-erro', { detail:{ code:'cancelled', terminal:true } }));
       const p = Promise.reject(Object.assign(new Error('Sessão indisponível para salvar.'), { code: 'cancelled' }));
       p.catch(()=>{});

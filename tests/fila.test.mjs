@@ -40,7 +40,11 @@ before(async () => {
   assert.ok(CLOUD, 'cloud.js precisa expor window.CLOUD');
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  montaJanela();
+  await import('../cloud.js?teste=' + Math.random());
+  CLOUD = globalThis.window.CLOUD;
+  await CLOUD.ready;
   ctrl.setDocChamadas.length = 0;
   ctrl.respostas.length = 0;
   ctrl.signOutChamado = 0;

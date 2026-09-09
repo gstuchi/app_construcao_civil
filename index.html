@@ -563,6 +563,7 @@
   .money{display:flex;align-items:center;gap:8px}
   .money>b{font-weight:600;color:var(--muted);font-size:.95em}
   .money>input{flex:1;min-width:0}
+.panel a{color:var(--accent)}.conta-dialog{background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:22px;padding:24px;width:calc(100% - 32px);max-width:480px;max-height:90dvh;overflow:auto;margin:auto;font-size:16px}.conta-dialog::backdrop{background:rgba(0,0,0,.65)}.conta-dialog p{margin:16px 0;line-height:1.5}.conta-dialog input{width:100%;font-size:16px}.conta-dialog button{min-height:44px}
 </style>
 </head>
 <body>
@@ -784,6 +785,17 @@
     </div>
     <div class="panel">
       <h2>Conta</h2>
+      <p id="ajEmail" class="muted-note"></p>
+      <div id="ajVerificacao" class="hidden">
+        <p class="muted-note">Confirme seu e-mail para manter acesso à conta. Você pode continuar usando o app.</p>
+        <button class="btn ghost" id="ajVerificar">Enviar confirmação de e-mail</button>
+        <p id="ajVerificarMsg" class="muted-note" role="status"></p>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" id="ajSenha">Trocar senha</button>
+        <button class="btn ghost" id="ajApagar">Apagar conta</button>
+      </div>
+      <p class="muted-note"><a href="privacidade.html" target="_blank" rel="noopener">Privacidade — rascunho</a></p>
       <button class="btn ghost" id="ajSair" style="width:100%"><span data-ico="sair"></span> Sair da conta</button>
     </div>
   </section>
@@ -813,6 +825,7 @@
 <script defer src="calc.js"></script>
 <script defer src="teclado.js"></script>
 <script defer src="share.js"></script>
+<script defer src="ui-confirm.js"></script>
 <script defer src="app.js"></script>
 <script src="pwa.js"></script>
 </body>

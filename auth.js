@@ -28,7 +28,11 @@
     } }); }
     catch(err){
       saindoDeProposito = false;
-      if(err && err.code === 'pendente'){
+      if(err?.code === 'outra-aba'){
+        toast('Feche outras abas do Custta antes de sair.', 'erro');
+      } else if(err?.code === 'navegador'){
+        toast('Atualize seu navegador para sair com segurança.', 'erro');
+      } else if(err && err.code === 'pendente'){
         toast('Conecte à internet e aguarde a sincronização antes de sair.', 'erro');
       } else { toast('Não foi possível sair com segurança. Tente novamente.', 'erro'); }
     } finally { document.body.inert = false; }

@@ -1128,13 +1128,14 @@ function hashEndpoint(s){
   return h.toString(36);
 }
 async function pushAtual(){
-  const reg = await navigator.serviceWorker.ready;
-  return reg.pushManager.getSubscription();
+  const reg = await navigator.serviceWorker.getRegistration();
+  return reg?.pushManager ? reg.pushManager.getSubscription() : null;
 }
 async function ativaPush(){
   const perm = await Notification.requestPermission();
   if(perm !== 'granted') return false;
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if(!reg?.active) throw new Error('Aguarde a preparação do aplicativo e tente novamente.');
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: b64ToU8(VAPID_PUBLICA),
@@ -1159,8 +1160,22 @@ async function desativaPush(){
 /* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
 window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
 
+window.addEventListener('cloud-conta', ()=>renderAjustes());
 /* ===== AJUSTES ===== */
 function renderAjustes(){
+  const conta = window.CLOUD?.user();
+  $('#ajEmail').textContent = conta?.email || '';
+  $('#ajVerificacao').classList.toggle('hidden', !conta || conta.emailVerificado);
+  $('#ajSenha').onclick = ()=>OBRA_CONTA.abrir('senha');
+  $('#ajApagar').onclick = ()=>OBRA_CONTA.abrir('apagar');
+  $('#ajVerificar').onclick = async()=>{
+    const b = $('#ajVerificar'); b.disabled = true;
+    try{
+      const enviado = await CLOUD.enviarVerificacao();
+      $('#ajVerificarMsg').textContent = enviado ? 'E-mail enviado. Confira também a caixa de spam.' : 'E-mail já confirmado.';
+    }catch(err){ $('#ajVerificarMsg').textContent = err.code === 'offline' ? 'Conecte à internet para enviar.' : 'Não foi possível enviar agora. Aguarde e tente novamente.'; }
+    finally{ b.disabled = false; }
+  };
   for(const formato of ['json', 'csv']){
     const botao = document.getElementById(formato === 'json' ? 'ajJson' : 'ajCsv');
     botao.onclick = async()=>{

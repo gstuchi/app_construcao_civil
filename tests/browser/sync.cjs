@@ -110,8 +110,7 @@ function checa(nome, ok, detalhe){
 
   /* 5. Erro de leitura vira aviso visível */
   await page.evaluate(() => { document.getElementById('toastWrap').innerHTML = ''; });
-  await page.evaluate(() => { window.__ultimo = 0; });
-  await page.waitForTimeout(31000); // a janela anti-spam do toast é de 30s
+  await page.evaluate(() => { ultimoAvisoErro = 0; });
   await page.evaluate(() => window.__emite('erro', 'permission-denied', 'leitura'));
   await page.waitForTimeout(300);
   t = await toasts(page);
@@ -123,6 +122,19 @@ function checa(nome, ok, detalhe){
   const diag = await page.evaluate(() => window.OBRA_DIAG.erros().map(e => e.msg));
   checa('erro inesperado entra no anel de diagnóstico', diag.some(m => /explosao de teste/.test(m)), diag);
 
+  await page.evaluate(()=>{
+    window.dispatchEvent(new PromiseRejectionEvent('unhandledrejection', {
+      promise:Promise.resolve(), reason:new Error('rejeicao de teste')
+    }));
+  });
+  checa('rejeição não tratada entra no diagnóstico',
+    await page.evaluate(()=>OBRA_DIAG.erros().some(e=>e.origem === 'promise' && e.msg.includes('rejeicao de teste'))));
+  await page.evaluate(()=>{
+    for(let i=0;i<25;i++) OBRA_DIAG.registra('teste', 'erro-'+i);
+  });
+  checa('diagnóstico mantém somente últimos 20 erros',
+    await page.evaluate(()=>OBRA_DIAG.erros().length === 20 && OBRA_DIAG.erros()[0].msg === 'erro-5'));
+
   /* 7. Desktop: a pill não quebra o cabeçalho */
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.evaluate(() => window.__emite('salvando'));
@@ -133,6 +145,18 @@ function checa(nome, ok, detalhe){
   });
   checa('pill cabe no cabeçalho do desktop', caixa.largura > 60 && caixa.altura > 20 && caixa.dentro, caixa);
   await page.screenshot({ path: process.argv[2] || 'pill-desktop.png' });
+
+  // Durante o flush do logout, nenhuma edição deve ficar só na tela.
+  await page.evaluate(()=>{ CLOUD.logout=()=>new Promise(r=>{ window.__liberaSaida=r; }); });
+  page.once('dialog', d=>d.accept());
+  await page.locator('#btnSairSide').click();
+  await page.waitForFunction(()=>document.body.inert);
+  let bloqueou=false;
+  try{ await page.locator('#btnSairSide').click({ timeout:300 }); }catch(e){ bloqueou=e.name === 'TimeoutError'; }
+  checa('logout em andamento bloqueia novos cliques', bloqueou);
+  await page.evaluate(()=>window.__liberaSaida());
+  await page.waitForFunction(()=>!document.body.inert);
+  checa('interface é liberada ao terminar saída', await page.evaluate(()=>!document.body.inert));
 
   await browser.close();
   console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTudo passou');

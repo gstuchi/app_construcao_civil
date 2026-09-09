@@ -1,5 +1,9 @@
 # ObraControl: de PWA a app público na App Store
 
+> Atualização em 2026-09-08: Fase 1 auditada; critérios, testes e decisões finais em
+> [Fase 1 — fechamento](superpowers/plans/2026-09-08-fase1-fechamento.md).
+> O texto abaixo preserva o planejamento original. Sentry permanece na Fase 3.
+
 ## Contexto
 
 O ObraControl hoje é um PWA vanilla em produção na Vercel, usado por uma pessoa (o pai do Giovani). O objetivo é publicá-lo na App Store como app baixável por qualquer construtor, gratuito na v1, seguro para usuários reais.

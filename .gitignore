@@ -26,3 +26,4 @@ vapid-keys.txt
 # Saída do empacotamento Capacitor (gerada por scripts/build-www.mjs)
 www/
 firestore-debug.log
+firebase-debug.log

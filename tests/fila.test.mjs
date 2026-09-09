@@ -47,6 +47,7 @@ beforeEach(() => {
   eventos.length = 0;
   globalThis.navigator.onLine = true;
   ctrl.pendentesSDK = Promise.resolve();
+  ctrl.token = Promise.resolve('token-teste');
 });
 
 /* O backoff começa em 1s. Escritas são entregues ao SDK imediatamente. */
@@ -136,12 +137,13 @@ test('logout normal sobe o pendente antes de sair', async () => {
 });
 
 test('erro de leitura do onSnapshot vira estado de erro visível', async () => {
-  CLOUD.watchDados(() => {});
+  const parar = CLOUD.watchDados(() => {});
   assert.ok(ctrl.snapshotErroCb, 'watchDados precisa passar callback de erro pro onSnapshot');
   ctrl.snapshotErroCb({ code: 'permission-denied' });
   const leitura = eventos.filter(e => e.tipo === 'cloud-estado' && e.detail.origem === 'leitura');
   assert.strictEqual(leitura.length, 1);
   assert.strictEqual(leitura[0].detail.estado, 'erro');
+  parar();
 });
 
 test('logout espera escrita em voo e só depois desativa push e sai', async () => {
@@ -212,4 +214,55 @@ test('troca de conta invalida callbacks antigos e não envia blob para outra pes
   assert.strictEqual(ctrl.setDocChamadas.length, 1);
   assert.strictEqual(ctrl.setDocChamadas[0].ref.path, 'dados/u-teste');
   ctrl.authCb({ uid: 'u-teste', email: 'teste@exemplo.com' });
+});
+
+test('erro de leitura resiste a escrita e rede; retry recria assinatura', async () => {
+  const parar = CLOUD.watchDados(()=>{});
+  const antiga = ctrl.snapshotCb;
+  ctrl.snapshotErroCb({ code:'permission-denied' });
+  await CLOUD.saveDados({ obras:[], config:{} });
+  assert.equal(CLOUD.estado(), 'erro', 'ack de escrita não esconde falha de leitura');
+  window.dispatchEvent(new Event('online'));
+  assert.equal(CLOUD.estado(), 'erro');
+  const pronta = CLOUD.tentarDeNovo();
+  assert.notEqual(ctrl.snapshotCb, antiga);
+  ctrl.snapshotCb({ data:()=>({ obras:[] }), metadata:{ fromCache:false, hasPendingWrites:false } });
+  await pronta;
+  assert.equal(CLOUD.estado(), 'ocioso');
+  parar();
+});
+
+test('limite invalida ack anterior e impede retry de enviar blob grande', async () => {
+  let confirma;
+  ctrl.respostas.push(new Promise(r=>{ confirma=r; }));
+  const primeiro = CLOUD.saveDados({ obras:[], config:{} });
+  const grande = CLOUD.saveDados({ obras:[], config:{ texto:'x'.repeat(900001) } });
+  await assert.rejects(grande, { code:'limite' });
+  await assert.rejects(primeiro, { code:'limite' });
+  confirma(); await espera();
+  assert.equal(CLOUD.estado(), 'erro');
+  await assert.rejects(CLOUD.tentarDeNovo(), { code:'limite' });
+  assert.equal(ctrl.setDocChamadas.length, 1);
+  await CLOUD.saveDados({ obras:[], config:{} });
+  assert.equal(CLOUD.estado(), 'ocioso');
+});
+
+test('refresh com falha de rede mantém sessão; credencial inválida encerra', async()=>{
+  ctrl.token = Promise.reject({ code:'auth/network-request-failed' });
+  assert.equal(await CLOUD.verificarSessao(true), false);
+  assert.equal(ctrl.signOutChamado, 0);
+  ctrl.token = Promise.reject({ code:'auth/invalid-refresh-token' });
+  assert.equal(await CLOUD.verificarSessao(true), false);
+  assert.equal(ctrl.signOutChamado, 1);
+});
+
+test('refresh antigo não encerra usuário que entrou depois', async()=>{
+  let rejeita;
+  ctrl.token = new Promise((_r,r)=>{ rejeita=r; });
+  const verificou = CLOUD.verificarSessao(true);
+  ctrl.authCb({ uid:'outra', email:'outra@exemplo.com' });
+  rejeita({ code:'auth/invalid-refresh-token' });
+  await verificou;
+  assert.equal(ctrl.signOutChamado, 0);
+  ctrl.authCb({ uid:'u-teste', email:'teste@exemplo.com' });
 });

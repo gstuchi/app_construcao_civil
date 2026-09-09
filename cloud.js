@@ -4,7 +4,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
-  signInWithEmailAndPassword, sendPasswordResetEmail, signOut,
+  signInWithEmailAndPassword, sendPasswordResetEmail, signOut, getIdToken,
 } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
@@ -41,11 +41,35 @@ let tentativa = 0, emVoo = false, estadoAtual = 'ocioso';
 let versaoEscrita = 0;
 let saindo = false, pendenciaCache = false;
 const espera = []; // {resolve, reject} das chamadas de saveDados ainda sem resposta do servidor
+const leituras = new Set();
+let verificacao = null, ultimaVerificacao = 0;
+const SESSAO_INVALIDA = new Set(['auth/invalid-refresh-token', 'auth/user-disabled',
+  'auth/user-token-expired', 'auth/user-not-found', 'auth/invalid-user-token']);
+
+function verificarSessao(forcar = false){
+  if(!currentUser || !auth.currentUser || offline()) return Promise.resolve(false);
+  const uid = currentUser.uid;
+  if(verificacao && verificacao.uid === uid) return verificacao.promise;
+  if(!forcar && Date.now() - ultimaVerificacao < 60000) return Promise.resolve(true);
+  ultimaVerificacao = Date.now();
+  const consulta = { uid };
+  consulta.promise = getIdToken(auth.currentUser, true).then(()=>true, async err=>{
+    // Ausência de rede nunca encerra a conta. Credencial invalidada precisa
+    // provocar onAuth(null), inclusive quando o SDK não faz isso sozinho.
+    if(currentUser && currentUser.uid === uid && SESSAO_INVALIDA.has(err.code)) await signOut(auth);
+    return false;
+  }).finally(()=>{ if(verificacao === consulta) verificacao = null; });
+  consulta.promise.catch(()=>{});
+  verificacao = consulta;
+  return consulta.promise;
+}
 
 const calc = () => window.OBRA_CALC;
 const offline = () => navigator.onLine === false;
 
 function setEstado(novo, code, origem){
+  const falhou = [...leituras].find(l=>l.erro);
+  if(novo !== 'erro' && falhou){ novo = 'erro'; code = falhou.erro.code; origem = 'leitura'; }
   estadoAtual = novo;
   window.dispatchEvent(new CustomEvent('cloud-estado', {
     detail: { estado: novo, code: code || null, tentativa, origem: origem || 'escrita' },
@@ -65,7 +89,14 @@ function flushSave(){
   const blob = pendingBlob; pendingBlob = null; emVoo = true;
   const versao = ++versaoEscrita;
   setEstado(offline() ? 'offline' : tentativa ? 'repetindo' : 'salvando');
-  setDoc(doc(db, 'dados', currentUser.uid), { ...blob, _atualizado: serverTimestamp() })
+  // A validação participa da mesma fila: confirmação de uma versão anterior
+  // nunca pode esconder a rejeição da edição atual.
+  let escrita;
+  try{
+    if(!calc().blobCabe(blob)) throw Object.assign(new Error('Limite de dados excedido.'), { code: 'limite' });
+    escrita = setDoc(doc(db, 'dados', currentUser.uid), { ...blob, _atualizado: serverTimestamp() });
+  } catch(err){ escrita = Promise.reject(err); }
+  escrita
     .then(()=>{
       if(versao !== versaoEscrita) return;
       emVoo = false; tentativa = 0;
@@ -81,9 +112,11 @@ function flushSave(){
       // usuário achar que estava salvo (ver 'cloud-erro' em app.js)
       pendingBlob = pendingBlob || blob;
       const code = (err && err.code) || 'desconhecido';
-      window.dispatchEvent(new CustomEvent('cloud-erro', { detail: { code } }));
+      const terminal = code === 'limite' || calc().erroEhTerminal(err);
+      if(code === 'unauthenticated') verificarSessao(true);
+      window.dispatchEvent(new CustomEvent('cloud-erro', { detail: { code, terminal } }));
 
-      if(calc().erroEhTerminal(err)){
+      if(terminal){
         // tentar de novo não resolve: para o backoff, segura o dado e espera ação
         tentativa = 0;
         setEstado('erro', code);
@@ -100,6 +133,7 @@ function flushSave(){
    dizer isso mesmo sem escrita pendente. Erro terminal não é apagado por nenhum
    dos dois — só some quando alguém tenta de novo. */
 window.addEventListener('online', ()=>{
+  verificarSessao();
   if(estadoAtual === 'erro') return;
   if(pendingBlob){ tentativa = 0; agendaRetry(0); }
   else setEstado(emVoo || pendenciaCache ? 'salvando' : 'ocioso');
@@ -107,13 +141,19 @@ window.addEventListener('online', ()=>{
 window.addEventListener('offline', ()=>{
   if(estadoAtual !== 'erro') setEstado('offline');
 });
+window.addEventListener('focus', ()=>verificarSessao());
+if(typeof document !== 'undefined') document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') verificarSessao();
+});
 
 onAuthStateChanged(auth, u => {
   if(currentUser && currentUser.uid !== (u && u.uid)){
+    [...leituras].forEach(l=>l.parar());
     versaoEscrita++;
     clearTimeout(retryTimer);
     pendingBlob = null; dirty = false; emVoo = false; tentativa = 0;
     pendenciaCache = false;
+    ultimaVerificacao = 0;
     terminaEspera('reject', Object.assign(new Error('Sessão alterada.'), { code: 'cancelled' }));
     setEstado(offline() ? 'offline' : 'ocioso');
   }
@@ -168,27 +208,54 @@ window.CLOUD = {
     }
   },
   resetSenha: email => sendPasswordResetEmail(auth, email),
+  verificarSessao,
 
   estado: () => estadoAtual,
   temPendencia: () => !!pendingBlob || emVoo || pendenciaCache,
 
   /* Botão "Tentar de novo" da pill, e o flush do logout. */
   tentarDeNovo(){
-    if(!pendingBlob && !emVoo) return Promise.resolve();
+    const reabertas = [...leituras].filter(l=>l.erro).map(l=>l.reiniciar());
+    if(!pendingBlob && !emVoo){
+      const leitura = Promise.all(reabertas);
+      leitura.catch(()=>{});
+      return leitura;
+    }
     tentativa = 0;
     clearTimeout(retryTimer); retryTimer = null;
     const p = new Promise((resolve, reject)=>espera.push({ resolve, reject }));
     p.catch(()=>{}); // quem chamar decide se trata; sem isto vira unhandledrejection
     flushSave();
-    return p;
+    const resultado = Promise.all([p, ...reabertas]);
+    resultado.catch(()=>{});
+    return resultado;
   },
 
   watchDados(cb){
     if(!currentUser) return () => {};
     const uid = currentUser.uid;
-    return onSnapshot(doc(db, 'dados', uid), { includeMetadataChanges: true },
+    let cancelar = ()=>{}, revisao = 0, resolveLeitura, rejectLeitura;
+    const leitura = { erro: null, parar, reiniciar };
+    leituras.add(leitura);
+    function parar(){
+      revisao++; cancelar(); leituras.delete(leitura);
+      if(rejectLeitura) rejectLeitura(Object.assign(new Error('Leitura encerrada.'), { code: 'cancelled' }));
+    }
+    function reiniciar(){
+      cancelar();
+      if(rejectLeitura) rejectLeitura(Object.assign(new Error('Leitura substituída.'), { code: 'cancelled' }));
+      const atual = ++revisao;
+      const pronta = new Promise((resolve,reject)=>{ resolveLeitura=resolve; rejectLeitura=reject; });
+      pronta.catch(()=>{});
+      cancelar = onSnapshot(doc(db, 'dados', uid), { includeMetadataChanges: true },
       snap => {
-        if(!currentUser || currentUser.uid !== uid) return;
+        if(atual !== revisao || !currentUser || currentUser.uid !== uid) return;
+        if(!snap.metadata.fromCache){
+          const recuperou = !!leitura.erro;
+          leitura.erro = null;
+          resolveLeitura(); rejectLeitura = null;
+          if(recuperou && !dirty) setEstado(offline() ? 'offline' : 'ocioso');
+        }
         pendenciaCache = snap.metadata.hasPendingWrites;
         if(!dirty && estadoAtual !== 'erro')
           setEstado(offline() ? 'offline' : pendenciaCache ? 'salvando' : 'ocioso');
@@ -201,13 +268,21 @@ window.CLOUD = {
       /* Sem este callback, uma rule errada pararia a chegada de dados sem
          sintoma nenhum na tela — risco criado pela própria fronteira de segurança. */
       err => {
-        if(currentUser && currentUser.uid === uid)
+        if(atual === revisao && currentUser && currentUser.uid === uid){
+          leitura.erro = err;
+          rejectLeitura?.(err); rejectLeitura = null;
           setEstado('erro', (err && err.code) || 'desconhecido', 'leitura');
+        }
       });
+      return pronta;
+    }
+    reiniciar();
+    return parar;
   },
   /* A promise confirma o servidor, não a mera entrega ao cache do SDK. */
   saveDados(blob){
     if(!currentUser || saindo){
+      window.dispatchEvent(new CustomEvent('cloud-erro', { detail:{ code:'cancelled', terminal:true } }));
       const p = Promise.reject(Object.assign(new Error('Sessão indisponível para salvar.'), { code: 'cancelled' }));
       p.catch(()=>{});
       return p;

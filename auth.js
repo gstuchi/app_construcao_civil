@@ -19,8 +19,10 @@
      notificação montada com os dados de quem saiu. */
   let saindoDeProposito = false; // separa "ele apertou Sair" de "a sessão caiu"
   const doSair=async()=>{
+    if(saindoDeProposito) return;
     if(!confirm('Sair da conta?')) return;
     saindoDeProposito = true;
+    document.body.inert = true; // não permite editar enquanto a saída aguarda a fila
     try{ await CLOUD.logout({ antesDeSair: async()=>{
       if(window.OBRA_PUSH) await window.OBRA_PUSH.desativa();
     } }); }
@@ -29,7 +31,7 @@
       if(err && err.code === 'pendente'){
         toast('Conecte à internet e aguarde a sincronização antes de sair.', 'erro');
       } else { toast('Não foi possível sair com segurança. Tente novamente.', 'erro'); }
-    }
+    } finally { document.body.inert = false; }
   };
   sair.onclick=doSair;
   const sairSide=$('#btnSairSide'); if(sairSide) sairSide.onclick=doSair;

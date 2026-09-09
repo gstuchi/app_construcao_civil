@@ -2,6 +2,11 @@
 
 Data: 2026-08-27 · Aprovado por Giovani no chat.
 
+Atualização de 2026-09-08: implementação e critérios finais registrados em
+[Fase 1 — auditoria de fechamento](../plans/2026-09-08-fase1-fechamento.md).
+As decisões atuais sobre persistência imediata, aviso de espera e logout sem
+descarte substituem os trechos históricos abaixo. Sentry permanece na Fase 3.
+
 Fase 1 do plano de lançamento na App Store
 (`C:\Users\User\.claude\plans\breezy-jumping-ladybug.md`). É a fase de maior
 severidade do plano: trava a Fase 2, porque exclusão de conta exige escrita

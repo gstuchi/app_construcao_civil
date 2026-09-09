@@ -31,6 +31,7 @@ const { chromium } = require('playwright');
     await context.route('**/cloud.js', r=>r.fulfill({ contentType:'text/javascript', body:cloud }));
     await context.route('**/firebase-auth.js', r=>r.fulfill({ contentType:'text/javascript', body:`
       export const getAuth = ()=>({});
+      export const getIdToken = ()=>Promise.resolve('token-teste');
       export const onAuthStateChanged = (_auth, cb)=>{ cb({ uid:'offline-test', email:'offline@example.com' }); };
       export const createUserWithEmailAndPassword = ()=>Promise.reject(new Error('Não usado'));
       export const signInWithEmailAndPassword = ()=>Promise.reject(new Error('Não usado'));

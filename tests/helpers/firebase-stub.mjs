@@ -9,10 +9,12 @@ export const __ctrl = {
   snapshotErroCb: null,
   snapshotCb: null,
   pendentesSDK: Promise.resolve(),
+  token: Promise.resolve('token-teste'),
 };
 
 export function initializeApp(){ return { nome: 'stub' }; }
-export function getAuth(){ return { nome: 'auth-stub' }; }
+export function getAuth(){ return { nome: 'auth-stub', currentUser:{ uid:'u-teste' } }; }
+export function getIdToken(){ return __ctrl.token; }
 export function onAuthStateChanged(_auth, cb){
   __ctrl.authCb = cb;
   cb({ uid: 'u-teste', email: 'teste@exemplo.com' });

@@ -50,14 +50,15 @@ function normaliza(d){
    Sem esta guarda a escrita falhava calada: a tela mostrava o gasto novo e o
    dado sumia no próximo carregamento. */
 function save(){
-  if(!OBRA_CALC.blobCabe(db)){
-    toast('Não deu pra salvar: seus dados chegaram no limite. Apague uma obra antiga.');
-    const p = Promise.reject(Object.assign(new Error('limite'), { code: 'limite' }));
-    p.catch(()=>{}); // quem quiser tratar trata; sem isto vira unhandledrejection
-    return p;
+  const tamanho = OBRA_CALC.tamanhoBlob(db);
+  if(tamanho >= 700000 && tamanho <= OBRA_CALC.LIMITE_BLOB && !avisouTamanho){
+    avisouTamanho = true;
+    toast('Seus dados estão próximos do limite de armazenamento.', 'erro');
   }
+  if(tamanho < 700000) avisouTamanho = false;
   return CLOUD.saveDados(db);
 }
+let avisouTamanho = false;
 
 /* Confirmação honesta: "sucesso" só depois do servidor confirmar. Se em 600ms
    ele não respondeu, informa espera sem prometer persistência pelo tempo decorrido.
@@ -1143,7 +1144,7 @@ async function ativaPush(){
     await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
       { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
   }catch(err){
-    await sub.unsubscribe().catch(()=>{}); // não deixa o toggle ligado sem a nuvem saber
+    await sub.unsubscribe().catch(e=>registraErro('push-limpeza', e.message, e.stack));
     throw err;
   }
   return true;
@@ -1361,7 +1362,10 @@ window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidd
 function bootCloud(){
   CLOUD.onAuth(user=>{
     if(unwatch){ unwatch(); unwatch=null; }
-    if(!user){ db = empty(); obraAberta = null; showView('inicio'); renderAll(); return; }
+    if(!user){
+      closeSheet(); sheet.textContent = '';
+      db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;
+    }
 
     /* Aqui existia uma migração dos dados antigos de localStorage pra nuvem.
        Removida: ela varria as chaves obras_data_v1* de QUALQUER pessoa que já
@@ -1388,7 +1392,15 @@ function avisoRaro(msg){
   ultimoAvisoErro = agora;
   toast(msg, 'erro');
 }
-window.addEventListener('cloud-erro', ()=>avisoRaro('Sem salvar na nuvem agora — vamos tentar de novo sozinhos.'));
+window.addEventListener('cloud-erro', e=>{
+  const { code, terminal } = e.detail;
+  const msg = code === 'limite'
+    ? 'Não salvou: limite de dados atingido. Reduza os dados e tente novamente.'
+    : terminal
+      ? 'Não salvou na nuvem. Confira sua conexão e conta; toque no aviso para tentar novamente.'
+      : 'Sem salvar na nuvem agora — vamos tentar de novo sozinhos.';
+  if(terminal) toast(msg, 'erro'); else avisoRaro(msg);
+});
 
 /* ---------- pill de sincronização ----------
    Fica invisível no caso normal. A fila de escrita mora em cloud.js; aqui só
@@ -1400,16 +1412,16 @@ const SYNC_VISUAL = {
   offline:   { rotulo: 'Sem conexão', marca: '<span class="ponto"></span>' },
   erro:      { rotulo: 'Não salvou',  marca: '<span class="ponto"></span>' },
 };
-function renderSync(estado){
+function renderSync(estado, origem){
   if(!syncPill) return;
   const v = SYNC_VISUAL[estado];
   syncPill.classList.toggle('hidden', !v);
   syncPill.classList.toggle('erro', estado === 'erro');
   if(!v) return;
   syncPill.innerHTML = `${v.marca}<span class="rotulo"></span>`;
-  syncPill.querySelector('.rotulo').textContent = v.rotulo;
+  syncPill.querySelector('.rotulo').textContent = estado === 'erro' && origem === 'leitura' ? 'Não sincronizou' : v.rotulo;
   syncPill.title = estado === 'erro'
-    ? 'Não deu pra salvar na nuvem. Toque pra tentar de novo.'
+    ? 'Não foi possível sincronizar. Toque para tentar de novo.'
     : v.rotulo;
   syncPill.onclick = estado === 'erro'
     ? ()=>{ toast('Tentando de novo…'); CLOUD.tentarDeNovo(); }
@@ -1417,13 +1429,13 @@ function renderSync(estado){
 }
 window.addEventListener('cloud-estado', e=>{
   const { estado, origem, code } = e.detail;
-  renderSync(estado);
+  renderSync(estado, origem);
   if(estado === 'erro' && origem === 'leitura')
     avisoRaro('Não consegui ler seus dados da nuvem agora (' + code + ').');
 });
 /* Rede caindo com nada pendente também precisa aparecer: cloud.js publica o
    estado, mas o primeiro paint acontece antes de qualquer evento. */
-window.addEventListener('offline', ()=>renderSync('offline'));
+window.addEventListener('offline', ()=>renderSync(window.CLOUD ? CLOUD.estado() : 'offline'));
 window.addEventListener('online',  ()=>renderSync(window.CLOUD ? CLOUD.estado() : 'ocioso'));
 
 /* ---------- rede de segurança de erro ----------
@@ -1437,6 +1449,8 @@ function registraErro(origem, msg, stack){
   console.error('[custta]', origem, msg);
 }
 window.OBRA_DIAG = { erros: () => diag.slice(), registra: registraErro };
+(window.OBRA_ERROS_INICIAIS || []).forEach(e=>registraErro(e.origem, e.msg, e.stack));
+delete window.OBRA_ERROS_INICIAIS;
 window.addEventListener('error', e=>{
   registraErro('window', e.message, e.error && e.error.stack);
   avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');

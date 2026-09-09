@@ -9,4 +9,8 @@ try{
     const meta = document.querySelector('meta[name="theme-color"]');
     if(meta) meta.content = claro ? (azul ? '#eef2f9' : '#EDF5F1') : '#070c18';
   }
-}catch(err){}
+}catch(err){
+  // app.js ainda não carregou: entrega o erro ao diagnóstico quando ele iniciar.
+  window.OBRA_ERROS_INICIAIS = [{ origem:'tema', msg:err.message, stack:err.stack }];
+  console.error('[custta] tema', err);
+}

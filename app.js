@@ -1051,6 +1051,7 @@ function renderRelatorio(){
   const totB = OBRA_CALC.totalBruto(o);
   const totC = OBRA_CALC.totalCorrigido(o, tx, hoje);
   const lucro = OBRA_CALC.lucroVenda(o, tx);
+  const itensRelatorio = new Map();
 
   let rows = '';
   groups.forEach(gr=>{
@@ -1059,7 +1060,9 @@ function renderRelatorio(){
       <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
     gr.gs.forEach(g=>{
       const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
-      rows += `<tr><td class="rt-desc">&nbsp;&nbsp;${escapeHtml(g.descricao||t.nm)}</td><td>${fmtData(g.data)}</td>
+      itensRelatorio.set(g.id,{g,c});
+      const descricao=g.descricao||t.nm;
+      rows += `<tr><td class="rt-desc"><label class="rep-pick no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(descricao)}"></label>${escapeHtml(descricao)}</td><td>${fmtData(g.data)}</td>
         <td>${money(g.valor)}</td><td>${money(c)}</td><td>+${money(c-g.valor)}</td></tr>`;
     });
   });
@@ -1081,7 +1084,14 @@ function renderRelatorio(){
       <h2 class="layout-28">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
       <div class="rep-head">
         ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
-        Correção de ${String(tx).replace('.',',')}% ao mês, da data de cada gasto até ${o.venda?'a venda ('+fmtData(o.venda.data)+')':'hoje ('+fmtData(hoje)+')'}.
+        Correção de ${String(tx).replace('.',',')}% ao mês, da data de cada gasto até ${o.venda ? `a venda (${fmtData(o.venda.data)})` : `hoje (${fmtData(hoje)})`}.<br>
+        Marque gastos para somar somente itens escolhidos.
+      </div>
+      <div class="rep-selected hidden" id="relSelected" aria-live="polite">
+        <div><span>Selecionados</span><b id="relSelQtd">0 itens</b></div>
+        <div><span>Bruto</span><b id="relSelBruto">${money(0)}</b></div>
+        <div><span>Corrigido</span><b id="relSelCorr">${money(0)}</b></div>
+        <div><span>Parte do total</span><b id="relSelPct">0%</b></div>
       </div>
       <div class="rep-scroll">
         <table class="rep-table">
@@ -1095,6 +1105,18 @@ function renderRelatorio(){
       </div>
       <button class="layout-44 btn primary no-print" id="relPrint">${ICON('impressora')} Imprimir / salvar PDF</button>
     </div>`;
+  const atualizarSelecao=()=>{
+    const marcados=[...document.querySelectorAll('.rel-check:checked')]
+      .map(c=>itensRelatorio.get(c.dataset.gasto)).filter(Boolean);
+    const bruto=marcados.reduce((s,x)=>s+x.g.valor,0);
+    const corr=marcados.reduce((s,x)=>s+x.c,0);
+    $('#relSelected').classList.toggle('hidden',marcados.length===0);
+    $('#relSelQtd').textContent=`${marcados.length} ${marcados.length===1?'item':'itens'}`;
+    $('#relSelBruto').textContent=money(bruto);
+    $('#relSelCorr').textContent=money(corr);
+    $('#relSelPct').textContent=totB>0?(bruto/totB*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'0%';
+  };
+  document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
   $('#relPrint').onclick = ()=>window.print();
 }
 

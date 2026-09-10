@@ -784,7 +784,11 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
     ${valHtml}
     ${selObra}
-    <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
+    <div class="field"><label>Tópico</label>
+      <details class="topico-picker" id="topicoPicker"><summary id="topicoEscolhido"></summary>
+        <label for="topicoBusca">Buscar tópico</label><input id="topicoBusca" type="search" placeholder="Digite o nome do tópico" autocomplete="off">
+        <div class="chips" id="fChips"></div><p id="topicoVazio" class="muted-note hidden">Nenhum tópico encontrado.</p>
+      </details></div>
     ${pagtoHtml}
     <div class="field"><label for="fDesc">Descrição (opcional)</label>
       <div class="desc-wrap"><input id="fDesc" maxlength="500" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}"
@@ -843,13 +847,24 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   if($('#fObra')) $('#fObra').addEventListener('change',()=>{ limpaDuplicado(); pintarSugestoes(); });
   const paint = ()=>{
     chips.innerHTML = '';
-    topicos().forEach(t=>{
+    const escolhido=topicos().find(t=>t.id===top);
+    $('#topicoEscolhido').textContent=escolhido?.nm||'Escolher tópico';
+    const busca=normalizaDescricao($('#topicoBusca').value);
+    const encontrados=topicos().filter(t=>normalizaDescricao(t.nm).includes(busca));
+    $('#topicoVazio').classList.toggle('hidden',encontrados.length>0);
+    encontrados.forEach(t=>{
       const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${escapeHtml(t.nm)}`);
       ch.type = 'button';
-      ch.onclick = ()=>{ top=t.id; limpaDuplicado(); paint(); pintarSugestoes(); };
+      ch.onclick = ()=>{
+        top=t.id; limpaDuplicado(); $('#topicoBusca').value='';
+        $('#topicoPicker').open=false; paint();
+        $('#descSugestoes').classList.remove('show'); $('#fDesc').setAttribute('aria-expanded','false');
+        $('#topicoEscolhido').focus();
+      };
       chips.appendChild(ch);
     });
   };
+  $('#topicoBusca').addEventListener('input',paint);
   paint();
 
   let pagto = isEdit ? (gasto.pagamento || 'pix') : 'pix';

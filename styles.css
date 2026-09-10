@@ -324,6 +324,11 @@
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px}
   .chip{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13.5px;cursor:pointer;font-weight:500}
   .chip.on{background:var(--brand-soft);color:var(--chip-on-ink);border-color:var(--line-strong);font-weight:600}
+  .topico-picker{border:1px solid var(--border);border-radius:11px;padding:0 12px;background:var(--surface-2)}
+  .topico-picker summary{padding:12px 0;cursor:pointer;min-height:48px;overflow-wrap:anywhere;font-size:16px}
+  .topico-picker[open]{padding-bottom:12px}
+  .topico-picker .chips{margin-top:10px;max-height:220px;overflow:auto;overscroll-behavior:contain}
+  .topico-picker .chip{max-width:100%;overflow-wrap:anywhere;min-height:44px}
   html[data-theme="light"] .chip.on{color:var(--brand);border-color:var(--brand)}
   .install-hint{background:var(--blue-soft);color:var(--blue);border-radius:12px;padding:11px 13px;font-size:12.5px;display:flex;gap:9px;align-items:center;margin-bottom:14px}
   .install-hint button{margin-left:auto;border:0;background:var(--blue);color:var(--btn-ink);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}

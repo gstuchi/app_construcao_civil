@@ -10,6 +10,12 @@ const TIPOS = { '.html':'text/html', '.js':'text/javascript', '.json':'applicati
 http.createServer((req, res) => {
   let rel = decodeURIComponent(req.url.split('?')[0]);
   if(rel === '/') rel = '/index.html';
+  // Suítes nunca enviam diagnóstico ao projeto real. Teste manual explícito
+  // substitui esta resposta via Playwright quando autorizado com --send-real.
+  if(rel === '/sentry-config.js'){
+    res.writeHead(200,{...headers,'content-type':'text/javascript'});
+    res.end('window.CUSTTA_SENTRY_CONFIG={dsn:""};');return;
+  }
   const arq = path.join(RAIZ, rel);
   if(!arq.startsWith(RAIZ)){ res.writeHead(403).end(); return; }
   fs.readFile(arq, (err, buf) => {

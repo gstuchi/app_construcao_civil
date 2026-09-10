@@ -1476,11 +1476,11 @@ window.addEventListener('offline', ()=>renderSync(window.CLOUD ? CLOUD.estado() 
 window.addEventListener('online',  ()=>renderSync(window.CLOUD ? CLOUD.estado() : 'ocioso'));
 
 /* ---------- rede de segurança de erro ----------
-   Anel dos últimos 20 erros, em memória. É o gancho que o Sentry substitui na
-   fase de endurecimento — por isso fica atrás de um nome estável. */
+   Anel local complementa Sentry; falhas do monitoramento não afetam o app. */
 const DIAG_MAX = 20;
 const diag = [];
 function registraErro(origem, msg, stack){
+  if(origem !== 'window' && origem !== 'promise') window.CUSTTA_MONITOR?.capture(origem, msg, stack);
   diag.push({ hora: new Date().toISOString(), origem, msg: String(msg || ''), stack: String(stack || '') });
   if(diag.length > DIAG_MAX) diag.shift();
   console.error('[custta]', origem, msg);

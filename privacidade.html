@@ -40,6 +40,8 @@
   <h2>4. Armazenamento e fornecedores</h2>
   <p>O aplicativo utiliza armazenamento local no dispositivo e serviços de nuvem para autenticação e sincronização. A infraestrutura pode envolver <strong>Google Firebase</strong> e <strong>Vercel</strong>, que tratam dados conforme seus próprios termos e medidas de segurança. O acesso aos dados de cada conta é isolado por regras de autorização.</p>
 
+  <p>Quando o monitoramento está configurado, utilizamos <strong>Sentry</strong> para receber diagnósticos técnicos de falhas: categoria do erro, versão do aplicativo, horário e arquivo/linha do código. Mensagens livres, dados das obras, e-mail, identificador da conta, cookies, parâmetros de URL e histórico de cliques não são incluídos nos eventos. Não usamos gravação de sessão (replay) nem rastreamento de desempenho. O serviço recebe a conexão de rede, incluindo endereço IP para transporte; a integração substitui o IP do evento pelo valor fixo 0.0.0.0 para impedir identificação e geolocalização no diagnóstico. O diagnóstico local mantém até 20 erros em memória e é descartado ao fechar ou recarregar a página.</p>
+
   <h2>5. Instagram e Meta</h2>
   <p>Quando uma pessoa interage com a Custta pelo Instagram, a Meta pode fornecer dados necessários para receber e responder mensagens, comentários e interações, conforme as permissões autorizadas e as políticas da plataforma. A Custta usa esses dados somente para atendimento, moderação e comunicação relacionada ao produto. Não vendemos dados de mensagens ou perfis.</p>
 

@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix notificacoes
       - run: npx playwright install --with-deps chromium
+      - run: npm run vendor:sentry
+      - run: git diff --exit-code -- vendor/sentry
       - run: npm run vendor:firebase
       - run: git diff --exit-code -- vendor/firebase
       - run: npm test

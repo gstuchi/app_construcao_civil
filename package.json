@@ -5,14 +5,16 @@
   "description": "Custta: aplicação estática sem build no deploy; npm mantém SDK local e executa testes.",
   "scripts": {
     "test": "npm run test:unit && npm run test:rules",
-    "test:unit": "node --test tests/calc.test.cjs tests/moeda.test.cjs tests/icons.test.cjs tests/teclado.test.cjs tests/resumo.test.cjs tests/xss.test.cjs tests/headers.test.cjs tests/pwa.test.cjs tests/workflow.test.cjs tests/sync.test.cjs tests/fila.test.mjs tests/diagnostico.test.cjs tests/share.test.cjs tests/conta.test.mjs tests/fuso.test.cjs tests/dados.test.cjs",
+    "test:unit": "node --test tests/calc.test.cjs tests/moeda.test.cjs tests/icons.test.cjs tests/teclado.test.cjs tests/resumo.test.cjs tests/xss.test.cjs tests/headers.test.cjs tests/pwa.test.cjs tests/workflow.test.cjs tests/sync.test.cjs tests/fila.test.mjs tests/diagnostico.test.cjs tests/share.test.cjs tests/conta.test.mjs tests/fuso.test.cjs tests/dados.test.cjs tests/sentry.test.cjs",
     "test:rules": "firebase emulators:exec --only firestore \"node --test tests/rules.test.mjs\"",
     "rules:deploy": "firebase deploy --only firestore:rules",
     "vendor:firebase": "node scripts/vendor-firebase.mjs",
-    "test:browser": "firebase emulators:exec --config firebase.test.json --project demo-custta-phase2 --only firestore,auth \"node tests/browser/rodar.cjs\""
+    "test:browser": "firebase emulators:exec --config firebase.test.json --project demo-custta-phase2 --only firestore,auth \"node tests/browser/rodar.cjs\"",
+    "vendor:sentry": "node scripts/vendor-sentry.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
+    "@sentry/browser": "10.74.0",
     "esbuild": "0.28.2",
     "firebase": "12.18.0",
     "firebase-tools": "^15.28.1",

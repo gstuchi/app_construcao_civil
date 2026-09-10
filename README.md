@@ -87,6 +87,15 @@ Browser (PWA)
 
 ## Segurança e ferramentas — Fase 3
 
+Sentry usa SDK 10.74.0 local em `vendor/sentry/` (`npm run vendor:sentry`).
+`sentry-config.js` contém somente DSN público, ambiente e release. DSN vazio
+desativa envio; ao configurar, permitir exatamente seu host em `connect-src`
+no `vercel.json`. Nunca incluir token administrativo no cliente.
+`sentry.js` envia categoria e stack técnica sem mensagens livres, conta ou
+dados de obras. Sem replay/tracing, até 20 eventos por carregamento, duplicatas
+limitadas por minuto e sem persistência offline. `tests/browser/sentry.cjs`
+inspeciona envelopes reais do SDK com transporte interceptado.
+
 O SDK Firebase 12.18.0 fica em `vendor/firebase/`, com licença e módulos versionados. Não é carregado de gstatic.com. npm é ferramenta de manutenção e testes; abrir e publicar o app continua sem build. `npm run vendor:firebase` usa esbuild somente para atualizar essa distribuição local e deve ser seguido de revisão dos arquivos e atualização do cache em `sw.js`.
 
 - `npm ci`: instala ferramentas com versões do lockfile.

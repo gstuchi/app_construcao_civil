@@ -46,11 +46,13 @@ O produto é pensado para um usuário não técnico, com foco em **clareza em 5 
 
 ## Arquitetura
 
-Aplicação **vanilla**, sem framework, sem bundler e sem etapa de build. HTML, CSS e JavaScript clássico servidos como arquivos estáticos. A persistência é local (`localStorage`) com sincronização opcional via Firebase.
+Aplicação **vanilla**, sem framework e sem etapa de build no deploy. HTML, CSS e JavaScript são servidos como arquivos estáticos. Auth mantém a sessão; Firestore persiste dados em IndexedDB e sincroniza por usuário. localStorage guarda preferências e marcador de limpeza de cache.
 
 ```text
 Browser (PWA)
-├── index.html         UI + CSS (temas, componentes, modal, toast)
+├── index.html         estrutura da UI
+├── styles.css         temas, componentes, modal, toast
+├── dados.js           validação do documento e limites de texto
 ├── app.js             estado, render, formulários, modal, toast
 ├── calc.js            regras de negócio puras (correção, parcelas) — sem DOM
 ├── auth.js ─┐
@@ -82,3 +84,15 @@ Browser (PWA)
 | `notificacoes/` | Backend de notificações push (Node + Firebase) — ver `notificacoes/README.md` |
 | `docs/` | Especificações e notas de design |
 
+
+## Segurança e ferramentas — Fase 3
+
+O SDK Firebase 12.18.0 fica em `vendor/firebase/`, com licença e módulos versionados. Não é carregado de gstatic.com. npm é ferramenta de manutenção e testes; abrir e publicar o app continua sem build. `npm run vendor:firebase` usa esbuild somente para atualizar essa distribuição local e deve ser seguido de revisão dos arquivos e atualização do cache em `sw.js`.
+
+- `npm ci`: instala ferramentas com versões do lockfile.
+- `npm test`: testes unitários e regras no emulador Firestore (Java 21).
+- `npm ci --prefix notificacoes` e `npx playwright install chromium`: preparação dos testes de navegador.
+- `npm run test:browser`: inicia servidor e emuladores, testa UI, CSP, SDK offline, sincronização e exclusão. Não usa contas ou documentos de produção.
+- GitHub Actions executa os testes em pushes para main e pull requests.
+
+CSP permite scripts e estilos locais, sem `unsafe-inline`. CSS está em arquivos; propriedades dinâmicas dos gráficos são controladas por JavaScript. Textos são escapados na renderização. Novas edições limitam nome a 120, descrição e afazer a 500, tópico a 80 caracteres. Dados antigos não são truncados por esses limites; normalização preserva campos desconhecidos para compatibilidade entre versões. Taxa aceita valores maiores que zero e até 20% ao mês; entrada inválida mostra mensagem e mantém taxa anterior.

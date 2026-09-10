@@ -1,18 +1,18 @@
 /* Nuvem (Firebase): auth + Firestore. Único arquivo que fala com o Firebase.
    Expõe window.CLOUD pros scripts clássicos (auth.js, app.js).
    As chaves abaixo são públicas; a segurança vem das rules do Firestore. */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
+import { initializeApp } from './vendor/firebase/firebase-app.js';
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, sendPasswordResetEmail, signOut, getIdToken,
   EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
   sendEmailVerification, reload,
-} from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
+} from './vendor/firebase/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, setDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
-} from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js';
+} from './vendor/firebase/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBqhDDa8IpXuXNq2kI2-NzzpjAGPCLNTKU',

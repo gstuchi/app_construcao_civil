@@ -1,0 +1,6 @@
+[
+  "./vendor/firebase/firebase-app.js",
+  "./vendor/firebase/firebase-auth.js",
+  "./vendor/firebase/firebase-firestore.js",
+  "./vendor/firebase/shared-VONABDH2.js"
+]

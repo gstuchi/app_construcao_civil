@@ -218,12 +218,19 @@
      viewport de elementos fixed, então sem isso o sheet inteiro fica atrás do teclado. */
   .backdrop{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));background:rgba(8,15,20,.5);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
   .backdrop.show{display:flex}
-  body.sheet-open{overflow:hidden}
+  body.sheet-open{position:fixed;top:var(--sheet-scroll-top,0px);left:0;right:0;overflow:hidden}
+  .backdrop{padding-top:max(12px,env(safe-area-inset-top));overflow:hidden}
   /* sheet precisa de teto de altura + scroll próprio: com muitos tópicos/parcelas o conteúdo
      passa da viewport e, sem isso, o topo (título, campo Valor) fica inacessível no iPhone. */
   .sheet{background:var(--surface-solid);width:100%;max-width:760px;max-height:min(88dvh,100%);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes up{from{transform:translateY(100%)}to{transform:none}}
   .sheet h3{font-size:17px;font-weight:700;margin-bottom:16px}
+  .sheet{min-width:0;max-height:100%;overflow-x:hidden;overscroll-behavior:none;scroll-padding-block:16px}
+  .sheet>*{min-width:0;max-width:100%}
+  .sheet .field input,.sheet .field select{min-width:0;max-width:100%;font-size:16px}
+  .sheet input[type="date"]{display:block;appearance:none;-webkit-appearance:none}
+  .sheet .sheet-actions{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom));background:var(--surface-solid);padding:12px 0 calc(20px + env(safe-area-inset-bottom));z-index:2}
+  .sheet .btn{min-width:0;min-height:44px}
   /* folha do tópico: abre ao tocar na legenda/fatia do donut em Gráficos */
   .top-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
   .top-head .ico{width:20px;height:20px;flex:0 0 auto;color:var(--brand)}

@@ -1433,11 +1433,24 @@ const backdrop = $('#backdrop'), sheet = $('#sheet');
    continua com a altura da tela cheia e metade dele fica atrás do teclado.
    visualViewport dá a área realmente visível; o CSS usa --vvh/--vvtop. */
 const vv = window.visualViewport;
+let sheetScrollY=null;
+let focusSheetTimer;
+function manterCampoVisivel(){
+  const campo=document.activeElement;
+  if(!backdrop.classList.contains('show') || !sheet.contains(campo) || !campo.matches('input,select,textarea')) return;
+  const caixa=sheet.getBoundingClientRect(), alvo=campo.getBoundingClientRect();
+  const rodape=sheet.querySelector('.sheet-actions');
+  const limite=rodape ? Math.min(caixa.bottom-16,rodape.getBoundingClientRect().top-12) : caixa.bottom-16;
+  if(alvo.bottom>limite) sheet.scrollTop+=alvo.bottom-limite;
+  else if(alvo.top<caixa.top+16) sheet.scrollTop-=caixa.top+16-alvo.top;
+}
 function syncViewport(){
   if(!vv) return;
   const r = document.documentElement.style;
   r.setProperty('--vvh', vv.height + 'px');
   r.setProperty('--vvtop', vv.offsetTop + 'px');
+  clearTimeout(focusSheetTimer);
+  focusSheetTimer=setTimeout(manterCampoVisivel,80);
 }
 if(vv){
   vv.addEventListener('resize', syncViewport);
@@ -1446,6 +1459,10 @@ if(vv){
 }
 
 function openSheet(html){
+  if(sheetScrollY===null){
+    sheetScrollY=window.scrollY;
+    document.documentElement.style.setProperty('--sheet-scroll-top',`${-sheetScrollY}px`);
+  }
   sheet.innerHTML = html;
   backdrop.classList.add('show');
   document.body.classList.add('sheet-open');
@@ -1453,15 +1470,22 @@ function openSheet(html){
   syncViewport();
 }
 function closeSheet(){
+  clearTimeout(focusSheetTimer);
+  if(sheet.contains(document.activeElement)) document.activeElement.blur();
   backdrop.classList.remove('show');
   document.body.classList.remove('sheet-open');
+  if(sheetScrollY!==null){
+    const posicao=sheetScrollY; sheetScrollY=null;
+    document.documentElement.style.removeProperty('--sheet-scroll-top');
+    window.scrollTo(0,posicao);
+  }
 }
 
 /* campo focado precisa aparecer acima do teclado: o resize do visualViewport chega
    depois da animação do teclado, por isso o atraso antes de centralizar. */
-sheet.addEventListener('focusin', e=>{
-  const alvo = e.target.closest('.field') || e.target;
-  setTimeout(()=>alvo.scrollIntoView({block:'center', behavior:'smooth'}), 350);
+sheet.addEventListener('focusin', ()=>{
+  clearTimeout(focusSheetTimer);
+  focusSheetTimer=setTimeout(manterCampoVisivel,80);
 });
 
 /* toast de feedback rápido pós-ação (ex: gasto lançado) */

@@ -633,7 +633,7 @@ function gastoRow(o, g, opts){
   const voltar = (opts && opts.voltar) || null;
   const fechar = voltar || closeSheet;
   const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'etiqueta'};
-  const li = el('li');
+  const li = el('li','gasto-row');
   const suf = g.parcela ? ` (${escapeHtml(g.parcela.n)}/${escapeHtml(g.parcela.de)})` : '';
   const futura = g.data > todayISO(); // ISO ordena lexicograficamente
   const pIc = g.pagamento==='cartao' ? ICON('cartao')+' ' : g.pagamento==='pix' ? ICON('raio')+' ' : '';
@@ -641,7 +641,7 @@ function gastoRow(o, g, opts){
     <div class="av ic-brand">${ICON(t.ic)}</div>
     <div class="li-main">
       <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
-      <div class="s">${pIc}${escapeHtml(t.nm)} · ${fmtData(g.data)}${futura?' <span class="tag pend">a vencer</span>':''}</div>
+      <div class="s gasto-meta"><span>${pIc}${escapeHtml(t.nm)}</span><span class="gasto-data">${fmtData(g.data)}</span>${futura?' <span class="tag pend">a vencer</span>':''}</div>
     </div>
     <div class="li-val neg">−${money(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';

@@ -41,10 +41,11 @@ let filtroTexto = '', filtroMes = ''; // busca dos lançamentos (só memória)
 let tab = 'inicio';
 let unwatch = null;
 
-function normaliza(d){
-  return d && typeof d==='object'
-    ? {...empty(), ...d, config:{...empty().config, ...(d.config||{})}}
-    : empty();
+const normaliza = OBRA_DADOS.normaliza;
+function textoValido(valor, tipo, campo){
+  if(valor.length <= OBRA_DADOS.LIMITES[tipo]) return true;
+  toast(`Use até ${OBRA_DADOS.LIMITES[tipo]} caracteres.`, "erro");
+  campo.focus(); return false;
 }
 /* O blob inteiro vai num documento só, e documento do Firestore para em 1MB.
    Sem esta guarda a escrita falhava calada: a tela mostrava o gasto novo e o
@@ -194,11 +195,15 @@ function drawComp(arr, hoje){
     <div class="hbar">
       <div class="hbar-nm">${escapeHtml(r.nm)}</div>
       <div class="hbar-track">
-        <i class="hb-corr"  style="width:${(r.c/max*100).toFixed(1)}%"></i>
-        <i class="hb-bruto" style="width:${(r.b/max*100).toFixed(1)}%"></i>
+        <i class="hb-corr"></i>
+        <i class="hb-bruto"></i>
       </div>
       <div class="hbar-vl">${moneyShort(r.b)} gasto · ${moneyShort(r.c)} corrigido</div>
     </div>`).join('');
+  $('#compBars').querySelectorAll('.hbar').forEach((bar,i)=>{
+    bar.querySelector('.hb-corr').style.width = (rows[i].c/max*100).toFixed(1)+'%';
+    bar.querySelector('.hb-bruto').style.width = (rows[i].b/max*100).toFixed(1)+'%';
+  });
 }
 
 /* ===== DETALHE DA OBRA ===== */
@@ -213,9 +218,9 @@ function renderObra(){
 
   let head = `
     <div class="panel">
-      <h2 style="font-size:19px"><span style="display:flex;align-items:center;gap:8px">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
-        <button class="li-del" id="oEdit" title="Editar obra" style="font-size:15px">${ICON('lapis')}</button></h2>
-      <div style="font-size:13.5px;color:var(--muted)">
+      <h2 class="layout-32"><span class="layout-33">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
+        <button class="layout-34 li-del" id="oEdit" title="Editar obra">${ICON('lapis')}</button></h2>
+      <div class="layout-35">
         <span class="tag ${f.cls}">${f.nm}</span> ·
         começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}
       </div>
@@ -231,7 +236,7 @@ function renderObra(){
         <div class="k-top"><span class="k-nome">Venda</span>
           <span class="chip2 green">Vendida em ${fmtData(o.venda.data)}</span></div>
         <div class="k-num">${money(o.venda.valor)}</div>
-        <div class="k-obs" style="color:${lucro.bruto>=0?'var(--green)':'var(--red)'}">lucro ${moneyShort(lucro.bruto)} · ${lucro.vsBanco>=0?'+':''}${moneyShort(lucro.vsBanco)} vs banco</div>
+        <div class="k-obs ${lucro.bruto>=0?'texto-positivo':'texto-negativo'}">lucro ${moneyShort(lucro.bruto)} · ${lucro.vsBanco>=0?'+':''}${moneyShort(lucro.vsBanco)} vs banco</div>
       </div>`;
   } else if(o.valorEstimadoVenda){
     kpiVenda = `
@@ -285,7 +290,7 @@ function renderObra(){
   const afazeres = `
     <div class="panel"><h2>Afazeres <span class="muted" id="afzCount"></span></h2>
       <div class="filter-row">
-        <input id="afzInput" placeholder="Ex: pagar pedreiro, buscar tinta" autocomplete="off" maxlength="120">
+        <input id="afzInput" maxlength="500" placeholder="Ex: pagar pedreiro, buscar tinta" autocomplete="off">
         <button class="btn primary afz-add" id="afzAdd" aria-label="Adicionar afazer" title="Adicionar">+</button>
       </div>
       <ul class="list" id="oAfazeres"></ul>
@@ -297,7 +302,7 @@ function renderObra(){
 
   const graficos = `
     <div class="panel"><h2>Gastos por tópico</h2>
-      <div class="donut-wrap" id="oDonutWrap" style="cursor:pointer" title="Ver gráficos grandes">
+      <div class="layout-36 donut-wrap" id="oDonutWrap" title="Ver gráficos grandes">
         <div class="donut">
           <svg viewBox="0 0 36 36" width="132" height="132" id="oDonut"></svg>
           <div class="center"><small>Total</small><b id="oDonutTotal"></b></div>
@@ -334,6 +339,7 @@ function renderObra(){
   const addAfazer = ()=>{
     const inp = $('#afzInput'); const txt = inp.value.trim();
     if(!txt){ inp.focus(); return; }
+    if(!textoValido(txt, 'afazer', inp)) return;
     const oo = obraById(obraAberta); if(!oo) return;
     (oo.afazeres || (oo.afazeres = [])).unshift({ id:uid(), texto:txt, feito:false });
     save(); inp.value = ''; renderAfazeres(oo); inp.focus();
@@ -389,7 +395,7 @@ function afazerRow(o, a){
 function drawDonutObra(entries, total){
   const svg = $('#oDonut'), leg = $('#oDonutLeg');
   $('#oDonutTotal').textContent = moneyShort(total);
-  if(!total){ svg.innerHTML=''; leg.innerHTML = `<div class="empty" style="padding:10px"><p>Sem gastos ainda</p></div>`; return; }
+  if(!total){ svg.innerHTML=''; leg.innerHTML = `<div class="layout-37 empty"><p>Sem gastos ainda</p></div>`; return; }
   const cs = getComputedStyle(document.documentElement);
   const R = 15.915, C = 2*Math.PI*R;
   let off = 0, paths = '';
@@ -407,7 +413,7 @@ function drawDonutObra(entries, total){
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     leg.appendChild(el('div','row',
-      `<span class="dot" style="background:${color}"></span>
+      `<span class="dot pie-${i%PIE.length}"></span>
        <span class="nm">${ICON(t.ic)} ${escapeHtml(t.nm)}</span>
        <span class="vl">${Math.round(val/total*100)}% · ${moneyShort(val)}</span>`));
   });
@@ -482,8 +488,8 @@ function evoChartHtml(o, opts = {}){
         ${marca}${rotulos}${cols}
       </svg>
       <div class="evo-leg">
-        <span><i style="background:var(--chart-gasto)"></i>Gasto</span>
-        <span><i style="background:var(--chart-rec)"></i>Corrigido pelo banco</span>
+        <span><i class="layout-38"></i>Gasto</span>
+        <span><i class="layout-39"></i>Corrigido pelo banco</span>
       </div>
     </div>`;
 }
@@ -592,7 +598,7 @@ function gastoRow(o, g, opts){
   const fechar = voltar || closeSheet;
   const t = TOP_MAP()[g.topico] || {nm:g.topico||'Outros', ic:'etiqueta'};
   const li = el('li');
-  const suf = g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '';
+  const suf = g.parcela ? ` (${escapeHtml(g.parcela.n)}/${escapeHtml(g.parcela.de)})` : '';
   const futura = g.data > todayISO(); // ISO ordena lexicograficamente
   const pIc = g.pagamento==='cartao' ? ICON('cartao')+' ' : g.pagamento==='pix' ? ICON('raio')+' ' : '';
   li.innerHTML = `
@@ -619,10 +625,10 @@ function gastoRow(o, g, opts){
     openSheet(`
       <h3>Excluir parcela ${g.parcela.n}/${g.parcela.de}</h3>
       <p class="muted-note">Esta parcela faz parte de uma compra em ${g.parcela.de}x no cartão.</p>
-      <div class="sheet-actions" style="flex-direction:column">
-        <button class="btn primary" id="dUma" style="width:100%">Excluir só esta parcela</button>
-        <button class="btn ghost" id="dTodas" style="width:100%;color:var(--red)">Excluir a compra toda (${irmas.length} parcela${irmas.length>1?'s':''})</button>
-        <button class="btn ghost" id="dCancel" style="width:100%">Cancelar</button>
+      <div class="layout-40 sheet-actions">
+        <button class="layout-19 btn primary" id="dUma">Excluir só esta parcela</button>
+        <button class="layout-41 btn ghost" id="dTodas">Excluir a compra toda (${irmas.length} parcela${irmas.length>1?'s':''})</button>
+        <button class="layout-19 btn ghost" id="dCancel">Cancelar</button>
       </div>`);
     $('#dCancel').onclick = fechar;
     $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); fechar(); };
@@ -668,20 +674,21 @@ function formVenda(o){
 function formEditarObra(o){
   openSheet(`
     <h3>Editar obra</h3>
-    <div class="field"><label>Nome</label><input id="fNome" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
+    <div class="field"><label>Nome</label><input id="fNome" maxlength="120" value="${escapeHtml(o.nome)}" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${escapeHtml(o.dataInicio)}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label>
       <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="field"><label>Área construída em m² (opcional)</label>
       <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(o.areaM2||'')}" autocomplete="off"></div>
     <div class="sheet-actions">
-      <button class="btn ghost" id="cDel" style="color:var(--red)">Apagar obra</button>
+      <button class="layout-42 btn ghost" id="cDel">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
   maskMoney('#fEst');
   $('#cSave').onclick = ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
+    if(!textoValido(nome, 'nome', $('#fNome'))) return;
     const oo = obraById(o.id); if(!oo) return;
     oo.nome = nome;
     oo.dataInicio = $('#fData').value || oo.dataInicio;
@@ -744,7 +751,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
     ${pagtoHtml}
     <div class="field"><label>Descrição (opcional)</label>
-      <input id="fDesc" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
+      <input id="fDesc" maxlength="500" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
     <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?escapeHtml(gasto.data):todayISO()}"></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
@@ -799,6 +806,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
+    if(!textoValido($('#fDesc').value.trim(), 'descricao', $('#fDesc'))) return;
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
     if(isEdit){
@@ -855,11 +863,11 @@ function donutComLegendaHtml(entries, total, size){
   const legenda = entries.map(([id,val],i)=>{
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-    return `<li data-top="${escapeHtml(id)}"><span class="dot" style="background:${color}"></span>
+    return `<li data-top="${escapeHtml(id)}"><span class="dot pie-${i%PIE.length}"></span>
       <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
       <div class="li-val">${Math.round(val/total*100)}% · ${moneyShort(val)}</div></li>`;
   }).join('');
-  return `<div class="graf-donut"><div class="donut" style="width:${size}px;height:${size}px">
+  return `<div class="graf-donut"><div class="donut donut-${size}">
       <svg viewBox="0 0 36 36" width="${size}" height="${size}">${paths}</svg>
       <div class="center"><small>Total</small><b>${moneyShort(total)}</b></div>
     </div></div>
@@ -891,13 +899,13 @@ function renderGraficos(){
 
   $('#grafBody').innerHTML = `
     <div class="panel">
-      <h2 style="justify-content:flex-start;gap:8px">${ICON('calculadora')} Gráficos — ${escapeHtml(o.nome)}</h2>
-      <h2 style="margin-top:10px">Gastos por tópico</h2>
+      <h2 class="layout-28">${ICON('calculadora')} Gráficos — ${escapeHtml(o.nome)}</h2>
+      <h2 class="layout-29">Gastos por tópico</h2>
       ${donutLeg}
     </div>
     ${evoChartHtml(o, { sufixo:'G', H:300 })}
     ${mesChartHtml(o, { sufixo:'G', H:300 })}
-    <button class="btn primary no-print" id="grafPrint" style="width:100%;margin-top:2px">${ICON('impressora')} Imprimir / salvar PDF</button>`;
+    <button class="layout-43 btn primary no-print" id="grafPrint">${ICON('impressora')} Imprimir / salvar PDF</button>`;
   bindEvoChart(o, 'G', renderGraficos);
   bindMesChart(o, 'G');
   bindDonutLegenda($('#grafBody'), id=>sheetTopico(o.id, id));
@@ -991,7 +999,7 @@ function renderRelatorio(){
 
   $('#relBody').innerHTML = `
     <div class="panel">
-      <h2 style="justify-content:flex-start;gap:8px">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
+      <h2 class="layout-28">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
       <div class="rep-head">
         ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
         Correção de ${String(tx).replace('.',',')}% ao mês, da data de cada gasto até ${o.venda?'a venda ('+fmtData(o.venda.data)+')':'hoje ('+fmtData(hoje)+')'}.
@@ -1006,7 +1014,7 @@ function renderRelatorio(){
           </tbody>
         </table>
       </div>
-      <button class="btn primary no-print" id="relPrint" style="width:100%;margin-top:14px">${ICON('impressora')} Imprimir / salvar PDF</button>
+      <button class="layout-44 btn primary no-print" id="relPrint">${ICON('impressora')} Imprimir / salvar PDF</button>
     </div>`;
   $('#relPrint').onclick = ()=>window.print();
 }
@@ -1057,13 +1065,13 @@ function simulaCompute(){
   const sinal = v => v==null ? '' : (v>=0 ? 'pos' : 'neg');
 
   out.innerHTML = `
-    <div class="card saldo big" style="${bate?'':'background:linear-gradient(140deg,#8a2438,#4a1a2a);border-color:rgba(255,120,140,.35);box-shadow:0 8px 32px rgba(220,60,90,.25)'}">
+    <div class="card saldo big ${bate?'':'saldo-abaixo'}">
       <div class="k-label"><span class="k-ic">${ICON(bate?'check':'alerta')}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
-      <div class="k-val" style="font-size:30px">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
+      <div class="layout-45 k-val">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
       <div class="k-sub">${quando} · banco paga ${String(taxa()).replace('.',',')}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}${novaDemais ? ' · obra com menos de 1 mês — % ao mês ainda não diz muito' : ''}</div>
     </div>
     <div class="panel">
-      <h2 style="justify-content:flex-start;gap:8px">${ICON('documento')} Relatório da simulação</h2>
+      <h2 class="layout-28">${ICON('documento')} Relatório da simulação</h2>
       <div class="rep-scroll"><table class="rep-table">
         <thead><tr><th></th><th>Pelo bruto</th><th>Pelo corrigido</th></tr></thead>
         <tbody>
@@ -1241,7 +1249,12 @@ function renderAjustes(){
     inp.value = String(db.config.taxaMensal).replace('.',',');
   inp.onchange = ()=>{
     const v = parseNum(inp.value);
-    db.config.taxaMensal = (v>0 && v<=20) ? v : 1;
+    if(!(v>0 && v<=20)){
+      toast('Informe uma taxa maior que 0 e até 20% ao mês.', 'erro');
+      inp.value = String(db.config.taxaMensal).replace('.',',');
+      return;
+    }
+    db.config.taxaMensal = v;
     inp.value = String(db.config.taxaMensal).replace('.',',');
     save(); renderAll();
   };
@@ -1268,6 +1281,7 @@ function renderAjustes(){
   $('#ajAddTopico').onclick = ()=>{
     const nm = $('#ajNovoTopico').value.trim();
     if(!nm){ $('#ajNovoTopico').focus(); return; }
+    if(!textoValido(nm, 'topico', $('#ajNovoTopico'))) return;
     db.config.topicosCustom.push({ id:'c_'+uid(), nm, ic:'etiqueta' });
     $('#ajNovoTopico').value = '';
     save(); renderAll();
@@ -1332,7 +1346,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classL
 function formNovaObra(){
   openSheet(`
     <h3>Nova obra</h3>
-    <div class="field"><label>Nome da obra</label><input id="fNome" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
+    <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${todayISO()}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label><div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
     <div class="field"><label>Área construída em m² (opcional)</label><input id="fArea" inputmode="decimal" placeholder="Ex: 320" autocomplete="off"></div>
@@ -1346,6 +1360,7 @@ function formNovaObra(){
   $('#cSave').onclick = ()=>{
     const nome = $('#fNome').value.trim();
     if(!nome){ $('#fNome').focus(); return; }
+    if(!textoValido(nome, 'nome', $('#fNome'))) return;
     const est = parseNum($('#fEst').value);
     const area = parseNum($('#fArea').value);
     const o = {

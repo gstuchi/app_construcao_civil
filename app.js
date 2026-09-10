@@ -1269,10 +1269,10 @@ async function desativaPush(){
 /* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
 window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
 
-/* Convite contextual: explica antes de abrir a permissão do sistema. "Agora não"
-   adia por sete dias; a escolha vale por conta neste aparelho. */
+/* Convite após login: uma resposta encerra os convites nesta conta/aparelho.
+   A ativação continua disponível em Ajustes. Datas antigas também contam como resposta. */
 const notifInvite=$('#notifInvite');
-const NOTIF_ADIAR_MS=7*24*60*60*1000;
+const convitesRespondidos=new Set();
 let conviteNotifUid=null;
 const chaveConviteNotif=uid=>`custta-notif-convite-${uid}`;
 function esconderConviteNotif(){ notifInvite?.classList.add('hidden'); }
@@ -1282,18 +1282,20 @@ async function atualizarConviteNotif(user){
   if(!user || !pushSuportado() || Notification.permission!=='default') return;
   try{
     if(await pushAtual()) return;
-    const adiado=Number(localStorage.getItem(chaveConviteNotif(user.uid)))||0;
-    if(Date.now()-adiado<NOTIF_ADIAR_MS) return;
+    if(convitesRespondidos.has(user.uid) || localStorage.getItem(chaveConviteNotif(user.uid))!==null) return;
     if(conviteNotifUid===user.uid) notifInvite.classList.remove('hidden');
   }catch(err){ registraErro('push-convite',err.message,err.stack); }
 }
-$('#notifDepois').onclick=()=>{
-  try{ if(conviteNotifUid) localStorage.setItem(chaveConviteNotif(conviteNotifUid),String(Date.now())); }
+function encerrarConviteNotif(){
+  if(conviteNotifUid) convitesRespondidos.add(conviteNotifUid);
+  try{ if(conviteNotifUid) localStorage.setItem(chaveConviteNotif(conviteNotifUid),'respondido'); }
   catch(err){ registraErro('push-convite',err.message,err.stack); }
   esconderConviteNotif();
-};
+}
+$('#notifDepois').onclick=encerrarConviteNotif;
 $('#notifAtivar').onclick=async()=>{
   const b=$('#notifAtivar'); b.disabled=true;
+  encerrarConviteNotif();
   try{
     const ok=await ativaPush();
     esconderConviteNotif();

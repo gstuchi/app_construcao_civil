@@ -104,6 +104,42 @@ const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 // String() antes do replace: campo numérico do blob (areaM2, valor) também passa por aqui
 function escapeHtml(s){ return (s==null||s===false ? '' : String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const normalizaDescricao = s => OBRA_CALC.semAcento(String(s || '')).trim().replace(/\s+/g, ' ');
+function distanciaEdicao(a,b){
+  if(a===b) return 0;
+  if(!a.length) return b.length;
+  if(!b.length) return a.length;
+  let ant=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    const atual=[i];
+    for(let j=1;j<=b.length;j++) atual[j]=Math.min(atual[j-1]+1,ant[j]+1,ant[j-1]+(a[i-1]===b[j-1]?0:1));
+    ant=atual;
+  }
+  return ant[b.length];
+}
+function sugestoesDescricao(obraId, topicoId, termo, ignorarId){
+  const busca=normalizaDescricao(termo);
+  if(!busca) return [];
+  const unicas=new Map();
+  db.obras.forEach(o=>o.gastos.forEach(g=>{
+    if(o.id===obraId && g.id===ignorarId) return;
+    const texto=String(g.descricao||'').trim(), chave=normalizaDescricao(texto);
+    if(!chave) return;
+    const item=unicas.get(chave)||{texto,chave,vezes:0,mesmaObra:false,mesmoTopico:false,ultima:''};
+    item.vezes++;
+    if(o.id===obraId) item.mesmaObra=true;
+    if(g.topico===topicoId) item.mesmoTopico=true;
+    if((g.data||'')>=item.ultima){ item.ultima=g.data||''; item.texto=texto; }
+    unicas.set(chave,item);
+  }));
+  return [...unicas.values()].filter(x=>x.chave.includes(busca)
+      || (busca.length>=4 && Math.abs(x.chave.length-busca.length)<=2 && distanciaEdicao(x.chave,busca)<=2))
+    .sort((a,b)=>{
+      const sa=(a.mesmoTopico?100:0)+(a.mesmaObra?40:0)+(a.chave.startsWith(busca)?25:0)+Math.min(a.vezes,10);
+      const sb=(b.mesmoTopico?100:0)+(b.mesmaObra?40:0)+(b.chave.startsWith(busca)?25:0)+Math.min(b.vezes,10);
+      return sb-sa || b.ultima.localeCompare(a.ultima) || a.texto.localeCompare(b.texto,'pt-BR');
+    }).slice(0,5);
+}
 function emptyBlock(icon,msg){ return `<div class="empty"><div class="big">${icon}</div><p>${msg}</p></div>`; }
 // KPIs de milhao estouram a largura do card (overflow:hidden corta o numero).
 // Reduz a fonte do numero so o quanto precisar pra caber; grande quando cabe.
@@ -750,9 +786,12 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     ${selObra}
     <div class="field"><label>Tópico</label><div class="chips" id="fChips"></div></div>
     ${pagtoHtml}
-    <div class="field"><label>Descrição (opcional)</label>
-      <input id="fDesc" maxlength="500" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}" autocomplete="off"></div>
+    <div class="field"><label for="fDesc">Descrição (opcional)</label>
+      <div class="desc-wrap"><input id="fDesc" maxlength="500" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}"
+        autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="descSugestoes">
+        <div class="desc-sugestoes" id="descSugestoes" role="listbox"></div></div></div>
     <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?escapeHtml(gasto.data):todayISO()}"></div>
+    <p class="dup-warning hidden" id="dupWarning" role="alert"></p>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Salvar</button>
@@ -773,12 +812,41 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
 
   let top = isEdit ? gasto.topico : topicos()[0].id;
   const chips = $('#fChips');
+  let duplicadoConfirmado = '';
+  const limpaDuplicado = ()=>{
+    duplicadoConfirmado='';
+    $('#dupWarning').classList.add('hidden');
+    $('#cSave').textContent='Salvar';
+  };
+  const pintarSugestoes = ()=>{
+    const lista=$('#descSugestoes'), campo=$('#fDesc');
+    const obraIdAtual=oFix ? oFix.id : ($('#fObra')?.value||'');
+    const sugestoes=sugestoesDescricao(obraIdAtual,top,campo.value,isEdit?gasto.id:null);
+    lista.innerHTML='';
+    sugestoes.forEach(s=>{
+      const b=el('button','desc-sugestao'); b.type='button'; b.setAttribute('role','option');
+      const nome=el('span'); nome.textContent=s.texto;
+      const contexto=el('small'); contexto.textContent=s.mesmoTopico?'mesmo tópico':`${s.vezes}× usado`;
+      b.append(nome,contexto);
+      b.onclick=()=>{ campo.value=s.texto; lista.classList.remove('show'); campo.setAttribute('aria-expanded','false'); limpaDuplicado(); campo.focus(); };
+      lista.appendChild(b);
+    });
+    lista.classList.toggle('show',sugestoes.length>0);
+    campo.setAttribute('aria-expanded',String(sugestoes.length>0));
+  };
+  $('#fDesc').addEventListener('input',()=>{ limpaDuplicado(); pintarSugestoes(); });
+  $('#fDesc').addEventListener('focus',pintarSugestoes);
+  $('#fDesc').addEventListener('blur',()=>setTimeout(()=>{
+    $('#descSugestoes').classList.remove('show'); $('#fDesc').setAttribute('aria-expanded','false');
+  },150));
+  $('#fData').addEventListener('input',limpaDuplicado);
+  if($('#fObra')) $('#fObra').addEventListener('change',()=>{ limpaDuplicado(); pintarSugestoes(); });
   const paint = ()=>{
     chips.innerHTML = '';
     topicos().forEach(t=>{
       const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${escapeHtml(t.nm)}`);
       ch.type = 'button';
-      ch.onclick = ()=>{ top=t.id; paint(); };
+      ch.onclick = ()=>{ top=t.id; limpaDuplicado(); paint(); pintarSugestoes(); };
       chips.appendChild(ch);
     });
   };
@@ -806,19 +874,30 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
     if(valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
-    if(!textoValido($('#fDesc').value.trim(), 'descricao', $('#fDesc'))) return;
+    const desc = $('#fDesc').value.trim();
+    if(!textoValido(desc, 'descricao', $('#fDesc'))) return;
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
+    const data0 = $('#fData').value || (isEdit ? gasto.data : todayISO());
+    const nParc = !isParcela && pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
+    const assinatura=[o.id,top,normalizaDescricao(desc),Math.round(valor*100),data0,nParc].join('|');
+    const pareceDuplicado=desc && o.gastos.some(x=>x.id!==(isEdit&&gasto.id)
+      && normalizaDescricao(x.descricao)===normalizaDescricao(desc)
+      && Math.round(x.valor*100)===Math.round(valor*100) && x.data===data0);
+    if(pareceDuplicado && duplicadoConfirmado!==assinatura){
+      duplicadoConfirmado=assinatura;
+      $('#dupWarning').textContent='Este gasto parece já lançado: mesma descrição, valor e data. Confira ou toque novamente para salvar mesmo assim.';
+      $('#dupWarning').classList.remove('hidden');
+      $('#cSave').textContent='Salvar mesmo assim';
+      return;
+    }
     if(isEdit){
       const g = o.gastos.find(x=>x.id===gasto.id); if(!g) return;
       g.valor = valor; g.topico = top;
-      g.descricao = $('#fDesc').value.trim();
-      g.data = $('#fData').value || g.data;
+      g.descricao = desc;
+      g.data = data0;
       if(!isParcela) g.pagamento = pagto;
     } else {
-      const nParc = pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
-      const data0 = $('#fData').value || todayISO();
-      const desc = $('#fDesc').value.trim();
       if(nParc > 1){
         const grupoId = uid();
         const parcelas = OBRA_CALC.gerarParcelas(valor, nParc, data0);

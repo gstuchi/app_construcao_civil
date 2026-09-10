@@ -25,6 +25,21 @@ const {chromium}=require('playwright');
     for(const run of [()=>openObra('o1'),()=>renderGraficos(),()=>renderRelatorio(),()=>{closeSheet();showView('simula');renderSimula();document.querySelector('#simValor').value='1';simulaCompute();},()=>{closeSheet();showView('ajustes');renderAjustes();},()=>formGasto('o1'),()=>formEditarObra(obraById('o1'))]){
       await page.evaluate(run);assert.equal(await page.locator('img[src="x"]').count(),0);
     }
+    await page.evaluate(()=>{
+      closeSheet(); const o=obraById('o1');
+      o.gastos.push({id:'cimento-antigo',valor:100,topico:'terreno',data:todayISO(),descricao:'Cimento',pagamento:'pix'});
+      formGasto('o1',null,100);
+    });
+    await page.locator('#fDesc').fill('ci');
+    assert.equal(await page.locator('.desc-sugestao').first().textContent().then(t=>t.includes('Cimento')),true);
+    await page.locator('.desc-sugestao').first().click();
+    assert.equal(await page.locator('#fDesc').inputValue(),'Cimento');
+    const antesDuplicado=await page.evaluate(()=>obraById('o1').gastos.length);
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(()=>obraById('o1').gastos.length),antesDuplicado);
+    assert.equal(await page.locator('#dupWarning').isVisible(),true);
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(()=>obraById('o1').gastos.length),antesDuplicado+1);
     await page.evaluate(()=>{closeSheet();showView('ajustes');renderAjustes();});
     assert.ok((await page.locator('#ajTopicos').textContent()).includes(ataque));
     await page.locator('#ajTaxa').fill('21');await page.locator('#ajTaxa').dispatchEvent('change');

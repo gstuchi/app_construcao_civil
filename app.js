@@ -1,5 +1,5 @@
 /* Custta — controle de custos por obra. PWA offline-first, vanilla JS.
-   Dados no Firestore por usuário (cloud.js); localStorage guarda só tema e skin. */
+   Dados no Firestore por usuário (cloud.js); localStorage guarda preferências deste aparelho. */
 'use strict';
 
 /* ---------- estado ---------- */
@@ -1269,6 +1269,39 @@ async function desativaPush(){
 /* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
 window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
 
+/* Convite contextual: explica antes de abrir a permissão do sistema. "Agora não"
+   adia por sete dias; a escolha vale por conta neste aparelho. */
+const notifInvite=$('#notifInvite');
+const NOTIF_ADIAR_MS=7*24*60*60*1000;
+let conviteNotifUid=null;
+const chaveConviteNotif=uid=>`custta-notif-convite-${uid}`;
+function esconderConviteNotif(){ notifInvite?.classList.add('hidden'); }
+async function atualizarConviteNotif(user){
+  esconderConviteNotif();
+  conviteNotifUid=user?.uid||null;
+  if(!user || !pushSuportado() || Notification.permission!=='default') return;
+  try{
+    if(await pushAtual()) return;
+    const adiado=Number(localStorage.getItem(chaveConviteNotif(user.uid)))||0;
+    if(Date.now()-adiado<NOTIF_ADIAR_MS) return;
+    if(conviteNotifUid===user.uid) notifInvite.classList.remove('hidden');
+  }catch(err){ registraErro('push-convite',err.message,err.stack); }
+}
+$('#notifDepois').onclick=()=>{
+  try{ if(conviteNotifUid) localStorage.setItem(chaveConviteNotif(conviteNotifUid),String(Date.now())); }
+  catch(err){ registraErro('push-convite',err.message,err.stack); }
+  esconderConviteNotif();
+};
+$('#notifAtivar').onclick=async()=>{
+  const b=$('#notifAtivar'); b.disabled=true;
+  try{
+    const ok=await ativaPush();
+    esconderConviteNotif();
+    toast(ok?'Notificações ativadas neste aparelho':'Permissão não concedida.',ok?undefined:'erro');
+  }catch(err){ toast('Não deu pra ativar agora. Tente novamente.', 'erro'); }
+  finally{ b.disabled=false; }
+};
+
 window.addEventListener('cloud-conta', ()=>renderAjustes());
 /* ===== AJUSTES ===== */
 function renderAjustes(){
@@ -1512,9 +1545,11 @@ function bootCloud(){
   CLOUD.onAuth(user=>{
     if(unwatch){ unwatch(); unwatch=null; }
     if(!user){
+      conviteNotifUid=null; esconderConviteNotif();
       closeSheet(); sheet.textContent = '';
       db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;
     }
+    atualizarConviteNotif(user);
 
     /* Aqui existia uma migração dos dados antigos de localStorage pra nuvem.
        Removida: ela varria as chaves obras_data_v1* de QUALQUER pessoa que já

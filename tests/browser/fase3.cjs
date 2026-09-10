@@ -46,6 +46,15 @@ const {chromium}=require('playwright');
     await cimento.nth(0).check(); await cimento.nth(1).check();
     assert.equal((await page.locator('#relSelected').textContent()).includes('R$ 200,00'),true);
     assert.equal((await page.locator('#relSelPct').textContent()),'66,67%');
+    const antesObra=await page.evaluate(()=>db.obras.length);
+    await page.evaluate(()=>formNovaObra());
+    await page.locator('#fNome').fill('Obra com área');
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(()=>db.obras.length),antesObra);
+    assert.equal(await page.locator('#fAreaErro').isVisible(),true);
+    await page.locator('#fArea').fill('120,5');
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(()=>db.obras.at(-1).areaM2),120.5);
     await page.evaluate(()=>{closeSheet();showView('ajustes');renderAjustes();});
     assert.ok((await page.locator('#ajTopicos').textContent()).includes(ataque));
     await page.locator('#ajTaxa').fill('21');await page.locator('#ajTaxa').dispatchEvent('change');
@@ -53,9 +62,10 @@ const {chromium}=require('playwright');
     assert.ok((await page.locator('#toastWrap').textContent()).includes('20%'));
     await page.evaluate(()=>{const e=document.querySelector('#ajNovoTopico');e.value='x'.repeat(81);document.querySelector('#ajAddTopico').click();});
     assert.equal(await page.evaluate(()=>db.config.topicosCustom.length),1);
+    const antesNomeLongo=await page.evaluate(()=>db.obras.length);
     await page.evaluate(()=>formNovaObra());
     await page.evaluate(()=>{document.querySelector('#fNome').value='x'.repeat(121);document.querySelector('#cSave').click();});
-    assert.equal(await page.evaluate(()=>db.obras.length),2);
+    assert.equal(await page.evaluate(()=>db.obras.length),antesNomeLongo);
     for(const width of [414,1440]){
       await page.setViewportSize({width,height:900});
       for(const light of [false,true]){

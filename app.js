@@ -1450,13 +1450,18 @@ function formNovaObra(){
     <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${todayISO()}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label><div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
-    <div class="field"><label>Área construída em m² (opcional)</label><input id="fArea" inputmode="decimal" placeholder="Ex: 320" autocomplete="off"></div>
+    <div class="field"><label for="fArea">Área construída em m²</label><input id="fArea" inputmode="decimal" placeholder="Ex: 320" autocomplete="off" required aria-describedby="fAreaErro">
+      <span class="field-error hidden" id="fAreaErro">Informe área construída maior que zero.</span></div>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Criar obra</button>
     </div>`);
   maskMoney('#fEst');
   $('#fNome').focus();
+  $('#fArea').addEventListener('input',()=>{
+    $('#fAreaErro').classList.add('hidden');
+    $('#fArea').removeAttribute('aria-invalid');
+  });
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
     const nome = $('#fNome').value.trim();
@@ -1464,11 +1469,17 @@ function formNovaObra(){
     if(!textoValido(nome, 'nome', $('#fNome'))) return;
     const est = parseNum($('#fEst').value);
     const area = parseNum($('#fArea').value);
+    if(!(area>0)){
+      $('#fAreaErro').classList.remove('hidden');
+      $('#fArea').setAttribute('aria-invalid','true');
+      $('#fArea').focus();
+      return;
+    }
     const o = {
       id: uid(), nome, fase: 'construcao',
       dataInicio: $('#fData').value || todayISO(),
       valorEstimadoVenda: est > 0 ? est : null,
-      areaM2: area > 0 ? area : null,
+      areaM2: area,
       gastos: [],
     };
     db.obras.push(o); save(); closeSheet(); renderAll(); openObra(o.id);

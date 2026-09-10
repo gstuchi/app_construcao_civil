@@ -179,6 +179,8 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 3 — Endurecimento e prontidão para nativo
 
+**Concluída em 2026-09-09.** Implementação publicada (cache v38), testes locais e [GitHub Actions](https://github.com/gstuchi/app_construcao_civil/actions/runs/34426925894) passaram. Produção abriu com SDK local e CSP sem violações. Detalhes em [execução da Fase 3](superpowers/plans/2026-09-09-fase3.md). Itens abaixo preservam diagnóstico e roteiro originais; referências de linhas são históricas.
+
 **Porta de entrada da Fase 4.** A ordem interna importa — CSP por último.
 
 1. **Escapar os pontos de XSS.** `escapeHtml()` existe em [app.js:74](app.js#L74) e é usado em ~14 lugares, mas **não** em [app.js:380](app.js#L380), [:567](app.js#L567), [:724](app.js#L724), [:864](app.js#L864) — exatamente onde caem os nomes de `topicosCustom`, que são texto livre sem sanitização nem limite ([app.js:1139-1141](app.js#L1139-L1141)). Hoje é só auto-XSS, mas a severidade **sobe** quando empacotado: é execução de código dentro de um WKWebView com acesso à ponte do Capacitor.

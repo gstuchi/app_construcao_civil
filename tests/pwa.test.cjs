@@ -6,6 +6,11 @@ const { join } = require('path');
 const raiz = join(__dirname, '..');
 const sw = readFileSync(join(raiz, 'sw.js'), 'utf8');
 const manifest = JSON.parse(readFileSync(join(raiz, 'manifest.json'), 'utf8'));
+for(const arquivo of JSON.parse(readFileSync(join(raiz,'vendor/firebase/assets.json'),'utf8'))){
+  assert.ok(sw.includes(`'${arquivo}'`), `módulo Firebase fora do precache: ${arquivo}`);
+  const modulo=readFileSync(join(raiz,arquivo),'utf8');
+  assert.ok(!/from\s*["']https:\/\//.test(modulo), `import externo em ${arquivo}`);
+}
 
 for(const icon of manifest.icons || []){
   assert.ok(sw.includes(`'./${icon.src}'`), `ícone do manifesto fora do precache: ${icon.src}`);

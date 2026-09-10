@@ -15,6 +15,9 @@ const ROOT=path.resolve(__dirname,'../..');
   const browser=await chromium.launch();
   try{
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width:414,height:896},acceptDownloads:true});
+    const violacoes=[];
+    await context.exposeBinding('__registraCSP',(_source,info)=>violacoes.push(info));
+    await context.addInitScript(()=>addEventListener('securitypolicyviolation',e=>window.__registraCSP(e.violatedDirective+': '+e.blockedURI)));
     const source=fs.readFileSync(path.join(ROOT,'cloud.js'),'utf8')
       .replace("projectId: 'app-construcao-civil'",`projectId: '${PROJECT}'`)
       .replace('sendPasswordResetEmail, signOut,','sendPasswordResetEmail, signOut, connectAuthEmulator,')
@@ -100,6 +103,22 @@ const ROOT=path.resolve(__dirname,'../..');
     await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked'),antesDeSair);
     assert.equal(await page.evaluate(()=>localStorage.getItem('custta-limpar-cache')),null);
     console.log('ok - logout normal sincroniza, limpa cache e recarrega sem sessão');
+    await page.locator('#lEmail').fill('logout-fase2@example.com');
+    await page.locator('#lSenha').fill('Local-emulador-123!');
+    await page.locator('#fLogin button[type="submit"]').click();
+    await page.waitForFunction(()=>CLOUD.user() && !document.body.classList.contains('locked'));
+    await page.locator('#btnNovaObra').click();
+    await page.locator('#fNome').fill('  Obra pelo formulário  ');
+    await page.locator('#cSave').click();
+    await page.waitForFunction(()=>db.obras.some(o=>o.nome==='Obra pelo formulário'));
+    await page.locator('#fab').click();
+    for(const key of ['1','2','3','4']) await page.locator(`.valor-key[data-k="${key}"]`).click();
+    await page.locator('.valor-ok').click();
+    await page.locator('#fDesc').fill('  Cimento pelo formulário  ');
+    await page.locator('#cSave').click();
+    await page.waitForFunction(()=>db.obras[0]?.gastos[0]?.valor===12.34 && !CLOUD.temPendencia());
+    assert.equal(await page.evaluate(()=>db.obras[0].gastos[0].descricao),'Cimento pelo formulário');
+    console.log('ok - login, criação de obra e lançamento pelo teclado/formulários reais');
     await env.withSecurityRulesDisabled(async ctx=>{
       const adminDb=ctx.firestore();
       await setDoc(doc(adminDb,'perfis','legado'),{email:'legado@example.com',cpf:'00000000000',plano:'gratis'});
@@ -114,5 +133,6 @@ const ROOT=path.resolve(__dirname,'../..');
       assert.equal(executar(false).encontrados,0);
     });
     console.log('ok - expurgo em dry-run preserva CPF; aplicação remove só CPF e segunda execução encontra zero');
+    assert.deepEqual(violacoes,[], 'CSP não deve bloquear fluxos reais de conta');
   }finally{await browser.close();await env.cleanup();}
 })().catch(err=>{console.error(err);process.exitCode=1;});

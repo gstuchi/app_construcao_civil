@@ -9,6 +9,12 @@ const vercel = JSON.parse(readFileSync(join(raiz, 'vercel.json'), 'utf8'));
 const headers = Object.fromEntries(vercel.headers[0].headers.map(h => [h.key.toLowerCase(), h.value]));
 
 assert.ok(headers['content-security-policy'], 'CSP ausente');
+assert.ok(!headers['content-security-policy'].includes('unsafe-inline'));
+assert.ok(!headers['content-security-policy'].includes('gstatic'));
+for(const nome of ['index.html','privacidade.html','app.js']){
+  const texto=readFileSync(join(raiz,nome),'utf8');
+  assert.ok(!/<style\b|\sstyle=/.test(texto), `${nome}: CSS inline`);
+}
 assert.ok(!headers['content-security-policy'].includes("script-src 'self' 'unsafe-inline'"), 'CSP permite script inline');
 assert.ok(headers['content-security-policy'].includes("object-src 'none'"));
 assert.ok(headers['content-security-policy'].includes("frame-ancestors 'none'"));

@@ -303,12 +303,12 @@ function renderObra(){
         <div class="k-num" id="oCorr">${money(corr)}</div>
         <div class="k-obs">Juros embutidos até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
       </div>
-      <div class="kpi amber">
+      <button type="button" class="kpi amber kpi-link" id="oAPagar">
         <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
           <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada em 30 dias'}</span></div>
         <div class="k-num">${money(venc.total)}</div>
-        <div class="k-obs">parcelas e gastos futuros</div>
-      </div>
+        <div class="k-obs">Ver parcelas e gastos futuros →</div>
+      </button>
       ${kpiVenda}
     </div>`;
 
@@ -384,6 +384,7 @@ function renderObra(){
   $('#afzInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addAfazer(); } });
 
   $('#oEdit').onclick = ()=>formEditarObra(o);
+  $('#oAPagar').onclick = ()=>sheetAPagar(o.id);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
   on('#oRel',          ()=>{ showView('relatorio'); renderRelatorio(); });
   on('#oGraf',         ()=>{ showView('graficos'); renderGraficos(); });
@@ -840,9 +841,10 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   };
   $('#fDesc').addEventListener('input',()=>{ limpaDuplicado(); pintarSugestoes(); });
   $('#fDesc').addEventListener('focus',pintarSugestoes);
-  $('#fDesc').addEventListener('blur',()=>setTimeout(()=>{
-    $('#descSugestoes').classList.remove('show'); $('#fDesc').setAttribute('aria-expanded','false');
-  },150));
+  $('#fDesc').addEventListener('blur',()=>{
+    const lista=$('#descSugestoes'), campo=$('#fDesc');
+    setTimeout(()=>{ lista.classList.remove('show'); campo.setAttribute('aria-expanded','false'); },150);
+  });
   $('#fData').addEventListener('input',limpaDuplicado);
   if($('#fObra')) $('#fObra').addEventListener('change',()=>{ limpaDuplicado(); pintarSugestoes(); });
   const paint = ()=>{
@@ -1008,6 +1010,20 @@ function renderGraficos(){
 
 /* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
    Só leitura sobre db; editar/excluir sai daqui pelo próprio gastoRow. */
+function sheetAPagar(obraId){
+  const o = obraById(obraId);
+  if(!o){ closeSheet(); return; }
+  const venc = OBRA_CALC.aPagar([o], todayISO());
+  openSheet(`<h3>A pagar · próximos 30 dias</h3>
+    <div class="top-resumo"><b>${money(venc.total)}</b>
+      <div class="sub">${venc.qtd} vencimento${venc.qtd===1?'':'s'} · a partir de amanhã</div></div>
+    <ul class="list" id="aPagarGastos"></ul>
+    ${venc.qtd?'': '<p class="muted-note">Nenhum gasto previsto para esse período.</p>'}
+    <div class="sheet-actions"><button class="btn ghost" id="aPagarFechar">Fechar</button></div>`);
+  venc.itens.forEach(({gasto})=>$('#aPagarGastos').appendChild(gastoRow(o,gasto,{voltar:()=>sheetAPagar(obraId)})));
+  $('#aPagarFechar').onclick = closeSheet;
+}
+
 function sheetTopico(obraId, topicoId){
   const o = obraById(obraId);
   if(!o) return;

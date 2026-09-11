@@ -179,10 +179,12 @@
     fim.setDate(fim.getDate() + dias);
     const limISO = fim.toISOString().slice(0, 10);
     let total = 0, qtd = 0;
+    const itens = [];
     obras.forEach(o => o.gastos.forEach(g => {
-      if(g.data > hojeISO && g.data <= limISO){ total += g.valor; qtd++; }
+      if(g.data > hojeISO && g.data <= limISO){ total += g.valor; qtd++; itens.push({obraId:o.id, gasto:g}); }
     }));
-    return { total, qtd };
+    itens.sort((a,b)=>a.gasto.data.localeCompare(b.gasto.data));
+    return { total, qtd, itens };
   }
 
   /* Últimos n gastos de todas as obras (data desc, desempate por id). */

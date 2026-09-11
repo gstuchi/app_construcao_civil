@@ -21,6 +21,19 @@ const {chromium}=require('playwright');
       db=normaliza({obras:[{id:'o',nome:'Casa teste',dataInicio:'2026-01-01',gastos:Array.from({length:20},(_,i)=>({id:String(i),descricao:i%2?'Condomínio residencial (9/11)':'Tambor Bianca para materiais',valor:1545.45,data:'2027-05-10',topico:'matextra',pagamento:'cartao'}))}]});
       renderAll();openObra('o');
     });
+    await page.evaluate(()=>{
+      const o=obraById('o');
+      o.gastos.push({id:'vence',descricao:'Cimento futuro',valor:100,data:OBRA_CALC.addMesesClampado(todayISO(),0),topico:'matextra',pagamento:'pix'});
+      const d=new Date();d.setDate(d.getDate()+1);o.gastos.at(-1).data=OBRA_CALC.dataLocalISO(d);
+      renderObra();
+    });
+    await page.locator('#oAPagar').click();
+    assert.equal(await page.locator('#aPagarGastos .gasto-row').count(),1);
+    await page.locator('#aPagarGastos .li-main').click();
+    await page.locator('#fDesc').fill('Cimento editado');
+    await page.locator('#cSave').click();
+    assert.match(await page.locator('#aPagarGastos').textContent(),/Cimento editado/);
+    await page.locator('#aPagarFechar').click();
     for(const width of [320,393,430,768,1440]){
       await page.setViewportSize({width,height:852});
       for(const light of [false,true]){

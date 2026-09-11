@@ -278,7 +278,10 @@ t('aPagar: janela de 30 dias', () => {
     { valor:400, data:'2026-08-10' },  // +35d: fora
     { valor:800, data:'2026-07-01' },  // passado: fora
   ]}];
-  assert.deepStrictEqual(C.aPagar(os, '2026-07-06'), { total:300, qtd:2 });
+  const venc = C.aPagar(os, '2026-07-06');
+  assert.strictEqual(venc.total, 300);
+  assert.strictEqual(venc.qtd, 2);
+  assert.deepStrictEqual(venc.itens.map(x=>x.gasto), os[0].gastos.slice(0,2));
 });
 
 t('gastosRecentes: ordena e limita', () => {

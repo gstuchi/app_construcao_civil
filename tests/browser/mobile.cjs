@@ -44,12 +44,14 @@ const {chromium}=require('playwright');
         if(width===393) await page.screenshot({path:path.join(os.tmpdir(),`custta-lista-${light}.png`)});
         const pos=await page.evaluate(()=>scrollY);
         await page.evaluate(()=>formGasto('o',null,800));
-        assert.equal(await page.locator('#topicoPicker').getAttribute('open'),null);
+        assert.equal(await page.locator('#topicoPicker').isVisible(),false);
+        await page.locator('#fDesc').fill('Descrição preservada');
         await page.locator('#topicoEscolhido').click();
         await page.locator('#topicoBusca').fill('fundacao');
         assert.equal(await page.locator('#fChips button').count(),1);
         await page.locator('#fChips button').click();
         assert.equal(await page.locator('#topicoEscolhido').textContent(),'Fundação');
+        assert.equal(await page.locator('#fDesc').inputValue(),'Descrição preservada');
         await page.locator('#fDesc').fill('Teste de lançamento');
         // Altura menor simula espaço ocupado pelo teclado, sem alegar emular iOS.
         await page.setViewportSize({width,height:460});

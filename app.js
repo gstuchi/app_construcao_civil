@@ -782,14 +782,12 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
        <input type="hidden" id="fVal" value="${OBRA_CALC.numParaCampo(valorInicial||'')}">`;
 
   openSheet(`
+    <div id="gastoCampos">
     <h3>${isEdit?'Editar gasto':'Novo gasto'}</h3>
     ${valHtml}
     ${selObra}
     <div class="field"><label>Tópico</label>
-      <details class="topico-picker" id="topicoPicker"><summary id="topicoEscolhido"></summary>
-        <label for="topicoBusca">Buscar tópico</label><input id="topicoBusca" type="search" placeholder="Digite o nome do tópico" autocomplete="off">
-        <div class="chips" id="fChips"></div><p id="topicoVazio" class="muted-note hidden">Nenhum tópico encontrado.</p>
-      </details></div>
+      <button type="button" class="topico-escolhido" id="topicoEscolhido"></button></div>
     ${pagtoHtml}
     <div class="field"><label for="fDesc">Descrição (opcional)</label>
       <div class="desc-wrap"><input id="fDesc" maxlength="500" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}"
@@ -800,6 +798,14 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
       <button class="btn primary" id="cSave">Salvar</button>
+    </div></div>
+    <div id="topicoPicker" class="hidden">
+      <h3>Escolher tópico</h3>
+      <div class="field"><label for="topicoBusca">Buscar tópico</label>
+        <input id="topicoBusca" type="search" placeholder="Digite o nome do tópico" autocomplete="off"></div>
+      <div class="topico-lista" id="fChips"></div>
+      <p id="topicoVazio" class="muted-note hidden">Nenhum tópico encontrado.</p>
+      <div class="sheet-actions"><button type="button" class="btn ghost" id="topicoVoltar">Voltar</button></div>
     </div>`);
 
   const pedirValor = ()=>{
@@ -847,6 +853,22 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   });
   $('#fData').addEventListener('input',limpaDuplicado);
   if($('#fObra')) $('#fObra').addEventListener('change',()=>{ limpaDuplicado(); pintarSugestoes(); });
+  let topicoScroll=0;
+  const fecharTopicos=()=>{
+    $('#topicoPicker').classList.add('hidden');
+    $('#gastoCampos').classList.remove('hidden');
+    $('#sheet').scrollTop=topicoScroll;
+    $('#topicoEscolhido').focus({preventScroll:true});
+  };
+  $('#topicoEscolhido').onclick=()=>{
+    topicoScroll=$('#sheet').scrollTop;
+    $('#gastoCampos').classList.add('hidden');
+    $('#topicoPicker').classList.remove('hidden');
+    $('#topicoBusca').value=''; paint();
+    $('#sheet').scrollTop=0;
+    $('#topicoVoltar').focus({preventScroll:true});
+  };
+  $('#topicoVoltar').onclick=fecharTopicos;
   const paint = ()=>{
     chips.innerHTML = '';
     const escolhido=topicos().find(t=>t.id===top);
@@ -855,13 +877,13 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     const encontrados=topicos().filter(t=>normalizaDescricao(t.nm).includes(busca));
     $('#topicoVazio').classList.toggle('hidden',encontrados.length>0);
     encontrados.forEach(t=>{
-      const ch = el('button','chip'+(t.id===top?' on':''),`${ICON(t.ic)} ${escapeHtml(t.nm)}`);
+      const ch = el('button','topico-opcao'+(t.id===top?' on':''),`${ICON(t.ic)} <span>${escapeHtml(t.nm)}</span>${t.id===top?' ✓':''}`);
       ch.type = 'button';
+      ch.setAttribute('aria-pressed',String(t.id===top));
       ch.onclick = ()=>{
         top=t.id; limpaDuplicado(); $('#topicoBusca').value='';
-        $('#topicoPicker').open=false; paint();
+        paint(); fecharTopicos();
         $('#descSugestoes').classList.remove('show'); $('#fDesc').setAttribute('aria-expanded','false');
-        $('#topicoEscolhido').focus();
       };
       chips.appendChild(ch);
     });

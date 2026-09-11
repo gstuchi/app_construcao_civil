@@ -16,3 +16,4 @@ Boundaries: code/commits/PRs written normal.
 
 Project workflow:
 - Keep each user-facing feature in a separate commit. Never combine independent implementations in one commit.
+- Push commits one at a time, with a separate successful push for each commit.

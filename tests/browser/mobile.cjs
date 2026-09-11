@@ -44,13 +44,10 @@ const {chromium}=require('playwright');
         if(width===393) await page.screenshot({path:path.join(os.tmpdir(),`custta-lista-${light}.png`)});
         const pos=await page.evaluate(()=>scrollY);
         await page.evaluate(()=>formGasto('o',null,800));
-        assert.equal(await page.locator('#topicoPicker').isVisible(),false);
+        assert.equal(await page.locator('#topicoBusca').count(),0);
         await page.locator('#fDesc').fill('Descrição preservada');
-        await page.locator('#topicoEscolhido').click();
-        await page.locator('#topicoBusca').fill('fundacao');
-        assert.equal(await page.locator('#fChips button').count(),1);
-        await page.locator('#fChips button').click();
-        assert.equal(await page.locator('#topicoEscolhido').textContent(),'Fundação');
+        await page.locator('#fChips button').filter({hasText:'Fundação'}).click();
+        assert.match(await page.locator('#fChips .on').textContent(),/Fundação/);
         assert.equal(await page.locator('#fDesc').inputValue(),'Descrição preservada');
         await page.locator('#fDesc').fill('Teste de lançamento');
         // Altura menor simula espaço ocupado pelo teclado, sem alegar emular iOS.
@@ -67,6 +64,6 @@ const {chromium}=require('playwright');
       }
     }
     assert.deepEqual(await page.evaluate(()=>errosMobile),[]);
-    console.log('ok - formulário, busca de tópicos e vencimentos em 5 larguras e 2 temas');
+    console.log('ok - formulário, botões de tópicos e vencimentos em 5 larguras e 2 temas');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

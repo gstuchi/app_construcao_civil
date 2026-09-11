@@ -1496,8 +1496,8 @@ function closeSheet(){
   }
 }
 
-/* campo focado precisa aparecer acima do teclado: o resize do visualViewport chega
-   depois da animação do teclado, por isso o atraso antes de centralizar. */
+/* Ajusta somente o scroll interno necessário, sem centralizar o campo nem
+   deslocar horizontalmente a página quando o teclado altera a viewport. */
 sheet.addEventListener('focusin', ()=>{
   clearTimeout(focusSheetTimer);
   focusSheetTimer=setTimeout(manterCampoVisivel,80);

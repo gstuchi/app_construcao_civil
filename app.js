@@ -301,7 +301,7 @@ function renderObra(){
       <div class="kpi">
         <div class="k-top"><span class="k-nome">Corrigido pelo banco</span></div>
         <div class="k-num" id="oCorr">${money(corr)}</div>
-        <div class="k-obs">Juros embutidos até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
+        <div class="k-obs">Correção até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
       </div>
       <button type="button" class="kpi amber kpi-link" id="oAPagar">
         <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
@@ -768,7 +768,11 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     ? `<p class="muted-note">${ICON('cartao')} Parcela ${gasto.parcela.n}/${gasto.parcela.de} de uma compra no cartão — a edição vale só pra esta parcela.</p>`
     : `<div class="field"><label>Pagamento</label><div class="chips" id="fPagto"></div></div>
        <div class="field hidden" id="fParcWrap"><label>Parcelas</label>
-         <select id="fParc">${Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x${i?'':' (à vista)'}</option>`).join('')}</select>
+         <select id="fParc">${Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x</option>`).join('')}</select>
+         <label for="fJuros">Taxa de juros (% ao mês)</label>
+         <input id="fJuros" inputmode="decimal" value="0" placeholder="Ex: 2,5" autocomplete="off" aria-describedby="cartaoAjuda cartaoResumo">
+         <p class="muted-note" id="cartaoAjuda">0 = sem juros. Informe o valor da compra sem juros. Parcelas mensais fixas, com primeiro pagamento após um mês. A data abaixo é o primeiro vencimento.</p>
+         <p class="muted-note" id="cartaoResumo" role="status" aria-live="polite"></p>
        </div>`;
 
   /* no novo gasto o valor já veio da tela de teclado: vira botão pra reabrir ela,
@@ -789,11 +793,12 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
     <div class="field"><label>Tópico</label>
       <button type="button" class="topico-escolhido" id="topicoEscolhido"></button></div>
     ${pagtoHtml}
+    ${isEdit && gasto.jurosCartao ? `<p class="muted-note">Condições originais da compra: ${escapeHtml(String(gasto.jurosCartao.taxaMensal).replace('.',','))}% ao mês · ${escapeHtml(String(gasto.jurosCartao.nParcelas))}x · juros ${money(gasto.jurosCartao.jurosCompra)} · total ${money(gasto.jurosCartao.totalCompra)}. O valor editável já inclui juros; não serão aplicados novamente.</p>`:''}
     <div class="field"><label for="fDesc">Descrição (opcional)</label>
       <div class="desc-wrap"><input id="fDesc" maxlength="500" placeholder="Ex: 50 sacos de cimento" value="${isEdit?escapeHtml(gasto.descricao||''):''}"
         autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="descSugestoes">
         <div class="desc-sugestoes" id="descSugestoes" role="listbox"></div></div></div>
-    <div class="field"><label>Data</label><input id="fData" type="date" value="${isEdit?escapeHtml(gasto.data):todayISO()}"></div>
+    <div class="field"><label id="fDataLabel" for="fData">Data</label><input id="fData" type="date" value="${isEdit?escapeHtml(gasto.data):todayISO()}"></div>
     <p class="dup-warning hidden" id="dupWarning" role="alert"></p>
     <div class="sheet-actions">
       <button class="btn ghost" id="cCancel">Cancelar</button>
@@ -811,7 +816,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const pedirValor = ()=>{
     TECLADO.abrir({
       valorInicial: parseNum($('#fVal').value),
-      onConfirm: v => { $('#fVal').value = OBRA_CALC.numParaCampo(v); pintarValor(); }
+      onConfirm: v => { $('#fVal').value = OBRA_CALC.numParaCampo(v); pintarValor(); atualizarCartao(); }
     });
   };
   const pintarValor = ()=>{
@@ -892,6 +897,25 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   paint();
 
   let pagto = isEdit ? (gasto.pagamento || 'pix') : 'pix';
+  const datasPagamento={pix:$('#fData').value,cartao:OBRA_CALC.addMesesClampado($('#fData').value,1)};
+  const lerTaxaCartao=()=>{
+    const texto=($('#fJuros')?.value||'').trim();
+    return /^(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(texto) ? Number(texto.replace(',','.')) : NaN;
+  };
+  const calcularCartao=()=>OBRA_CALC.parcelamentoCartao(parseNum($('#fVal').value),Number($('#fParc')?.value),lerTaxaCartao(),$('#fData').value);
+  const atualizarCartao=()=>{
+    if(isEdit) return;
+    $('#fDataLabel').textContent=pagto==='cartao'?'Primeiro vencimento':'Data';
+    const r=calcularCartao();
+    $('#cartaoResumo').textContent=r
+      ? `${r.nParcelas}x de ${money(r.parcelas[0].valor)}${r.parcelas.at(-1).valor!==r.parcelas[0].valor?` (última: ${money(r.parcelas.at(-1).valor)})`:''} · Juros do cartão: ${money(r.jurosCompra)} · Total: ${money(r.totalCompra)}`
+      : 'Informe valor, parcelas, data válida e taxa entre 0 e 100% ao mês.';
+  };
+  if(!isEdit){
+    $('#fJuros').addEventListener('input',()=>{limpaDuplicado();atualizarCartao();});
+    $('#fParc').addEventListener('change',()=>{limpaDuplicado();atualizarCartao();});
+    $('#fData').addEventListener('input',atualizarCartao);
+  }
   if(!isParcela){
     const pchips = $('#fPagto');
     const paintPagto = ()=>{
@@ -899,11 +923,18 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       [['pix',ICON('raio')+' Pix'],['cartao',ICON('cartao')+' Cartão']].forEach(([id,nm])=>{
         const ch = el('button','chip'+(id===pagto?' on':''),nm);
         ch.type = 'button';
-        ch.onclick = ()=>{ pagto=id; paintPagto(); };
+        ch.onclick = ()=>{
+          if(!isEdit && id!==pagto){
+            datasPagamento[pagto]=$('#fData').value;
+            $('#fData').value=datasPagamento[id];
+          }
+          pagto=id; limpaDuplicado(); paintPagto();
+        };
         pchips.appendChild(ch);
       });
       // parcelar só faz sentido no cartão e ao criar
       $('#fParcWrap').classList.toggle('hidden', pagto!=='cartao' || isEdit);
+      atualizarCartao();
     };
     paintPagto();
   }
@@ -911,15 +942,21 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   if(isEdit) $('#fVal').focus();
   $('#cCancel').onclick = fechar;
   $('#cSave').onclick = ()=>{
-    const valor = parseNum($('#fVal').value);
-    if(valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
+    let valor = parseNum($('#fVal').value);
+    if(!Number.isFinite(valor) || valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
     const desc = $('#fDesc').value.trim();
     if(!textoValido(desc, 'descricao', $('#fDesc'))) return;
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
     const data0 = $('#fData').value || (isEdit ? gasto.data : todayISO());
     const nParc = !isParcela && pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
-    const assinatura=[o.id,top,normalizaDescricao(desc),Math.round(valor*100),data0,nParc].join('|');
+    const cartao = !isEdit && pagto==='cartao' ? calcularCartao() : null;
+    if(!isEdit && pagto==='cartao' && !cartao){
+      toast('Confira valor, parcelas, data e taxa de juros');
+      $('#fJuros').focus(); return;
+    }
+    if(cartao) valor=cartao.totalCompra;
+    const assinatura=[o.id,top,normalizaDescricao(desc),Math.round(valor*100),data0,nParc,cartao?.taxaMensal].join('|');
     const pareceDuplicado=desc && o.gastos.some(x=>x.id!==(isEdit&&gasto.id)
       && normalizaDescricao(x.descricao)===normalizaDescricao(desc)
       && Math.round(x.valor*100)===Math.round(valor*100) && x.data===data0);
@@ -936,10 +973,13 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       g.descricao = desc;
       g.data = data0;
       if(!isParcela) g.pagamento = pagto;
+      if(pagto!=='cartao') delete g.jurosCartao;
     } else {
+      const dadosCartao = cartao ? { jurosCartao:{taxaMensal:cartao.taxaMensal,valorCompra:cartao.valorCompra,
+        nParcelas:cartao.nParcelas,totalCompra:cartao.totalCompra,jurosCompra:cartao.jurosCompra} } : {};
       if(nParc > 1){
         const grupoId = uid();
-        const parcelas = OBRA_CALC.gerarParcelas(valor, nParc, data0);
+        const parcelas = cartao.parcelas;
         if(!parcelas.length){
           toast('O valor precisa ter pelo menos um centavo por parcela');
           $('#fParc').focus();
@@ -947,10 +987,10 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
         }
         parcelas.forEach((p,i)=>{
           o.gastos.push({ id:uid(), valor:p.valor, topico:top, descricao:desc,
-            data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc} });
+            data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc}, ...dadosCartao });
         });
       } else {
-        o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto });
+        o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto, ...dadosCartao });
       }
     }
     salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
@@ -1148,7 +1188,7 @@ function renderRelatorio(){
       </div>
       <div class="rep-scroll">
         <table class="rep-table">
-          <thead><tr><th>Tópico / gasto</th><th>Data</th><th>Bruto</th><th>Corrigido</th><th>Juros</th></tr></thead>
+          <thead><tr><th>Tópico / gasto</th><th>Data</th><th>Bruto</th><th>Corrigido</th><th>Correção pelo banco</th></tr></thead>
           <tbody>
             ${rows}
             <tr class="rep-total"><td>TOTAL</td><td></td><td>${money(totB)}</td><td>${money(totC)}</td><td>+${money(totC-totB)}</td></tr>

@@ -301,4 +301,22 @@ t('precoPorM2', () => {
   assert.strictEqual(C.precoPorM2(0, 300), null);
 });
 
+t('cartão: Price mensal, centavos e vencimentos', () => {
+  const r=C.parcelamentoCartao(1000,2,10,'2026-01-31');
+  assert.equal(r.totalCompra,1152.38);
+  assert.equal(r.jurosCompra,152.38);
+  assert.deepEqual(r.parcelas,[{valor:576.19,data:'2026-01-31'},{valor:576.19,data:'2026-02-28'}]);
+  const sem=C.parcelamentoCartao(100,3,0,'2026-01-31');
+  assert.equal(sem.jurosCompra,0);
+  assert.deepEqual(sem.parcelas.map(p=>p.valor),[33.33,33.33,33.34]);
+  assert.equal(C.parcelamentoCartao(100,1,2,'2026-01-31').totalCompra,102);
+  for(const tx of [-1,NaN,Infinity,101]) assert.equal(C.parcelamentoCartao(100,3,tx,'2026-01-31'),null);
+  assert.equal(C.parcelamentoCartao(0.01,3,0,'2026-01-31'),null);
+  assert.equal(C.parcelamentoCartao(100,0,1,'2026-01-31'),null);
+  assert.equal(C.parcelamentoCartao(100,2,1,'2026-02-31'),null);
+  const pequeno=C.parcelamentoCartao(1000,36,0.000001,'2026-01-31');
+  assert.ok(Number.isFinite(pequeno.totalCompra));
+  assert.equal(Math.round(pequeno.parcelas.reduce((s,p)=>s+p.valor,0)*100),Math.round(pequeno.totalCompra*100));
+});
+
 console.log(`OK: ${n} testes`);

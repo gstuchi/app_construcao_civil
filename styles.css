@@ -326,6 +326,7 @@
   .chip.on{background:var(--brand-soft);color:var(--chip-on-ink);border-color:var(--line-strong);font-weight:600}
   .topico-escolhido,.topico-opcao{width:100%;border:1px solid var(--border);border-radius:11px;padding:14px 12px;background:var(--surface-2);color:var(--text);font:inherit;font-size:16px;text-align:left;cursor:pointer;overflow-wrap:anywhere}
   .topico-escolhido::after{content:'›';float:right;color:var(--muted)}
+  #fParc{margin-bottom:12px}
   .topico-lista{display:grid;gap:8px}
   .topico-opcao{display:flex;align-items:center;gap:10px;min-height:48px}
   .topico-opcao span{flex:1;min-width:0}

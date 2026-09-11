@@ -240,6 +240,24 @@
     }));
   }
 
+  /* Parcelas mensais fixas (Price/PGTO, pagamento no fim de cada período).
+     dataISO é o primeiro vencimento. Última parcela absorve os centavos.
+     https://support.microsoft.com/pt-br/excel/functions/pmt-function */
+  function parcelamentoCartao(valor, n, taxaMensal, dataISO){
+    if(!Number.isFinite(valor) || valor<=0 || !Number.isInteger(n) || n<1 || n>36
+      || !Number.isFinite(taxaMensal) || taxaMensal<0 || taxaMensal>100
+      || !dataISOValida(dataISO)) return null;
+    const base = Math.round(valor*100)/100;
+    const i = taxaMensal/100;
+    const prestacao = i===0 ? base/n : base*i/(-Math.expm1(-n*Math.log1p(i)));
+    const total = Math.round(prestacao*n*100)/100;
+    if(!Number.isSafeInteger(Math.round(total*100))) return null;
+    const parcelas=gerarParcelas(total,n,dataISO);
+    if(!parcelas.length) return null;
+    return {valorCompra:base, taxaMensal, nParcelas:n, totalCompra:total,
+      jurosCompra:Math.round((total-base)*100)/100, parcelas};
+  }
+
   /* ---- dinheiro digitado (máscara dos campos R$) ---- */
   /* Formata enquanto digita: só dígitos e 1 vírgula; milhar com pontos. */
   function fmtDigitado(v){
@@ -273,7 +291,7 @@
     const n = parseFloat(v); return Number.isFinite(n) ? n : 0;
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
+  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

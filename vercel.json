@@ -25,5 +25,9 @@
         }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/push-diario?periodo=manha", "schedule": "0 12 * * *" },
+    { "path": "/api/push-diario?periodo=noite", "schedule": "0 21 * * *" }
   ]
 }

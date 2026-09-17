@@ -52,3 +52,19 @@ Publicar.
   commit reativa).
 - iPhone: só iOS 16.4+ com o PWA instalado na tela inicial.
 - Sair da conta não desliga as notificações do aparelho; desligue o toggle antes de trocar de conta.
+
+## Trocar para Vercel Cron (opcional, recomendado antes do lançamento)
+
+O GitHub desativa cron após 60 dias sem atividade no repositório. A rota
+`api/push-diario.js` e os `crons` do `vercel.json` já existem, mas respondem
+503 enquanto `CRON_SECRET` não estiver configurado — nada é enviado em dobro.
+
+1. Vercel → projeto → Settings → Environment Variables (Production):
+   `CRON_SECRET` (valor aleatório longo), `FIREBASE_SERVICE_ACCOUNT`,
+   `VAPID_PUBLIC`, `VAPID_PRIVATE`, `VAPID_SUBJECT` — mesmos valores dos secrets do GitHub.
+2. **No mesmo deploy**, remover o bloco `schedule:` de `.github/workflows/push-diario.yml`
+   (manter `workflow_dispatch` para teste manual) e ajustar `tests/workflow.test.cjs`.
+3. Fazer o deploy. Vercel → Cron Jobs → "Run" em `/api/push-diario?periodo=noite`
+   e conferir o log (`{"enviados":N,"removidos":M}`).
+4. Para o app iOS, subir a chave APNs `.p8` em Firebase → Configurações do projeto →
+   Cloud Messaging → Apple app configuration.

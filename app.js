@@ -1417,7 +1417,7 @@ function renderAjustes(){
         const on = inscrito && perm === 'granted';
         tgN.classList.toggle('on', on);
         tgN.setAttribute('aria-checked', String(on));
-      });
+      }).catch(err => registraErro('push-estado', err && err.message, err && err.stack));
       tgN.onclick = async () => {
         const nota = $('#ajNotifNota');
         nota.textContent = NOTIF_NOTA_PADRAO;
@@ -1651,6 +1651,7 @@ function bootCloud(){
       tokenFcmSincronizado = false;
       try{ localStorage.removeItem(ESTADO_KEY); }catch(e){}
       estadoRestaurado = false;
+      obraDaNotificacao = undefined; // notificação de outra conta não pode abrir obra desta
       conviteNotifUid=null; esconderConviteNotif();
       closeSheet(); sheet.textContent = '';
       db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;

@@ -29,11 +29,14 @@ function montaResumo(dados, hojeISO, periodo){
   if(!dados || !Array.isArray(dados.obras) || !dados.obras.length) return null;
   const obras = dados.obras.filter(o => o && typeof o === 'object');
   const linhas = [];
+  const origem = new Set(); // obras que geraram alguma linha — uma só vira atalho no toque
 
   // afazeres não riscados, somando todas as obras (campo é opcional por obra)
   const pend = obras.reduce((s, o) => {
     const afazeres = Array.isArray(o.afazeres) ? o.afazeres : [];
-    return s + afazeres.filter(a => a && typeof a === 'object' && !a.feito).length;
+    const n = afazeres.filter(a => a && typeof a === 'object' && !a.feito).length;
+    if(n) origem.add(o.id);
+    return s + n;
   }, 0);
   if(pend > 0) linhas.push(pend === 1 ? '1 afazer pendente' : pend + ' afazeres pendentes');
 
@@ -43,7 +46,7 @@ function montaResumo(dados, hojeISO, periodo){
     let qtd = 0, total = 0;
     for(const o of obras) for(const g of (Array.isArray(o.gastos) ? o.gastos : [])){
       if(g && typeof g.data === 'string' && g.data.slice(0, 7) === mes && g.data >= hojeISO){
-        qtd++; total += Number(g.valor) || 0;
+        qtd++; total += Number(g.valor) || 0; origem.add(o.id);
       }
     }
     if(qtd > 0) linhas.push((qtd === 1 ? '1 parcela vence' : qtd + ' parcelas vencem')
@@ -52,14 +55,20 @@ function montaResumo(dados, hojeISO, periodo){
 
   // lembrete de lançar: só à noite, com obra em andamento e nada lançado hoje
   if(periodo !== 'manha'){
-    const emObra = obras.some(o => o.fase === 'construcao');
+    const emObra = obras.filter(o => o.fase === 'construcao');
     const lancouHoje = obras.some(o => (Array.isArray(o.gastos) ? o.gastos : [])
       .some(g => g && g.data === hojeISO));
-    if(emObra && !lancouHoje) linhas.push('Lançou os gastos de hoje?');
+    if(emObra.length && !lancouHoje){
+      linhas.push('Lançou os gastos de hoje?');
+      emObra.forEach(o => origem.add(o.id));
+    }
   }
 
   if(!linhas.length) return null;
-  return { titulo: 'Custta', corpo: linhas.join('\n') };
+  const resumo = { titulo: 'Custta', corpo: linhas.join('\n') };
+  const [unica] = origem;
+  if(origem.size === 1 && typeof unica === 'string') resumo.obraId = unica;
+  return resumo;
 }
 
 module.exports = { montaResumo, endpointPushValido };

@@ -9,7 +9,7 @@ import {
   sendEmailVerification, reload,
 } from './vendor/firebase/firebase-auth.js';
 import {
-  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
   doc, setDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
 } from './vendor/firebase/firebase-firestore.js';
@@ -51,8 +51,11 @@ async function contaExclusiva(acao){
     });
   }finally{ await registrarAba(); }
 }
+/* WKWebView não tem abas: o gerenciador multi-aba só acrescenta coordenação inútil
+   e depende de APIs que o iOS pode suspender em segundo plano. */
+const nativo = !!window.OBRA_NATIVO?.ehNativo();
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: persistentLocalCache({ tabManager: nativo ? persistentSingleTabManager({}) : persistentMultipleTabManager() }),
 });
 
 let currentUser = null;

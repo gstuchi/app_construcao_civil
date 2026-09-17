@@ -1414,9 +1414,11 @@ function renderAjustes(){
          em vez de esconder o painel, ensina o caminho */
       tgN.disabled = true;
       tgN.style.opacity = '.4';
-      $('#ajNotifNota').textContent = 'Pra receber notificações no iPhone: abra no Safari, '
-        + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
-        + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
+      $('#ajNotifNota').textContent = OBRA_NATIVO.ehNativo()
+        ? 'Notificações indisponíveis neste aparelho no momento.'
+        : 'Pra receber notificações no iPhone: abra no Safari, '
+          + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
+          + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
     }else{
       pushAtual().then(sub => {
         const on = !!sub && Notification.permission === 'granted';
@@ -1620,7 +1622,7 @@ $('#fab').onclick = ()=>{
 
 /* ---------- instalar PWA ---------- */
 let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; $('#installHint').classList.remove('hidden'); });
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); if(OBRA_NATIVO.ehNativo()) return; deferredPrompt=e; $('#installHint').classList.remove('hidden'); });
 $('#installBtn').onclick = async()=>{
   if(!deferredPrompt) return;
   deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null;

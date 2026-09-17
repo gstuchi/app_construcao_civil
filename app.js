@@ -1018,6 +1018,16 @@ function bindDonutLegenda(container, onPick){
   });
 }
 
+/* window.print() falha calado no WKWebView: no app o botão compartilha a planilha. */
+function ligarImprimir(botao){
+  if(!OBRA_NATIVO.ehNativo()){ botao.onclick = ()=>window.print(); return; }
+  botao.innerHTML = `${ICON('documento')} Compartilhar planilha`;
+  botao.onclick = async()=>{
+    try{ await OBRA_SHARE.exportar(db, 'csv'); }
+    catch(err){ toast('Não foi possível compartilhar. Tente novamente.', 'erro'); }
+  };
+}
+
 /* ===== GRÁFICOS DA OBRA (tela cheia, legível, imprime em PDF) ===== */
 function renderGraficos(){
   const o = obraById(obraAberta);
@@ -1037,7 +1047,7 @@ function renderGraficos(){
   bindEvoChart(o, 'G', renderGraficos);
   bindMesChart(o, 'G');
   bindDonutLegenda($('#grafBody'), id=>sheetTopico(o.id, id));
-  $('#grafPrint').onclick = ()=>window.print();
+  ligarImprimir($('#grafPrint'));
 }
 
 /* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
@@ -1180,7 +1190,7 @@ function renderRelatorio(){
     $('#relSelPct').textContent=totB>0?(bruto/totB*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'0%';
   };
   document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
-  $('#relPrint').onclick = ()=>window.print();
+  ligarImprimir($('#relPrint'));
 }
 
 /* ===== SERÁ QUE VALE A PENA? ===== */

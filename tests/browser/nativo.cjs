@@ -90,6 +90,23 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       assert.deepEqual(await page.evaluate(()=>errosPagina), []);
       await ctx.close();
     }
+    /* ---- Task 5: compartilhar ---- */
+    {
+      const { ctx, page } = await abrir(browser, { nativo:true });
+      await page.evaluate(()=>{ openObra('o1'); showView('relatorio'); renderRelatorio(); });
+      assert.match(await page.locator('#relPrint').textContent(), /Compartilhar planilha/);
+      await page.locator('#relPrint').click();
+      await page.waitForFunction(()=>chamadasNativas.some(c=>c[0]==='Share'));
+      const share = await page.evaluate(()=>chamadasNativas.find(c=>c[0]==='Share'));
+      assert.match(share[2].files[0], /^file:\/\/\/cache\/custta-.*\.csv$/);
+      await page.evaluate(()=>{ showView('graficos'); renderGraficos(); });
+      assert.match(await page.locator('#grafPrint').textContent(), /Compartilhar planilha/);
+      await ctx.close();
+      const web = await abrir(browser, { nativo:false });
+      await web.page.evaluate(()=>{ openObra('o1'); showView('relatorio'); renderRelatorio(); });
+      assert.match(await web.page.locator('#relPrint').textContent(), /Imprimir/);
+      await web.ctx.close();
+    }
     console.log('ok - nativo');
   }finally{ await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

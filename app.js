@@ -1765,6 +1765,24 @@ if(OBRA_NATIVO.ehNativo()){
   setTimeout(esconder, 8000); // teto: primeira abertura sem rede não pode prender no splash
   // iOS pode matar o app em segundo plano: entrega ao SDK o que estiver pendente
   OBRA_NATIVO.aoSegundoPlano(()=>{ if(window.CLOUD) CLOUD.tentarDeNovo().catch(()=>{}); });
+
+  /* Atualização só pela App Store: avisa quando a produção declara versão maior. */
+  const VERSAO_DISPENSADA = 'custta-versao-dispensada';
+  fetch('https://app-construcao-civil.vercel.app/versao.json', { cache:'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(v => {
+      if(!v || !v.loja || !/^itms-apps:\/\//.test(v.loja)) return;
+      if(!OBRA_CALC.versaoMaior(v.versao, window.APP_VERSAO)) return;
+      let dispensada = null; try{ dispensada = localStorage.getItem(VERSAO_DISPENSADA); }catch(e){}
+      if(dispensada === v.versao) return;
+      $('#ajVersaoLoja').href = v.loja;
+      $('#ajVersao').classList.remove('hidden');
+      $('#ajVersaoFechar').onclick = ()=>{
+        try{ localStorage.setItem(VERSAO_DISPENSADA, v.versao); }catch(e){}
+        $('#ajVersao').classList.add('hidden');
+      };
+    })
+    .catch(()=>{}); // offline: sem aviso, sem erro
 }
 
 renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

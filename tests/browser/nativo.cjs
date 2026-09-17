@@ -10,6 +10,14 @@ const OBRAS = { config:{ taxaMensal:1, topicosCustom:[{ id:'c_x', nm:'<img src=x
 async function abrir(browser, { nativo, viewport = { width:390, height:844 }, antes }){
   const ctx = await browser.newContext({ viewport, serviceWorkers:'allow' });
   await ctx.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
+  if(nativo){
+    // no aparelho a CSP vem da <meta> do www/ (cspNativa já libera produção); o servidor de teste serve a CSP web
+    await ctx.route('http://localhost:8123/', async r => {
+      const resp = await r.fetch(); const h = resp.headers();
+      h['content-security-policy'] = h['content-security-policy'].replace("connect-src 'self'", "connect-src 'self' https://app-construcao-civil.vercel.app");
+      await r.fulfill({ response:resp, headers:h });
+    });
+  }
   await ctx.route('https://**/*', r => r.abort());
   await ctx.addInitScript(([nativo, obras]) => {
     sessionStorage.setItem('splashVista', '1');
@@ -170,6 +178,25 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       await page.waitForFunction(()=>typeof db !== 'undefined' && db.obras.length === 1);
       await page.waitForTimeout(300);
       assert.equal(await page.evaluate(()=>tab), 'ajustes', 'toque do usuário antes do snapshot vence a restauração salva');
+      await ctx.close();
+    }
+    /* ---- Task 12: aviso de versão ---- */
+    {
+      const antes = async ctx => {
+        await ctx.addInitScript(()=>{ window.APP_VERSAO = '1.0.0'; });
+        // a extensão do connect-src pra produção já é aplicada por abrir() para todo contexto nativo
+        await ctx.route('https://app-construcao-civil.vercel.app/versao.json', r => r.fulfill({ contentType:'application/json',
+          headers:{ 'access-control-allow-origin':'*' }, body:JSON.stringify({ versao:'1.1.0', loja:'itms-apps://apps.apple.com/app/id123' }) }));
+      };
+      const { ctx, page } = await abrir(browser, { nativo:true, antes });
+      await page.evaluate(()=>{ showView('ajustes'); renderAjustes(); });
+      await page.waitForSelector('#ajVersao:not(.hidden)');
+      assert.equal(await page.getAttribute('#ajVersaoLoja', 'href'), 'itms-apps://apps.apple.com/app/id123');
+      await page.click('#ajVersaoFechar');
+      await page.reload();
+      await page.waitForFunction(()=>typeof db !== 'undefined' && db.obras.length === 1);
+      await page.waitForTimeout(500);
+      assert.equal(await page.locator('#ajVersao').isHidden(), true, 'dispensado não volta');
       await ctx.close();
     }
     console.log('ok - nativo');

@@ -24,6 +24,13 @@
           "value": "max-age=31536000; includeSubDomains"
         }
       ]
+    },
+    {
+      "source": "/versao.json",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "capacitor://localhost" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
     }
   ],
   "crons": [

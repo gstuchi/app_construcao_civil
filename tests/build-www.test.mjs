@@ -22,6 +22,9 @@ test('copia arquivos servidos e injeta CSP nativa', async()=>{
   assert.ok(!meta[1].includes('upgrade-insecure-requests'));
   assert.match(meta[1], new RegExp("connect-src 'self' [^;]*" + PRODUCAO.replace(/\./g, '\\.')));
   await access(join(destino, 'app.js'));
+  const versao = JSON.parse(await readFile(join(raiz, 'versao.json'), 'utf8')).versao;
+  assert.equal(await readFile(join(destino, 'versao-app.js'), 'utf8'), `window.APP_VERSAO=${JSON.stringify(versao)};\n`);
+  assert.ok(html.indexOf('<script src="versao-app.js"></script>') < html.indexOf('<script src="nativo.js"></script>'));
 });
 
 test('cspNativa remove diretivas que meta não aceita', ()=>{
@@ -35,5 +38,6 @@ test('arquivo listado ausente falha', async()=>{
   await writeFile(join(falsa, 'styles.css'), '');
   await writeFile(join(falsa, 'index.html'), '<meta charset="utf-8">');
   await writeFile(join(falsa, 'vercel.json'), JSON.stringify({ headers:[{ source:'/(.*)', headers:[{ key:'Content-Security-Policy', value:"default-src 'none'" }] }] }));
+  await writeFile(join(falsa, 'versao.json'), '{"versao":"1.0.0"}');
   await assert.rejects(construir({ raiz:falsa, destino:join(falsa, 'www') }), /falta\.js/);
 });

@@ -40,8 +40,13 @@ export async function construir({ raiz, destino }){
   const html = await readFile(indice, 'utf8');
   const marca = '<meta charset="utf-8">';
   if(!html.includes(marca)) throw new Error('index.html sem <meta charset="utf-8">');
-  await writeFile(indice, html.replace(marca,
-    `${marca}\n<meta http-equiv="Content-Security-Policy" content="${cspNativa(header.value)}">`));
+  const { versao } = JSON.parse(await readFile(join(raiz, 'versao.json'), 'utf8'));
+  await writeFile(join(destino, 'versao-app.js'), `window.APP_VERSAO=${JSON.stringify(versao)};\n`);
+  const nativoTag = '<script src="nativo.js"></script>';
+  if(!html.includes(nativoTag)) throw new Error('index.html sem ' + nativoTag);
+  await writeFile(indice, html
+    .replace(marca, `${marca}\n<meta http-equiv="Content-Security-Policy" content="${cspNativa(header.value)}">`)
+    .replace(nativoTag, `<script src="versao-app.js"></script>\n${nativoTag}`));
   return arquivos;
 }
 

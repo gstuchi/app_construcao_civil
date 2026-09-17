@@ -29,6 +29,14 @@ t('corrigido: taxa zero = valor bruto', () => {
   assert.strictEqual(C.corrigido(10000, '2026-07-04', '2027-07-04', 0), 10000);
 });
 
+t('versaoMaior compara semver numérico e ignora inválidos', () => {
+  assert.strictEqual(C.versaoMaior('1.0.10', '1.0.9'), true);
+  assert.strictEqual(C.versaoMaior('1.2.0', '1.10.0'), false);
+  assert.strictEqual(C.versaoMaior('2.0.0', '2.0.0'), false);
+  assert.strictEqual(C.versaoMaior('abc', '1.0.0'), false);
+  assert.strictEqual(C.versaoMaior('1.0.0', undefined), false);
+});
+
 t('corrigido: 30 dias a 1% ≈ +0,986%', () => {
   // 1.01^(30/30.44) = 1.0098551
   perto(C.corrigido(10000, '2026-07-04', '2026-08-03', 1), 10098.55, 0.05);

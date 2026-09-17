@@ -342,6 +342,9 @@
     .notif-invite-actions{grid-column:1/-1}
     .notif-invite-actions .btn{flex:1}
   }
+  .versao-aviso{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px;margin:0 0 14px;border-radius:14px;background:var(--surface-2)}
+  .versao-aviso span{flex:1 1 100%;font-weight:650}
+  .versao-aviso .btn{flex:1;text-align:center;text-decoration:none}
 
   /* ===== splash de abertura (planta baixa + skyline — splash.js) =====
      usa --brand-rgb / --accent-rgb do skin ativo. */

@@ -167,6 +167,31 @@ function canon(x){
 }
 
 /* ---------- navegação ---------- */
+/* iOS mata o app em segundo plano e o WKWebView recarrega do zero: lembra onde
+   o usuário estava. Preferência por aparelho, não é dado de obra. */
+const ESTADO_KEY = 'custta-estado';
+let estadoRestaurado = false;
+function lembraEstado(){
+  if(!estadoRestaurado) return; // antes de restaurar, o boot não pode sobrescrever o salvo
+  try{ localStorage.setItem(ESTADO_KEY, JSON.stringify({ tab, obraAberta })); }
+  catch(e){ registraErro('estado', e && e.message); }
+}
+function restauraEstado(){
+  if(estadoRestaurado) return;
+  estadoRestaurado = true;
+  let salvo = null;
+  try{ salvo = JSON.parse(localStorage.getItem(ESTADO_KEY) || 'null'); }catch(e){ salvo = null; }
+  if(!salvo || typeof salvo.tab !== 'string' || !document.getElementById('v-' + salvo.tab)) return;
+  if(salvo.obraAberta && obraById(salvo.obraAberta)){
+    openObra(salvo.obraAberta);
+    if(salvo.tab === 'relatorio'){ showView('relatorio'); renderRelatorio(); }
+    else if(salvo.tab === 'graficos'){ showView('graficos'); renderGraficos(); }
+  }else if(!['obra', 'relatorio', 'graficos'].includes(salvo.tab)){
+    showView(salvo.tab); renderAll();
+  }else{
+    showView('inicio'); renderAll();
+  }
+}
 function showView(v){
   tab = v;
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
@@ -175,6 +200,7 @@ function showView(v){
   $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
   document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
   window.scrollTo({top:0});
+  lembraEstado();
 }
 document.querySelectorAll('button[data-tab]').forEach(b=>{
   b.onclick = ()=>{ obraAberta=null; showView(b.dataset.tab); renderAll(); };
@@ -1605,10 +1631,13 @@ let obraDaNotificacao; // undefined = nada pendente; null = abrir Início
 function depoisDoPrimeiroSnapshot(){
   if(!dadosCarregados) return;
   if(obraDaNotificacao !== undefined){
+    estadoRestaurado = true; // notificação vence a restauração
     const id = obraDaNotificacao; obraDaNotificacao = undefined;
     if(id && obraById(id)) openObra(id);
     else { obraAberta = null; showView('inicio'); renderAll(); }
+    return;
   }
+  restauraEstado();
 }
 OBRA_PUSH.aoAbrirNotificacao(id => { obraDaNotificacao = id; depoisDoPrimeiroSnapshot(); });
 
@@ -1618,6 +1647,8 @@ function bootCloud(){
     if(unwatch){ unwatch(); unwatch=null; }
     if(!user){
       dadosCarregados = false;
+      try{ localStorage.removeItem(ESTADO_KEY); }catch(e){}
+      estadoRestaurado = false;
       conviteNotifUid=null; esconderConviteNotif();
       closeSheet(); sheet.textContent = '';
       db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;

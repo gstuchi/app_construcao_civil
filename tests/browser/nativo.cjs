@@ -138,6 +138,20 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       assert.equal(await page.locator('#splash').count(), 0, 'splash web não aparece no nativo');
       await ctx.close();
     }
+    /* ---- Task 11: restauração ---- */
+    {
+      const { ctx, page } = await abrir(browser, { nativo:true });
+      await page.evaluate(()=>{ openObra('o1'); showView('relatorio'); renderRelatorio(); });
+      await page.reload();
+      await page.waitForFunction(()=>typeof db !== 'undefined' && db.obras.length === 1);
+      await page.waitForFunction(()=>obraAberta === 'o1' && tab === 'relatorio');
+      await page.evaluate(()=>localStorage.setItem('custta-estado', JSON.stringify({ tab:'obra', obraAberta:'sumiu' })));
+      await page.reload();
+      await page.waitForFunction(()=>typeof db !== 'undefined' && db.obras.length === 1);
+      await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(()=>tab), 'inicio', 'obra apagada volta ao início');
+      await ctx.close();
+    }
     console.log('ok - nativo');
   }finally{ await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

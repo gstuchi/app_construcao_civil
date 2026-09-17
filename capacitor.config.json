@@ -1,0 +1,11 @@
+{
+  "appId": "com.gstuchi.custta",
+  "appName": "Custta",
+  "webDir": "www",
+  "backgroundColor": "#04100C",
+  "ios": { "contentInset": "never" },
+  "plugins": {
+    "SplashScreen": { "launchAutoHide": false, "backgroundColor": "#04100C", "showSpinner": false },
+    "FirebaseMessaging": { "presentationOptions": ["badge", "sound", "alert"] }
+  }
+}

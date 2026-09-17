@@ -203,9 +203,9 @@ function showView(v){
   lembraEstado();
 }
 document.querySelectorAll('button[data-tab]').forEach(b=>{
-  b.onclick = ()=>{ obraAberta=null; showView(b.dataset.tab); renderAll(); };
+  b.onclick = ()=>{ estadoRestaurado = true; /* gesto do usuário vence a restauração */ obraAberta=null; showView(b.dataset.tab); renderAll(); };
 });
-$('#btnVoltar').onclick = ()=>{ obraAberta=null; showView('inicio'); renderAll(); };
+$('#btnVoltar').onclick = ()=>{ estadoRestaurado = true; /* gesto do usuário vence a restauração */ obraAberta=null; showView('inicio'); renderAll(); };
 function openObra(id){ obraAberta=id; evoSel=-1; mesSel=-1; filtroTexto=''; filtroMes=''; showView('obra'); renderObra(); }
 
 /* ---------- render ---------- */

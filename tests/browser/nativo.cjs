@@ -152,6 +152,26 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       assert.equal(await page.evaluate(()=>tab), 'inicio', 'obra apagada volta ao início');
       await ctx.close();
     }
+    /* ---- Task 11: gesto do usuário antes do 1º snapshot vence a restauração salva ---- */
+    {
+      // atrasa a chegada dos dados pra dar tempo de tocar numa aba antes do snapshot
+      const antesLento = ctx => ctx.addInitScript(()=>{
+        const original = window.CLOUD.watchDados;
+        window.CLOUD.watchDados = cb => {
+          let unwatch = ()=>{};
+          setTimeout(()=>{ unwatch = original(cb) || unwatch; }, 800);
+          return ()=>unwatch();
+        };
+      });
+      const { ctx, page } = await abrir(browser, { nativo:true, antes:antesLento });
+      await page.evaluate(()=>localStorage.setItem('custta-estado', JSON.stringify({ tab:'relatorio', obraAberta:'o1' })));
+      await page.reload(); // reaplica o antes: o próximo snapshot também chega atrasado
+      await page.evaluate(()=>document.querySelector('nav.tabs button[data-tab="ajustes"]').click());
+      await page.waitForFunction(()=>typeof db !== 'undefined' && db.obras.length === 1);
+      await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(()=>tab), 'ajustes', 'toque do usuário antes do snapshot vence a restauração salva');
+      await ctx.close();
+    }
     console.log('ok - nativo');
   }finally{ await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

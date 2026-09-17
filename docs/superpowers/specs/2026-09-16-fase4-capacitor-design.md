@@ -61,7 +61,7 @@ Plugins (devDependencies, versão estável atual da linha 8): `@capacitor/core`,
 - `app.js`: `OBRA_PUSH.aoAbrirNotificacao(id => id && obraById(id) ? openObra(id) : showView('inicio'))`, aplicado depois do primeiro snapshot.
 - **`notificacoes/resumo.js`**: `montaResumo` inclui `obraId` quando exatamente uma obra contribui para as linhas; senão omite.
 - **`notificacoes/envia.js`** vira `enviaTodos({db, webpush, messaging, periodo, agora, log})` exportado + CLI fino. Para cada `tokens.<k>`: `messaging.send({token, notification:{title,body}, data:{obraId?}, apns:{payload:{aps:{sound:'default'}}}})`; `messaging/registration-token-not-registered` e `invalid-argument` removem o token. `sw.js` passa a abrir `./#obra=<id>` quando o payload web tiver `obraId`, e `app.js` consome esse hash uma vez.
-- **Vercel Cron**: `api/push-diario.js` chama `enviaTodos`; responde 401 sem `Authorization: Bearer ${CRON_SECRET}` e 503 se `CRON_SECRET` não existir. `vercel.json` ganha `crons` 12:00 e 21:00 UTC com `?periodo=manha|noite`. Dependências do servidor ficam em `notificacoes/package.json`; `api/` importa de lá. `notificacoes/README.md` ganha "Trocar para Vercel Cron" (secrets, desligar o `schedule` do workflow no mesmo deploy para não enviar em dobro).
+- **Vercel Cron**: `api/push-diario.js` chama `enviaTodos`; responde 401 sem `Authorization: Bearer ${CRON_SECRET}` e 503 se `CRON_SECRET` não existir. `vercel.json` ganha `crons` 12:00 e 21:00 UTC com `?periodo=manha|noite`. `firebase-admin` e `web-push` entram em `dependencies` da raiz (a função da Vercel resolve módulos pela raiz; o browser nunca os carrega). `notificacoes/README.md` ganha "Trocar para Vercel Cron" (secrets, desligar o `schedule` do workflow no mesmo deploy para não enviar em dobro).
 - Testes: `tests/push.test.cjs` (web e nativo com fakes), `notificacoes` testes de `enviaTodos` com messaging/webpush falsos, `tests/cron.test.mjs` (401/503/200 com `enviaTodos` injetado), rules.
 
 ## 4d — Adições nativas
@@ -70,7 +70,7 @@ Plugins (devDependencies, versão estável atual da linha 8): `@capacitor/core`,
 - Haptics: `OBRA_NATIVO.vibrar()` ao confirmar lançamento de gasto com sucesso.
 - Status bar: `aplicaTema`, `aplicaSkin` e o boot chamam `OBRA_NATIVO.barraStatus(temaClaro())`.
 - Splash: no nativo `splash-pre.js` remove o splash web e `splash.js` não roda; `OBRA_NATIVO.esconderSplash()` quando `CLOUD.ready` resolve (teto 8s).
-- Segundo plano: `OBRA_NATIVO.aoSegundoPlano(() => CLOUD.flush?.())` — expõe o flush existente se ainda não público.
+- Segundo plano: `OBRA_NATIVO.aoSegundoPlano(() => CLOUD.tentarDeNovo())` — reusa o flush existente.
 
 ## 4e — Riscos do aparelho
 

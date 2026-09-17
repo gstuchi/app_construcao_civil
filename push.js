@@ -111,9 +111,17 @@
     async function atualizarToken(token){
       const chave = lerChave();
       const novaChave = hashEndpoint(token);
-      if(chave === novaChave) return;
+      /* Sem chave salva o usuário nunca ativou (ou acabou de desativar/sair) —
+         gravar aqui religaria notificações sem consentimento. */
+      if(!chave || chave === novaChave) return;
       await win.CLOUD.savePushToken(novaChave, { token, plataforma:'ios', criado:new Date().toISOString() });
-      if(chave) await win.CLOUD.removePushToken(chave);
+      if(lerChave() !== chave){
+        /* desativar() rodou enquanto o savePushToken estava em voo — desfaz o
+           token novo sem religar nada e sem tocar no localStorage. */
+        await win.CLOUD.removePushToken(novaChave).catch(e => win.OBRA_DIAG?.registra('push-limpeza', e.message, e.stack));
+        return;
+      }
+      await win.CLOUD.removePushToken(chave);
       try{ win.localStorage.setItem(CHAVE_TOKEN, novaChave); }catch(e){ win.OBRA_DIAG?.registra('push-token', e.message); }
     }
     async function sincronizarToken(){

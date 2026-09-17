@@ -157,6 +157,41 @@ test('web: sincronizarToken é no-op', async()=>{
   await criar(win).sincronizarToken();
 });
 
+test('nativo: tokenReceived sem chave salva não rearma notificações sem consentimento', async()=>{
+  const { win, log, ouvintes } = janelaNativa({ permissaoAtual:'granted' });
+  const push = criar(win); // nunca ativou neste aparelho — não há chave salva
+  ouvintes.tokenReceived({ token:'tok-2' });
+  await new Promise(r => setTimeout(r, 0));
+  assert.deepEqual(log, []);
+  assert.equal(await push.inscrito(), false);
+});
+
+test('nativo: desativar no meio de uma sincronização em voo desfaz o token novo sem religar', async()=>{
+  const { win, log, ouvintes } = janelaNativa({ permissaoAtual:'granted' });
+  const push = criar(win);
+  await push.ativar(); log.length = 0; // chave salva = hash('tok-1')
+
+  let resolverSalvar;
+  win.CLOUD.savePushToken = (k, v) => { log.push(['save', k, v.token, v.plataforma]); return new Promise(r => { resolverSalvar = r; }); };
+
+  ouvintes.tokenReceived({ token:'tok-2' }); // dispara atualizarToken; savePushToken ainda não resolveu
+  await Promise.resolve(); // deixa o listener chegar até o await do savePushToken
+
+  await push.desativa(); // sair/apagar conta rodando no meio da sincronização
+  assert.equal(await push.inscrito(), false);
+
+  resolverSalvar(); // savePushToken finalmente resolve
+  await new Promise(r => setTimeout(r, 0)); // deixa atualizarToken perceber o desativar e desfazer
+
+  assert.equal(await push.inscrito(), false, 'não pode religar depois do desativar concorrente');
+  assert.deepEqual(log, [
+    ['save', hashEndpoint('tok-2'), 'tok-2', 'ios'],
+    ['remove', hashEndpoint('tok-1')],
+    ['deleteToken'],
+    ['remove', hashEndpoint('tok-2')], // desfaz o token novo — nunca chegou a religar
+  ]);
+});
+
 test('nativo: toque na notificação entrega obraId', ()=>{
   const { win, ouvintes } = janelaNativa();
   const recebidos = [];

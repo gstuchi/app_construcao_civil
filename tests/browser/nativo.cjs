@@ -101,10 +101,15 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
     /* ---- Task 5: compartilhar ---- */
     {
       const { ctx, page } = await abrir(browser, { nativo:true });
-      await page.evaluate(()=>{ openObra('o1'); showView('relatorio'); renderRelatorio(); });
+      await page.evaluate(()=>{
+        db.obras.push({ id:'o2', nome:'Casa Verde', fase:'pronta', dataInicio:'2026-01-01', gastos:[{ id:'g2', valor:99, topico:'c_x', descricao:'Telha', data:'2026-02-02', pagamento:'pix' }] });
+        openObra('o1'); showView('relatorio'); renderRelatorio();
+      });
       assert.match(await page.locator('#relPrint').textContent(), /Compartilhar planilha/);
       await page.locator('#relPrint').click();
       await page.waitForFunction(()=>chamadasNativas.some(c=>c[0]==='Share'));
+      const planilha = await page.evaluate(()=>chamadasNativas.find(c=>c[0]==='Filesystem' && c[1]==='writeFile')[2].data);
+      assert.ok(planilha.includes('Casa Azul') && !planilha.includes('Casa Verde'), 'planilha só da obra aberta');
       const share = await page.evaluate(()=>chamadasNativas.find(c=>c[0]==='Share'));
       assert.match(share[2].files[0], /^file:\/\/\/cache\/custta-.*\.csv$/);
       await page.evaluate(()=>{ showView('graficos'); renderGraficos(); });

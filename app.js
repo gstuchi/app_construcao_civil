@@ -1050,7 +1050,8 @@ function ligarImprimir(botao){
   if(!OBRA_NATIVO.ehNativo()){ botao.onclick = ()=>window.print(); return; }
   botao.innerHTML = `${ICON('documento')} Compartilhar planilha`;
   botao.onclick = async()=>{
-    try{ await OBRA_SHARE.exportar(db, 'csv'); }
+    // a tela é de uma obra: a planilha também
+    try{ await OBRA_SHARE.exportar(OBRA_SHARE.dadosDaObra(db, obraAberta), 'csv'); }
     catch(err){ toast('Não foi possível compartilhar. Tente novamente.', 'erro'); }
   };
 }

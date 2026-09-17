@@ -23,3 +23,24 @@ test('LICENSE proprietária, com titular, ano e resumo em inglês', () => {
   assert.equal(pkg.license, 'UNLICENSED', 'convenção npm para código proprietário');
   assert.equal(pkg.private, true);
 });
+
+/* O spec e o plano desta própria mudança descrevem a renomeação — citar o
+   caminho antigo neles é o registro histórico, não uma referência viva. */
+const PODEM_CITAR_CAMINHO_ANTIGO = [
+  'docs/specs/2026-09-17-repositorio-profissional-design.md',
+  'docs/plans/2026-09-17-repositorio-profissional.md',
+  'tests/docs.test.mjs',
+];
+
+test('nenhum arquivo aponta mais para a pasta antiga de documentação', () => {
+  const antigo = 'docs/' + 'superpowers';
+  const textuais = versionados.filter(f =>
+    /\.(md|js|mjs|cjs|json|yml|yaml|html|css)$/.test(f) &&
+    !f.startsWith('ios/') && !f.startsWith('vendor/') &&
+    !PODEM_CITAR_CAMINHO_ANTIGO.includes(f));
+  const culpados = textuais.filter(f => ler(f).includes(antigo));
+  assert.deepEqual(culpados, [], 'ainda citam o caminho antigo de spec/plano');
+  assert.ok(versionados.some(f => f.startsWith('docs/specs/')), 'docs/specs/ precisa existir');
+  assert.ok(versionados.some(f => f.startsWith('docs/plans/')), 'docs/plans/ precisa existir');
+  assert.ok(!versionados.some(f => f.startsWith(antigo + '/')), 'a pasta antiga precisa sumir do git');
+});

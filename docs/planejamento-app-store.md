@@ -207,7 +207,7 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 4 — Empacotamento com Capacitor
 
-**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/superpowers/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
+**Código concluído em 2026-09-16** na branch `feat/fase4` (spec em `docs/specs/` e plano em `docs/plans/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](plans/2026-09-16-fase4-checklist-aparelho.md).
 
 **Travada por:** Fase 0 (bundle ID, chave APNs, conta) e Fase 3 (SDK local, CSP).
 
@@ -335,4 +335,4 @@ Fase 2 export web ─────► Fase 4d (ramo nativo do share)
 | 4 | Build TestFlight no iPhone real: push com app fechado abre a obra certa; modo avião funciona; exclusão de conta funciona no binário; pinch-zoom funciona; nenhum `confirm()` some. |
 | 5 | Build no App Store Connect, metadados completos, conta de demonstração populada, notas de revisão em inglês, submetido. |
 
-**Cada fase vira sua própria spec + plano de implementação** antes de virar código, seguindo o fluxo que o projeto já usa em `docs/superpowers/`.
+**Cada fase vira sua própria spec + plano de implementação** antes de virar código, seguindo o fluxo que o projeto já usa em `docs/specs/` e `docs/plans/`.

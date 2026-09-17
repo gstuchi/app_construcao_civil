@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vanilla JS sem build, Capacitor 8 (devDependencies), Firebase JS 12.18 (vendor), firebase-admin 14, web-push, node:test, Playwright 1.63, agent-browser 0.38.
 
-**Spec:** `docs/superpowers/specs/2026-09-16-fase4-capacitor-design.md`
+**Spec:** `docs/specs/2026-09-16-fase4-capacitor-design.md`
 
 ## Global Constraints
 
@@ -43,7 +43,7 @@
 | `app.js` | restauração `{tab, obraAberta}` | 11 |
 | `versao.json` (novo), `calc.js`, `app.js`, `index.html`, `scripts/build-www.mjs`, `vercel.json` | aviso de versão | 12 |
 | `docs/sdks-fase4.md` (novo), `privacidade.html` | SDKs congelados + política | 13 |
-| `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`, `CLAUDE.md`, `README.md` | validação e documentação | 14 |
+| `docs/plans/2026-09-16-fase4-checklist-aparelho.md`, `CLAUDE.md`, `README.md` | validação e documentação | 14 |
 
 ---
 
@@ -2356,7 +2356,7 @@ git commit -m "docs: congelar sdks da fase 4 e citar token de notificacao na pol
 ### Task 14: Validação final, checklist de aparelho e documentação
 
 **Files:**
-- Create: `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`
+- Create: `docs/plans/2026-09-16-fase4-checklist-aparelho.md`
 - Modify: `CLAUDE.md`, `README.md`, `docs/planejamento-app-store.md` (status da Fase 4)
 
 - [ ] **Step 1: Suítes completas**
@@ -2381,7 +2381,7 @@ Critérios: viewport sem `user-scalable`; tela de login renderiza nos dois taman
 
 Abra as screenshots com a ferramenta Read e confira visualmente.
 
-- [ ] **Step 3: Checklist de aparelho** — `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`:
+- [ ] **Step 3: Checklist de aparelho** — `docs/plans/2026-09-16-fase4-checklist-aparelho.md`:
 
 ```markdown
 # Fase 4 — o que só valida com Apple, Xcode e iPhone
@@ -2435,7 +2435,7 @@ Nova subseção depois de "Notificações push":
 ```markdown
 ### App iOS (Capacitor)
 
-`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`.
+`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/plans/2026-09-16-fase4-checklist-aparelho.md`.
 ```
 
 `README.md`: parágrafo curto "Fase 4" com o mesmo resumo e link para o checklist.
@@ -2443,7 +2443,7 @@ Nova subseção depois de "Notificações push":
 `docs/planejamento-app-store.md`, logo abaixo de `## Fase 4 — Empacotamento com Capacitor`:
 
 ```markdown
-**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/superpowers/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
+**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
 ```
 
 - [ ] **Step 5: Run** `npm run test:unit` → verde.
@@ -2451,6 +2451,6 @@ Nova subseção depois de "Notificações push":
 - [ ] **Step 6: Commit**
 
 ```bash
-git add docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md CLAUDE.md README.md docs/planejamento-app-store.md
+git add docs/plans/2026-09-16-fase4-checklist-aparelho.md CLAUDE.md README.md docs/planejamento-app-store.md
 git commit -m "docs: registrar validacao da fase 4 e checklist de aparelho"
 ```

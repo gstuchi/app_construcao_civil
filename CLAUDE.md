@@ -78,7 +78,7 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 ### App iOS (Capacitor)
 
-`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`.
+`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/plans/2026-09-16-fase4-checklist-aparelho.md`.
 
 ## UI
 
@@ -92,7 +92,7 @@ Um hook PostToolUse (`.claude/settings.local.json`) roda o detector da skill `im
 
 ## Fluxo de trabalho
 
-Features maiores começam por um documento em `docs/superpowers/specs/AAAA-MM-DD-nome-design.md` (e às vezes um plano em `docs/superpowers/plans/`) antes do código — vale ler o spec correspondente antes de mexer numa tela existente.
+Features maiores começam por um documento em `docs/specs/AAAA-MM-DD-nome-design.md` (e às vezes um plano em `docs/plans/`) antes do código — vale ler o spec correspondente antes de mexer numa tela existente.
 
 Commits em português, estilo `feat: `/`fix: `/`docs: `, minúsculas, sem acento no assunto.
 

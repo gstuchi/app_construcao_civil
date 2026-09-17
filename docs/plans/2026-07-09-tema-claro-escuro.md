@@ -6,7 +6,7 @@
 
 **Architecture:** Todas as cores já vivem em CSS variables no `:root` de `index.html`; o tema claro é um bloco `html[data-theme="light"]` que as sobrescreve. Script inline no `<head>` aplica o tema salvo antes da pintura. Gráficos leem cores via `getComputedStyle`, então basta `renderAll()` após a troca.
 
-**Tech Stack:** HTML/CSS/JS vanilla, sem build, sem dependência nova. Spec: `docs/superpowers/specs/2026-07-09-tema-claro-escuro-design.md`.
+**Tech Stack:** HTML/CSS/JS vanilla, sem build, sem dependência nova. Spec: `docs/specs/2026-07-09-tema-claro-escuro-design.md`.
 
 ## Global Constraints
 

@@ -1,6 +1,6 @@
 # Fase 4 — Empacotamento com Capacitor
 
-Data: 2026-09-16 · Branch: `feat/fase4` · Origem: [planejamento](../../planejamento-app-store.md#fase-4--empacotamento-com-capacitor)
+Data: 2026-09-16 · Branch: `feat/fase4` · Origem: [planejamento](../planejamento-app-store.md#fase-4--empacotamento-com-capacitor)
 
 ## Objetivo
 
@@ -86,7 +86,7 @@ Plugins (devDependencies, versão estável atual da linha 8): `@capacitor/core`,
 2. Nova suíte Playwright `tests/browser/nativo.cjs` com `window.Capacitor` falso via `addInitScript`: SW não registra, botões viram Compartilhar e chamam Share, confirmação por dialog, status bar chamada ao trocar tema, toque em notificação abre a obra, estado restaurado após reload. Entra em `rodar.cjs`.
 3. Validação manual com **agent-browser** em web e nativo simulado, 390×844 e 1280×800: zoom liberado, diálogos no lugar de `confirm`, zero violação de CSP no console.
 4. `npm run cap:sync` conclui sem erro.
-5. `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`: o que só valida com Xcode/iPhone/Apple (build, TestFlight, push real com app fechado, modo avião, exclusão de conta no binário, pinch-zoom, teclado, sessão após uma semana).
+5. `docs/plans/2026-09-16-fase4-checklist-aparelho.md`: o que só valida com Xcode/iPhone/Apple (build, TestFlight, push real com app fechado, modo avião, exclusão de conta no binário, pinch-zoom, teclado, sessão após uma semana).
 
 ## Fora do escopo
 

@@ -4,7 +4,7 @@
 
 **Goal:** Login e dados na nuvem (Firebase Auth + Firestore), tempo real entre aparelhos, offline funcionando, migração dos dados locais antigos.
 
-**Architecture:** `cloud.js` (ES module) encapsula todo o Firebase e expõe `window.CLOUD`; `auth.js` vira e-mail+senha usando essa API; `app.js` troca localStorage por `CLOUD.saveDados`/`CLOUD.watchDados` — um documento `dados/{uid}` com o blob inteiro, snapshot em tempo real re-renderiza. Spec: `docs/superpowers/specs/2026-07-05-banco-nuvem-firebase-design.md`.
+**Architecture:** `cloud.js` (ES module) encapsula todo o Firebase e expõe `window.CLOUD`; `auth.js` vira e-mail+senha usando essa API; `app.js` troca localStorage por `CLOUD.saveDados`/`CLOUD.watchDados` — um documento `dados/{uid}` com o blob inteiro, snapshot em tempo real re-renderiza. Spec: `docs/specs/2026-07-05-banco-nuvem-firebase-design.md`.
 
 **Tech Stack:** Firebase JS SDK v10 modular via CDN gstatic (ESM), vanilla JS, Playwright (Edge) pra e2e.
 

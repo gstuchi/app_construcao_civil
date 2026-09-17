@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vanilla JS (PWA, sem build), Firebase Firestore (web SDK 10.12.2 via CDN no cliente; `firebase-admin` no cron), `web-push`, GitHub Actions.
 
-**Spec:** `docs/superpowers/specs/2026-07-10-notificacoes-push-design.md`
+**Spec:** `docs/specs/2026-07-10-notificacoes-push-design.md`
 
 ## Global Constraints
 

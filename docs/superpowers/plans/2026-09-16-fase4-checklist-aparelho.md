@@ -8,6 +8,7 @@ Código pronto em `feat/fase4`. Itens abaixo dependem de matrícula Apple, Xcode
 - [ ] Gerar chave APNs `.p8` e subir em Firebase → Cloud Messaging → Apple app configuration.
 - [ ] Xcode → Signing & Capabilities: Team, "Push Notifications" e "Background Modes › Remote notifications".
 - [ ] Preencher `versao.json` → `loja` com `itms-apps://apps.apple.com/app/id<ID>` depois de criar o app no App Store Connect.
+- [ ] Google Cloud Console → Credenciais → checar se a API key web do Firebase tem restrição de HTTP referrer/app. Se tiver, `capacitor://localhost` falha Auth/Firestore no app nativo — liberar esse esquema ou remover a restrição.
 
 ## No iPhone (TestFlight)
 - [ ] Instalar, logar, matar o app, reabrir: continua logado e na mesma tela/obra.
@@ -19,8 +20,10 @@ Código pronto em `feat/fase4`. Itens abaixo dependem de matrícula Apple, Xcode
 - [ ] Tema claro/escuro troca a cor do texto da barra de status.
 - [ ] Ativar notificações → token aparece em `push/{uid}.tokens` no console.
 - [ ] GitHub Actions → push-diario → Run workflow: notificação chega com o app fechado e abre a obra certa quando o resumo é de uma obra só.
+- [ ] Ativar notificações, desligar a rede (modo avião), tentar Sair e Apagar conta: cada ação deve concluir ou falhar com mensagem de conexão — nunca travar por causa do token do FCM.
 - [ ] Apagar conta pelo app: `dados`, `perfis`, `push` somem no console.
 - [ ] Deixar uma semana sem abrir e reabrir: sessão persiste (se não, plano B: `@capacitor-firebase/authentication`).
+- [ ] Na primeira preview da Vercel, aba Functions: confirmar que `api/push-diario` foi empacotada.
 
 ## Validado nesta máquina (2026-09-17)
 - Testes unitários (76/76), rules no emulador (34/34) e browser (Playwright, incluindo `tests/browser/nativo.cjs` com Capacitor simulado) — todos verdes. `npm run cap:sync` concluído (sem Xcode instalado: nenhum build nativo).

@@ -43,4 +43,10 @@ test('nenhum arquivo aponta mais para a pasta antiga de documentação', () => {
   assert.ok(versionados.some(f => f.startsWith('docs/specs/')), 'docs/specs/ precisa existir');
   assert.ok(versionados.some(f => f.startsWith('docs/plans/')), 'docs/plans/ precisa existir');
   assert.ok(!versionados.some(f => f.startsWith(antigo + '/')), 'a pasta antiga precisa sumir do git');
+
+  /* Link relativo para dentro da pasta antiga sem o prefixo "docs/" — por
+     exemplo escrito a partir de docs/, onde "superpowers/plans/x.md" também
+     resolvia para a pasta que sumiu. */
+  const culpadosSemPrefixo = textuais.filter(f => /\]\(superpowers\/|`superpowers\//.test(ler(f)));
+  assert.deepEqual(culpadosSemPrefixo, [], 'ainda citam "superpowers/" sem o prefixo docs/');
 });

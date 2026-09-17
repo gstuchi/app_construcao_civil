@@ -1,7 +1,7 @@
 # ObraControl: de PWA a app público na App Store
 
 > Atualização em 2026-09-08: Fase 1 auditada; critérios, testes e decisões finais em
-> [Fase 1 — fechamento](superpowers/plans/2026-09-08-fase1-fechamento.md).
+> [Fase 1 — fechamento](plans/2026-09-08-fase1-fechamento.md).
 > O texto abaixo preserva o planejamento original. Sentry permanece na Fase 3.
 
 ## Contexto
@@ -179,7 +179,7 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 3 — Endurecimento e prontidão para nativo
 
-**Concluída em 2026-09-09.** Implementação publicada (cache v38), testes locais e [GitHub Actions](https://github.com/gstuchi/app_construcao_civil/actions/runs/34426925894) passaram. Produção abriu com SDK local e CSP sem violações. Detalhes em [execução da Fase 3](superpowers/plans/2026-09-09-fase3.md). Itens abaixo preservam diagnóstico e roteiro originais; referências de linhas são históricas.
+**Concluída em 2026-09-09.** Implementação publicada (cache v38), testes locais e [GitHub Actions](https://github.com/gstuchi/app_construcao_civil/actions/runs/34426925894) passaram. Produção abriu com SDK local e CSP sem violações. Detalhes em [execução da Fase 3](plans/2026-09-09-fase3.md). Itens abaixo preservam diagnóstico e roteiro originais; referências de linhas são históricas.
 
 **Porta de entrada da Fase 4.** A ordem interna importa — CSP por último.
 

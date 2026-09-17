@@ -2443,7 +2443,7 @@ Nova subseção depois de "Notificações push":
 `docs/planejamento-app-store.md`, logo abaixo de `## Fase 4 — Empacotamento com Capacitor`:
 
 ```markdown
-**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
+**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](plans/2026-09-16-fase4-checklist-aparelho.md).
 ```
 
 - [ ] **Step 5: Run** `npm run test:unit` → verde.

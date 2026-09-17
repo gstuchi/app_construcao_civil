@@ -963,7 +963,8 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
         o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto, ...dadosCartao });
       }
     }
-    salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
+    salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso')
+      .then(()=>OBRA_NATIVO.vibrar(), ()=>{}); // vibra só com o servidor confirmando
     renderAll(); fechar();
   };
 }
@@ -1274,6 +1275,7 @@ function aplicaTema(claro){
   try{ localStorage.setItem(TEMA_KEY, claro ? 'claro' : 'escuro'); }catch(e){ registraErro('tema', e && e.message); }
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  OBRA_NATIVO.barraStatus(temaClaro());
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
 }
 
@@ -1287,6 +1289,7 @@ function aplicaSkin(skin){
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   if(window.__globeDraw) window.__globeDraw(); // com prefers-reduced-motion o globo é estático — força a cor nova
+  OBRA_NATIVO.barraStatus(temaClaro());
   renderAll();
 }
 
@@ -1721,4 +1724,16 @@ window.addEventListener('unhandledrejection', e=>{
 function ligaSync(){ renderSync(CLOUD.estado()); }
 if(window.CLOUD){ bootCloud(); ligaSync(); }
 else window.addEventListener('cloud-pronto', ()=>{ bootCloud(); ligaSync(); });
+
+/* ---------- app nativo: barra de status, splash e segundo plano ---------- */
+if(OBRA_NATIVO.ehNativo()){
+  OBRA_NATIVO.barraStatus(temaClaro());
+  const esconder = ()=>OBRA_NATIVO.esconderSplash();
+  if(window.CLOUD) CLOUD.ready.then(esconder, esconder);
+  else window.addEventListener('cloud-pronto', ()=>CLOUD.ready.then(esconder, esconder), { once:true });
+  setTimeout(esconder, 8000); // teto: primeira abertura sem rede não pode prender no splash
+  // iOS pode matar o app em segundo plano: entrega ao SDK o que estiver pendente
+  OBRA_NATIVO.aoSegundoPlano(()=>{ if(window.CLOUD) CLOUD.tentarDeNovo().catch(()=>{}); });
+}
+
 renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

@@ -119,6 +119,25 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       assert.equal(await page.locator('#v-obra').isVisible(), true);
       await ctx.close();
     }
+    /* ---- Task 10: adições nativas ---- */
+    {
+      // sem splashVista: prova que o splash web some mesmo na primeira abertura
+      const antes = ctx => ctx.addInitScript(()=>sessionStorage.removeItem('splashVista'));
+      const { ctx, page } = await abrir(browser, { nativo:true, antes });
+      const chamou = (p, m) => page.evaluate(([p, m]) => chamadasNativas.filter(c => c[0] === p && c[1] === m), [p, m]);
+      await page.waitForFunction(()=>chamadasNativas.some(c=>c[0]==='SplashScreen' && c[1]==='hide'));
+      assert.deepEqual((await chamou('StatusBar', 'setStyle')).at(-1)[2], { style:'DARK' }, 'tema escuro padrão → texto claro');
+      await page.evaluate(()=>aplicaTema(true));
+      assert.deepEqual((await chamou('StatusBar', 'setStyle')).at(-1)[2], { style:'LIGHT' });
+      await page.evaluate(()=>{ openObra('o1'); formGasto('o1', null, 50); });
+      await page.locator('#fDesc').fill('Areia');
+      await page.locator('#cSave').click();
+      await page.waitForFunction(()=>chamadasNativas.some(c=>c[0]==='Haptics'));
+      await page.evaluate(()=>ouvintesNativos['App:appStateChange']({ isActive:false }));
+      assert.equal(await page.evaluate(()=>window.flushes), 1);
+      assert.equal(await page.locator('#splash').count(), 0, 'splash web não aparece no nativo');
+      await ctx.close();
+    }
     console.log('ok - nativo');
   }finally{ await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

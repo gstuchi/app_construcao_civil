@@ -60,3 +60,66 @@ test('sem suporte: desativa resolve sem tocar em nada', async()=>{
   assert.equal(push.suportado(), false);
   await push.desativa();
 });
+
+function janelaNativa({ receive = 'granted', falhaSalvar = false } = {}){
+  const log = [], memoria = new Map(), ouvintes = {};
+  const fcm = {
+    checkPermissions: async()=>({ receive:'prompt' }),
+    requestPermissions: async()=>({ receive }),
+    getToken: async()=>({ token:'tok-1' }),
+    deleteToken: async()=>log.push(['deleteToken']),
+    addListener: (ev, fn)=>{ ouvintes[ev] = fn; },
+  };
+  const win = {
+    navigator:{}, location:{ hash:'' },
+    OBRA_NATIVO:{ ehNativo:()=>true, plugin:n => n === 'FirebaseMessaging' ? fcm : null },
+    localStorage:{ getItem:k=>memoria.get(k) ?? null, setItem:(k,v)=>memoria.set(k,v), removeItem:k=>memoria.delete(k) },
+    CLOUD:{ savePushToken: async(k, v)=>{ log.push(['save', k, v.token, v.plataforma]); if(falhaSalvar) throw new Error('rede'); },
+            removePushToken: async k=>log.push(['remove', k]) },
+    OBRA_DIAG:{ registra(){} },
+  };
+  return { win, log, ouvintes };
+}
+
+test('nativo: ativar pede permissão, grava token e lembra a chave', async()=>{
+  const { win, log } = janelaNativa();
+  const push = criar(win);
+  assert.equal(push.suportado(), true);
+  assert.equal(await push.permissao(), 'default');
+  assert.equal(await push.ativar(), true);
+  assert.equal(await push.inscrito(), true);
+  assert.deepEqual(log, [['save', hashEndpoint('tok-1'), 'tok-1', 'ios']]);
+  await push.desativa();
+  assert.deepEqual(log.slice(1), [['deleteToken'], ['remove', hashEndpoint('tok-1')]]);
+  assert.equal(await push.inscrito(), false);
+});
+
+test('nativo: negado não grava; falha ao gravar apaga token', async()=>{
+  const negado = janelaNativa({ receive:'denied' });
+  assert.equal(await criar(negado.win).ativar(), false);
+  assert.deepEqual(negado.log, []);
+  const falha = janelaNativa({ falhaSalvar:true });
+  await assert.rejects(criar(falha.win).ativar(), /rede/);
+  assert.deepEqual(falha.log.at(-1), ['deleteToken']);
+});
+
+test('nativo: toque na notificação entrega obraId', ()=>{
+  const { win, ouvintes } = janelaNativa();
+  const recebidos = [];
+  criar(win).aoAbrirNotificacao(id => recebidos.push(id));
+  ouvintes.notificationActionPerformed({ notification:{ data:{ obraId:'o1' } } });
+  ouvintes.notificationActionPerformed({ notification:{ data:{} } });
+  assert.deepEqual(recebidos, ['o1', null]);
+});
+
+test('web: hash #obra= abre uma vez e mensagem do SW também', ()=>{
+  const ouvintes = {}, trocas = [];
+  const win = { navigator:{ serviceWorker:{ addEventListener:(ev, fn)=>{ ouvintes[ev] = fn; } } },
+    location:{ hash:'#obra=abc123', pathname:'/', search:'' }, history:{ replaceState:(...a)=>trocas.push(a) } };
+  const recebidos = [];
+  criar(win).aoAbrirNotificacao(id => recebidos.push(id));
+  ouvintes.message({ data:{ tipo:'abrir-obra', obraId:'xyz' } });
+  ouvintes.message({ data:{ tipo:'outra' } });
+  assert.deepEqual(recebidos, ['abc123', 'xyz']);
+  assert.equal(trocas.length, 1);
+});

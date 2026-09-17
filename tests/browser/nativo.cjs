@@ -107,6 +107,18 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       assert.match(await web.page.locator('#relPrint').textContent(), /Imprimir/);
       await web.ctx.close();
     }
+    /* ---- Task 7: push nativo ---- */
+    {
+      const { ctx, page } = await abrir(browser, { nativo:true });
+      await page.evaluate(()=>{ showView('ajustes'); renderAjustes(); });
+      await page.locator('#ajNotif').click();
+      await page.waitForFunction(()=>window.tokenSalvo);
+      assert.equal(await page.evaluate(()=>tokenSalvo[1].token), 'tok-teste');
+      await page.evaluate(()=>ouvintesNativos['FirebaseMessaging:notificationActionPerformed']({ notification:{ data:{ obraId:'o1' } } }));
+      await page.waitForFunction(()=>obraAberta === 'o1');
+      assert.equal(await page.locator('#v-obra').isVisible(), true);
+      await ctx.close();
+    }
     console.log('ok - nativo');
   }finally{ await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

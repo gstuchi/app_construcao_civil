@@ -224,6 +224,12 @@ describe('push/{uid} — inscrições e tokens', () => {
     await assertFails(setDoc(doc(comoAna(), 'push', ANA.uid), { subs }, { merge: true }));
   });
 
+  test('mais de 10 tokens FCM é rejeitado', async () => {
+    const tokens = {};
+    for (let i = 0; i < 11; i++) tokens['t' + i] = { token: 'tok-' + i, plataforma: 'ios' };
+    await assertFails(setDoc(doc(comoAna(), 'push', ANA.uid), { tokens }, { merge: true }));
+  });
+
   test('subs que não é mapa é rejeitado', async () => {
     await assertFails(setDoc(doc(comoAna(), 'push', ANA.uid), { subs: 'nada disso' }));
   });

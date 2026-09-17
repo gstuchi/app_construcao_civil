@@ -1595,11 +1595,26 @@ $('#installBtn').onclick = async()=>{
 };
 window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidden'));
 
+/* Aberturas que dependem dos dados reais (toque em notificação, restauração de estado)
+   só acontecem depois do primeiro snapshot — antes disso db está vazio. */
+let dadosCarregados = false;
+let obraDaNotificacao; // undefined = nada pendente; null = abrir Início
+function depoisDoPrimeiroSnapshot(){
+  if(!dadosCarregados) return;
+  if(obraDaNotificacao !== undefined){
+    const id = obraDaNotificacao; obraDaNotificacao = undefined;
+    if(id && obraById(id)) openObra(id);
+    else { obraAberta = null; showView('inicio'); renderAll(); }
+  }
+}
+OBRA_PUSH.aoAbrirNotificacao(id => { obraDaNotificacao = id; depoisDoPrimeiroSnapshot(); });
+
 /* ---------- go: espera auth e liga o tempo real ---------- */
 function bootCloud(){
   CLOUD.onAuth(user=>{
     if(unwatch){ unwatch(); unwatch=null; }
     if(!user){
+      dadosCarregados = false;
       conviteNotifUid=null; esconderConviteNotif();
       closeSheet(); sheet.textContent = '';
       db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;
@@ -1615,10 +1630,13 @@ function bootCloud(){
       if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
       const novo = normaliza(blob);
       // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
-      if(canon(novo) === canon(db)) return;
-      db = novo;
-      if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
-      renderAll();
+      if(canon(novo) !== canon(db)){
+        db = novo;
+        if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
+        renderAll();
+      }
+      dadosCarregados = true;
+      depoisDoPrimeiroSnapshot();
     });
   });
 }

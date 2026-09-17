@@ -1,6 +1,6 @@
 /* Service worker — network-first. Online sempre pega a versão nova; o cache
    é só o retrato pra funcionar offline. Bump CACHE ao mudar arquivos. */
-const CACHE = 'obras-v48';
+const CACHE = 'obras-v49';
 const ASSETS = ['./vendor/sentry/sentry.js', './sentry-config.js', './sentry.js', './vendor/firebase/firebase-app.js', './vendor/firebase/firebase-auth.js', './vendor/firebase/firebase-firestore.js', './vendor/firebase/shared-VONABDH2.js', './styles.css', './privacidade.css', './dados.js', './', './index.html', './app.js', './push.js', './share.js', './ui-confirm.js', './privacidade.html', './auth.js', './globe.js', './calc.js', './cloud.js', './icons.js', './splash.js', './splash-pre.js', './teclado.js', './tema.js', './nativo.js', './pwa.js', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './fontes/hanken-grotesk-800.woff2'];
 
 self.addEventListener('install', e => {
@@ -33,7 +33,7 @@ self.addEventListener('fetch', e => {
   );
 });
 
-/* Push: o cron diário (GitHub Actions) manda { titulo, corpo } via Web Push. */
+/* Push: o cron diário manda { titulo, corpo, obraId? } via Web Push. */
 self.addEventListener('push', e => {
   let d = {};
   try{ d = e.data.json(); }catch(err){}
@@ -41,15 +41,22 @@ self.addEventListener('push', e => {
     body: d.corpo || '',
     icon: './icon-192.png',
     badge: './icon-192.png',
+    data: { obraId: typeof d.obraId === 'string' ? d.obraId : null },
   }));
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const obraId = e.notification.data && e.notification.data.obraId;
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
-      for(const w of ws){ if('focus' in w) return w.focus(); }
-      return clients.openWindow('./');
+      for(const w of ws){
+        if('focus' in w){
+          if(obraId) w.postMessage({ tipo: 'abrir-obra', obraId });
+          return w.focus();
+        }
+      }
+      return clients.openWindow(obraId ? './#obra=' + encodeURIComponent(obraId) : './');
     })
   );
 });

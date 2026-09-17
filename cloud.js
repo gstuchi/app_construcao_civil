@@ -455,5 +455,14 @@ window.CLOUD = {
     if(!currentUser) return Promise.resolve();
     return setDoc(doc(db, 'push', currentUser.uid), { subs: { [chave]: deleteField() } }, { merge: true });
   },
+  /* Token FCM do app iOS. Mesmo documento, campo separado: web e nativo convivem. */
+  savePushToken(chave, dados){
+    if(!currentUser) return Promise.resolve();
+    return setDoc(doc(db, 'push', currentUser.uid), { tokens: { [chave]: dados } }, { merge: true });
+  },
+  removePushToken(chave){
+    if(!currentUser) return Promise.resolve();
+    return setDoc(doc(db, 'push', currentUser.uid), { tokens: { [chave]: deleteField() } }, { merge: true });
+  },
 };
 window.dispatchEvent(new Event('cloud-pronto'));

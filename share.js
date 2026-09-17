@@ -17,6 +17,10 @@
     }
     return '\uFEFF' + linhas.map(l=>l.map(celula).join(';')).join('\r\n') + '\r\n';
   }
+  /* Recorte de uma obra só, com a config junto (os tópicos próprios dão nome às linhas). */
+  function dadosDaObra(dados, obraId){
+    return { obras:(dados.obras || []).filter(o=>o.id === obraId), config:dados.config };
+  }
   function json(dados){
     return JSON.stringify({ formato:'custta', versao:1, exportadoEm:new Date().toISOString(), dados }, null, 2);
   }
@@ -40,7 +44,7 @@
     document.body.append(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 60000);
   }
-  const api = { csv, json, exportar };
+  const api = { csv, json, exportar, dadosDaObra };
   if(typeof module !== 'undefined') module.exports = api;
   if(root) root.OBRA_SHARE = api;
 })(typeof window !== 'undefined' ? window : null);

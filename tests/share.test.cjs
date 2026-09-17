@@ -29,3 +29,15 @@ test('no nativo exporta pelo share sheet e não cai no download web', async()=>{
   assert.equal(pedidos[0].titulo, 'Dados do Custta');
   assert.ok(pedidos[0].texto.includes('Mão de obra'));
 });
+const { dadosDaObra } = require('../share.js');
+test('planilha de uma obra leva só os gastos dela e mantém os tópicos', ()=>{
+  const varias = { obras:[
+    { id:'a', nome:'Casa A', fase:'construcao', gastos:[{ descricao:'Cimento', valor:10, data:'2026-09-01', topico:'custom' }] },
+    { id:'b', nome:'Casa B', fase:'pronta', gastos:[{ descricao:'Areia', valor:20, data:'2026-09-02', topico:'custom' }] },
+  ], config:dados.config };
+  const texto = csv(dadosDaObra(varias, 'a'));
+  assert.ok(texto.includes('"Casa A"') && texto.includes('"Mão de obra"'));
+  assert.ok(!texto.includes('Casa B') && !texto.includes('Areia'));
+  assert.deepEqual(dadosDaObra(varias, 'sumiu').obras, []);
+  assert.equal(varias.obras.length, 2, 'não altera o estado original');
+});

@@ -16,3 +16,16 @@ test('política cita token de dispositivo do FCM e lista de SDKs bate com packag
   assert.match(sdks, /@sentry\/browser/);
   assert.match(sdks, /firebase 12\.18\.0/);
 });
+
+test('política publicada identifica o controlador e não é mais rascunho', ()=>{
+  const politica = ler('privacidade.html');
+  assert.doesNotMatch(politica, /Rascunho|será confirmado/);
+  assert.match(politica, /<strong>Versão vigente:<\/strong> 17 de setembro de 2026\./);
+  assert.match(politica, /Controlador dos dados pessoais: <strong>Giovani Stuchi<\/strong>/);
+  assert.match(politica, /Resolução CD\/ANPD nº 2\/2022/);
+});
+
+test('Ajustes aponta para a política sem chamá-la de rascunho', ()=>{
+  const index = ler('index.html');
+  assert.match(index, /<a href="privacidade\.html"[^>]*>Política de privacidade<\/a>/);
+});

@@ -93,9 +93,15 @@
     async function desativar(){
       const chave = lerChave();
       if(!chave) return;
-      await fcm().deleteToken();
-      await win.CLOUD.removePushToken(chave);
-      try{ win.localStorage.removeItem(CHAVE_TOKEN); }catch(e){ /* sem storage não há o que limpar */ }
+      /* removePushToken primeiro: se o FCM falhar em apagar o token (deleteToken),
+         logout (auth.js) e apagar conta (ui-confirm.js) não podem travar por isso —
+         só uma falha de rede no Firestore deve propagar e abortar. */
+      try{
+        await win.CLOUD.removePushToken(chave);
+        await fcm().deleteToken().catch(e => win.OBRA_DIAG?.registra('push-limpeza', e.message, e.stack));
+      }finally{
+        try{ win.localStorage.removeItem(CHAVE_TOKEN); }catch(e){ /* sem storage não há o que limpar */ }
+      }
     }
     return {
       suportado: () => !!fcm(),

@@ -61,13 +61,14 @@ test('sem suporte: desativa resolve sem tocar em nada', async()=>{
   await push.desativa();
 });
 
-function janelaNativa({ receive = 'granted', falhaSalvar = false } = {}){
+function janelaNativa({ receive = 'granted', falhaSalvar = false, falhaExcluir = false, falhaRemoverToken = false, permissaoAtual = 'prompt' } = {}){
   const log = [], memoria = new Map(), ouvintes = {};
+  let tokenAtual = 'tok-1';
   const fcm = {
-    checkPermissions: async()=>({ receive:'prompt' }),
+    checkPermissions: async()=>({ receive:permissaoAtual }),
     requestPermissions: async()=>({ receive }),
-    getToken: async()=>({ token:'tok-1' }),
-    deleteToken: async()=>log.push(['deleteToken']),
+    getToken: async()=>({ token:tokenAtual }),
+    deleteToken: async()=>{ if(falhaExcluir) throw new Error('fcm indisponível'); log.push(['deleteToken']); },
     addListener: (ev, fn)=>{ ouvintes[ev] = fn; },
   };
   const win = {
@@ -75,10 +76,10 @@ function janelaNativa({ receive = 'granted', falhaSalvar = false } = {}){
     OBRA_NATIVO:{ ehNativo:()=>true, plugin:n => n === 'FirebaseMessaging' ? fcm : null },
     localStorage:{ getItem:k=>memoria.get(k) ?? null, setItem:(k,v)=>memoria.set(k,v), removeItem:k=>memoria.delete(k) },
     CLOUD:{ savePushToken: async(k, v)=>{ log.push(['save', k, v.token, v.plataforma]); if(falhaSalvar) throw new Error('rede'); },
-            removePushToken: async k=>log.push(['remove', k]) },
+            removePushToken: async k=>{ log.push(['remove', k]); if(falhaRemoverToken) throw new Error('rede'); } },
     OBRA_DIAG:{ registra(){} },
   };
-  return { win, log, ouvintes };
+  return { win, log, ouvintes, setToken:t=>{ tokenAtual = t; } };
 }
 
 test('nativo: ativar pede permissão, grava token e lembra a chave', async()=>{
@@ -90,7 +91,16 @@ test('nativo: ativar pede permissão, grava token e lembra a chave', async()=>{
   assert.equal(await push.inscrito(), true);
   assert.deepEqual(log, [['save', hashEndpoint('tok-1'), 'tok-1', 'ios']]);
   await push.desativa();
-  assert.deepEqual(log.slice(1), [['deleteToken'], ['remove', hashEndpoint('tok-1')]]);
+  assert.deepEqual(log.slice(1), [['remove', hashEndpoint('tok-1')], ['deleteToken']]);
+  assert.equal(await push.inscrito(), false);
+});
+
+test('nativo: fcm falha ao apagar o token mas desativar conclui (logout/apagar conta não travam)', async()=>{
+  const { win, log } = janelaNativa({ falhaExcluir:true });
+  const push = criar(win);
+  await push.ativar(); log.length = 0;
+  await push.desativa(); // não deve lançar mesmo com deleteToken rejeitando
+  assert.deepEqual(log, [['remove', hashEndpoint('tok-1')]]);
   assert.equal(await push.inscrito(), false);
 });
 

@@ -113,6 +113,50 @@ test('nativo: negado não grava; falha ao gravar apaga token', async()=>{
   assert.deepEqual(falha.log.at(-1), ['deleteToken']);
 });
 
+test('nativo: sincronizarToken salva o novo e remove o antigo quando o aparelho troca', async()=>{
+  const { win, log, setToken } = janelaNativa({ permissaoAtual:'granted' });
+  const push = criar(win);
+  await push.ativar(); log.length = 0;
+  setToken('tok-2');
+  await push.sincronizarToken();
+  assert.deepEqual(log, [['save', hashEndpoint('tok-2'), 'tok-2', 'ios'], ['remove', hashEndpoint('tok-1')]]);
+  assert.equal(await push.inscrito(), true);
+});
+
+test('nativo: sincronizarToken não faz nada quando o token não mudou', async()=>{
+  const { win, log } = janelaNativa({ permissaoAtual:'granted' });
+  const push = criar(win);
+  await push.ativar(); log.length = 0;
+  await push.sincronizarToken();
+  assert.deepEqual(log, []);
+});
+
+test('nativo: sincronizarToken não faz nada sem chave salva ou sem permissão concedida', async()=>{
+  const semChave = janelaNativa({ permissaoAtual:'granted' });
+  await criar(semChave.win).sincronizarToken();
+  assert.deepEqual(semChave.log, []);
+
+  const semPermissao = janelaNativa({ permissaoAtual:'prompt' });
+  await criar(semPermissao.win).ativar(); semPermissao.log.length = 0;
+  semPermissao.setToken('tok-2');
+  await criar(semPermissao.win).sincronizarToken();
+  assert.deepEqual(semPermissao.log, []);
+});
+
+test('nativo: tokenReceived atualiza o token salvo sem esperar sincronizarToken', async()=>{
+  const { win, log, ouvintes } = janelaNativa({ permissaoAtual:'granted' });
+  const push = criar(win);
+  await push.ativar(); log.length = 0;
+  ouvintes.tokenReceived({ token:'tok-2' });
+  await new Promise(r => setTimeout(r, 0));
+  assert.deepEqual(log, [['save', hashEndpoint('tok-2'), 'tok-2', 'ios'], ['remove', hashEndpoint('tok-1')]]);
+});
+
+test('web: sincronizarToken é no-op', async()=>{
+  const { win } = janelaWeb();
+  await criar(win).sincronizarToken();
+});
+
 test('nativo: toque na notificação entrega obraId', ()=>{
   const { win, ouvintes } = janelaNativa();
   const recebidos = [];

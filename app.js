@@ -1643,10 +1643,12 @@ OBRA_PUSH.aoAbrirNotificacao(id => { obraDaNotificacao = id; depoisDoPrimeiroSna
 
 /* ---------- go: espera auth e liga o tempo real ---------- */
 function bootCloud(){
+  let tokenFcmSincronizado = false; // uma vez por login — não a cada snapshot
   CLOUD.onAuth(user=>{
     if(unwatch){ unwatch(); unwatch=null; }
     if(!user){
       dadosCarregados = false;
+      tokenFcmSincronizado = false;
       try{ localStorage.removeItem(ESTADO_KEY); }catch(e){}
       estadoRestaurado = false;
       conviteNotifUid=null; esconderConviteNotif();
@@ -1670,6 +1672,10 @@ function bootCloud(){
         renderAll();
       }
       dadosCarregados = true;
+      if(!tokenFcmSincronizado){
+        tokenFcmSincronizado = true;
+        OBRA_PUSH.sincronizarToken?.(); // no-op na web; nativo troca o token se o FCM já rotacionou o antigo
+      }
       depoisDoPrimeiroSnapshot();
     });
   });

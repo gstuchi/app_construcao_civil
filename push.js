@@ -50,6 +50,7 @@
       permissao: async() => win.Notification.permission,
       inscrito: async() => !!(await atual()),
       ativar, desativar,
+      sincronizarToken: async() => {}, // rotação de token é conceito só do FCM nativo
       /* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
       desativa: () => suportado() ? desativar() : Promise.resolve(),
       /* Clique na notificação: app fechado abre ./#obra=<id>; aberto recebe postMessage do SW. */
@@ -103,11 +104,34 @@
         try{ win.localStorage.removeItem(CHAVE_TOKEN); }catch(e){ /* sem storage não há o que limpar */ }
       }
     }
+    /* O FCM pode rotacionar o token (reinstalação, restauração de backup, etc.) sem
+       que o app peça — se não acompanhar, o Firestore guarda um token morto e o
+       aparelho para de receber. Usada tanto pelo boot (getToken) quanto pelo evento
+       tokenReceived (token já vem no evento). */
+    async function atualizarToken(token){
+      const chave = lerChave();
+      const novaChave = hashEndpoint(token);
+      if(chave === novaChave) return;
+      await win.CLOUD.savePushToken(novaChave, { token, plataforma:'ios', criado:new Date().toISOString() });
+      if(chave) await win.CLOUD.removePushToken(chave);
+      try{ win.localStorage.setItem(CHAVE_TOKEN, novaChave); }catch(e){ win.OBRA_DIAG?.registra('push-token', e.message); }
+    }
+    async function sincronizarToken(){
+      try{
+        if(!lerChave()) return; // nunca ativou neste aparelho — nada a sincronizar
+        if(await permissao() !== 'granted') return;
+        const { token } = await fcm().getToken();
+        await atualizarToken(token);
+      }catch(err){ win.OBRA_DIAG?.registra('push-sincroniza', err && err.message, err && err.stack); }
+    }
+    fcm()?.addListener('tokenReceived', ev => {
+      atualizarToken(ev && ev.token).catch(err => win.OBRA_DIAG?.registra('push-sincroniza', err && err.message, err && err.stack));
+    });
     return {
       suportado: () => !!fcm(),
       permissao,
       inscrito: async() => !!lerChave(),
-      ativar, desativar,
+      ativar, desativar, sincronizarToken,
       desativa: () => fcm() ? desativar() : Promise.resolve(),
       aoAbrirNotificacao(fn){
         fcm()?.addListener('notificationActionPerformed', ev => fn(ev?.notification?.data?.obraId || null));

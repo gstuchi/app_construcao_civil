@@ -16,6 +16,7 @@ PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro ren
 
 ---
 
+
 ## Sumário
 
 - [Visão geral](#visão-geral)
@@ -84,6 +85,10 @@ Browser (PWA)
 | `notificacoes/` | Backend de notificações push (Node + Firebase) — ver `notificacoes/README.md` |
 | `docs/` | Especificações e notas de design |
 
+
+## Por que a raiz tem tantos arquivos
+
+O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o que o navegador baixa. `index.html` carrega cada script na ordem declarada, `styles.css` traz todo o CSS e `sw.js` lista esses mesmos arquivos no precache. `package.json` existe para testes, manutenção do SDK local (`vendor/`), Capacitor e a função de cron em `api/` — nada dele vai para o navegador. O projeto iOS fica em `ios/`; `www/` é gerado por `npm run build:www` e não é versionado.
 
 ## Segurança e ferramentas — Fase 3
 

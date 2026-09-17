@@ -19,7 +19,8 @@ for(const icon of manifest.icons || []){
 }
 assert.ok(/if\s*\(\s*!res\.ok\s*\)\s*return res/.test(sw), 'service worker pode substituir cache bom por resposta 4xx/5xx');
 assert.ok(html.includes('id="notifAtivar"') && html.includes('id="notifDepois"'), 'convite de notificações precisa permitir ativar ou adiar');
-assert.ok(app.includes("$('#notifAtivar').onclick") && app.includes('ativaPush()'), 'permissão deve partir do clique explícito do usuário');
+assert.ok(app.includes("$('#notifAtivar').onclick") && app.includes('OBRA_PUSH.ativar()'), 'permissão deve partir do clique explícito do usuário');
+assert.ok(sw.includes("'./push.js'") && sw.includes("'./nativo.js'"), 'push.js e nativo.js no precache');
 const {runInNewContext}=require('node:vm');
 const trecho=app.slice(app.indexOf('const notifInvite='),app.indexOf("window.addEventListener('cloud-conta'"));
 const memoria=new Map(), elementos=new Map();
@@ -29,9 +30,9 @@ const $=id=>{
 };
 let exibicoes=0;
 $('#notifInvite').classList.remove=()=>exibicoes++;
-const contexto={$,Set,Notification:{permission:'default'},pushSuportado:()=>true,pushAtual:async()=>null,
+const contexto={$,Set,OBRA_PUSH:{suportado:()=>true,permissao:async()=>'default',inscrito:async()=>null,ativar:async()=>false},
   localStorage:{getItem:k=>memoria.get(k)??null,setItem:(k,v)=>memoria.set(k,v)},
-  registraErro:()=>{},ativaPush:async()=>false,toast:()=>{}};
+  registraErro:()=>{},toast:()=>{}};
 runInNewContext(trecho,contexto);
 (async()=>{
   await contexto.atualizarConviteNotif({uid:'ana'});

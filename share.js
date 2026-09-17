@@ -1,4 +1,4 @@
-/* Exportação web. O ramo nativo poderá usar a mesma interface na Fase 4. */
+/* Exportação: share sheet nativo no app iOS; Web Share ou download na web. */
 'use strict';
 (function(root){
   function celula(valor){
@@ -20,11 +20,17 @@
   function json(dados){
     return JSON.stringify({ formato:'custta', versao:1, exportadoEm:new Date().toISOString(), dados }, null, 2);
   }
-  async function exportar(dados, formato){
+  async function exportar(dados, formato, raiz = root){
     if(!['json','csv'].includes(formato)) throw new Error('Formato não suportado.');
     const texto = formato === 'json' ? json(dados) : csv(dados);
     const nome = 'custta-' + new Date().toISOString().slice(0,10) + '.' + formato;
-    const arquivo = new File([texto], nome, { type:formato === 'json' ? 'application/json' : 'text/csv;charset=utf-8' });
+    const tipo = formato === 'json' ? 'application/json' : 'text/csv;charset=utf-8';
+    const nativo = raiz && raiz.OBRA_NATIVO;
+    if(nativo && nativo.ehNativo()){
+      const r = await nativo.compartilharArquivo({ nome, texto, tipo, titulo:'Dados do Custta' });
+      if(r) return;
+    }
+    const arquivo = new File([texto], nome, { type:tipo });
     if(navigator.canShare?.({ files:[arquivo] })){
       await navigator.share({ files:[arquivo], title:'Dados do Custta' });
       return;

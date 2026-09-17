@@ -146,4 +146,13 @@ t('período ausente ou desconhecido se comporta como noite', () => {
   }
 });
 
+t('obraId só quando exatamente uma obra gera o resumo', () => {
+  const uma = { obras: [ { id:'o1', nome:'A', fase:'construcao', gastos: [] }, { id:'o2', nome:'B', fase:'vendida', gastos: [] } ] };
+  assert.strictEqual(montaResumo(uma, '2026-07-10', 'noite').obraId, 'o1');
+  const duas = { obras: [ { id:'o1', fase:'construcao', gastos: [] }, { id:'o2', fase:'construcao', gastos: [] } ] };
+  assert.strictEqual('obraId' in montaResumo(duas, '2026-07-10', 'noite'), false);
+  const afazer = { obras: [ { id:'o1', fase:'pronta', afazeres:[{ feito:false }], gastos: [] }, { id:'o2', fase:'pronta', gastos: [] } ] };
+  assert.strictEqual(montaResumo(afazer, '2026-07-10', 'manha').obraId, 'o1');
+});
+
 console.log(`\n${n} testes ok`);

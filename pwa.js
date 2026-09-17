@@ -1,6 +1,7 @@
 /* Registro e atualização do PWA. */
 'use strict';
-if('serviceWorker' in navigator){
+/* No app nativo os arquivos vêm do próprio binário; SW só atrapalharia a atualização. */
+if('serviceWorker' in navigator && !window.OBRA_NATIVO?.ehNativo()){
   const jaControlado = !!navigator.serviceWorker.controller;
   let recarregou = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {

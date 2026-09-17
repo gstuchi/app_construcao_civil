@@ -38,7 +38,8 @@ export function signOut(){ __ctrl.signOutChamado++; return passo('signOut'); }
 
 export function initializeFirestore(){ return { nome: 'db-stub' }; }
 export function persistentLocalCache(){ return {}; }
-export function persistentMultipleTabManager(){ return {}; }
+export function persistentMultipleTabManager(){ __ctrl.tabManager = 'multiple'; return {}; }
+export function persistentSingleTabManager(){ __ctrl.tabManager = 'single'; return {}; }
 export function doc(_db, col, id){ return { path: col + '/' + id }; }
 export function serverTimestamp(){ return '@ts'; }
 export function deleteField(){ return '@del'; }

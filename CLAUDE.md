@@ -17,6 +17,8 @@ npm test                 # unit + rules
 npm run test:unit        # node --test nos tests/*.cjs (sem browser, sem rede)
 npm run test:rules       # sobe o emulador do Firestore e roda tests/rules.test.mjs (precisa Java)
 npm run rules:deploy     # firebase deploy --only firestore:rules
+npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
+npm run cap:sync         # build:www + cap sync ios
 
 node --test tests/calc.test.cjs                     # um arquivo só
 node --test --test-name-pattern="parcelas" tests/rules.test.mjs
@@ -35,6 +37,8 @@ Scripts clássicos com globais, carregados na ordem declarada no fim de `index.h
 | [calc.js](calc.js) | `OBRA_CALC` + `module.exports` | regras de negócio puras, zero DOM — é o que os testes de unidade cobrem |
 | [cloud.js](cloud.js) | `window.CLOUD`, evento `cloud-pronto` | único ponto de contato com o Firebase |
 | [auth.js](auth.js) | — | overlay de login (`#auth` + `body.locked`) |
+| [nativo.js](nativo.js) | `OBRA_NATIVO` + `module.exports` | único ponto que toca `window.Capacitor`; no browser tudo é neutro |
+| [push.js](push.js) | `OBRA_PUSH` + `module.exports` | notificações: Web Push na web, FCM no app iOS |
 | [app.js](app.js) | `db`, `renderAll`, `OBRA_PUSH` | todo o estado e render da UI (~1350 linhas) |
 | [teclado.js](teclado.js) | `TECLADO` | teclado numérico próprio para digitar valor |
 | [icons.js](icons.js) | `ICON` | SVGs inline (`data-ico`) |
@@ -65,6 +69,10 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 ### Notificações push
 
 `notificacoes/` é um cron do GitHub Actions ([.github/workflows/push-diario.yml](.github/workflows/push-diario.yml)) que dispara duas vezes ao dia — 12:00 UTC (9h Brasília) e 21:00 UTC (18h). O workflow deriva `PERIODO` (`manha`/`noite`) do cron que disparou, e `montaResumo` usa isso pra omitir o "Lançou os gastos de hoje?" de manhã. Roda com Admin SDK (ignora rules) e lê `push/{uid}`. É ferramenta de CI com `package.json` próprio — não faz parte do app. Chave VAPID pública fica hardcoded em `app.js`; a privada é secret do repositório.
+
+### App iOS (Capacitor)
+
+`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`.
 
 ## UI
 

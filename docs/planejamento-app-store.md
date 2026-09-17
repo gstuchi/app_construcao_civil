@@ -207,6 +207,8 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 4 — Empacotamento com Capacitor
 
+**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/superpowers/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
+
 **Travada por:** Fase 0 (bundle ID, chave APNs, conta) e Fase 3 (SDK local, CSP).
 
 ### 4a — Esqueleto do projeto (tudo possível no Windows)

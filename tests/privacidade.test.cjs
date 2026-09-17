@@ -1,0 +1,18 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
+const ler = p => readFileSync(join(__dirname, '..', p), 'utf8');
+
+test('política cita token de dispositivo do FCM e lista de SDKs bate com package.json', ()=>{
+  const politica = ler('privacidade.html');
+  assert.match(politica, /Firebase Cloud Messaging/);
+  assert.match(politica, /token/i);
+  const sdks = ler('docs/sdks-fase4.md');
+  const pkg = JSON.parse(ler('package.json'));
+  for(const nome of Object.keys(pkg.devDependencies).filter(n => n.startsWith('@capacitor')))
+    assert.ok(sdks.includes(nome), 'SDK sem registro: ' + nome);
+  assert.match(sdks, /@sentry\/browser/);
+  assert.match(sdks, /firebase 12\.18\.0/);
+});

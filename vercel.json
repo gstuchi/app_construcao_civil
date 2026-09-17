@@ -24,6 +24,17 @@
           "value": "max-age=31536000; includeSubDomains"
         }
       ]
+    },
+    {
+      "source": "/versao.json",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "capacitor://localhost" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
     }
+  ],
+  "crons": [
+    { "path": "/api/push-diario?periodo=manha", "schedule": "0 12 * * *" },
+    { "path": "/api/push-diario?periodo=noite", "schedule": "0 21 * * *" }
   ]
 }

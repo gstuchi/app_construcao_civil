@@ -148,8 +148,8 @@ function checa(nome, ok, detalhe){
 
   // Durante o flush do logout, nenhuma edição deve ficar só na tela.
   await page.evaluate(()=>{ CLOUD.logout=()=>new Promise(r=>{ window.__liberaSaida=r; }); });
-  page.once('dialog', d=>d.accept());
   await page.locator('#btnSairSide').click();
+  await page.locator('dialog.confirma-dialog [data-acao=confirmar]').click();
   await page.waitForFunction(()=>document.body.inert);
   let bloqueou=false;
   try{ await page.locator('#btnSairSide').click({ timeout:300 }); }catch(e){ bloqueou=e.name === 'TimeoutError'; }

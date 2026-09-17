@@ -20,7 +20,7 @@
   let saindoDeProposito = false; // separa "ele apertou Sair" de "a sessão caiu"
   const doSair=async()=>{
     if(saindoDeProposito) return;
-    if(!confirm('Sair da conta?')) return;
+    if(!(await OBRA_CONFIRM.perguntar('Sair da conta?', { confirmar:'Sair' }))) return;
     saindoDeProposito = true;
     document.body.inert = true; // não permite editar enquanto a saída aguarda a fila
     try{ await CLOUD.logout({ antesDeSair: async()=>{

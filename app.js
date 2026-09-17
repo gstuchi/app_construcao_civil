@@ -167,6 +167,31 @@ function canon(x){
 }
 
 /* ---------- navegação ---------- */
+/* iOS mata o app em segundo plano e o WKWebView recarrega do zero: lembra onde
+   o usuário estava. Preferência por aparelho, não é dado de obra. */
+const ESTADO_KEY = 'custta-estado';
+let estadoRestaurado = false;
+function lembraEstado(){
+  if(!estadoRestaurado) return; // antes de restaurar, o boot não pode sobrescrever o salvo
+  try{ localStorage.setItem(ESTADO_KEY, JSON.stringify({ tab, obraAberta })); }
+  catch(e){ registraErro('estado', e && e.message); }
+}
+function restauraEstado(){
+  if(estadoRestaurado) return;
+  estadoRestaurado = true;
+  let salvo = null;
+  try{ salvo = JSON.parse(localStorage.getItem(ESTADO_KEY) || 'null'); }catch(e){ salvo = null; }
+  if(!salvo || typeof salvo.tab !== 'string' || !document.getElementById('v-' + salvo.tab)) return;
+  if(salvo.obraAberta && obraById(salvo.obraAberta)){
+    openObra(salvo.obraAberta);
+    if(salvo.tab === 'relatorio'){ showView('relatorio'); renderRelatorio(); }
+    else if(salvo.tab === 'graficos'){ showView('graficos'); renderGraficos(); }
+  }else if(!['obra', 'relatorio', 'graficos'].includes(salvo.tab)){
+    showView(salvo.tab); renderAll();
+  }else{
+    showView('inicio'); renderAll();
+  }
+}
 function showView(v){
   tab = v;
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
@@ -175,11 +200,12 @@ function showView(v){
   $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
   document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
   window.scrollTo({top:0});
+  lembraEstado();
 }
 document.querySelectorAll('button[data-tab]').forEach(b=>{
-  b.onclick = ()=>{ obraAberta=null; showView(b.dataset.tab); renderAll(); };
+  b.onclick = ()=>{ estadoRestaurado = true; /* gesto do usuário vence a restauração */ obraAberta=null; showView(b.dataset.tab); renderAll(); };
 });
-$('#btnVoltar').onclick = ()=>{ obraAberta=null; showView('inicio'); renderAll(); };
+$('#btnVoltar').onclick = ()=>{ estadoRestaurado = true; /* gesto do usuário vence a restauração */ obraAberta=null; showView('inicio'); renderAll(); };
 function openObra(id){ obraAberta=id; evoSel=-1; mesSel=-1; filtroTexto=''; filtroMes=''; showView('obra'); renderObra(); }
 
 /* ---------- render ---------- */
@@ -392,7 +418,7 @@ function renderObra(){
   on('#oPronta',       ()=>mudarFase(o.id,'pronta'));
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
-  on('#oDesfazer',     ()=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
+  on('#oDesfazer',     async()=>{ if(await OBRA_CONFIRM.perguntar('Desfazer a venda? A obra volta pra “Pronta”.', { confirmar:'Desfazer venda' })){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
 }
 
 function renderAfazeres(o){
@@ -648,12 +674,13 @@ function gastoRow(o, g, opts){
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
   const del = el('button','li-del','×');
-  del.onclick = ()=>{
+  del.onclick = async()=>{
     const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
-      // exclusão simples usa confirm, não abre folha: nada a fechar, só voltar
-      if(confirm('Excluir este gasto?')){
-        oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll();
+      // exclusão simples usa diálogo curto, não abre folha: nada a fechar, só voltar
+      if(await OBRA_CONFIRM.perguntar('Excluir este gasto?', { confirmar:'Excluir' })){
+        const atual = obraById(o.id); if(!atual) return;
+        atual.gastos = atual.gastos.filter(x=>x.id!==g.id); save(); renderAll();
         if(voltar) voltar();
       }
       return;
@@ -735,9 +762,9 @@ function formEditarObra(o){
     oo.areaM2 = area>0 ? area : null;
     save(); closeSheet(); renderAll();
   };
-  $('#cDel').onclick = ()=>{
+  $('#cDel').onclick = async()=>{
     const n = o.gastos.length;
-    if(confirm(`Apagar “${o.nome}”?` + (n?` Os ${n} lançamento(s) dela serão perdidos.`:''))){
+    if(await OBRA_CONFIRM.perguntar(`Apagar “${o.nome}”?` + (n?` Os ${n} lançamento(s) dela serão perdidos.`:''), { confirmar:'Apagar obra' })){
       db.obras = db.obras.filter(x=>x.id!==o.id);
       obraAberta = null;
       save(); closeSheet(); showView('inicio'); renderAll();
@@ -962,7 +989,8 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
         o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto, ...dadosCartao });
       }
     }
-    salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso');
+    salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso')
+      .then(()=>OBRA_NATIVO.vibrar(), ()=>{}); // vibra só com o servidor confirmando
     renderAll(); fechar();
   };
 }
@@ -1017,6 +1045,16 @@ function bindDonutLegenda(container, onPick){
   });
 }
 
+/* window.print() falha calado no WKWebView: no app o botão compartilha a planilha. */
+function ligarImprimir(botao){
+  if(!OBRA_NATIVO.ehNativo()){ botao.onclick = ()=>window.print(); return; }
+  botao.innerHTML = `${ICON('documento')} Compartilhar planilha`;
+  botao.onclick = async()=>{
+    try{ await OBRA_SHARE.exportar(db, 'csv'); }
+    catch(err){ toast('Não foi possível compartilhar. Tente novamente.', 'erro'); }
+  };
+}
+
 /* ===== GRÁFICOS DA OBRA (tela cheia, legível, imprime em PDF) ===== */
 function renderGraficos(){
   const o = obraById(obraAberta);
@@ -1036,7 +1074,7 @@ function renderGraficos(){
   bindEvoChart(o, 'G', renderGraficos);
   bindMesChart(o, 'G');
   bindDonutLegenda($('#grafBody'), id=>sheetTopico(o.id, id));
-  $('#grafPrint').onclick = ()=>window.print();
+  ligarImprimir($('#grafPrint'));
 }
 
 /* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
@@ -1179,7 +1217,7 @@ function renderRelatorio(){
     $('#relSelPct').textContent=totB>0?(bruto/totB*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'0%';
   };
   document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
-  $('#relPrint').onclick = ()=>window.print();
+  ligarImprimir($('#relPrint'));
 }
 
 /* ===== SERÁ QUE VALE A PENA? ===== */
@@ -1263,6 +1301,7 @@ function aplicaTema(claro){
   try{ localStorage.setItem(TEMA_KEY, claro ? 'claro' : 'escuro'); }catch(e){ registraErro('tema', e && e.message); }
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  OBRA_NATIVO.barraStatus(temaClaro());
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
 }
 
@@ -1276,60 +1315,13 @@ function aplicaSkin(skin){
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   if(window.__globeDraw) window.__globeDraw(); // com prefers-reduced-motion o globo é estático — força a cor nova
+  OBRA_NATIVO.barraStatus(temaClaro());
   renderAll();
 }
 
 /* ===== NOTIFICAÇÕES PUSH — inscrição por aparelho, resumo diário via cron ===== */
-const VAPID_PUBLICA = 'BEZVfZrOAgzNMnSS4Hpt-PKwchrfEaW5igUoXdZILQqBWdeC9D2RTp_-JfrTagRU4eK2FM0zC3U0GXYS2LUwiyk';
 const NOTIF_NOTA_PADRAO = 'Afazeres pendentes, parcelas do mês e lembrete de lançar gastos. '
   + 'Chega mesmo com o app fechado. Vale neste aparelho.';
-
-const pushSuportado = () =>
-  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-
-function b64ToU8(b64){
-  const pad = '='.repeat((4 - b64.length % 4) % 4);
-  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
-  return Uint8Array.from(raw, c => c.charCodeAt(0));
-}
-/* hash curto do endpoint — vira nome de campo no Firestore (sem . nem /) */
-function hashEndpoint(s){
-  let h = 5381;
-  for(let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
-  return h.toString(36);
-}
-async function pushAtual(){
-  const reg = await navigator.serviceWorker.getRegistration();
-  return reg?.pushManager ? reg.pushManager.getSubscription() : null;
-}
-async function ativaPush(){
-  const perm = await Notification.requestPermission();
-  if(perm !== 'granted') return false;
-  const reg = await navigator.serviceWorker.getRegistration();
-  if(!reg?.active) throw new Error('Aguarde a preparação do aplicativo e tente novamente.');
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: b64ToU8(VAPID_PUBLICA),
-  });
-  const j = sub.toJSON();
-  try{
-    await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
-      { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
-  }catch(err){
-    await sub.unsubscribe().catch(e=>registraErro('push-limpeza', e.message, e.stack));
-    throw err;
-  }
-  return true;
-}
-async function desativaPush(){
-  const sub = await pushAtual();
-  if(!sub) return;
-  const chave = hashEndpoint(sub.endpoint);
-  await sub.unsubscribe();
-  await CLOUD.removePushSub(chave);
-}
-/* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
-window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
 
 /* Convite após login: uma resposta encerra os convites nesta conta/aparelho.
    A ativação continua disponível em Ajustes. Datas antigas também contam como resposta. */
@@ -1341,9 +1333,10 @@ function esconderConviteNotif(){ notifInvite?.classList.add('hidden'); }
 async function atualizarConviteNotif(user){
   esconderConviteNotif();
   conviteNotifUid=user?.uid||null;
-  if(!user || !pushSuportado() || Notification.permission!=='default') return;
+  if(!user || !OBRA_PUSH.suportado()) return;
   try{
-    if(await pushAtual()) return;
+    if(await OBRA_PUSH.permissao()!=='default') return;
+    if(await OBRA_PUSH.inscrito()) return;
     if(convitesRespondidos.has(user.uid) || localStorage.getItem(chaveConviteNotif(user.uid))!==null) return;
     if(conviteNotifUid===user.uid) notifInvite.classList.remove('hidden');
   }catch(err){ registraErro('push-convite',err.message,err.stack); }
@@ -1359,7 +1352,7 @@ $('#notifAtivar').onclick=async()=>{
   const b=$('#notifAtivar'); b.disabled=true;
   encerrarConviteNotif();
   try{
-    const ok=await ativaPush();
+    const ok=await OBRA_PUSH.ativar();
     esconderConviteNotif();
     toast(ok?'Notificações ativadas neste aparelho':'Permissão não concedida.',ok?undefined:'erro');
   }catch(err){ toast('Não deu pra ativar agora. Tente novamente.', 'erro'); }
@@ -1409,30 +1402,33 @@ function renderAjustes(){
 
   const tgN = $('#ajNotif');
   if(tgN){
-    if(!pushSuportado()){
+    if(!OBRA_PUSH.suportado()){
       /* iPhone no Safari (fora do app instalado) não expõe a API de push —
          em vez de esconder o painel, ensina o caminho */
       tgN.disabled = true;
       tgN.style.opacity = '.4';
-      $('#ajNotifNota').textContent = 'Pra receber notificações no iPhone: abra no Safari, '
-        + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
-        + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
+      $('#ajNotifNota').textContent = OBRA_NATIVO.ehNativo()
+        ? 'Notificações indisponíveis neste aparelho no momento.'
+        : 'Pra receber notificações no iPhone: abra no Safari, '
+          + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
+          + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
     }else{
-      pushAtual().then(sub => {
-        const on = !!sub && Notification.permission === 'granted';
+      Promise.all([OBRA_PUSH.inscrito(), OBRA_PUSH.permissao()]).then(([inscrito, perm]) => {
+        const on = inscrito && perm === 'granted';
         tgN.classList.toggle('on', on);
         tgN.setAttribute('aria-checked', String(on));
-      });
+      }).catch(err => registraErro('push-estado', err && err.message, err && err.stack));
       tgN.onclick = async () => {
         const nota = $('#ajNotifNota');
         nota.textContent = NOTIF_NOTA_PADRAO;
         try{
-          const sub = await pushAtual();
-          if(sub){
-            await desativaPush();
+          if(await OBRA_PUSH.inscrito()){
+            await OBRA_PUSH.desativar();
           }else{
-            const ok = await ativaPush();
-            if(!ok) nota.textContent = 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
+            const ok = await OBRA_PUSH.ativar();
+            if(!ok) nota.textContent = OBRA_NATIVO.ehNativo()
+              ? 'Permissão negada. Libere em Ajustes do iPhone › Custta › Notificações e tente de novo.'
+              : 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
           }
         }catch(err){
           nota.textContent = 'Não deu pra ativar agora. Tente de novo.';
@@ -1464,10 +1460,10 @@ function renderAjustes(){
     li.innerHTML = `<div class="av ic-brand">${ICON('etiqueta')}</div>
       <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
     const del = el('button','li-del','×');
-    del.onclick = ()=>{
+    del.onclick = async()=>{
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
-      if(emUso){ alert('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
-      if(confirm(`Remover o tópico “${t.nm}”?`)){
+      if(emUso){ await OBRA_CONFIRM.avisar('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
+      if(await OBRA_CONFIRM.perguntar(`Remover o tópico “${t.nm}”?`, { confirmar:'Remover' })){
         db.config.topicosCustom = db.config.topicosCustom.filter(x=>x.id!==t.id);
         save(); renderAll();
       }
@@ -1620,7 +1616,7 @@ $('#fab').onclick = ()=>{
 
 /* ---------- instalar PWA ---------- */
 let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; $('#installHint').classList.remove('hidden'); });
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); if(OBRA_NATIVO.ehNativo()) return; deferredPrompt=e; $('#installHint').classList.remove('hidden'); });
 $('#installBtn').onclick = async()=>{
   if(!deferredPrompt) return;
   deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null;
@@ -1628,11 +1624,34 @@ $('#installBtn').onclick = async()=>{
 };
 window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidden'));
 
+/* Aberturas que dependem dos dados reais (toque em notificação, restauração de estado)
+   só acontecem depois do primeiro snapshot — antes disso db está vazio. */
+let dadosCarregados = false;
+let obraDaNotificacao; // undefined = nada pendente; null = abrir Início
+function depoisDoPrimeiroSnapshot(){
+  if(!dadosCarregados) return;
+  if(obraDaNotificacao !== undefined){
+    estadoRestaurado = true; // notificação vence a restauração
+    const id = obraDaNotificacao; obraDaNotificacao = undefined;
+    if(id && obraById(id)) openObra(id);
+    else { obraAberta = null; showView('inicio'); renderAll(); }
+    return;
+  }
+  restauraEstado();
+}
+OBRA_PUSH.aoAbrirNotificacao(id => { obraDaNotificacao = id; depoisDoPrimeiroSnapshot(); });
+
 /* ---------- go: espera auth e liga o tempo real ---------- */
 function bootCloud(){
+  let tokenFcmSincronizado = false; // uma vez por login — não a cada snapshot
   CLOUD.onAuth(user=>{
     if(unwatch){ unwatch(); unwatch=null; }
     if(!user){
+      dadosCarregados = false;
+      tokenFcmSincronizado = false;
+      try{ localStorage.removeItem(ESTADO_KEY); }catch(e){}
+      estadoRestaurado = false;
+      obraDaNotificacao = undefined; // notificação de outra conta não pode abrir obra desta
       conviteNotifUid=null; esconderConviteNotif();
       closeSheet(); sheet.textContent = '';
       db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;
@@ -1648,10 +1667,17 @@ function bootCloud(){
       if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
       const novo = normaliza(blob);
       // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
-      if(canon(novo) === canon(db)) return;
-      db = novo;
-      if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
-      renderAll();
+      if(canon(novo) !== canon(db)){
+        db = novo;
+        if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
+        renderAll();
+      }
+      dadosCarregados = true;
+      if(!tokenFcmSincronizado){
+        tokenFcmSincronizado = true;
+        OBRA_PUSH.sincronizarToken?.(); // no-op na web; nativo troca o token se o FCM já rotacionou o antigo
+      }
+      depoisDoPrimeiroSnapshot();
     });
   });
 }
@@ -1736,4 +1762,34 @@ window.addEventListener('unhandledrejection', e=>{
 function ligaSync(){ renderSync(CLOUD.estado()); }
 if(window.CLOUD){ bootCloud(); ligaSync(); }
 else window.addEventListener('cloud-pronto', ()=>{ bootCloud(); ligaSync(); });
+
+/* ---------- app nativo: barra de status, splash e segundo plano ---------- */
+if(OBRA_NATIVO.ehNativo()){
+  OBRA_NATIVO.barraStatus(temaClaro());
+  const esconder = ()=>OBRA_NATIVO.esconderSplash();
+  if(window.CLOUD) CLOUD.ready.then(esconder, esconder);
+  else window.addEventListener('cloud-pronto', ()=>CLOUD.ready.then(esconder, esconder), { once:true });
+  setTimeout(esconder, 8000); // teto: primeira abertura sem rede não pode prender no splash
+  // iOS pode matar o app em segundo plano: entrega ao SDK o que estiver pendente
+  OBRA_NATIVO.aoSegundoPlano(()=>{ if(window.CLOUD) CLOUD.tentarDeNovo().catch(()=>{}); });
+
+  /* Atualização só pela App Store: avisa quando a produção declara versão maior. */
+  const VERSAO_DISPENSADA = 'custta-versao-dispensada';
+  fetch('https://app-construcao-civil.vercel.app/versao.json', { cache:'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(v => {
+      if(!v || !v.loja || !/^itms-apps:\/\//.test(v.loja)) return;
+      if(!OBRA_CALC.versaoMaior(v.versao, window.APP_VERSAO)) return;
+      let dispensada = null; try{ dispensada = localStorage.getItem(VERSAO_DISPENSADA); }catch(e){}
+      if(dispensada === v.versao) return;
+      $('#ajVersaoLoja').href = v.loja;
+      $('#ajVersao').classList.remove('hidden');
+      $('#ajVersaoFechar').onclick = ()=>{
+        try{ localStorage.setItem(VERSAO_DISPENSADA, v.versao); }catch(e){}
+        $('#ajVersao').classList.add('hidden');
+      };
+    })
+    .catch(()=>{}); // offline: sem aviso, sem erro
+}
+
 renderAll(); // primeiro paint (vazio) enquanto a nuvem responde

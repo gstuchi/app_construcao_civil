@@ -25,4 +25,8 @@ const scriptsInline = [...index.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)
   .filter(m => m[1].trim());
 assert.strictEqual(scriptsInline.length, 0, 'index.html ainda contém JavaScript inline');
 
+const versaoHeaders = vercel.headers.find(h => h.source === '/versao.json');
+assert.ok(versaoHeaders, 'versao.json precisa de CORS para o app nativo');
+assert.deepStrictEqual(versaoHeaders.headers.find(h => h.key === 'Access-Control-Allow-Origin'), { key:'Access-Control-Allow-Origin', value:'capacitor://localhost' });
+
 console.log('ok - headers e CSP bloqueiam scripts inline e embedding');

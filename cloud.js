@@ -9,7 +9,7 @@ import {
   sendEmailVerification, reload,
 } from './vendor/firebase/firebase-auth.js';
 import {
-  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
   doc, setDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
 } from './vendor/firebase/firebase-firestore.js';
@@ -51,8 +51,11 @@ async function contaExclusiva(acao){
     });
   }finally{ await registrarAba(); }
 }
+/* WKWebView não tem abas: o gerenciador multi-aba só acrescenta coordenação inútil
+   e depende de APIs que o iOS pode suspender em segundo plano. */
+const nativo = !!window.OBRA_NATIVO?.ehNativo();
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: persistentLocalCache({ tabManager: nativo ? persistentSingleTabManager({}) : persistentMultipleTabManager() }),
 });
 
 let currentUser = null;
@@ -451,6 +454,15 @@ window.CLOUD = {
   removePushSub(chave){
     if(!currentUser) return Promise.resolve();
     return setDoc(doc(db, 'push', currentUser.uid), { subs: { [chave]: deleteField() } }, { merge: true });
+  },
+  /* Token FCM do app iOS. Mesmo documento, campo separado: web e nativo convivem. */
+  savePushToken(chave, dados){
+    if(!currentUser) return Promise.resolve();
+    return setDoc(doc(db, 'push', currentUser.uid), { tokens: { [chave]: dados } }, { merge: true });
+  },
+  removePushToken(chave){
+    if(!currentUser) return Promise.resolve();
+    return setDoc(doc(db, 'push', currentUser.uid), { tokens: { [chave]: deleteField() } }, { merge: true });
   },
 };
 window.dispatchEvent(new Event('cloud-pronto'));

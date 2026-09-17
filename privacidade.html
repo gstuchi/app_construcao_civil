@@ -12,7 +12,7 @@
   <div class="brand">cus<span>tt</span>a<span>.</span></div>
   <h1>Política de Privacidade</h1>
   <p class="lead">Esta política explica como a Custta trata dados pessoais e informações cadastradas no aplicativo de controle de custos por obra.</p>
-  <div class="meta"><strong>Rascunho da próxima versão:</strong> 9 de setembro de 2026. Responsável será confirmado antes da publicação definitiva.</div>
+  <div class="meta"><strong>Rascunho da próxima versão:</strong> 16 de setembro de 2026. Responsável será confirmado antes da publicação definitiva.</div>
 
   <h2>1. Dados tratados</h2>
   <p>A Custta trata somente os dados necessários para oferecer e proteger o serviço:</p>
@@ -41,6 +41,8 @@
   <p>O aplicativo utiliza armazenamento local no dispositivo e serviços de nuvem para autenticação e sincronização. A infraestrutura pode envolver <strong>Google Firebase</strong> e <strong>Vercel</strong>, que tratam dados conforme seus próprios termos e medidas de segurança. O acesso aos dados de cada conta é isolado por regras de autorização.</p>
 
   <p>Quando o monitoramento está configurado, utilizamos <strong>Sentry</strong> para receber diagnósticos técnicos de falhas: categoria do erro, versão do aplicativo, horário e arquivo/linha do código. Mensagens livres, dados das obras, e-mail, identificador da conta, cookies, parâmetros de URL e histórico de cliques não são incluídos nos eventos. Não usamos gravação de sessão (replay) nem rastreamento de desempenho. O serviço recebe a conexão de rede, incluindo endereço IP para transporte; a integração substitui o IP do evento pelo valor fixo 0.0.0.0 para impedir identificação e geolocalização no diagnóstico. O diagnóstico local mantém até 20 erros em memória e é descartado ao fechar ou recarregar a página.</p>
+
+  <p>No aplicativo para iPhone, as notificações usam o Firebase Cloud Messaging (Google) e a Apple Push Notification service. Para isso guardamos um token de dispositivo, que identifica o aparelho apenas para entregar o resumo diário. O token é apagado quando você desliga as notificações, sai da conta ou apaga a conta.</p>
 
   <h2>5. Instagram e Meta</h2>
   <p>Quando uma pessoa interage com a Custta pelo Instagram, a Meta pode fornecer dados necessários para receber e responder mensagens, comentários e interações, conforme as permissões autorizadas e as políticas da plataforma. A Custta usa esses dados somente para atendimento, moderação e comunicação relacionada ao produto. Não vendemos dados de mensagens ou perfis.</p>

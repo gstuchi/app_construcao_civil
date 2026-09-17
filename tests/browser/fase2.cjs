@@ -77,7 +77,9 @@ const ROOT=path.resolve(__dirname,'../..');
     await page.locator('#contaSenha').fill('Nova-local-456!'); await page.locator('#contaConfirmacao').fill('APAGAR');
     const antesDeApagar=await page.evaluate(()=>window.__documentoId);
     await page.locator('#contaEnviar').click();
-    await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !document.querySelector('.conta-dialog') && document.body.classList.contains('locked'),antesDeApagar);
+    /* Esperas de recarga: flush da fila (teto de 5s no cloud.js) + terminate + clearIndexedDbPersistence
+       + reload. No runner do GitHub isso passa dos 15s padrão da suíte, então estas duas ganham folga. */
+    await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !document.querySelector('.conta-dialog') && document.body.classList.contains('locked'),antesDeApagar,{timeout:30000});
     await env.withSecurityRulesDisabled(async ctx=>{
       const adminDb=ctx.firestore();
       for(const colecao of ['dados','perfis','push']) assert.equal((await getDoc(doc(adminDb,colecao,uid))).exists(),false);
@@ -100,7 +102,9 @@ const ROOT=path.resolve(__dirname,'../..');
     console.log('ok - outra aba aberta impede saída e preserva sessão');
     const antesDeSair=await page.evaluate(()=>window.__documentoId);
     await page.evaluate(()=>{ CLOUD.logout().catch(e=>window.__falhaSaida=e.code); });
-    await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked'),antesDeSair);
+    /* Esperas de recarga: flush da fila (teto de 5s no cloud.js) + terminate + clearIndexedDbPersistence
+       + reload. No runner do GitHub isso passa dos 15s padrão da suíte, então estas duas ganham folga. */
+    await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked'),antesDeSair,{timeout:30000});
     assert.equal(await page.evaluate(()=>localStorage.getItem('custta-limpar-cache')),null);
     console.log('ok - logout normal sincroniza, limpa cache e recarrega sem sessão');
     await page.locator('#lEmail').fill('logout-fase2@example.com');

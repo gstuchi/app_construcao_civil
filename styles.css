@@ -597,7 +597,8 @@
   .money{display:flex;align-items:center;gap:8px}
   .money>b{font-weight:600;color:var(--muted);font-size:.95em}
   .money>input{flex:1;min-width:0}
-.panel a{color:var(--accent)}.conta-dialog{background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:22px;padding:24px;width:calc(100% - 32px);max-width:480px;max-height:90dvh;overflow:auto;margin:auto;font-size:16px}.conta-dialog::backdrop{background:rgba(0,0,0,.65)}.conta-dialog p{margin:16px 0;line-height:1.5}.conta-dialog input{width:100%;font-size:16px}.conta-dialog button{min-height:44px}
+.panel a{color:var(--accent)}.conta-dialog{background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:22px;padding:24px;width:calc(100% - 32px);max-width:480px;max-height:90dvh;overflow:auto;margin:auto;font-size:16px}.conta-dialog::backdrop{background:rgba(0,0,0,.65)}
+.confirma-dialog .confirma-msg{margin:0 0 18px;font-size:16px;line-height:1.45;overflow-wrap:anywhere}.conta-dialog p{margin:16px 0;line-height:1.5}.conta-dialog input{width:100%;font-size:16px}.conta-dialog button{min-height:44px}
 
 /* Declarações estáticas extraídas dos templates. */
 body .layout-1{top:15%;left:10%;animation-delay:1.8s}

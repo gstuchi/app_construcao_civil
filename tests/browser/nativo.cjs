@@ -66,6 +66,30 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       await page.waitForFunction(async()=> (await navigator.serviceWorker.getRegistrations()).length === 1, null, { timeout:5000 });
       await ctx.close();
     }
+    /* ---- Task 4: diálogos ---- */
+    {
+      const { ctx, page } = await abrir(browser, { nativo:true });
+      await page.evaluate(()=>{ showView('ajustes'); renderAjustes(); });
+      await page.locator('#ajTopicos .li-del').first().click();
+      const dlg = page.locator('dialog.confirma-dialog');
+      assert.equal(await dlg.locator('.confirma-msg').textContent(), 'Este tópico tem gastos lançados. Mova ou apague os gastos antes.');
+      await dlg.locator('[data-acao=confirmar]').click();
+      await page.evaluate(()=>openObra('o1'));
+      await page.locator('#oGastos .li-del').first().click();
+      await dlg.locator('[data-acao=cancelar]').click();
+      assert.equal(await page.evaluate(()=>obraById('o1').gastos.length), 1, 'cancelar mantém gasto');
+      await page.locator('#oGastos .li-del').first().click();
+      await dlg.locator('[data-acao=confirmar]').click();
+      // fechar o <dialog> dispara o evento 'close' como tarefa assíncrona: espera o efeito, não só o clique.
+      await page.waitForFunction(()=>obraById('o1').gastos.length === 0);
+      await page.evaluate(()=>{ db.obras[0].gastos=[]; showView('ajustes'); renderAjustes(); });
+      await page.locator('#ajTopicos .li-del').first().click();
+      assert.equal(await dlg.locator('.confirma-msg').textContent(), 'Remover o tópico “<img src=x onerror=alert(1)>”?', 'nome aparece literal');
+      await dlg.locator('[data-acao=confirmar]').click();
+      await page.waitForFunction(()=>db.config.topicosCustom.length === 0);
+      assert.deepEqual(await page.evaluate(()=>errosPagina), []);
+      await ctx.close();
+    }
     console.log('ok - nativo');
   }finally{ await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

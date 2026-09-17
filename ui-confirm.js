@@ -76,4 +76,32 @@
   window.addEventListener('cloud-cache-bloqueado',mostrarCache);
   window.addEventListener('cloud-pronto',()=>{ if(CLOUD.cacheBloqueado()) mostrarCache(); });
   window.OBRA_CONTA = { abrir };
+
+  /* confirm()/alert() viram no-op silencioso no WKWebView sem WKUIDelegate.
+     Mensagem entra por textContent: nome de obra e tópico são texto do usuário. */
+  function dialogoSimples(msg, { confirmar, cancelar }){
+    return new Promise(resolve=>{
+      const d = document.createElement('dialog');
+      d.className = 'conta-dialog confirma-dialog';
+      const p = document.createElement('p'); p.className = 'confirma-msg'; p.textContent = msg;
+      const acoes = document.createElement('div'); acoes.className = 'sheet-actions';
+      const botao = (texto, classe, acao)=>{
+        const b = document.createElement('button'); b.type = 'button'; b.className = classe;
+        b.dataset.acao = acao; b.textContent = texto; acoes.append(b); return b;
+      };
+      const bCancelar = cancelar ? botao(cancelar, 'btn ghost', 'cancelar') : null;
+      const bConfirmar = botao(confirmar, 'btn primary', 'confirmar');
+      let resposta = false;
+      d.append(p, acoes);
+      d.addEventListener('close', ()=>{ d.remove(); resolve(resposta); }, { once:true });
+      if(bCancelar) bCancelar.onclick = ()=>d.close();
+      bConfirmar.onclick = ()=>{ resposta = true; d.close(); };
+      document.body.append(d); d.showModal();
+      (bCancelar || bConfirmar).focus(); // ação destrutiva nunca é o foco inicial
+    });
+  }
+  window.OBRA_CONFIRM = {
+    perguntar: (msg, { confirmar = 'Confirmar', cancelar = 'Cancelar' } = {}) => dialogoSimples(msg, { confirmar, cancelar }),
+    avisar: msg => dialogoSimples(msg, { confirmar:'Entendi', cancelar:null }).then(()=>{}),
+  };
 })();

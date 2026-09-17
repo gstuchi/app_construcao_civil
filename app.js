@@ -392,7 +392,7 @@ function renderObra(){
   on('#oPronta',       ()=>mudarFase(o.id,'pronta'));
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
-  on('#oDesfazer',     ()=>{ if(confirm('Desfazer a venda? A obra volta pra “Pronta”.')){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
+  on('#oDesfazer',     async()=>{ if(await OBRA_CONFIRM.perguntar('Desfazer a venda? A obra volta pra “Pronta”.', { confirmar:'Desfazer venda' })){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
 }
 
 function renderAfazeres(o){
@@ -648,12 +648,13 @@ function gastoRow(o, g, opts){
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
   const del = el('button','li-del','×');
-  del.onclick = ()=>{
+  del.onclick = async()=>{
     const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
-      // exclusão simples usa confirm, não abre folha: nada a fechar, só voltar
-      if(confirm('Excluir este gasto?')){
-        oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll();
+      // exclusão simples usa diálogo curto, não abre folha: nada a fechar, só voltar
+      if(await OBRA_CONFIRM.perguntar('Excluir este gasto?', { confirmar:'Excluir' })){
+        const atual = obraById(o.id); if(!atual) return;
+        atual.gastos = atual.gastos.filter(x=>x.id!==g.id); save(); renderAll();
         if(voltar) voltar();
       }
       return;
@@ -735,9 +736,9 @@ function formEditarObra(o){
     oo.areaM2 = area>0 ? area : null;
     save(); closeSheet(); renderAll();
   };
-  $('#cDel').onclick = ()=>{
+  $('#cDel').onclick = async()=>{
     const n = o.gastos.length;
-    if(confirm(`Apagar “${o.nome}”?` + (n?` Os ${n} lançamento(s) dela serão perdidos.`:''))){
+    if(await OBRA_CONFIRM.perguntar(`Apagar “${o.nome}”?` + (n?` Os ${n} lançamento(s) dela serão perdidos.`:''), { confirmar:'Apagar obra' })){
       db.obras = db.obras.filter(x=>x.id!==o.id);
       obraAberta = null;
       save(); closeSheet(); showView('inicio'); renderAll();
@@ -1466,10 +1467,10 @@ function renderAjustes(){
     li.innerHTML = `<div class="av ic-brand">${ICON('etiqueta')}</div>
       <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
     const del = el('button','li-del','×');
-    del.onclick = ()=>{
+    del.onclick = async()=>{
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
-      if(emUso){ alert('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
-      if(confirm(`Remover o tópico “${t.nm}”?`)){
+      if(emUso){ await OBRA_CONFIRM.avisar('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
+      if(await OBRA_CONFIRM.perguntar(`Remover o tópico “${t.nm}”?`, { confirmar:'Remover' })){
         db.config.topicosCustom = db.config.topicosCustom.filter(x=>x.id!==t.id);
         save(); renderAll();
       }

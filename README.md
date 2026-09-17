@@ -105,3 +105,7 @@ O SDK Firebase 12.18.0 fica em `vendor/firebase/`, com licença e módulos versi
 - GitHub Actions executa os testes em pushes para main e pull requests.
 
 CSP permite scripts e estilos locais, sem `unsafe-inline`. CSS está em arquivos; propriedades dinâmicas dos gráficos são controladas por JavaScript. Textos são escapados na renderização. Novas edições limitam nome a 120, descrição e afazer a 500, tópico a 80 caracteres. Dados antigos não são truncados por esses limites; normalização preserva campos desconhecidos para compatibilidade entre versões. Taxa aceita valores maiores que zero e até 20% ao mês; entrada inválida mostra mensagem e mantém taxa anterior.
+
+## Empacotamento nativo — Fase 4
+
+O mesmo código roda como app iOS via Capacitor (`ios/`, `npm run build:www`, `npm run cap:sync`), com share sheet, push nativo (FCM), haptics, barra de status e splash nativos, sem mudar a arquitetura vanilla nem exigir build no deploy web. Código concluído em `feat/fase4`; build, TestFlight e push real dependem de matrícula Apple — ver [checklist de aparelho](docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).

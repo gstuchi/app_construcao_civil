@@ -14,7 +14,8 @@ Leia `PRODUCT.md` antes de mexer em UI: usuário-alvo não técnico, celular pri
 
 ```bash
 npm test                 # unit + rules
-npm run test:unit        # node --test nos tests/*.cjs (sem browser, sem rede)
+npm run test:unit        # node --test nos tests/*.cjs e *.mjs (sem browser, sem rede)
+npm run test:browser     # emuladores + servidor estático + suítes Playwright de tests/browser/
 npm run test:rules       # sobe o emulador do Firestore e roda tests/rules.test.mjs (precisa Java)
 npm run rules:deploy     # firebase deploy --only firestore:rules
 npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
@@ -24,9 +25,11 @@ node --test tests/calc.test.cjs                     # um arquivo só
 node --test --test-name-pattern="parcelas" tests/rules.test.mjs
 ```
 
-`package.json` existe só para teste/deploy — **nada dele é empacotado no app**. Não adicione dependência de runtime ao browser.
+`package.json` existe para teste, manutenção do SDK local, Capacitor e a função de cron do servidor (`api/`) — **nada dele é empacotado no app web**. Não adicione dependência de runtime ao browser.
 
-Para rodar o app num browser de verdade (servir a raiz + dirigir com Playwright, com os bypasses de splash/login), use a skill de projeto `verify` (`.claude/skills/verify/SKILL.md`).
+CSP estrita no `vercel.json` (`default-src 'none'`, `script-src 'self'`, `style-src-attr 'none'`): nada de `<style>`, `style="..."` em atributo ou `onclick=` no HTML; Firebase e Sentry ficam versionados em `vendor/` (`npm run vendor:firebase` / `vendor:sentry`, a CI falha se o diff não estiver limpo).
+
+Para dirigir o app num browser de verdade, suba `node tests/browser/servidor.cjs` (serve a raiz em :8123 com os headers do `vercel.json`) e chame a suíte direto — `tests/browser/rodar.cjs` só orquestra. As suítes com dados sintéticos (`mobile`, `cartao`, `nativo`, `contraste`) fazem stub de `window.CLOUD` e de `sessionStorage.splashVista` via `addInitScript`; as que usam SDK real (`fase1/2/3`, `persistencia`, `sync`) exigem os emuladores (`CUSTTA_EMULADORES=1`).
 
 ## Arquitetura
 
@@ -39,10 +42,13 @@ Scripts clássicos com globais, carregados na ordem declarada no fim de `index.h
 | [auth.js](auth.js) | — | overlay de login (`#auth` + `body.locked`) |
 | [nativo.js](nativo.js) | `OBRA_NATIVO` + `module.exports` | único ponto que toca `window.Capacitor`; no browser tudo é neutro |
 | [push.js](push.js) | `OBRA_PUSH` + `module.exports` | notificações: Web Push na web, FCM no app iOS |
-| [app.js](app.js) | `db`, `renderAll`, `OBRA_PUSH` | todo o estado e render da UI (~1350 linhas) |
+| [app.js](app.js) | `db`, `renderAll`, `OBRA_DIAG` | todo o estado e render da UI (~1800 linhas) |
+| [ui-confirm.js](ui-confirm.js) | `OBRA_CONTA`, `OBRA_CONFIRM` | `<dialog>` de conta e as confirmações que substituem `confirm()`/`alert()` |
+| [share.js](share.js) | `OBRA_SHARE` + `module.exports` | exportação JSON/CSV e o recorte `dadosDaObra` |
 | [teclado.js](teclado.js) | `TECLADO` | teclado numérico próprio para digitar valor |
 | [icons.js](icons.js) | `ICON` | SVGs inline (`data-ico`) |
-| [index.html](index.html) | — | markup **e todo o CSS** (temas, skins, componentes) |
+| [styles.css](styles.css) | — | **todo o CSS do app** (temas, skins, componentes); `privacidade.css` serve só `privacidade.html` |
+| [index.html](index.html) | — | markup; sem CSS e sem JavaScript inline (exigência da CSP) |
 
 ### Estado e sincronização
 
@@ -58,7 +64,7 @@ Consequências práticas:
 
 ### Fronteira de segurança
 
-A `apiKey` em `cloud.js` é **pública por design**. A segurança está em [firestore.rules](firestore.rules), que valida a forma do blob (`hasOnly`, limites de tamanho, faixa de `taxaMensal`).
+A `apiKey` em `cloud.js` é **pública por design**. A segurança está em [firestore.rules](firestore.rules), que valida a forma do blob (`hasOnly`, limites de tamanho, faixa de `taxaMensal`) em `dados/{uid}`, `perfis/{uid}` e `push/{uid}`.
 
 Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as rules não forem atualizadas junto. Ao mudar o formato do estado: editar `firestore.rules`, adicionar caso em `tests/rules.test.mjs`, `npm run test:rules`, `npm run rules:deploy`. Nunca editar rules pelo console do Firebase.
 
@@ -76,10 +82,10 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 ## UI
 
-- Todo o CSS vive em `index.html`. Cores vêm de custom properties; tema (`data-theme="light"`) e skin (`data-skin="azul"`) são atributos no `<html>`, aplicados por um script inline no `<head>` antes do primeiro paint. Não hardcode cor fora das variáveis — quebra um dos quatro combos tema×skin.
+- Todo o CSS vive em `styles.css`. Cores vêm de custom properties; tema (`data-theme="light"`) e skin (`data-skin="azul"`) são atributos no `<html>`, aplicados por `tema.js` antes do primeiro paint. Não hardcode cor fora das variáveis — quebra um dos quatro combos tema×skin.
 - Views são `<section class="view" id="v-*">`; `showView(tab)` troca. Cada uma tem seu `render*()` em `app.js`.
 - **A navegação existe duplicada**: `aside.side` (desktop ≥900px) e `nav.tabs` (mobile), com os mesmos `data-tab`. Ao dirigir por browser, qualifique o seletor. Verifique mudanças visuais nos dois viewports.
-- Modais: `openSheet(html)` / `closeSheet()` (bottom sheet + backdrop). Feedback: `toast(msg)`.
+- Modais: `openSheet(html)` / `closeSheet()` (bottom sheet + backdrop); conta e confirmações usam `<dialog>` (`OBRA_CONTA.abrir`, `OBRA_CONFIRM.perguntar`). Feedback: `toast(msg, tipo)`.
 - Campos de dinheiro: `maskMoney(sel)` na entrada, `OBRA_CALC.parseNum` na leitura.
 
 Um hook PostToolUse (`.claude/settings.local.json`) roda o detector da skill `impeccable` após cada Edit/Write em arquivo de UI e devolve achados como system reminder.

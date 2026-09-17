@@ -1291,56 +1291,8 @@ function aplicaSkin(skin){
 }
 
 /* ===== NOTIFICAÇÕES PUSH — inscrição por aparelho, resumo diário via cron ===== */
-const VAPID_PUBLICA = 'BEZVfZrOAgzNMnSS4Hpt-PKwchrfEaW5igUoXdZILQqBWdeC9D2RTp_-JfrTagRU4eK2FM0zC3U0GXYS2LUwiyk';
 const NOTIF_NOTA_PADRAO = 'Afazeres pendentes, parcelas do mês e lembrete de lançar gastos. '
   + 'Chega mesmo com o app fechado. Vale neste aparelho.';
-
-const pushSuportado = () =>
-  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-
-function b64ToU8(b64){
-  const pad = '='.repeat((4 - b64.length % 4) % 4);
-  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
-  return Uint8Array.from(raw, c => c.charCodeAt(0));
-}
-/* hash curto do endpoint — vira nome de campo no Firestore (sem . nem /) */
-function hashEndpoint(s){
-  let h = 5381;
-  for(let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
-  return h.toString(36);
-}
-async function pushAtual(){
-  const reg = await navigator.serviceWorker.getRegistration();
-  return reg?.pushManager ? reg.pushManager.getSubscription() : null;
-}
-async function ativaPush(){
-  const perm = await Notification.requestPermission();
-  if(perm !== 'granted') return false;
-  const reg = await navigator.serviceWorker.getRegistration();
-  if(!reg?.active) throw new Error('Aguarde a preparação do aplicativo e tente novamente.');
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: b64ToU8(VAPID_PUBLICA),
-  });
-  const j = sub.toJSON();
-  try{
-    await CLOUD.savePushSub(hashEndpoint(sub.endpoint),
-      { endpoint: j.endpoint, keys: j.keys, criado: new Date().toISOString() });
-  }catch(err){
-    await sub.unsubscribe().catch(e=>registraErro('push-limpeza', e.message, e.stack));
-    throw err;
-  }
-  return true;
-}
-async function desativaPush(){
-  const sub = await pushAtual();
-  if(!sub) return;
-  const chave = hashEndpoint(sub.endpoint);
-  await sub.unsubscribe();
-  await CLOUD.removePushSub(chave);
-}
-/* auth.js chama isto antes do logout — a inscrição precisa morrer junto com a sessão. */
-window.OBRA_PUSH = { desativa: () => pushSuportado() ? desativaPush() : Promise.resolve() };
 
 /* Convite após login: uma resposta encerra os convites nesta conta/aparelho.
    A ativação continua disponível em Ajustes. Datas antigas também contam como resposta. */
@@ -1352,9 +1304,10 @@ function esconderConviteNotif(){ notifInvite?.classList.add('hidden'); }
 async function atualizarConviteNotif(user){
   esconderConviteNotif();
   conviteNotifUid=user?.uid||null;
-  if(!user || !pushSuportado() || Notification.permission!=='default') return;
+  if(!user || !OBRA_PUSH.suportado()) return;
   try{
-    if(await pushAtual()) return;
+    if(await OBRA_PUSH.permissao()!=='default') return;
+    if(await OBRA_PUSH.inscrito()) return;
     if(convitesRespondidos.has(user.uid) || localStorage.getItem(chaveConviteNotif(user.uid))!==null) return;
     if(conviteNotifUid===user.uid) notifInvite.classList.remove('hidden');
   }catch(err){ registraErro('push-convite',err.message,err.stack); }
@@ -1370,7 +1323,7 @@ $('#notifAtivar').onclick=async()=>{
   const b=$('#notifAtivar'); b.disabled=true;
   encerrarConviteNotif();
   try{
-    const ok=await ativaPush();
+    const ok=await OBRA_PUSH.ativar();
     esconderConviteNotif();
     toast(ok?'Notificações ativadas neste aparelho':'Permissão não concedida.',ok?undefined:'erro');
   }catch(err){ toast('Não deu pra ativar agora. Tente novamente.', 'erro'); }
@@ -1420,7 +1373,7 @@ function renderAjustes(){
 
   const tgN = $('#ajNotif');
   if(tgN){
-    if(!pushSuportado()){
+    if(!OBRA_PUSH.suportado()){
       /* iPhone no Safari (fora do app instalado) não expõe a API de push —
          em vez de esconder o painel, ensina o caminho */
       tgN.disabled = true;
@@ -1431,8 +1384,8 @@ function renderAjustes(){
           + 'toque em Compartilhar e "Adicionar à Tela de Início". Depois abra o app pelo '
           + 'ícone novo e ative aqui. Precisa de iOS 16.4 ou mais novo.';
     }else{
-      pushAtual().then(sub => {
-        const on = !!sub && Notification.permission === 'granted';
+      Promise.all([OBRA_PUSH.inscrito(), OBRA_PUSH.permissao()]).then(([inscrito, perm]) => {
+        const on = inscrito && perm === 'granted';
         tgN.classList.toggle('on', on);
         tgN.setAttribute('aria-checked', String(on));
       });
@@ -1440,12 +1393,13 @@ function renderAjustes(){
         const nota = $('#ajNotifNota');
         nota.textContent = NOTIF_NOTA_PADRAO;
         try{
-          const sub = await pushAtual();
-          if(sub){
-            await desativaPush();
+          if(await OBRA_PUSH.inscrito()){
+            await OBRA_PUSH.desativar();
           }else{
-            const ok = await ativaPush();
-            if(!ok) nota.textContent = 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
+            const ok = await OBRA_PUSH.ativar();
+            if(!ok) nota.textContent = OBRA_NATIVO.ehNativo()
+              ? 'Permissão negada. Libere em Ajustes do iPhone › Custta › Notificações e tente de novo.'
+              : 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.';
           }
         }catch(err){
           nota.textContent = 'Não deu pra ativar agora. Tente de novo.';

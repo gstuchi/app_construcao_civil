@@ -233,26 +233,25 @@ async function capturar(saidaDir) {
     await page.evaluate(() => { document.querySelector('.app').style.marginTop = ''; }); // só valia pra essa foto
 
     // 2) Detalhe da obra — KPIs, donut pequeno, afazeres. nav.tabs e o FAB são
-    // fixos no rodapé/canto e cobrem sempre a mesma faixa da tela; rola só o
-    // suficiente pra essa faixa cair exatamente entre dois afazeres (nunca no
-    // meio do texto de um), mostrando 1-2 afazeres inteiros.
+    // fixos no rodapé/canto; a lista de afazeres tem itens muito próximos (só
+    // ~2px de intervalo), então qualquer rolagem que caiba um 2º afazer inteiro
+    // corta o cabeçalho "custta." no topo. Prioriza o cabeçalho limpo: sem
+    // rolar (scrollY=0), esconde os afazeres além do primeiro pra fechar a
+    // lista com uma borda limpa em vez de deixar o 2º sangrando sob a nav.
     await page.evaluate(() => openObra('o1'));
     await page.waitForFunction(() => document.querySelectorAll('#obraBody .kpi').length === 4
       && document.querySelectorAll('#oDonut circle').length > 0);
     await page.evaluate(() => {
-      const navTop = document.querySelector('nav.tabs').getBoundingClientRect().top;
       const itens = [...document.querySelectorAll('#oAfazeres li')];
-      for (let i = 0; i < itens.length - 1; i++) {
-        const meio = (itens[i].getBoundingClientRect().bottom + itens[i + 1].getBoundingClientRect().top) / 2;
-        const rolagem = meio - navTop;
-        if (rolagem >= 0) { window.scrollBy(0, rolagem); return; }
-      }
+      itens.slice(1).forEach(li => { li.style.display = 'none'; });
     });
     await foto('02-obra.png');
 
     // 3) Relatório — a tabela é mais larga que a tela (rolagem horizontal real do
     // app); rola até alinhar a coluna "Data" à esquerda, revelando Bruto/Corrigido
-    // sem cortar nenhum valor no meio.
+    // por completo (a coluna "Correção" fica cortada à direita — aceitável, é a
+    // 5ª coluna). Na vertical, ajusta pelo mínimo necessário pra nenhuma linha
+    // ficar pela metade sob a nav fixa do rodapé.
     await page.evaluate(() => { showView('relatorio'); renderRelatorio(); });
     await page.waitForFunction(() => document.querySelectorAll('.rep-table tbody tr').length > 0);
     await page.evaluate(() => {
@@ -260,23 +259,38 @@ async function capturar(saidaDir) {
       const th = document.querySelectorAll('.rep-table thead th')[1];
       scroller.scrollLeft += th.getBoundingClientRect().left - scroller.getBoundingClientRect().left;
     });
+    await page.evaluate(() => {
+      const navTop = document.querySelector('nav.tabs').getBoundingClientRect().top;
+      const linhas = [...document.querySelectorAll('.rep-table tbody tr')]
+        .map(tr => tr.getBoundingClientRect()).filter(r => r.bottom > r.top);
+      for (let i = 0; i < linhas.length - 1; i++) {
+        const meio = (linhas[i].bottom + linhas[i + 1].top) / 2;
+        const rolagem = meio - navTop;
+        if (rolagem >= 0) { window.scrollBy(0, rolagem); return; }
+      }
+    });
     await foto('03-relatorio.png');
 
     // 4) Gráficos — evolução + gasto por mês inteiros na tela (o donut+legenda
-    // por si só já é mais alto que a viewport; melhor não cortar gráfico nenhum
-    // pela metade do que mostrar os três espremidos).
+    // por si só já é mais alto que a viewport). Rola exatamente até o topo do
+    // card "Evolução da obra" — ele começa inteiro na borda superior, sem
+    // sobrar tirinha cortada de outro card acima.
     await page.evaluate(() => { showView('graficos'); renderGraficos(); });
     await page.waitForFunction(() => document.querySelectorAll('#grafBody svg').length >= 3);
     await page.evaluate(() => {
       const evo = document.querySelector('#evoSvgG').closest('.panel');
-      const mes = document.querySelector('#mesSvgG').closest('.panel');
-      const topo = evo.getBoundingClientRect().top + window.scrollY;
-      const fundo = mes.getBoundingClientRect().bottom + window.scrollY;
-      window.scrollTo(0, (topo + fundo) / 2 - window.innerHeight / 2);
+      window.scrollTo(0, evo.getBoundingClientRect().top + window.scrollY);
+      // o botão "Imprimir/salvar PDF" vem logo depois do card "Gasto por mês" e
+      // sobra bem pertinho da nav fixa — só a pontinha dele apareceria, cortada.
+      // Melhor escondê-lo nessa foto do que deixar essa tirinha.
+      const btn = document.querySelector('#grafPrint');
+      if (btn) btn.style.display = 'none';
     });
     await foto('04-graficos.png');
 
-    // 5) Será que vale a pena? — simulador com cenário preenchido
+    // 5) Será que vale a pena? — simulador com cenário preenchido. Sem rolagem
+    // horizontal: o rótulo da linha (1ª coluna) tem prioridade e fica inteiro;
+    // a coluna "Pelo corrigido" é que fica cortada à direita.
     await page.evaluate(() => { showView('simula'); renderSimula(); });
     await page.evaluate(() => {
       document.querySelector('#simObra').value = 'o2';
@@ -285,12 +299,6 @@ async function capturar(saidaDir) {
       simulaCompute();
     });
     await page.waitForFunction(() => document.querySelector('.card.saldo .k-val')?.textContent.trim().length > 0);
-    // a tabela "pelo bruto/pelo corrigido" também estica um pouco além da tela;
-    // rola pro fim pra mostrar a coluna "Pelo corrigido" completa.
-    await page.evaluate(() => {
-      const scroller = document.querySelector('#simOut .rep-scroll');
-      if (scroller) scroller.scrollLeft = scroller.scrollWidth - scroller.clientWidth;
-    });
     await foto('05-simulador.png');
 
     const erros = await page.evaluate(() => errosPagina);

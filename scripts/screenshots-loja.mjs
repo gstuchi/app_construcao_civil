@@ -218,14 +218,36 @@ async function capturar(saidaDir) {
       console.log(`ok - ${nome} (${width}x${height})`);
     };
 
-    // 1) Início — lista de obras + comparativo
+    // 1) Início — lista de obras + comparativo. Com só 3 obras o conteúdo fica mais
+    // baixo que a viewport (nav.tabs é fixa no rodapé); em vez de deixar toda a
+    // sobra como uma faixa vazia embaixo, distribui a diferença entre topo e
+    // rodapé — composição mais equilibrada, sem faixa vazia grande.
     await page.waitForFunction(() => document.querySelectorAll('#panelComp .hbar').length === 3);
+    await page.evaluate(() => {
+      const nav = document.querySelector('nav.tabs');
+      const app = document.querySelector('.app');
+      const folga = nav.getBoundingClientRect().top - app.getBoundingClientRect().bottom;
+      if (folga > 20) app.style.marginTop = Math.round(folga / 2) + 'px';
+    });
     await foto('01-inicio.png');
+    await page.evaluate(() => { document.querySelector('.app').style.marginTop = ''; }); // só valia pra essa foto
 
-    // 2) Detalhe da obra — KPIs, donut pequeno, afazeres
+    // 2) Detalhe da obra — KPIs, donut pequeno, afazeres. nav.tabs e o FAB são
+    // fixos no rodapé/canto e cobrem sempre a mesma faixa da tela; rola só o
+    // suficiente pra essa faixa cair exatamente entre dois afazeres (nunca no
+    // meio do texto de um), mostrando 1-2 afazeres inteiros.
     await page.evaluate(() => openObra('o1'));
     await page.waitForFunction(() => document.querySelectorAll('#obraBody .kpi').length === 4
       && document.querySelectorAll('#oDonut circle').length > 0);
+    await page.evaluate(() => {
+      const navTop = document.querySelector('nav.tabs').getBoundingClientRect().top;
+      const itens = [...document.querySelectorAll('#oAfazeres li')];
+      for (let i = 0; i < itens.length - 1; i++) {
+        const meio = (itens[i].getBoundingClientRect().bottom + itens[i + 1].getBoundingClientRect().top) / 2;
+        const rolagem = meio - navTop;
+        if (rolagem >= 0) { window.scrollBy(0, rolagem); return; }
+      }
+    });
     await foto('02-obra.png');
 
     // 3) Relatório — a tabela é mais larga que a tela (rolagem horizontal real do

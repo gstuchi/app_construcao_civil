@@ -89,6 +89,19 @@ A CSP definida no `vercel.json` é estrita (`default-src 'none'`,
 inline no HTML. Os SDKs do Firebase e do Sentry ficam versionados em `vendor/`,
 não são carregados de CDN, e a CI falha se o diff dessa pasta não estiver limpo.
 
+**Sentry:** o SDK fica local em `vendor/sentry/`; `sentry-config.js` só guarda
+DSN público, ambiente e release — DSN vazio desativa o envio. `sentry.js` só
+envia categoria e stack técnica, sem mensagem livre, dados de conta ou de
+obra; sem replay nem tracing; até 20 eventos por carregamento, com duplicatas
+limitadas por minuto; sem persistência offline. Nenhum token administrativo
+entra no cliente.
+
+**Limites de texto:** nome até 120 caracteres, descrição e afazer até 500,
+tópico até 80 (`dados.js`, `OBRA_DADOS.LIMITES`). Dado antigo não é truncado
+por esses limites — eles só valem para edição nova; a normalização preserva
+campos desconhecidos entre versões. A taxa mensal aceita valores maiores que
+zero e até 20% ao mês.
+
 ## Service worker e cache
 
 `sw.js` é network-first: online, sempre busca a versão mais recente; o cache

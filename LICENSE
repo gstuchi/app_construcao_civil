@@ -23,6 +23,11 @@ Nenhum outro direito é concedido.
 O nome "Custta", o logotipo e a identidade visual do aplicativo não são
 licenciados por este documento.
 
+Esta licença não restringe os direitos que os Termos de Serviço do GitHub concedem aos
+usuários da plataforma sobre repositórios públicos — visualizar o código e fazer fork
+dentro do GitHub. Esses direitos não incluem nenhuma das permissões negadas acima fora
+da plataforma.
+
 Bibliotecas de terceiros distribuídas neste repositório — entre elas os SDKs
 em vendor/ — mantêm suas próprias licenças, que prevalecem sobre esta para os
 arquivos correspondentes.
@@ -37,7 +42,10 @@ English summary — Copyright (c) 2026 Giovani Stuchi. All rights reserved.
 
 This source code is published for reading and technical evaluation only. Any
 use, copying, modification, redistribution, or publication to an application
-store requires prior written permission from the copyright holder. Third-party
+store requires prior written permission from the copyright holder. Quoting short
+excerpts with attribution for educational or journalistic purposes is permitted.
+The rights GitHub's Terms of Service grant other users over public repositories
+(viewing and forking within GitHub) are not restricted by this license. Third-party
 libraries vendored in this repository keep their own licenses. The software is
 provided "as is", without warranty of any kind.
 

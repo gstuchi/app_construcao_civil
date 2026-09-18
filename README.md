@@ -16,7 +16,7 @@ PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro ren
   <tr>
     <td><img src="docs/img/inicio.png" width="260" alt="Lista de obras com total gasto por obra e comparativo entre elas"></td>
     <td><img src="docs/img/obra.png" width="260" alt="Tela da obra com total gasto, valor corrigido pelo banco, contas a pagar e venda estimada"></td>
-    <td><img src="docs/img/graficos.png" width="260" alt="Graficos de evolucao da obra e de gasto por mes"></td>
+    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos de evolução da obra e de gasto por mês"></td>
   </tr>
 </table>
 

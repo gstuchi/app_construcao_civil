@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tamanhoPng, TELAS_README } from '../scripts/screenshots-loja.mjs';
@@ -120,9 +120,9 @@ test('todo link relativo da documentação viva aponta pra arquivo existente', (
       if (/^(https?:|mailto:|itms-apps:|#)/.test(destino)) continue;
       const semAncora = destino.split('#')[0];
       if (!semAncora) continue;
-      if (!existsSync(path.resolve(base, decodeURIComponent(semAncora)))) {
-        quebrados.push(`${arquivo} → ${destino}`);
-      }
+      const alvo = path.relative(RAIZ, path.resolve(base, decodeURIComponent(semAncora)));
+      const existe = versionados.includes(alvo) || versionados.some(f => f.startsWith(alvo.replace(/\/$/, '') + '/'));
+      if (!existe) quebrados.push(`${arquivo} → ${destino}`);
     }
   }
   assert.deepEqual(quebrados, [], 'link relativo apontando pro vazio');

@@ -24,10 +24,12 @@ canteiro — `obra`, `gasto`, `topico`, `fase`, `corrigido`, `afazer`.
 
 ## Testes
 
+Primeiro, `npm ci` (instala as ferramentas nas versões do lockfile).
+
 ```bash
 npm run test:unit     # node --test; sem rede e sem browser; é o que roda mais
 npm run test:rules    # emulador do Firestore; exige Java 21
-npm run test:browser  # emuladores + Playwright; exige npx playwright install chromium
+npm run test:browser  # emuladores + Playwright; exige Java 21 e npx playwright install chromium
 npm test              # unit + rules
 ```
 

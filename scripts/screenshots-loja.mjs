@@ -3,7 +3,8 @@
    Sobe o servidor estático de tests/browser/servidor.cjs, injeta dados sintéticos
    direto em `db` (sem Firestore, sem rede) e fotografa 5 telas em 1290×2796
    (iPhone 6.9"/6.7": viewport 430×932 com deviceScaleFactor 3).
-   Uso: node scripts/screenshots-loja.mjs [diretorio-de-saida] */
+   Uso: node scripts/screenshots-loja.mjs [diretorio-de-saida]   (5 capturas da loja, 1290×2796)
+        node scripts/screenshots-loja.mjs --readme               (3 capturas em 1× direto em docs/img/) */
 'use strict';
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -327,12 +328,13 @@ if (executadoDireto) {
   const soReadme = args.includes('--readme');
   const saidaDir = args.find(a => !a.startsWith('--')) || '/tmp/custta-loja';
   (async () => {
-    if (!soReadme) {
+    if (soReadme) {
+      // As do README são as mesmas telas em 1×, gravadas direto no repositório.
+      await capturar(path.join(RAIZ, 'docs', 'img'), { escala: 1, mapa: TELAS_README });
+      console.log('capturas do README salvas em docs/img');
+    } else {
       await capturar(saidaDir);
       console.log('capturas da loja salvas em ' + saidaDir);
     }
-    // As do README são as mesmas telas em 1×, gravadas direto no repositório.
-    await capturar(path.join(RAIZ, 'docs', 'img'), { escala: 1, mapa: TELAS_README });
-    console.log('capturas do README salvas em docs/img');
   })().catch(err => { console.error(err); process.exitCode = 1; });
 }

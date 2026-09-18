@@ -35,7 +35,7 @@ Para dirigir o app num browser de verdade, suba `node tests/browser/servidor.cjs
 
 ## Arquitetura
 
-Scripts clássicos com globais, carregados na ordem declarada no fim de `index.html`. Não há `import` entre eles (exceto `cloud.js`, que é `type="module"`); a comunicação é por global.
+Scripts clássicos com globais, carregados na ordem em que aparecem no `index.html` — `tema.js` e `nativo.js` no `<head>`, para agir antes do primeiro paint; o resto no fim do `<body>`. Não há `import` entre eles (exceto `cloud.js`, que é `type="module"`); a comunicação é por global.
 
 | Arquivo | Global exposto | Papel |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ Scripts clássicos com globais, carregados na ordem declarada no fim de `index.h
 
 ### Estado e sincronização
 
-O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados (só preferências por aparelho: `mo_tema`, `mo_skin`, `splashVista`).
+O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados — só preferências por aparelho (localStorage: `mo_tema`, `mo_skin`, `custta-estado`; sessionStorage: `splashVista`).
 
 Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (entrega cada versão na hora à fila persistente do SDK e sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
 

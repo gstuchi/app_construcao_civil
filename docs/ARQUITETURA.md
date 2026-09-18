@@ -9,8 +9,8 @@ código roda como app iOS, empacotado com Capacitor.
 
 Todo o estado do usuário é um documento só no Firestore, `dados/{uid}`, com a
 forma `{ obras: [...], config: { taxaMensal, topicosCustom } }`. Não há
-localStorage de dados — só preferências do aparelho (`mo_tema`, `mo_skin`,
-`splashVista`, `custta-estado`).
+localStorage de dados — só preferências do aparelho (localStorage: `mo_tema`,
+`mo_skin`, `custta-estado`; sessionStorage: `splashVista`).
 
 ```mermaid
 flowchart TD
@@ -49,9 +49,10 @@ compra parcelada no cartão gera N gastos irmãos com o mesmo `grupoId` e
 
 ## Os arquivos e o que cada um expõe
 
-Scripts clássicos com variáveis globais, carregados na ordem declarada no fim
-do `index.html`. Não há `import` entre eles — a exceção é o `cloud.js`, que é
-`type="module"`. A comunicação é por global.
+Scripts clássicos com variáveis globais, carregados na ordem em que aparecem
+no `index.html` — `tema.js` e `nativo.js` no `<head>`, para agir antes do
+primeiro paint; o resto no fim do `<body>`. Não há `import` entre eles — a
+exceção é o `cloud.js`, que é `type="module"`. A comunicação é por global.
 
 | Arquivo | Global | Papel |
 | --- | --- | --- |
@@ -125,7 +126,8 @@ O projeto `ios/` é versionado; `www/` é gerado por `npm run build:www` e não
 entra no git. O comportamento nativo é sempre condicionado por
 `OBRA_NATIVO.ehNativo()`, e `nativo.js` é o único arquivo que toca
 `window.Capacitor` — erro de plugin nunca chega à UI, vira registro em
-`OBRA_DIAG` e a função devolve resultado neutro.
+`OBRA_DIAG` e a função devolve resultado neutro — a exceção é o
+compartilhamento de arquivo, que repropaga o erro para a UI poder avisar.
 
 O que muda no app em relação ao site: share sheet do iOS na exportação, push
 por FCM, vibração ao lançar gasto, barra de status seguindo o tema, splash

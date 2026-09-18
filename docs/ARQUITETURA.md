@@ -57,7 +57,7 @@ do `index.html`. Não há `import` entre eles — a exceção é o `cloud.js`, q
 | --- | --- | --- |
 | `calc.js` | `OBRA_CALC` | regras de negócio puras, zero DOM — é o que os testes de unidade cobrem |
 | `cloud.js` | `window.CLOUD`, evento `cloud-pronto` | único ponto de contato com o Firebase |
-| `dados.js` | `normaliza` | valida a forma do documento e os limites de texto |
+| `dados.js` | `OBRA_DADOS` | valida a forma do documento e os limites de texto |
 | `auth.js` | — | overlay de login (`#auth` + `body.locked`) |
 | `app.js` | `db`, `renderAll`, `OBRA_DIAG` | todo o estado e o render da UI |
 | `nativo.js` | `OBRA_NATIVO` | único ponto que toca `window.Capacitor`; na web é tudo neutro |

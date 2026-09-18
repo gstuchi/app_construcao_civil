@@ -54,7 +54,7 @@ Scripts clássicos com globais, carregados na ordem declarada no fim de `index.h
 
 O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados (só preferências por aparelho: `mo_tema`, `mo_skin`, `splashVista`).
 
-Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (debounce 300ms, sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
+Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (entrega cada versão na hora à fila persistente do SDK e sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
 
 Consequências práticas:
 

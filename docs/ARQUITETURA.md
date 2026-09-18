@@ -17,7 +17,7 @@ flowchart TD
     U["Usuário lança um gasto"] --> M["mutação em db — app.js"]
     M --> R["renderAll()"]
     M --> S["save()"]
-    S --> C["CLOUD.saveDados<br/>debounce 300 ms<br/>sobrescreve o documento inteiro"]
+    S --> C["CLOUD.saveDados<br/>entrega na hora à fila do SDK<br/>sobrescreve o documento inteiro"]
     C --> F[("Firestore<br/>dados/{uid}")]
     C -. sem rede .-> IDB[("IndexedDB<br/>fila do SDK")]
     IDB -. rede volta .-> F

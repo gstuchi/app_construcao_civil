@@ -72,4 +72,8 @@ test('docs/ARQUITETURA.md documenta o fluxo de dados', () => {
   for (const global of ['OBRA_CALC', 'window.CLOUD', 'OBRA_PUSH', 'OBRA_SHARE']) {
     assert.ok(arq.includes(global), `tabela de globais sem ${global}`);
   }
+  for (const rel of ['docs/ARQUITETURA.md', 'CLAUDE.md']) {
+    assert.doesNotMatch(ler(rel), /debounce/i,
+      `${rel}: saveDados não tem debounce — entrega cada versão na hora (cloud.js)`);
+  }
 });

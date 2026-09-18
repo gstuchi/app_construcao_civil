@@ -21,9 +21,11 @@ npm run rules:deploy     # firebase deploy --only firestore:rules
 npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
 npm run cap:sync         # build:www + cap sync ios
 
-node --test tests/calc.test.cjs                     # um arquivo só
-node --test --test-name-pattern="parcelas" tests/rules.test.mjs
+node --test tests/calc.test.cjs                              # um arquivo só
+node --test --test-name-pattern="LICENSE" tests/docs.test.mjs  # um teste só (arquivos que usam node:test)
 ```
+
+As rules só rodam com o emulador — use `npm run test:rules`.
 
 `package.json` existe para teste, manutenção do SDK local, Capacitor e a função de cron do servidor (`api/`) — **nada dele é empacotado no app web**. Não adicione dependência de runtime ao browser.
 

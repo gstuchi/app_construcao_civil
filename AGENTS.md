@@ -34,9 +34,11 @@ npm test              # unit + rules
 Um arquivo ou um teste só:
 
 ```bash
-node --test tests/calc.test.cjs
-node --test --test-name-pattern="parcelas" tests/rules.test.mjs
+node --test tests/calc.test.cjs                              # um arquivo só
+node --test --test-name-pattern="LICENSE" tests/docs.test.mjs  # um teste só (arquivos que usam node:test)
 ```
+
+As rules só rodam com o emulador — use `npm run test:rules`.
 
 Para dirigir o app à mão num browser de verdade, suba
 `node tests/browser/servidor.cjs` — ele serve a raiz em `:8123` com os mesmos

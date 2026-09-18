@@ -94,3 +94,46 @@ test('capturas do README existem em 1x, versionadas e com alt', () => {
     .filter(m => !/\balt="[^"]+"/.test(m[0])).map(m => m[0]);
   assert.deepEqual(semAlt, [], 'toda captura precisa de alt descritivo');
 });
+
+/* Só documentos vivos: os .md da raiz e os de docs/ no primeiro nível. docs/specs/ e
+   docs/plans/ são registro histórico, cheios de trecho de markdown citado dentro de
+   bloco de código, e ficam de fora. Linha dentro de bloco cercado também não conta. */
+const foraDeBlocoDeCodigo = texto => {
+  let dentro = false;
+  return texto.split('\n').filter(linha => {
+    if (/^\s*(```|~~~)/.test(linha)) { dentro = !dentro; return false; }
+    return !dentro;
+  }).join('\n');
+};
+
+test('todo link relativo da documentação viva aponta pra arquivo existente', () => {
+  const alvos = versionados.filter(f =>
+    f.endsWith('.md') && (!f.includes('/') || /^docs\/[^/]+\.md$/.test(f)));
+  for (const obrigatorio of ['README.md', 'AGENTS.md', 'CLAUDE.md', 'docs/ARQUITETURA.md', 'docs/planejamento-app-store.md']) {
+    assert.ok(alvos.includes(obrigatorio), `${obrigatorio} saiu do escopo do checador`);
+  }
+  const quebrados = [];
+  for (const arquivo of alvos) {
+    const base = path.dirname(path.join(RAIZ, arquivo));
+    for (const m of foraDeBlocoDeCodigo(ler(arquivo)).matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
+      const destino = m[1];
+      if (/^(https?:|mailto:|itms-apps:|#)/.test(destino)) continue;
+      const semAncora = destino.split('#')[0];
+      if (!semAncora) continue;
+      if (!existsSync(path.resolve(base, decodeURIComponent(semAncora)))) {
+        quebrados.push(`${arquivo} → ${destino}`);
+      }
+    }
+  }
+  assert.deepEqual(quebrados, [], 'link relativo apontando pro vazio');
+});
+
+test('README manda a arquitetura pro documento próprio', () => {
+  const readme = ler('README.md');
+  assert.ok(readme.includes('docs/ARQUITETURA.md'), 'README precisa linkar a arquitetura');
+  assert.ok(!readme.includes('todo o CSS (temas claro/escuro'),
+    'a tabela de estrutura ainda diz que o CSS mora no index.html');
+  assert.ok(!/^##\s.*Fase [34]\s*$/m.test(readme),
+    'seção de fase é registro de execução — vive no planejamento, não no README');
+  assert.ok(readme.length < 7000, `README com ${readme.length} caracteres; era pra encolher`);
+});

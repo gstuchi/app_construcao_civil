@@ -50,3 +50,15 @@ test('nenhum arquivo aponta mais para a pasta antiga de documentação', () => {
   const culpadosSemPrefixo = textuais.filter(f => /\]\(superpowers\/|`superpowers\//.test(ler(f)));
   assert.deepEqual(culpadosSemPrefixo, [], 'ainda citam "superpowers/" sem o prefixo docs/');
 });
+
+test('AGENTS.md é instrução de contribuição, não prompt de persona', () => {
+  const agents = ler('AGENTS.md');
+  assert.doesNotMatch(agents, /caveman/i,
+    'a persona mora em ~/.claude/CLAUDE.md, fora do repositório');
+  for (const secao of ['## Idioma', '## Commits', '## Testes']) {
+    assert.ok(agents.includes(secao), `AGENTS.md sem a seção ${secao}`);
+  }
+  assert.match(agents, /npm run test:unit/, 'precisa dizer como rodar os testes');
+  assert.match(agents, /sw\.js/, 'a regra do ASSETS/CACHE é a que mais quebra produção');
+  assert.match(agents, /docs\/specs\//, 'precisa dizer onde nasce um spec');
+});

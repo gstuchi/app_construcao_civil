@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tamanhoPng, TELAS_README } from '../scripts/screenshots-loja.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const versionados = execFileSync('git', ['ls-files'], { cwd: RAIZ, encoding: 'utf8' })
@@ -76,4 +77,20 @@ test('docs/ARQUITETURA.md documenta o fluxo de dados', () => {
     assert.doesNotMatch(ler(rel), /debounce/i,
       `${rel}: saveDados não tem debounce — entrega cada versão na hora (cloud.js)`);
   }
+});
+
+test('capturas do README existem em 1x, versionadas e com alt', () => {
+  const readme = ler('README.md');
+  assert.equal(TELAS_README.size, 3, 'três capturas — quatro já viram carrossel');
+  for (const nome of TELAS_README.values()) {
+    const rel = `docs/img/${nome}`;
+    assert.ok(versionados.includes(rel), `${rel} precisa estar versionado`);
+    const { width, height } = tamanhoPng(readFileSync(path.join(RAIZ, rel)));
+    assert.equal(width, 430, `${rel}: no README a captura é 1x; 1290 pesa 4x sem ganho`);
+    assert.equal(height, 932, `${rel}: altura de iPhone 6.9"`);
+    assert.ok(readme.includes(rel), `README não mostra ${rel}`);
+  }
+  const semAlt = [...readme.matchAll(/<img\s[^>]*src="docs\/img\/[^>]*>/g)]
+    .filter(m => !/\balt="[^"]+"/.test(m[0])).map(m => m[0]);
+  assert.deepEqual(semAlt, [], 'toda captura precisa de alt descritivo');
 });

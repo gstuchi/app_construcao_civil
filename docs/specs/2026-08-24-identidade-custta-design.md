@@ -20,7 +20,7 @@ Decidido em brainstorm antes de gerar nomes:
 - **Promessa:** *o custo real, na ponta do lápis*. O lucro é consequência.
 - **Registro do nome:** mundo do construtor, palavra concreta — não jargão financeiro nem termo abstrato.
 
-O diferencial que nenhum concorrente tem é o **custo de oportunidade**: `totalCorrigido`, `lucroVenda.vsBanco` e `taxaEquivalenteMensal` em [calc.js](../../../calc.js) tratam a obra como aplicação financeira. Toda a comunicação sai daí.
+O diferencial que nenhum concorrente tem é o **custo de oportunidade**: `totalCorrigido`, `lucroVenda.vsBanco` e `taxaEquivalenteMensal` em [calc.js](../../calc.js) tratam a obra como aplicação financeira. Toda a comunicação sai daí.
 
 ## Nomes descartados
 
@@ -64,14 +64,14 @@ Feita em 2026-08-24:
 
 Troca de texto em 9 arquivos, 17 ocorrências de "ObraControl" mais 4 de "Minhas Obras" (o nome anterior ao anterior, ainda vivo no título da notificação push):
 
-- [index.html](../../../index.html) — `<title>`, `apple-mobile-web-app-title`, título da tela de login, logo da sidebar, logo do cabeçalho
-- [manifest.json](../../../manifest.json) — `name` e `short_name`
-- [sw.js](../../../sw.js) — título padrão do push; `CACHE` de `obras-v25` para `obras-v26`
-- [notificacoes/resumo.js](../../../notificacoes/resumo.js) — título do resumo diário
-- [tests/resumo.test.cjs](../../../tests/resumo.test.cjs) — asserção do título
-- [package.json](../../../package.json), `package-lock.json` — campo `name` para `custta`
-- [tests/rules.test.mjs](../../../tests/rules.test.mjs) — `projectId` do emulador para `custta-rules-test`
-- [app.js](../../../app.js), [firestore.rules](../../../firestore.rules), [README.md](../../../README.md), [notificacoes/README.md](../../../notificacoes/README.md) — comentários e documentação
+- [index.html](../../index.html) — `<title>`, `apple-mobile-web-app-title`, título da tela de login, logo da sidebar, logo do cabeçalho
+- [manifest.json](../../manifest.json) — `name` e `short_name`
+- [sw.js](../../sw.js) — título padrão do push; `CACHE` de `obras-v25` para `obras-v26`
+- [notificacoes/resumo.js](../../notificacoes/resumo.js) — título do resumo diário
+- [tests/resumo.test.cjs](../../tests/resumo.test.cjs) — asserção do título
+- [package.json](../../package.json), `package-lock.json` — campo `name` para `custta`
+- [tests/rules.test.mjs](../../tests/rules.test.mjs) — `projectId` do emulador para `custta-rules-test`
+- [app.js](../../app.js), [firestore.rules](../../firestore.rules), [README.md](../../README.md), [notificacoes/README.md](../../notificacoes/README.md) — comentários e documentação
 
 O `projectId` do Firebase (`app-construcao-civil`) **não muda** — é identificador de infraestrutura, não marca.
 

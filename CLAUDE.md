@@ -21,9 +21,11 @@ npm run rules:deploy     # firebase deploy --only firestore:rules
 npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
 npm run cap:sync         # build:www + cap sync ios
 
-node --test tests/calc.test.cjs                     # um arquivo só
-node --test --test-name-pattern="parcelas" tests/rules.test.mjs
+node --test tests/calc.test.cjs                              # um arquivo só
+node --test --test-name-pattern="LICENSE" tests/docs.test.mjs  # um teste só (arquivos que usam node:test)
 ```
+
+As rules só rodam com o emulador — use `npm run test:rules`.
 
 `package.json` existe para teste, manutenção do SDK local, Capacitor e a função de cron do servidor (`api/`) — **nada dele é empacotado no app web**. Não adicione dependência de runtime ao browser.
 
@@ -33,7 +35,7 @@ Para dirigir o app num browser de verdade, suba `node tests/browser/servidor.cjs
 
 ## Arquitetura
 
-Scripts clássicos com globais, carregados na ordem declarada no fim de `index.html`. Não há `import` entre eles (exceto `cloud.js`, que é `type="module"`); a comunicação é por global.
+Scripts clássicos com globais, carregados na ordem em que aparecem no `index.html` — `tema.js` e `nativo.js` no `<head>`, para agir antes do primeiro paint; o resto no fim do `<body>`. Não há `import` entre eles (exceto `cloud.js`, que é `type="module"`); a comunicação é por global.
 
 | Arquivo | Global exposto | Papel |
 | --- | --- | --- |
@@ -52,9 +54,9 @@ Scripts clássicos com globais, carregados na ordem declarada no fim de `index.h
 
 ### Estado e sincronização
 
-O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados (só preferências por aparelho: `mo_tema`, `mo_skin`, `splashVista`).
+O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados — só preferências por aparelho (localStorage: `mo_tema`, `mo_skin`, `custta-estado`; sessionStorage: `splashVista`).
 
-Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (debounce 300ms, sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
+Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (entrega cada versão na hora à fila persistente do SDK e sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
 
 Consequências práticas:
 
@@ -74,11 +76,11 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 ### Notificações push
 
-`notificacoes/` é um cron do GitHub Actions ([.github/workflows/push-diario.yml](.github/workflows/push-diario.yml)) que dispara duas vezes ao dia — 12:00 UTC (9h Brasília) e 21:00 UTC (18h). O workflow deriva `PERIODO` (`manha`/`noite`) do cron que disparou, e `montaResumo` usa isso pra omitir o "Lançou os gastos de hoje?" de manhã. Roda com Admin SDK (ignora rules) e lê `push/{uid}`. É ferramenta de CI com `package.json` próprio — não faz parte do app. Chave VAPID pública fica hardcoded em `app.js`; a privada é secret do repositório.
+`notificacoes/` é um cron do GitHub Actions ([.github/workflows/push-diario.yml](.github/workflows/push-diario.yml)) que dispara duas vezes ao dia — 12:00 UTC (9h Brasília) e 21:00 UTC (18h). O workflow deriva `PERIODO` (`manha`/`noite`) do cron que disparou, e `montaResumo` usa isso pra omitir o "Lançou os gastos de hoje?" de manhã. Roda com Admin SDK (ignora rules) e lê `push/{uid}`. É ferramenta de CI com `package.json` próprio — não faz parte do app. Chave VAPID pública fica hardcoded em `push.js`; a privada é secret do repositório.
 
 ### App iOS (Capacitor)
 
-`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md`.
+`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/plans/2026-09-16-fase4-checklist-aparelho.md`.
 
 ## UI
 
@@ -92,7 +94,7 @@ Um hook PostToolUse (`.claude/settings.local.json`) roda o detector da skill `im
 
 ## Fluxo de trabalho
 
-Features maiores começam por um documento em `docs/superpowers/specs/AAAA-MM-DD-nome-design.md` (e às vezes um plano em `docs/superpowers/plans/`) antes do código — vale ler o spec correspondente antes de mexer numa tela existente.
+Features maiores começam por um documento em `docs/specs/AAAA-MM-DD-nome-design.md` (e às vezes um plano em `docs/plans/`) antes do código — vale ler o spec correspondente antes de mexer numa tela existente.
 
 Commits em português, estilo `feat: `/`fix: `/`docs: `, minúsculas, sem acento no assunto.
 

@@ -3,7 +3,8 @@
    Sobe o servidor estático de tests/browser/servidor.cjs, injeta dados sintéticos
    direto em `db` (sem Firestore, sem rede) e fotografa 5 telas em 1290×2796
    (iPhone 6.9"/6.7": viewport 430×932 com deviceScaleFactor 3).
-   Uso: node scripts/screenshots-loja.mjs [diretorio-de-saida] */
+   Uso: node scripts/screenshots-loja.mjs [diretorio-de-saida]   (5 capturas da loja, 1290×2796)
+        node scripts/screenshots-loja.mjs --readme               (3 capturas em 1× direto em docs/img/) */
 'use strict';
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -12,9 +13,16 @@ import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const LARGURA_ALVO = 1290, ALTURA_ALVO = 2796;
 const VIEWPORT = { width: 430, height: 932 };
 const ESCALA = 3;
+
+/* As três capturas que vão para o topo do README, em 1× (430×932). As mesmas
+   telas da loja, sem o número na frente — no README elas têm nome, não ordem. */
+export const TELAS_README = new Map([
+  ['01-inicio.png', 'inicio.png'],
+  ['02-obra.png', 'obra.png'],
+  ['04-graficos.png', 'graficos.png'],
+]);
 
 /* ---------- dados sintéticos (função pura — cobrida por tests/screenshots.test.mjs) ---------- */
 
@@ -176,13 +184,14 @@ async function subirServidor() {
   return servidor;
 }
 
-async function capturar(saidaDir) {
+async function capturar(saidaDir, { escala = ESCALA, mapa = null } = {}) {
   await mkdir(saidaDir, { recursive: true });
+  const alvoL = VIEWPORT.width * escala, alvoA = VIEWPORT.height * escala;
   const dados = dadosDemo();
   const servidor = await subirServidor();
   const browser = await chromium.launch();
   try {
-    const ctx = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: ESCALA, serviceWorkers: 'block' });
+    const ctx = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: escala, serviceWorkers: 'block' });
     await ctx.route('**/cloud.js', r => r.fulfill({ contentType: 'text/javascript', body: '' }));
     await ctx.route('https://**/*', r => r.abort());
     await ctx.addInitScript(() => {
@@ -208,14 +217,16 @@ async function capturar(saidaDir) {
     await page.waitForFunction(() => document.querySelectorAll('#obrasList li').length === 3);
 
     const foto = async (nome, opts = {}) => {
-      await page.waitForTimeout(150); // um frame de sobra pra layout de SVG assentar
-      const destino = path.join(saidaDir, nome);
+      const saidaNome = mapa ? mapa.get(nome) : nome;
+      if (!saidaNome) return; // tela que este modo não fotografa
+      await page.waitForTimeout(150); // um frame de sobra pro layout de SVG assentar
+      const destino = path.join(saidaDir, saidaNome);
       await page.screenshot({ path: destino, animations: 'disabled', ...opts });
       const { width, height } = tamanhoPng(await readFile(destino));
-      if (width !== LARGURA_ALVO || height !== ALTURA_ALVO) {
-        throw new Error(`${nome}: ${width}x${height}, esperado ${LARGURA_ALVO}x${ALTURA_ALVO}`);
+      if (width !== alvoL || height !== alvoA) {
+        throw new Error(`${saidaNome}: ${width}x${height}, esperado ${alvoL}x${alvoA}`);
       }
-      console.log(`ok - ${nome} (${width}x${height})`);
+      console.log(`ok - ${saidaNome} (${width}x${height})`);
     };
 
     // 1) Início — lista de obras + comparativo. Com só 3 obras o conteúdo fica mais
@@ -313,8 +324,17 @@ async function capturar(saidaDir) {
 
 const executadoDireto = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (executadoDireto) {
-  const saidaDir = process.argv[2] || '/tmp/custta-loja';
-  capturar(saidaDir)
-    .then(() => console.log('capturas salvas em ' + saidaDir))
-    .catch(err => { console.error(err); process.exitCode = 1; });
+  const args = process.argv.slice(2);
+  const soReadme = args.includes('--readme');
+  const saidaDir = args.find(a => !a.startsWith('--')) || '/tmp/custta-loja';
+  (async () => {
+    if (soReadme) {
+      // As do README são as mesmas telas em 1×, gravadas direto no repositório.
+      await capturar(path.join(RAIZ, 'docs', 'img'), { escala: 1, mapa: TELAS_README });
+      console.log('capturas do README salvas em docs/img');
+    } else {
+      await capturar(saidaDir);
+      console.log('capturas da loja salvas em ' + saidaDir);
+    }
+  })().catch(err => { console.error(err); process.exitCode = 1; });
 }

@@ -1,6 +1,6 @@
 /* Tela de valor com teclado próprio.
    O display é uma <div>, não um <input>: assim o teclado do iOS nunca abre —
-   que é o motivo desta tela existir (ver docs/superpowers/specs/2026-08-12-tela-valor-teclado-design.md).
+   que é o motivo desta tela existir (ver docs/specs/2026-08-12-tela-valor-teclado-design.md).
 
    Roda no browser (window.TECLADO) e nos testes em Node (module.exports).
    A lógica de dígitos é pura e fica separada da camada de tela. */

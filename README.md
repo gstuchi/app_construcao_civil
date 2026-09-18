@@ -12,6 +12,14 @@ PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro ren
 ![Build](https://img.shields.io/badge/build-nenhum-lightgrey)
 ![Deploy](https://img.shields.io/badge/deploy-Vercel-black)
 
+<table>
+  <tr>
+    <td><img src="docs/img/inicio.png" width="260" alt="Lista de obras com total gasto por obra e comparativo entre elas"></td>
+    <td><img src="docs/img/obra.png" width="260" alt="Tela da obra com total gasto, valor corrigido pelo banco, contas a pagar e venda estimada"></td>
+    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos de evolução da obra e de gasto por mês"></td>
+  </tr>
+</table>
+
 </div>
 
 ---
@@ -22,11 +30,10 @@ PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro ren
 - [Visão geral](#visão-geral)
 - [Funcionalidades](#funcionalidades)
 - [Arquitetura](#arquitetura)
-- [Rodar localmente](#rodar-localmente)
-- [Testes](#testes)
-- [Deploy](#deploy)
 - [Estrutura do projeto](#estrutura-do-projeto)
-- [Decisões de projeto](#decisões-de-projeto)
+- [Por que a raiz tem tantos arquivos](#por-que-a-raiz-tem-tantos-arquivos)
+- [Documentação](#documentação)
+- [Licença](#licença)
 
 ## Visão geral
 
@@ -47,70 +54,49 @@ O produto é pensado para um usuário não técnico, com foco em **clareza em 5 
 
 ## Arquitetura
 
-Aplicação **vanilla**, sem framework e sem etapa de build no deploy. HTML, CSS e JavaScript são servidos como arquivos estáticos. Auth mantém a sessão; Firestore persiste dados em IndexedDB e sincroniza por usuário. localStorage guarda preferências e marcador de limpeza de cache.
+Aplicação **vanilla**: HTML, CSS e JavaScript servidos como arquivos estáticos,
+sem framework e sem etapa de build no deploy. O estado do usuário é um único
+documento no Firestore, sincronizado em tempo real e disponível offline pelo
+IndexedDB do próprio SDK. `calc.js` concentra os cálculos financeiros e não toca
+no DOM, o que o torna testável em Node; `cloud.js` é o único ponto de contato
+com o Firebase; `sw.js` é network-first, então o cache só serve como retrato
+para o modo offline.
 
-```text
-Browser (PWA)
-├── index.html         estrutura da UI
-├── styles.css         temas, componentes, modal, toast
-├── dados.js           validação do documento e limites de texto
-├── app.js             estado, render, formulários, modal, toast
-├── calc.js            regras de negócio puras (correção, parcelas) — sem DOM
-├── auth.js ─┐
-│            ├──────►  cloud.js  ──►  Firebase (Auth + Firestore)
-└── (dados) ─┘
-└── sw.js              service worker (network-first) → funciona offline
-```
-
-- **`calc.js`** concentra os cálculos financeiros e não toca no DOM, o que o torna testável isoladamente em Node.
-- **`cloud.js`** é o único ponto de contato com o Firebase. As chaves de configuração são públicas por natureza; a segurança é imposta pelas *rules* do Firestore.
-- **`sw.js`** usa estratégia *network-first*: online sempre busca a versão mais recente, e o cache serve apenas como retrato para o modo offline.
-
-
+O diagrama do fluxo de dados, a tabela de globais, a fronteira de segurança e a
+camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 
 ## Estrutura do projeto
 
 | Caminho | Responsabilidade |
 | --- | --- |
-| `index.html` | Estrutura da página, todo o CSS (temas claro/escuro, componentes) e markup do modal/toast |
-| `app.js` | Lógica da interface: render, formulários, modais, notificações |
-| `calc.js` | Cálculos puros de obra (correção monetária, parcelas) — sem DOM |
-| `auth.js` | Tela de login (Firebase, e-mail + senha) |
-| `cloud.js` | Integração com Firebase (Auth + Firestore) |
-| `icons.js` | Ícones SVG inline |
-| `splash.js`, `globe.js` | Splash de abertura e globo de pontos (100% offline) |
-| `sw.js` | Service worker (network-first) |
-| `manifest.json` | Manifesto PWA |
-| `tests/` | Testes de unidade em Node (`.cjs`) |
-| `notificacoes/` | Backend de notificações push (Node + Firebase) — ver `notificacoes/README.md` |
-| `docs/` | Especificações e notas de design |
-
+| `index.html` | markup da página — sem CSS e sem JavaScript inline (exigência da CSP) |
+| `styles.css` | todo o CSS do app: temas, skins e componentes |
+| `app.js` | estado e render da interface |
+| `calc.js` | cálculos puros de obra (correção monetária, parcelas) — sem DOM |
+| `cloud.js`, `auth.js` | Firebase (Auth + Firestore) e a tela de login |
+| `nativo.js`, `push.js`, `share.js`, `ui-confirm.js` | camada nativa, notificações, exportação e diálogos |
+| `sw.js`, `manifest.json` | service worker e manifesto do PWA |
+| `firestore.rules` | as regras que de fato protegem os dados |
+| `vendor/` | SDKs do Firebase e do Sentry, versionados em vez de vindos de CDN |
+| `ios/` | projeto Capacitor do app para iPhone |
+| `api/`, `notificacoes/` | função de cron e o job de notificações — não fazem parte do app web |
+| `tests/` | unidade, rules e suítes de browser |
+| `docs/` | arquitetura, specs e planos |
 
 ## Por que a raiz tem tantos arquivos
 
 O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o que o navegador baixa. `index.html` carrega cada script na ordem declarada, `styles.css` traz todo o CSS e `sw.js` lista esses mesmos arquivos no precache. `package.json` existe para testes, manutenção do SDK local (`vendor/`), Capacitor e a função de cron em `api/` — nada dele vai para o navegador. O projeto iOS fica em `ios/`; `www/` é gerado por `npm run build:www` e não é versionado.
 
-## Segurança e ferramentas — Fase 3
+## Documentação
 
-Sentry usa SDK 10.74.0 local em `vendor/sentry/` (`npm run vendor:sentry`).
-`sentry-config.js` contém somente DSN público, ambiente e release. DSN vazio
-desativa envio; ao configurar, permitir exatamente seu host em `connect-src`
-no `vercel.json`. Nunca incluir token administrativo no cliente.
-`sentry.js` envia categoria e stack técnica sem mensagens livres, conta ou
-dados de obras. Sem replay/tracing, até 20 eventos por carregamento, duplicatas
-limitadas por minuto e sem persistência offline. `tests/browser/sentry.cjs`
-inspeciona envelopes reais do SDK com transporte interceptado.
+- **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)** — fluxo de dados, globais, segurança, service worker, push e camada nativa.
+- **[AGENTS.md](AGENTS.md)** — idioma, estilo de commit, como rodar os testes e o que quebra produção.
+- **[PRODUCT.md](PRODUCT.md)** — usuário-alvo e princípios de design.
+- **[docs/planejamento-app-store.md](docs/planejamento-app-store.md)** — as fases do caminho até a App Store.
+- **[docs/specs/](docs/specs/)** e **[docs/plans/](docs/plans/)** — o spec e o plano de cada funcionalidade, antes do código.
 
-O SDK Firebase 12.18.0 fica em `vendor/firebase/`, com licença e módulos versionados. Não é carregado de gstatic.com. npm é ferramenta de manutenção e testes; abrir e publicar o app continua sem build. `npm run vendor:firebase` usa esbuild somente para atualizar essa distribuição local e deve ser seguido de revisão dos arquivos e atualização do cache em `sw.js`.
+## Licença
 
-- `npm ci`: instala ferramentas com versões do lockfile.
-- `npm test`: testes unitários e regras no emulador Firestore (Java 21).
-- `npm ci --prefix notificacoes` e `npx playwright install chromium`: preparação dos testes de navegador.
-- `npm run test:browser`: inicia servidor e emuladores, testa UI, CSP, SDK offline, sincronização e exclusão. Não usa contas ou documentos de produção.
-- GitHub Actions executa os testes em pushes para main e pull requests.
-
-CSP permite scripts e estilos locais, sem `unsafe-inline`. CSS está em arquivos; propriedades dinâmicas dos gráficos são controladas por JavaScript. Textos são escapados na renderização. Novas edições limitam nome a 120, descrição e afazer a 500, tópico a 80 caracteres. Dados antigos não são truncados por esses limites; normalização preserva campos desconhecidos para compatibilidade entre versões. Taxa aceita valores maiores que zero e até 20% ao mês; entrada inválida mostra mensagem e mantém taxa anterior.
-
-## Empacotamento nativo — Fase 4
-
-O mesmo código roda como app iOS via Capacitor (`ios/`, `npm run build:www`, `npm run cap:sync`), com share sheet, push nativo (FCM), haptics, barra de status e splash nativos, sem mudar a arquitetura vanilla nem exigir build no deploy web. Código concluído em `feat/fase4`; build, TestFlight e push real dependem de matrícula Apple — ver [checklist de aparelho](docs/superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
+Proprietária — ver [LICENSE](LICENSE). O código é público para leitura e
+avaliação; uso, redistribuição e publicação em loja dependem de autorização
+por escrito.

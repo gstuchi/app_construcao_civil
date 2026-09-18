@@ -1,7 +1,7 @@
 # ObraControl: de PWA a app público na App Store
 
 > Atualização em 2026-09-08: Fase 1 auditada; critérios, testes e decisões finais em
-> [Fase 1 — fechamento](superpowers/plans/2026-09-08-fase1-fechamento.md).
+> [Fase 1 — fechamento](plans/2026-09-08-fase1-fechamento.md).
 > O texto abaixo preserva o planejamento original. Sentry permanece na Fase 3.
 
 ## Contexto
@@ -11,7 +11,7 @@ O ObraControl hoje é um PWA vanilla em produção na Vercel, usado por uma pess
 Três agentes de exploração mapearam o estado atual. O app está funcionalmente maduro — 26 specs implementadas, empty states bons, erros de login bem tratados, assets 100% relativos. Mas ele foi construído com a premissa de um único usuário conhecido, e essa premissa aparece em três lugares que impedem o lançamento público:
 
 1. **A fronteira de segurança não existe no repositório.** Não há `firestore.rules`, `firebase.json` nem `.firebaserc` — nem no histórico do git. As regras vivem apenas no console do Firebase, não versionadas e não verificáveis.
-2. **Falhas de escrita são invisíveis.** [app.js:777](app.js#L777) exibe "Gasto lançado com sucesso" antes de saber se o dado foi gravado, e uma falha trava a sincronização remota em silêncio.
+2. **Falhas de escrita são invisíveis.** [app.js:777](../app.js#L777) exibe "Gasto lançado com sucesso" antes de saber se o dado foi gravado, e uma falha trava a sincronização remota em silêncio.
 3. **Faltam os requisitos obrigatórios da Apple** — exclusão de conta in-app, política de privacidade, e defesa contra a Guideline 4.2 (app que é "só um site empacotado").
 
 **Decisões já tomadas:** Capacitor (sem reescrita), push migrando para APNs via FCM, CPF removido por completo, grátis na v1 com espaço arquitetural para cobrar depois, ritmo "sem pressa, bem feito".
@@ -23,7 +23,7 @@ Três agentes de exploração mapearam o estado atual. O app está funcionalment
 ## ⚠️ Duas ações manuais urgentes (antes de qualquer código)
 
 1. **Verificar as rules no console do Firebase** → Firestore → Regras. Se estiver `allow read, write: if true`, os dados de todos os usuários estão abertos agora.
-2. **Apagar a conta de teste** `ux.qa.minhasobras@gmail.com` no Firebase Auth. A senha está em texto puro em [docs/ux-review-2026-07-08.md:8](docs/ux-review-2026-07-08.md#L8), num repositório público. Apagar o usuário, não só trocar a senha.
+2. **Apagar a conta de teste** `ux.qa.minhasobras@gmail.com` no Firebase Auth. A senha está em texto puro em [docs/ux-review-2026-07-08.md:8](ux-review-2026-07-08.md#L8), num repositório público. Apagar o usuário, não só trocar a senha.
 
 ---
 
@@ -42,11 +42,11 @@ Três agentes de exploração mapearam o estado atual. O app está funcionalment
 |---|---|
 | Criar `firestore.rules`, `firebase.json`, `.firebaserc` e fazer deploy | novos na raiz |
 | Testes das rules com `@firebase/rules-unit-testing` + emulador | novo `tests/rules.test.mjs` + `package.json` na raiz |
-| Redigir a linha da credencial vazada | [docs/ux-review-2026-07-08.md:8](docs/ux-review-2026-07-08.md#L8) |
-| Endurecer `.gitignore`: `*serviceAccount*.json`, `.env*`, `*.p8`, `*.p12`, `*.pem`, `*.mobileprovision`, `.superpowers/`, `ios/`, `node_modules/`, `www/` | [.gitignore](.gitignore) |
+| Redigir a linha da credencial vazada | [docs/ux-review-2026-07-08.md:8](ux-review-2026-07-08.md#L8) |
+| Endurecer `.gitignore`: `*serviceAccount*.json`, `.env*`, `*.p8`, `*.p12`, `*.pem`, `*.mobileprovision`, `.superpowers/`, `ios/`, `node_modules/`, `www/` | [.gitignore](../.gitignore) |
 | Rodar `gitleaks detect` no histórico completo | — |
-| **Apagar a migração de localStorage legado** — vazamento entre contas: varre `obras_data_v1*` de *qualquer* usuário anterior do navegador e importa pra conta logada agora. Código morto além de inseguro. | [app.js:1259-1273](app.js#L1259-L1273) |
-| Chamar `desativaPush()` no logout — hoje a inscrição sobrevive à troca de conta, e o usuário B recebe notificações geradas com os dados do usuário A | [app.js:1046-1052](app.js#L1046-L1052), [auth.js:38](auth.js#L38) |
+| **Apagar a migração de localStorage legado** — vazamento entre contas: varre `obras_data_v1*` de *qualquer* usuário anterior do navegador e importa pra conta logada agora. Código morto além de inseguro. | [app.js:1259-1273](../app.js#L1259-L1273) |
+| Chamar `desativaPush()` no logout — hoje a inscrição sobrevive à troca de conta, e o usuário B recebe notificações geradas com os dados do usuário A | [app.js:1046-1052](../app.js#L1046-L1052), [auth.js:38](../auth.js#L38) |
 
 **As rules:**
 
@@ -119,20 +119,20 @@ O `hasOnly(['email','criado','tz'])` em `perfis` faz as próprias rules rejeitar
 
 **A fase de maior severidade do plano.** Trava a Fase 2 (exclusão de conta precisa de escritas confiáveis e erros visíveis).
 
-1. **Destravar o deadlock do `dirty`.** [cloud.js:46](cloud.js#L46) engole a falha e não agenda nada; `dirty` fica `true` pra sempre; [app.js:1276](app.js#L1276) então retorna cedo em todo snapshot seguinte. Uma escrita falha congela a sincronização remota até um save posterior dar certo por acaso. Corrigir com retry em backoff exponencial (1s, 2s, 4s… teto 30s) e limpar `dirty` em falha terminal, depois de mostrá-la.
-2. **`saveDados` retorna promise.** [cloud.js:74-79](cloud.js#L74-L79) é fire-and-forget. Precisa resolver quando gravou e rejeitar quando falhou de vez.
-3. **Toast depois da promise.** [app.js:777](app.js#L777) e os demais pontos de `save()`: [app.js:647](app.js#L647), [:654](app.js#L654), [:1116](app.js#L1116), [:1131](app.js#L1131), [:1143](app.js#L1143).
-4. **Callback de erro no `onSnapshot`** — [cloud.js:65-72](cloud.js#L65-L72) não tem. Sem ele, as rules novas da Fase 0 poderiam quebrar o app sem ninguém ver.
-5. **Indicador de sincronização** — salvo / salvando / sem conexão. [cloud.js:69](cloud.js#L69) já passa `fromCache` e [app.js:1276](app.js#L1276) nunca lê. Somar listeners de `navigator.onLine`.
+1. **Destravar o deadlock do `dirty`.** [cloud.js:46](../cloud.js#L46) engole a falha e não agenda nada; `dirty` fica `true` pra sempre; [app.js:1276](../app.js#L1276) então retorna cedo em todo snapshot seguinte. Uma escrita falha congela a sincronização remota até um save posterior dar certo por acaso. Corrigir com retry em backoff exponencial (1s, 2s, 4s… teto 30s) e limpar `dirty` em falha terminal, depois de mostrá-la.
+2. **`saveDados` retorna promise.** [cloud.js:74-79](../cloud.js#L74-L79) é fire-and-forget. Precisa resolver quando gravou e rejeitar quando falhou de vez.
+3. **Toast depois da promise.** [app.js:777](../app.js#L777) e os demais pontos de `save()`: [app.js:647](../app.js#L647), [:654](../app.js#L654), [:1116](../app.js#L1116), [:1131](../app.js#L1131), [:1143](../app.js#L1143).
+4. **Callback de erro no `onSnapshot`** — [cloud.js:65-72](../cloud.js#L65-L72) não tem. Sem ele, as rules novas da Fase 0 poderiam quebrar o app sem ninguém ver.
+5. **Indicador de sincronização** — salvo / salvando / sem conexão. [cloud.js:69](../cloud.js#L69) já passa `fromCache` e [app.js:1276](../app.js#L1276) nunca lê. Somar listeners de `navigator.onLine`.
 6. **Expiração de sessão** — o token dura 1h; a renovação falha offline ou com conta revogada. Tratar `onAuthStateChanged(null)` no meio da sessão com mensagem real.
-7. **Corrigir `logout()`** ([cloud.js:60](cloud.js#L60)) — hoje faz `pendingBlob = null` antes do `signOut`, destruindo trabalho não salvo em silêncio. Precisa aguardar o flush.
-8. **Captura global de erro** — `window.onerror` + `unhandledrejection`. E os catches vazios em [index.html:786](index.html#L786) e [app.js:1266-1269](app.js#L1266-L1269).
+7. **Corrigir `logout()`** ([cloud.js:60](../cloud.js#L60)) — hoje faz `pendingBlob = null` antes do `signOut`, destruindo trabalho não salvo em silêncio. Precisa aguardar o flush.
+8. **Captura global de erro** — `window.onerror` + `unhandledrejection`. E os catches vazios em [index.html:786](../index.html#L786) e [app.js:1266-1269](../app.js#L1266-L1269).
 9. **Guarda de tamanho do documento** — avisar acima de ~700KB serializados. Rules do Firestore não conseguem medir bytes; o limite de 1MB não tem proteção server-side. A ~150 bytes por gasto isso dá ~6.500 gastos — anos de uso, mas é um precipício sem grade.
 10. **Decidir monitoramento de erro agora**, não depois — é insumo da política de privacidade e dos App Privacy labels. Recomendação: Sentry browser SDK servido da própria origem (sem CDN), amostrado.
 
 **Pronto quando:** com o devtools offline, lançar um gasto mostra "salvando", não "sucesso"; ao voltar a rede o dado sobe e *aí* aparece o sucesso; matar a rede no meio da escrita e restaurar depois faz o dado chegar sem reload; após um `permission-denied` forçado o app mostra erro em vez de congelar.
 
-**Verificar:** estender o procedimento Playwright de [.claude/skills/verify/SKILL.md](.claude/skills/verify/SKILL.md) com alternância offline/online via CDP. É o primeiro teste e2e real e vira o molde da Fase 3.
+**Verificar:** estender o procedimento Playwright de .claude/skills/verify/SKILL.md com alternância offline/online via CDP. É o primeiro teste e2e real e vira o molde da Fase 3.
 
 ---
 
@@ -146,15 +146,15 @@ Termos de uso **não** entram — a EULA padrão da Apple já se aplica a apps g
 
 | Item | Arquivos |
 |---|---|
-| Reautenticação (`reauthenticateWithCredential`) — pré-requisito rígido da exclusão | [auth.js](auth.js), novo `ui-confirm.js` |
-| Troca de senha in-app | [auth.js](auth.js) |
-| **Exclusão de conta** em Ajustes | [app.js:1054-1147](app.js#L1054-L1147), [cloud.js](cloud.js) |
-| Remover CPF: campo, máscara, validador | [auth.js:8-26](auth.js#L8-L26), [:75-76](auth.js#L75-L76), [:131-133](auth.js#L131-L133), `#cCpf` em [index.html](index.html) |
-| Remover `cpf` da escrita de perfil | [cloud.js:56-57](cloud.js#L56-L57) |
+| Reautenticação (`reauthenticateWithCredential`) — pré-requisito rígido da exclusão | [auth.js](../auth.js), novo `ui-confirm.js` |
+| Troca de senha in-app | [auth.js](../auth.js) |
+| **Exclusão de conta** em Ajustes | [app.js:1054-1147](../app.js#L1054-L1147), [cloud.js](../cloud.js) |
+| Remover CPF: campo, máscara, validador | [auth.js:8-26](../auth.js#L8-L26), [:75-76](../auth.js#L75-L76), [:131-133](../auth.js#L131-L133), `#cCpf` em [index.html](../index.html) |
+| Remover `cpf` da escrita de perfil | [cloud.js:56-57](../cloud.js#L56-L57) |
 | **Expurgar os CPFs já gravados** — script Admin SDK avulso | novo `notificacoes/scripts/purga-cpf.mjs` |
-| Gravar `tz` por usuário em `perfis` — hoje o cron é fixo em `America/Sao_Paulo` | [notificacoes/envia.js:22](notificacoes/envia.js#L22), [cloud.js](cloud.js) |
-| Exportação de dados (CSV de gastos + JSON de backup) atrás de um adaptador `share.js` | novo `share.js`, Ajustes em [app.js](app.js) |
-| Verificação de e-mail: `sendEmailVerification` + banner suave + reenvio | [auth.js](auth.js) |
+| Gravar `tz` por usuário em `perfis` — hoje o cron é fixo em `America/Sao_Paulo` | [notificacoes/envia.js:22](../notificacoes/envia.js#L22), [cloud.js](../cloud.js) |
+| Exportação de dados (CSV de gastos + JSON de backup) atrás de um adaptador `share.js` | novo `share.js`, Ajustes em [app.js](../app.js) |
+| Verificação de e-mail: `sendEmailVerification` + banner suave + reenvio | [auth.js](../auth.js) |
 | Página de privacidade em pt-BR na Vercel + link em Ajustes | novo `privacidade.html` |
 
 **Verificação de e-mail fica como aviso, nunca bloqueio.** E **não** colocar `email_verified` nas rules na v1 — o usuário real é uma pessoa de 60 e poucos anos, não técnica, que ficaria trancada fora dos próprios dados de obra por causa de um filtro de spam.
@@ -179,16 +179,16 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 3 — Endurecimento e prontidão para nativo
 
-**Concluída em 2026-09-09.** Implementação publicada (cache v38), testes locais e [GitHub Actions](https://github.com/gstuchi/app_construcao_civil/actions/runs/34426925894) passaram. Produção abriu com SDK local e CSP sem violações. Detalhes em [execução da Fase 3](superpowers/plans/2026-09-09-fase3.md). Itens abaixo preservam diagnóstico e roteiro originais; referências de linhas são históricas.
+**Concluída em 2026-09-09.** Implementação publicada (cache v38), testes locais e [GitHub Actions](https://github.com/gstuchi/app_construcao_civil/actions/runs/34426925894) passaram. Produção abriu com SDK local e CSP sem violações. Detalhes em [execução da Fase 3](plans/2026-09-09-fase3.md). Itens abaixo preservam diagnóstico e roteiro originais; referências de linhas são históricas.
 
 **Porta de entrada da Fase 4.** A ordem interna importa — CSP por último.
 
-1. **Escapar os pontos de XSS.** `escapeHtml()` existe em [app.js:74](app.js#L74) e é usado em ~14 lugares, mas **não** em [app.js:380](app.js#L380), [:567](app.js#L567), [:724](app.js#L724), [:864](app.js#L864) — exatamente onde caem os nomes de `topicosCustom`, que são texto livre sem sanitização nem limite ([app.js:1139-1141](app.js#L1139-L1141)). Hoje é só auto-XSS, mas a severidade **sobe** quando empacotado: é execução de código dentro de um WKWebView com acesso à ponte do Capacitor.
-2. **Limites de tamanho e trim:** nome da obra ([app.js:638-641](app.js#L638-L641)), descrição do gasto ([:759](app.js#L759), [:765](app.js#L765)), tópico customizado. No DOM (`maxlength`) *e* no JS.
-3. **Endurecer `normaliza()`** ([app.js:40-44](app.js#L40-L44)) — hoje é um spread raso sem checagem de tipo. Validar, coagir, descartar elementos malformados, e **preservar chaves desconhecidas**. Isso vira crítico: web e iOS vão conviver em versões diferentes escrevendo no mesmo documento, permanentemente.
-4. **Corrigir o clamp silencioso da taxa** em [app.js:1112-1117](app.js#L1112-L1117) — valores acima de 20 viram 1 sem mensagem.
-5. **Empacotar o SDK do Firebase localmente.** [cloud.js:4-12](cloud.js#L4-L12) busca três módulos ESM do `gstatic.com` em runtime. Em app nativo isso significa: primeira abertura sem rede = app morto. E a revisão da Apple costuma acontecer em rede limitada. **Porta rígida da Fase 4.**
-6. **Extrair o CSS inline** ([index.html:34-534](index.html#L34-L534)) para `styles.css` e os três `<script>` inline ([:20](index.html#L20), [:575](index.html#L575), [:777](index.html#L777)) para arquivos. Movimentação pura, sem mudança de lógica. Atualizar `ASSETS` e o `CACHE` de [sw.js](sw.js).
+1. **Escapar os pontos de XSS.** `escapeHtml()` existe em [app.js:74](../app.js#L74) e é usado em ~14 lugares, mas **não** em [app.js:380](../app.js#L380), [:567](../app.js#L567), [:724](../app.js#L724), [:864](../app.js#L864) — exatamente onde caem os nomes de `topicosCustom`, que são texto livre sem sanitização nem limite ([app.js:1139-1141](../app.js#L1139-L1141)). Hoje é só auto-XSS, mas a severidade **sobe** quando empacotado: é execução de código dentro de um WKWebView com acesso à ponte do Capacitor.
+2. **Limites de tamanho e trim:** nome da obra ([app.js:638-641](../app.js#L638-L641)), descrição do gasto ([:759](../app.js#L759), [:765](../app.js#L765)), tópico customizado. No DOM (`maxlength`) *e* no JS.
+3. **Endurecer `normaliza()`** ([app.js:40-44](../app.js#L40-L44)) — hoje é um spread raso sem checagem de tipo. Validar, coagir, descartar elementos malformados, e **preservar chaves desconhecidas**. Isso vira crítico: web e iOS vão conviver em versões diferentes escrevendo no mesmo documento, permanentemente.
+4. **Corrigir o clamp silencioso da taxa** em [app.js:1112-1117](../app.js#L1112-L1117) — valores acima de 20 viram 1 sem mensagem.
+5. **Empacotar o SDK do Firebase localmente.** [cloud.js:4-12](../cloud.js#L4-L12) busca três módulos ESM do `gstatic.com` em runtime. Em app nativo isso significa: primeira abertura sem rede = app morto. E a revisão da Apple costuma acontecer em rede limitada. **Porta rígida da Fase 4.**
+6. **Extrair o CSS inline** ([index.html:34-534](../index.html#L34-L534)) para `styles.css` e os três `<script>` inline ([:20](../index.html#L20), [:575](../index.html#L575), [:777](../index.html#L777)) para arquivos. Movimentação pura, sem mudança de lógica. Atualizar `ASSETS` e o `CACHE` de [sw.js](../sw.js).
 7. **CSP**, só depois do item 6:
    ```
    default-src 'none'; script-src 'self'; style-src 'self';
@@ -199,7 +199,7 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
    base-uri 'none'; form-action 'none'; frame-ancestors 'none';
    ```
 8. **`package.json` na raiz + CI.** Ligar os 5 testes `.cjs` existentes ao `node --test`, somar Playwright cobrindo: login, criar obra, lançar gasto, escrita offline + flush ao reconectar, exclusão de conta. GitHub Actions no push. **Registrar no README que isso introduz npm como ferramenta, não como build — o app continua sem build**, conforme o princípio 5 do PRODUCT.md.
-9. Atualizar a documentação defasada: [PRODUCT.md:13](PRODUCT.md#L13) ainda diz localStorage + login por CPF; o comentário de cabeçalho em [app.js:1](app.js#L1) idem.
+9. Atualizar a documentação defasada: [PRODUCT.md:13](../PRODUCT.md#L13) ainda diz localStorage + login por CPF; o comentário de cabeçalho em [app.js:1](../app.js#L1) idem.
 
 **Pronto quando:** CSP ativa sem `unsafe-inline` em lugar nenhum e zero violações no console; o app abre e funciona por completo com `gstatic.com` bloqueado no devtools; um tópico chamado `<img src=x onerror=alert(1)>` aparece como texto literal em todas as telas; CI verde.
 
@@ -207,7 +207,7 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 4 — Empacotamento com Capacitor
 
-**Código concluído em 2026-09-16** na branch `feat/fase4` (spec e plano em `docs/superpowers/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](superpowers/plans/2026-09-16-fase4-checklist-aparelho.md).
+**Código concluído em 2026-09-16** na branch `feat/fase4` (spec em `docs/specs/` e plano em `docs/plans/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](plans/2026-09-16-fase4-checklist-aparelho.md).
 
 **Travada por:** Fase 0 (bundle ID, chave APNs, conta) e Fase 3 (SDK local, CSP).
 
@@ -221,31 +221,31 @@ No `Info.plist`: `ITSAppUsesNonExemptEncryption = false` (só usa HTTPS, é isen
 
 | O quê | Onde | Ação |
 |---|---|---|
-| Banner "instalar PWA" (`beforeinstallprompt`) | [app.js:1244-1251](app.js#L1244-L1251) | Esconder |
-| Texto "abra no Safari… Adicionar à Tela de Início" | [app.js:1081-1083](app.js#L1081-L1083) | Trocar por texto de notificação nativa — essa frase dentro de um binário da App Store é sinalização instantânea pro revisor |
-| Registro do SW + reload por `controllerchange` | [index.html:777-788](index.html#L777-L788) | Pular no nativo |
-| `window.print()` | [app.js:837](app.js#L837), [:904](app.js#L904) | Vira PDF pro share sheet, ou some — impressão não funciona em WKWebView e falha em silêncio |
-| `confirm()` / `alert()` | [app.js:321](app.js#L321), [:576](app.js#L576), [:651](app.js#L651), [:1128](app.js#L1128), [:1129](app.js#L1129); [auth.js:38](auth.js#L38) | `ui-confirm.js` — **obrigatório**, viram no-op silencioso sem `WKUIDelegate` |
-| `user-scalable=no` | [index.html:5](index.html#L5) | **Remover.** O Safari ignora desde o iOS 10, mas o WKWebView **obedece** — empacotar desativaria o pinch-zoom pra um usuário que o PRODUCT.md descreve usando óculos de leitura |
-| `persistentMultipleTabManager` | [cloud.js:26](cloud.js#L26) | → `persistentSingleTabManager` |
-| Gambiarra de teclado com `visualViewport` | [app.js:1152-1166](app.js#L1152-L1166) | Retestar contra `@capacitor/keyboard` — pode ter virado redundante ou conflitante |
+| Banner "instalar PWA" (`beforeinstallprompt`) | [app.js:1244-1251](../app.js#L1244-L1251) | Esconder |
+| Texto "abra no Safari… Adicionar à Tela de Início" | [app.js:1081-1083](../app.js#L1081-L1083) | Trocar por texto de notificação nativa — essa frase dentro de um binário da App Store é sinalização instantânea pro revisor |
+| Registro do SW + reload por `controllerchange` | [index.html:777-788](../index.html#L777-L788) | Pular no nativo |
+| `window.print()` | [app.js:837](../app.js#L837), [:904](../app.js#L904) | Vira PDF pro share sheet, ou some — impressão não funciona em WKWebView e falha em silêncio |
+| `confirm()` / `alert()` | [app.js:321](../app.js#L321), [:576](../app.js#L576), [:651](../app.js#L651), [:1128](../app.js#L1128), [:1129](../app.js#L1129); [auth.js:38](../auth.js#L38) | `ui-confirm.js` — **obrigatório**, viram no-op silencioso sem `WKUIDelegate` |
+| `user-scalable=no` | [index.html:5](../index.html#L5) | **Remover.** O Safari ignora desde o iOS 10, mas o WKWebView **obedece** — empacotar desativaria o pinch-zoom pra um usuário que o PRODUCT.md descreve usando óculos de leitura |
+| `persistentMultipleTabManager` | [cloud.js:26](../cloud.js#L26) | → `persistentSingleTabManager` |
+| Gambiarra de teclado com `visualViewport` | [app.js:1152-1166](../app.js#L1152-L1166) | Retestar contra `@capacitor/keyboard` — pode ter virado redundante ou conflitante |
 
 ### 4c — Push para FCM/APNs
 
-Exige a chave `.p8` da Fase 0, subida no console do Firebase. `@capacitor/push-notifications` + `@capacitor-firebase/messaging`; extrair [app.js:1005-1052](app.js#L1005-L1052) para `push.js` com implementação web e nativa atrás de uma interface.
+Exige a chave `.p8` da Fase 0, subida no console do Firebase. `@capacitor/push-notifications` + `@capacitor-firebase/messaging`; extrair [app.js:1005-1052](../app.js#L1005-L1052) para `push.js` com implementação web e nativa atrás de uma interface.
 
-`push/{uid}` fica bi-formato: `subs` (web push, PWA existente) e `tokens` (FCM) — as rules da Fase 0 já aceitam ambos. [notificacoes/envia.js](notificacoes/envia.js) envia pelos dois caminhos. Ligar `pushNotificationActionPerformed` → `openObra(id)`.
+`push/{uid}` fica bi-formato: `subs` (web push, PWA existente) e `tokens` (FCM) — as rules da Fase 0 já aceitam ambos. [notificacoes/envia.js](../notificacoes/envia.js) envia pelos dois caminhos. Ligar `pushNotificationActionPerformed` → `openObra(id)`.
 
-**Migrar o cron do GitHub Actions para Vercel Cron.** O próprio [notificacoes/README.md:48](notificacoes/README.md#L48) registra que o GitHub desativa cron após 60 dias de inatividade do repositório — num app público, as notificações simplesmente parariam um dia.
+**Migrar o cron do GitHub Actions para Vercel Cron.** O próprio [notificacoes/README.md:48](../notificacoes/README.md#L48) registra que o GitHub desativa cron após 60 dias de inatividade do repositório — num app público, as notificações simplesmente parariam um dia.
 
 ### 4d — Adições nativas que respondem à Guideline 4.2
 
-Este é o maior risco de reprovação e nenhum item dele é código de fachada: `@capacitor/share` (exportação pelo share sheet nativo), `@capacitor/haptics` na confirmação de gasto, `@capacitor/status-bar` sincronizado ao tema ([app.js:983-1002](app.js#L983-L1002)), `@capacitor/splash-screen` no lugar de [splash.js](splash.js) no nativo, `@capacitor/app` para descarregar escritas pendentes ao ir pra segundo plano.
+Este é o maior risco de reprovação e nenhum item dele é código de fachada: `@capacitor/share` (exportação pelo share sheet nativo), `@capacitor/haptics` na confirmação de gasto, `@capacitor/status-bar` sincronizado ao tema ([app.js:983-1002](../app.js#L983-L1002)), `@capacitor/splash-screen` no lugar de [splash.js](../splash.js) no nativo, `@capacitor/app` para descarregar escritas pendentes ao ir pra segundo plano.
 
 ### 4e — Riscos que só aparecem no aparelho
 
 - **Persistência da sessão.** O SDK JS guarda a sessão em IndexedDB, e o iOS pode despejar dados do WKWebView sob pressão de armazenamento. Se o usuário for deslogado do nada, o plano B é `@capacitor-firebase/authentication` (SDK nativo) — o que é reescrever `cloud.js`. Testar: instalar, logar, matar o app, deixar uma semana, reabrir.
-- **Restauração de estado.** O iOS mata apps em segundo plano com frequência, e ao voltar o WKWebView recarrega do zero e cai no Início. **Não precisa de router** — 15 linhas persistindo `{tab, obraAberta}` em `localStorage` dentro de `showView()` ([app.js:102](app.js#L102)) e `openObra()` ([app.js:115](app.js#L115)), restaurando em `bootCloud()` depois do primeiro snapshot, com a guarda que já existe em [app.js:1281](app.js#L1281).
+- **Restauração de estado.** O iOS mata apps em segundo plano com frequência, e ao voltar o WKWebView recarrega do zero e cai no Início. **Não precisa de router** — 15 linhas persistindo `{tab, obraAberta}` em `localStorage` dentro de `showView()` ([app.js:102](../app.js#L102)) e `openObra()` ([app.js:115](../app.js#L115)), restaurando em `bootCloud()` depois do primeiro snapshot, com a guarda que já existe em [app.js:1281](../app.js#L1281).
 - **Congelar a lista de SDKs e publicar a política de privacidade aqui.**
 
 **Atualização do app: só por release da App Store.** Sem OTA na v1 — Appflow é pago, e OTA self-hosted acrescenta superfície de assinatura, rollback e versionamento pra operar, além de permitir mandar código não testado pra um aparelho que você não consegue depurar. Com um usuário real, 24-48h de revisão é aceitável. Somar ~20 linhas: constante `APP_VERSAO` no build, um `versao.json` na Vercel, e um banner dispensável em Ajustes com link `itms-apps://` quando houver versão nova.
@@ -335,4 +335,4 @@ Fase 2 export web ─────► Fase 4d (ramo nativo do share)
 | 4 | Build TestFlight no iPhone real: push com app fechado abre a obra certa; modo avião funciona; exclusão de conta funciona no binário; pinch-zoom funciona; nenhum `confirm()` some. |
 | 5 | Build no App Store Connect, metadados completos, conta de demonstração populada, notas de revisão em inglês, submetido. |
 
-**Cada fase vira sua própria spec + plano de implementação** antes de virar código, seguindo o fluxo que o projeto já usa em `docs/superpowers/`.
+**Cada fase vira sua própria spec + plano de implementação** antes de virar código, seguindo o fluxo que o projeto já usa em `docs/specs/` e `docs/plans/`.

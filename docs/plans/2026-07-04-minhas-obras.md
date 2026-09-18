@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Pivotar o app de finanças pessoais para controle de custos por obra com valor corrigido (custo de oportunidade) e lucro na venda, conforme `docs/superpowers/specs/2026-07-04-obras-design.md`.
+**Goal:** Pivotar o app de finanças pessoais para controle de custos por obra com valor corrigido (custo de oportunidade) e lucro na venda, conforme `docs/specs/2026-07-04-obras-design.md`.
 
 **Architecture:** Mantém a casca aprovada (globo, auth, tokens CSS, PWA). Novo módulo puro `calc.js` (correção composta, totais, lucro) testável em Node. `app.js` reescrito: 3 views (Início, Detalhe da obra, Ajustes) renderizadas por JS em containers do `index.html`.
 

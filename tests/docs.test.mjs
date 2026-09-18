@@ -62,3 +62,14 @@ test('AGENTS.md é instrução de contribuição, não prompt de persona', () =>
   assert.match(agents, /sw\.js/, 'a regra do ASSETS/CACHE é a que mais quebra produção');
   assert.match(agents, /docs\/specs\//, 'precisa dizer onde nasce um spec');
 });
+
+test('docs/ARQUITETURA.md documenta o fluxo de dados', () => {
+  const arq = ler('docs/ARQUITETURA.md');
+  assert.match(arq, /```mermaid/, 'o diagrama é o motivo do arquivo existir');
+  assert.match(arq, /onSnapshot/, 'o caminho de volta do Firestore precisa aparecer');
+  assert.match(arq, /firestore\.rules/, 'a fronteira de segurança precisa aparecer');
+  assert.match(arq, /OBRA_NATIVO/, 'a camada nativa precisa aparecer');
+  for (const global of ['OBRA_CALC', 'window.CLOUD', 'OBRA_PUSH', 'OBRA_SHARE']) {
+    assert.ok(arq.includes(global), `tabela de globais sem ${global}`);
+  }
+});

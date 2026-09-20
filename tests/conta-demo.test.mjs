@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { documentoDados, documentoPerfil, lerArgs, EMAIL_PADRAO } from '../scripts/conta-demo.mjs';
+import { documentoDados, documentoPerfil, lerArgs, EMAIL_PADRAO, SENHA_EMULADOR } from '../scripts/conta-demo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rules = readFileSync(path.join(RAIZ, 'firestore.rules'), 'utf8');
@@ -60,9 +60,27 @@ test('_atualizado é o milissegundo que o app usa, não um Timestamp', () => {
 });
 
 test('o padrão é o emulador; produção precisa ser pedida', () => {
-  assert.equal(lerArgs([]).producao, false, 'sem flag o script não pode tocar em produção');
-  assert.equal(lerArgs([]).email, EMAIL_PADRAO);
-  assert.equal(lerArgs(['--producao']).producao, true);
-  assert.equal(lerArgs(['--email', 'outro@exemplo.com']).email, 'outro@exemplo.com');
-  assert.equal(lerArgs(['--senha', 'abc']).senha, 'abc');
+  assert.equal(lerArgs([], {}).producao, false, 'sem flag o script não pode tocar em produção');
+  assert.equal(lerArgs([], {}).email, EMAIL_PADRAO);
+  assert.equal(lerArgs(['--producao'], {}).producao, true);
+  assert.equal(lerArgs(['--email', 'outro@exemplo.com'], {}).email, 'outro@exemplo.com');
+  assert.equal(lerArgs(['--senha', 'abc'], {}).senha, 'abc');
+});
+
+/* Este repositório é público. Uma senha real com valor padrão no código
+   entregaria a conta que a Apple está revisando para qualquer um que lesse o
+   arquivo — inclusive para alguém apagar as obras no meio da análise. */
+test('produção não tem senha padrão; o emulador tem', () => {
+  assert.equal(lerArgs(['--producao'], {}).senha, '', 'produção sem --senha precisa ficar vazia e o script recusar');
+  assert.equal(lerArgs(['--producao'], { CONTA_DEMO_SENHA: 'do-ambiente' }).senha, 'do-ambiente');
+  assert.equal(lerArgs(['--producao', '--senha', 'da-linha'], { CONTA_DEMO_SENHA: 'do-ambiente' }).senha, 'da-linha',
+    '--senha manda mais que o ambiente');
+  assert.equal(lerArgs([], {}).senha, SENHA_EMULADOR, 'no emulador a senha é fixa e descartável');
+});
+
+test('nenhuma senha de verdade está escrita no script', () => {
+  const fonte = readFileSync(path.join(RAIZ, 'scripts', 'conta-demo.mjs'), 'utf8');
+  const literais = [...fonte.matchAll(/['"`]([^'"`\n]{8,})['"`]/g)].map(m => m[1]);
+  const suspeitas = literais.filter(s => /[A-Z]/.test(s) && /[0-9]/.test(s) && /[^A-Za-z0-9\s./:@_-]/.test(s));
+  assert.deepEqual(suspeitas, [], `parece senha escrita no código: ${suspeitas.join(', ')}`);
 });

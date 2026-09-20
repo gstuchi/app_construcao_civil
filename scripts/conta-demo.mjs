@@ -8,13 +8,15 @@
    em fases diferentes, 69 gastos, compras parceladas no cartão e afazeres.
 
    Uso:
-     node scripts/conta-demo.mjs                      # emulador (padrão, não toca em nada real)
-     node scripts/conta-demo.mjs --producao           # projeto real
-     node scripts/conta-demo.mjs --email x --senha y  # sobrescreve e-mail/senha padrão
+     node scripts/conta-demo.mjs                              # emulador (padrão, não toca em nada real)
+     node scripts/conta-demo.mjs --producao --senha 'SENHA'   # projeto real
+     node scripts/conta-demo.mjs --email outro@exemplo.com    # troca o e-mail
 
    No emulador nada é preciso além do próprio emulador rodando. Em produção,
    FIREBASE_SERVICE_ACCOUNT precisa ter o JSON da conta de serviço — a mesma
-   variável que o cron de push já usa.
+   variável que o cron de push já usa — e a senha precisa vir por --senha ou
+   CONTA_DEMO_SENHA, porque este repositório é público e senha real não pode
+   ter valor padrão no código.
 
    O script é idempotente: rodar de novo na mesma conta só repõe os dados. */
 'use strict';
@@ -40,16 +42,20 @@ export function documentoPerfil(email, agora = new Date()){
   return { email, criado: agora.toISOString(), tz: 'America/Sao_Paulo' };
 }
 
-export function lerArgs(argv){
+/* Este repositório é público. Senha de verdade não pode ter valor padrão aqui:
+   qualquer um leria e entraria na conta que a Apple está revisando. A senha do
+   emulador é fixa de propósito — é descartável e nunca sai desta máquina —, mas
+   em produção ela precisa vir de fora, por --senha ou CONTA_DEMO_SENHA. */
+export const SENHA_EMULADOR = 'emulador-local';
+
+export function lerArgs(argv, env = process.env){
   const valor = nome => {
     const i = argv.indexOf('--' + nome);
     return i >= 0 ? (argv[i + 1] ?? '') : null;
   };
-  return {
-    producao: argv.includes('--producao'),
-    email: valor('email') || EMAIL_PADRAO,
-    senha: valor('senha') || 'RevisaoCustta2026!',
-  };
+  const producao = argv.includes('--producao');
+  const senha = valor('senha') || env.CONTA_DEMO_SENHA || (producao ? '' : SENHA_EMULADOR);
+  return { producao, email: valor('email') || EMAIL_PADRAO, senha };
 }
 
 /* Cria o usuário, ou reaproveita o que já existe repondo a senha — ela precisa
@@ -90,6 +96,11 @@ async function principal(opcoes){
     if(!process.env.FIREBASE_SERVICE_ACCOUNT){
       throw new Error('--producao exige FIREBASE_SERVICE_ACCOUNT com o JSON da conta de serviço.');
     }
+    /* Sem isto a senha viria de um padrão no código, e este repositório é
+       público — a conta que a Apple revisa ficaria aberta para qualquer um. */
+    if(!opcoes.senha){
+      throw new Error('--producao exige a senha por --senha ou CONTA_DEMO_SENHA. O repositório é público: nenhuma senha real pode ter valor padrão no código.');
+    }
     initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
     console.log(`PRODUÇÃO: projeto ${PROJETO}, conta ${opcoes.email}`);
   }
@@ -107,7 +118,10 @@ async function principal(opcoes){
   console.log('');
   console.log('Para colar em App Store Connect → Informações da versão → Login obrigatório:');
   console.log(`  E-mail: ${opcoes.email}`);
-  console.log(`  Senha:  ${opcoes.senha}`);
+  /* A senha de produção veio de quem rodou o comando, que já a conhece.
+     Reimprimi-la só a jogaria no histórico do shell e no log do terminal. */
+  console.log(opcoes.producao ? '  Senha:  a que você passou em --senha / CONTA_DEMO_SENHA'
+                              : `  Senha:  ${opcoes.senha}`);
   if(!opcoes.producao) console.log('\n(isto rodou no EMULADOR — para valer, rode com --producao)');
 }
 

@@ -114,12 +114,16 @@ Os passos 1 e 2 são feitos por `scripts/conta-demo.mjs`, que cria o usuário e 
 
 ```bash
 npm run conta:demo             # ensaio no emulador, não toca em nada real
-FIREBASE_SERVICE_ACCOUNT="$(cat chave.json)" npm run conta:demo:producao
+
+# para valer — a senha vem de fora, nunca do código:
+FIREBASE_SERVICE_ACCOUNT="$(cat chave.json)" \
+CONTA_DEMO_SENHA='escolha uma senha forte aqui' \
+  npm run conta:demo:producao
 ```
 
-O script é idempotente: rodar de novo repõe os dados e a senha na mesma conta. Ele recusa `--producao` sem credencial e recusa rodar contra produção se `FIRESTORE_EMULATOR_HOST` estiver sobrando no ambiente, que gravaria no emulador em silêncio.
+O script é idempotente: rodar de novo repõe os dados e a senha na mesma conta. Ele recusa `--producao` sem credencial, sem senha, ou se `FIRESTORE_EMULATOR_HOST` estiver sobrando no ambiente — o que gravaria no emulador em silêncio e deixaria o revisor sem conta.
 
-1. E-mail e senha padrão: `revisao.custta@gmail.com` / `RevisaoCustta2026!`. Para trocar, passe `--email` e `--senha`.
+1. E-mail padrão: `revisao.custta@gmail.com` (troque com `--email`). **A senha não tem padrão e não pode ser escrita em lugar nenhum do repositório** — ele é público, e uma senha commitada entrega a conta que a Apple está revisando para qualquer um. Guarde-a no seu gerenciador de senhas e cole no App Store Connect.
 2. O formato gravado é conferido por `tests/conta-demo.test.mjs` contra as `firestore.rules` — o Admin SDK passa por cima das regras, então a conferência precisa morar no teste.
 3. Preencha e-mail e senha em App Store Connect → Informações da versão → Login obrigatório.
 4. Não apague nem troque a senha dessa conta enquanto a revisão estiver em andamento.

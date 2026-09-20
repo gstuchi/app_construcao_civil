@@ -1,0 +1,91 @@
+name: ios-build
+# Compila o app iOS no runner macOS, SEM assinatura.
+#
+# Por que sem assinatura: a matrícula no Apple Developer Program ainda não saiu,
+# e certificado/perfil só existem depois dela. Tudo que vem ANTES da assinatura
+# — npm ci, build:www, cap sync, resolução dos pacotes Swift, compilação do
+# Capacitor e do Firebase — já pode ser verificado agora. É a porta de entrada
+# da Fase 5: quando a conta chegar, só entram os secrets e o passo de export.
+#
+# Capacitor 8 usa Swift Package Manager (ios/App/CapApp-SPM), não CocoaPods.
+# Não existe Podfile aqui e `pod install` não é passo deste build.
+#
+# Os pacotes locais do Package.swift apontam para ../../../node_modules, então
+# `npm ci` é pré-requisito do xcodebuild, não só do cap sync.
+#
+# Custo: repositório privado dá 2.000 min/mês com multiplicador 10x para macOS,
+# ou seja ~200 min. Por isso este workflow NÃO roda em todo push — só em PR que
+# mexe no que afeta o build nativo, e no botão manual da aba Actions.
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'scripts/build-www.mjs'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compilar:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      # Fica no log: o runner troca de Xcode ao longo do tempo e é a primeira
+      # coisa a conferir quando um build que passava começa a quebrar sozinho.
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      - run: npm ci
+
+      # build:www monta a pasta www/ e cap sync a copia para ios/App/App/public,
+      # além de regravar o Package.swift do CapApp-SPM a partir do package.json.
+      - name: Empacotar a web e sincronizar o Capacitor
+        run: npm run cap:sync
+
+      # O sync não pode deixar o projeto versionado sujo: se Package.swift ou o
+      # pbxproj saírem diferentes, é porque o commit está defasado do package.json.
+      - name: O cap sync não mudou nada versionado
+        run: git diff --exit-code -- ios
+
+      # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem
+      # aprove macro ou plugin de pacote na primeira resolução, e sem as flags o
+      # xcodebuild falha em vez de perguntar.
+      # CODE_SIGNING_* zerados: é isto que faz o build existir sem conta Apple.
+      - name: Compilar (Release, sem assinatura)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ios/App/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY= \
+            build
+
+      - name: O binário saiu
+        run: |
+          app=ios/App/build/Build/Products/Release-iphoneos/App.app
+          test -d "$app" || { echo "não achei $app"; exit 1; }
+          test -f "$app/App" || { echo "$app sem executável"; exit 1; }
+          test -f "$app/public/index.html" || { echo "$app sem a web empacotada"; exit 1; }
+          echo "ok - $app"

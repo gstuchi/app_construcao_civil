@@ -260,10 +260,12 @@ Este é o maior risco de reprovação e nenhum item dele é código de fachada: 
 
 - Gerar o CSR com `openssl` no Windows → subir no portal da Apple → baixar o `.cer` → converter em `.p12` com `openssl`. Nenhum Mac envolvido nos certificados.
 - Criar uma API key do App Store Connect (`.p8`) pela web.
-- Workflow em `macos-latest`: `npm ci` → `build-www` → `npx cap sync ios` → `pod install` → `xcodebuild archive` → `-exportArchive` → upload via `notarytool` ou fastlane `pilot`.
+- Workflow em `macos-latest`: `npm ci` → `build-www` → `npx cap sync ios` → `xcodebuild archive` → `-exportArchive` → upload via `notarytool` ou fastlane `pilot`. **Sem CocoaPods:** o Capacitor 8 deste repo usa Swift Package Manager (`ios/App/CapApp-SPM`), não existe `Podfile` e `pod install` não é passo do build. Os pacotes locais do `Package.swift` apontam para `node_modules`, então `npm ci` é pré-requisito do `xcodebuild`, não só do `cap sync`.
 - Guardar `.p12`, senha, API key, issuer ID e key ID como secrets do GitHub. Keychain temporária no CI.
 - Repositório privado dá 2.000 minutos/mês, com multiplicador **10x para macOS** = ~200 minutos de macOS. Um build Capacitor leva 8-12 min → 15-20 builds/mês de graça. Suficiente pro ritmo "sem pressa".
 - **O TestFlight é o seu laço de teste em aparelho.** O CI sobe o build, você instala no seu iPhone pelo app do TestFlight, e testa tudo da 4e em hardware real.
+
+**Já em pé, antes da matrícula:** o workflow [`ios-build.yml`](../.github/workflows/ios-build.yml) compila o app em `macos-latest` com `CODE_SIGNING_ALLOWED=NO`. Certificado e perfil só existem depois da conta aprovada, mas tudo que vem antes da assinatura — `npm ci`, `build:www`, `cap sync`, resolução dos pacotes Swift, compilação do Capacitor e do Firebase — já é verificável hoje. Ele não roda em todo push (minuto de macOS custa 10x): dispara em PR que mexe no build nativo e no botão manual da aba Actions. Quando a conta sair, entram os secrets e os passos de `archive`/`exportArchive` por cima deste caminho já testado.
 
 Comprar um Mac mini só se você bater numa parede que o log do CI não resolve — na prática, o Safari Web Inspector, que precisa de Mac pra anexar num WKWebView. Mitigação: o Sentry da Fase 1 te dá visibilidade remota de erro no lugar disso.
 

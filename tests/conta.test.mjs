@@ -8,10 +8,12 @@ let cloud;
 beforeEach(async()=>{
   const event=new EventTarget();
   globalThis.window={ addEventListener:event.addEventListener.bind(event), dispatchEvent:event.dispatchEvent.bind(event),
-    OBRA_CALC:require('../calc.js'), location:{ reload:()=>ctrl.passos.push('reload') } };
+    OBRA_CALC:require('../calc.js'), OBRA_CADASTRO:require('../cadastro.js'),
+    location:{ reload:()=>ctrl.passos.push('reload') } };
   globalThis.CustomEvent=globalThis.CustomEvent || Event;
   Object.defineProperty(globalThis,'navigator',{value:{onLine:true},configurable:true});
   ctrl.passos=[]; ctrl.falhas={}; ctrl.respostas=[]; ctrl.pendentesSDK=Promise.resolve();
+  ctrl.perfil=null; ctrl.updateDocChamadas=[];
   await import('../cloud.js?conta='+Math.random()); cloud=window.CLOUD; await cloud.ready;
 });
 test('exclusão confirma documentos antes da conta e limpa cache por último',async()=>{
@@ -33,10 +35,30 @@ test('falha no batch mantém conta e cache; falha na conta informa exclusão par
   await assert.rejects(cloud.apagarConta('senha','APAGAR'),{dadosApagados:true});
   assert.ok(!ctrl.passos.includes('clear'));
 });
-test('troca de senha exige reautenticação e rejeita senha curta',async()=>{
-  await assert.rejects(cloud.trocarSenha('atual','123'),{code:'auth/weak-password'});
-  await cloud.trocarSenha('atual','Nova-segura!');
+test('troca de senha aplica a regra nova antes de reautenticar',async()=>{
+  await assert.rejects(cloud.trocarSenha('atual','123'),{code:'auth/weak-password',message:'Use pelo menos 8 caracteres.'});
+  await assert.rejects(cloud.trocarSenha('atual','abcdefghij'),{code:'auth/weak-password',message:'Inclua pelo menos um número.'});
+  assert.deepEqual(ctrl.passos,[]);
+  await cloud.trocarSenha('atual','Nova-segura1');
   assert.deepEqual(ctrl.passos,['reauth','senha']);
+});
+test('cadastro grava perfil com nome e origem junto do e-mail e fuso',async()=>{
+  ctrl.setDocChamadas=[];
+  await cloud.signup('ana@exemplo.com','Obra2026x',{nome:'Ana',origem:'instagram'});
+  const perfil=ctrl.setDocChamadas.find(c=>c.ref.path==='perfis/u-teste');
+  assert.equal(perfil.dados.nome,'Ana'); assert.equal(perfil.dados.origem,'instagram');
+  assert.ok(perfil.dados.tz); assert.ok(perfil.dados.criado);
+});
+test('lerPerfil devolve nome e sobrenome, e null quando falta ou falha',async()=>{
+  ctrl.perfil={email:'x',nome:'Ana',sobrenome:'Lima',origem:'google'};
+  assert.deepEqual(await cloud.lerPerfil(),{nome:'Ana',sobrenome:'Lima'});
+  ctrl.perfil=null; assert.equal(await cloud.lerPerfil(),null);
+  ctrl.falhas.get={code:'unavailable'}; assert.equal(await cloud.lerPerfil(),null);
+});
+test('salvarNome atualiza e remove sobrenome vazio',async()=>{
+  await cloud.salvarNome('Ana','Lima');
+  await cloud.salvarNome('Ana','');
+  assert.deepEqual(ctrl.updateDocChamadas.map(c=>c.dados),[{nome:'Ana',sobrenome:'Lima'},{nome:'Ana',sobrenome:'@del'}]);
 });
 test('logout limpa após signOut; falha de limpeza bloqueia novo login até retry',async()=>{
   ctrl.falhas.clear={code:'failed-precondition'};

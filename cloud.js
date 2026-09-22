@@ -10,7 +10,7 @@ import {
 } from './vendor/firebase/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
-  doc, setDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
+  doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
 } from './vendor/firebase/firebase-firestore.js';
 
@@ -261,12 +261,31 @@ window.CLOUD = {
 
   /* perfis/{uid} guarda só o mínimo. Nada de CPF: o app nunca leu de volta,
      e dado pessoal que não se usa é só responsabilidade sob a LGPD.
-     As rules rejeitam qualquer chave fora de email/criado/tz. */
-  async signup(email, senha){
+     O perfil (nome, sobrenome, origem) chega já normalizado por OBRA_CADASTRO;
+     as rules são a fronteira e rejeitam qualquer chave fora da lista. */
+  async signup(email, senha, perfil = {}){
     if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
     await setDoc(doc(db, 'perfis', cred.user.uid),
-      { email:cred.user.email, criado: new Date().toISOString(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo' });
+      { email:cred.user.email ?? email, criado: new Date().toISOString(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo', ...perfil });
+  },
+  async lerPerfil(){
+    const u = auth.currentUser;
+    if(!u) return null;
+    try{
+      const snap = await getDoc(doc(db, 'perfis', u.uid));
+      if(!snap.exists()) return null;
+      const { nome, sobrenome } = snap.data();
+      const r = {};
+      if(typeof nome === 'string' && nome) r.nome = nome;
+      if(typeof sobrenome === 'string' && sobrenome) r.sobrenome = sobrenome;
+      return r;
+    }catch{ return null; }
+  },
+  async salvarNome(nome, sobrenome){
+    const u = auth.currentUser;
+    if(!u) throw Object.assign(new Error('Entre na conta.'), { code:'offline' });
+    await updateDoc(doc(db, 'perfis', u.uid), { nome, sobrenome: sobrenome ? sobrenome : deleteField() });
   },
   login: (email, senha) => cacheBloqueado
     ? Promise.reject(Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' }))
@@ -285,7 +304,8 @@ window.CLOUD = {
     return true;
   },
   async trocarSenha(atual, nova){
-    if(nova.length < 6) throw Object.assign(new Error('Use pelo menos 6 caracteres.'), { code:'auth/weak-password' });
+    const regra = window.OBRA_CADASTRO.validaSenha(nova, auth.currentUser?.email);
+    if(!regra.ok) throw Object.assign(new Error(regra.erro), { code:'auth/weak-password' });
     const u = await reautenticar(atual);
     await updatePassword(u, nova);
   },

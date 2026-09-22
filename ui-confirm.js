@@ -13,14 +13,46 @@
     if(err.code === 'auth/network-request-failed') return 'Falha na conexão. Tente novamente quando a internet voltar.';
     return 'Não foi possível concluir. Tente novamente.';
   }
+  /* Boilerplate comum dos dialogs de conta: criação, guard `aberto`, foco inicial,
+     cancelamento bloqueado enquanto trabalha, campos desabilitados durante o envio
+     assíncrono e reabilitados no finally. `validar` roda antes de travar a tela e
+     pode abortar (retornando false, já com a mensagem escrita); `executar` recebe
+     o que `validar` devolveu e só precisa da chamada ao CLOUD (mais fechar/toast). */
+  function montaDialogo(html, { preencher, foco, validar, executar }){
+    const dialogo = document.createElement('dialog');
+    dialogo.className = 'conta-dialog';
+    dialogo.setAttribute('aria-labelledby','contaTitulo');
+    dialogo.innerHTML = html;
+    if(preencher) preencher(dialogo);
+    let trabalhando = false;
+    function fechar(){ dialogo.close(); dialogo.remove(); aberto = null; }
+    aberto = { fechar };
+    document.body.append(dialogo); dialogo.showModal();
+    dialogo.querySelector(foco)?.focus();
+    dialogo.addEventListener('cancel', e=>{ if(trabalhando) e.preventDefault(); });
+    dialogo.addEventListener('close', ()=>{ dialogo.remove(); aberto = null; });
+    dialogo.querySelector('#contaCancelar').onclick = fechar;
+    dialogo.querySelector('form').onsubmit = async e=>{
+      e.preventDefault(); if(trabalhando) return;
+      const msg = dialogo.querySelector('#contaMensagem');
+      const dado = validar(dialogo, msg);
+      if(dado === false) return;
+      trabalhando = true;
+      dialogo.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+      try{ await executar(dado, { dialogo, msg, fechar }); }
+      catch(err){ msg.textContent = mensagem(err); }
+      finally{
+        trabalhando = false;
+        dialogo.querySelectorAll('input,button').forEach(el=>el.disabled=false);
+      }
+    };
+    return dialogo;
+  }
   function abrir(tipo, dados){
     if(aberto) return;
     if(tipo === 'nome') return abrirNome(dados);
     const apagar = tipo === 'apagar';
-    const dialogo = document.createElement('dialog');
-    dialogo.className = 'conta-dialog';
-    dialogo.setAttribute('aria-labelledby','contaTitulo');
-    dialogo.innerHTML = `<form id="contaForm">
+    const html = `<form id="contaForm">
       <h2 id="contaTitulo">${apagar ? 'Apagar conta' : 'Trocar senha'}</h2>
       <p>${apagar ? 'Isso apaga sua conta, obras, gastos e notificações. Não pode ser desfeito. Exporte seus dados antes de continuar.' : 'Confirme sua senha atual e escolha uma nova senha.'}</p>
       <div class="field"><label for="contaSenha">Senha atual</label><input id="contaSenha" type="password" autocomplete="current-password" required></div>
@@ -37,51 +69,36 @@
       <div class="sheet-actions"><button type="button" class="btn ghost" id="contaCancelar">Cancelar</button>
       <button type="submit" class="btn" id="contaEnviar">${apagar ? 'Apagar minha conta' : 'Salvar senha'}</button></div>
     </form>`;
-    let trabalhando = false;
-    function fechar(){ dialogo.close(); dialogo.remove(); aberto = null; }
-    aberto = { fechar };
-    document.body.append(dialogo); dialogo.showModal();
+    const dialogo = montaDialogo(html, {
+      foco: '#contaSenha',
+      validar(dlg, msg){
+        const senha = dlg.querySelector('#contaSenha');
+        const confirmacao = dlg.querySelector('#contaConfirmacao');
+        if(apagar && confirmacao.value !== 'APAGAR'){ msg.textContent = 'Digite APAGAR exatamente como aparece acima.'; return false; }
+        if(!apagar){
+          const regra = OBRA_CADASTRO.validaSenha(confirmacao.value, CLOUD.user()?.email);
+          if(!regra.ok){ msg.textContent = regra.erro; return false; }
+          if(dlg.querySelector('#contaNova2').value !== confirmacao.value){ msg.textContent = 'As senhas novas não são iguais.'; return false; }
+        }
+        const atual = senha.value, nova = confirmacao.value;
+        senha.value = ''; if(!apagar){ confirmacao.value = ''; dlg.querySelector('#contaNova2').value = ''; }
+        return { atual, nova };
+      },
+      async executar({ atual, nova }, { msg, fechar }){
+        msg.textContent = apagar ? 'Apagando conta. Aguarde…' : 'Salvando senha…';
+        if(apagar) await CLOUD.apagarConta(atual, nova, { antesDeApagar:()=>window.OBRA_PUSH?.desativa() });
+        else await CLOUD.trocarSenha(atual, nova);
+        fechar(); if(!apagar) toast('Senha alterada.');
+      },
+    });
     if(!apagar){
       const ul = dialogo.querySelector('#contaRegras'), nova = dialogo.querySelector('#contaConfirmacao');
       OBRA_CHECKLIST.montar(ul);
       nova.addEventListener('input', ()=>OBRA_CHECKLIST.atualizar(ul, nova.value, CLOUD.user()?.email));
     }
-    dialogo.querySelector('#contaSenha').focus();
-    dialogo.addEventListener('cancel', e=>{ if(trabalhando) e.preventDefault(); });
-    dialogo.addEventListener('close', ()=>{ dialogo.remove(); aberto = null; });
-    dialogo.querySelector('#contaCancelar').onclick = fechar;
-    dialogo.querySelector('form').onsubmit = async e=>{
-      e.preventDefault(); if(trabalhando) return;
-      const senha = dialogo.querySelector('#contaSenha');
-      const confirmacao = dialogo.querySelector('#contaConfirmacao');
-      const msg = dialogo.querySelector('#contaMensagem');
-      if(apagar && confirmacao.value !== 'APAGAR'){ msg.textContent = 'Digite APAGAR exatamente como aparece acima.'; return; }
-      if(!apagar){
-        const regra = OBRA_CADASTRO.validaSenha(confirmacao.value, CLOUD.user()?.email);
-        if(!regra.ok){ msg.textContent = regra.erro; return; }
-        if(dialogo.querySelector('#contaNova2').value !== confirmacao.value){ msg.textContent = 'As senhas novas não são iguais.'; return; }
-      }
-      trabalhando = true;
-      const atual = senha.value, nova = confirmacao.value;
-      senha.value = ''; if(!apagar){ confirmacao.value = ''; dialogo.querySelector('#contaNova2').value = ''; }
-      dialogo.querySelectorAll('input,button').forEach(el=>el.disabled=true);
-      msg.textContent = apagar ? 'Apagando conta. Aguarde…' : 'Salvando senha…';
-      try{
-        if(apagar) await CLOUD.apagarConta(atual, nova, { antesDeApagar:()=>window.OBRA_PUSH?.desativa() });
-        else await CLOUD.trocarSenha(atual, nova);
-        fechar(); if(!apagar) toast('Senha alterada.');
-      }catch(err){ msg.textContent = mensagem(err); }
-      finally{
-        trabalhando = false;
-        dialogo.querySelectorAll('input,button').forEach(el=>el.disabled=false);
-      }
-    };
   }
   function abrirNome(dados){
-    const dialogo = document.createElement('dialog');
-    dialogo.className = 'conta-dialog';
-    dialogo.setAttribute('aria-labelledby','contaTitulo');
-    dialogo.innerHTML = `<form>
+    const html = `<form>
       <h2 id="contaTitulo">Seu nome</h2>
       <div class="field"><label for="contaNome">Nome</label><input id="contaNome" type="text" autocomplete="given-name" maxlength="60" required></div>
       <div class="field"><label for="contaSobrenome">Sobrenome <span class="opcional">(opcional)</span></label><input id="contaSobrenome" type="text" autocomplete="family-name" maxlength="80"></div>
@@ -89,31 +106,24 @@
       <div class="sheet-actions"><button type="button" class="btn ghost" id="contaCancelar">Cancelar</button>
       <button type="submit" class="btn" id="contaEnviar">Salvar</button></div>
     </form>`;
-    dialogo.querySelector('#contaNome').value = dados?.nome || '';
-    dialogo.querySelector('#contaSobrenome').value = dados?.sobrenome || '';
-    let trabalhando = false;
-    function fechar(){ dialogo.close(); dialogo.remove(); aberto = null; }
-    aberto = { fechar };
-    document.body.append(dialogo); dialogo.showModal();
-    dialogo.querySelector('#contaNome').focus();
-    dialogo.addEventListener('cancel', e=>{ if(trabalhando) e.preventDefault(); });
-    dialogo.addEventListener('close', ()=>{ dialogo.remove(); aberto = null; });
-    dialogo.querySelector('#contaCancelar').onclick = fechar;
-    dialogo.querySelector('form').onsubmit = async e=>{
-      e.preventDefault(); if(trabalhando) return;
-      const msg = dialogo.querySelector('#contaMensagem');
-      const r = OBRA_CADASTRO.normalizaNome({ nome:dialogo.querySelector('#contaNome').value, sobrenome:dialogo.querySelector('#contaSobrenome').value });
-      if(!r.ok){ msg.textContent = r.erro; dialogo.querySelector(r.campo==='nome'?'#contaNome':'#contaSobrenome').focus(); return; }
-      trabalhando = true;
-      dialogo.querySelectorAll('input,button').forEach(el=>el.disabled=true);
-      msg.textContent = 'Salvando…';
-      try{
-        await CLOUD.salvarNome(r.perfil.nome, r.perfil.sobrenome || '');
+    montaDialogo(html, {
+      preencher(dlg){
+        dlg.querySelector('#contaNome').value = dados?.nome || '';
+        dlg.querySelector('#contaSobrenome').value = dados?.sobrenome || '';
+      },
+      foco: '#contaNome',
+      validar(dlg, msg){
+        const r = OBRA_CADASTRO.normalizaNome({ nome:dlg.querySelector('#contaNome').value, sobrenome:dlg.querySelector('#contaSobrenome').value });
+        if(!r.ok){ msg.textContent = r.erro; dlg.querySelector(r.campo==='nome'?'#contaNome':'#contaSobrenome').focus(); return false; }
+        return r.perfil;
+      },
+      async executar(perfil, { msg, fechar }){
+        msg.textContent = 'Salvando…';
+        await CLOUD.salvarNome(perfil.nome, perfil.sobrenome || '');
         fechar(); toast('Nome salvo.');
         window.dispatchEvent(new Event('perfil-alterado'));
-      }catch(err){ msg.textContent = mensagem(err); }
-      finally{ trabalhando = false; dialogo.querySelectorAll('input,button').forEach(el=>el.disabled=false); }
-    };
+      },
+    });
   }
   function mostrarCache(){
     aberto?.fechar();

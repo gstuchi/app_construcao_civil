@@ -1374,7 +1374,8 @@ async function carregaPerfilAjustes(conta, forcar){
   if(!conta){ perfilAjustes.uid=null; perfilAjustes.dados=null; pintaNome(); return; }
   if(perfilAjustes.uid === conta.uid && !forcar){ pintaNome(); return; }
   perfilAjustes.uid = conta.uid;
-  const dados = await window.CLOUD.lerPerfil();
+  let dados = null;
+  try{ dados = (await window.CLOUD?.lerPerfil?.()) ?? null; }catch{ dados = null; }
   if(perfilAjustes.uid !== conta.uid) return; // trocou de conta no meio
   perfilAjustes.dados = dados; pintaNome();
 }

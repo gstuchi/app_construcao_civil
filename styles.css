@@ -271,6 +271,8 @@
   .senha-regras li::before{content:"";width:14px;height:14px;flex:none;border-radius:50%;border:1.5px solid var(--line-strong)}
   .senha-regras li.ok{color:var(--text)}
   .senha-regras li.ok::before{border-color:var(--brand);background:var(--brand) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%2304100C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat}
+  /* claro: --brand fica escuro, check preto sumia — mesmo traço em branco */
+  html[data-theme="light"] .senha-regras li.ok::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
   @media (max-width:360px){.senha-regras{grid-template-columns:1fr}}
   .field-error{display:block;color:var(--red);font-size:12px;margin-top:6px}
   .desc-wrap{position:relative}

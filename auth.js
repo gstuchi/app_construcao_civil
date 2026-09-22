@@ -10,7 +10,7 @@
     auth.classList.toggle('hidden',!on);
     document.body.classList.toggle('locked',on);
     sair.classList.toggle('hidden',on);
-    if(on){ mostrarAba('login'); $('#lSenha').value=''; $('#cSenha').value=''; }
+    if(on){ mostrarAba('login'); limpaSenhas(); }
   }
   locked(true); // começa travado até o CLOUD dizer quem é
 
@@ -91,6 +91,37 @@
     b.innerHTML = ICON(i.type==='password' ? 'olho' : 'olhoFechado');
   });
 
+  /* ---------- checklist de senha (também usado no Trocar senha, via OBRA_CHECKLIST) ---------- */
+  const CHECKLIST = {
+    montar(ul){
+      ul.innerHTML = OBRA_CADASTRO.REGRAS_SENHA
+        .map(r=>`<li data-regra="${r.id}">${r.texto}</li>`).join('');
+    },
+    atualizar(ul, senha, email){
+      const {regras} = OBRA_CADASTRO.validaSenha(senha, email);
+      for(const r of regras) ul.querySelector(`[data-regra="${r.id}"]`)?.classList.toggle('ok', r.ok);
+    },
+  };
+  window.OBRA_CHECKLIST = CHECKLIST;
+  const regrasCad = $('#cRegras');
+  CHECKLIST.montar(regrasCad);
+  const atualizaRegras = ()=>CHECKLIST.atualizar(regrasCad, $('#cSenha').value, $('#cEmail').value);
+  $('#cSenha').addEventListener('input', atualizaRegras);
+  $('#cEmail').addEventListener('input', atualizaRegras);
+
+  /* ---------- como conheceu ---------- */
+  const selOrigem = $('#cOrigem');
+  for(const o of OBRA_CADASTRO.ORIGENS){
+    const op = document.createElement('option'); op.value = o.id; op.textContent = o.nome; selOrigem.append(op);
+  }
+  function mostraDetalhe(){
+    const o = OBRA_CADASTRO.ORIGENS.find(x=>x.id===selOrigem.value);
+    $('#cDetalheWrap').classList.toggle('hidden', !o?.detalhe);
+    $('#cDetalheLabel').textContent = o?.detalhe || '';
+    if(!o?.detalhe) $('#cDetalhe').value = '';
+  }
+  selOrigem.addEventListener('change', mostraDetalhe);
+
   /* ---------- erros do Firebase em português ---------- */
   function msgErro(e){
     const c = (e && e.code) || '';
@@ -98,7 +129,7 @@
       return 'E-mail ou senha incorretos.';
     if(c.includes('email-already-in-use')) return 'Este e-mail já tem conta. Use "Entrar".';
     if(c.includes('invalid-email'))        return 'E-mail inválido.';
-    if(c.includes('weak-password'))        return 'Senha fraca: use pelo menos 6 caracteres.';
+    if(c.includes('weak-password'))        return 'Senha fraca: use 8 caracteres ou mais, com letra e número.';
     if(c.includes('too-many-requests'))    return 'Muitas tentativas. Espere um pouco.';
     if(c.includes('network-request-failed')) return 'Sem internet. Conecte pra entrar.';
     return 'Não deu certo. Tente de novo.';
@@ -136,15 +167,35 @@
   };
 
   /* ---------- cadastro ---------- */
+  const CAMPO_ID = {nome:'cNome', sobrenome:'cSobrenome', origem:'cOrigem', origemDetalhe:'cDetalhe'};
+  function marca(id, msg){
+    const msgEl=$('#cMsg'); msgEl.textContent=msg;
+    const el=document.getElementById(id); el.setAttribute('aria-invalid','true'); el.focus();
+  }
+  $('#fCad').addEventListener('input', e=>e.target.removeAttribute?.('aria-invalid'));
+  $('#fCad').addEventListener('change', e=>e.target.removeAttribute?.('aria-invalid'));
   $('#fCad').addEventListener('submit',async e=>{
     e.preventDefault();
     const msg=$('#cMsg'); msg.textContent='';
-    const email=$('#cEmail').value.trim(), senha=$('#cSenha').value;
-    if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='E-mail inválido.'; return; }
-    if(senha.length<6){ msg.textContent='Senha precisa de pelo menos 6 caracteres.'; return; }
+    const perfil = OBRA_CADASTRO.normalizaPerfil({
+      nome:$('#cNome').value, sobrenome:$('#cSobrenome').value,
+      origem:$('#cOrigem').value, origemDetalhe:$('#cDetalhe').value,
+    });
+    const email=$('#cEmail').value.trim(), senha=$('#cSenha').value, senha2=$('#cSenha2').value;
+    if(!perfil.ok && (perfil.campo==='nome' || perfil.campo==='sobrenome')) return marca(CAMPO_ID[perfil.campo], perfil.erro);
+    if(!/^\S+@\S+\.\S+$/.test(email)) return marca('cEmail','E-mail inválido.');
+    const regra = OBRA_CADASTRO.validaSenha(senha, email);
+    if(!regra.ok) return marca('cSenha', regra.erro);
+    if(senha2 !== senha) return marca('cSenha2','As senhas não são iguais.');
+    if(!perfil.ok) return marca(CAMPO_ID[perfil.campo], perfil.erro);
     await comLoading(e.target.querySelector('button[type=submit]'), 'Criando conta…', async()=>{
-      try{ await CLOUD.signup(email, senha); }
+      try{ await CLOUD.signup(email, senha, perfil.perfil); }
       catch(err){ msg.textContent=msgErro(err); }
     });
   });
+
+  function limpaSenhas(){
+    for(const id of ['lSenha','cSenha','cSenha2']) document.getElementById(id).value='';
+    const ul=document.getElementById('cRegras'); if(ul && ul.children.length) CHECKLIST.atualizar(ul,'','');
+  }
 })();

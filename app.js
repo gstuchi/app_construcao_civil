@@ -36,6 +36,8 @@ const FASES = {
 
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
 let db = empty();
+/* Nome vem de perfis/{uid}; lido uma vez por conta e relido quando o dialog salva. */
+const perfilAjustes = { uid:null, dados:null };
 let obraAberta = null;   // id da obra no detalhe
 let filtroTexto = '', filtroMes = ''; // busca dos lançamentos (só memória)
 let tab = 'inicio';
@@ -1362,10 +1364,27 @@ $('#notifAtivar').onclick=async()=>{
 
 window.addEventListener('cloud-conta', ()=>renderAjustes());
 /* ===== AJUSTES ===== */
+function pintaNome(){
+  const d = perfilAjustes.dados, nome = [d?.nome, d?.sobrenome].filter(Boolean).join(' ');
+  $('#ajNome').textContent = nome;
+  $('#ajNome').classList.toggle('hidden', !nome);
+  $('#ajNomeEditar').textContent = nome ? 'Editar nome' : 'Adicionar nome';
+}
+async function carregaPerfilAjustes(conta, forcar){
+  if(!conta){ perfilAjustes.uid=null; perfilAjustes.dados=null; pintaNome(); return; }
+  if(perfilAjustes.uid === conta.uid && !forcar){ pintaNome(); return; }
+  perfilAjustes.uid = conta.uid;
+  const dados = await window.CLOUD.lerPerfil();
+  if(perfilAjustes.uid !== conta.uid) return; // trocou de conta no meio
+  perfilAjustes.dados = dados; pintaNome();
+}
+window.addEventListener('perfil-alterado', ()=>carregaPerfilAjustes(window.CLOUD?.user(), true));
 function renderAjustes(){
   const conta = window.CLOUD?.user();
   $('#ajEmail').textContent = conta?.email || '';
   $('#ajVerificacao').classList.toggle('hidden', !conta || conta.emailVerificado);
+  $('#ajNomeEditar').onclick = ()=>OBRA_CONTA.abrir('nome', perfilAjustes.dados);
+  carregaPerfilAjustes(conta);
   $('#ajSenha').onclick = ()=>OBRA_CONTA.abrir('senha');
   $('#ajApagar').onclick = ()=>OBRA_CONTA.abrir('apagar');
   $('#ajVerificar').onclick = async()=>{

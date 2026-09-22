@@ -199,6 +199,55 @@ describe('perfis/{uid} — CPF e plano', () => {
   });
 });
 
+describe('perfis/{uid} — nome e origem', () => {
+  const base = { email: ANA.email, criado: '2026-09-22T00:00:00.000Z', tz: 'America/Sao_Paulo' };
+
+  test('perfil antigo, sem campos novos, continua aceito', async () => {
+    await assertSucceeds(setDoc(doc(comoAna(), 'perfis', ANA.uid), base));
+  });
+
+  test('cadastro completo é aceito', async () => {
+    await assertSucceeds(setDoc(doc(comoAna(), 'perfis', ANA.uid), {
+      ...base, nome: 'Ana', sobrenome: 'Lima', origem: 'indicacao', origemDetalhe: 'Seu João',
+    }));
+  });
+
+  for (const origem of ['instagram', 'indicacao', 'google', 'tiktok', 'youtube', 'outro']) {
+    test(`origem ${origem} é aceita`, async () => {
+      await assertSucceeds(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome: 'Ana', origem }));
+    });
+  }
+
+  test('origem fora da lista é rejeitada', async () => {
+    await assertFails(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome: 'Ana', origem: 'orkut' }));
+  });
+
+  test('nome vazio, longo ou com tipo errado é rejeitado', async () => {
+    for (const nome of ['', 'A'.repeat(61), 42, { x: 1 }])
+      await assertFails(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome }));
+  });
+
+  test('sobrenome e detalhe acima de 80 são rejeitados', async () => {
+    await assertFails(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome: 'Ana', sobrenome: 'L'.repeat(81) }));
+    await assertFails(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome: 'Ana', origem: 'outro', origemDetalhe: 'x'.repeat(81) }));
+  });
+
+  test('chave desconhecida continua rejeitada', async () => {
+    await assertFails(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome: 'Ana', telefone: '11999999999' }));
+  });
+
+  test('cliente edita nome e sobrenome depois', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), base));
+    await assertSucceeds(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { nome: 'Ana', sobrenome: 'Lima' }));
+  });
+
+  test('cliente NÃO muda a origem depois do cadastro', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), { ...base, nome: 'Ana', origem: 'google' }));
+    await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { origem: 'instagram' }));
+    await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { origemDetalhe: 'x' }));
+  });
+});
+
 describe('push/{uid} — inscrições e tokens', () => {
   test('grava a própria inscrição web push', async () => {
     await assertSucceeds(setDoc(doc(comoAna(), 'push', ANA.uid), {

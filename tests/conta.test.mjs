@@ -49,6 +49,15 @@ test('cadastro grava perfil com nome e origem junto do e-mail e fuso',async()=>{
   assert.equal(perfil.dados.nome,'Ana'); assert.equal(perfil.dados.origem,'instagram');
   assert.ok(perfil.dados.tz); assert.ok(perfil.dados.criado);
 });
+test('signup avisa perfil-alterado só depois do setDoc do perfil terminar',async()=>{
+  ctrl.setDocChamadas=[];
+  let gravadoAoDisparar=false;
+  window.addEventListener('perfil-alterado',()=>{
+    gravadoAoDisparar=ctrl.setDocChamadas.some(c=>c.ref.path==='perfis/u-teste');
+  });
+  await cloud.signup('ana@exemplo.com','Obra2026x',{nome:'Ana'});
+  assert.ok(gravadoAoDisparar);
+});
 test('lerPerfil devolve nome e sobrenome, e null quando falta ou falha',async()=>{
   ctrl.perfil={email:'x',nome:'Ana',sobrenome:'Lima',origem:'google'};
   assert.deepEqual(await cloud.lerPerfil(),{nome:'Ana',sobrenome:'Lima'});

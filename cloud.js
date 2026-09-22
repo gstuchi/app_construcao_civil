@@ -268,6 +268,10 @@ window.CLOUD = {
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
     await setDoc(doc(db, 'perfis', cred.user.uid),
       { email:cred.user.email ?? email, criado: new Date().toISOString(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo', ...perfil });
+    // onAuthStateChanged (e o watchDados que ele liga) pode disparar o primeiro
+    // renderAjustes() antes deste setDoc terminar, deixando o cache de Ajustes
+    // (por uid) preso em "sem nome". Avisa que o perfil mudou pra ele reler.
+    window.dispatchEvent(new Event('perfil-alterado'));
   },
   async lerPerfil(){
     const u = auth.currentUser;

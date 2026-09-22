@@ -86,14 +86,11 @@ const cloudEmulado=()=>fs.readFileSync(path.join(ROOT,'cloud.js'),'utf8')
     assert.equal(perfil.email,'cadastro@example.com'); assert.ok(perfil.tz);
     console.log('ok - cadastro grava nome, origem e detalhe no perfil');
 
-    // Ajustes mostra e edita o nome.
-    // onAuthStateChanged (e o listener de dados/{uid} que ele liga) dispara antes do
-    // setDoc de perfis/{uid} terminar dentro de signup() — então o primeiro renderAjustes()
-    // automático quase sempre acontece com o perfil ainda não gravado, e a leitura fica em
-    // cache por uid (design descrito no spec). 'perfil-alterado' é o mesmo evento público que
-    // OBRA_CONTA usa depois de editar o nome; disparar aqui só garante que o teste não dependa
-    // de vencer essa corrida de rede.
-    await page.evaluate(()=>{ showView('ajustes'); window.dispatchEvent(new Event('perfil-alterado')); });
+    // Ajustes mostra e edita o nome. signup() dispara 'perfil-alterado' depois do
+    // setDoc de perfis/{uid} terminar, então o cache por uid do Ajustes (que o primeiro
+    // renderAjustes() automático de onAuthStateChanged pode ter preenchido antes do
+    // perfil ser gravado) sempre reflete o nome certo sem precisar de reload.
+    await page.evaluate(()=>showView('ajustes'));
     await page.waitForFunction(()=>document.getElementById('ajNome').textContent==='Ana');
     assert.equal(await page.textContent('#ajNomeEditar'),'Editar nome');
     await page.locator('#ajNomeEditar').click();

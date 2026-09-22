@@ -246,6 +246,15 @@ describe('perfis/{uid} — nome e origem', () => {
     await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { origem: 'instagram' }));
     await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { origemDetalhe: 'x' }));
   });
+
+  test('cliente cria perfil só com email, criado, tz e nome (conta órfã se recupera)', async () => {
+    await assertSucceeds(setDoc(doc(comoAna(), 'perfis', ANA.uid), { ...base, nome: 'Ana' }));
+  });
+
+  test('cliente cura e-mail de perfil legado gravado com capitalização diferente', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), { ...base, email: 'ANA@exemplo.com' }));
+    await assertSucceeds(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { email: ANA.email, nome: 'Ana' }));
+  });
 });
 
 describe('push/{uid} — inscrições e tokens', () => {

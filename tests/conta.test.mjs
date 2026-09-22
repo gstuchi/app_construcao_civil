@@ -64,10 +64,39 @@ test('lerPerfil devolve nome e sobrenome, e null quando falta ou falha',async()=
   ctrl.perfil=null; assert.equal(await cloud.lerPerfil(),null);
   ctrl.falhas.get={code:'unavailable'}; assert.equal(await cloud.lerPerfil(),null);
 });
-test('salvarNome atualiza e remove sobrenome vazio',async()=>{
+test('salvarNome exige internet e não escreve nada offline',async()=>{
+  ctrl.setDocChamadas=[];
+  navigator.onLine=false;
+  await assert.rejects(cloud.salvarNome('Ana','Lima'),{code:'offline'});
+  assert.equal(ctrl.updateDocChamadas.length,0);
+  assert.ok(!ctrl.setDocChamadas.some(c=>c.ref.path==='perfis/u-teste'));
+  assert.ok(!ctrl.passos.some(p=>p.startsWith('get:')));
+});
+test('salvarNome atualiza perfil existente, curando o e-mail e removendo sobrenome vazio',async()=>{
+  ctrl.perfil={email:'ANA@exemplo.com',nome:'Ana'};
   await cloud.salvarNome('Ana','Lima');
   await cloud.salvarNome('Ana','');
-  assert.deepEqual(ctrl.updateDocChamadas.map(c=>c.dados),[{nome:'Ana',sobrenome:'Lima'},{nome:'Ana',sobrenome:'@del'}]);
+  assert.deepEqual(ctrl.updateDocChamadas.map(c=>c.dados),[
+    {email:'teste@exemplo.com',nome:'Ana',sobrenome:'Lima'},
+    {email:'teste@exemplo.com',nome:'Ana',sobrenome:'@del'},
+  ]);
+});
+test('salvarNome cria o perfil quando o doc não existe (conta órfã)',async()=>{
+  ctrl.perfil=null; ctrl.setDocChamadas=[];
+  await cloud.salvarNome('Ana','Lima');
+  const chamada=ctrl.setDocChamadas.find(c=>c.ref.path==='perfis/u-teste');
+  assert.equal(chamada.dados.email,'teste@exemplo.com');
+  assert.ok(chamada.dados.criado);
+  assert.ok(chamada.dados.tz);
+  assert.equal(chamada.dados.nome,'Ana');
+  assert.equal(chamada.dados.sobrenome,'Lima');
+});
+test('salvarNome cria perfil sem sobrenome quando não informado',async()=>{
+  ctrl.perfil=null; ctrl.setDocChamadas=[];
+  await cloud.salvarNome('Ana','');
+  const chamada=ctrl.setDocChamadas.find(c=>c.ref.path==='perfis/u-teste');
+  assert.equal(chamada.dados.nome,'Ana');
+  assert.ok(!('sobrenome' in chamada.dados));
 });
 test('logout limpa após signOut; falha de limpeza bloqueia novo login até retry',async()=>{
   ctrl.falhas.clear={code:'failed-precondition'};

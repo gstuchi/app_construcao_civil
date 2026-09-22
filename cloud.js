@@ -98,6 +98,7 @@ function verificarSessao(forcar = false){
 
 const calc = () => window.OBRA_CALC;
 const offline = () => navigator.onLine === false;
+const fusoAtual = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
 
 function setEstado(novo, code, origem){
   const falhou = [...leituras].find(l=>l.erro);
@@ -267,7 +268,7 @@ window.CLOUD = {
     if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
     await setDoc(doc(db, 'perfis', cred.user.uid),
-      { email:cred.user.email ?? email, criado: new Date().toISOString(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo', ...perfil });
+      { email:cred.user.email ?? email, criado: new Date().toISOString(), tz:fusoAtual(), ...perfil });
     // onAuthStateChanged (e o watchDados que ele liga) pode disparar o primeiro
     // renderAjustes() antes deste setDoc terminar, deixando o cache de Ajustes
     // (por uid) preso em "sem nome". Avisa que o perfil mudou pra ele reler.
@@ -287,9 +288,18 @@ window.CLOUD = {
     }catch{ return null; }
   },
   async salvarNome(nome, sobrenome){
-    const u = auth.currentUser;
-    if(!u) throw Object.assign(new Error('Entre na conta.'), { code:'offline' });
-    await updateDoc(doc(db, 'perfis', u.uid), { nome, sobrenome: sobrenome ? sobrenome : deleteField() });
+    const u = usuarioOnline();
+    const ref = doc(db, 'perfis', u.uid);
+    const snap = await getDoc(ref);
+    // email: u.email cura perfis legados salvos com o e-mail digitado (antes de
+    // d2402db) — as rules exigem email == request.auth.token.email pra atualizar.
+    if(snap.exists()){
+      await updateDoc(ref, { email: u.email, nome, sobrenome: sobrenome ? sobrenome : deleteField() });
+    }else{
+      // Sem doc: cadastro cujo setDoc falhou depois do createUser (rede caiu, ou
+      // conta antiga). Recria com o mínimo que o signup grava.
+      await setDoc(ref, { email: u.email, criado: new Date().toISOString(), tz: fusoAtual(), nome, ...(sobrenome ? { sobrenome } : {}) });
+    }
   },
   login: (email, senha) => cacheBloqueado
     ? Promise.reject(Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' }))

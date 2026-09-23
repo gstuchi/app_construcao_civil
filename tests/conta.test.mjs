@@ -13,7 +13,7 @@ beforeEach(async()=>{
   globalThis.CustomEvent=globalThis.CustomEvent || Event;
   Object.defineProperty(globalThis,'navigator',{value:{onLine:true},configurable:true});
   ctrl.passos=[]; ctrl.falhas={}; ctrl.respostas=[]; ctrl.pendentesSDK=Promise.resolve();
-  ctrl.perfil=null; ctrl.updateDocChamadas=[];
+  ctrl.perfil=null; ctrl.updateDocChamadas=[]; ctrl.verificado=false; ctrl.aoVerificar=null;
   await import('../cloud.js?conta='+Math.random()); cloud=window.CLOUD; await cloud.ready;
 });
 test('exclusão confirma documentos antes da conta e limpa cache por último',async()=>{
@@ -106,4 +106,30 @@ test('logout limpa após signOut; falha de limpeza bloqueia novo login até retr
   await assert.rejects(cloud.login('teste@exemplo.com','senha'),{code:'cache'});
   delete ctrl.falhas.clear; await cloud.limparCache();
   assert.equal(ctrl.passos.at(-1),'reload');
+});
+test('cadastro envia a confirmação de e-mail depois de gravar o perfil',async()=>{
+  ctrl.setDocChamadas=[];
+  let perfilJaGravado=null;
+  ctrl.aoVerificar=()=>{ perfilJaGravado=ctrl.setDocChamadas.some(c=>c.ref.path==='perfis/u-teste'); };
+  await cloud.signup('ana@exemplo.com','Obra2026x',{nome:'Ana',origem:'instagram'});
+  assert.equal(perfilJaGravado,true);
+  assert.ok(ctrl.passos.includes('verificacao'));
+});
+test('falha ao enviar a confirmação não derruba o cadastro',async()=>{
+  ctrl.falhas.verificacao={code:'auth/too-many-requests'};
+  await cloud.signup('ana@exemplo.com','Obra2026x',{nome:'Ana',origem:'instagram'});
+  assert.ok(ctrl.passos.includes('verificacao'));
+});
+test('conferirVerificacao atualiza a conta e avisa quando o e-mail foi confirmado',async()=>{
+  let avisos=0; window.addEventListener('cloud-conta',()=>avisos++);
+  assert.equal(await cloud.conferirVerificacao(),false);
+  assert.equal(cloud.user().emailVerificado,false); assert.equal(avisos,0);
+  ctrl.verificado=true;
+  assert.equal(await cloud.conferirVerificacao(),true);
+  assert.equal(cloud.user().emailVerificado,true); assert.equal(avisos,1);
+});
+test('conferirVerificacao offline não quebra e mantém o estado',async()=>{
+  navigator.onLine=false;
+  assert.equal(await cloud.conferirVerificacao(),false);
+  assert.equal(cloud.user().emailVerificado,false);
 });

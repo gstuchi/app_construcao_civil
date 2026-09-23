@@ -22,8 +22,8 @@ function passo(nome){ __ctrl.passos.push(nome); return __ctrl.falhas[nome] ? Pro
 export function reauthenticateWithCredential(){ return passo('reauth'); }
 export function updatePassword(){ return passo('senha'); }
 export function deleteUser(){ return passo('deleteUser'); }
-export function sendEmailVerification(){ return Promise.resolve(); }
-export function reload(){ return Promise.resolve(); }
+export function sendEmailVerification(){ __ctrl.aoVerificar?.(); return passo('verificacao'); }
+export function reload(u){ if(__ctrl.verificado && u) u.emailVerified = true; return Promise.resolve(); }
 export function terminate(){ return passo('terminate'); }
 export function clearIndexedDbPersistence(){ return passo('clear'); }
 export function writeBatch(){ return { delete(ref){ __ctrl.passos.push('delete:'+ref.path); }, commit:()=>passo('commit') }; }

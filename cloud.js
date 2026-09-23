@@ -273,6 +273,9 @@ window.CLOUD = {
     // renderAjustes() antes deste setDoc terminar, deixando o cache de Ajustes
     // (por uid) preso em "sem nome". Avisa que o perfil mudou pra ele reler.
     window.dispatchEvent(new Event('perfil-alterado'));
+    /* Só o link clicado prova que o e-mail existe. Falha no envio (limite do
+       Firebase, rede) não desfaz a conta: o aviso no topo oferece reenviar. */
+    try{ auth.languageCode = 'pt-BR'; await sendEmailVerification(cred.user); }catch{}
   },
   async lerPerfil(){
     const u = auth.currentUser;
@@ -316,6 +319,20 @@ window.CLOUD = {
     auth.languageCode = 'pt-BR';
     await sendEmailVerification(u);
     return true;
+  },
+  /* Relê o usuário no servidor para saber se o link já foi clicado.
+     Nunca rejeita: offline ou erro só mantém o estado atual. */
+  async conferirVerificacao(){
+    try{
+      const u = usuarioOnline();
+      await reload(u);
+      if(auth.currentUser?.uid !== u.uid || !currentUser) return false;
+      if(u.emailVerified && !currentUser.emailVerificado){
+        currentUser.emailVerificado = true;
+        window.dispatchEvent(new Event('cloud-conta'));
+      }
+      return !!u.emailVerified;
+    }catch{ return false; }
   },
   async trocarSenha(atual, nova){
     const regra = window.OBRA_CADASTRO.validaSenha(nova, auth.currentUser?.email);

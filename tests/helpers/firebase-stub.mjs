@@ -11,6 +11,7 @@ export const __ctrl = {
   pendentesSDK: Promise.resolve(),
   token: Promise.resolve('token-teste'),
   passos: [], falhas: {},
+  perfil: null,
 };
 
 export function initializeApp(){ return { nome: 'stub' }; }
@@ -21,8 +22,8 @@ function passo(nome){ __ctrl.passos.push(nome); return __ctrl.falhas[nome] ? Pro
 export function reauthenticateWithCredential(){ return passo('reauth'); }
 export function updatePassword(){ return passo('senha'); }
 export function deleteUser(){ return passo('deleteUser'); }
-export function sendEmailVerification(){ return Promise.resolve(); }
-export function reload(){ return Promise.resolve(); }
+export function sendEmailVerification(){ __ctrl.aoVerificar?.(); return passo('verificacao'); }
+export function reload(u){ if(__ctrl.verificado && u) u.emailVerified = true; return Promise.resolve(); }
 export function terminate(){ return passo('terminate'); }
 export function clearIndexedDbPersistence(){ return passo('clear'); }
 export function writeBatch(){ return { delete(ref){ __ctrl.passos.push('delete:'+ref.path); }, commit:()=>passo('commit') }; }
@@ -52,4 +53,16 @@ export function setDoc(ref, dados){
   if(r && typeof r.then === 'function') return r;
   if(!r || r === 'ok') return Promise.resolve();
   return Promise.reject(Object.assign(new Error(r.code), { code: r.code }));
+}
+
+export function getDoc(ref){
+  __ctrl.passos.push('get:'+ref.path);
+  if(__ctrl.falhas.get) return Promise.reject(__ctrl.falhas.get);
+  const dados = __ctrl.perfil;
+  return Promise.resolve({ exists:()=>dados!==null, data:()=>dados });
+}
+export function updateDoc(ref, dados){
+  __ctrl.passos.push('update:'+ref.path);
+  __ctrl.updateDocChamadas = [...(__ctrl.updateDocChamadas||[]), { ref, dados }];
+  return __ctrl.falhas.update ? Promise.reject(__ctrl.falhas.update) : Promise.resolve();
 }

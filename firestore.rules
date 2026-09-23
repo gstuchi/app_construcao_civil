@@ -36,22 +36,28 @@ service cloud.firestore {
       }
     }
 
-    /* perfis/{uid} — e-mail, fuso horário e (no futuro) o plano.
+    /* perfis/{uid} — e-mail, fuso, nome e como a pessoa conheceu o Custta.
        'cpf' é rejeitado estruturalmente: hasOnly não o inclui.
        'plano' é DELIBERADAMENTE não-gravável pelo cliente — só o Admin SDK escreve.
-       É isso que permite cobrar depois sem migração dolorosa. */
+       'origem' é gravada uma vez no cadastro; o cliente não a altera depois.
+       Limites e lista de origens espelham cadastro.js: mudou lá, muda aqui. */
     match /perfis/{uid} {
       allow get:    if meu(uid);
       allow list:   if false;
       allow create: if meu(uid)
-                    && request.resource.data.keys().hasOnly(['email', 'criado', 'tz'])
+                    && request.resource.data.keys().hasOnly(
+                         ['email', 'criado', 'tz', 'nome', 'sobrenome', 'origem', 'origemDetalhe'])
                     && perfilClienteOk();
       allow update: if meu(uid)
                     && resource != null
                     && request.resource.data.diff(resource.data)
-                         .affectedKeys().hasOnly(['email', 'tz'])
+                         .affectedKeys().hasOnly(['email', 'tz', 'nome', 'sobrenome'])
                     && perfilClienteOk();
       allow delete: if meu(uid);
+
+      function textoAte(d, campo, max) {
+        return !(campo in d) || (d[campo] is string && d[campo].size() <= max);
+      }
 
       function perfilClienteOk() {
         let d = request.resource.data;
@@ -60,7 +66,11 @@ service cloud.firestore {
             && d.email.size() <= 320
             && d.criado is string
             && d.criado.size() <= 40
-            && (!('tz' in d) || (d.tz is string && d.tz.size() <= 64));
+            && (!('tz' in d) || (d.tz is string && d.tz.size() <= 64))
+            && (!('nome' in d) || (d.nome is string && d.nome.size() >= 1 && d.nome.size() <= 60))
+            && textoAte(d, 'sobrenome', 80)
+            && (!('origem' in d) || d.origem in ['instagram', 'indicacao', 'google', 'tiktok', 'youtube', 'outro'])
+            && textoAte(d, 'origemDetalhe', 80);
       }
     }
 

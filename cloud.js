@@ -10,7 +10,7 @@ import {
 } from './vendor/firebase/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
-  doc, setDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
+  doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
 } from './vendor/firebase/firebase-firestore.js';
 
@@ -98,6 +98,7 @@ function verificarSessao(forcar = false){
 
 const calc = () => window.OBRA_CALC;
 const offline = () => navigator.onLine === false;
+const fusoAtual = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo';
 
 function setEstado(novo, code, origem){
   const falhou = [...leituras].find(l=>l.erro);
@@ -261,12 +262,47 @@ window.CLOUD = {
 
   /* perfis/{uid} guarda só o mínimo. Nada de CPF: o app nunca leu de volta,
      e dado pessoal que não se usa é só responsabilidade sob a LGPD.
-     As rules rejeitam qualquer chave fora de email/criado/tz. */
-  async signup(email, senha){
+     O perfil (nome, sobrenome, origem) chega já normalizado por OBRA_CADASTRO;
+     as rules são a fronteira e rejeitam qualquer chave fora da lista. */
+  async signup(email, senha, perfil = {}){
     if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
     const cred = await createUserWithEmailAndPassword(auth, email, senha);
     await setDoc(doc(db, 'perfis', cred.user.uid),
-      { email:cred.user.email, criado: new Date().toISOString(), tz:Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo' });
+      { email:cred.user.email ?? email, criado: new Date().toISOString(), tz:fusoAtual(), ...perfil });
+    // onAuthStateChanged (e o watchDados que ele liga) pode disparar o primeiro
+    // renderAjustes() antes deste setDoc terminar, deixando o cache de Ajustes
+    // (por uid) preso em "sem nome". Avisa que o perfil mudou pra ele reler.
+    window.dispatchEvent(new Event('perfil-alterado'));
+    /* Só o link clicado prova que o e-mail existe. Falha no envio (limite do
+       Firebase, rede) não desfaz a conta: o aviso no topo oferece reenviar. */
+    try{ auth.languageCode = 'pt-BR'; await sendEmailVerification(cred.user); }catch{}
+  },
+  async lerPerfil(){
+    const u = auth.currentUser;
+    if(!u) return null;
+    try{
+      const snap = await getDoc(doc(db, 'perfis', u.uid));
+      if(!snap.exists()) return null;
+      const { nome, sobrenome } = snap.data();
+      const r = {};
+      if(typeof nome === 'string' && nome) r.nome = nome;
+      if(typeof sobrenome === 'string' && sobrenome) r.sobrenome = sobrenome;
+      return r;
+    }catch{ return null; }
+  },
+  async salvarNome(nome, sobrenome){
+    const u = usuarioOnline();
+    const ref = doc(db, 'perfis', u.uid);
+    const snap = await getDoc(ref);
+    // email: u.email cura perfis legados salvos com o e-mail digitado (antes de
+    // d2402db) — as rules exigem email == request.auth.token.email pra atualizar.
+    if(snap.exists()){
+      await updateDoc(ref, { email: u.email, nome, sobrenome: sobrenome ? sobrenome : deleteField() });
+    }else{
+      // Sem doc: cadastro cujo setDoc falhou depois do createUser (rede caiu, ou
+      // conta antiga). Recria com o mínimo que o signup grava.
+      await setDoc(ref, { email: u.email, criado: new Date().toISOString(), tz: fusoAtual(), nome, ...(sobrenome ? { sobrenome } : {}) });
+    }
   },
   login: (email, senha) => cacheBloqueado
     ? Promise.reject(Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' }))
@@ -284,8 +320,23 @@ window.CLOUD = {
     await sendEmailVerification(u);
     return true;
   },
+  /* Relê o usuário no servidor para saber se o link já foi clicado.
+     Nunca rejeita: offline ou erro só mantém o estado atual. */
+  async conferirVerificacao(){
+    try{
+      const u = usuarioOnline();
+      await reload(u);
+      if(auth.currentUser?.uid !== u.uid || !currentUser) return false;
+      if(u.emailVerified && !currentUser.emailVerificado){
+        currentUser.emailVerificado = true;
+        window.dispatchEvent(new Event('cloud-conta'));
+      }
+      return !!u.emailVerified;
+    }catch{ return false; }
+  },
   async trocarSenha(atual, nova){
-    if(nova.length < 6) throw Object.assign(new Error('Use pelo menos 6 caracteres.'), { code:'auth/weak-password' });
+    const regra = window.OBRA_CADASTRO.validaSenha(nova, auth.currentUser?.email);
+    if(!regra.ok) throw Object.assign(new Error(regra.erro), { code:'auth/weak-password' });
     const u = await reautenticar(atual);
     await updatePassword(u, nova);
   },

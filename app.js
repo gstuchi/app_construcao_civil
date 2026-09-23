@@ -36,6 +36,8 @@ const FASES = {
 
 const empty = () => ({obras:[], config:{taxaMensal:1, topicosCustom:[]}});
 let db = empty();
+/* Nome vem de perfis/{uid}; lido uma vez por conta e relido quando o dialog salva. */
+const perfilAjustes = { uid:null, dados:null };
 let obraAberta = null;   // id da obra no detalhe
 let filtroTexto = '', filtroMes = ''; // busca dos lançamentos (só memória)
 let tab = 'inicio';
@@ -1362,10 +1364,61 @@ $('#notifAtivar').onclick=async()=>{
 
 window.addEventListener('cloud-conta', ()=>renderAjustes());
 /* ===== AJUSTES ===== */
+function pintaNome(){
+  const d = perfilAjustes.dados, nome = [d?.nome, d?.sobrenome].filter(Boolean).join(' ');
+  $('#ajNome').textContent = nome;
+  $('#ajNome').classList.toggle('hidden', !nome);
+  $('#ajNomeEditar').textContent = nome ? 'Editar nome' : 'Adicionar nome';
+}
+async function carregaPerfilAjustes(conta, forcar){
+  if(!conta){ perfilAjustes.uid=null; perfilAjustes.dados=null; pintaNome(); return; }
+  if(perfilAjustes.uid === conta.uid && !forcar){ pintaNome(); return; }
+  perfilAjustes.uid = conta.uid;
+  let dados = null;
+  try{ dados = (await window.CLOUD?.lerPerfil?.()) ?? null; }catch{ dados = null; }
+  if(perfilAjustes.uid !== conta.uid) return; // trocou de conta no meio
+  perfilAjustes.dados = dados; pintaNome();
+}
+window.addEventListener('perfil-alterado', ()=>carregaPerfilAjustes(window.CLOUD?.user(), true));
+/* Aviso fixo enquanto o e-mail não for confirmado: e-mail errado só aparece
+   quando a pessoa esquece a senha e o link de redefinição não chega. */
+function renderAvisoEmail(conta){
+  const pendente = !!conta && !conta.emailVerificado;
+  $('#avisoEmail').classList.toggle('hidden', !pendente);
+  if(!pendente) return;
+  $('#avisoEmailTexto').textContent = `Enviamos um link para ${conta.email}. Abra o e-mail e toque no link para proteger sua conta.`;
+  $('#avisoEmailReenviar').onclick = async()=>{
+    const b = $('#avisoEmailReenviar'); b.disabled = true;
+    try{
+      const enviado = await CLOUD.enviarVerificacao();
+      $('#avisoEmailMsg').textContent = enviado ? 'Link reenviado. Confira também a caixa de spam.' : 'E-mail já confirmado.';
+    }catch(err){
+      $('#avisoEmailMsg').textContent = err.code === 'offline' ? 'Conecte à internet para reenviar.'
+        : err.code === 'auth/too-many-requests' ? 'Muitos envios seguidos. Aguarde alguns minutos.'
+        : 'Não foi possível reenviar agora. Tente novamente.';
+    }finally{ b.disabled = false; }
+  };
+  $('#avisoEmailJa').onclick = async()=>{
+    const b = $('#avisoEmailJa'); b.disabled = true;
+    try{
+      if(!(await CLOUD.conferirVerificacao()))
+        $('#avisoEmailMsg').textContent = navigator.onLine === false ? 'Conecte à internet para conferir.'
+          : 'Ainda não recebemos a confirmação. Toque no link do e-mail e tente de novo.';
+    }finally{ b.disabled = false; }
+  };
+}
+/* Quem confirma pelo app de e-mail volta pro Custta: confere sozinho. */
+document.addEventListener('visibilitychange', ()=>{
+  const conta = window.CLOUD?.user();
+  if(document.visibilityState === 'visible' && conta && !conta.emailVerificado) window.CLOUD.conferirVerificacao?.();
+});
 function renderAjustes(){
   const conta = window.CLOUD?.user();
+  renderAvisoEmail(conta);
   $('#ajEmail').textContent = conta?.email || '';
   $('#ajVerificacao').classList.toggle('hidden', !conta || conta.emailVerificado);
+  $('#ajNomeEditar').onclick = ()=>OBRA_CONTA.abrir('nome', perfilAjustes.dados);
+  carregaPerfilAjustes(conta);
   $('#ajSenha').onclick = ()=>OBRA_CONTA.abrir('senha');
   $('#ajApagar').onclick = ()=>OBRA_CONTA.abrir('apagar');
   $('#ajVerificar').onclick = async()=>{
@@ -1658,6 +1711,7 @@ function bootCloud(){
       db = empty(); obraAberta = null; showView('inicio'); renderAll(); return;
     }
     atualizarConviteNotif(user);
+    renderAvisoEmail(user); // conta nova tem blob vazio = db inicial, e o watchDados não re-renderiza
 
     /* Aqui existia uma migração dos dados antigos de localStorage pra nuvem.
        Removida: ela varria as chaves obras_data_v1* de QUALQUER pessoa que já

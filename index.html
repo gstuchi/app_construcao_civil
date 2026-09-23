@@ -89,13 +89,28 @@
             <button class="linklike" type="button" id="lEsqueci">Esqueci minha senha</button>
           </form>
           <form id="fCad" class="hidden" novalidate>
+            <div class="field"><label for="cNome">Nome</label>
+              <input id="cNome" type="text" autocomplete="given-name" autocapitalize="words" maxlength="60" placeholder="Seu nome"></div>
+            <div class="field"><label for="cSobrenome">Sobrenome <span class="opcional">(opcional)</span></label>
+              <input id="cSobrenome" type="text" autocomplete="family-name" autocapitalize="words" maxlength="80" placeholder="Seu sobrenome"></div>
             <div class="field"><label for="cEmail">E-mail</label>
               <input id="cEmail" type="email" autocomplete="email" placeholder="voce@email.com"></div>
             <div class="field"><label for="cSenha">Senha</label>
               <div class="pw-wrap">
-                <input id="cSenha" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+                <input id="cSenha" type="password" autocomplete="new-password" maxlength="128" aria-describedby="cRegras"
+                  passwordrules="minlength: 8; required: digit; required: lower, upper;" placeholder="Crie uma senha">
                 <button type="button" class="pw-eye" data-eye="cSenha" data-ico="olho" aria-label="Mostrar senha"></button>
+              </div>
+              <ul class="senha-regras" id="cRegras" aria-live="polite"></ul></div>
+            <div class="field"><label for="cSenha2">Confirmar senha</label>
+              <div class="pw-wrap">
+                <input id="cSenha2" type="password" autocomplete="new-password" maxlength="128" placeholder="Repita a senha">
+                <button type="button" class="pw-eye" data-eye="cSenha2" data-ico="olho" aria-label="Mostrar senha"></button>
               </div></div>
+            <div class="field"><label for="cOrigem">Como conheceu o Custta?</label>
+              <select id="cOrigem"><option value="">Escolha uma opção</option></select></div>
+            <div class="field hidden" id="cDetalheWrap"><label for="cDetalhe" id="cDetalheLabel"></label>
+              <input id="cDetalhe" type="text" maxlength="80" autocapitalize="words"></div>
             <div class="auth-msg" id="cMsg" role="alert"></div>
             <button class="layout-19 btn primary" type="submit">Criar conta</button>
           </form>
@@ -136,6 +151,14 @@
       <button type="button" class="btn ghost" id="notifDepois">Agora não</button>
       <button type="button" class="btn primary" id="notifAtivar">Ativar</button>
     </div>
+  </div>
+
+  <div id="avisoEmail" class="versao-aviso hidden no-print" role="region" aria-label="Confirmar e-mail">
+    <span>Confirme seu e-mail</span>
+    <p class="muted-note" id="avisoEmailTexto"></p>
+    <button type="button" class="btn ghost" id="avisoEmailReenviar">Reenviar link</button>
+    <button type="button" class="btn primary" id="avisoEmailJa">Já confirmei</button>
+    <p class="muted-note" id="avisoEmailMsg" role="status"></p>
   </div>
 
   <!-- ============ INÍCIO ============ -->
@@ -254,6 +277,7 @@
     </div>
     <div class="panel">
       <h2>Conta</h2>
+      <p id="ajNome" class="conta-nome hidden"></p>
       <p id="ajEmail" class="muted-note"></p>
       <div id="ajVerificacao" class="hidden">
         <p class="muted-note">Confirme seu e-mail para manter acesso à conta. Você pode continuar usando o app.</p>
@@ -261,6 +285,7 @@
         <p id="ajVerificarMsg" class="muted-note" role="status"></p>
       </div>
       <div class="sheet-actions">
+        <button class="btn ghost" id="ajNomeEditar">Adicionar nome</button>
         <button class="btn ghost" id="ajSenha">Trocar senha</button>
         <button class="btn ghost" id="ajApagar">Apagar conta</button>
       </div>
@@ -293,6 +318,7 @@
 <script defer src="splash.js"></script>
 <script type="module" src="cloud.js"></script>
 <script defer src="icons.js"></script>
+<script defer src="cadastro.js"></script>
 <script defer src="auth.js"></script>
 <script defer src="calc.js"></script>
 <script defer src="teclado.js"></script>

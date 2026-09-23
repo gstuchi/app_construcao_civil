@@ -86,6 +86,20 @@ const cloudEmulado=()=>fs.readFileSync(path.join(ROOT,'cloud.js'),'utf8')
     assert.equal(perfil.email,'cadastro@example.com'); assert.ok(perfil.tz);
     console.log('ok - cadastro grava nome, origem e detalhe no perfil');
 
+    // e-mail de confirmação sai sozinho; aviso fixo até o link ser clicado
+    const oob=await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${PROJECT}/oobCodes`).then(r=>r.json());
+    const link=oob.oobCodes.find(c=>c.requestType==='VERIFY_EMAIL' && c.email==='cadastro@example.com');
+    assert.ok(link,'cadastro precisa enviar o link de confirmação sozinho');
+    await page.waitForSelector('#avisoEmail',{state:'visible'});
+    assert.match(await page.textContent('#avisoEmailTexto'),/cadastro@example\.com/);
+    await page.locator('#avisoEmailJa').click();
+    await page.waitForFunction(()=>document.getElementById('avisoEmailMsg').textContent.includes('Ainda não'));
+    assert.ok((await fetch(link.oobLink)).ok);
+    await page.locator('#avisoEmailJa').click();
+    await page.waitForSelector('#avisoEmail',{state:'hidden'});
+    assert.equal(await page.evaluate(()=>CLOUD.user().emailVerificado),true);
+    console.log('ok - cadastro envia confirmação e o aviso some depois do link');
+
     // Ajustes mostra e edita o nome. signup() dispara 'perfil-alterado' depois do
     // setDoc de perfis/{uid} terminar, então o cache por uid do Ajustes (que o primeiro
     // renderAjustes() automático de onAuthStateChanged pode ter preenchido antes do

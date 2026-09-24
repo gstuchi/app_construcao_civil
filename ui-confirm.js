@@ -5,12 +5,17 @@
   function mensagem(err){
     if(err.code === 'outra-aba') return 'Feche outras abas do Custta e tente novamente.';
     if(err.code === 'navegador') return 'Atualize seu navegador para gerenciar a conta.';
-    if(err.dadosApagados) return 'Os dados foram apagados, mas a conta ainda existe. Digite sua senha e tente apagar novamente.';
+    if(err.dadosApagados) return CLOUD.user()?.temSenha === false
+      ? 'Os dados foram apagados, mas a conta ainda existe. Tente apagar novamente.'
+      : 'Os dados foram apagados, mas a conta ainda existe. Digite sua senha e tente apagar novamente.';
     if(['offline','pendente'].includes(err.code)) return 'Conecte à internet e aguarde a sincronização para continuar.';
     if(['auth/invalid-credential','auth/wrong-password'].includes(err.code)) return 'Senha atual incorreta.';
     if(err.code === 'auth/weak-password') return err.message || 'Senha fraca: use 8 caracteres ou mais, com letra e número.';
     if(err.code === 'auth/too-many-requests') return 'Muitas tentativas. Aguarde antes de tentar novamente.';
     if(err.code === 'auth/network-request-failed') return 'Falha na conexão. Tente novamente quando a internet voltar.';
+    if(['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'].includes(err.code)) return 'Confirmação com o Google cancelada.';
+    if(err.code === 'auth/popup-blocked') return 'O navegador bloqueou a janela do Google. Permita pop-ups e tente de novo.';
+    if(err.code === 'auth/user-mismatch') return 'Entre com a mesma conta Google desta conta.';
     return 'Não foi possível concluir. Tente novamente.';
   }
   /* Boilerplate comum dos dialogs de conta: criação, guard `aberto`, foco inicial,
@@ -52,10 +57,11 @@
     if(aberto) return;
     if(tipo === 'nome') return abrirNome(dados);
     const apagar = tipo === 'apagar';
+    const semSenha = apagar && CLOUD.user()?.temSenha === false;
     const html = `<form id="contaForm">
       <h2 id="contaTitulo">${apagar ? 'Apagar conta' : 'Trocar senha'}</h2>
-      <p>${apagar ? 'Isso apaga sua conta, obras, gastos e notificações. Não pode ser desfeito. Exporte seus dados antes de continuar.' : 'Confirme sua senha atual e escolha uma nova senha.'}</p>
-      <div class="field"><label for="contaSenha">Senha atual</label><input id="contaSenha" type="password" autocomplete="current-password" required></div>
+      <p>${apagar ? 'Isso apaga sua conta, obras, gastos e notificações. Não pode ser desfeito. Exporte seus dados antes de continuar.' + (semSenha ? ' Para confirmar, você vai entrar com o Google de novo.' : '') : 'Confirme sua senha atual e escolha uma nova senha.'}</p>
+      ${semSenha ? '' : '<div class="field"><label for="contaSenha">Senha atual</label><input id="contaSenha" type="password" autocomplete="current-password" required></div>'}
       ${apagar
         ? `<div class="field"><label for="contaConfirmacao">Digite APAGAR para confirmar</label>
              <input id="contaConfirmacao" type="text" autocomplete="off" required></div>`
@@ -70,7 +76,7 @@
       <button type="submit" class="btn" id="contaEnviar">${apagar ? 'Apagar minha conta' : 'Salvar senha'}</button></div>
     </form>`;
     const dialogo = montaDialogo(html, {
-      foco: '#contaSenha',
+      foco: semSenha ? '#contaConfirmacao' : '#contaSenha',
       validar(dlg, msg){
         const senha = dlg.querySelector('#contaSenha');
         const confirmacao = dlg.querySelector('#contaConfirmacao');
@@ -80,8 +86,8 @@
           if(!regra.ok){ msg.textContent = regra.erro; return false; }
           if(dlg.querySelector('#contaNova2').value !== confirmacao.value){ msg.textContent = 'As senhas novas não são iguais.'; return false; }
         }
-        const atual = senha.value, nova = confirmacao.value;
-        senha.value = ''; if(!apagar){ confirmacao.value = ''; dlg.querySelector('#contaNova2').value = ''; }
+        const atual = senha ? senha.value : '', nova = confirmacao.value;
+        if(senha) senha.value = ''; if(!apagar){ confirmacao.value = ''; dlg.querySelector('#contaNova2').value = ''; }
         return { atual, nova };
       },
       async executar({ atual, nova }, { msg, fechar }){

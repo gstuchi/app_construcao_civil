@@ -42,11 +42,17 @@ no cliente OAuth web. `custta.com.br` já estava nos domínios autorizados.
 4. Conta que já existia com e-mail e senha no mesmo endereço: o Firebase liga
    o Google à mesma conta (mesmo uid, dados preservados). Se ele recusar
    (`auth/account-exists-with-different-credential`), a mensagem manda entrar
-   com e-mail e senha.
+   com e-mail e senha. Exceção: conta com senha cujo e-mail **não foi
+   verificado** perde o provedor de senha ao entrar com Google no mesmo
+   e-mail (política anti-sequestro do Firebase: quem prova o e-mail pelo
+   Google fica com a conta). O uid e os dados ficam; dali em diante a pessoa
+   entra só pelo Google.
 
 ### Completar perfil
 1. Só para conta com provedor `google.com`. Ao entrar, `auth.js` chama
-   `CLOUD.perfilPendente()`, que lê `perfis/{uid}` **do servidor**.
+   `CLOUD.perfilPendente()`, que lê `perfis/{uid}` primeiro do cache local
+   (achou → não pendente, sem esperar a rede) e, se não estiver no cache,
+   **do servidor** — cache vazio não prova que o documento não existe.
 2. Documento inexistente → a tela de login continua travada e mostra o
    formulário "Falta pouco" (`#fPerfil`): nome, sobrenome (opcional), como
    conheceu (+ detalhe). Nome/sobrenome vêm de `displayName` do Google
@@ -56,11 +62,16 @@ no cliente OAuth web. `custta.com.br` já estava nos domínios autorizados.
 4. Leitura falhou (offline, erro) → não trava: destrava e tenta de novo no
    próximo login. Travar o app de quem está sem rede é pior que perder a origem.
 5. "Usar outra conta" sai sem confirmação (não há dado local ainda).
+6. Duas abas no "Falta pouco": a segunda a salvar recebe `permission-denied`
+   (o `setDoc` vira update e as rules recusam). Se `perfilPendente()` disser
+   que o perfil já existe, ela destrava em vez de mostrar erro.
 
 ### Conta só Google (sem senha)
 - Ajustes esconde "Trocar senha" quando `temSenha` é falso.
 - "Apagar conta" não pede senha: o diálogo pede só APAGAR e a reautenticação é
   `reauthenticateWithPopup` com o Google. Popup bloqueado/fechado → mensagem.
+  O popup abre antes da trava entre abas (`navigator.locks`), ainda dentro do
+  gesto do usuário; depois dos awaits da trava o Safari o bloquearia.
 - O aviso de confirmar e-mail não aparece: conta Google já vem verificada.
 - Conta com os dois provedores continua pedindo senha como hoje.
 

@@ -12,6 +12,7 @@ export const __ctrl = {
   token: Promise.resolve('token-teste'),
   passos: [], falhas: {},
   perfil: null,
+  perfilCache: null,     // conteúdo de perfis/{uid} no cache local; null = não está no cache
 };
 
 export function initializeApp(config){ __ctrl.config = config; return { nome: 'stub' }; }
@@ -78,4 +79,12 @@ export function getDocFromServer(ref){
   if(__ctrl.falhas.getServer) return Promise.reject(__ctrl.falhas.getServer);
   const dados = __ctrl.perfil;
   return Promise.resolve({ exists:()=>dados!==null, data:()=>dados });
+}
+/* Como o SDK: documento fora do cache rejeita (não responde 'não existe'). */
+export function getDocFromCache(ref){
+  __ctrl.passos.push('getCache:'+ref.path);
+  if(__ctrl.falhas.getCache) return Promise.reject(__ctrl.falhas.getCache);
+  const dados = __ctrl.perfilCache;
+  if(dados === null) return Promise.reject(Object.assign(new Error('Failed to get document from cache.'), { code:'unavailable' }));
+  return Promise.resolve({ exists:()=>true, data:()=>dados });
 }

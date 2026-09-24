@@ -23,7 +23,7 @@ beforeEach(async()=>{
   globalThis.CustomEvent=globalThis.CustomEvent || Event;
   Object.defineProperty(globalThis,'navigator',{value:{onLine:true},configurable:true});
   ctrl.passos=[]; ctrl.falhas={}; ctrl.respostas=[]; ctrl.pendentesSDK=Promise.resolve();
-  ctrl.perfil=null; ctrl.setDocChamadas=[];
+  ctrl.perfil=null; ctrl.perfilCache=null; ctrl.setDocChamadas=[];
   await carregar();
 });
 afterEach(()=>{ delete globalThis.matchMedia; delete globalThis.location; });
@@ -66,6 +66,22 @@ test('falha na volta do redirect vira evento cloud-google-erro',async()=>{
   await carregar(); await tique();
   const ev=eventos.find(e=>e.type==='cloud-google-erro');
   assert.ok(ev); assert.equal(ev.detail.code,'auth/account-exists-with-different-credential');
+});
+test('perfilPendente: perfil no cache responde sem ir ao servidor',async()=>{
+  await entraComo(['google.com']); ctrl.passos=[];
+  ctrl.perfilCache={nome:'Ana'};
+  assert.equal(await cloud.perfilPendente(),false);
+  assert.deepEqual(ctrl.passos,['getCache:perfis/u-teste']);
+});
+test('perfilPendente: fora do cache (ou erro no cache) pergunta ao servidor',async()=>{
+  await entraComo(['google.com']); ctrl.passos=[];
+  assert.equal(await cloud.perfilPendente(),true, 'servidor sem doc = pendente');
+  assert.deepEqual(ctrl.passos,['getCache:perfis/u-teste','getServer:perfis/u-teste']);
+  ctrl.passos=[]; ctrl.falhas.getCache={code:'internal'}; ctrl.perfil={nome:'Ana'};
+  assert.equal(await cloud.perfilPendente(),false);
+  assert.deepEqual(ctrl.passos,['getCache:perfis/u-teste','getServer:perfis/u-teste']);
+  ctrl.perfil=null; ctrl.falhas.getServer={code:'unavailable'};
+  assert.equal(await cloud.perfilPendente(),false, 'erro no servidor não trava');
 });
 test('perfilPendente: só conta Google, lendo do servidor, falha não trava',async()=>{
   assert.equal(await cloud.perfilPendente(),false);

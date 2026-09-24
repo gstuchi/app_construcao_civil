@@ -11,7 +11,7 @@ import {
 } from './vendor/firebase/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
-  doc, setDoc, getDoc, getDocFromServer, updateDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
+  doc, setDoc, getDoc, getDocFromCache, getDocFromServer, updateDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
 } from './vendor/firebase/firebase-firestore.js';
 
@@ -342,13 +342,18 @@ window.CLOUD = {
       throw err;
     }
   },
-  /* Só conta Google: o cadastro por e-mail já grava o perfil. Lê do servidor,
-     porque cache vazio não prova que o documento não existe. Qualquer falha
-     responde "não pendente": travar quem está sem rede é pior que perder a origem. */
+  /* Só conta Google: o cadastro por e-mail já grava o perfil. Perfil no cache
+     basta (e não segura a tela de login a cada abertura com rede ruim); cache
+     vazio não prova que o documento não existe, então aí pergunta ao servidor.
+     Qualquer falha do servidor responde "não pendente": travar quem está sem
+     rede é pior que perder a origem. O uid vem de auth.currentUser (o SDK) e os
+     provedores de currentUser, o mesmo retrato que auth.js consultou. */
   async perfilPendente(){
     const u = auth.currentUser;
     if(!u || !currentUser?.provedores.includes('google.com')) return false;
-    try{ return !(await getDocFromServer(doc(db, 'perfis', u.uid))).exists(); }
+    const ref = doc(db, 'perfis', u.uid);
+    try{ if((await getDocFromCache(ref)).exists()) return false; }catch{}
+    try{ return !(await getDocFromServer(ref)).exists(); }
     catch{ return false; }
   },
   async completarPerfil(perfil){

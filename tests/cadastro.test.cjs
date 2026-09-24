@@ -58,3 +58,26 @@ test('normalizaNome valida só nome e sobrenome',()=>{
   assert.deepEqual(C.normalizaNome({nome:'Ana',sobrenome:''}).perfil,{nome:'Ana'});
   assert.equal(C.normalizaNome({nome:''}).campo,'nome');
 });
+test('nomeDoGoogle separa primeira palavra e resto, com espaços limpos',()=>{
+  assert.deepEqual(C.nomeDoGoogle('  Ana   Maria  Souza '),{nome:'Ana',sobrenome:'Maria Souza'});
+  assert.deepEqual(C.nomeDoGoogle('Ana'),{nome:'Ana',sobrenome:''});
+  assert.deepEqual(C.nomeDoGoogle(undefined),{nome:'',sobrenome:''});
+  assert.deepEqual(C.nomeDoGoogle(42),{nome:'',sobrenome:''});
+});
+test('nomeDoGoogle corta nos limites do perfil',()=>{
+  const r=C.nomeDoGoogle('A'.repeat(70)+' '+'B'.repeat(90));
+  assert.equal(r.nome.length,60); assert.equal(r.sobrenome.length,80);
+});
+test('mensagemErroGoogle: desistência é silenciosa, o resto em português',()=>{
+  for(const c of ['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'])
+    assert.equal(C.mensagemErroGoogle(c),'');
+  assert.equal(C.mensagemErroGoogle('auth/account-exists-with-different-credential'),'Este e-mail já tem conta com senha. Entre com e-mail e senha.');
+  assert.equal(C.mensagemErroGoogle('auth/unauthorized-domain'),'Login com Google indisponível neste endereço. Use custta.com.br.');
+  assert.equal(C.mensagemErroGoogle('auth/operation-not-supported-in-this-environment'),'Seu navegador bloqueou o login com Google. Use e-mail e senha.');
+  assert.equal(C.mensagemErroGoogle('auth/web-storage-unsupported'),'Seu navegador bloqueou o login com Google. Use e-mail e senha.');
+  assert.equal(C.mensagemErroGoogle('auth/network-request-failed'),'Sem internet. Conecte pra entrar.');
+  assert.equal(C.mensagemErroGoogle('auth/too-many-requests'),'Muitas tentativas. Espere um pouco.');
+  assert.equal(C.mensagemErroGoogle('auth/qualquer-outro'),'Não deu certo entrar com o Google. Tente de novo.');
+  assert.equal(C.mensagemErroGoogle(undefined),'Não deu certo entrar com o Google. Tente de novo.');
+  assert.equal(C.mensagemErroGoogle('toString'),'Não deu certo entrar com o Google. Tente de novo.');
+});

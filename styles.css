@@ -460,6 +460,15 @@
   .auth-spacer{height:52vh}
   .auth-msg{font-size:12.5px;color:var(--red);min-height:18px;margin:-4px 0 8px}
   .linklike{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;width:100%;margin-top:10px;text-decoration:underline}
+  .auth-google{margin-bottom:6px}
+  .btn.google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--surface-solid);color:var(--text);border:1px solid var(--line-strong)}
+  .btn.google:hover{border-color:var(--brand)}
+  .btn.google img{flex:none}
+  .auth-ou{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--muted);font-size:12px}
+  .auth-ou::before,.auth-ou::after{content:"";flex:1;height:1px;background:var(--line)}
+  .auth-perfil-titulo{font-size:20px;margin:0 0 4px;color:var(--text)}
+  .auth-perfil-texto{font-size:13.5px;color:var(--muted);margin:0 0 14px}
   .pw-wrap{position:relative}
   .pw-wrap input{padding-right:52px}
   .pw-eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:16px;cursor:pointer;padding:6px 8px;color:var(--muted)}

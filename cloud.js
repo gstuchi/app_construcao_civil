@@ -7,16 +7,20 @@ import {
   signInWithEmailAndPassword, sendPasswordResetEmail, signOut, getIdToken,
   EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
   sendEmailVerification, reload,
+  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, reauthenticateWithPopup,
 } from './vendor/firebase/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
-  doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
+  doc, setDoc, getDoc, getDocFromServer, updateDoc, onSnapshot, serverTimestamp, deleteField, waitForPendingWrites,
   writeBatch, terminate, clearIndexedDbPersistence,
 } from './vendor/firebase/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBqhDDa8IpXuXNq2kI2-NzzpjAGPCLNTKU',
-  authDomain: 'app-construcao-civil.firebaseapp.com',
+  /* Em custta.com.br o handler do login com Google vem do próprio domínio (a
+     Vercel repassa /__/auth ao Firebase). Com firebaseapp.com o Safari, que
+     isola armazenamento de terceiros, perde a volta do redirect. */
+  authDomain: globalThis.location?.hostname === 'custta.com.br' ? 'custta.com.br' : 'app-construcao-civil.firebaseapp.com',
   projectId: 'app-construcao-civil',
   storageBucket: 'app-construcao-civil.firebasestorage.app',
   messagingSenderId: '111188093030',
@@ -25,6 +29,21 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+/* Volta do signInWithRedirect (PWA instalado / popup bloqueado). O usuário
+   chega pelo onAuthStateChanged; aqui só interessa o erro, pra tela de login. */
+getRedirectResult(auth).catch(err=>{
+  window.dispatchEvent(new CustomEvent('cloud-google-erro', { detail:{ code:(err && err.code) || 'desconhecido' } }));
+});
+function provedorGoogle(){
+  const p = new GoogleAuthProvider();
+  p.setCustomParameters({ prompt:'select_account' });
+  return p;
+}
+/* PWA instalado no iPhone: o popup abre fora do app e não volta. */
+function pwaInstalado(){
+  try{ return !!(globalThis.matchMedia?.('(display-mode: standalone)').matches || globalThis.navigator?.standalone); }
+  catch{ return false; }
+}
 // Cada aba mantém uma trava compartilhada. Saída/exclusão exigem exclusividade:
 // outra aba não pode escrever entre o flush e a limpeza do IndexedDB.
 let liberaAba = null, travaAba = null;
@@ -225,7 +244,11 @@ onAuthStateChanged(auth, async u => {
     terminaEspera('reject', Object.assign(new Error('Sessão alterada.'), { code: 'cancelled' }));
     setEstado(offline() ? 'offline' : 'ocioso');
   }
-  currentUser = u ? { uid: u.uid, email: u.email, emailVerificado:!!u.emailVerified } : null;
+  const provedores = u ? (u.providerData || []).map(p=>p.providerId) : [];
+  currentUser = u ? { uid: u.uid, email: u.email, emailVerificado:!!u.emailVerified, provedores,
+    // sem providerData (conta antiga/duplê) vale o fluxo com senha de sempre
+    temSenha: !provedores.length || provedores.includes('password'),
+    nomeExibicao: u.displayName || '' } : null;
   readyResolve();
   authCbs.forEach(cb => cb(currentUser));
   if(!u && temMarcaCache() && !saindo) limparCache().catch(()=>{});
@@ -238,7 +261,9 @@ function usuarioOnline(){
 }
 async function reautenticar(senha){
   const u = usuarioOnline();
-  await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, senha));
+  // Conta só Google não tem senha: confirma a identidade no próprio Google.
+  if(currentUser?.temSenha === false) await reauthenticateWithPopup(u, provedorGoogle());
+  else await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, senha));
   if(auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Sessão alterada.'), { code:'cancelled' });
   return u;
 }
@@ -307,6 +332,30 @@ window.CLOUD = {
   login: (email, senha) => cacheBloqueado
     ? Promise.reject(Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' }))
     : signInWithEmailAndPassword(auth, email, senha).then(()=>{}),
+  async entrarGoogle(){
+    if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
+    auth.languageCode = 'pt-BR';
+    if(pwaInstalado()) return signInWithRedirect(auth, provedorGoogle());
+    try{ await signInWithPopup(auth, provedorGoogle()); }
+    catch(err){
+      if(err?.code === 'auth/popup-blocked') return signInWithRedirect(auth, provedorGoogle());
+      throw err;
+    }
+  },
+  /* Só conta Google: o cadastro por e-mail já grava o perfil. Lê do servidor,
+     porque cache vazio não prova que o documento não existe. Qualquer falha
+     responde "não pendente": travar quem está sem rede é pior que perder a origem. */
+  async perfilPendente(){
+    const u = auth.currentUser;
+    if(!u || !currentUser?.provedores.includes('google.com')) return false;
+    try{ return !(await getDocFromServer(doc(db, 'perfis', u.uid))).exists(); }
+    catch{ return false; }
+  },
+  async completarPerfil(perfil){
+    const u = usuarioOnline();
+    await setDoc(doc(db, 'perfis', u.uid), { email: u.email, criado: new Date().toISOString(), tz: fusoAtual(), ...perfil });
+    window.dispatchEvent(new Event('perfil-alterado'));
+  },
   async enviarVerificacao(){
     const u = usuarioOnline();
     await reload(u);

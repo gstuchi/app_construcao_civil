@@ -396,8 +396,13 @@ window.CLOUD = {
     saindo = true;
     let dadosApagados = false;
     try{
+      /* Conta só Google: o popup precisa sair ainda no gesto do usuário. Depois
+         dos awaits da trava entre abas o Safari o bloqueia. reautenticar confere
+         o uid, e o corpo da trava confere de novo antes do batch. */
+      const soGoogle = currentUser?.temSenha === false;
+      if(soGoogle) await reautenticar();
       return await contaExclusiva(async()=>{
-        await reautenticar(senha);
+        if(!soGoogle) await reautenticar(senha);
         await aguardarFila();
         if(offline() || auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Conexão ou sessão alterada.'), { code:'cancelled' });
         // Desativa a inscrição antes do batch: removePushSub não pode recriar push depois dele.

@@ -101,3 +101,38 @@ test('conta com senha e Google continua reautenticando por senha',async()=>{
   await cloud.apagarConta('senha','APAGAR');
   assert.equal(ctrl.passos[0],'reauth');
 });
+/* Trava entre abas que só anota os passos: mostra se o popup veio antes dela. */
+function comTravas(){
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true,locks:{
+    request(_nome, opcoes, cb){
+      ctrl.passos.push(opcoes.mode==='shared' ? 'trava:aba' : 'trava:exclusiva');
+      return Promise.resolve(cb({}));
+    },
+  }}});
+}
+test('conta só Google: popup de reautenticação vem antes da trava entre abas',async()=>{
+  comTravas(); await carregar();
+  await entraComo(['google.com']); ctrl.passos=[];
+  await cloud.apagarConta('','APAGAR');
+  assert.equal(ctrl.passos[0],'reauthPopup', 'popup ainda dentro do gesto do usuário');
+  assert.ok(ctrl.passos.indexOf('trava:exclusiva') > 0);
+  assert.equal(ctrl.passos.filter(p=>p==='reauthPopup').length,1, 'não pede o popup de novo dentro da trava');
+  assert.ok(ctrl.passos.includes('deleteUser'));
+});
+test('conta só Google: popup falhando não apaga nada',async()=>{
+  comTravas(); await carregar();
+  await entraComo(['google.com']); ctrl.passos=[];
+  ctrl.falhas.reauthPopup={code:'auth/popup-blocked'};
+  await assert.rejects(cloud.apagarConta('','APAGAR'),{code:'auth/popup-blocked'});
+  assert.deepEqual(ctrl.passos,['reauthPopup']);
+  delete ctrl.falhas.reauthPopup; ctrl.passos=[];
+  await cloud.apagarConta('','APAGAR');
+  assert.ok(ctrl.passos.includes('commit'), 'saindo voltou a false');
+});
+test('conta com senha reautentica dentro da trava, como antes',async()=>{
+  comTravas(); await carregar();
+  await entraComo(['password','google.com']); ctrl.passos=[];
+  await cloud.apagarConta('senha','APAGAR');
+  assert.ok(ctrl.passos.indexOf('reauth') > ctrl.passos.indexOf('trava:exclusiva'));
+  assert.ok(!ctrl.passos.includes('reauthPopup'));
+});

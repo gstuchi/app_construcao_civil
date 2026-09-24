@@ -4,15 +4,11 @@
 const { timingSafeEqual } = require('node:crypto');
 
 function carregarPadrao(){
-  const admin = require('firebase-admin');
   const webpush = require('web-push');
   const { enviaTodos } = require('../notificacoes/enviar.js');
-  if(!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
+  const { depsAdmin } = require('../notificacoes/admin.js');
   webpush.setVapidDetails(process.env.VAPID_SUBJECT, process.env.VAPID_PUBLIC, process.env.VAPID_PRIVATE);
-  return { enviaTodos, deps: {
-    db: admin.firestore(), webpush, messaging: admin.messaging(),
-    FieldPath: admin.firestore.FieldPath, FieldValue: admin.firestore.FieldValue,
-  } };
+  return { enviaTodos, deps: { ...depsAdmin(process.env.FIREBASE_SERVICE_ACCOUNT), webpush } };
 }
 
 function segredoConfere(recebido, esperado){

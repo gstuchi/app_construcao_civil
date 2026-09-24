@@ -180,7 +180,37 @@ async function sair(page){
     await page.evaluate(()=>window.dispatchEvent(new CustomEvent('cloud-google-erro',{detail:{code:'auth/account-exists-with-different-credential'}})));
     assert.equal(await page.textContent('#lMsg'),'Este e-mail já tem conta com senha. Entre com e-mail e senha.');
     console.log('ok - erro do redirect vira mensagem em português no login');
+
+    // 9b. a mensagem velha do Google não volta depois de entrar por e-mail e sair
+    await page.locator('#authTabs button[data-k="cad"]').click();
+    await page.locator('#cNome').fill('Carla');
+    await page.locator('#cEmail').fill('carla@example.com');
+    await page.locator('#cSenha').fill('Obra2026x'); await page.locator('#cSenha2').fill('Obra2026x');
+    await page.selectOption('#cOrigem','instagram');
+    await page.locator('#fCad button[type=submit]').click();
+    await page.waitForFunction(()=>!document.body.classList.contains('locked'));
+    await sair(page);
+    assert.equal(await page.textContent('#lMsg'),'');
+    console.log('ok - erro antigo do Google some depois de entrar por e-mail e sair');
     await context.close();
+
+    // 9c. duas abas no "Falta pouco": a que salva por último não fica presa
+    {
+      const ctxAbas=await novoContexto();
+      const abaA=await abrirApp(ctxAbas);
+      await entrarGooglePeloEmulador(abaA,'duas.abas@example.com','Davi Lima');
+      await abaA.waitForSelector('#fPerfil',{state:'visible'});
+      const abaB=await abrirApp(ctxAbas);
+      await abaB.waitForSelector('#fPerfil',{state:'visible'});
+      for(const aba of [abaA,abaB]) await aba.selectOption('#pOrigem','youtube');
+      await abaA.locator('#fPerfil button[type=submit]').click();
+      await abaA.waitForFunction(()=>!document.body.classList.contains('locked'));
+      await abaB.locator('#fPerfil button[type=submit]').click();
+      await abaB.waitForFunction(()=>!document.body.classList.contains('locked'));
+      assert.equal(await abaB.textContent('#pMsg'),'');
+      console.log('ok - segunda aba no "Falta pouco" destrava quando a outra já gravou o perfil');
+      await ctxAbas.close();
+    }
 
     // 10. app nativo (WKWebView) não mostra o Google
     {

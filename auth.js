@@ -50,7 +50,7 @@
   async function aoTrocarUsuario(u){
     const minha = ++checagem;
     if(u){
-      jaLogou = true;
+      jaLogou = true; erroGoogle = ''; // entrou: erro de tentativa anterior não volta na próxima tela de login
       if(u.provedores?.includes('google.com') && await CLOUD.perfilPendente()){
         if(minha === checagem) mostrarPerfil(u);
         return;
@@ -106,7 +106,9 @@
     $('#fCad').classList.toggle('hidden',k!=='cad');
     $('#lMsg').textContent=''; $('#cMsg').textContent=''; $('#pMsg').textContent='';
   }
-  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>mostrarAba(b.dataset.k));
+  /* Zera o erro do Google no clique, não em mostrarAba: locked(true) a chama
+     antes de o onAuth(null) reescrever a mensagem que chegou do redirect. */
+  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{ erroGoogle = ''; mostrarAba(b.dataset.k); });
 
   /* ---------- olho de mostrar senha ---------- */
   document.querySelectorAll('.pw-eye').forEach(b=>b.onclick=()=>{
@@ -224,7 +226,7 @@
   const btnGoogle = $('#btnGoogle');
   btnGoogle.onclick = async()=>{
     const msg = $('#fCad').classList.contains('hidden') ? $('#lMsg') : $('#cMsg');
-    msg.textContent = '';
+    msg.textContent = ''; erroGoogle = '';
     const texto = $('#btnGoogleTexto');
     btnGoogle.disabled = true; texto.textContent = 'Abrindo o Google…';
     try{ await CLOUD.entrarGoogle(); }
@@ -252,7 +254,12 @@
     if(!r.ok) return marca(CAMPO_PERFIL[r.campo], r.erro, 'pMsg');
     await comLoading(e.target.querySelector('button[type=submit]'), 'Salvando…', async()=>{
       try{ await CLOUD.completarPerfil(r.perfil); locked(false); }
-      catch(err){ msg.textContent = err?.code === 'offline' ? 'Conecte à internet para continuar.' : 'Não deu certo salvar. Tente de novo.'; }
+      catch(err){
+        /* Outra aba já gravou o perfil: o setDoc virou update e as rules recusam.
+           Se o perfil existe, não há nada pendente — segue pro app. */
+        if(err?.code === 'permission-denied' && !(await CLOUD.perfilPendente())){ locked(false); return; }
+        msg.textContent = err?.code === 'offline' ? 'Conecte à internet para continuar.' : 'Não deu certo salvar. Tente de novo.';
+      }
     });
   });
   $('#pOutra').onclick = async()=>{

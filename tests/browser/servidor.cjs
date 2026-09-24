@@ -3,7 +3,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const RAIZ = path.resolve(__dirname, '..', '..');
 const headers=Object.fromEntries(require('../../vercel.json').headers[0].headers.map(h=>[h.key,h.value]));
 // Apenas emuladores locais recebem exceção HTTP/WS; produção mantém HTTPS.
-if(process.env.CUSTTA_EMULADORES === '1') headers['Content-Security-Policy']=headers['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' http://127.0.0.1:8080 http://127.0.0.1:9099 ws://127.0.0.1:8080").replace('; upgrade-insecure-requests','');
+if(process.env.CUSTTA_EMULADORES === '1') headers['Content-Security-Policy']=headers['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' http://127.0.0.1:8080 http://127.0.0.1:9099 ws://127.0.0.1:8080").replace("frame-src 'self'", "frame-src 'self' http://127.0.0.1:9099").replace('; upgrade-insecure-requests','');
 const TIPOS = { '.html':'text/html', '.js':'text/javascript', '.json':'application/json',
   '.svg':'image/svg+xml', '.png':'image/png', '.woff2':'font/woff2', '.css':'text/css' };
 

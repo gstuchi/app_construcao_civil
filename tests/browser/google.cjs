@@ -41,10 +41,13 @@ async function escolherConta(popup, email){
   await popup.locator('.js-reuse-account',{hasText:email}).first().click();
 }
 const travado=page=>page.evaluate(()=>document.body.classList.contains('locked'));
+/* O logout limpa o cache e recarrega a página. Esperar só o "locked" deixa o
+   próximo page.evaluate correr contra o reload; espera o documento novo. */
 async function sair(page){
+  const antes=await page.evaluate(()=>window.__documentoId);
   await page.locator('#btnSair:visible, #btnSairSide:visible').first().click();
   await page.locator('dialog.confirma-dialog [data-acao=confirmar]').click();
-  await page.waitForFunction(()=>document.body.classList.contains('locked') && !CLOUD.user());
+  await page.waitForFunction(antes=>window.__documentoId !== antes && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && document.body.classList.contains('locked'),antes,{timeout:30000});
 }
 
 (async()=>{
@@ -62,7 +65,7 @@ async function sair(page){
     await context.addInitScript(()=>addEventListener('securitypolicyviolation',e=>window.__registraCSP(e.violatedDirective+': '+e.blockedURI)));
     const source=cloudEmulado();
     await context.route('**/cloud.js',r=>r.fulfill({contentType:'text/javascript',body:source}));
-    await context.addInitScript(()=>sessionStorage.setItem('splashVista','1'));
+    await context.addInitScript(()=>{ sessionStorage.setItem('splashVista','1'); window.__documentoId=crypto.randomUUID(); });
     return context;
   };
   const abrirApp=async context=>{

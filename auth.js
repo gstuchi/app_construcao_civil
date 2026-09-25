@@ -62,8 +62,10 @@
     jaLogou = false; saindoDeProposito = false;
     locked(true); // limpa #lMsg, então a mensagem vem depois
     if(expirou) $('#lMsg').textContent = 'Sua sessão expirou por segurança. Entre de novo pra continuar.';
+    /* Não zera erroGoogle aqui: o onAuth(null) chega duas vezes na abertura
+       (loop do onAuthStateChanged e ready.then) e a segunda apagaria a
+       mensagem. Ela sai ao entrar ou ao clicar em "Continuar com Google". */
     else if(erroGoogle){ $('#lMsg').textContent = erroGoogle; }
-    erroGoogle = '';
   }
   function mostrarPerfil(u){
     $('#authTabs').classList.add('hidden'); $('#authGoogle').classList.add('hidden');

@@ -3,14 +3,15 @@
 Código pronto em `feat/fase4`. Itens abaixo dependem de matrícula Apple, Xcode ou aparelho.
 
 ## Antes do primeiro build
-- [ ] Matricular no Apple Developer Program; trocar `com.gstuchi.custta` pelo bundle ID reservado em `capacitor.config.json` e rodar `npm run cap:sync`.
-- [ ] Firebase → adicionar app iOS com o bundle ID → baixar `GoogleService-Info.plist` → arrastar para `ios/App/App/` no Xcode (target App). Sem ele o app fecha ao abrir.
-- [ ] Gerar chave APNs `.p8` e subir em Firebase → Cloud Messaging → Apple app configuration.
-- [ ] Xcode → Signing & Capabilities: Team, "Push Notifications" e "Background Modes › Remote notifications".
-- [ ] Preencher `versao.json` → `loja` com `itms-apps://apps.apple.com/app/id<ID>` depois de criar o app no App Store Connect.
+- [x] Matricular no Apple Developer Program; trocar `com.gstuchi.custta` pelo bundle ID reservado em `capacitor.config.json` e rodar `npm run cap:sync` (25/09/2026, PR #17) — bundle definitivo `br.com.custta.app`.
+- [x] Firebase → adicionar app iOS com o bundle ID → baixar `GoogleService-Info.plist` → arrastar para `ios/App/App/` no Xcode (target App). Sem ele o app fecha ao abrir. (25/09/2026, PR #17)
+- [x] Gerar chave APNs `.p8` e subir em Firebase → Cloud Messaging → Apple app configuration. (25/09/2026, PR #17)
+- [x] Xcode → Signing & Capabilities: Team, "Push Notifications" e "Background Modes › Remote notifications". (25/09/2026, PR #17) — feito pelo `project.pbxproj`, não por clique no Xcode: capacidade de push é `App.entitlements` (`aps-environment = $(APS_ENVIRONMENT)`) + build setting `APS_ENVIRONMENT` (Debug `development`, Release `production`) + Release assinada manualmente (perfil `Custta App Store`, identidade `Apple Distribution`).
+- [ ] Preencher `versao.json` → `loja` com `itms-apps://apps.apple.com/app/id<ID>` depois de criar o app no App Store Connect. Destravado: o app "Custta" já existe no App Store Connect (25/09/2026) — falta só o `<ID>` real.
 - [ ] Google Cloud Console → Credenciais → checar se a API key web do Firebase tem restrição de HTTP referrer/app. Se tiver, `capacitor://localhost` falha Auth/Firestore no app nativo — liberar esse esquema ou remover a restrição.
 
 ## No iPhone (TestFlight)
+Seção alcançável agora: `.github/workflows/ios-testflight.yml` (PR #17) arquiva, assina e envia um build de verdade ao TestFlight — falta só instalar no iPhone e rodar os itens abaixo.
 - [ ] Instalar, logar, matar o app, reabrir: continua logado e na mesma tela/obra.
 - [ ] Modo avião na primeira abertura após instalar: app abre e lista obras do cache.
 - [ ] Lançar gasto: vibra ao confirmar; teclado numérico e folhas não ficam atrás do teclado do iOS (gambiarra `visualViewport`).

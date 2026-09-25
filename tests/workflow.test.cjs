@@ -35,14 +35,17 @@ const ios = readFileSync(join(dir, 'ios-build.yml'), 'utf8');
 
 assert.match(ios, /runs-on:\s*macos-latest/, 'o build iOS precisa do runner macOS');
 
-// Sem a matrícula na Apple não há certificado; o build só existe sem assinatura.
-// Quando a conta sair, quem ligar a assinatura tira estas linhas de propósito.
+// ios-build.yml fica sem assinatura de propósito: roda sem secrets (até em PR
+// de fork) e prova que a Release manual (perfil "Custta App Store" no
+// pbxproj) não quebra um build sem assinatura. A assinatura de verdade e o
+// envio moram em ios-testflight.yml.
 assert.match(ios, /CODE_SIGNING_ALLOWED=NO/, 'o build precisa dispensar assinatura');
 assert.match(ios, /CODE_SIGNING_REQUIRED=NO/, 'o build precisa dispensar assinatura');
 
-// Minuto de macOS custa 10x. Rodar a cada push queima a cota do mês em dias.
+// Rodar a cada push queima runner à toa — o build nativo só interessa quando
+// o diff mexe em algo que pode quebrá-lo.
 assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(ios),
-  'o build iOS não pode disparar em todo push — a cota macOS é 10x');
+  'o build iOS não pode disparar em todo push');
 assert.match(ios, /workflow_dispatch:/, 'o build iOS precisa do botão manual');
 
 // Capacitor 8 é SPM: não existe Podfile no projeto, e `pod install` aqui só
@@ -68,4 +71,45 @@ assert.match(xml, /BlueprintName\s*=\s*"App"/, 'scheme não aponta para o target
 assert.match(xml, /ReferencedContainer\s*=\s*"container:App\.xcodeproj"/,
   'scheme aponta para container errado');
 
-console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda');
+const tf = readFileSync(join(dir, 'ios-testflight.yml'), 'utf8');
+const tfSemComentario = tf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
+assert.match(tf, /runs-on:\s*macos-latest/, 'o envio precisa do runner macOS');
+assert.match(tf, /workflow_dispatch:/, 'o envio precisa do botão manual');
+// Cada execução vira um build no TestFlight: nada de disparo em todo push.
+assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(tf), 'o envio não pode disparar em push');
+assert.match(tf, /cancel-in-progress:\s*false/, 'cancelar no meio pode matar um upload');
+assert.ok(!/pod install/.test(tfSemComentario), 'projeto é SPM, não CocoaPods');
+assert.ok(tf.indexOf('npm ci') < tf.indexOf('xcodebuild \\'), 'npm ci precisa rodar antes do xcodebuild');
+// Re-run repete o run_number; a Apple recusa build repetido.
+assert.match(tf, /CURRENT_PROJECT_VERSION="\$\{\{ github\.run_number \}\}\.\$\{\{ github\.run_attempt \}\}"/,
+  'build number precisa crescer e não repetir em re-run');
+assert.match(tf, /if:\s*always\(\)[\s\S]*delete-keychain/, 'keychain temporária precisa sumir mesmo com falha');
+for(const s of ['ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_P8', 'APPLE_TEAM_ID', 'DIST_CERT_P12', 'DIST_CERT_SENHA', 'PERFIL_APP_STORE'])
+  assert.match(tf, new RegExp(`secrets\\.${s}\\b`), `workflow não lê o secret ${s}`);
+assert.ok(!/-----BEGIN/.test(tf), 'chave literal no workflow — repositório é público');
+assert.match(tf, /AppleWWDRCAG3\.cer/, 'sem o intermediário WWDR G3 a identidade não é válida para assinar');
+
+// PR de fork não recebe secrets — sem essa guarda o job roda vermelho com
+// "secret ausente" em vez de simplesmente não disparar.
+assert.match(tf, /github\.event\.pull_request\.head\.repo\.full_name\s*==\s*github\.repository/,
+  'falta a guarda de PR de fork no job enviar');
+
+// Perfil errado ainda assina, mas gera .ipa que a Apple recusa lá na frente —
+// o Name e o TeamIdentifier do perfil precisam ser conferidos contra o
+// esperado antes do archive.
+assert.match(tf, /TeamIdentifier/, 'perfil precisa ter o TeamIdentifier conferido');
+assert.match(tf, /!=\s*"Custta App Store"/, 'perfil precisa ter o Name conferido contra "Custta App Store"');
+assert.match(tf, /TEAM"\s*!=\s*"\$APPLE_TEAM_ID"/,
+  'perfil precisa comparar o time do perfil com APPLE_TEAM_ID');
+
+// Sem jargão de plano interno sobrevivendo no comentário do workflow.
+assert.ok(!/Task 2/.test(tf), 'comentário ainda referencia "Task 2" (jargão de plano interno)');
+
+const exportOpts = readFileSync(join(__dirname, '..', 'ios', 'App', 'ExportOptions.plist'), 'utf8');
+assert.match(exportOpts, /<key>method<\/key>\s*<string>app-store-connect<\/string>/);
+assert.match(exportOpts, /<key>destination<\/key>\s*<string>upload<\/string>/);
+assert.match(exportOpts, /<key>signingStyle<\/key>\s*<string>manual<\/string>/);
+assert.match(exportOpts, /<key>teamID<\/key>\s*<string>4S7JKDKN27<\/string>/);
+assert.match(exportOpts, /<key>br\.com\.custta\.app<\/key>\s*<string>Custta App Store<\/string>/);
+
+console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda; envio ao TestFlight assinado e sob demanda');

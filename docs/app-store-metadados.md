@@ -10,7 +10,8 @@ Textos prontos para colar no App Store Connect. Limites da Apple entre parêntes
 | Subtítulo | `Custo e lucro das suas obras` | 30 (29 usados) |
 | Categoria principal | Finanças | — |
 | Categoria secundária | Produtividade | — |
-| Bundle ID | reservar `com.gstuchi.custta` (o provisório já está em `capacitor.config.json`) | — |
+| Bundle ID | `br.com.custta.app` (registrado em 25/09/2026; não muda nunca) | — |
+| SKU | `custta-ios` | — |
 
 ## Texto promocional (170)
 
@@ -162,7 +163,7 @@ Substitua `<e-mail>` e `<senha>` pelos dados reais da conta de demonstração.
 
 ## Ordem de preenchimento
 
-1. Reservar o nome e criar o app com o bundle ID.
+1. ~~Reservar o nome e criar o app com o bundle ID.~~ Feito (25/09/2026).
 2. Colar nome, subtítulo, palavras-chave, descrição e texto promocional.
 3. Subir screenshots e ícone.
 4. Responder o questionário de classificação etária.

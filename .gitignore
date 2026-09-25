@@ -7,8 +7,9 @@ node_modules/
 notificacoes/node_modules/
 
 # Segredos — nada aqui pode entrar num commit.
-# A apiKey do Firebase em cloud.js é pública por design; o que está listado
-# abaixo NÃO é, e um vazamento aqui dá acesso administrativo ao projeto.
+# As apiKeys do Firebase (web em cloud.js, iOS em ios/App/App/GoogleService-Info.plist)
+# são públicas por design; o que está listado abaixo NÃO é, e um vazamento aqui
+# dá acesso administrativo ao projeto.
 *serviceAccount*.json
 .env
 .env.*

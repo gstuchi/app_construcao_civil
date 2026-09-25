@@ -1,0 +1,220 @@
+name: ios-testflight
+# Arquiva, assina e envia o app iOS ao TestFlight.
+#
+# Por que assinatura manual: a assinatura automática na nuvem (o Xcode pedindo
+# um perfil via `-allowProvisioningUpdates`) gera um perfil de *desenvolvimento*,
+# e a Apple recusa perfil de desenvolvimento pra time sem aparelho cadastrado
+# ("Your team has no devices" — a conta é nova, não tem iPhone registrado). O
+# caminho manual evita isso: certificado Apple Distribution e perfil App Store
+# ("Custta App Store", que não exige aparelho) foram gerados uma única vez pela
+# API do App Store Connect (Task 2 liga o target App a esse perfil e identidade
+# no `project.pbxproj`) e vivem em secrets do repositório. Por isso o passo de
+# archive aqui embaixo NÃO passa CODE_SIGN_IDENTITY nem PROVISIONING_PROFILE_*
+# na linha de comando: um override desses no xcodebuild vale para TODOS os
+# targets da build, inclusive os pacotes de recurso SPM do Firebase, que não
+# têm (nem podem ter) assinatura de distribuição própria — só o
+# CURRENT_PROJECT_VERSION é passado na linha de comando.
+#
+# Por que só botão manual + PR que mexe em assinatura: cada execução deste
+# workflow é um envio de verdade ao TestFlight (consome build number e cota de
+# minuto macOS, que custa 10x). Não faz sentido disparar em todo push — só
+# quando alguém decide soltar um build (workflow_dispatch) ou quando um PR
+# mexe no que pode quebrar a assinatura (este arquivo, o ExportOptions.plist,
+# as entitlements ou o pbxproj), pra pegar erro de configuração antes do merge.
+#
+# Por que o build number leva github.run_attempt: a Apple recusa build com
+# CFBundleVersion repetido. github.run_number sozinho não muda quando alguém
+# clica "Re-run" numa execução que falhou no meio (por exemplo, no upload) —
+# só github.run_attempt incrementa nesse caso. Os dois juntos garantem que um
+# re-run também gera um build number novo.
+#
+# Como renovar o certificado: certificado de distribuição e perfil "Custta App
+# Store" valem um ano a partir de quando foram gerados (set/2026) — renovar em
+# set/2027, gerar novo .p12 e .mobileprovision e atualizar os secrets
+# DIST_CERT_P12, DIST_CERT_SENHA e PERFIL_APP_STORE (cópia local em
+# ~/Documents/custta-chaves/).
+#
+# Capacitor 8 usa Swift Package Manager (ios/App/CapApp-SPM), não CocoaPods.
+# Não existe Podfile aqui e `pod install` não é passo deste workflow.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ios-testflight.yml'
+      - 'ios/App/ExportOptions.plist'
+      - 'ios/App/App/App.entitlements'
+      - 'ios/App/App.xcodeproj/project.pbxproj'
+
+permissions:
+  contents: read
+
+# Sem ref no group, de propósito: dois envios ao TestFlight ao mesmo tempo (de
+# PRs diferentes, por exemplo) disputariam o mesmo build number e a mesma
+# keychain temporária do runner. cancel-in-progress fica false porque cancelar
+# no meio de um envio pode deixar upload pela metade — o próximo espera.
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  enviar:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      # Fica no log: o runner troca de Xcode ao longo do tempo e é a primeira
+      # coisa a conferir quando um envio que passava começa a quebrar sozinho.
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # Falhar aqui, rápido e com mensagem clara, é melhor que falhar dez
+      # minutos depois no meio do xcodebuild com um erro de assinatura opaco.
+      - name: Os secrets de assinatura existem
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+          DIST_CERT_SENHA: ${{ secrets.DIST_CERT_SENHA }}
+          PERFIL_APP_STORE: ${{ secrets.PERFIL_APP_STORE }}
+        run: |
+          falta=0
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID DIST_CERT_P12 DIST_CERT_SENHA PERFIL_APP_STORE; do
+            [ -z "${!v}" ] && { echo "::error::secret $v ausente"; falta=1; }
+          done
+          exit $falta
+
+      - run: npm ci
+
+      # build:www monta a pasta www/ e cap sync a copia para ios/App/App/public,
+      # além de regravar o Package.swift do CapApp-SPM a partir do package.json.
+      - name: Empacotar a web e sincronizar o Capacitor
+        run: npm run cap:sync
+
+      # O sync não pode deixar o projeto versionado sujo: se Package.swift ou o
+      # pbxproj saírem diferentes, é porque o commit está defasado do package.json.
+      - name: O cap sync não mudou nada versionado
+        run: git diff --exit-code -- ios
+
+      # Keychain só deste job, criada e destruída na mesma execução — nunca a
+      # keychain padrão do runner, que é compartilhada e persiste entre steps
+      # de formas imprevisíveis. A senha nasce aqui, some com a keychain no
+      # fim do job (passo "Limpar") e nunca aparece em log.
+      - name: Keychain temporária
+        env:
+          DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+          DIST_CERT_SENHA: ${{ secrets.DIST_CERT_SENHA }}
+        run: |
+          set -o pipefail
+          KEYCHAIN="$RUNNER_TEMP/assinatura.keychain-db"
+          SENHA="$(openssl rand -base64 32)"
+          security create-keychain -p "$SENHA" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$SENHA" "$KEYCHAIN"
+          echo "$DIST_CERT_P12" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_CERT_SENHA" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$SENHA" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/dist.p12"
+
+          # Sem o intermediário da Apple na cadeia, "Apple Distribution: ..."
+          # importa mas fica INVÁLIDA para assinar (find-identity não lista
+          # como válida) — confirmado testando localmente com o certificado
+          # real. Não dá pra contar com o runner já ter esse intermediário
+          # instalado, então baixa e importa aqui; "already exists" é normal
+          # em runner reaproveitado, não é erro.
+          curl -fsSL -o "$RUNNER_TEMP/AppleWWDRCAG3.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
+          security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN" || true
+
+          # Só mostra a identidade (nome do certificado), nunca a chave privada.
+          # Falha alto e cedo se a cadeia não fechou — senão o erro só apareceria
+          # confuso lá na frente, no xcodebuild archive.
+          IDENTIDADES="$(security find-identity -v -p codesigning "$KEYCHAIN")"
+          echo "$IDENTIDADES"
+          if ! grep -q 'Apple Distribution' <<< "$IDENTIDADES"; then
+            echo "::error::nenhuma identidade Apple Distribution válida na keychain — falta o intermediário WWDR G3 ou o certificado não importou"
+            exit 1
+          fi
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      # Xcode 16+ passou a ler os perfis de UserData, não só de MobileDevice —
+      # instala nos dois locais pra funcionar em qualquer versão do runner.
+      - name: Perfil de provisionamento
+        env:
+          PERFIL_APP_STORE: ${{ secrets.PERFIL_APP_STORE }}
+        run: |
+          set -o pipefail
+          PERFIL="$RUNNER_TEMP/perfil.mobileprovision"
+          echo "$PERFIL_APP_STORE" | base64 --decode > "$PERFIL"
+          UUID="$(security cms -D -i "$PERFIL" | plutil -extract UUID raw -o - -)"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          cp "$PERFIL" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          cp "$PERFIL" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$UUID.mobileprovision"
+          echo "PERFIL_UUID=$UUID" >> "$GITHUB_ENV"
+
+      - name: Chave da API do App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_ENV"
+
+      # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem
+      # aprove macro ou plugin de pacote na primeira resolução, e sem as flags o
+      # xcodebuild falha em vez de perguntar.
+      # Sem overrides de assinatura na linha de comando (ver comentário do
+      # cabeçalho) — o Release do target App já está configurado como manual,
+      # com o perfil e a identidade certos, pelo pbxproj (Task 2).
+      - name: Arquivar (Release, assinado)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Custta.xcarchive" \
+            -derivedDataPath ios/App/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}.${{ github.run_attempt }}" \
+            archive
+
+      - name: Enviar ao TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Custta.xcarchive" \
+            -exportOptionsPlist ios/App/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Resumo
+        run: |
+          echo "Build \`${{ github.run_number }}.${{ github.run_attempt }}\` enviado ao TestFlight." >> "$GITHUB_STEP_SUMMARY"
+
+      # always(): a keychain e o perfil temporários não podem sobreviver a uma
+      # falha no meio do job — o runner é reciclado, mas não custa garantir.
+      - name: Limpar
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/assinatura.keychain-db" || true
+          rm -rf "$RUNNER_TEMP/asc" "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/perfil.mobileprovision"
+          if [ -n "${PERFIL_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$PERFIL_UUID.mobileprovision"
+            rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$PERFIL_UUID.mobileprovision"
+          fi

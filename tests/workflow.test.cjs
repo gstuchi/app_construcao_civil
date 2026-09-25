@@ -68,4 +68,29 @@ assert.match(xml, /BlueprintName\s*=\s*"App"/, 'scheme não aponta para o target
 assert.match(xml, /ReferencedContainer\s*=\s*"container:App\.xcodeproj"/,
   'scheme aponta para container errado');
 
-console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda');
+const tf = readFileSync(join(dir, 'ios-testflight.yml'), 'utf8');
+const tfSemComentario = tf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
+assert.match(tf, /runs-on:\s*macos-latest/, 'o envio precisa do runner macOS');
+assert.match(tf, /workflow_dispatch:/, 'o envio precisa do botão manual');
+// Cada execução vira um build no TestFlight: nada de disparo em todo push.
+assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(tf), 'o envio não pode disparar em push');
+assert.match(tf, /cancel-in-progress:\s*false/, 'cancelar no meio pode matar um upload');
+assert.ok(!/pod install/.test(tfSemComentario), 'projeto é SPM, não CocoaPods');
+assert.ok(tf.indexOf('npm ci') < tf.indexOf('xcodebuild \\'), 'npm ci precisa rodar antes do xcodebuild');
+// Re-run repete o run_number; a Apple recusa build repetido.
+assert.match(tf, /CURRENT_PROJECT_VERSION="\$\{\{ github\.run_number \}\}\.\$\{\{ github\.run_attempt \}\}"/,
+  'build number precisa crescer e não repetir em re-run');
+assert.match(tf, /if:\s*always\(\)[\s\S]*delete-keychain/, 'keychain temporária precisa sumir mesmo com falha');
+for(const s of ['ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_P8', 'APPLE_TEAM_ID', 'DIST_CERT_P12', 'DIST_CERT_SENHA', 'PERFIL_APP_STORE'])
+  assert.match(tf, new RegExp(`secrets\\.${s}\\b`), `workflow não lê o secret ${s}`);
+assert.ok(!/-----BEGIN/.test(tf), 'chave literal no workflow — repositório é público');
+assert.match(tf, /AppleWWDRCAG3\.cer/, 'sem o intermediário WWDR G3 a identidade não é válida para assinar');
+
+const exportOpts = readFileSync(join(__dirname, '..', 'ios', 'App', 'ExportOptions.plist'), 'utf8');
+assert.match(exportOpts, /<key>method<\/key>\s*<string>app-store-connect<\/string>/);
+assert.match(exportOpts, /<key>destination<\/key>\s*<string>upload<\/string>/);
+assert.match(exportOpts, /<key>signingStyle<\/key>\s*<string>manual<\/string>/);
+assert.match(exportOpts, /<key>teamID<\/key>\s*<string>4S7JKDKN27<\/string>/);
+assert.match(exportOpts, /<key>br\.com\.custta\.app<\/key>\s*<string>Custta App Store<\/string>/);
+
+console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda; envio ao TestFlight assinado e sob demanda');

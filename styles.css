@@ -772,6 +772,101 @@ body .layout-45{font-size:30px}
 .sp-data.layout-5{animation-delay:2.1s}
 .sp-data.layout-6{animation-delay:3.4s}
 
+/* ===== conteúdo no padrão iOS (celular) =====
+   Painéis e cards viram os grupos "inset grouped" dos apps da Apple (Ajustes, Carteira,
+   Saúde): cantos de 14px, sem borda nem sombra, superfície sólida um degrau acima do fundo.
+   Listas com linha alta, separador fino recuado a partir do texto e realce ao tocar; busca
+   com lupa; botão preenchido e tingido de 50px; sheet com alça. O desktop não muda: as duas
+   regras soltas abaixo só mantêm nele o desenho de antes. */
+  .chevron,.busca-ic{display:none}
+  .busca{display:flex;flex:1;min-width:0} /* o rótulo da busca ocupa o lugar que era do campo */
+  @media screen and (max-width:899px){
+    .panel,.card,.kpi{border-radius:14px;border:0;box-shadow:none}
+    .card.saldo,.card.saldo.saldo-abaixo{box-shadow:none}
+    .kpi{background:var(--surface-solid)} /* opaco como os painéis: o globo não passa através */
+    .panel{padding:14px 16px}
+    .panel h2{font-size:17px;font-weight:600}
+    .panel h2 .muted{font-size:15px}
+
+    ul.list{gap:0}
+    ul.list li{min-height:56px;border-bottom:0;position:relative;padding:10px 4px}
+    /* separador fino que começa no texto, não atravessa o ícone (38px de ícone + 13 de vão + 4) */
+    ul.list li + li::before{content:"";position:absolute;top:0;left:54px;right:0;height:.5px;background:var(--border)}
+    #oAfazeres li + li::before{left:43px} /* afazer: bolinha de 26px no lugar do ícone */
+    ul.list li:active{background:var(--surface-2);border-radius:10px}
+    .chevron{display:block;color:var(--muted);font-size:22px;line-height:1;margin-left:-4px;flex:none}
+
+    /* Obras: a lista é o grupo; "Minhas obras" repetia o título grande e sai da vista
+       (continua para o VoiceOver), a contagem vira o cabeçalho da seção, acima do grupo */
+    .panel.grupo-obras{background:transparent;padding:0}
+    .grupo-obras > h2{margin:0 4px 8px}
+    .grupo-obras > h2 .muted{font-weight:500}
+    /* o realce do toque vai de borda a borda do grupo, recortado pelos cantos dele */
+    .grupo-obras > ul.list{background:var(--surface-solid);border-radius:14px;overflow:hidden}
+    .grupo-obras > ul.list li{padding:10px 14px 10px 16px}
+    .grupo-obras > ul.list li + li::before{left:67px}
+    .grupo-obras > ul.list li:active{border-radius:0}
+    .rotulo-grupo,.obra-head h2 > .layout-33,#v-simula > .panel:first-child > h2{
+      position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+    /* obra: o nome já está no título grande; o painel do topo vira a linha de subtítulo
+       dele (fase, início e tempo de obra) com o lápis de editar à direita */
+    .panel.obra-head{display:flex;align-items:center;gap:12px;background:transparent;padding:0 0 0 4px;margin:-6px 0 16px}
+    .obra-head h2{order:2;margin:0;flex:none}
+    .obra-head .obra-meta{order:1;flex:1;min-width:0;font-size:15px;line-height:1.4}
+    .obra-meta .obra-sep{display:none} /* fase numa linha, início e tempo de obra na outra */
+    .obra-meta .obra-desde{display:block;margin-top:6px}
+    .obra-meta .tag{font-size:13px;padding:3px 10px}
+    /* lápis como botão redondo tingido (44px), como os botões de ação dos apps da Apple */
+    .obra-head #oEdit{width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center;
+      background:var(--brand-soft);color:var(--chip-on-ink);font-size:19px}
+    .obra-head #oEdit:active{opacity:.6;background:var(--brand-soft);color:var(--chip-on-ink)}
+    html[data-theme="light"] .obra-head #oEdit{color:var(--brand-600)}
+    #obrasList .obra-tempo{white-space:nowrap} /* quebra antes do "· 16 meses", nunca no meio dele */
+
+    /* indicadores da obra: o selo desce para baixo do nome quando não cabe ao lado (antes o
+       nome quebrava palavra por palavra); o primário das ações ocupa a linha toda */
+    .kpi .k-top{flex-wrap:wrap;justify-content:flex-start;gap:4px 6px}
+    .obra-actions .btn{flex:1 1 auto} /* cada um na largura do texto: "Voltar pra construção" ganha a linha em vez de quebrar */
+    .obra-actions .btn.primary{flex-basis:100%}
+    /* Ajustes: as ações de cada grupo empilham (três botões lado a lado quebravam o texto em duas linhas) */
+    #v-ajustes .panel .sheet-actions{flex-direction:column}
+
+    /* campos cheios, sem contorno (o contorno só aparece no foco e no aviso) */
+    .field input,.field select,.valor-btn{border-color:transparent}
+
+    /* busca no padrão iOS: campo cheio e arredondado com lupa; o mês é um botão de menu ao lado */
+    .busca{position:relative;flex:1;min-width:0}
+    .busca-ic{display:block;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;line-height:0}
+    .filter-row input,.filter-row select{border:0;border-radius:10px;min-height:44px;background:var(--surface-2)}
+    .filter-row select{max-width:none} /* "Todos os meses" inteiro; a busca fica com o resto */
+    .filter-row input::placeholder{color:var(--muted);opacity:1}
+    .busca input{padding-left:34px;border-radius:10px;border:0;background:var(--surface-2);min-height:44px;width:100%}
+    .filter-row .afz-add{min-height:44px;border-radius:10px}
+
+    /* botões: primário preenchido, secundário tingido da marca; ao tocar, só a opacidade responde */
+    .btn,.sheet .btn{min-height:50px;border-radius:12px;font-size:17px;font-weight:600}
+    .btn:active{opacity:.6;transform:none}
+    /* tinta do tingido: a --brand sobre a --brand-soft dá 4,4:1 no escuro; a tinta do chip ligado passa */
+    .btn.ghost{background:var(--brand-soft);color:var(--chip-on-ink);border:0}
+    html[data-theme="light"] .btn.ghost{color:var(--brand-600)}
+    /* destrutivo (apagar compra, obra, conta): vermelho sobre cinza, como no iOS — sobre o tingido
+       da marca não chega a 4,5:1. O "html" empata com a regra do claro acima e vence pela ordem. */
+    html .btn.ghost.layout-41,html .btn.ghost.layout-42,#ajApagar{background:var(--surface-2);color:var(--red)}
+    .notif-invite-actions .btn{min-height:44px;font-size:15px}
+
+    /* sheet com alça: a faixa de cima (32px) é a zona de puxar para fechar (gestos.js) */
+    .sheet{border-radius:14px 14px 0 0;padding-top:22px;position:relative}
+    .sheet::before{content:"";position:absolute;top:7px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--muted);opacity:.45}
+
+    .card,.panel li,.chip,.chip2,.back,.li-del{-webkit-tap-highlight-color:transparent}
+    .chip:active,.chip2:active{opacity:.6}
+  }
+  /* toque em tela estreita: o × sai da vista (arrastar para apagar, bloco dos gestos) e a
+     terceira coluna de 44px que era dele volta para o texto e o valor */
+  @media (max-width:600px) and (pointer:coarse){
+    ul.list li.gasto-row{grid-template-columns:38px minmax(0,1fr)}
+  }
+
 /* gestos (gestos.js) */
   /* branco sobre o --red do escuro (#fb7185) dá 2,7:1; o botão tem vermelho próprio: 5,5:1 nos quatro combos tema×skin */
   :root{--apagar:#c22e55}

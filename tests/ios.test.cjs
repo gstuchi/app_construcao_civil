@@ -58,3 +58,37 @@ test('trocar de tela diz a direção da navegação', ()=>{
 test('voltar da barra com hidden some de fato (display da classe venceria o do atributo)', ()=>{
   assert.match(ler('styles.css'), /\.nav-voltar\[hidden\]\{[^}]*display:\s*none/);
 });
+
+test('conteúdo no padrão iOS: alça no sheet, linha de lista alta, botão alto', ()=>{
+  const css = ler('styles.css');
+  assert.match(css, /\.sheet::before\{/);
+  assert.match(css, /ul\.list li\{[^}]*min-height:\s*56px/);
+  assert.match(css, /\.btn\{[^}]*min-height:\s*50px/);
+});
+
+test('lista de obras com chevron e busca com lupa', ()=>{
+  const app = ler('app.js');
+  assert.match(app, /class="chevron"/);
+  assert.match(app, /class="busca-ic"/);
+});
+
+test('indicadores da obra opacos no celular (o globo não passa através)', ()=>{
+  const opacas = regras(ler('styles.css'))
+    .filter(r => /background:\s*var\(--surface-solid\)/.test(r.decl))
+    .flatMap(r => r.sel.split(',').map(s => s.trim()));
+  assert.ok(opacas.includes('.kpi'), '.kpi sem fundo sólido no celular');
+});
+
+test('sem o × na vista (toque), a linha do gasto não guarda a coluna vazia de 44px', ()=>{
+  const css = ler('styles.css');
+  const bloco = css.match(/@media \(max-width:600px\) and \(pointer:coarse\)\{([\s\S]*?)\n  \}/);
+  assert.ok(bloco, 'falta o bloco para toque em tela estreita');
+  assert.match(bloco[1], /ul\.list li\.gasto-row\{[^}]*grid-template-columns:\s*38px minmax\(0,\s*1fr\)\s*[;}]/);
+});
+
+test('botões × de apagar com nome em português (o VoiceOver lia "multiplicação")', ()=>{
+  const app = ler('app.js');
+  const botoes = [...app.matchAll(/const (\w+) = el\('button','li-del','×'\);\s*\n\s*\1\.setAttribute\('aria-label','([^']+)'\)/g)].map(m => m[2]);
+  assert.equal((app.match(/el\('button','li-del','×'\)/g) || []).length, botoes.length, 'algum × sem aria-label logo depois');
+  assert.deepEqual(botoes.sort(), ['Apagar afazer', 'Apagar gasto', 'Apagar tópico']);
+});

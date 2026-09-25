@@ -289,9 +289,10 @@ function renderInicio(){
       <div class="av ic-brand">${ICON(f.ic)}</div>
       <div class="li-main">
         <div class="t">${escapeHtml(o.nome)}</div>
-        <div class="s"><span class="tag ${f.cls}">${f.nm}</span> · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</div>
+        <div class="s"><span class="tag ${f.cls}">${f.nm}</span> <span class="obra-tempo">· ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</span></div>
       </div>
-      <div class="li-val">${moneyShort(OBRA_CALC.totalBruto(o))}</div>`;
+      <div class="li-val">${moneyShort(OBRA_CALC.totalBruto(o))}</div>
+      <span class="chevron" aria-hidden="true">›</span>`;
     li.onclick = ()=>openObra(o.id);
     list.appendChild(li);
   });
@@ -335,12 +336,11 @@ function renderObra(){
   const lucro = OBRA_CALC.lucroVenda(o, taxa());
 
   let head = `
-    <div class="panel">
+    <div class="panel obra-head">
       <h2 class="layout-32"><span class="layout-33">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
-        <button class="layout-34 li-del" id="oEdit" title="Editar obra">${ICON('lapis')}</button></h2>
-      <div class="layout-35">
-        <span class="tag ${f.cls}">${f.nm}</span> ·
-        começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}
+        <button class="layout-34 li-del" id="oEdit" title="Editar obra" aria-label="Editar obra">${ICON('lapis')}</button></h2>
+      <div class="layout-35 obra-meta">
+        <span class="tag ${f.cls}">${f.nm}</span><span class="obra-sep"> · </span><span class="obra-desde">começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</span>
       </div>
     </div>`;
 
@@ -432,10 +432,13 @@ function renderObra(){
     ${mesChartHtml(o)}`;
 
   const mesesComGasto = [...new Set(o.gastos.map(g=>g.data.slice(0,7)))].sort().reverse();
+  // no celular a busca divide a linha com o mês: a dica curta do iOS cabe inteira (a longa era cortada)
+  const dicaBusca = matchMedia('(max-width:899px)').matches ? 'Buscar' : 'Pesquisar gasto ou tópico';
   const lanc = `
     <div class="panel"><h2>Lançamentos <span class="muted" id="lanCount"></span></h2>
       <div class="filter-row">
-        <input id="fBusca" placeholder="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}">
+        <label class="busca"><span class="busca-ic" aria-hidden="true">${ICON('lupa')}</span>
+          <input id="fBusca" placeholder="${dicaBusca}" aria-label="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}"></label>
         <select id="fMes"><option value="">Todos os meses</option>
           ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
         </select>
@@ -731,6 +734,7 @@ function gastoRow(o, g, opts){
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
   const del = el('button','li-del','×');
+  del.setAttribute('aria-label','Apagar gasto');
   del.onclick = async()=>{
     const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
@@ -1571,6 +1575,7 @@ function renderAjustes(){
     li.innerHTML = `<div class="av ic-brand">${ICON('etiqueta')}</div>
       <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
     const del = el('button','li-del','×');
+    del.setAttribute('aria-label','Apagar tópico');
     del.onclick = async()=>{
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
       if(emUso){ await OBRA_CONFIRM.avisar('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }

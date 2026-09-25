@@ -38,8 +38,17 @@
       try{ app.addListener('appStateChange', estado => { if(estado && !estado.isActive) fn(); }); }
       catch(err){ registra('app', err); }
     }
+    /* marca <html class="nativo"> (Capacitor) ou <html class="standalone"> (PWA instalado,
+       display-mode:standalone ou navigator.standalone do iOS) — Tasks 2 e 4 leem essas classes. */
+    function marcarAmbiente(doc){
+      const cl = doc && doc.documentElement && doc.documentElement.classList;
+      if(!cl) return;
+      if(ehNativo()){ cl.add('nativo'); return; }
+      const mm = q => { try{ return !!(win.matchMedia && win.matchMedia(q).matches); }catch(e){ return false; } };
+      if(mm('(display-mode: standalone)') || (win.navigator && win.navigator.standalone === true)) cl.add('standalone');
+    }
     return {
-      ehNativo, plugin, compartilharArquivo, aoSegundoPlano,
+      ehNativo, plugin, compartilharArquivo, aoSegundoPlano, marcarAmbiente,
       vibrar: () => chama('Haptics', 'impact', { style:'LIGHT' }, 'haptics'),
       // DARK = texto claro, para fundo escuro
       barraStatus: claro => chama('StatusBar', 'setStyle', { style: claro ? 'LIGHT' : 'DARK' }, 'statusbar'),
@@ -48,4 +57,5 @@
   }
   if(typeof module !== 'undefined') module.exports = { criar };
   if(root) root.OBRA_NATIVO = criar(root);
+  if(root && root.document) root.OBRA_NATIVO.marcarAmbiente(root.document);
 })(typeof window !== 'undefined' ? window : null);

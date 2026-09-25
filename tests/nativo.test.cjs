@@ -80,3 +80,18 @@ test('nativo: segundo plano chama só ao ficar inativo', ()=>{
   win.__appState({ isActive:false });
   assert.equal(n, 1);
 });
+
+test('marcarAmbiente: nativo e standalone viram classe no <html>', ()=>{
+  const classes = new Set();
+  const doc = { documentElement:{ classList:{ add:c=>classes.add(c) } } };
+  const win = { Capacitor:{ isNativePlatform:()=>true, Plugins:{} }, matchMedia:()=>({ matches:false }), navigator:{} };
+  criar(win).marcarAmbiente(doc);
+  assert.deepEqual([...classes], ['nativo']);
+  classes.clear();
+  const web = { matchMedia:q=>({ matches:q === '(display-mode: standalone)' }), navigator:{} };
+  criar(web).marcarAmbiente(doc);
+  assert.deepEqual([...classes], ['standalone']);
+  classes.clear();
+  criar({ matchMedia:()=>({ matches:false }), navigator:{ standalone:true } }).marcarAmbiente(doc);
+  assert.deepEqual([...classes], ['standalone']);
+});

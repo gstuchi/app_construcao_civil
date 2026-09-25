@@ -108,17 +108,23 @@
 
   body{
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    background:
-      radial-gradient(1100px 750px at 85% -5%, var(--glow-1), transparent 62%),
-      radial-gradient(900px 700px at -10% 105%, var(--glow-2), transparent 60%),
-      var(--bg);
-    background-attachment:fixed;
+    background:var(--bg);
     color:var(--text); line-height:1.5; font-size:16.5px;
     padding-bottom:calc(76px + env(safe-area-inset-bottom));
     -webkit-tap-highlight-color:transparent;
   }
+  /* brilho como camada própria, pintada uma vez: sem "attachment fixo" no fundo do body,
+     que o iOS repinta a cada quadro de rolagem e deixa a página "travada". */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(1100px 750px at 85% -5%, var(--glow-1), transparent 62%),
+      radial-gradient(900px 700px at -10% 105%, var(--glow-2), transparent 60%);
+  }
   #globe{position:fixed;inset:0;z-index:0;pointer-events:none}
   html[data-theme="light"] #globe{opacity:.4} /* globo segue o skin (globe.js lê as vars); no claro vira marca-d'água */
+  /* chrome de interface (não é texto de dado): sem seleção nem menu de toque longo */
+  button,nav.tabs,header.top,.back,ul.list li,.chip,.chip2{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   .app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px 16px 8px}
   header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-top:env(safe-area-inset-top)}
   header.top h1{font-size:20px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
@@ -205,8 +211,10 @@
     .gasto-row>.li-val{grid-column:2;grid-row:2;white-space:normal;overflow-wrap:anywhere}
     .gasto-row>.li-del{grid-column:3;grid-row:1/3;min-height:44px;min-width:44px}
   }
-  @media(display-mode:standalone){
-    body::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--bg);z-index:90;pointer-events:none}
+  /* capa da barra de status: vale no app nativo (Capacitor) e no PWA instalado
+     (nativo.js marca as duas classes em <html> — display-mode:standalone não casa no WKWebView) */
+  html.nativo body::after, html.standalone body::after{
+    content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--bg);z-index:90;pointer-events:none
   }
 
   .empty{text-align:center;padding:30px 16px;color:var(--muted)}
@@ -262,7 +270,7 @@
   .seg button.on[data-k="despesa"]{color:var(--red)}
   .field{margin-bottom:13px}
   .field label{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:6px}
-  .field input,.field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:12px 13px;font-size:15px;font-family:inherit;outline:none}
+  .field input,.field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:12px 13px;font-size:16px;font-family:inherit;outline:none}
   .field input:focus,.field select:focus{border-color:var(--brand)}
   .field .opcional{color:var(--faint);font-weight:400}
   .field input[aria-invalid="true"],.field select[aria-invalid="true"]{border-color:var(--amber)}
@@ -528,6 +536,7 @@
   .rep-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
   @media print{
     body{background:#fff!important;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body::before{display:none} /* brilho é camada própria agora: print sobrescrevia só o background do body */
     body *{visibility:hidden}
     section.view.active,section.view.active *{visibility:visible}
     section.view.active{position:absolute;left:0;top:0;width:100%;display:block}
@@ -559,9 +568,13 @@
     header.top .sair{display:none}
     body.locked .side{visibility:hidden}
   }
+  /* celular: superfícies opacas — o globo animado não pode aparecer através do conteúdo */
+  @media (max-width:899px){
+    .card:not(.saldo),.panel{background:var(--surface-solid)}
+  }
   /* busca dos lançamentos + respiro mobile */
   .filter-row{display:flex;gap:8px;margin-bottom:12px}
-  .filter-row input,.filter-row select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 11px;font-size:14px}
+  .filter-row input,.filter-row select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 11px;font-size:16px}
   .filter-row input{flex:1;min-width:0}
   .filter-row select{flex:0 0 auto;max-width:44%}
   .filter-row .afz-add{flex:0 0 auto;padding:9px 16px;font-size:20px;line-height:1;font-weight:600}

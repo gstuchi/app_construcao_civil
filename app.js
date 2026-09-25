@@ -194,16 +194,70 @@ function restauraEstado(){
     showView('inicio'); renderAll();
   }
 }
+/* Direção da troca de tela, para a transição do celular (styles.css, body[data-nav]):
+   a aba Obras é uma pilha (Obras › obra › relatório/gráficos): descer desliza da
+   direita, subir desliza de volta; trocar de aba é só um fade, como no iOS. */
+const PILHA_OBRAS = ['inicio', 'obra', 'relatorio', 'graficos'];
+const nivelNav = x => x==='obra' ? 1 : (x==='relatorio'||x==='graficos') ? 2 : 0;
+function direcaoNav(de, para){
+  if(PILHA_OBRAS.includes(de) !== PILHA_OBRAS.includes(para)) return 'aba';
+  return nivelNav(para) > nivelNav(de) ? 'push' : nivelNav(para) < nivelNav(de) ? 'pop' : 'aba';
+}
 function showView(v){
+  const nav = direcaoNav(tab, v);
+  /* o título grande não sai de cena (só troca o texto): tirar o atributo e recalcular o
+     estilo dele faz a animação recomeçar a cada tela, junto com a da seção */
+  delete document.body.dataset.nav;
+  void getComputedStyle($('#tituloGrande')).animationName;
+  document.body.dataset.nav = nav;
   tab = v;
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
   $('#v-'+v).classList.add('active');
-  document.querySelectorAll('button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
+  document.querySelectorAll('aside.side button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
+  /* na barra de abas, a aba Obras segue acesa dentro da obra, do relatório e dos gráficos (iOS) */
+  const aba = PILHA_OBRAS.includes(v) ? 'inicio' : v;
+  document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
   $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
   document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
   window.scrollTo({top:0});
+  atualizaTitulo();
   lembraEstado();
 }
+/* Barra de navegação do celular (padrão iOS): título grande no começo do conteúdo,
+   título pequeno na barra quando o grande sai da vista, "‹ Obras" nas telas empilhadas.
+   No desktop os três ficam escondidos e o header continua com a logo. */
+const TITULOS = { inicio:'Obras', simula:'Vale a pena?', ajustes:'Ajustes', relatorio:'Relatório', graficos:'Gráficos' };
+function atualizaTitulo(){
+  const t = tab==='obra' ? (obraById(obraAberta)?.nome || 'Obra') : (TITULOS[tab] || '');
+  $('#tituloGrande').textContent = t; // nome de obra é texto do usuário: textContent, nunca innerHTML
+  $('#navTitulo').textContent = t;
+  const volta = ['obra','relatorio','graficos'].includes(tab);
+  $('#navVoltar').hidden = !volta;
+  const destino = tab==='obra' ? 'Obras' : 'Obra';
+  $('#navVoltarTexto').textContent = destino;
+  $('#navVoltar').setAttribute('aria-label', `Voltar para ${destino}`);
+}
+/* o voltar mora na barra; quem sabe voltar continua sendo o .back de cada tela (escondido no celular) */
+$('#navVoltar').onclick = ()=> document.querySelector('section.view.active .back')?.click();
+/* Título grande passou para baixo da barra → barra ganha material e mostra o título pequeno.
+   A margem é a altura real da barra (44px + área segura, que muda de aparelho para aparelho
+   e na rotação): com número fixo, no iPhone com entalhe o título subia até o relógio antes
+   de a barra ganhar fundo. */
+if('IntersectionObserver' in window){
+  let io = null, alturaBarra = -1;
+  const observaTitulo = ()=>{
+    const h = Math.round($('header.top').getBoundingClientRect().height);
+    if(h === alturaBarra) return;
+    alturaBarra = h;
+    if(io) io.disconnect();
+    io = new IntersectionObserver(([e])=>$('header.top').classList.toggle('colapsada', !e.isIntersecting),
+      { rootMargin: `-${h}px 0px 0px 0px` });
+    io.observe($('#tituloGrande'));
+  };
+  observaTitulo();
+  addEventListener('resize', observaTitulo);
+}
+atualizaTitulo();
 document.querySelectorAll('button[data-tab]').forEach(b=>{
   b.onclick = ()=>{ estadoRestaurado = true; /* gesto do usuário vence a restauração */ obraAberta=null; showView(b.dataset.tab); renderAll(); };
 });
@@ -421,6 +475,7 @@ function renderObra(){
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
   on('#oDesfazer',     async()=>{ if(await OBRA_CONFIRM.perguntar('Desfazer a venda? A obra volta pra “Pronta”.', { confirmar:'Desfazer venda' })){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
+  atualizaTitulo(); // obra renomeada (aqui ou em outro aparelho) atualiza o título da barra
 }
 
 function renderAfazeres(o){

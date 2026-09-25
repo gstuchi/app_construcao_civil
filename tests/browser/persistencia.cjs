@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
     let cloud = fs.readFileSync(path.join(root, 'cloud.js'), 'utf8');
     cloud = cloud.replace("projectId: 'app-construcao-civil'", "projectId: 'demo-custta-offline'");
     cloud = cloud.replace('deleteField, waitForPendingWrites,',
-      'deleteField, waitForPendingWrites, connectFirestoreEmulator, disableNetwork, enableNetwork, getDocFromServer,');
+      'deleteField, waitForPendingWrites, connectFirestoreEmulator, disableNetwork, enableNetwork,');
     cloud = cloud.replace('let currentUser = null;', `
       connectFirestoreEmulator(db, '127.0.0.1', 8080, { mockUserToken: { sub: 'offline-test', email: 'offline@example.com' } });
       await disableNetwork(db);
@@ -43,6 +43,11 @@ const { chromium } = require('playwright');
       export const signInWithEmailAndPassword = ()=>Promise.reject(new Error('Não usado'));
       export const sendPasswordResetEmail = ()=>Promise.resolve();
       export const signOut = ()=>{ sessionStorage.setItem('teste-saiu','1'); return Promise.resolve(); };
+      export class GoogleAuthProvider { setCustomParameters(){} }
+      export const signInWithPopup = ()=>Promise.reject(new Error('Não usado'));
+      export const signInWithRedirect = ()=>Promise.reject(new Error('Não usado'));
+      export const getRedirectResult = ()=>Promise.resolve(null);
+      export const reauthenticateWithPopup = ()=>Promise.resolve();
     ` }));
     await context.addInitScript(()=>sessionStorage.setItem('splashVista', '1'));
     let page = await context.newPage();

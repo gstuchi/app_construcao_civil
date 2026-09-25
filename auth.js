@@ -44,13 +44,34 @@
      ficar offline não desloga) — acontece quando a conta é apagada/desativada,
      a senha muda em outro aparelho, ou o token é revogado. Sem esta distinção,
      a tela de login aparecia do nada e o usuário não sabia o que tinha havido. */
-  let jaLogou = false;
-  function aoTrocarUsuario(u){
-    if(u){ jaLogou = true; locked(false); return; }
+  /* Conta Google entra sem perfil: fica na tela de entrada até completar.
+     `checagem` descarta a resposta se o usuário trocou durante a leitura. */
+  let jaLogou = false, checagem = 0, erroGoogle = '';
+  async function aoTrocarUsuario(u){
+    const minha = ++checagem;
+    if(u){
+      jaLogou = true; erroGoogle = ''; // entrou: erro de tentativa anterior não volta na próxima tela de login
+      if(u.provedores?.includes('google.com') && await CLOUD.perfilPendente()){
+        if(minha === checagem) mostrarPerfil(u);
+        return;
+      }
+      if(minha === checagem) locked(false);
+      return;
+    }
     const expirou = jaLogou && !saindoDeProposito;
     jaLogou = false; saindoDeProposito = false;
     locked(true); // limpa #lMsg, então a mensagem vem depois
     if(expirou) $('#lMsg').textContent = 'Sua sessão expirou por segurança. Entre de novo pra continuar.';
+    else if(erroGoogle){ $('#lMsg').textContent = erroGoogle; }
+    erroGoogle = '';
+  }
+  function mostrarPerfil(u){
+    $('#authTabs').classList.add('hidden'); $('#authGoogle').classList.add('hidden');
+    $('#fLogin').classList.add('hidden'); $('#fCad').classList.add('hidden');
+    $('#fPerfil').classList.remove('hidden');
+    const {nome, sobrenome} = OBRA_CADASTRO.nomeDoGoogle(u.nomeExibicao);
+    $('#pNome').value = nome; $('#pSobrenome').value = sobrenome; $('#pMsg').textContent = '';
+    $('#pOrigem').focus();
   }
   if(window.CLOUD) CLOUD.onAuth(aoTrocarUsuario);
   else window.addEventListener('cloud-pronto', ()=>CLOUD.onAuth(aoTrocarUsuario));
@@ -77,12 +98,17 @@
 
   /* ---------- tabs ---------- */
   function mostrarAba(k){
+    $('#authTabs').classList.remove('hidden');
+    $('#authGoogle').classList.toggle('hidden', !!window.OBRA_NATIVO?.ehNativo());
+    $('#fPerfil').classList.add('hidden');
     $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
     $('#fLogin').classList.toggle('hidden',k!=='login');
     $('#fCad').classList.toggle('hidden',k!=='cad');
-    $('#lMsg').textContent=''; $('#cMsg').textContent='';
+    $('#lMsg').textContent=''; $('#cMsg').textContent=''; $('#pMsg').textContent='';
   }
-  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>mostrarAba(b.dataset.k));
+  /* Zera o erro do Google no clique, não em mostrarAba: locked(true) a chama
+     antes de o onAuth(null) reescrever a mensagem que chegou do redirect. */
+  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{ erroGoogle = ''; mostrarAba(b.dataset.k); });
 
   /* ---------- olho de mostrar senha ---------- */
   document.querySelectorAll('.pw-eye').forEach(b=>b.onclick=()=>{
@@ -109,18 +135,20 @@
   $('#cSenha').addEventListener('input', atualizaRegras);
   $('#cEmail').addEventListener('input', atualizaRegras);
 
-  /* ---------- como conheceu ---------- */
-  const selOrigem = $('#cOrigem');
-  for(const o of OBRA_CADASTRO.ORIGENS){
-    const op = document.createElement('option'); op.value = o.id; op.textContent = o.nome; selOrigem.append(op);
+  /* ---------- como conheceu (cadastro e "Falta pouco") ---------- */
+  function montaOrigem(sel, wrap, label, detalhe){
+    for(const o of OBRA_CADASTRO.ORIGENS){
+      const op = document.createElement('option'); op.value = o.id; op.textContent = o.nome; sel.append(op);
+    }
+    sel.addEventListener('change', ()=>{
+      const o = OBRA_CADASTRO.ORIGENS.find(x=>x.id===sel.value);
+      wrap.classList.toggle('hidden', !o?.detalhe);
+      label.textContent = o?.detalhe || '';
+      if(!o?.detalhe) detalhe.value = '';
+    });
   }
-  function mostraDetalhe(){
-    const o = OBRA_CADASTRO.ORIGENS.find(x=>x.id===selOrigem.value);
-    $('#cDetalheWrap').classList.toggle('hidden', !o?.detalhe);
-    $('#cDetalheLabel').textContent = o?.detalhe || '';
-    if(!o?.detalhe) $('#cDetalhe').value = '';
-  }
-  selOrigem.addEventListener('change', mostraDetalhe);
+  montaOrigem($('#cOrigem'), $('#cDetalheWrap'), $('#cDetalheLabel'), $('#cDetalhe'));
+  montaOrigem($('#pOrigem'), $('#pDetalheWrap'), $('#pDetalheLabel'), $('#pDetalhe'));
 
   /* ---------- erros do Firebase em português ---------- */
   function msgErro(e){
@@ -168,8 +196,8 @@
 
   /* ---------- cadastro ---------- */
   const CAMPO_ID = {nome:'cNome', sobrenome:'cSobrenome', origem:'cOrigem', origemDetalhe:'cDetalhe'};
-  function marca(id, msg){
-    const msgEl=$('#cMsg'); msgEl.textContent=msg;
+  function marca(id, msg, msgId='cMsg'){
+    const msgEl=$('#'+msgId); msgEl.textContent=msg;
     const el=document.getElementById(id); el.setAttribute('aria-invalid','true'); el.focus();
   }
   $('#fCad').addEventListener('input', e=>e.target.removeAttribute?.('aria-invalid'));
@@ -193,6 +221,52 @@
       catch(err){ msg.textContent=msgErro(err); }
     });
   });
+
+  /* ---------- Google ---------- */
+  const btnGoogle = $('#btnGoogle');
+  btnGoogle.onclick = async()=>{
+    const msg = $('#fCad').classList.contains('hidden') ? $('#lMsg') : $('#cMsg');
+    msg.textContent = ''; erroGoogle = '';
+    const texto = $('#btnGoogleTexto');
+    btnGoogle.disabled = true; texto.textContent = 'Abrindo o Google…';
+    try{ await CLOUD.entrarGoogle(); }
+    catch(err){ msg.textContent = err?.code === 'cache' ? 'Limpe os dados locais antes de entrar.' : OBRA_CADASTRO.mensagemErroGoogle(err?.code); }
+    finally{ btnGoogle.disabled = false; texto.textContent = 'Continuar com Google'; }
+  };
+  /* Erro na volta do redirect. Pode chegar antes do onAuth(null), que limpa
+     #lMsg: guarda pra reescrever depois. */
+  window.addEventListener('cloud-google-erro', e=>{
+    erroGoogle = OBRA_CADASTRO.mensagemErroGoogle(e.detail?.code);
+    $('#lMsg').textContent = erroGoogle;
+  });
+
+  /* ---------- Falta pouco (conta Google sem perfil) ---------- */
+  const CAMPO_PERFIL = {nome:'pNome', sobrenome:'pSobrenome', origem:'pOrigem', origemDetalhe:'pDetalhe'};
+  $('#fPerfil').addEventListener('input', e=>e.target.removeAttribute?.('aria-invalid'));
+  $('#fPerfil').addEventListener('change', e=>e.target.removeAttribute?.('aria-invalid'));
+  $('#fPerfil').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const msg = $('#pMsg'); msg.textContent = '';
+    const r = OBRA_CADASTRO.normalizaPerfil({
+      nome:$('#pNome').value, sobrenome:$('#pSobrenome').value,
+      origem:$('#pOrigem').value, origemDetalhe:$('#pDetalhe').value,
+    });
+    if(!r.ok) return marca(CAMPO_PERFIL[r.campo], r.erro, 'pMsg');
+    await comLoading(e.target.querySelector('button[type=submit]'), 'Salvando…', async()=>{
+      try{ await CLOUD.completarPerfil(r.perfil); locked(false); }
+      catch(err){
+        /* Outra aba já gravou o perfil: o setDoc virou update e as rules recusam.
+           Se o perfil existe, não há nada pendente — segue pro app. */
+        if(err?.code === 'permission-denied' && !(await CLOUD.perfilPendente())){ locked(false); return; }
+        msg.textContent = err?.code === 'offline' ? 'Conecte à internet para continuar.' : 'Não deu certo salvar. Tente de novo.';
+      }
+    });
+  });
+  $('#pOutra').onclick = async()=>{
+    saindoDeProposito = true;
+    try{ await CLOUD.logout(); }
+    catch{ saindoDeProposito = false; $('#pMsg').textContent = 'Não foi possível trocar de conta agora. Tente de novo.'; }
+  };
 
   function limpaSenhas(){
     for(const id of ['lSenha','cSenha','cSenha2']) document.getElementById(id).value='';

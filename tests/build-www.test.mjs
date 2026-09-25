@@ -32,6 +32,13 @@ test('cspNativa remove diretivas que meta não aceita', ()=>{
     `default-src 'none'; connect-src 'self' ${PRODUCAO}`);
 });
 
+test('cspNativa tira o que só o login com Google da web usa', ()=>{
+  const nativa = cspNativa("default-src 'none'; script-src 'self' https://apis.google.com; frame-src 'self' https://app-construcao-civil.firebaseapp.com; connect-src 'self'");
+  assert.ok(!nativa.includes('apis.google.com'));
+  assert.ok(!nativa.includes('frame-src'));
+  assert.ok(nativa.includes("script-src 'self'"));
+});
+
 test('arquivo listado ausente falha', async()=>{
   const falsa = await mkdtemp(join(tmpdir(), 'custta-raiz-'));
   await writeFile(join(falsa, 'sw.js'), "const ASSETS = ['./', './index.html', './falta.js'];");

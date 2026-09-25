@@ -71,7 +71,31 @@
     return {ok:true, campo:'', erro:'', perfil};
   }
 
-  const api = {REGRAS_SENHA, validaSenha, ORIGENS, LIMITES_PERFIL, normalizaPerfil, normalizaNome};
+  /* displayName do Google → nome + sobrenome: primeira palavra é o nome, o resto
+     o sobrenome, cortados nos limites. "Falta pouco" deixa a pessoa corrigir. */
+  function nomeDoGoogle(displayName){
+    const partes = limpa(displayName).split(' ').filter(Boolean);
+    return {
+      nome: (partes[0] || '').slice(0, LIMITES_PERFIL.nome),
+      sobrenome: partes.slice(1).join(' ').slice(0, LIMITES_PERFIL.sobrenome),
+    };
+  }
+  /* '' = a pessoa desistiu (fechou o popup): não é erro pra mostrar. */
+  const SEM_GOOGLE = 'Seu navegador bloqueou o login com Google. Use e-mail e senha.';
+  const ERROS_GOOGLE = Object.freeze({
+    'auth/popup-closed-by-user':'', 'auth/cancelled-popup-request':'', 'auth/user-cancelled':'',
+    'auth/account-exists-with-different-credential':'Este e-mail já tem conta com senha. Entre com e-mail e senha.',
+    'auth/unauthorized-domain':'Login com Google indisponível neste endereço. Use custta.com.br.',
+    'auth/operation-not-supported-in-this-environment':SEM_GOOGLE,
+    'auth/web-storage-unsupported':SEM_GOOGLE,
+    'auth/network-request-failed':'Sem internet. Conecte pra entrar.',
+    'auth/too-many-requests':'Muitas tentativas. Espere um pouco.',
+  });
+  function mensagemErroGoogle(code){
+    return Object.hasOwn(ERROS_GOOGLE, code) ? ERROS_GOOGLE[code] : 'Não deu certo entrar com o Google. Tente de novo.';
+  }
+
+  const api = {REGRAS_SENHA, validaSenha, ORIGENS, LIMITES_PERFIL, normalizaPerfil, normalizaNome, nomeDoGoogle, mensagemErroGoogle};
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CADASTRO = api;
 })(typeof window !== 'undefined' ? window : globalThis);

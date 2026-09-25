@@ -12,14 +12,22 @@ export const __ctrl = {
   token: Promise.resolve('token-teste'),
   passos: [], falhas: {},
   perfil: null,
+  perfilCache: null,     // conteúdo de perfis/{uid} no cache local; null = não está no cache
 };
 
-export function initializeApp(){ return { nome: 'stub' }; }
+export function initializeApp(config){ __ctrl.config = config; return { nome: 'stub' }; }
 export function getAuth(){ return { nome: 'auth-stub', currentUser:{ uid:'u-teste', email:'teste@exemplo.com' } }; }
 export function getIdToken(){ return __ctrl.token; }
 export const EmailAuthProvider = { credential:(email,senha)=>({email,senha}) };
 function passo(nome){ __ctrl.passos.push(nome); return __ctrl.falhas[nome] ? Promise.reject(__ctrl.falhas[nome]) : Promise.resolve(); }
 export function reauthenticateWithCredential(){ return passo('reauth'); }
+export class GoogleAuthProvider{ setCustomParameters(p){ this.parametros = p; } }
+export function signInWithPopup(){ return passo('popup'); }
+export function signInWithRedirect(){ return passo('redirect'); }
+export function reauthenticateWithPopup(){ return passo('reauthPopup'); }
+export function getRedirectResult(){
+  return __ctrl.falhas.redirectResult ? Promise.reject(__ctrl.falhas.redirectResult) : Promise.resolve(null);
+}
 export function updatePassword(){ return passo('senha'); }
 export function deleteUser(){ return passo('deleteUser'); }
 export function sendEmailVerification(){ __ctrl.aoVerificar?.(); return passo('verificacao'); }
@@ -65,4 +73,18 @@ export function updateDoc(ref, dados){
   __ctrl.passos.push('update:'+ref.path);
   __ctrl.updateDocChamadas = [...(__ctrl.updateDocChamadas||[]), { ref, dados }];
   return __ctrl.falhas.update ? Promise.reject(__ctrl.falhas.update) : Promise.resolve();
+}
+export function getDocFromServer(ref){
+  __ctrl.passos.push('getServer:'+ref.path);
+  if(__ctrl.falhas.getServer) return Promise.reject(__ctrl.falhas.getServer);
+  const dados = __ctrl.perfil;
+  return Promise.resolve({ exists:()=>dados!==null, data:()=>dados });
+}
+/* Como o SDK: documento fora do cache rejeita (não responde 'não existe'). */
+export function getDocFromCache(ref){
+  __ctrl.passos.push('getCache:'+ref.path);
+  if(__ctrl.falhas.getCache) return Promise.reject(__ctrl.falhas.getCache);
+  const dados = __ctrl.perfilCache;
+  if(dados === null) return Promise.reject(Object.assign(new Error('Failed to get document from cache.'), { code:'unavailable' }));
+  return Promise.resolve({ exists:()=>true, data:()=>dados });
 }

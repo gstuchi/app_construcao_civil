@@ -1420,6 +1420,8 @@ function renderAjustes(){
   $('#ajNomeEditar').onclick = ()=>OBRA_CONTA.abrir('nome', perfilAjustes.dados);
   carregaPerfilAjustes(conta);
   $('#ajSenha').onclick = ()=>OBRA_CONTA.abrir('senha');
+  // Conta só Google não tem senha pra trocar.
+  $('#ajSenha').classList.toggle('hidden', conta?.temSenha === false);
   $('#ajApagar').onclick = ()=>OBRA_CONTA.abrir('apagar');
   $('#ajVerificar').onclick = async()=>{
     const b = $('#ajVerificar'); b.disabled = true;

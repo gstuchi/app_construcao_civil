@@ -8,11 +8,13 @@ import { fileURLToPath } from 'node:url';
 export const PRODUCAO = 'https://app-construcao-civil.vercel.app';
 
 /* <meta> não aceita frame-ancestors, report-uri, sandbox nem upgrade-insecure-requests.
-   Produção entra em connect-src para o aviso de versão do app nativo. */
+   Produção entra em connect-src para o aviso de versão do app nativo.
+   O app nativo não tem login com Google: sai o script do Google e o frame-src. */
 export function cspNativa(csp){
   return csp.split(';').map(d => d.trim()).filter(Boolean)
-    .filter(d => !/^(frame-ancestors|upgrade-insecure-requests|report-uri|sandbox)\b/.test(d))
+    .filter(d => !/^(frame-ancestors|upgrade-insecure-requests|report-uri|sandbox|frame-src)\b/.test(d))
     .map(d => d.startsWith('connect-src') ? `${d} ${PRODUCAO}` : d)
+    .map(d => d.startsWith('script-src') ? d.replace(' https://apis.google.com', '') : d)
     .join('; ');
 }
 

@@ -21,6 +21,7 @@ assert.ok(/if\s*\(\s*!res\.ok\s*\)\s*return res/.test(sw), 'service worker pode 
 assert.ok(html.includes('id="notifAtivar"') && html.includes('id="notifDepois"'), 'convite de notificações precisa permitir ativar ou adiar');
 assert.ok(app.includes("$('#notifAtivar').onclick") && app.includes('OBRA_PUSH.ativar()'), 'permissão deve partir do clique explícito do usuário');
 assert.ok(sw.includes("'./push.js'") && sw.includes("'./nativo.js'"), 'push.js e nativo.js no precache');
+assert.ok(/pathname\.startsWith\('\/__\/'\)\)\s*return/.test(sw), 'service worker não pode interceptar o handler do login (/__/)');
 const {runInNewContext}=require('node:vm');
 const trecho=app.slice(app.indexOf('const notifInvite='),app.indexOf("window.addEventListener('cloud-conta'"));
 const memoria=new Map(), elementos=new Map();

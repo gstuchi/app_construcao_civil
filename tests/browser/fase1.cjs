@@ -28,7 +28,7 @@ async function rules(text){
     let source = fs.readFileSync(path.join(ROOT, 'cloud.js'), 'utf8')
       .replace("projectId: 'app-construcao-civil'", `projectId: '${PROJECT}'`)
       .replace('sendPasswordResetEmail, signOut,', 'sendPasswordResetEmail, signOut, connectAuthEmulator,')
-      .replace('deleteField, waitForPendingWrites,', 'deleteField, waitForPendingWrites, connectFirestoreEmulator, getDocFromServer, disableNetwork, enableNetwork,')
+      .replace('deleteField, waitForPendingWrites,', 'deleteField, waitForPendingWrites, connectFirestoreEmulator, disableNetwork, enableNetwork,')
       .replace('const auth = getAuth(app);', `const auth = getAuth(app);
         connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings:true });
         window.__token = ()=>auth.currentUser.getIdToken(true).then(()=>null,e=>e.code);`)

@@ -707,3 +707,22 @@ body .layout-45{font-size:30px}
 .sp-data.layout-4{animation-delay:2.8s}
 .sp-data.layout-5{animation-delay:2.1s}
 .sp-data.layout-6{animation-delay:3.4s}
+
+/* gestos (gestos.js) */
+  /* branco sobre o --red do escuro (#fb7185) dá 2,7:1; o botão tem vermelho próprio: 5,5:1 nos quatro combos tema×skin */
+  :root{--apagar:#c22e55}
+  li.swipe{position:relative;overflow:hidden;touch-action:pan-y}
+  li.swipe > *{transform:translateX(var(--dx,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  li.swipe.arrastando > *{transition:none}
+  /* o botão fica além da borda direita e entra junto com o conteúdo, então parado não cobre o valor;
+     120px (o máximo do arrasto) com o texto centrado nos 80 que aparecem com a linha aberta */
+  .acao-apagar{position:absolute;top:0;bottom:0;left:100%;width:120px;padding:0 40px 0 0;border:0;border-radius:0;background:var(--apagar);color:#fff;font-size:15px;font-weight:600}
+  .sheet{transform:translateY(var(--dy,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  .sheet.arrastando{transition:none}
+  /* transform só durante o arrasto: fora dele, transform na tela viraria bloco de contenção dos position:fixed internos */
+  section.view.active.arrastando-borda{transform:translateX(var(--dx-tela,0px))}
+  section.view.active.soltando-borda{transform:translateX(var(--dx-tela,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  @media (pointer:coarse){
+    ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  }
+  @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda{transition:none} }

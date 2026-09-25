@@ -405,7 +405,7 @@ window.CLOUD = {
          dos awaits da trava entre abas o Safari o bloqueia. reautenticar confere
          o uid, e o corpo da trava confere de novo antes do batch. */
       const soGoogle = currentUser?.temSenha === false;
-      if(soGoogle) await reautenticar();
+      if(soGoogle){ await reautenticar(); opcoes?.aoConfirmar?.(); }
       return await contaExclusiva(async()=>{
         if(!soGoogle) await reautenticar(senha);
         await aguardarFila();

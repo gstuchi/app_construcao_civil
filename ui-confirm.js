@@ -91,8 +91,13 @@
         return { atual, nova };
       },
       async executar({ atual, nova }, { msg, fechar }){
-        msg.textContent = apagar ? 'Apagando conta. Aguarde…' : 'Salvando senha…';
-        if(apagar) await CLOUD.apagarConta(atual, nova, { antesDeApagar:()=>window.OBRA_PUSH?.desativa() });
+        const apagando = 'Apagando conta. Aguarde…';
+        // Conta só Google: a janela do Google abre primeiro; só depois dela a conta é apagada.
+        msg.textContent = !apagar ? 'Salvando senha…' : semSenha ? 'Confirme sua conta Google na janela que abriu.' : apagando;
+        if(apagar) await CLOUD.apagarConta(atual, nova, {
+          aoConfirmar:()=>{ msg.textContent = apagando; },
+          antesDeApagar:()=>window.OBRA_PUSH?.desativa(),
+        });
         else await CLOUD.trocarSenha(atual, nova);
         fechar(); if(!apagar) toast('Senha alterada.');
       },

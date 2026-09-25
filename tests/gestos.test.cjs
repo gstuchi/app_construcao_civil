@@ -37,3 +37,22 @@ test('borda só no app nativo ou no PWA instalado, e só nos primeiros 24px', ()
   assert.equal(G.bordaAtiva(10, cl()), false);   // Safari comum: a borda é do navegador
   assert.equal(G.bordaAtiva(30, cl('nativo')), false);
 });
+
+test('sheet: com campo em foco, só puxa pela alça (32px de cima)', ()=>{
+  assert.equal(G.podePuxarSheet({ scrollTop:0, focoEmCampo:false, yNoSheet:300 }), true);
+  assert.equal(G.podePuxarSheet({ scrollTop:40, focoEmCampo:false, yNoSheet:10 }), false); // rolado: o sheet rola
+  assert.equal(G.podePuxarSheet({ scrollTop:0, focoEmCampo:true, yNoSheet:300 }), false);  // digitando: não descarta o form
+  assert.equal(G.podePuxarSheet({ scrollTop:0, focoEmCampo:true, yNoSheet:20 }), true);    // pela alça, pode
+  assert.equal(G.podePuxarSheet({ scrollTop:0, focoEmCampo:true, yNoSheet:33 }), false);
+});
+
+test('borda: só com a tela livre por cima e o voltar à vista', ()=>{
+  const livre = { sheetAberto:false, dialogoAberto:false, tecladoAberto:false, bloqueado:false, temVoltar:true, voltarCoberto:false };
+  assert.equal(G.podeVoltarBorda(livre), true);
+  assert.equal(G.podeVoltarBorda({ ...livre, tecladoAberto:true }), false); // teclado de valor por cima da obra
+  assert.equal(G.podeVoltarBorda({ ...livre, sheetAberto:true }), false);
+  assert.equal(G.podeVoltarBorda({ ...livre, dialogoAberto:true }), false);
+  assert.equal(G.podeVoltarBorda({ ...livre, bloqueado:true }), false);     // tela de login
+  assert.equal(G.podeVoltarBorda({ ...livre, temVoltar:false }), false);    // aba sem voltar
+  assert.equal(G.podeVoltarBorda({ ...livre, voltarCoberto:true }), false); // qualquer overlay por cima do voltar
+});

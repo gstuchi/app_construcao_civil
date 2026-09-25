@@ -28,6 +28,18 @@
   function bordaAtiva(x, classes){
     return x <= 24 && (classes.contains('nativo') || classes.contains('standalone'));
   }
+  /* Com um campo em foco (usuário digitando), puxar do meio do sheet descartaria o
+     formulário: aí só vale pela alça, os 32px de cima. */
+  const ALCA_SHEET = 32;
+  function podePuxarSheet({ scrollTop, focoEmCampo, yNoSheet }){
+    if(scrollTop > 0) return false;
+    return !focoEmCampo || yNoSheet <= ALCA_SHEET;
+  }
+  /* O voltar da borda só vale com a tela livre: nada por cima dela (sheet, diálogo,
+     teclado de valor, login) e o botão de voltar à vista, não coberto. */
+  function podeVoltarBorda({ sheetAberto, dialogoAberto, tecladoAberto, bloqueado, temVoltar, voltarCoberto }){
+    return !sheetAberto && !dialogoAberto && !tecladoAberto && !bloqueado && !!temVoltar && !voltarCoberto;
+  }
 
   let ligado = false;
   function iniciar(win){
@@ -69,6 +81,14 @@
         if(nav) return nav;
         const b = doc.querySelector('section.view.active .back');
         return b && b.getClientRects().length ? b : null;
+      }
+      /* Algum overlay (teclado de valor, toast, o que vier) está por cima do voltar?
+         Fora da viewport (rolou para longe) não conta como coberto. */
+      function coberto(el){
+        const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+        if(x < 0 || y < 0 || x >= win.innerWidth || y >= win.innerHeight) return false;
+        const topo = doc.elementFromPoint(x, y);
+        return !!topo && !el.contains(topo);
       }
 
       /* ---- linha ---- */
@@ -173,11 +193,18 @@
         if(aberta && aberta !== li) fecharLinha(aberta); // tocar fora fecha a que estava aberta
         if(li && li.querySelector(':scope > .li-del'))
           linha = { li, aberta:li.classList.contains('aberta'), noBotao:!!alvo.closest('.acao-apagar'), movendo:false, vibrou:false };
-        if(sheet && sheetAberto() && sheet.contains(alvo) && sheet.scrollTop <= 0) puxada = { ativa:false };
-        if(!sheetAberto() && !doc.querySelector('dialog[open]') && !doc.body.classList.contains('locked')
-          && bordaAtiva(t.clientX, html.classList)){
-          const tela = doc.querySelector('section.view.active');
-          if(tela && alvoVoltar()) borda = { tela, ativa:false };
+        if(sheet && sheetAberto() && sheet.contains(alvo)){
+          const foco = doc.activeElement;
+          const focoEmCampo = !!(foco && sheet.contains(foco) && foco.matches('input,select,textarea,[contenteditable]'));
+          if(podePuxarSheet({ scrollTop:sheet.scrollTop, focoEmCampo, yNoSheet:t.clientY - sheet.getBoundingClientRect().top }))
+            puxada = { ativa:false };
+        }
+        if(bordaAtiva(t.clientX, html.classList)){
+          const tela = doc.querySelector('section.view.active'), voltar = alvoVoltar();
+          if(tela && podeVoltarBorda({ sheetAberto:sheetAberto(), dialogoAberto:!!doc.querySelector('dialog[open]'),
+            tecladoAberto:doc.body.classList.contains('teclado-open'), bloqueado:doc.body.classList.contains('locked'),
+            temVoltar:!!voltar, voltarCoberto:!!voltar && coberto(voltar) }))
+            borda = { tela, ativa:false };
         }
       }
       function movimento(e){
@@ -261,7 +288,7 @@
     }catch(err){ registra(err); }
   }
 
-  const api = { eixo, fimArrastoLinha, fimArrastoSheet, fimArrastoBorda, bordaAtiva, LARGURA_APAGAR };
+  const api = { eixo, fimArrastoLinha, fimArrastoSheet, fimArrastoBorda, bordaAtiva, podePuxarSheet, podeVoltarBorda, LARGURA_APAGAR };
   if(typeof module !== 'undefined') module.exports = api;
   if(root && root.document){ api.iniciar = win => iniciar(win); root.OBRA_GESTOS = api; api.iniciar(root); }
 })(typeof window !== 'undefined' ? window : null);

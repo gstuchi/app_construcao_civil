@@ -140,6 +140,7 @@ async function sair(page){
     await page.locator('#contaConfirmacao').fill('APAGAR');
     {
       const popup=await abrirPopup(page,()=>page.locator('#contaEnviar').click());
+      assert.equal(await page.locator('#contaMensagem').textContent(),'Confirme sua conta Google na janela que abriu.');
       await escolherConta(popup,'ana.google@example.com');
     }
     await page.waitForFunction(()=>document.body.classList.contains('locked') && !CLOUD.user(),null,{timeout:20000});

@@ -163,7 +163,7 @@ Substitua `<e-mail>` e `<senha>` pelos dados reais da conta de demonstração.
 
 ## Ordem de preenchimento
 
-1. Reservar o nome e criar o app com o bundle ID.
+1. ~~Reservar o nome e criar o app com o bundle ID.~~ Feito (25/09/2026).
 2. Colar nome, subtítulo, palavras-chave, descrição e texto promocional.
 3. Subir screenshots e ícone.
 4. Responder o questionário de classificação etária.

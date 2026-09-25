@@ -1,11 +1,12 @@
 name: ios-build
-# Compila o app iOS no runner macOS, SEM assinatura.
+# Compila o app iOS no runner macOS, SEM assinatura — de propósito.
 #
-# Por que sem assinatura: a matrícula no Apple Developer Program ainda não saiu,
-# e certificado/perfil só existem depois dela. Tudo que vem ANTES da assinatura
-# — npm ci, build:www, cap sync, resolução dos pacotes Swift, compilação do
-# Capacitor e do Firebase — já pode ser verificado agora. É a porta de entrada
-# da Fase 5: quando a conta chegar, só entram os secrets e o passo de export.
+# Por que sem assinatura: este workflow é a checagem barata de compilação para
+# todo PR que mexe em ios/ — não precisa de nenhum secret (então roda até em
+# PR de fork) e prova que a assinatura manual de Release configurada no
+# pbxproj não quebra um build sem assinatura (CODE_SIGNING_ALLOWED=NO ignora
+# essa configuração). Assinatura de verdade e envio ao TestFlight moram em
+# `ios-testflight.yml`, workflow separado.
 #
 # Capacitor 8 usa Swift Package Manager (ios/App/CapApp-SPM), não CocoaPods.
 # Não existe Podfile aqui e `pod install` não é passo deste build.
@@ -13,9 +14,8 @@ name: ios-build
 # Os pacotes locais do Package.swift apontam para ../../../node_modules, então
 # `npm ci` é pré-requisito do xcodebuild, não só do cap sync.
 #
-# Custo: repositório privado dá 2.000 min/mês com multiplicador 10x para macOS,
-# ou seja ~200 min. Por isso este workflow NÃO roda em todo push — só em PR que
-# mexe no que afeta o build nativo, e no botão manual da aba Actions.
+# Por que não roda em todo push: só dispara quando o diff toca o que afeta o
+# build nativo (paths abaixo), ou no botão manual da aba Actions.
 on:
   pull_request:
     paths:
@@ -65,7 +65,9 @@ jobs:
       # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem
       # aprove macro ou plugin de pacote na primeira resolução, e sem as flags o
       # xcodebuild falha em vez de perguntar.
-      # CODE_SIGNING_* zerados: é isto que faz o build existir sem conta Apple.
+      # CODE_SIGNING_* zerados de propósito: a Release do pbxproj está
+      # configurada para assinatura manual (perfil "Custta App Store"), e é
+      # exatamente essa configuração que este build ignora, sem secret nenhum.
       - name: Compilar (Release, sem assinatura)
         run: |
           set -o pipefail

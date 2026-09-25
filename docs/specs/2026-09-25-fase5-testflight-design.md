@@ -24,13 +24,15 @@ Um botão na aba Actions (e, sozinho, todo PR que mexe em assinatura) que monta 
 
 **`GoogleService-Info.plist` versionado.** Não é segredo: a `API_KEY` dele é do mesmo tipo da que já está em `cloud.js` e sai dentro de todo `.ipa` publicado. O plugin `@capacitor-firebase/messaging` chama `FirebaseApp.configure()` sozinho quando encontra o arquivo no bundle. Endurecimento opcional (fora do escopo): restringir essa chave a apps iOS com o bundle `br.com.custta.app` no Google Cloud.
 
-**Número do build = `github.run_number` do workflow de envio.** A Apple exige número crescente por versão; o `run_number` só cresce. Versão de marketing continua `1.0` no projeto.
+**Número do build = `github.run_number`.`github.run_attempt` do workflow de envio.** A Apple exige número crescente por versão e recusa build repetido; um re-run repete o `run_number`, mas o `run_attempt` incrementa nesse caso, então o par junto sempre gera um build number novo. Versão de marketing continua `1.0` no projeto.
 
 **Envio por `xcodebuild -exportArchive` com `destination = upload`**, autenticado pela API key. É o caminho atual da Apple; `altool` fica de reserva se o upload direto falhar.
 
-**Disparo.** `workflow_dispatch` (botão) e `pull_request` só quando o PR mexe no próprio workflow, no `ExportOptions.plist`, no `App.entitlements` ou no `project.pbxproj` — mudança de assinatura precisa provar o envio antes do merge. Não roda em todo push nem em todo PR: cada execução gera um build no TestFlight. `concurrency` sem cancelar execução em andamento, para não matar um upload no meio.
+**Disparo.** `workflow_dispatch` (botão) e `pull_request` só quando o PR mexe no próprio workflow, no `ExportOptions.plist`, no `App.entitlements` ou no `project.pbxproj` — mudança de assinatura precisa provar o envio antes do merge. Não roda em todo push nem em todo PR: cada execução gera um build no TestFlight. `concurrency` sem cancelar execução em andamento, para não matar um upload no meio. O job tem uma guarda extra (`if:`) que só deixa passar `workflow_dispatch` ou PR cuja `head.repo.full_name` é o próprio repositório — PR de fork não recebe secrets, e sem a guarda o job rodaria vermelho com "secret ausente".
 
 **Keychain temporária** criada no runner, com senha aleatória, apagada no fim (`if: always()`), junto com o `.p8` e o perfil escritos em `$RUNNER_TEMP`.
+
+**Perfil conferido antes do archive.** O passo que instala o perfil decodifica o `.mobileprovision` e compara `Name` (precisa ser `Custta App Store`) e `TeamIdentifier` (precisa bater com `APPLE_TEAM_ID`) contra o esperado, além de avisar (`::warning::`) se faltarem menos de 30 dias para o vencimento — um secret trocado por engano assina normalmente e só apareceria como erro opaco lá na frente, no upload recusado pela Apple.
 
 **Grupo interno do TestFlight** criado pela API depois do primeiro upload, com acesso a todos os builds e o Giovani como testador, para o build chegar no app TestFlight sem clique no painel.
 

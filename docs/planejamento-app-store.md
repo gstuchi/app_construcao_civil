@@ -207,7 +207,7 @@ Chamar `deleteUser()` antes faz o cliente perder na hora a permissão de apagar 
 
 ## Fase 4 — Empacotamento com Capacitor
 
-**Código concluído em 2026-09-16** na branch `feat/fase4` (spec em `docs/specs/` e plano em `docs/plans/`). Build, TestFlight e push real dependem da matrícula Apple — ver [checklist de aparelho](plans/2026-09-16-fase4-checklist-aparelho.md).
+**Código concluído em 2026-09-16** na branch `feat/fase4` (spec em `docs/specs/` e plano em `docs/plans/`). A matrícula Apple foi aprovada em 25/09/2026: build assinado e TestFlight já funcionam de ponta a ponta (PR #17, Fase 5); push real em aparelho segue como o pendente do [checklist de aparelho](plans/2026-09-16-fase4-checklist-aparelho.md).
 
 **Travada por:** Fase 0 (bundle ID, chave APNs, conta) e Fase 3 (SDK local, CSP).
 
@@ -256,16 +256,18 @@ Este é o maior risco de reprovação e nenhum item dele é código de fachada: 
 
 ## Fase 5 — Máquina de build e submissão
 
+**TestFlight em pé em 2026-09-25** (PR #17): `ios-testflight.yml` arquiva, assina (manual, perfil Custta App Store) e envia; spec e plano em `docs/specs/2026-09-25-fase5-testflight-design.md` e `docs/plans/2026-09-25-fase5-testflight.md`. Faltam metadados, conta demo e envio para revisão.
+
 **Você não precisa comprar um Mac.** O ciclo inteiro roda em **GitHub Actions com runner `macos-latest`**:
 
-- Gerar o CSR com `openssl` no Windows → subir no portal da Apple → baixar o `.cer` → converter em `.p12` com `openssl`. Nenhum Mac envolvido nos certificados.
+- Certificado de distribuição e perfil App Store criados uma única vez pela API do App Store Connect (JWT com a Team key), não pelo portal com CSR gerado no Windows. Nenhum Mac envolvido.
 - Criar uma API key do App Store Connect (`.p8`) pela web.
-- Workflow em `macos-latest`: `npm ci` → `build-www` → `npx cap sync ios` → `xcodebuild archive` → `-exportArchive` → upload via `notarytool` ou fastlane `pilot`. **Sem CocoaPods:** o Capacitor 8 deste repo usa Swift Package Manager (`ios/App/CapApp-SPM`), não existe `Podfile` e `pod install` não é passo do build. Os pacotes locais do `Package.swift` apontam para `node_modules`, então `npm ci` é pré-requisito do `xcodebuild`, não só do `cap sync`.
+- Workflow em `macos-latest`: `npm ci` → `build-www` → `npx cap sync ios` → `xcodebuild archive` → `-exportArchive` com `destination = upload`, autenticado pela mesma API key (não `notarytool` nem fastlane `pilot`). **Sem CocoaPods:** o Capacitor 8 deste repo usa Swift Package Manager (`ios/App/CapApp-SPM`), não existe `Podfile` e `pod install` não é passo do build. Os pacotes locais do `Package.swift` apontam para `node_modules`, então `npm ci` é pré-requisito do `xcodebuild`, não só do `cap sync`.
 - Guardar `.p12`, senha, API key, issuer ID e key ID como secrets do GitHub. Keychain temporária no CI.
-- Repositório privado dá 2.000 minutos/mês, com multiplicador **10x para macOS** = ~200 minutos de macOS. Um build Capacitor leva 8-12 min → 15-20 builds/mês de graça. Suficiente pro ritmo "sem pressa".
+- O repositório é público: runner `macos-latest` padrão do GitHub Actions é de graça, sem limite de minuto a vigiar.
 - **O TestFlight é o seu laço de teste em aparelho.** O CI sobe o build, você instala no seu iPhone pelo app do TestFlight, e testa tudo da 4e em hardware real.
 
-**Já em pé, antes da matrícula:** o workflow [`ios-build.yml`](../.github/workflows/ios-build.yml) compila o app em `macos-latest` com `CODE_SIGNING_ALLOWED=NO`. Certificado e perfil só existem depois da conta aprovada, mas tudo que vem antes da assinatura — `npm ci`, `build:www`, `cap sync`, resolução dos pacotes Swift, compilação do Capacitor e do Firebase — já é verificável hoje. Ele não roda em todo push (minuto de macOS custa 10x): dispara em PR que mexe no build nativo e no botão manual da aba Actions. Quando a conta sair, entram os secrets e os passos de `archive`/`exportArchive` por cima deste caminho já testado.
+**Como aconteceu, na ordem certa:** primeiro veio o workflow [`ios-build.yml`](../.github/workflows/ios-build.yml), sem assinatura (`CODE_SIGNING_ALLOWED=NO`) — checagem barata de compilação, sem depender de secret nem de conta Apple aprovada, disparando só em PR que mexe no build nativo e no botão manual da aba Actions. A assinatura e o envio pousaram depois, num workflow separado, [`ios-testflight.yml`](../.github/workflows/ios-testflight.yml) (PR #17): mesmo `npm ci` → `cap sync` → `xcodebuild`, mais keychain temporária, `archive` e `-exportArchive`.
 
 Comprar um Mac mini só se você bater numa parede que o log do CI não resolve — na prática, o Safari Web Inspector, que precisa de Mac pra anexar num WKWebView. Mitigação: o Sentry da Fase 1 te dá visibilidade remota de erro no lugar disso.
 

@@ -244,7 +244,7 @@ e trocar o texto do `console.log` final por `'ok - Actions com SHA imutável e p
 
 ### Task 6: TestFlight interno (controlador, API)
 
-- [ ] Criar grupo interno `Interno` (`isInternalGroup: true`, `hasAccessToAllBuilds: true`) e adicionar o Giovani (`giovanistuchi@hotmail.com`) como testador.
+- [ ] Criar grupo interno `Interno` (`isInternalGroup: true`, `hasAccessToAllBuilds: true`) e adicionar o Giovani (Apple ID da conta) como testador.
 
 ### Task 7: Web intacta
 

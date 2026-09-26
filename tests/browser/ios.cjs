@@ -205,6 +205,28 @@ async function checarTela(page, nome){
       await page.waitForTimeout(300);
       assert.equal(await page.evaluate(() => document.querySelector('section.view.active').id), 'v-obra',
         'sem nativo/standalone o gesto de borda não deve voltar a tela (é o "voltar" do navegador)');
+
+      /* Nova obra foca o nome enquanto o sheet ainda entra de baixo (translateY(100%)): o Safari rola
+         o #backdrop para mostrar o campo e o sheet para no meio do caminho, com o topo cortado. O
+         Chromium não rola sozinho, então o teste força a rolagem que o Safari faria e exige que ela
+         não pegue. */
+      await page.evaluate(() => { showView('inicio'); renderAll(); });
+      await page.locator('#btnNovaObra').click();
+      const rolagem = await page.evaluate(() => {
+        const bd = document.getElementById('backdrop');
+        bd.scrollTop = 9999;
+        return { scrollTop: bd.scrollTop, foco: document.activeElement.id };
+      });
+      assert.equal(rolagem.foco, 'fNome', 'Nova obra deve abrir com o nome em foco');
+      assert.equal(rolagem.scrollTop, 0, 'o #backdrop não pode rolar enquanto o sheet entra (o Safari deixa o sheet cortado no alto)');
+      await page.waitForTimeout(400); // fim da animação de entrada
+      const caixa = await page.evaluate(() => {
+        const r = document.getElementById('sheet').getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, vh: innerHeight };
+      });
+      assert.ok(caixa.top >= 0, `topo do sheet de Nova obra fora da tela (top ${caixa.top})`);
+      assert.ok(Math.abs(caixa.bottom - caixa.vh) < 1, `sheet de Nova obra deve encostar no fundo (bottom ${caixa.bottom}, tela ${caixa.vh})`);
+      await page.locator('#cCancel').click();
       assert.deepEqual(await page.evaluate(() => errosPagina), []);
       await ctx.close();
     }

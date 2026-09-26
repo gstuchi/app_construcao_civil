@@ -22,6 +22,15 @@ const contraste = (a, b) => {
   return (l1 + 0.05) / (l2 + 0.05);
 };
 const rgb = s => s.match(/\d+/g).slice(0,3).map(Number);
+/* mesma leitura de cor, com o alfa (rgba) junto — pra compor o fundo de verdade quando ele é translúcido */
+const rgba = s => { const m = s.match(/[\d.]+/g).map(Number); return [m[0], m[1], m[2], m[3]===undefined ? 1 : m[3]]; };
+const misturar = (fg, fundoOpaco) => { const a = fg[3];
+  return [0,1,2].map(i => fg[i]*a + fundoOpaco[i]*(1-a)); };
+/* WCAG: texto grande (>=24px, ou negrito >=18.66px) pede só 3:1; o resto, 4,5:1 */
+const minimoContraste = (fontSizePx, fontWeight) => {
+  const negrito = Number(fontWeight) >= 700;
+  return (fontSizePx >= 24 || (negrito && fontSizePx >= 18.66)) ? 3 : 4.5;
+};
 
 (async () => {
   const browser = await chromium.launch();
@@ -57,6 +66,54 @@ const rgb = s => s.match(/\d+/g).slice(0,3).map(Number);
       await page.close();
     }
   }
+  /* contraste dos 4 combos tema×skin a 390x844 (achados da revisão final): primário, tingido,
+     tingido destrutivo e a aba ativa da nav.tabs — esta com fundo translúcido (--barra), então
+     entra composta sobre o --bg do body antes de medir. */
+  for(const tema of ['escuro', 'claro']){
+    for(const skin of ['esmeralda', 'azul']){
+      const page = await browser.newPage({ viewport: { width:390, height:844 } });
+      await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
+      await page.addInitScript(FAKE);
+      await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
+      if(skin === 'azul') await page.addInitScript(() => localStorage.setItem('mo_skin', 'azul'));
+      await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
+      await page.goto('http://localhost:8123/index.html');
+      await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
+        document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll();
+        showView('ajustes'); renderAjustes(); });
+
+      const corBase = rgba(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
+      const alvos = [
+        ['#ajAddTopico', '.btn.primary'],
+        ['#ajJson', '.btn.ghost'],
+        ['#ajApagar', 'ghost destrutivo'],
+        ['nav.tabs button.on', 'aba ativa'],
+      ];
+      const dados = await page.evaluate(sels => sels.map(([s]) => {
+        const el = document.querySelector(s);
+        if(!el) return null;
+        const cs = getComputedStyle(el);
+        // mesmo helper do laço da pill: sobe até achar o fundo de verdade (botão/label não têm bg próprio)
+        let fundo = cs.backgroundColor, no = el;
+        while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo) && no.parentElement){ no = no.parentElement; fundo = getComputedStyle(no).backgroundColor; }
+        return { cor: cs.color, fundo, fontSize: parseFloat(cs.fontSize), fontWeight: cs.fontWeight };
+      }), alvos);
+
+      for(let i = 0; i < alvos.length; i++){
+        const [sel, nome] = alvos[i], d = dados[i];
+        if(!d){ falhas++; console.log(`FALHA - 390x844/${tema}/${skin}/${nome}: elemento "${sel}" não encontrado`); continue; }
+        const fg = rgba(d.cor);
+        const fundo = rgba(d.fundo)[3] < 1 ? misturar(rgba(d.fundo), corBase) : rgba(d.fundo).slice(0,3);
+        const c = contraste(fg.slice(0,3), fundo);
+        const minimo = minimoContraste(d.fontSize, d.fontWeight);
+        const ok = c >= minimo;
+        if(!ok) falhas++;
+        console.log(`${ok?'ok   ':'FALHA'} - 390x844/${tema}/${skin}/${nome}: contraste ${c.toFixed(2)} (min ${minimo}) · ${d.cor} sobre ${d.fundo}`);
+      }
+      await page.close();
+    }
+  }
+
   await browser.close();
   console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTodos os combos legíveis');
   process.exit(falhas ? 1 : 0);

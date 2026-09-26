@@ -129,8 +129,11 @@
   }
   #globe{position:fixed;inset:0;z-index:0;pointer-events:none}
   html[data-theme="light"] #globe{opacity:.4} /* globo segue o skin (globe.js lê as vars); no claro vira marca-d'água */
-  /* chrome de interface (não é texto de dado): sem seleção nem menu de toque longo */
-  button,nav.tabs,header.top,.back,ul.list li,.chip,.chip2{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  /* chrome de interface (não é texto de dado): sem seleção nem menu de toque longo.
+     Só no celular — no desktop o usuário seleciona/copia texto normalmente, inclusive da lista. */
+  @media (max-width:899px){
+    button,nav.tabs,header.top,.back,ul.list li,.chip,.chip2{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  }
   .app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px 16px 8px}
   header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-top:env(safe-area-inset-top)}
   header.top h1{font-size:20px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
@@ -879,9 +882,11 @@ body .layout-45{font-size:30px}
   .acao-apagar{position:absolute;top:0;bottom:0;left:100%;width:120px;padding:0 40px 0 0;border:0;border-radius:0;background:var(--apagar);color:#fff;font-size:15px;font-weight:600}
   .sheet{transform:translateY(var(--dy,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
   .sheet.arrastando{transition:none}
-  /* transform só durante o arrasto: fora dele, transform na tela viraria bloco de contenção dos position:fixed internos */
-  section.view.active.arrastando-borda{transform:translateX(var(--dx-tela,0px))}
-  section.view.active.soltando-borda{transform:translateX(var(--dx-tela,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  /* transform só durante o arrasto: fora dele, transform na tela viraria bloco de contenção dos position:fixed internos.
+     .titulo-grande mora fora de section.view (é o cabeçalho iOS): gestos.js marca as mesmas classes
+     e o mesmo --dx-tela nela também, senão o título fica parado enquanto a tela segue o dedo. */
+  section.view.active.arrastando-borda,.titulo-grande.arrastando-borda{transform:translateX(var(--dx-tela,0px))}
+  section.view.active.soltando-borda,.titulo-grande.soltando-borda{transform:translateX(var(--dx-tela,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
   @media (pointer:coarse){
     ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   }

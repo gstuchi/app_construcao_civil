@@ -21,6 +21,12 @@
   function fimArrastoSheet(dy, vy){
     return dy > 120 || (vy > 0.8 && dy > 30) ? 'fechar' : 'voltar';
   }
+  /* No WKWebView o UIKit pode iniciar o próprio rubber-band nos primeiros ~10px, antes de eixo()
+     decidir o eixo — e o touchmove seguinte às vezes já vem não-cancelable. Por isso o listener do
+     sheet trava a rolagem nativa também nesse instante inicial: puxão para baixo e predominante. */
+  function bloqueiaPuxada(dx, dy){
+    return dy > 0 && Math.abs(dy) >= Math.abs(dx);
+  }
   function fimArrastoBorda(dx, vx, largura){
     return dx > largura * 0.35 || (vx > 0.5 && dx > 40) ? 'voltar' : 'cancelar';
   }
@@ -159,21 +165,27 @@
       }
 
       /* ---- borda ---- */
-      function limparTela(tela){
-        tela.classList.remove('arrastando-borda', 'soltando-borda');
-        tela.style.removeProperty('--dx-tela');
+      function limparTela(el){
+        el.classList.remove('arrastando-borda', 'soltando-borda');
+        el.style.removeProperty('--dx-tela');
       }
+      /* .titulo-grande mora fora de section.view (fica antes dela no markup): sem estar dentro
+         da tela, não herda o --dx-tela dela, então recebe as mesmas classes/variável à parte. */
+      function elementosBorda(b){ return b.titulo ? [b.tela, b.titulo] : [b.tela]; }
       function soltarBorda(cancelado){
         const b = borda; borda = null;
         if(!b || !b.ativa) return;
+        const els = elementosBorda(b);
         const dx = Math.max(0, toque.x - toque.x0);
         const alvo = !cancelado && fimArrastoBorda(dx, velocidade('x'), win.innerWidth) === 'voltar' ? alvoVoltar() : null;
-        if(alvo || semMovimento()){ limparTela(b.tela); if(alvo) alvo.click(); return; }
+        if(alvo || semMovimento()){ els.forEach(limparTela); if(alvo) alvo.click(); return; }
         // anima de volta; o transform some no fim (fora do arrasto ele prenderia os position:fixed)
-        b.tela.classList.remove('arrastando-borda');
-        b.tela.classList.add('soltando-borda');
-        b.tela.style.setProperty('--dx-tela', '0px');
-        win.setTimeout(() => { if(!borda || borda.tela !== b.tela) limparTela(b.tela); }, 260);
+        for(const el of els){
+          el.classList.remove('arrastando-borda');
+          el.classList.add('soltando-borda');
+          el.style.setProperty('--dx-tela', '0px');
+        }
+        win.setTimeout(() => { if(!borda || borda.tela !== b.tela) els.forEach(limparTela); }, 260);
       }
 
       function soltarTudo(cancelado){
@@ -204,7 +216,7 @@
           if(tela && podeVoltarBorda({ sheetAberto:sheetAberto(), dialogoAberto:!!doc.querySelector('dialog[open]'),
             tecladoAberto:doc.body.classList.contains('teclado-open'), bloqueado:doc.body.classList.contains('locked'),
             temVoltar:!!voltar, voltarCoberto:!!voltar && coberto(voltar) }))
-            borda = { tela, ativa:false };
+            borda = { tela, titulo:doc.querySelector('.titulo-grande'), ativa:false };
         }
       }
       function movimento(e){
@@ -230,8 +242,13 @@
         }
         if(linha) moverLinha(dx);
         if(borda){
-          if(!borda.ativa){ borda.ativa = true; borda.tela.classList.remove('soltando-borda'); borda.tela.classList.add('arrastando-borda'); }
-          borda.tela.style.setProperty('--dx-tela', Math.max(0, dx) + 'px');
+          const els = elementosBorda(borda);
+          if(!borda.ativa){
+            borda.ativa = true;
+            for(const el of els){ el.classList.remove('soltando-borda'); el.classList.add('arrastando-borda'); }
+          }
+          const px = Math.max(0, dx) + 'px';
+          for(const el of els) el.style.setProperty('--dx-tela', px);
         }
         if(puxada){
           if(!puxada.ativa){ puxada.ativa = true; sheet.classList.add('arrastando'); }
@@ -252,10 +269,13 @@
       doc.addEventListener('touchmove', seguro(movimento), passivo);
       doc.addEventListener('touchend', seguro(fim), passivo);
       doc.addEventListener('touchcancel', seguro(fim), passivo);
-      /* único ouvinte não passivo: só segura a rolagem enquanto o sheet está sendo puxado */
+      /* único ouvinte não passivo: só segura a rolagem enquanto o sheet está sendo puxado (ou,
+         nos ~10px antes do eixo decidir, quando já dá para saber que vai puxar: ver bloqueiaPuxada) */
       if(sheet) sheet.addEventListener('touchmove', seguro(e => {
         movimento(e);
-        if(puxada && puxada.ativa && e.cancelable) e.preventDefault();
+        if(!puxada || !e.cancelable) return;
+        const dx = toque ? toque.x - toque.x0 : 0, dy = toque ? toque.y - toque.y0 : 0;
+        if(puxada.ativa || bloqueiaPuxada(dx, dy)) e.preventDefault();
       }), { passive:false });
 
       // rolar (a página ou o sheet) fecha a linha aberta; tremida de poucos px não conta
@@ -288,7 +308,7 @@
     }catch(err){ registra(err); }
   }
 
-  const api = { eixo, fimArrastoLinha, fimArrastoSheet, fimArrastoBorda, bordaAtiva, podePuxarSheet, podeVoltarBorda, LARGURA_APAGAR };
+  const api = { eixo, fimArrastoLinha, fimArrastoSheet, fimArrastoBorda, bordaAtiva, podePuxarSheet, podeVoltarBorda, bloqueiaPuxada, LARGURA_APAGAR };
   if(typeof module !== 'undefined') module.exports = api;
   if(root && root.document){ api.iniciar = win => iniciar(win); root.OBRA_GESTOS = api; api.iniciar(root); }
 })(typeof window !== 'undefined' ? window : null);

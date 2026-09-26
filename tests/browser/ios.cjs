@@ -22,9 +22,9 @@ const OBRAS = { config: { taxaMensal: 1, topicosCustom: [] },
   obras: [{ id:'o1', nome:'Casa Azul', fase:'construcao', dataInicio:'2026-01-01',
     areaM2:80, valorEstimadoVenda:500000, gastos }] };
 
-async function abrir(browser, { nativo = false } = {}){
+async function abrir(browser, { nativo = false, viewport = { width:390, height:844 }, isMobile = true, hasTouch = true } = {}){
   const ctx = await browser.newContext({
-    viewport: { width:390, height:844 }, isMobile:true, hasTouch:true, deviceScaleFactor:3,
+    viewport, isMobile, hasTouch, deviceScaleFactor:3,
     serviceWorkers:'allow',
   });
   await ctx.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
@@ -206,6 +206,27 @@ async function checarTela(page, nome){
       assert.equal(await page.evaluate(() => document.querySelector('section.view.active').id), 'v-obra',
         'sem nativo/standalone o gesto de borda não deve voltar a tela (é o "voltar" do navegador)');
       assert.deepEqual(await page.evaluate(() => errosPagina), []);
+      await ctx.close();
+    }
+
+    /* ---- desktop (>=900px): nada do chrome de celular vaza, texto da lista continua selecionável ---- */
+    {
+      const { ctx, page } = await abrir(browser, { viewport: { width:1280, height:800 }, isMobile:false, hasTouch:false });
+      const r = await page.evaluate(() => {
+        const li = document.querySelector('ul.list li');
+        return {
+          selecionavel: li && getComputedStyle(li).userSelect !== 'none',
+          tituloGrandeVisivel: getComputedStyle(document.getElementById('tituloGrande')).display !== 'none',
+          navVoltarVisivel: getComputedStyle(document.getElementById('navVoltar')).display !== 'none',
+          sideVisivel: getComputedStyle(document.querySelector('.side')).display !== 'none',
+          scrollWidth: document.documentElement.scrollWidth,
+        };
+      });
+      assert.equal(r.selecionavel, true, 'no desktop, o texto de ul.list li deve continuar selecionável');
+      assert.equal(r.tituloGrandeVisivel, false, '#tituloGrande é só do celular; não deve aparecer no desktop');
+      assert.equal(r.navVoltarVisivel, false, '#navVoltar é só do celular; não deve aparecer no desktop');
+      assert.equal(r.sideVisivel, true, 'aside.side (nav do desktop) deve estar visível');
+      assert.equal(r.scrollWidth, 1280, `scrollWidth != 1280 no desktop (veio ${r.scrollWidth})`);
       await ctx.close();
     }
 

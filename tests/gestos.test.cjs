@@ -46,6 +46,14 @@ test('sheet: com campo em foco, só puxa pela alça (32px de cima)', ()=>{
   assert.equal(G.podePuxarSheet({ scrollTop:0, focoEmCampo:true, yNoSheet:33 }), false);
 });
 
+test('sheet: bloqueia a rolagem nativa em puxão para baixo predominante, mesmo antes do eixo decidir', ()=>{
+  assert.equal(G.bloqueiaPuxada(2, 6), true);   // 6px para baixo, quase reto: já dá pra saber
+  assert.equal(G.bloqueiaPuxada(0, 1), true);   // 1px para baixo conta (decisão vale desde o início)
+  assert.equal(G.bloqueiaPuxada(6, 2), false);  // horizontal predominante: não é puxão de sheet
+  assert.equal(G.bloqueiaPuxada(2, -6), false); // para cima: o sheet rola, não puxa
+  assert.equal(G.bloqueiaPuxada(0, 0), false);  // parado
+});
+
 test('borda: só com a tela livre por cima e o voltar à vista', ()=>{
   const livre = { sheetAberto:false, dialogoAberto:false, tecladoAberto:false, bloqueado:false, temVoltar:true, voltarCoberto:false };
   assert.equal(G.podeVoltarBorda(livre), true);

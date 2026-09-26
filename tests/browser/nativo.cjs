@@ -61,7 +61,7 @@ async function abrir(browser, { nativo, viewport = { width:390, height:844 }, an
       await page.waitForTimeout(800);
       assert.equal(await page.evaluate(async()=> (await navigator.serviceWorker.getRegistrations()).length), 0, 'nativo não registra SW');
       const viewport = await page.getAttribute('meta[name=viewport]', 'content');
-      assert.ok(!/user-scalable|maximum-scale/.test(viewport), 'zoom precisa ficar liberado: ' + viewport);
+      assert.equal(viewport, 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');
       await page.evaluate(()=>window.dispatchEvent(new Event('beforeinstallprompt')));
       assert.equal(await page.locator('#installHint').isHidden(), true, 'nativo não oferece instalar PWA');
       await page.evaluate(()=>{ showView('ajustes'); renderAjustes(); });

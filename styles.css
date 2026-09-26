@@ -583,7 +583,10 @@
   }
   /* celular: superfícies opacas — o globo animado não pode aparecer através do conteúdo */
   @media (max-width:899px){
-    .card:not(.saldo),.panel{background:var(--surface-solid)}
+    .card:not(.saldo),.panel,.notif-invite{background:var(--surface-solid)}
+    /* relatório da simulação: a 1ª coluna quebra linha para as duas colunas de valor caberem sem rolar */
+    .rep-table th,.rep-table td{padding:7px 6px}
+    .rep-table th:first-child,.rep-table td:first-child{white-space:normal}
   }
   /* ===== barras no padrão iOS (celular) =====
      Barra de navegação fixa que cobre também a área do relógio: transparente no topo, com o

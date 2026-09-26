@@ -66,7 +66,8 @@
     --glow-1:rgba(37,72,180,.32); --glow-2:rgba(84,38,160,.22);
     --saldo-a:#2450c9; --saldo-b:#5b2fd1; --saldo-border:rgba(120,150,255,.35); --saldo-shadow:rgba(48,80,220,.35);
     --fab-a:#3b6cf0; --fab-b:#5b2fd1; --fab-ink:#fff; --fab-shadow:rgba(70,100,240,.5);
-    --btn-ink:#fff; --chip-on-ink:#a8c2ff;
+    /* tinta escura: branco sobre o #5b8cff dá 3,2:1; esta dá 6,2:1 */
+    --btn-ink:#070c18; --chip-on-ink:#a8c2ff;
     --side-bg:rgba(11,18,36,.78); --side-on-ink:#cfe0ff;
     --barra:rgba(7,12,24,.72);
     --globe-land-rgb:96,140,255; --globe-hi-rgb:160,196,255; --globe-ocean-rgb:78,114,224;
@@ -850,8 +851,8 @@ body .layout-45{font-size:30px}
     .btn.ghost{background:var(--brand-soft);color:var(--chip-on-ink);border:0}
     html[data-theme="light"] .btn.ghost{color:var(--brand-600)}
     /* destrutivo (apagar compra, obra, conta): vermelho sobre cinza, como no iOS — sobre o tingido
-       da marca não chega a 4,5:1. O "html" empata com a regra do claro acima e vence pela ordem. */
-    html .btn.ghost.layout-41,html .btn.ghost.layout-42,#ajApagar{background:var(--surface-2);color:var(--red)}
+       da marca não chega a 4,5:1. "html body" vence a regra do claro acima por especificidade. */
+    html body .btn.ghost.layout-41,html body .btn.ghost.layout-42,#ajApagar{background:var(--surface-2);color:var(--red)}
     .notif-invite-actions .btn{min-height:44px;font-size:15px}
 
     /* sheet com alça: a faixa de cima (32px) é a zona de puxar para fechar (gestos.js) */

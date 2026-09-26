@@ -893,4 +893,4 @@ body .layout-45{font-size:30px}
   @media (pointer:coarse){
     ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   }
-  @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda{transition:none} }
+  @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda,.titulo-grande.soltando-borda{transition:none} }

@@ -194,16 +194,70 @@ function restauraEstado(){
     showView('inicio'); renderAll();
   }
 }
+/* Direção da troca de tela, para a transição do celular (styles.css, body[data-nav]):
+   a aba Obras é uma pilha (Obras › obra › relatório/gráficos): descer desliza da
+   direita, subir desliza de volta; trocar de aba é só um fade, como no iOS. */
+const PILHA_OBRAS = ['inicio', 'obra', 'relatorio', 'graficos'];
+const nivelNav = x => x==='obra' ? 1 : (x==='relatorio'||x==='graficos') ? 2 : 0;
+function direcaoNav(de, para){
+  if(PILHA_OBRAS.includes(de) !== PILHA_OBRAS.includes(para)) return 'aba';
+  return nivelNav(para) > nivelNav(de) ? 'push' : nivelNav(para) < nivelNav(de) ? 'pop' : 'aba';
+}
 function showView(v){
+  const nav = direcaoNav(tab, v);
+  /* o título grande não sai de cena (só troca o texto): tirar o atributo e recalcular o
+     estilo dele faz a animação recomeçar a cada tela, junto com a da seção */
+  delete document.body.dataset.nav;
+  void getComputedStyle($('#tituloGrande')).animationName;
+  document.body.dataset.nav = nav;
   tab = v;
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
   $('#v-'+v).classList.add('active');
-  document.querySelectorAll('button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
+  document.querySelectorAll('aside.side button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
+  /* na barra de abas, a aba Obras segue acesa dentro da obra, do relatório e dos gráficos (iOS) */
+  const aba = PILHA_OBRAS.includes(v) ? 'inicio' : v;
+  document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
   $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
   document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
   window.scrollTo({top:0});
+  atualizaTitulo();
   lembraEstado();
 }
+/* Barra de navegação do celular (padrão iOS): título grande no começo do conteúdo,
+   título pequeno na barra quando o grande sai da vista, "‹ Obras" nas telas empilhadas.
+   No desktop os três ficam escondidos e o header continua com a logo. */
+const TITULOS = { inicio:'Obras', simula:'Vale a pena?', ajustes:'Ajustes', relatorio:'Relatório', graficos:'Gráficos' };
+function atualizaTitulo(){
+  const t = tab==='obra' ? (obraById(obraAberta)?.nome || 'Obra') : (TITULOS[tab] || '');
+  $('#tituloGrande').textContent = t; // nome de obra é texto do usuário: textContent, nunca innerHTML
+  $('#navTitulo').textContent = t;
+  const volta = ['obra','relatorio','graficos'].includes(tab);
+  $('#navVoltar').hidden = !volta;
+  const destino = tab==='obra' ? 'Obras' : 'Obra';
+  $('#navVoltarTexto').textContent = destino;
+  $('#navVoltar').setAttribute('aria-label', `Voltar para ${destino}`);
+}
+/* o voltar mora na barra; quem sabe voltar continua sendo o .back de cada tela (escondido no celular) */
+$('#navVoltar').onclick = ()=> document.querySelector('section.view.active .back')?.click();
+/* Título grande passou para baixo da barra → barra ganha material e mostra o título pequeno.
+   A margem é a altura real da barra (44px + área segura, que muda de aparelho para aparelho
+   e na rotação): com número fixo, no iPhone com entalhe o título subia até o relógio antes
+   de a barra ganhar fundo. */
+if('IntersectionObserver' in window){
+  let io = null, alturaBarra = -1;
+  const observaTitulo = ()=>{
+    const h = Math.round($('header.top').getBoundingClientRect().height);
+    if(h === alturaBarra) return;
+    alturaBarra = h;
+    if(io) io.disconnect();
+    io = new IntersectionObserver(([e])=>$('header.top').classList.toggle('colapsada', !e.isIntersecting),
+      { rootMargin: `-${h}px 0px 0px 0px` });
+    io.observe($('#tituloGrande'));
+  };
+  observaTitulo();
+  addEventListener('resize', observaTitulo);
+}
+atualizaTitulo();
 document.querySelectorAll('button[data-tab]').forEach(b=>{
   b.onclick = ()=>{ estadoRestaurado = true; /* gesto do usuário vence a restauração */ obraAberta=null; showView(b.dataset.tab); renderAll(); };
 });
@@ -235,9 +289,10 @@ function renderInicio(){
       <div class="av ic-brand">${ICON(f.ic)}</div>
       <div class="li-main">
         <div class="t">${escapeHtml(o.nome)}</div>
-        <div class="s"><span class="tag ${f.cls}">${f.nm}</span> · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</div>
+        <div class="s"><span class="tag ${f.cls}">${f.nm}</span> <span class="obra-tempo">· ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</span></div>
       </div>
-      <div class="li-val">${moneyShort(OBRA_CALC.totalBruto(o))}</div>`;
+      <div class="li-val">${moneyShort(OBRA_CALC.totalBruto(o))}</div>
+      <span class="chevron" aria-hidden="true">›</span>`;
     li.onclick = ()=>openObra(o.id);
     list.appendChild(li);
   });
@@ -281,12 +336,11 @@ function renderObra(){
   const lucro = OBRA_CALC.lucroVenda(o, taxa());
 
   let head = `
-    <div class="panel">
+    <div class="panel obra-head">
       <h2 class="layout-32"><span class="layout-33">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
-        <button class="layout-34 li-del" id="oEdit" title="Editar obra">${ICON('lapis')}</button></h2>
-      <div class="layout-35">
-        <span class="tag ${f.cls}">${f.nm}</span> ·
-        começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}
+        <button class="layout-34 li-del" id="oEdit" title="Editar obra" aria-label="Editar obra">${ICON('lapis')}</button></h2>
+      <div class="layout-35 obra-meta">
+        <span class="tag ${f.cls}">${f.nm}</span><span class="obra-sep"> · </span><span class="obra-desde">começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</span>
       </div>
     </div>`;
 
@@ -378,10 +432,13 @@ function renderObra(){
     ${mesChartHtml(o)}`;
 
   const mesesComGasto = [...new Set(o.gastos.map(g=>g.data.slice(0,7)))].sort().reverse();
+  // no celular a busca divide a linha com o mês: a dica curta do iOS cabe inteira (a longa era cortada)
+  const dicaBusca = matchMedia('(max-width:899px)').matches ? 'Buscar' : 'Pesquisar gasto ou tópico';
   const lanc = `
     <div class="panel"><h2>Lançamentos <span class="muted" id="lanCount"></span></h2>
       <div class="filter-row">
-        <input id="fBusca" placeholder="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}">
+        <label class="busca"><span class="busca-ic" aria-hidden="true">${ICON('lupa')}</span>
+          <input id="fBusca" placeholder="${dicaBusca}" aria-label="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}"></label>
         <select id="fMes"><option value="">Todos os meses</option>
           ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
         </select>
@@ -421,6 +478,7 @@ function renderObra(){
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
   on('#oDesfazer',     async()=>{ if(await OBRA_CONFIRM.perguntar('Desfazer a venda? A obra volta pra “Pronta”.', { confirmar:'Desfazer venda' })){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
+  atualizaTitulo(); // obra renomeada (aqui ou em outro aparelho) atualiza o título da barra
 }
 
 function renderAfazeres(o){
@@ -676,6 +734,7 @@ function gastoRow(o, g, opts){
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
   const del = el('button','li-del','×');
+  del.setAttribute('aria-label','Apagar gasto');
   del.onclick = async()=>{
     const oo = obraById(o.id); if(!oo) return;
     if(!g.grupoId){
@@ -1516,6 +1575,7 @@ function renderAjustes(){
     li.innerHTML = `<div class="av ic-brand">${ICON('etiqueta')}</div>
       <div class="li-main"><div class="t">${escapeHtml(t.nm)}</div></div>`;
     const del = el('button','li-del','×');
+    del.setAttribute('aria-label','Apagar tópico');
     del.onclick = async()=>{
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
       if(emUso){ await OBRA_CONFIRM.avisar('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }

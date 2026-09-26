@@ -47,6 +47,7 @@ Scripts clássicos com globais, carregados na ordem em que aparecem no `index.ht
 | [nativo.js](nativo.js) | `OBRA_NATIVO` + `module.exports` | único ponto que toca `window.Capacitor`; no browser tudo é neutro |
 | [push.js](push.js) | `OBRA_PUSH` + `module.exports` | notificações: Web Push na web, FCM no app iOS |
 | [app.js](app.js) | `db`, `renderAll`, `OBRA_DIAG` | todo o estado e render da UI (~1800 linhas) |
+| [gestos.js](gestos.js) | `OBRA_GESTOS` + `module.exports` | gestos de iPhone: arrastar para apagar, puxar sheet, voltar pela borda |
 | [ui-confirm.js](ui-confirm.js) | `OBRA_CONTA`, `OBRA_CONFIRM` | `<dialog>` de conta e as confirmações que substituem `confirm()`/`alert()` |
 | [share.js](share.js) | `OBRA_SHARE` + `module.exports` | exportação JSON/CSV e o recorte `dadosDaObra` |
 | [teclado.js](teclado.js) | `TECLADO` | teclado numérico próprio para digitar valor |

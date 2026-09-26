@@ -23,6 +23,8 @@
     --fab-a:#14B39A; --fab-b:#0C6350; --fab-ink:#04100C; --fab-shadow:rgba(20,179,154,.45);
     --btn-ink:#04100C; --chip-on-ink:#8FE8D5;
     --side-bg:rgba(7,26,20,.78); --side-on-ink:#C7F5E8;
+    /* material das barras do celular (navegação e abas): o --bg com alfa, desfocado por baixo */
+    --barra:rgba(4,16,12,.72);
     --globe-land-rgb:20,179,154; --globe-hi-rgb:168,255,224; --globe-ocean-rgb:15,124,106;
     --globe-halo-rgb:20,179,154; --globe-ring-rgb:58,209,126;
   }
@@ -43,6 +45,7 @@
     --chart-rec:#177A4A; --chart-gasto:#1F6FA8; --chart-desp:#B8437C;
     --glow-1:rgba(11,122,104,.12); --glow-2:rgba(23,122,74,.08);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
+    --barra:rgba(237,245,241,.90); /* .90: rótulo inativo ≥4,5:1 até sobre o card de saldo; o ativo (marca) sobre ele cai a ~3,9–4,2:1 de passagem, convenção do material do iOS */
   }
   /* ===== Skin Azul (paleta original) — mesmo esqueleto de variáveis ===== */
   html[data-skin="azul"]{
@@ -63,8 +66,10 @@
     --glow-1:rgba(37,72,180,.32); --glow-2:rgba(84,38,160,.22);
     --saldo-a:#2450c9; --saldo-b:#5b2fd1; --saldo-border:rgba(120,150,255,.35); --saldo-shadow:rgba(48,80,220,.35);
     --fab-a:#3b6cf0; --fab-b:#5b2fd1; --fab-ink:#fff; --fab-shadow:rgba(70,100,240,.5);
-    --btn-ink:#fff; --chip-on-ink:#a8c2ff;
+    /* tinta escura: branco sobre o #5b8cff dá 3,2:1; esta dá 6,2:1 */
+    --btn-ink:#070c18; --chip-on-ink:#a8c2ff;
     --side-bg:rgba(11,18,36,.78); --side-on-ink:#cfe0ff;
+    --barra:rgba(7,12,24,.72);
     --globe-land-rgb:96,140,255; --globe-hi-rgb:160,196,255; --globe-ocean-rgb:78,114,224;
     --globe-halo-rgb:58,100,245; --globe-ring-rgb:100,140,255;
   }
@@ -84,6 +89,7 @@
     --chart-rec:#187a44; --chart-gasto:#2a63c4; --chart-desp:#c22759;
     --glow-1:rgba(91,140,255,.14); --glow-2:rgba(140,90,220,.09);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
+    --barra:rgba(238,242,249,.93); /* .93 (o --muted do azul claro é mais claro): rótulo inativo ≥4,5:1 até sobre o card de saldo (4,53–4,66); o ativo sobre ele fica em 4,41–4,53:1 de passagem, convenção do material do iOS */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%;touch-action:manipulation} /* mata zoom por duplo-toque (cara de app) */
@@ -108,20 +114,30 @@
 
   body{
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    background:
-      radial-gradient(1100px 750px at 85% -5%, var(--glow-1), transparent 62%),
-      radial-gradient(900px 700px at -10% 105%, var(--glow-2), transparent 60%),
-      var(--bg);
-    background-attachment:fixed;
+    background:var(--bg);
     color:var(--text); line-height:1.5; font-size:16.5px;
     padding-bottom:calc(76px + env(safe-area-inset-bottom));
     -webkit-tap-highlight-color:transparent;
   }
+  /* brilho como camada própria, pintada uma vez: sem "attachment fixo" no fundo do body,
+     que o iOS repinta a cada quadro de rolagem e deixa a página "travada". */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(1100px 750px at 85% -5%, var(--glow-1), transparent 62%),
+      radial-gradient(900px 700px at -10% 105%, var(--glow-2), transparent 60%);
+  }
   #globe{position:fixed;inset:0;z-index:0;pointer-events:none}
   html[data-theme="light"] #globe{opacity:.4} /* globo segue o skin (globe.js lê as vars); no claro vira marca-d'água */
+  /* chrome de interface (não é texto de dado): sem seleção nem menu de toque longo.
+     Só no celular — no desktop o usuário seleciona/copia texto normalmente, inclusive da lista. */
+  @media (max-width:899px){
+    button,nav.tabs,header.top,.back,ul.list li,.chip,.chip2{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  }
   .app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px 16px 8px}
   header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-top:env(safe-area-inset-top)}
   header.top h1{font-size:20px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
+  .nav-voltar,.nav-titulo,.titulo-grande{display:none} /* só existem no celular (barras iOS, mais abaixo) */
   .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-700));display:grid;place-items:center;color:#fff;font-size:16px}
   section.view{display:none;animation:fade .25s ease}
   section.view.active{display:block}
@@ -205,8 +221,10 @@
     .gasto-row>.li-val{grid-column:2;grid-row:2;white-space:normal;overflow-wrap:anywhere}
     .gasto-row>.li-del{grid-column:3;grid-row:1/3;min-height:44px;min-width:44px}
   }
-  @media(display-mode:standalone){
-    body::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--bg);z-index:90;pointer-events:none}
+  /* capa da barra de status: vale no app nativo (Capacitor) e no PWA instalado
+     (nativo.js marca as duas classes em <html> — display-mode:standalone não casa no WKWebView) */
+  html.nativo body::after, html.standalone body::after{
+    content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--bg);z-index:90;pointer-events:none
   }
 
   .empty{text-align:center;padding:30px 16px;color:var(--muted)}
@@ -214,7 +232,10 @@
   .empty p{font-size:13.5px}
 
   /* bottom nav */
-  /* fundo sólido: transparência/blur deixava a barra "flutuando" no iPhone */
+  /* no celular a barra vira o material do iOS (--barra + desfoque, em "barras no padrão iOS"):
+     o "flutuando" de antes era transparência crua sobre botões arredondados; com o --bg a
+     72–78% de opacidade, saturação e desfoque, o conteúdo por baixo só passa como borrão,
+     e a linha fina em cima ancora a barra na borda da tela, como nos apps da Apple */
   nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--surface-solid);border-top:1px solid var(--border);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:40}
   nav.tabs button{flex:1;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;cursor:pointer;font-size:11.5px;font-weight:500;border-radius:12px}
   nav.tabs button .ti{font-size:21px;line-height:1}
@@ -262,7 +283,7 @@
   .seg button.on[data-k="despesa"]{color:var(--red)}
   .field{margin-bottom:13px}
   .field label{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:6px}
-  .field input,.field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:12px 13px;font-size:15px;font-family:inherit;outline:none}
+  .field input,.field select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:12px 13px;font-size:16px;font-family:inherit;outline:none}
   .field input:focus,.field select:focus{border-color:var(--brand)}
   .field .opcional{color:var(--faint);font-weight:400}
   .field input[aria-invalid="true"],.field select[aria-invalid="true"]{border-color:var(--amber)}
@@ -528,6 +549,7 @@
   .rep-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
   @media print{
     body{background:#fff!important;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body::before{display:none} /* brilho é camada própria agora: print sobrescrevia só o background do body */
     body *{visibility:hidden}
     section.view.active,section.view.active *{visibility:visible}
     section.view.active{position:absolute;left:0;top:0;width:100%;display:block}
@@ -559,9 +581,71 @@
     header.top .sair{display:none}
     body.locked .side{visibility:hidden}
   }
+  /* celular: superfícies opacas — o globo animado não pode aparecer através do conteúdo */
+  @media (max-width:899px){
+    .card:not(.saldo),.panel,.notif-invite{background:var(--surface-solid)}
+    /* relatório da simulação: a 1ª coluna quebra linha para as duas colunas de valor caberem sem rolar */
+    .rep-table th,.rep-table td{padding:7px 6px}
+    .rep-table th:first-child,.rep-table td:first-child{white-space:normal}
+  }
+  /* ===== barras no padrão iOS (celular) =====
+     Barra de navegação fixa que cobre também a área do relógio: transparente no topo, com o
+     título grande no começo do conteúdo; quando ele passa para baixo da barra (app.js,
+     IntersectionObserver), a barra ganha o material translúcido e o título pequeno.
+     A barra de abas é sempre material. O desktop (≥900px) segue com o header e a lateral. */
+  @media screen and (max-width:899px){ /* screen: a impressão do relatório segue como antes */
+    /* clip: a tela entrando pela direita (transição) não pode abrir rolagem lateral;
+       hidden antes é o recuo para WebKit sem clip (iOS 15) */
+    /* no recuo, overflow-x:hidden faz o overflow-y computar auto: inofensivo, o .app não tem altura limitada */
+    .app{padding-top:calc(44px + env(safe-area-inset-top));overflow-x:hidden;overflow-x:clip}
+    header.top{position:fixed;top:0;left:0;right:0;z-index:50;margin:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+      min-height:calc(44px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));
+      background:transparent;border-bottom:.5px solid transparent;transition:background-color .2s,border-color .2s}
+    header.top h1{display:none} /* a logo sai no celular; o título grande assume */
+    header.top > .layout-22{grid-column:3;grid-row:1;justify-self:end}
+    header.top.colapsada{background:var(--barra);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom-color:var(--border)}
+    /* 96px de cada lado (voltar à esquerda, sair à direita): o título fica centrado e com respiro */
+    .nav-titulo{display:block;grid-column:2;grid-row:1;font-size:17px;font-weight:600;opacity:0;transition:opacity .2s;max-width:min(60vw,calc(100vw - 192px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    header.top.colapsada .nav-titulo{opacity:1}
+    .nav-voltar{grid-column:1;grid-row:1;justify-self:start;border:0;background:transparent;color:var(--brand);font-family:inherit;font-size:17px;min-height:44px;padding:0 8px;display:flex;align-items:center;gap:2px;cursor:pointer}
+    .nav-voltar[hidden]{display:none} /* sem isto o display:flex da classe venceria o do atributo */
+    .nav-voltar span:first-child{font-size:30px;line-height:1;margin-top:-3px}
+    .nav-voltar:active{opacity:.5}
+    /* sair e pill de sincronização viram itens de barra: sem caixa, alvo de 44px */
+    header.top .sair{width:44px;height:44px;margin-left:0;border:0;background:transparent;box-shadow:none;color:var(--brand);font-size:20px}
+    header.top .sair:active{opacity:.5}
+    header.top .sync-pill{position:relative}
+    header.top .sync-pill::before{content:"";position:absolute;inset:-8px -4px} /* 28px de pílula, 44px de toque */
+    section.view > .back{display:none} /* o voltar mora na barra */
+    .titulo-grande{display:block;font-size:34px;font-weight:700;letter-spacing:-.02em;margin:4px 4px 14px;line-height:1.15;overflow-wrap:anywhere}
+    /* a barra de navegação cobre a área do relógio: a capa da barra de status sai no celular */
+    html.nativo body::after, html.standalone body::after{display:none}
+
+    nav.tabs{background:var(--barra);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--border);
+      padding:0 0 env(safe-area-inset-bottom);min-height:calc(49px + env(safe-area-inset-bottom))}
+    nav.tabs button{border-radius:0;padding:6px 0 2px;font-size:11px;gap:3px;min-height:49px}
+    nav.tabs button .ti{font-size:25px}
+    nav.tabs button:active{opacity:.5}
+    body{padding-bottom:calc(49px + 16px + env(safe-area-inset-bottom))}
+    body.com-fab{padding-bottom:calc(49px + 96px + env(safe-area-inset-bottom))}
+    .fab{bottom:calc(49px + 16px + env(safe-area-inset-bottom));box-shadow:0 4px 14px var(--fab-shadow)}
+    .toast-wrap{bottom:calc(49px + 90px + env(safe-area-inset-bottom))}
+
+    /* transições (direção vem do showView): a obra entra pela direita, voltar entra pela
+       esquerda, trocar de aba é um fade curto; o título grande acompanha a tela */
+    body[data-nav="push"] section.view.active,body[data-nav="push"] .titulo-grande{animation:entra-direita .32s cubic-bezier(.2,.8,.2,1)}
+    body[data-nav="pop"] section.view.active,body[data-nav="pop"] .titulo-grande{animation:entra-esquerda .32s cubic-bezier(.2,.8,.2,1)}
+    body[data-nav="aba"] section.view.active,body[data-nav="aba"] .titulo-grande{animation:fade .18s ease}
+  }
+  @keyframes entra-direita{from{transform:translateX(30%);opacity:.6}to{transform:none;opacity:1}}
+  @keyframes entra-esquerda{from{transform:translateX(-20%);opacity:.6}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion: reduce){
+    section.view,body[data-nav] section.view.active,body[data-nav] .titulo-grande{animation:none}
+    header.top,.nav-titulo{transition:none}
+  }
   /* busca dos lançamentos + respiro mobile */
   .filter-row{display:flex;gap:8px;margin-bottom:12px}
-  .filter-row input,.filter-row select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 11px;font-size:14px}
+  .filter-row input,.filter-row select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 11px;font-size:16px}
   .filter-row input{flex:1;min-width:0}
   .filter-row select{flex:0 0 auto;max-width:44%}
   .filter-row .afz-add{flex:0 0 auto;padding:9px 16px;font-size:20px;line-height:1;font-weight:600}
@@ -694,3 +778,119 @@ body .layout-45{font-size:30px}
 .sp-data.layout-4{animation-delay:2.8s}
 .sp-data.layout-5{animation-delay:2.1s}
 .sp-data.layout-6{animation-delay:3.4s}
+
+/* ===== conteúdo no padrão iOS (celular) =====
+   Painéis e cards viram os grupos "inset grouped" dos apps da Apple (Ajustes, Carteira,
+   Saúde): cantos de 14px, sem borda nem sombra, superfície sólida um degrau acima do fundo.
+   Listas com linha alta, separador fino recuado a partir do texto e realce ao tocar; busca
+   com lupa; botão preenchido e tingido de 50px; sheet com alça. O desktop não muda: as duas
+   regras soltas abaixo só mantêm nele o desenho de antes. */
+  .chevron,.busca-ic{display:none}
+  .busca{display:flex;flex:1;min-width:0} /* o rótulo da busca ocupa o lugar que era do campo */
+  @media screen and (max-width:899px){
+    .panel,.card,.kpi{border-radius:14px;border:0;box-shadow:none}
+    .card.saldo,.card.saldo.saldo-abaixo{box-shadow:none}
+    .kpi{background:var(--surface-solid)} /* opaco como os painéis: o globo não passa através */
+    .panel{padding:14px 16px}
+    .panel h2{font-size:17px;font-weight:600}
+    .panel h2 .muted{font-size:15px}
+
+    ul.list{gap:0}
+    ul.list li{min-height:56px;border-bottom:0;position:relative;padding:10px 4px}
+    /* separador fino que começa no texto, não atravessa o ícone (38px de ícone + 13 de vão + 4) */
+    ul.list li + li::before{content:"";position:absolute;top:0;left:54px;right:0;height:.5px;background:var(--border)}
+    #oAfazeres li + li::before{left:43px} /* afazer: bolinha de 26px no lugar do ícone */
+    ul.list li:active{background:var(--surface-2);border-radius:10px}
+    .chevron{display:block;color:var(--muted);font-size:22px;line-height:1;margin-left:-4px;flex:none}
+
+    /* Obras: a lista é o grupo; "Minhas obras" repetia o título grande e sai da vista
+       (continua para o VoiceOver), a contagem vira o cabeçalho da seção, acima do grupo */
+    .panel.grupo-obras{background:transparent;padding:0}
+    .grupo-obras > h2{margin:0 4px 8px}
+    .grupo-obras > h2 .muted{font-weight:500}
+    /* o realce do toque vai de borda a borda do grupo, recortado pelos cantos dele */
+    .grupo-obras > ul.list{background:var(--surface-solid);border-radius:14px;overflow:hidden}
+    .grupo-obras > ul.list li{padding:10px 14px 10px 16px}
+    .grupo-obras > ul.list li + li::before{left:67px}
+    .grupo-obras > ul.list li:active{border-radius:0}
+    .rotulo-grupo,.obra-head h2 > .layout-33,#v-simula > .panel:first-child > h2{
+      position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+    /* obra: o nome já está no título grande; o painel do topo vira a linha de subtítulo
+       dele (fase, início e tempo de obra) com o lápis de editar à direita */
+    .panel.obra-head{display:flex;align-items:center;gap:12px;background:transparent;padding:0 0 0 4px;margin:-6px 0 16px}
+    .obra-head h2{order:2;margin:0;flex:none}
+    .obra-head .obra-meta{order:1;flex:1;min-width:0;font-size:15px;line-height:1.4}
+    .obra-meta .obra-sep{display:none} /* fase numa linha, início e tempo de obra na outra */
+    .obra-meta .obra-desde{display:block;margin-top:6px}
+    .obra-meta .tag{font-size:13px;padding:3px 10px}
+    /* lápis como botão redondo tingido (44px), como os botões de ação dos apps da Apple */
+    .obra-head #oEdit{width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center;
+      background:var(--brand-soft);color:var(--chip-on-ink);font-size:19px}
+    .obra-head #oEdit:active{opacity:.6;background:var(--brand-soft);color:var(--chip-on-ink)}
+    html[data-theme="light"] .obra-head #oEdit{color:var(--brand-600)}
+    #obrasList .obra-tempo{white-space:nowrap} /* quebra antes do "· 16 meses", nunca no meio dele */
+
+    /* indicadores da obra: o selo desce para baixo do nome quando não cabe ao lado (antes o
+       nome quebrava palavra por palavra); o primário das ações ocupa a linha toda */
+    .kpi .k-top{flex-wrap:wrap;justify-content:flex-start;gap:4px 6px}
+    .obra-actions .btn{flex:1 1 auto} /* cada um na largura do texto: "Voltar pra construção" ganha a linha em vez de quebrar */
+    .obra-actions .btn.primary{flex-basis:100%}
+    /* Ajustes: as ações de cada grupo empilham (três botões lado a lado quebravam o texto em duas linhas) */
+    #v-ajustes .panel .sheet-actions{flex-direction:column}
+
+    /* campos cheios, sem contorno (o contorno só aparece no foco e no aviso) */
+    .field input,.field select,.valor-btn{border-color:transparent}
+
+    /* busca no padrão iOS: campo cheio e arredondado com lupa; o mês é um botão de menu ao lado */
+    .busca{position:relative;flex:1;min-width:0}
+    .busca-ic{display:block;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;line-height:0}
+    .filter-row input,.filter-row select{border:0;border-radius:10px;min-height:44px;background:var(--surface-2)}
+    .filter-row select{max-width:none} /* "Todos os meses" inteiro; a busca fica com o resto */
+    .filter-row input::placeholder{color:var(--muted);opacity:1}
+    .busca input{padding-left:34px;border-radius:10px;border:0;background:var(--surface-2);min-height:44px;width:100%}
+    .filter-row .afz-add{min-height:44px;border-radius:10px}
+
+    /* botões: primário preenchido, secundário tingido da marca; ao tocar, só a opacidade responde */
+    .btn,.sheet .btn{min-height:50px;border-radius:12px;font-size:17px;font-weight:600}
+    .btn:active{opacity:.6;transform:none}
+    /* tinta do tingido: a --brand sobre a --brand-soft dá 4,4:1 no escuro; a tinta do chip ligado passa */
+    .btn.ghost{background:var(--brand-soft);color:var(--chip-on-ink);border:0}
+    html[data-theme="light"] .btn.ghost{color:var(--brand-600)}
+    /* destrutivo (apagar compra, obra, conta): vermelho sobre cinza, como no iOS — sobre o tingido
+       da marca não chega a 4,5:1. "html body" vence a regra do claro acima por especificidade. */
+    html body .btn.ghost.layout-41,html body .btn.ghost.layout-42,#ajApagar{background:var(--surface-2);color:var(--red)}
+    .notif-invite-actions .btn{min-height:44px;font-size:15px}
+
+    /* sheet com alça: a faixa de cima (32px) é a zona de puxar para fechar (gestos.js) */
+    .sheet{border-radius:14px 14px 0 0;padding-top:22px;position:relative}
+    .sheet::before{content:"";position:absolute;top:7px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--muted);opacity:.45}
+
+    .card,.panel li,.chip,.chip2,.back,.li-del{-webkit-tap-highlight-color:transparent}
+    .chip:active,.chip2:active{opacity:.6}
+  }
+  /* toque em tela estreita: o × sai da vista (arrastar para apagar, bloco dos gestos) e a
+     terceira coluna de 44px que era dele volta para o texto e o valor */
+  @media (max-width:600px) and (pointer:coarse){
+    ul.list li.gasto-row{grid-template-columns:38px minmax(0,1fr)}
+  }
+
+/* gestos (gestos.js) */
+  /* branco sobre o --red do escuro (#fb7185) dá 2,7:1; o botão tem vermelho próprio: 5,5:1 nos quatro combos tema×skin */
+  :root{--apagar:#c22e55}
+  li.swipe{position:relative;overflow:hidden;touch-action:pan-y}
+  li.swipe > *{transform:translateX(var(--dx,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  li.swipe.arrastando > *{transition:none}
+  /* o botão fica além da borda direita e entra junto com o conteúdo, então parado não cobre o valor;
+     120px (o máximo do arrasto) com o texto centrado nos 80 que aparecem com a linha aberta */
+  .acao-apagar{position:absolute;top:0;bottom:0;left:100%;width:120px;padding:0 40px 0 0;border:0;border-radius:0;background:var(--apagar);color:#fff;font-size:15px;font-weight:600}
+  .sheet{transform:translateY(var(--dy,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  .sheet.arrastando{transition:none}
+  /* transform só durante o arrasto: fora dele, transform na tela viraria bloco de contenção dos position:fixed internos.
+     .titulo-grande mora fora de section.view (é o cabeçalho iOS): gestos.js marca as mesmas classes
+     e o mesmo --dx-tela nela também, senão o título fica parado enquanto a tela segue o dedo. */
+  section.view.active.arrastando-borda,.titulo-grande.arrastando-borda{transform:translateX(var(--dx-tela,0px))}
+  section.view.active.soltando-borda,.titulo-grande.soltando-borda{transform:translateX(var(--dx-tela,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  @media (pointer:coarse){
+    ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  }
+  @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda,.titulo-grande.soltando-borda{transition:none} }

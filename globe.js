@@ -43,17 +43,36 @@
     }
   }
 
+  // só no toque a barra de endereço do Safari some/aparece: no desktop encolher a altura da
+  // janela é redimensionamento de verdade e deve recentralizar o globo, como no main.
+  const ehToque = () => !!(window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+
+  // no toque, o canvas nasce com a altura da tela na orientação atual (≥ qualquer viewport do
+  // Safari, com ou sem barra): assim o recolhimento da barra nunca exige realocar no meio da rolagem
+  function alturaAlvo(){
+    const h=window.innerHeight, s=window.screen;
+    if(!ehToque() || !s || !s.width || !s.height) return h;
+    const tela = window.innerWidth<=h ? Math.max(s.width,s.height) : Math.min(s.width,s.height);
+    return Math.max(h, tela);
+  }
+
   let W,H,R,cx,cy;
-  function resize(){
+  function realoca(){
     const dpr=Math.min(1.75, window.devicePixelRatio||1);
-    W=window.innerWidth; H=window.innerHeight;
+    W=window.innerWidth; H=alturaAlvo();
     cv.width=W*dpr; cv.height=H*dpr;
+    cv.style.height=H+'px';                  // altura fixa: a barra do Safari só corta embaixo, não estica o desenho
     ctx.setTransform(dpr,0,0,dpr,0,0);
     R=Math.min(H*0.46, W*0.55);
     cx=W*0.80; cy=H*0.42;                    // esfera com curvatura visível, à direita
   }
-  window.addEventListener('resize',resize);
-  resize();
+  function aoRedimensionar(){
+    // no toque, a barra de endereço do Safari recolhendo só encolhe a altura: não é resize de verdade
+    if(ehToque() && window.innerWidth===W && window.innerHeight<=H) return;
+    realoca();
+  }
+  window.addEventListener('resize',aoRedimensionar);
+  realoca();
 
   /* cores vêm das CSS vars do skin ativo (--globe-*-rgb) — 1 leitura por frame */
   function cores(){
@@ -106,20 +125,43 @@
     drawSet(land,sin,cos,true,C);
   }
 
-  if(reduced){ draw(1.2); window.__globeDraw=()=>draw(1.2); return; }
+  if(reduced){ draw(1.2); window.__globeDraw=()=>draw(1.2); window.__globeEstado=()=>({ rodando:false }); return; }
   window.__globeDraw=()=>{}; // animando, o próximo frame já pega a cor nova
 
-  let angle=1.2, last=performance.now(), running=true;
+  let angle=1.2, last=performance.now(), running=true, timerRetomada=null, quadro=null;
   function loop(now){
     if(!running) return;
     angle += (now-last)*0.00004;              // giro calmo
     last=now;
     draw(angle);
-    requestAnimationFrame(loop);
+    quadro = requestAnimationFrame(loop);
   }
+  /* cancela o frame agendado (se houver) — sem isto, um requestAnimationFrame já enfileirado
+     antes da pausa ainda dispara depois, e se nesse meio-tempo o laço já tiver sido retomado
+     (ex.: voltando de segundo plano), ele agenda um SEGUNDO loop rodando junto do primeiro. */
+  function paraQuadro(){
+    running=false;
+    if(quadro!==null){ cancelAnimationFrame(quadro); quadro=null; }
+  }
+  function retomar(){
+    if(document.hidden || running) return;
+    running=true; last=performance.now();
+    quadro = requestAnimationFrame(loop);
+  }
+  /* rolagem e toque custam caro junto do requestAnimationFrame: pausa o laço e
+     retoma ~400ms depois do último evento (debounce por clearTimeout/setTimeout) */
+  function pausaTemporaria(){
+    paraQuadro();
+    clearTimeout(timerRetomada);
+    timerRetomada=setTimeout(retomar,400);
+  }
+  window.addEventListener('scroll',pausaTemporaria,{passive:true});
+  window.addEventListener('touchstart',pausaTemporaria,{passive:true});
+  window.addEventListener('touchmove',pausaTemporaria,{passive:true});
   document.addEventListener('visibilitychange',()=>{
-    running=!document.hidden;
-    if(running){ last=performance.now(); requestAnimationFrame(loop); }
+    if(document.hidden){ paraQuadro(); return; }
+    retomar();
   });
-  requestAnimationFrame(loop);
+  window.__globeEstado=()=>({ rodando:running });
+  quadro = requestAnimationFrame(loop);
 })();

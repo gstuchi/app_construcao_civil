@@ -4,29 +4,7 @@
 
 /* ---------- estado ---------- */
 
-const TOPICOS = [
-  {id:'terreno',    nm:'Terreno',           ic:'mapa'},
-  {id:'projeto',    nm:'Documentação',      ic:'documento'},
-  {id:'matbasicos', nm:'Materiais básicos', ic:'tijolos'},
-  {id:'fundacao',   nm:'Fundação',          ic:'pa'},
-  {id:'ferragem',   nm:'Ferragem',          ic:'vergalhao'},
-  {id:'estrutura',  nm:'Estrutura',         ic:'guindaste'},
-  {id:'alvenaria',  nm:'Alvenaria',         ic:'tijolos'},
-  {id:'telhado',    nm:'Telhado',           ic:'casa'},
-  {id:'eletrica',   nm:'Elétrica',          ic:'raio'},
-  {id:'hidraulica', nm:'Encanamento',       ic:'gota'},
-  {id:'esquadrias', nm:'Esq. de alumínio',  ic:'porta'},
-  {id:'revest',     nm:'Cerâmica',          ic:'ladrilho'},
-  {id:'pintura',    nm:'Pintura',           ic:'rolo'},
-  {id:'acabamento', nm:'Acabamento',        ic:'rolo'},
-  {id:'piscina',    nm:'Piscina',           ic:'piscina'},
-  {id:'paisagismo', nm:'Jardim',            ic:'arvore'},
-  {id:'maoobra',    nm:'Mão de obra',       ic:'capacete'},
-  {id:'aluguelmaq', nm:'Aluguel de máquina',ic:'engrenagem'},
-  {id:'matextra',   nm:'Materiais extra',   ic:'caixa'},
-  {id:'extras',     nm:'Extras',            ic:'mais'},
-  {id:'outros',     nm:'Outros',            ic:'caixa'},
-];
+const TOPICOS = OBRA_CALC.TOPICOS; // calc.js: o push (Node) usa a mesma lista
 const PIE = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
 const FASES = {
   construcao: {nm:'Em construção',    ic:'guindaste', cls:'pend'},

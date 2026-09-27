@@ -327,4 +327,59 @@ t('cartão: Price mensal, centavos e vencimentos', () => {
   assert.equal(Math.round(pequeno.parcelas.reduce((s,p)=>s+p.valor,0)*100),Math.round(pequeno.totalCompra*100));
 });
 
+const obraOrc = (orcamento, gastos = []) => ({ id:'o', dataInicio:'2026-01-01', gastos, orcamento });
+const gOrc = (topico, valor, data = '2026-02-01') => ({ id: topico + valor, topico, valor, data });
+
+t('TOPICOS exportado com ids únicos e nomes', () => {
+  assert.ok(Array.isArray(C.TOPICOS) && C.TOPICOS.length === 21);
+  assert.strictEqual(new Set(C.TOPICOS.map(x => x.id)).size, C.TOPICOS.length);
+  assert.strictEqual(C.TOPICOS.find(x => x.id === 'fundacao').nm, 'Fundação');
+  assert.strictEqual(C.TOPICOS.find(x => x.id === 'hidraulica').nm, 'Encanamento');
+});
+
+t('orcamentoObra: sem orçamento ou inválido = null', () => {
+  assert.strictEqual(C.orcamentoObra(obraOrc(undefined)), null);
+  assert.strictEqual(C.orcamentoObra(obraOrc(null)), null);
+  assert.strictEqual(C.orcamentoObra(obraOrc({ modo:'total', total:0 })), null);
+  assert.strictEqual(C.orcamentoObra(obraOrc({ modo:'total', total:'800' })), null);
+  assert.strictEqual(C.orcamentoObra(obraOrc({ modo:'topicos', topicos:{} })), null);
+  assert.strictEqual(C.orcamentoObra(obraOrc({ modo:'topicos', topicos:{ fundacao:-5 } })), null);
+});
+
+t('orcamentoObra modo total: bruto inteiro, inclusive parcela a vencer', () => {
+  const r = C.orcamentoObra(obraOrc({ modo:'total', total:800000 },
+    [gOrc('terreno', 180000), gOrc('fundacao', 432400, '2027-12-01')]));
+  assert.strictEqual(r.modo, 'total');
+  assert.strictEqual(r.previsto, 800000);
+  assert.strictEqual(r.gasto, 612400);
+  assert.strictEqual(r.pct, 77);
+  assert.strictEqual(r.sobra, 187600);
+  assert.strictEqual(r.nivel, 'ok');
+  assert.deepStrictEqual(r.topicos, []);
+  assert.deepStrictEqual(r.fora, []);
+  assert.strictEqual(r.foraTotal, 0);
+});
+
+t('orcamentoObra limiares: 89,4% ok, 89,6% perto, 100% perto, meio centavo acima passou', () => {
+  const nivel = gasto => C.orcamentoObra(obraOrc({ modo:'total', total:1000 }, [gOrc('terreno', gasto)])).nivel;
+  assert.strictEqual(nivel(894), 'ok');
+  assert.strictEqual(nivel(896), 'perto');
+  assert.strictEqual(nivel(1000), 'perto');
+  assert.strictEqual(nivel(1000.004), 'perto');
+  assert.strictEqual(nivel(1000.01), 'passou');
+});
+
+t('orcamentoObra modo topicos: compara só previstos, fora aparece separado', () => {
+  const r = C.orcamentoObra(obraOrc({ modo:'topicos', topicos:{ fundacao:90000, estrutura:250000, c_apagado:1000 } },
+    [gOrc('fundacao', 98000), gOrc('estrutura', 231000), gOrc('hidraulica', 12000), gOrc('pintura', 3000)]));
+  assert.strictEqual(r.modo, 'topicos');
+  assert.strictEqual(r.previsto, 341000);
+  assert.strictEqual(r.gasto, 329000);
+  assert.deepStrictEqual(r.topicos.map(x => [x.id, x.nivel, x.pct]),
+    [['fundacao','passou',109], ['estrutura','perto',92], ['c_apagado','ok',0]]);
+  assert.strictEqual(r.topicos[0].sobra, -8000);
+  assert.deepStrictEqual(r.fora, [{ id:'hidraulica', gasto:12000 }, { id:'pintura', gasto:3000 }]);
+  assert.strictEqual(r.foraTotal, 15000);
+});
+
 console.log(`OK: ${n} testes`);

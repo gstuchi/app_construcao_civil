@@ -300,7 +300,67 @@
     return false;
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior };
+  /* Tópicos fixos. Moram aqui, e não no app.js, porque o push diário (Node)
+     precisa do nome do tópico para escrever o aviso de orçamento. */
+  const TOPICOS = Object.freeze([
+    {id:'terreno',    nm:'Terreno',           ic:'mapa'},
+    {id:'projeto',    nm:'Documentação',      ic:'documento'},
+    {id:'matbasicos', nm:'Materiais básicos', ic:'tijolos'},
+    {id:'fundacao',   nm:'Fundação',          ic:'pa'},
+    {id:'ferragem',   nm:'Ferragem',          ic:'vergalhao'},
+    {id:'estrutura',  nm:'Estrutura',         ic:'guindaste'},
+    {id:'alvenaria',  nm:'Alvenaria',         ic:'tijolos'},
+    {id:'telhado',    nm:'Telhado',           ic:'casa'},
+    {id:'eletrica',   nm:'Elétrica',          ic:'raio'},
+    {id:'hidraulica', nm:'Encanamento',       ic:'gota'},
+    {id:'esquadrias', nm:'Esq. de alumínio',  ic:'porta'},
+    {id:'revest',     nm:'Cerâmica',          ic:'ladrilho'},
+    {id:'pintura',    nm:'Pintura',           ic:'rolo'},
+    {id:'acabamento', nm:'Acabamento',        ic:'rolo'},
+    {id:'piscina',    nm:'Piscina',           ic:'piscina'},
+    {id:'paisagismo', nm:'Jardim',            ic:'arvore'},
+    {id:'maoobra',    nm:'Mão de obra',       ic:'capacete'},
+    {id:'aluguelmaq', nm:'Aluguel de máquina',ic:'engrenagem'},
+    {id:'matextra',   nm:'Materiais extra',   ic:'caixa'},
+    {id:'extras',     nm:'Extras',            ic:'mais'},
+    {id:'outros',     nm:'Outros',            ic:'caixa'},
+  ]);
+
+  /* Orçamento previsto × real. Base = bruto (inclui parcelas a vencer), nunca o
+     corrigido. O pct arredondado é o que a tela mostra; o nível sai dele, então
+     cor e número nunca discordam. Passou = mais de meio centavo acima. */
+  const LIMIAR_PERTO = 90;
+  function itemOrcamento(gasto, previsto){
+    const pct = Math.round(gasto / previsto * 100);
+    const nivel = gasto - previsto > 0.005 ? 'passou' : pct >= LIMIAR_PERTO ? 'perto' : 'ok';
+    return { previsto, gasto, pct, sobra: previsto - gasto, nivel };
+  }
+  const positivoFinito = v => typeof v === 'number' && Number.isFinite(v) && v > 0;
+  function orcamentoObra(obra){
+    const orc = obra && obra.orcamento;
+    if(!orc || typeof orc !== 'object') return null;
+    const gastos = Array.isArray(obra.gastos) ? obra.gastos : [];
+    if(orc.modo === 'topicos'){
+      const prev = orc.topicos && typeof orc.topicos === 'object' ? orc.topicos : {};
+      const ids = Object.keys(prev).filter(id => positivoFinito(prev[id]));
+      if(!ids.length) return null;
+      const porTop = Object.create(null);
+      gastos.forEach(g => { porTop[g.topico] = (porTop[g.topico] || 0) + g.valor; });
+      const topicos = ids.map(id => ({ id, ...itemOrcamento(porTop[id] || 0, prev[id]) }))
+        .sort((a, b) => b.gasto / b.previsto - a.gasto / a.previsto || a.id.localeCompare(b.id));
+      const fora = Object.keys(porTop).filter(id => !ids.includes(id) && porTop[id] > 0)
+        .map(id => ({ id, gasto: porTop[id] }))
+        .sort((a, b) => b.gasto - a.gasto || a.id.localeCompare(b.id));
+      const previsto = topicos.reduce((s, x) => s + x.previsto, 0);
+      const gasto = topicos.reduce((s, x) => s + x.gasto, 0);
+      return { modo:'topicos', ...itemOrcamento(gasto, previsto), topicos, fora,
+        foraTotal: fora.reduce((s, f) => s + f.gasto, 0) };
+    }
+    if(!positivoFinito(orc.total)) return null;
+    return { modo:'total', ...itemOrcamento(totalBruto(obra), orc.total), topicos:[], fora:[], foraTotal:0 };
+  }
+
+  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

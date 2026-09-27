@@ -65,7 +65,7 @@ Consequências práticas:
 
 - **`saveDados` reescreve o blob inteiro.** Qualquer coisa que não deva ser sobrescrita por outro aparelho mora em documento separado — foi por isso que as inscrições de push viraram `push/{uid}`.
 - Depois de mexer em `db`, sempre `save()` **e** `renderAll()` (ou o `render*` da view).
-- Objeto obra: `{id, nome, fase: 'construcao'|'pronta'|'vendida', dataInicio, valorEstimadoVenda, areaM2, gastos: [], afazeres?: []}`. Gasto: `{id, valor, topico, descricao, data, pagamento}`; compra parcelada gera N gastos irmãos com `grupoId` comum e `parcela: {n, de}`.
+- Objeto obra: `{id, nome, fase: 'construcao'|'pronta'|'vendida', dataInicio, valorEstimadoVenda, areaM2, gastos: [], afazeres?: [], orcamento?: {modo:'total', total} | {modo:'topicos', topicos:{idDoTópico: valor}}}`. Gasto: `{id, valor, topico, descricao, data, pagamento}`; compra parcelada gera N gastos irmãos com `grupoId` comum e `parcela: {n, de}`.
 
 ### Fronteira de segurança
 

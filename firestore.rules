@@ -39,6 +39,8 @@ service cloud.firestore {
     /* perfis/{uid} — e-mail, fuso, nome e como a pessoa conheceu o Custta.
        'cpf' é rejeitado estruturalmente: hasOnly não o inclui.
        'plano' é DELIBERADAMENTE não-gravável pelo cliente — só o Admin SDK escreve.
+       'avisosOrcamento' (memória do aviso de orçamento do push) também é só do Admin SDK:
+       fica fora da lista do update, então o cliente não a grava e ela não atrapalha o update dele.
        'origem' é gravada uma vez no cadastro; o cliente não a altera depois.
        Limites e lista de origens espelham cadastro.js: mudou lá, muda aqui. */
     match /perfis/{uid} {

@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('assert');
-const { montaResumo, endpointPushValido } = require('../notificacoes/resumo.js');
+const { montaResumo, endpointPushValido, estadoOrcamento, avisosOrcamento } = require('../notificacoes/resumo.js');
 
 let n = 0;
 function t(nome, fn){ fn(); n++; console.log('ok -', nome); }
@@ -153,6 +153,100 @@ t('obraId só quando exatamente uma obra gera o resumo', () => {
   assert.strictEqual('obraId' in montaResumo(duas, '2026-07-10', 'noite'), false);
   const afazer = { obras: [ { id:'o1', fase:'pronta', afazeres:[{ feito:false }], gastos: [] }, { id:'o2', fase:'pronta', gastos: [] } ] };
   assert.strictEqual(montaResumo(afazer, '2026-07-10', 'manha').obraId, 'o1');
+});
+
+const obraOrc = (id, nome, orcamento, gastos, extra) => ({ id, nome, fase:'construcao', dataInicio:'2026-01-01',
+  orcamento, gastos: gastos.map(([topico, valor], i) => ({ id:id + i, topico, valor, data:'2026-07-10' })), ...extra });
+const CASA = obraOrc('o1', 'Casa Alphaville', { modo:'topicos', topicos:{ fundacao:90000, estrutura:250000 } },
+  [['fundacao', 98000], ['estrutura', 231000]]);
+
+t('estadoOrcamento: só itens a partir de perto', () => {
+  assert.deepStrictEqual(estadoOrcamento({ obras:[CASA] }),
+    { 'o1|total':'perto', 'o1|t:fundacao':'passou', 'o1|t:estrutura':'perto' });
+  assert.deepStrictEqual(estadoOrcamento({ obras:[] }), {});
+  assert.deepStrictEqual(estadoOrcamento(null), {});
+});
+
+t('sem memória (anterior ausente ou null): nenhum aviso de orçamento', () => {
+  assert.deepStrictEqual(avisosOrcamento({ obras:[CASA] }, null), { linhas:[], obraIds:[] });
+  assert.strictEqual(montaResumo({ obras:[CASA] }, '2026-07-10', 'noite'), null);
+});
+
+t('primeira vez: frases de tópico e de total, passou antes de perto', () => {
+  const r = avisosOrcamento({ obras:[CASA] }, {});
+  assert.deepStrictEqual(r.linhas, [
+    'Fundação passou R$ 8 mil do previsto',
+    'Casa Alphaville chegou a 97% do orçamento',
+    'Estrutura chegou a 92% do previsto',
+  ]);
+  assert.deepStrictEqual(r.obraIds, ['o1']);
+});
+
+t('mesmo nível: silêncio; subida perto → passou: avisa de novo', () => {
+  const estado = estadoOrcamento({ obras:[CASA] });
+  assert.deepStrictEqual(avisosOrcamento({ obras:[CASA] }, estado).linhas, []);
+  const estourou = obraOrc('o1', 'Casa Alphaville', CASA.orcamento, [['fundacao', 98000], ['estrutura', 260000]]);
+  assert.deepStrictEqual(avisosOrcamento({ obras:[estourou] }, estado).linhas,
+    ['Casa Alphaville passou R$ 18 mil do orçamento', 'Estrutura passou R$ 10 mil do previsto']);
+});
+
+t('descida esquece: depois de baixar, nova subida avisa', () => {
+  const folgada = obraOrc('o1', 'Casa Alphaville', { modo:'topicos', topicos:{ fundacao:200000, estrutura:250000 } },
+    [['fundacao', 98000], ['estrutura', 100000]]);
+  const estado = estadoOrcamento({ obras:[folgada] });
+  assert.deepStrictEqual(estado, {});
+  assert.strictEqual(avisosOrcamento({ obras:[CASA] }, estado).linhas.length, 3);
+});
+
+t('memória com lixo não quebra nem silencia', () => {
+  const r = avisosOrcamento({ obras:[CASA] }, { 'o1|t:fundacao':'constructor', 'o1|total':42 });
+  assert.strictEqual(r.linhas.length, 3);
+});
+
+t('obra vendida não avisa; várias obras ganham o nome entre parênteses', () => {
+  const vendida = obraOrc('v', 'Vendida', { modo:'total', total:10 }, [['terreno', 100]], { fase:'vendida', venda:{ valor:1, data:'2026-07-01' } });
+  const outra = obraOrc('o2', 'Sobrado', { modo:'total', total:1008000 }, [['estrutura', 1048000]]);
+  const r = avisosOrcamento({ obras:[CASA, vendida, outra] }, {});
+  assert.ok(r.linhas.includes('Fundação (Casa Alphaville) passou R$ 8 mil do previsto'), r.linhas.join(' | '));
+  assert.ok(!r.linhas.some(l => l.includes('Vendida')));
+  assert.deepStrictEqual(r.obraIds, ['o1', 'o2']);
+});
+
+t('no máximo 3 frases; o resto vira contagem', () => {
+  const muitos = obraOrc('o1', 'Casa', { modo:'topicos', topicos:{ fundacao:10, estrutura:10, eletrica:10, pintura:10 } },
+    [['fundacao', 20], ['estrutura', 20], ['eletrica', 20], ['pintura', 20]]);
+  const r = avisosOrcamento({ obras:[muitos] }, {});
+  assert.strictEqual(r.linhas.length, 4);
+  assert.strictEqual(r.linhas[3], '+ 2 avisos de orçamento');
+});
+
+t('tópico próprio usa o nome dele; tópico apagado cai no id', () => {
+  const dados = { config:{ taxaMensal:1, topicosCustom:[{ id:'c_portao', nm:'Portão', ic:'etiqueta' }] },
+    obras:[obraOrc('o1', 'Casa', { modo:'topicos', topicos:{ c_portao:1000, c_sumiu:1000 } }, [['c_portao', 1500], ['c_sumiu', 1500]])] };
+  const linhas = avisosOrcamento(dados, {}).linhas;
+  assert.ok(linhas.includes('Portão passou R$ 500,00 do previsto'), linhas.join(' | '));
+  assert.ok(linhas.includes('c_sumiu passou R$ 500,00 do previsto'), linhas.join(' | '));
+});
+
+t('montaResumo: avisos de orçamento vêm primeiro e viram atalho da obra', () => {
+  const dados = { obras:[{ ...CASA, afazeres:[{ id:'a', texto:'x', feito:false }] }] };
+  const r = montaResumo(dados, '2026-07-10', 'noite', {});
+  assert.strictEqual(r.corpo.split('\n')[0], 'Fundação passou R$ 8 mil do previsto');
+  assert.ok(r.corpo.includes('1 afazer pendente'));
+  assert.strictEqual(r.obraId, 'o1');
+});
+
+t('valores grandes ficam curtos', () => {
+  const grande = obraOrc('o1', 'Casa', { modo:'total', total:1000000 }, [['terreno', 2250000]]);
+  assert.deepStrictEqual(avisosOrcamento({ obras:[grande] }, {}).linhas, ['Casa passou R$ 1,25 mi do orçamento']);
+  const mil = obraOrc('o1', 'Casa', { modo:'total', total:1000 }, [['terreno', 2500]]);
+  assert.deepStrictEqual(avisosOrcamento({ obras:[mil] }, {}).linhas, ['Casa passou R$ 1,5 mil do orçamento']);
+});
+
+t('curto: 999,995 a 999,999 arredonda pro milhar antes de escolher a unidade', () => {
+  const beira = obraOrc('o1', 'Casa', { modo:'total', total:1000 }, [['terreno', 1999.996]]);
+  const linhas = avisosOrcamento({ obras:[beira] }, {}).linhas;
+  assert.ok(linhas.some(l => l.includes('R$ 1 mil')), linhas.join(' | '));
 });
 
 console.log(`\n${n} testes ok`);

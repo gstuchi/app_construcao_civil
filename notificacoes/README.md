@@ -43,6 +43,38 @@ Publicar.
    (Se não houver afazer pendente, parcela nem lembrete, o log do workflow
    mostra "nada a dizer" — criar um afazer antes de testar.)
 
+## Avisos de orçamento
+
+O resumo diário (`resumo.js`) também avisa de orçamento: para cada obra não
+vendida com orçamento, o total e, no modo `topicos`, cada tópico previsto.
+Avisa a partir de 90% (nível `perto`) e quando passa (nível `passou`); obra
+vendida não entra. As frases de orçamento vêm antes das outras no corpo da
+notificação, por serem a notícia mais importante do dia.
+
+**Não repete todo dia.** Cada item (obra × total, obra × tópico) tem nível
+`ok < perto < passou`. Só avisa quando o nível atual é maior que o último
+avisado — a memória fica em `perfis/{uid}.avisosOrcamento`, gravada pelo
+`enviar.js` depois do envio. Ficou no mesmo nível: silêncio. Desceu (aumentou
+o orçamento, apagou gasto): a memória desce junto, e uma nova subida volta a
+avisar.
+
+Essa memória não fica em `push/{uid}` porque as rules dali exigem
+`hasOnly(['subs', 'tokens'])` no documento inteiro — um campo a mais quebraria
+a inscrição de push do cliente. Em `perfis/{uid}` o campo fica fora da lista
+gravável pelo cliente (mesmo mecanismo do `plano`), então convive em paz com
+o update de nome/fuso que o próprio usuário faz.
+
+Conta sem perfil não recebe aviso de orçamento (sem memória, sem aviso —
+silêncio é melhor que repetir todo dia), e o Admin SDK nunca cria perfil só
+para gravar a memória. A gravação acontece depois de pelo menos uma entrega
+bem-sucedida (Web Push ou FCM), ou quando não havia nada a dizer e algum
+nível desceu (só pode ter sido descida, então não há envio para confirmar).
+Se todos os envios falharem, a memória fica como estava e o aviso tenta de
+novo no próximo disparo. Apagar a conta apaga `perfis/{uid}` e a memória vai
+junto.
+
+Mudança só de comentário nas rules — nenhum deploy de rules é necessário.
+
 ## Avisos
 
 - Dois disparos por dia: 12:00 UTC (9h Brasília) e 21:00 UTC (18h), com

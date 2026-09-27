@@ -27,7 +27,7 @@ const MAX_FRASES_ORC = 3;
 
 /* "R$ 8 mil", "R$ 1,5 mil", "R$ 1,25 mi" — cabe na notificação */
 function curto(n){
-  const a = Math.abs(n);
+  const a = Math.round(Math.abs(n) * 100) / 100;
   const fmt = (v, casas) => {
     const s = v.toFixed(casas).replace('.', ',');
     return s.includes(',') ? s.replace(/0+$/, '').replace(/,$/, '') : s;

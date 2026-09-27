@@ -243,4 +243,10 @@ t('valores grandes ficam curtos', () => {
   assert.deepStrictEqual(avisosOrcamento({ obras:[mil] }, {}).linhas, ['Casa passou R$ 1,5 mil do orçamento']);
 });
 
+t('curto: 999,995 a 999,999 arredonda pro milhar antes de escolher a unidade', () => {
+  const beira = obraOrc('o1', 'Casa', { modo:'total', total:1000 }, [['terreno', 1999.996]]);
+  const linhas = avisosOrcamento({ obras:[beira] }, {}).linhas;
+  assert.ok(linhas.some(l => l.includes('R$ 1 mil')), linhas.join(' | '));
+});
+
 console.log(`\n${n} testes ok`);

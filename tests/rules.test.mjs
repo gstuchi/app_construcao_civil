@@ -197,6 +197,21 @@ describe('perfis/{uid} — CPF e plano', () => {
     }));
     await assertFails(getDoc(doc(comoAna(), 'perfis', BENTO.uid)));
   });
+
+  test('avisosOrcamento gravado pelo servidor não impede o cliente de salvar nome e fuso', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), {
+      email: ANA.email, criado: '2026-08-19T00:00:00.000Z', avisosOrcamento: { 'o1|total': 'perto' },
+    }));
+    await assertSucceeds(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { email: ANA.email, nome: 'Ana' }));
+    await assertSucceeds(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { tz: 'America/Manaus' }));
+  });
+
+  test('cliente NÃO grava avisosOrcamento', async () => {
+    await semeia(db => setDoc(doc(db, 'perfis', ANA.uid), {
+      email: ANA.email, criado: '2026-08-19T00:00:00.000Z',
+    }));
+    await assertFails(updateDoc(doc(comoAna(), 'perfis', ANA.uid), { avisosOrcamento: {} }));
+  });
 });
 
 describe('perfis/{uid} — nome e origem', () => {

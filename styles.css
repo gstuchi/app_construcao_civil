@@ -781,6 +781,41 @@ body .layout-45{font-size:30px}
 .sp-data.layout-5{animation-delay:2.1s}
 .sp-data.layout-6{animation-delay:3.4s}
 
+/* ===== orçamento previsto × real =====
+   Verde-marca abaixo de 90%, âmbar daí pra cima. Nunca vermelho (PRODUCT.md). */
+  .orc-card .orc-topo{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .orc-rotulo{font-size:14px;color:var(--muted);font-weight:650}
+  .orc-pill{font-size:12.5px;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--green-soft);color:var(--green);white-space:nowrap}
+  .orc-pill.alerta{background:var(--amber-soft);color:var(--amber)}
+  .orc-num{font-size:28px;font-weight:750;letter-spacing:-.02em;line-height:1.15;margin-top:6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .orc-num small{font-size:16px;font-weight:600;letter-spacing:0;color:var(--muted);white-space:nowrap}
+  .orc-barra{height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin:14px 0 10px}
+  .orc-barra i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--accent))}
+  .orc-barra.alerta i{background:var(--amber)}
+  .orc-barra.fina{height:8px;margin:8px 0 0}
+  .orc-barra.mini{height:6px;margin:0;flex:0 0 56px}
+  .orc-rodape{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .orc-rodape b{color:var(--text);font-weight:650}
+  .orc-secao{font-size:15px;font-weight:650;color:var(--muted);margin:4px 4px 8px}
+  .orc-lista{list-style:none}
+  .orc-item{padding:12px 0;border-top:1px solid var(--border)}
+  .orc-item:first-child{border-top:0;padding-top:2px}
+  .orc-item:last-child{padding-bottom:2px}
+  .orc-item-conteudo{display:block;width:100%;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left}
+  button.orc-item-conteudo{cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button.orc-item-conteudo:active{opacity:.6}
+  button.orc-item-conteudo:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:8px}
+  .orc-linha{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .orc-nome{font-size:16px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+  .orc-val{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .orc-val b{color:var(--text);font-weight:650}
+  .orc-frase{font-size:14px;color:var(--muted);margin-top:6px}
+  .orc-frase.alerta{color:var(--amber)}
+  .btn.orc-editar{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-bottom:14px}
+  .orc-mini{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .orc-mini span{min-width:0;overflow-wrap:anywhere}
+  .orc-mini .orc-mini-alerta{color:var(--amber)}
+
 /* ===== conteúdo no padrão iOS (celular) =====
    Painéis e cards viram os grupos "inset grouped" dos apps da Apple (Ajustes, Carteira,
    Saúde): cantos de 14px, sem borda nem sombra, superfície sólida um degrau acima do fundo.

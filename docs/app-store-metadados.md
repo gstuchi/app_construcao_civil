@@ -101,9 +101,13 @@ Derivados de `docs/sdks-fase4.md`. Não chute: label que não bate com o binári
 | Tipo de dado | Coletado | Vinculado à identidade | Rastreamento | Finalidade |
 | --- | --- | --- | --- | --- |
 | Endereço de e-mail | Sim | Sim | Não | Funcionalidade do app (conta e login) |
+| Nome (nome e sobrenome do cadastro) | Sim | Sim | Não | Funcionalidade do app |
 | Conteúdo do usuário (obras, gastos, afazeres) | Sim | Sim | Não | Funcionalidade do app |
 | Identificadores — ID de dispositivo (token FCM) | Sim | Sim | Não | Funcionalidade do app (notificações) |
-| Diagnóstico — dados de falha | Sim | Não | Não | Diagnóstico (Sentry, sem mensagem livre, sem dado de obra, IP substituído por 0.0.0.0) |
+| Diagnóstico — dados de falha | Sim | Não | Não | Funcionalidade do app (Sentry, sem mensagem livre, sem dado de obra, IP substituído por 0.0.0.0) |
+| Outros dados — como conheceu o Custta | Sim | Sim | Não | Análise (entender por quais canais o app é conhecido) |
+
+O App Store Connect não tem finalidade "Diagnóstico": dado de falha usado para corrigir erro entra em **Funcionalidade do app**. A mesma tabela está declarada em `ios/App/App/PrivacyInfo.xcprivacy`; mudou uma, muda a outra (o teste `tests/capacitor.test.cjs` confere).
 
 Nada é usado para publicidade ou rastreamento entre apps, então a resposta sobre App Tracking Transparency é **não**.
 

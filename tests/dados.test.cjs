@@ -36,6 +36,8 @@ test('orçamento total válido: número positivo, texto numérico vira número, 
   assert.deepEqual(o.orcamento, { modo:'total', total:800000, futuro:1 });
   const [semModo] = normaliza({ obras:[obraBase({ orcamento:{ total:5 } })] }).obras;
   assert.deepEqual(semModo.orcamento, { modo:'total', total:5 });
+  const [modoInvalido] = normaliza({ obras:[obraBase({ orcamento:{ modo:'xyz', total:5 } })] }).obras;
+  assert.deepEqual(modoInvalido.orcamento, { modo:'total', total:5 });
 });
 test('orçamento por tópico: só ids de texto até 80 e valores positivos, no máximo 100', () => {
   const topicos = { fundacao:90000, estrutura:'250000', lixo:-3, zero:0, nan:'x', ['x'.repeat(81)]:10, c_1:5 };

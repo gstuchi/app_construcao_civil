@@ -1624,6 +1624,8 @@ function renderAjustes(){
     del.onclick = async()=>{
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
       if(emUso){ await OBRA_CONFIRM.avisar('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
+      const noOrcamento = db.obras.some(o=>o.orcamento && o.orcamento.modo==='topicos' && o.orcamento.topicos && o.orcamento.topicos[t.id]>0);
+      if(noOrcamento){ await OBRA_CONFIRM.avisar('Este tópico está no orçamento de uma obra. Tire o valor dele no orçamento antes de apagar.'); return; }
       if(await OBRA_CONFIRM.perguntar(`Remover o tópico “${t.nm}”?`, { confirmar:'Remover' })){
         db.config.topicosCustom = db.config.topicosCustom.filter(x=>x.id!==t.id);
         save(); renderAll();

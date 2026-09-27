@@ -191,6 +191,21 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
         if(width===393) await page.screenshot({path:path.join(os.tmpdir(),`custta-orc-obra-${light?'claro':'escuro'}.png`),fullPage:true});
       }
     }
+    // Apagar tópico próprio que está no orçamento de uma obra: avisa e não apaga
+    await page.evaluate(()=>{
+      db=normaliza({obras:structuredClone(window.OBRAS_TESTE),config:{taxaMensal:1,topicosCustom:[{id:'c_portao',nm:'Portão',ic:'etiqueta'}]}});
+      const oa=obraById('a');
+      oa.orcamento={modo:'topicos',topicos:{...oa.orcamento.topicos,c_portao:5000}};
+      showView('ajustes');renderAjustes();
+    });
+    const liPortao=page.locator('#ajTopicos li').filter({hasText:'Portão'});
+    await liPortao.locator('.li-del').evaluate(b=>b.click());
+    assert.match(await page.locator('dialog[open]').textContent(),
+      /Este tópico está no orçamento de uma obra\. Tire o valor dele no orçamento antes de apagar\./);
+    await page.locator('dialog[open] button',{hasText:'Entendi'}).click();
+    assert.deepEqual(await page.evaluate(()=>db.config.topicosCustom.map(t=>t.id)),['c_portao']);
+    await page.evaluate(()=>{db=normaliza({obras:structuredClone(window.OBRAS_TESTE),config:{taxaMensal:1,topicosCustom:[]}});showView('inicio');renderAll();});
+
     assert.deepEqual(await page.evaluate(()=>errosOrc),[]);
     await ctx.close();
 

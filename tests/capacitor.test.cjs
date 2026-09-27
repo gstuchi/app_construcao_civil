@@ -82,3 +82,28 @@ test('Info.plist exige arm64, não armv7', ()=>{
   const caps = plist.match(/<key>UIRequiredDeviceCapabilities<\/key>\s*<array>([\s\S]*?)<\/array>/)[1];
   assert.deepEqual([...caps.matchAll(/<string>([^<]+)<\/string>/g)].map(m=>m[1]), ['arm64']);
 });
+
+test('manifesto de privacidade empacotado e igual aos labels da loja', ()=>{
+  const pbx = ler('ios/App/App.xcodeproj/project.pbxproj');
+  const recursos = pbx.match(/isa = PBXResourcesBuildPhase;[\s\S]*?files = \(([\s\S]*?)\);/)[1];
+  assert.ok(recursos.includes('PrivacyInfo.xcprivacy in Resources'), 'manifesto fora da fase Copy Bundle Resources');
+
+  const xml = ler('ios/App/App/PrivacyInfo.xcprivacy');
+  assert.match(xml, /<key>NSPrivacyTracking<\/key>\s*<false\/>/);
+  // Tipo → [vinculado, finalidade], na ordem da tabela de docs/app-store-metadados.md.
+  const tipos = [...xml.matchAll(/<string>NSPrivacyCollectedDataType(\w+)<\/string>\s*<key>NSPrivacyCollectedDataTypeLinked<\/key>\s*<(true|false)\/>\s*<key>NSPrivacyCollectedDataTypeTracking<\/key>\s*<false\/>\s*<key>NSPrivacyCollectedDataTypePurposes<\/key>\s*<array>\s*<string>NSPrivacyCollectedDataTypePurpose(\w+)<\/string>\s*<\/array>/g)]
+    .map(m => [m[1], m[2] === 'true', m[3]]);
+  assert.deepEqual(tipos, [
+    ['EmailAddress', true, 'AppFunctionality'],
+    ['Name', true, 'AppFunctionality'],
+    ['OtherUserContent', true, 'AppFunctionality'],
+    ['DeviceID', true, 'AppFunctionality'],
+    ['CrashData', false, 'AppFunctionality'],
+    ['OtherDataTypes', true, 'Analytics'],
+  ]);
+  const labels = ler('docs/app-store-metadados.md').split('## App Privacy labels')[1].split('\n## ')[0];
+  assert.equal(labels.match(/^\| [^-|][^|]* \| Sim \|/gm).length, tipos.length, 'tabela de labels e manifesto com quantidades diferentes');
+
+  // IONFilesystemLib (via @capacitor/filesystem) lê data de arquivo e não traz manifesto próprio.
+  assert.match(xml, /NSPrivacyAccessedAPICategoryFileTimestamp<\/string>\s*<key>NSPrivacyAccessedAPITypeReasons<\/key>\s*<array>\s*<string>C617\.1<\/string>/);
+});

@@ -1722,7 +1722,82 @@ function toast(msg, tipo){
 backdrop.onclick = e=>{ if(e.target===backdrop) closeSheet(); };
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classList.contains('show')) closeSheet(); });
 
-function formOrcamento(obraId){ /* folha na Task 6 */ }
+/* Folha do orçamento: só o total, ou valor por tópico (fixos e próprios).
+   Grava só o modo ativo; salvar tudo vazio tira o orçamento da obra. */
+function formOrcamento(obraId){
+  const o = obraById(obraId);
+  if(!o) return;
+  const atual = o.orcamento || null;
+  let modo = atual && atual.modo === 'topicos' ? 'topicos' : 'total';
+  const valTop = (atual && atual.modo === 'topicos' && atual.topicos) || {};
+  const campos = topicos().map(t => `
+      <label class="orc-campo"><span>${escapeHtml(t.nm)}</span>
+        <input data-top="${escapeHtml(t.id)}" inputmode="decimal" placeholder="sem valor" autocomplete="off" value="${valTop[t.id] ? OBRA_CALC.numParaCampo(valTop[t.id]) : ''}"></label>`).join('');
+  openSheet(`
+    <h3>Orçamento da obra</h3>
+    <div class="seg" role="group" aria-label="Tipo de orçamento">
+      <button type="button" data-modo="total">Só o total</button>
+      <button type="button" data-modo="topicos">Por tópico</button>
+    </div>
+    <div class="field" id="orcTotalWrap"><label for="orcTotal">Orçamento total</label>
+      <div class="money"><b>R$</b><input id="orcTotal" inputmode="decimal" placeholder="0,00" autocomplete="off" value="${atual && atual.modo === 'total' ? OBRA_CALC.numParaCampo(atual.total) : ''}"></div></div>
+    <div id="orcTopWrap">
+      <div class="orc-campos">${campos}</div>
+      <div class="orc-soma"><span>Total</span><b id="orcSoma" aria-live="polite"></b></div>
+      <p class="orc-dica">Tópico sem valor não entra na comparação.</p>
+    </div>
+    ${atual ? '<button type="button" class="btn ghost orc-tirar" id="orcTirar">Tirar orçamento</button>' : ''}
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cCancel">Cancelar</button>
+      <button class="btn primary" id="cSave">Salvar</button>
+    </div>`);
+  const entradas = [...sheet.querySelectorAll('#orcTopWrap input[data-top]')];
+  const somaTopicos = () => entradas.reduce((s, i) => s + Math.max(0, parseNum(i.value)), 0);
+  const pintaSoma = () => {
+    $('#orcSoma').textContent = money(somaTopicos());
+  };
+  const aplicaModo = m => {
+    modo = m;
+    sheet.querySelectorAll('.seg button').forEach(b => {
+      const on = b.dataset.modo === m;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    $('#orcTotalWrap').classList.toggle('hidden', m !== 'total');
+    $('#orcTopWrap').classList.toggle('hidden', m !== 'topicos');
+    // trocar pra "só o total" com o campo vazio não pode apagar o previsto por tópico
+    // sem o construtor ver o número: pré-preenche com a soma atual (salvar ainda grava só o modo ativo).
+    if(m === 'total' && !$('#orcTotal').value){
+      const soma = somaTopicos();
+      if(soma > 0) $('#orcTotal').value = OBRA_CALC.numParaCampo(soma);
+    }
+  };
+  sheet.querySelectorAll('.seg button').forEach(b => { b.onclick = () => aplicaModo(b.dataset.modo); });
+  maskMoney('#orcTotal');
+  entradas.forEach(i => { maskMoney(i); i.addEventListener('input', pintaSoma); });
+  aplicaModo(modo);
+  pintaSoma();
+  const aplica = novo => {
+    const oo = obraById(obraId);
+    if(oo){ if(novo) oo.orcamento = novo; else delete oo.orcamento; save(); }
+    closeSheet(); renderAll();
+  };
+  $('#cCancel').onclick = closeSheet;
+  $('#cSave').onclick = () => {
+    if(modo === 'total'){
+      const total = parseNum($('#orcTotal').value);
+      aplica(total > 0 ? { modo:'total', total } : null);
+      return;
+    }
+    const tops = {};
+    entradas.forEach(i => { const v = parseNum(i.value); if(v > 0) tops[i.dataset.top] = v; });
+    aplica(Object.keys(tops).length ? { modo:'topicos', topicos:tops } : null);
+  };
+  const tirar = $('#orcTirar');
+  if(tirar) tirar.onclick = async () => {
+    if(await OBRA_CONFIRM.perguntar('Tirar o orçamento desta obra? Os gastos continuam como estão.', { confirmar:'Tirar orçamento' })) aplica(null);
+  };
+}
 
 function formNovaObra(){
   openSheet(`
@@ -1730,6 +1805,7 @@ function formNovaObra(){
     <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
     <div class="field"><label>Começou em</label><input id="fData" type="date" value="${todayISO()}"></div>
     <div class="field"><label>Valor estimado de venda (opcional)</label><div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
+    <div class="field"><label for="fOrc">Orçamento total (opcional)</label><div class="money"><b>R$</b><input id="fOrc" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
     <div class="field"><label for="fArea">Área construída em m²</label><input id="fArea" inputmode="decimal" placeholder="Ex: 320" autocomplete="off" required aria-describedby="fAreaErro">
       <span class="field-error hidden" id="fAreaErro">Informe área construída maior que zero.</span></div>
     <div class="sheet-actions">
@@ -1737,6 +1813,7 @@ function formNovaObra(){
       <button class="btn primary" id="cSave">Criar obra</button>
     </div>`);
   maskMoney('#fEst');
+  maskMoney('#fOrc');
   $('#fNome').focus();
   $('#fArea').addEventListener('input',()=>{
     $('#fAreaErro').classList.add('hidden');
@@ -1762,6 +1839,8 @@ function formNovaObra(){
       areaM2: area,
       gastos: [],
     };
+    const orcTotal = parseNum($('#fOrc').value);
+    if(orcTotal > 0) o.orcamento = { modo:'total', total:orcTotal };
     db.obras.push(o); save(); closeSheet(); renderAll(); openObra(o.id);
   };
 }

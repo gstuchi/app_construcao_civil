@@ -815,6 +815,20 @@ body .layout-45{font-size:30px}
   .orc-mini{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .orc-mini span{min-width:0;overflow-wrap:anywhere}
   .orc-mini .orc-mini-alerta{color:var(--amber)}
+  .sheet .seg button{min-height:44px;font-size:15px}
+  .orc-campos{background:var(--surface-2);border-radius:14px;padding:4px 14px}
+  .orc-campo{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--border)}
+  .orc-campo:first-child{border-top:0}
+  .orc-campo>span{font-size:16px;min-width:0;overflow-wrap:anywhere}
+  .orc-campo input{flex:0 0 150px;width:150px;min-width:0;text-align:right;background:var(--surface-solid);border:1px solid transparent;color:var(--text);border-radius:11px;padding:11px 12px;font-size:16px;font-family:inherit;font-variant-numeric:tabular-nums;outline:none}
+  .orc-campo input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .orc-campo input::placeholder{color:var(--muted);opacity:1}
+  .orc-soma{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px;border-radius:14px;background:var(--brand-soft);margin-top:12px}
+  .orc-soma span{font-size:15px;font-weight:650}
+  .orc-soma b{font-size:24px;font-weight:750;font-variant-numeric:tabular-nums}
+  .orc-dica{font-size:13.5px;color:var(--muted);text-align:center;margin:8px 0 12px}
+  .btn.orc-tirar{width:100%;margin:4px 0 6px;color:var(--red)}
+  @media screen and (max-width:899px){ html body .btn.ghost.orc-tirar{background:var(--surface-2);color:var(--red)} }
 
 /* ===== conteúdo no padrão iOS (celular) =====
    Painéis e cards viram os grupos "inset grouped" dos apps da Apple (Ajustes, Carteira,

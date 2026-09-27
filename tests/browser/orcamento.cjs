@@ -31,6 +31,7 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
   const page=await ctx.newPage();
   await page.goto('http://localhost:8123');
   await page.evaluate(obras=>{document.getElementById('auth')?.classList.add('hidden');document.body.classList.remove('locked');
+    window.OBRAS_TESTE=structuredClone(obras);
     db=normaliza({obras,config:{taxaMensal:1,topicosCustom:[]}});renderAll();},OBRAS);
   return {ctx,page};
 }
@@ -86,6 +87,89 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     await page.evaluate(()=>openObra('c'));
     assert.equal(await page.locator('#oOrc').count(),0);
     assert.equal(await page.locator('#oOrcDefinir').count(),1);
+
+    // Folha: definir só o total numa obra sem orçamento
+    await page.locator('#oOrcDefinir').click();
+    assert.equal((await page.locator('#sheet .seg button.on').textContent()).trim(),'Só o total');
+    assert.equal(await page.locator('#orcTopWrap').isHidden(),true);
+    await page.locator('#orcTotal').fill('500000');
+    assert.equal(await page.locator('#orcTotal').inputValue(),'500.000');
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>obraById('c').orcamento),{modo:'total',total:500000});
+    assert.equal(await page.locator('#oOrc').count(),1);
+
+    // Folha por tópico: abre no modo salvo, soma ao vivo, salva só valores > 0
+    await page.evaluate(()=>{db.config.topicosCustom=[{id:'c_portao',nm:'Portão',ic:'etiqueta'}];openObra('a');});
+    await page.locator('#oOrcEditar').click();
+    assert.equal((await page.locator('#sheet .seg button.on').textContent()).trim(),'Por tópico');
+    assert.equal(await page.locator('#sheet .seg button.on').getAttribute('aria-pressed'),'true');
+    const somaTxt=async()=>(await page.locator('#orcSoma').textContent()).replace(/\s/g,' ');
+    assert.equal(await somaTxt(),'R$ 800.000,00');
+    assert.match(await page.locator('#orcTopWrap').textContent(),/Tópico sem valor não entra na comparação\./);
+    const campo=id=>page.locator(`#orcTopWrap input[data-top="${id}"]`);
+    assert.equal(await campo('fundacao').inputValue(),'90.000,00');
+    assert.equal(await campo('hidraulica').getAttribute('placeholder'),'sem valor');
+    assert.equal(await campo('c_portao').count(),1,'tópico próprio também tem campo');
+    await campo('fundacao').fill('100000');
+    assert.equal(await somaTxt(),'R$ 810.000,00');
+    await campo('eletrica').fill('');
+    assert.equal(await somaTxt(),'R$ 710.000,00');
+    await campo('c_portao').fill('5.000,50');
+    for(const fonte of await page.locator('#sheet input').evaluateAll(els=>els.map(e=>parseFloat(getComputedStyle(e).fontSize))))
+      assert.ok(fonte>=16,'campo com fonte < 16px dá zoom no iOS');
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>obraById('a').orcamento),
+      {modo:'topicos',topicos:{terreno:180000,fundacao:100000,estrutura:250000,acabamento:180000,c_portao:5000.5}});
+
+    // Trocar pra "Só o total" e salvar vazio tira o orçamento
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
+    assert.equal(await page.locator('#orcTotal').isVisible(),true);
+    // trocar de modo não pode apagar o previsto por tópico sem o construtor ver o número
+    assert.equal(await page.locator('#orcTotal').inputValue(),'715.000,50');
+    await page.locator('#orcTotal').fill('');
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(()=>'orcamento' in obraById('a')),false);
+    assert.equal(await page.locator('#oOrcDefinir').count(),1);
+
+    // Tirar orçamento pede confirmação
+    await page.evaluate(()=>openObra('b'));
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#orcTirar').click();
+    await page.locator('dialog[open] button',{hasText:'Tirar orçamento'}).click();
+    await page.waitForFunction(()=>!('orcamento' in obraById('b')));
+    assert.equal(await page.locator('#oOrc').count(),0);
+
+    // Nova obra com orçamento total
+    await page.evaluate(()=>formNovaObra());
+    await page.locator('#fNome').fill('Casa Nova');
+    await page.locator('#fArea').fill('200');
+    await page.locator('#fOrc').fill('300000');
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>db.obras.find(o=>o.nome==='Casa Nova').orcamento),{modo:'total',total:300000});
+    assert.equal(await page.locator('#oOrc').count(),1);
+    // Nova obra sem orçamento: nada muda
+    await page.evaluate(()=>formNovaObra());
+    await page.locator('#fNome').fill('Casa Sem');
+    await page.locator('#fArea').fill('100');
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(()=>'orcamento' in db.obras.find(o=>o.nome==='Casa Sem')),false);
+
+    // Folha a 320px: nada vaza na horizontal
+    await page.setViewportSize({width:320,height:640});
+    await page.evaluate(()=>{db=normaliza({obras:structuredClone(window.OBRAS_TESTE),config:{taxaMensal:1,topicosCustom:[]}});openObra('a');formOrcamento('a');});
+    assert.ok(await page.locator('#sheet').evaluate(e=>e.scrollWidth<=e.clientWidth),'folha não rola na horizontal');
+    await page.waitForTimeout(400); // espera a animação "up" (.28s) do sheet sentar antes de printar
+    await page.screenshot({path:path.join(os.tmpdir(),'custta-orc-folha-320.png')});
+    await page.evaluate(()=>closeSheet());
+    await page.setViewportSize({width:393,height:852});
+    await page.evaluate(()=>{formOrcamento('a');});
+    await page.waitForTimeout(400);
+    await page.screenshot({path:path.join(os.tmpdir(),'custta-orc-folha.png')});
+    await page.evaluate(()=>{ const s=document.querySelector('#sheet'); s.scrollTop=1e6; });
+    await page.waitForTimeout(200);
+    await page.screenshot({path:path.join(os.tmpdir(),'custta-orc-folha-fim.png')});
+    await page.evaluate(()=>{closeSheet();db=normaliza({obras:structuredClone(window.OBRAS_TESTE),config:{taxaMensal:1,topicosCustom:[]}});renderAll();});
 
     // Larguras e temas: sem rolagem horizontal
     for(const width of [320,393,430,768,1440]){

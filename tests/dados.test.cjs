@@ -21,3 +21,30 @@ test('metadados de parcela são validados mesmo sem grupoId',()=>{
   const d=normaliza({obras:[{id:'o',dataInicio:'2026-01-01',gastos:[{id:'g',data:'2026-01-01',valor:1,parcela:{n:'<img src=x onerror=alert(1)>',de:2}}]}]});
   assert.equal(d.obras[0].gastos[0].parcela,undefined);
 });
+const obraBase = extra => ({ id:'o', dataInicio:'2026-01-01', gastos:[], ...extra });
+test('obra sem orçamento continua sem a chave e normaliza é idempotente', () => {
+  const d = normaliza({ obras:[obraBase({})] });
+  assert.equal('orcamento' in d.obras[0], false);
+  assert.deepEqual(normaliza(d), d);
+  for(const lixo of [null, 0, 'x', [], { modo:'total' }, { modo:'total', total:-1 }, { modo:'total', total:0 },
+    { modo:'topicos', topicos:{} }, { modo:'topicos', topicos:{ fundacao:0, '':5 } }, { modo:'topicos', topicos:[] }]){
+    assert.equal('orcamento' in normaliza({ obras:[obraBase({ orcamento:lixo })] }).obras[0], false, JSON.stringify(lixo));
+  }
+});
+test('orçamento total válido: número positivo, texto numérico vira número, extras preservados', () => {
+  const [o] = normaliza({ obras:[obraBase({ orcamento:{ modo:'total', total:'800000', futuro:1 } })] }).obras;
+  assert.deepEqual(o.orcamento, { modo:'total', total:800000, futuro:1 });
+  const [semModo] = normaliza({ obras:[obraBase({ orcamento:{ total:5 } })] }).obras;
+  assert.deepEqual(semModo.orcamento, { modo:'total', total:5 });
+});
+test('orçamento por tópico: só ids de texto até 80 e valores positivos, no máximo 100', () => {
+  const topicos = { fundacao:90000, estrutura:'250000', lixo:-3, zero:0, nan:'x', ['x'.repeat(81)]:10, c_1:5 };
+  const [o] = normaliza({ obras:[obraBase({ orcamento:{ modo:'topicos', topicos, total:999 } })] }).obras;
+  assert.deepEqual(o.orcamento.topicos, { fundacao:90000, estrutura:250000, c_1:5 });
+  assert.equal(o.orcamento.modo, 'topicos');
+  const muitos = Object.fromEntries(Array.from({ length:150 }, (_, i) => ['t' + i, i + 1]));
+  const [m] = normaliza({ obras:[obraBase({ orcamento:{ modo:'topicos', topicos:muitos } })] }).obras;
+  assert.equal(Object.keys(m.orcamento.topicos).length, 100);
+  const d = normaliza({ obras:[obraBase({ orcamento:{ modo:'topicos', topicos } })] });
+  assert.deepEqual(normaliza(d), d);
+});

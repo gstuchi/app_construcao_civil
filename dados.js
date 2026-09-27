@@ -14,6 +14,30 @@
     return Number.isFinite(d.getTime()) && d.toISOString().slice(0,10) === v;
   };
   const lista = (v, fn) => Array.isArray(v) ? v.filter(objeto).map(fn).filter(Boolean) : [];
+  /* Orçamento previsto (opcional): só o total, ou valor por tópico. Inválido ou
+     vazio some — a obra sem orçamento fica exatamente como era, sem chave nova. */
+  const MAX_TOPICOS_ORC = 100;
+  function orcamento(v){
+    if(!objeto(v)) return null;
+    const maior = x => numero(x) !== null && numero(x) > 0 ? numero(x) : null;
+    if(v.modo === 'topicos'){
+      const origem = objeto(v.topicos) ? v.topicos : {};
+      const topicos = {};
+      for(const [id, valor] of Object.entries(origem)){
+        if(Object.keys(topicos).length >= MAX_TOPICOS_ORC) break;
+        if(id.trim() && id.length <= LIMITES.topico && maior(valor) !== null) topicos[id] = maior(valor);
+      }
+      if(!Object.keys(topicos).length) return null;
+      const r = {...v, modo:'topicos', topicos};
+      delete r.total;
+      return r;
+    }
+    const total = maior(v.total);
+    if(total === null) return null;
+    const r = {...v, modo:'total', total};
+    delete r.topicos;
+    return r;
+  }
   function gasto(g){
     if(!texto(g.id) || !data(g.data) || positivo(g.valor) === null) return null;
     const r = {...g, id:texto(g.id), data:g.data, valor:positivo(g.valor), topico:texto(g.topico)||'outros', descricao:texto(g.descricao), pagamento:texto(g.pagamento)||'pix'};
@@ -27,10 +51,13 @@
   function obra(o){
     if(!texto(o.id) || !data(o.dataInicio)) return null;
     const venda = objeto(o.venda) && data(o.venda.data) && positivo(o.venda.valor)!==null ? {...o.venda,valor:positivo(o.venda.valor)} : null;
-    return {...o, id:texto(o.id), nome:texto(o.nome)||'Obra sem nome',
+    const r = {...o, id:texto(o.id), nome:texto(o.nome)||'Obra sem nome',
       fase:['construcao','pronta','vendida'].includes(o.fase) && (o.fase!=='vendida'||venda) ? o.fase : 'construcao',
       venda, valorEstimadoVenda:positivo(o.valorEstimadoVenda), areaM2:positivo(o.areaM2),
       gastos:lista(o.gastos,gasto), afazeres:lista(o.afazeres,a=>texto(a.id)?{...a,id:texto(a.id),texto:texto(a.texto),feito:a.feito===true}:null)};
+    const orc = orcamento(o.orcamento);
+    if(orc) r.orcamento = orc; else delete r.orcamento;
+    return r;
   }
   function normaliza(d){
     const origem=objeto(d)?d:{}, config=objeto(origem.config)?origem.config:{};

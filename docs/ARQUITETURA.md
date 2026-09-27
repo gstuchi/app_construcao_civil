@@ -40,7 +40,8 @@ Formato de uma obra:
 
 ```js
 { id, nome, fase: 'construcao' | 'pronta' | 'vendida', dataInicio,
-  valorEstimadoVenda, areaM2, gastos: [], afazeres?: [] }
+  valorEstimadoVenda, areaM2, gastos: [], afazeres?: [],
+  orcamento?: {modo:'total', total} | {modo:'topicos', topicos:{idDoTópico: valor}} }
 ```
 
 Formato de um gasto: `{ id, valor, topico, descricao, data, pagamento }`. Uma

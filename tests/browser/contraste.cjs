@@ -1,5 +1,6 @@
-/* Retratos da pill de sincronização nos 4 combos (tema × viewport) e contraste
-   WCAG do texto. Precisa do servidor de tests/browser/servidor.cjs no ar.
+/* Retratos da pill de sincronização nos 8 combos (tema × cor × viewport) e contraste
+   WCAG do texto — a pill tem fundo de vidro translúcido, então varia com a cor do skin
+   (esmeralda/azul) além do tema. Precisa do servidor de tests/browser/servidor.cjs no ar.
    Uso: NODE_PATH=<cache do npx com playwright> node tests/browser/contraste.cjs [pasta] */
 const { chromium } = require('playwright');
 const SAIDA = process.argv[2] || '.';
@@ -37,37 +38,40 @@ const minimoContraste = (fontSizePx, fontWeight) => {
   const browser = await chromium.launch();
   let falhas = 0;
   for(const tema of ['escuro', 'claro']){
-    for(const [nome, vp] of [['mobile', { width:414, height:896 }], ['desktop', { width:1440, height:900 }]]){
-      const page = await browser.newPage({ viewport: vp });
-      await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
-      await page.addInitScript(FAKE);
-      await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
-      await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
-      await page.goto('http://localhost:8123/index.html');
-      await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
-        document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
-      /* a pílula agora tem fundo de vidro translúcido: compor sobre o --bg do body antes de medir */
-      const corBody = rgba(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
+    for(const skin of ['esmeralda', 'azul']){
+      for(const [nome, vp] of [['mobile', { width:414, height:896 }], ['desktop', { width:1440, height:900 }]]){
+        const page = await browser.newPage({ viewport: vp });
+        await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
+        await page.addInitScript(FAKE);
+        await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
+        if(skin === 'azul') await page.addInitScript(() => localStorage.setItem('mo_skin', 'azul'));
+        await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
+        await page.goto('http://localhost:8123/index.html');
+        await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
+          document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
+        /* a pílula agora tem fundo de vidro translúcido: compor sobre o --bg do body antes de medir */
+        const corBody = rgba(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
 
-      for(const estado of ['salvando', 'offline', 'erro']){
-        await page.evaluate(e => window.__emite(e, 'permission-denied'), estado);
-        await page.waitForTimeout(120);
-        const m = await page.evaluate(() => {
-          const p = document.getElementById('syncPill'), cs = getComputedStyle(p);
-          const r = p.getBoundingClientRect();
-          let fundo = cs.backgroundColor, no = p;
-          while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo) && no.parentElement){ no = no.parentElement; fundo = getComputedStyle(no).backgroundColor; }
-          return { cor: cs.color, fundo, visivel: r.width > 0 && r.height > 0 && cs.visibility === 'visible', texto: p.textContent.trim() };
-        });
-        const f = rgba(m.fundo);
-        const c = contraste(rgb(m.cor), f[3] < 1 ? misturar(f, corBody) : f.slice(0,3));
-        const ok = m.visivel && c >= 4.5;
-        if(!ok) falhas++;
-        console.log(`${ok?'ok   ':'FALHA'} - ${tema}/${nome}/${estado}: contraste ${c.toFixed(2)} · "${m.texto}" · ${m.cor} sobre ${m.fundo}`);
+        for(const estado of ['salvando', 'offline', 'erro']){
+          await page.evaluate(e => window.__emite(e, 'permission-denied'), estado);
+          await page.waitForTimeout(120);
+          const m = await page.evaluate(() => {
+            const p = document.getElementById('syncPill'), cs = getComputedStyle(p);
+            const r = p.getBoundingClientRect();
+            let fundo = cs.backgroundColor, no = p;
+            while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo) && no.parentElement){ no = no.parentElement; fundo = getComputedStyle(no).backgroundColor; }
+            return { cor: cs.color, fundo, visivel: r.width > 0 && r.height > 0 && cs.visibility === 'visible', texto: p.textContent.trim() };
+          });
+          const f = rgba(m.fundo);
+          const c = contraste(rgb(m.cor), f[3] < 1 ? misturar(f, corBody) : f.slice(0,3));
+          const ok = m.visivel && c >= 4.5;
+          if(!ok) falhas++;
+          console.log(`${ok?'ok   ':'FALHA'} - ${tema}/${skin}/${nome}/${estado}: contraste ${c.toFixed(2)} · "${m.texto}" · ${m.cor} sobre ${m.fundo}`);
+        }
+        await page.evaluate(() => window.__emite('erro', 'permission-denied'));
+        await page.screenshot({ path: `${SAIDA}/pill-${tema}-${skin}-${nome}.png`, clip: { x:0, y:0, width: vp.width, height: 120 } });
+        await page.close();
       }
-      await page.evaluate(() => window.__emite('erro', 'permission-denied'));
-      await page.screenshot({ path: `${SAIDA}/pill-${tema}-${nome}.png`, clip: { x:0, y:0, width: vp.width, height: 120 } });
-      await page.close();
     }
   }
   /* contraste dos 4 combos tema×skin a 390x844 (achados da revisão final): primário, tingido,

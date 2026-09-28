@@ -13,7 +13,7 @@ canteiro — `obra`, `gasto`, `topico`, `fase`, `corrigido`, `afazer`.
 
 ## Commits
 
-- Assunto em minúsculas, sem acento, no formato `tipo: o que mudou`.
+- Assunto em minúsculas, com acentos, no formato `tipo: o que mudou`; corpo em prosa quando a mudança não é trivial.
 - Tipos em uso: `feat`, `fix`, `docs`, `test`, `chore`, `refactor`.
 - **Um commit por funcionalidade.** Nunca junte duas implementações
   independentes no mesmo commit.

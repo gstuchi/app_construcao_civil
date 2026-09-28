@@ -75,3 +75,17 @@ test('toque encolhe na hora e volta com mola; troca de tela com mola', ()=>{
     assert.ok(regras.some(r => new RegExp(`animation:${k} var\\(--mola-dur\\) var\\(--mola\\)`).test(r.decl)), `${k} sem mola`);
   }
 });
+
+/* Vidro só na camada de navegação (spec, "Onde há vidro"): qualquer backdrop-filter que não
+   seja "none" precisa estar num destes seletores. */
+const PERMITIDOS = [
+  /^nav\.tabs$/, /^\.fab$/, /^header\.top::before$/, /^\.nav-voltar$/, /^header\.top \.sair$/, /^header\.top \.sync-pill$/,
+  /^\.sheet$/, /^\.conta-dialog$/, /^\.toast$/, /^\.valor-tela$/, /^\.auth-card$/, /^\.side$/, /^\.tgl-tema:active \.bola$/,
+];
+test('backdrop-filter só nos seletores da camada de navegação', ()=>{
+  const fora = regras
+    .filter(r => /(^|;|\s)backdrop-filter:\s*(?!none)/.test(r.decl))
+    .flatMap(r => r.sel.split(',').map(s => s.trim()))
+    .filter(s => !PERMITIDOS.some(p => p.test(s)));
+  assert.deepEqual(fora, [], 'vidro em conteúdo ou vidro sobre vidro');
+});

@@ -61,6 +61,13 @@ test('botões de ação em cápsula (iOS 26)', ()=>{
   assert.ok(regras.some(r => r.sel === '.btn' && /border-radius:999px/.test(r.decl)), '.btn base sem cápsula');
 });
 
+test('login sem cores soltas: a moldura cinza fixa saiu', ()=>{
+  const card = regras.find(r => r.sel === '.auth-card');
+  assert.ok(card);
+  assert.doesNotMatch(card.decl, /#6C6C6C|#222\b/i);
+  assert.match(card.decl, /var\(--vidro-folha\)/);
+});
+
 test('toque encolhe na hora e volta com mola; troca de tela com mola', ()=>{
   assert.ok(regras.some(r => r.sel === '.btn' && /transition:transform var\(--mola-dur\) var\(--mola\)/.test(r.decl)), '.btn sem mola de volta');
   assert.ok(regras.some(r => r.sel === '.btn:active' && /scale\(\.97\)/.test(r.decl) && /\.1s ease-out/.test(r.decl)), '.btn:active sem resposta imediata');

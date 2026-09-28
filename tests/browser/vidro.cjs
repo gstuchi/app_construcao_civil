@@ -349,6 +349,15 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- login ---- */
+    await teste('cartão do login é vidro sobre o globo', async ()=>{
+      const { ctx, page } = await abrir(browser, { logado:false });
+      assert.match(await estilo(page, '.auth-card', 'backdropFilter'), /blur\(40px\)/);
+      assert.equal(await estilo(page, '.auth-card', 'borderTopWidth'), '0px');
+      assert.equal(await estilo(page, '.auth-inner', 'backgroundColor'), 'rgba(0, 0, 0, 0)');
+      await ctx.close();
+    });
+
     /* (as tarefas seguintes acrescentam blocos aqui, antes do fechamento do try) */
   }finally{
     await browser.close();

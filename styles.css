@@ -1,10 +1,12 @@
 
   /* Dark é o padrão; claro é opção (PRODUCT.md) — variáveis do claro em html[data-theme=light] */
+  /* --faint (usado só em ".field .opcional") subiu nos quatro combos pro cartão de login em
+     vidro: sobre --vidro-folha o valor antigo caía a ~3,7:1‑4,0:1, abaixo do mínimo de 4,5:1. */
   :root{
     --bg:#04100C;
     --surface:rgba(12,36,29,.92); --surface-solid:#0C241D; --surface-2:#10322A;
     --line:#1B3D33; --line-strong:#2A5446; --border:#1B3D33;
-    --ink:#EAFFF6; --text:#EAFFF6; --muted:#86AA9A; --faint:#5C7D70;
+    --ink:#EAFFF6; --text:#EAFFF6; --muted:#86AA9A; --faint:#64887A;
     --brand:#14B39A; --brand-600:#0D8577; --brand-700:#0C6350; --brand-900:#0A3F30;
     --brand-soft:#0A3F30; --accent:#3AD17E;
     --profit:#35D68A; --warn:#E0A83A;
@@ -42,7 +44,7 @@
     --bg:#EDF5F1;
     --surface:rgba(255,255,255,.92); --surface-solid:#ffffff; --surface-2:#E2EFE8;
     --line:#C6DCD1; --line-strong:#9FBFB0; --border:#C6DCD1;
-    --ink:#13261E; --text:#13261E; --muted:#4D685C; --faint:#688577;
+    --ink:#13261E; --text:#13261E; --muted:#4D685C; --faint:#5F7A6D;
     --brand:#0B7A68; --brand-600:#096453; --brand-700:#075243; --brand-900:#D6F0E7;
     --brand-soft:#D6F0E7; --accent:#177A4A;
     --profit:#0E7A41; --warn:#8A5A06;
@@ -93,7 +95,7 @@
     --bg:#eef2f9;
     --surface:rgba(255,255,255,.92); --surface-solid:#ffffff; --surface-2:#e7edf7;
     --line:#cdd8e8; --line-strong:#9fb3d4; --border:#cdd8e8;
-    --ink:#16233c; --text:#16233c; --muted:#556685; --faint:#7285a3;
+    --ink:#16233c; --text:#16233c; --muted:#556685; --faint:#617594;
     --brand:#3560cf; --brand-600:#2b4fb0; --brand-700:#223f92; --brand-900:#dde7fb;
     --brand-soft:#dde7fb; --accent:#6d4fc9;
     --profit:#0e7a41; --warn:#8a5a06;
@@ -522,10 +524,13 @@
   /* filho direto só: os spans internos do logotipo (tt e ponto) não podem virar bloco */
   .auth-title h1 > .logotipo{display:block;font-size:46px;line-height:1.12;margin-top:6px}
   .auth-hint{margin-top:14px;font-size:13px;color:var(--muted)}
-  .auth-card{width:100%;max-width:440px;border:4px solid #6C6C6C;background:#222;border-radius:30px;padding:9px;transform-origin:center top;will-change:transform;
-    box-shadow:0 0 #0000004d,0 9px 20px #0000004a,0 37px 37px #00000042,0 84px 50px #00000026,0 149px 60px #0000000a}
-  .auth-card.boost,.auth-title.boost{transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s ease}
-  .auth-inner{background:var(--surface-solid);border-radius:21px;padding:22px 20px 18px}
+  /* cartão de entrada em vidro denso sobre o globo e o brilho (antes: moldura cinza fixa,
+     fora das variáveis de tema) */
+  .auth-card{width:100%;max-width:440px;border:0;border-radius:32px;padding:0;transform-origin:center top;will-change:transform;
+    background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);
+    box-shadow:var(--vidro-brilho),var(--vidro-sombra)}
+  .auth-card.boost,.auth-title.boost{transition:transform var(--mola-dur) var(--mola),opacity .3s ease}
+  .auth-inner{background:transparent;border-radius:32px;padding:26px 22px 20px}
   .auth-spacer{height:52vh}
   .auth-msg{font-size:12.5px;color:var(--red);min-height:18px;margin:-4px 0 8px}
   .linklike{background:none;border:none;color:var(--brand);font-size:13px;cursor:pointer;width:100%;margin-top:10px;text-decoration:underline}

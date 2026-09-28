@@ -56,3 +56,15 @@ test('efeito de borda da barra mora no ::before, não no header (raiz de fundo)'
   const noHeader = regras.filter(r => /^header\.top(\.colapsada)?$/.test(r.sel) && /backdrop-filter:/.test(r.decl));
   assert.deepEqual(noHeader.map(r => r.sel), []);
 });
+
+test('botões de ação em cápsula (iOS 26)', ()=>{
+  assert.ok(regras.some(r => r.sel === '.btn' && /border-radius:999px/.test(r.decl)), '.btn base sem cápsula');
+});
+
+test('toque encolhe na hora e volta com mola; troca de tela com mola', ()=>{
+  assert.ok(regras.some(r => r.sel === '.btn' && /transition:transform var\(--mola-dur\) var\(--mola\)/.test(r.decl)), '.btn sem mola de volta');
+  assert.ok(regras.some(r => r.sel === '.btn:active' && /scale\(\.97\)/.test(r.decl) && /\.1s ease-out/.test(r.decl)), '.btn:active sem resposta imediata');
+  for(const k of ['entra-direita', 'entra-esquerda']){
+    assert.ok(regras.some(r => new RegExp(`animation:${k} var\\(--mola-dur\\) var\\(--mola\\)`).test(r.decl)), `${k} sem mola`);
+  }
+});

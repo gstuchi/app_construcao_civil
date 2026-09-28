@@ -292,6 +292,36 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- controles e conteúdo ---- */
+    await teste('botões e busca em cápsula', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      for(const sel of ['.obra-actions .btn', '.busca input']){
+        const h = (await caixa(page, sel)).height;
+        assert.ok(parseFloat(await estilo(page, sel, 'borderTopLeftRadius')) >= h / 2 - 1, `${sel} não é cápsula`);
+      }
+      await ctx.close();
+    });
+    await teste('chave de tema vira lente de vidro enquanto é apertada', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      await page.evaluate(() => { showView('ajustes'); renderAjustes(); });
+      const b = await caixa(page, '#ajTema');
+      await page.mouse.move(b.left + b.width / 2, b.top + b.height / 2);
+      await page.mouse.down();
+      await page.waitForTimeout(100);
+      assert.match(await estilo(page, '#ajTema .bola', 'backdropFilter'), /blur/);
+      await page.mouse.up();
+      await ctx.close();
+    });
+    await teste('desktop: grupos sem borda nem sombra, opacos', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      await page.evaluate(() => openObra('o1'));
+      assert.equal(await estilo(page, '.panel', 'borderTopWidth'), '0px');
+      assert.equal(await estilo(page, '.panel', 'boxShadow'), 'none');
+      assert.match(await estilo(page, '.panel', 'backgroundColor'), /^rgb\(/);
+      await ctx.close();
+    });
+
     /* (as tarefas seguintes acrescentam blocos aqui, antes do fechamento do try) */
   }finally{
     await browser.close();

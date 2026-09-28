@@ -757,8 +757,9 @@ No texto da lista vazia (linha com `'Nenhuma obra ainda.<br>Toque em “+ Nova o
 - [ ] **Step 5: CSS — botão + de vidro em qualquer largura**
 
 Na regra base `.fab{...}` (seção `/* FAB */`), trocar `background:linear-gradient(140deg,var(--fab-a),var(--fab-b));color:var(--fab-ink);font-size:28px;box-shadow:0 6px 24px var(--fab-shadow);` por
-`background:var(--vidro-tinta);color:var(--vidro-tinta-ink);font-size:30px;-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);box-shadow:var(--vidro-brilho),var(--vidro-sombra);transition:transform .1s ease-out;`
-e acrescentar depois da regra `.fab:active{...}`:
+`background:var(--vidro-tinta);color:var(--vidro-tinta-ink);font-size:30px;-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);box-shadow:var(--vidro-brilho),var(--vidro-sombra);transition:transform var(--mola-dur) var(--mola);`,
+trocar `.fab:active{transform:scale(.94)}` por `.fab:active{transform:scale(.94);transition:transform .1s ease-out}` (encolhe na hora, volta com a mola)
+e acrescentar depois dela:
 
 ```css
   /* materializa ao aparecer (display none → grid dispara a animação); o toque encolhe na hora */
@@ -792,10 +793,10 @@ No bloco `@media screen and (max-width:899px)` das "barras no padrão iOS", **su
     nav.tabs[data-aba="2"]{--aba-i:2}
     nav.tabs[data-aba="-1"]::before{opacity:0}
     nav.tabs button{position:relative;z-index:1;border-radius:calc((var(--abas-h) - 8px) / 2);padding:4px 0 2px;min-height:0;font-size:11px;font-weight:600;gap:2px;
-      transition:transform .1s ease-out}
+      transition:transform var(--mola-dur) var(--mola)}
     nav.tabs button .ti{font-size:24px}
-    /* resposta no toque, não no soltar */
-    nav.tabs button:active{opacity:1;transform:scale(.94)}
+    /* resposta no toque, não no soltar: encolhe em 0,1s e volta com a mola */
+    nav.tabs button:active{opacity:1;transform:scale(.94);transition:transform .1s ease-out}
     /* tinta da aba sobre a lente: a --brand sobre a --brand-soft dá 4,4:1 no escuro; a do chip ligado passa */
     nav.tabs button.on{color:var(--chip-on-ink)}
     html[data-theme="light"] nav.tabs button.on{color:var(--brand-600)}
@@ -836,11 +837,15 @@ No laço dos 4 combos, **remover** a entrada `['nav.tabs button.on', 'aba ativa'
           inativa: getComputedStyle(document.querySelector('nav.tabs button:not(.on)')).color,
           ativa: getComputedStyle(document.querySelector('nav.tabs button.on')).color,
           lente: raiz.getPropertyValue('--brand-soft'),
+          luz: raiz.getPropertyValue('--vidro-luz'),
           fundos: ['--bg', '--surface-solid', '--saldo-a', '--saldo-b'].map(v => [v, raiz.getPropertyValue(v)]),
         };
       });
+      // o brightness() do filtro (--vidro-luz) age sobre o que passa por baixo, antes do preenchimento
+      const luz = parseFloat(abas.luz) || 1;
+      const sob = cor => hex(cor).map(v => Math.min(255, v * luz));
       for(const [nomeFundo, cor] of abas.fundos){
-        const c = contraste(rgba(abas.inativa).slice(0, 3), misturar(rgba(abas.vidro), hex(cor)));
+        const c = contraste(rgba(abas.inativa).slice(0, 3), misturar(rgba(abas.vidro), sob(cor)));
         const ok = c >= 4.5; if(!ok) falhas++;
         console.log(`${ok?'ok   ':'FALHA'} - 390x844/${tema}/${skin}/aba inativa sobre ${nomeFundo}: contraste ${c.toFixed(2)} (min 4.5)`);
       }
@@ -851,7 +856,7 @@ No laço dos 4 combos, **remover** a entrada `['nav.tabs button.on', 'aba ativa'
 
 Run: `node tests/browser/servidor.cjs & sleep 1; node tests/browser/contraste.cjs /tmp; pkill -f tests/browser/servidor.cjs`
 
-Se algum "aba inativa sobre …" falhar num combo, suba o alfa do `--vidro` **daquele bloco** em passos de .02 e rode de novo, até passar; se "aba ativa" falhar, ajuste a tinta ativa daquele combo usando uma cor já existente nos tokens (ex.: `--side-on-ink`) — nunca cor solta. Ao final, deixe um comentário curto junto do `--vidro` de cada bloco com o menor contraste medido (padrão do `--barra` antigo, ex.: `/* .70: rótulo inativo ≥4,5:1 até sobre o card de saldo (4,62) */`).
+Se algum "aba inativa sobre …" falhar num combo, primeiro ajuste o `--vidro-luz` daquele bloco (escuro: descer em passos de .04 até no mínimo .66; claro: subir em passos de .04 até no máximo 1.22); se ainda falhar, suba o alfa do `--vidro` daquele bloco em passos de .02 — o Giovani pediu o vidro o mais transparente possível, então pare no primeiro valor que passa; se "aba ativa" falhar, ajuste a tinta ativa daquele combo usando uma cor já existente nos tokens (ex.: `--side-on-ink`) — nunca cor solta. Ao final, deixe um comentário curto junto do `--vidro` de cada bloco com o menor contraste medido (padrão do `--barra` antigo, ex.: `/* .70: rótulo inativo ≥4,5:1 até sobre o card de saldo (4,62) */`).
 
 Em `tests/browser/rodar.cjs`, depois de `await run('tests/browser/vidro.cjs');`, acrescentar `await run('tests/browser/contraste.cjs',[os.tmpdir()]);`.
 
@@ -964,11 +969,11 @@ Antes da linha de comentário `/* ===== barras no padrão iOS (celular) =====`, 
     .nav-titulo{display:block;grid-column:2;grid-row:1;font-size:17px;font-weight:600;opacity:0;transition:opacity .2s;max-width:min(60vw,calc(100vw - 192px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     header.top.colapsada .nav-titulo{opacity:1}
     .nav-voltar,header.top .sair,header.top .sync-pill{background:var(--vidro);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);box-shadow:var(--vidro-brilho),var(--vidro-sombra);border:0}
-    .nav-voltar{grid-column:1;grid-row:1;justify-self:start;color:var(--brand);font-family:inherit;font-size:17px;font-weight:500;height:44px;padding:0 16px 0 10px;border-radius:22px;display:flex;align-items:center;gap:2px;cursor:pointer;transition:transform .1s ease-out}
+    .nav-voltar{grid-column:1;grid-row:1;justify-self:start;color:var(--brand);font-family:inherit;font-size:17px;font-weight:500;height:44px;padding:0 16px 0 10px;border-radius:22px;display:flex;align-items:center;gap:2px;cursor:pointer;transition:transform var(--mola-dur) var(--mola)}
     .nav-voltar[hidden]{display:none} /* sem isto o display:flex da classe venceria o do atributo */
     .nav-voltar span:first-child{font-size:30px;line-height:1;margin-top:-3px}
-    header.top .sair{width:44px;height:44px;margin-left:0;border-radius:50%;color:var(--brand);font-size:20px;transition:transform .1s ease-out}
-    .nav-voltar:active,header.top .sair:active{transform:scale(.94)}
+    header.top .sair{width:44px;height:44px;margin-left:0;border-radius:50%;color:var(--brand);font-size:20px;transition:transform var(--mola-dur) var(--mola)}
+    .nav-voltar:active,header.top .sair:active{transform:scale(.94);transition:transform .1s ease-out}
     header.top .sync-pill{position:relative}
     header.top .sync-pill::before{content:"";position:absolute;inset:-8px -4px} /* 28px de pílula, 44px de toque */
     section.view > .back{display:none} /* o voltar mora na barra */
@@ -1182,6 +1187,8 @@ Substituir a função `fecharSheet()` inteira por:
 
 (a variável `semMovimento` continua usada em `soltarBorda`.)
 
+Fluidez do puxão (achado da revisão da Tarefa 2): o ramo elástico de `movimento` lê `sheet.offsetHeight` a cada `touchmove`, logo depois de escrever `--dy` — leitura de layout forçada no meio do gesto. Guardar a altura uma vez no começo: em `inicio(e)`, trocar `puxada = { ativa:false };` por `puxada = { ativa:false, altura:sheet.offsetHeight };` e, em `movimento`, trocar `elastico(dy, sheet.offsetHeight)` por `elastico(dy, puxada.altura)`.
+
 Em `soltarBorda`, a limpeza depois da volta usa hoje um tempo fixo (`}, 260);`). Com a mola de quique a volta dura `--mola-quique-dur` (0,41s); limpar antes cortaria a animação no meio. Trocar a linha
 
 ```js
@@ -1328,7 +1335,7 @@ Run → Expected: FALHA.
 - `.conta-dialog{background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:22px;...}` → trocar `background:var(--surface-solid)` por `background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);box-shadow:var(--vidro-brilho),var(--vidro-sombra)`, `border:1px solid var(--border)` por `border:0` e `border-radius:22px` por `border-radius:28px`. Acrescentar ao fim da regra `;animation:materializa var(--mola-dur) var(--mola)`.
 - `.conta-dialog::backdrop{background:rgba(0,0,0,.65)` → `rgba(0,0,0,.4)`.
 - `.valor-tela{...;background:var(--surface-solid);...;animation:up .24s cubic-bezier(.2,.8,.2,1)}` → `background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);` e `animation:sobe var(--mola-dur) var(--mola)`.
-- `.toast{...;background:var(--surface-solid);...;border:1px solid var(--border);border-radius:13px;...;box-shadow:var(--shadow);...}` → `background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);border:0;border-radius:999px;box-shadow:var(--vidro-brilho),var(--vidro-sombra)`. Em `.toast.erro{border-color:var(--red);color:var(--red)}` → `.toast.erro{color:var(--red);box-shadow:var(--vidro-brilho),inset 0 0 0 1px var(--red),var(--vidro-sombra)}`.
+- `.toast{...;background:var(--surface-solid);...;border:1px solid var(--border);border-radius:13px;...;box-shadow:var(--shadow);...}` → `background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);border:0;border-radius:999px;box-shadow:var(--vidro-brilho),var(--vidro-sombra)`, e a entrada `animation:toastIn .22s ease-out forwards` → `animation:toastIn var(--mola-dur) var(--mola) forwards` (a saída `toastOut` fica curta, .18s: sumir não precisa de mola). Em `.toast.erro{border-color:var(--red);color:var(--red)}` → `.toast.erro{color:var(--red);box-shadow:var(--vidro-brilho),inset 0 0 0 1px var(--red),var(--vidro-sombra)}`.
 
 - [ ] **Step 3: `globe.js`**
 
@@ -1386,6 +1393,14 @@ Em `tests/vidro.test.cjs`:
 test('botões de ação em cápsula (iOS 26)', ()=>{
   assert.ok(regras.some(r => r.sel === '.btn' && /border-radius:999px/.test(r.decl)), '.btn base sem cápsula');
 });
+
+test('toque encolhe na hora e volta com mola; troca de tela com mola', ()=>{
+  assert.ok(regras.some(r => r.sel === '.btn' && /transition:transform var\(--mola-dur\) var\(--mola\)/.test(r.decl)), '.btn sem mola de volta');
+  assert.ok(regras.some(r => r.sel === '.btn:active' && /scale\(\.97\)/.test(r.decl) && /\.1s ease-out/.test(r.decl)), '.btn:active sem resposta imediata');
+  for(const k of ['entra-direita', 'entra-esquerda']){
+    assert.ok(regras.some(r => new RegExp(`animation:${k} var\\(--mola-dur\\) var\\(--mola\\)`).test(r.decl)), `${k} sem mola`);
+  }
+});
 ```
 
 Em `tests/browser/vidro.cjs`:
@@ -1429,6 +1444,8 @@ Run → Expected: FALHA.
 - Regra base `.btn{flex:1;border:0;border-radius:12px;...}` → `border-radius:999px`. No bloco do celular, `.btn,.sheet .btn{min-height:50px;border-radius:12px;...}` → `border-radius:999px`.
 - No bloco do celular, busca: em `.filter-row input,.filter-row select{border:0;border-radius:10px;...}`, `.busca input{...;border-radius:10px;...}` e `.filter-row .afz-add{min-height:44px;border-radius:10px}` → `border-radius:999px` nos três.
 - `.notif-invite-actions .btn` e `.install-hint button`: `border-radius:999px`.
+- Toque dos botões com mola (pedido de animações fluidas): na regra base `.btn`, acrescentar `transition:transform var(--mola-dur) var(--mola)` e, logo depois, `.btn:active{transform:scale(.97);transition:transform .1s ease-out}`; no bloco do celular, trocar `.btn:active{opacity:.6;transform:none}` por `.btn:active{opacity:1;transform:scale(.97);transition:transform .1s ease-out}`.
+- Troca de tela com mola: no bloco das barras iOS do celular, as três animações `body[data-nav="push"] ... {animation:entra-direita .32s cubic-bezier(.2,.8,.2,1)}`, `body[data-nav="pop"] ... {animation:entra-esquerda .32s cubic-bezier(.2,.8,.2,1)}` e `body[data-nav="aba"] ... {animation:fade .18s ease}` passam a `var(--mola-dur) var(--mola)` (a de aba também); a regra base `section.view{display:none;animation:fade .25s ease}` passa a `animation:fade var(--mola-dur) var(--mola)`.
 - Grupos em qualquer largura: **mover** para fora do `@media screen and (max-width:899px)` do "conteúdo no padrão iOS" as regras `.panel,.card,.kpi{border-radius:14px;border:0;box-shadow:none}` e `.card.saldo,.card.saldo.saldo-abaixo{box-shadow:none}`; e mover para fora do `@media (max-width:899px)` "superfícies opacas" a regra `.card:not(.saldo),.panel,.notif-invite{background:var(--surface-solid)}` (e `.kpi{background:var(--surface-solid)}`), atualizando o comentário: "conteúdo é opaco em qualquer largura: vidro só na navegação".
 - Chave de tema, perto das regras `.tgl-tema`:
 
@@ -1451,7 +1468,7 @@ Expected: verde.
 
 ```bash
 git add styles.css tests/vidro.test.cjs tests/browser/vidro.cjs
-git commit -m "feat: botões e busca em cápsula e chave de tema que vira vidro ao tocar" -m "Os botões de ação e a busca ganham o formato de cápsula do iOS 26, e a bolinha da chave de tema vira uma lente de vidro enquanto é apertada. Os grupos de conteúdo do desktop perdem borda e sombra de site e ficam opacos como no celular, porque vidro é só da navegação."
+git commit -m "feat: botões e busca em cápsula, toque com mola e chave de tema que vira vidro" -m "Os botões de ação e a busca ganham o formato de cápsula do iOS 26; todo botão encolhe na hora do toque e volta com mola, e a troca de tela passa a usar as molas. A bolinha da chave de tema vira uma lente de vidro enquanto é apertada. Os grupos de conteúdo do desktop perdem borda e sombra de site e ficam opacos como no celular, porque vidro é só da navegação."
 ```
 
 ---

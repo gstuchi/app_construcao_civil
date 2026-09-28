@@ -14,6 +14,8 @@ Tomadas com o Giovani (2026-09-28):
 
 - **Escopo: tudo.** Celular (app iOS + PWA), desktop ≥900px no estilo macOS Tahoe, login e cadastro, sheets, diálogos, teclado de valor e avisos. Uma linguagem visual só.
 - **Barra de abas: cápsula de vidro flutuante com o botão + separado**, um círculo de vidro tingido à direita dela (como a busca nos apps Música e Fotos do iOS 26). O FAB redondo sobre o conteúdo deixa de existir no celular.
+- **Vidro mais transparente** (pedido depois de ver a prévia): preenchimento em torno de 0,40 no escuro e 0,55 no claro, com um ajuste de brilho dentro do próprio filtro (`--vidro-luz`: escurece o que passa por baixo no tema escuro, clareia no claro) para os rótulos continuarem legíveis — o mesmo recurso que a Apple usa.
+- **Animações bem fluidas** (mesmo pedido): toda resposta ao toque é imediata e volta com mola; troca de tela, avisos, lente das abas, sheets e diálogos usam as molas; nada trava o toque durante uma animação.
 - **Entrega:** PR com commits separados, CI verde, prévia da Vercel conferida no agent-browser e build da branch no TestFlight. O merge é do Giovani, depois de sentir no iPhone.
 
 Tomadas por mim, com o motivo:
@@ -37,7 +39,8 @@ Cada bloco de tema×cor que hoje define `--barra` passa a definir o material int
 | `--vidro-tinta` | vidro tingido da marca (botão +, ação primária flutuante), com `--fab-ink` como tinta |
 | `--vidro-brilho` | sombra interna que desenha a borda de luz (1px claro em cima + contorno de .5px) |
 | `--vidro-sombra` | sombra externa suave, mais funda quanto maior a superfície |
-| `--vidro-filtro` | `saturate(180%) blur(24px)`; sheets e barra lateral usam `blur(40px)` |
+| `--vidro-luz` | brilho aplicado ao que passa por baixo (≈0,78 no escuro, ≈1,1 no claro) |
+| `--vidro-filtro` | `saturate(180%) blur(24px) brightness(var(--vidro-luz))`; sheets e barra lateral usam `blur(40px)` |
 
 Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask` ou `backdrop-filter`: ele vira "raiz de fundo" e o vidro para de enxergar a página. Por isso o `.backdrop` escurece por `background-color` (sem `backdrop-filter` nem `opacity`), e o efeito de borda da barra de navegação mora num `::before`, não no `header`.
 
@@ -113,6 +116,8 @@ Física dos gestos (`gestos.js`, funções puras testadas):
 - **Projeção de impulso** (função da Apple, `projeta(v, 0.998)`): soltar a sheet, a linha e o voltar pela borda decide o destino pelo ponto projetado, não pela posição de soltura. Um peteleco curto fecha; um arrasto lento que para no meio volta.
 - **Elástico nos limites** (`elastico(excesso, dimensao)`): puxar a sheet para cima além do topo e a linha para a direita além do zero resistem progressivamente, em vez de parar seco.
 - A animação depois do gesto parte do ponto atual (já é assim com `transition` sobre a posição corrente) e usa `--mola-quique`.
+
+Toque: todo controle tocável (botões, abas, +, itens da barra) encolhe na hora em que o dedo encosta (0,1s) e volta com `--mola` ao soltar — a transição de volta é da mola, a de ida é curta. A troca de tela (entrar na obra, voltar, trocar de aba) e a entrada e saída dos avisos também passam a usar as molas.
 
 `prefers-reduced-motion`: molas, deslizes e crescimento viram troca por opacidade curta ou instantânea; nada de quique.
 

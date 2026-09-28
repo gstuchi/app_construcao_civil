@@ -178,6 +178,31 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- desktop ---- */
+    await teste('desktop: lateral flutua em vidro, a 10px das bordas', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      const s = await caixa(page, '.side');
+      assert.ok(perto(s.left, 10) && perto(s.top, 10) && perto(s.bottom, 890), `lateral em ${JSON.stringify(s)}`);
+      assert.equal(await estilo(page, '.side', 'borderTopLeftRadius'), '22px');
+      assert.match(await estilo(page, '.side', 'backdropFilter'), /blur\(40px\)/);
+      assert.ok((await caixa(page, '.app')).left >= s.right + 20, 'conteúdo encostado na lateral');
+      assert.ok(parseFloat(await estilo(page, '.side button.on', 'borderTopLeftRadius')) >= 18, 'item selecionado não é cápsula');
+      await ctx.close();
+    });
+    await teste('desktop: nome da obra some do painel do topo, não repete o título grande', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      await page.evaluate(() => openObra('o1'));
+      /* opacity, além de visibility: #navTitulo (barra colapsada) é aria-hidden e fica com
+         opacity:0 até rolar — existe no layout (a coluna do grid mede pelo texto) mas não
+         aparece pra ninguém; sem esse filtro o teste acusaria repetição que não existe na tela */
+      const n = await page.evaluate(() => [...document.querySelectorAll('body *')].filter(e =>
+        e.children.length === 0 && e.textContent.trim() === 'Casa Azul' && e.getClientRects().length &&
+        getComputedStyle(e).visibility !== 'hidden' && parseFloat(getComputedStyle(e).opacity) > 0 &&
+        e.getBoundingClientRect().width > 1).length);
+      assert.equal(n, 1, 'nome da obra repetido na tela');
+      await ctx.close();
+    });
+
     /* ---- sheets ---- */
     const CURTA = '<h3>Teste</h3><p>linha</p><div class="sheet-actions"><button class="btn primary" id="bOk">Ok</button></div>';
     await teste('sheet flutua em vidro no celular, e o véu não vira raiz de fundo', async ()=>{
@@ -318,7 +343,9 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await page.evaluate(() => openObra('o1'));
       assert.equal(await estilo(page, '.panel', 'borderTopWidth'), '0px');
       assert.equal(await estilo(page, '.panel', 'boxShadow'), 'none');
-      assert.match(await estilo(page, '.panel', 'backgroundColor'), /^rgb\(/);
+      /* .grupo-obras e .obra-head são o invólucro sem material da lista/subtítulo (T9): o
+         painel de verdade é opaco */
+      assert.match(await estilo(page, '.panel:not(.grupo-obras):not(.obra-head)', 'backgroundColor'), /^rgb\(/);
       await ctx.close();
     });
 

@@ -165,7 +165,9 @@ function restauraEstado(){
   estadoRestaurado = true;
   let salvo = null;
   try{ salvo = JSON.parse(localStorage.getItem(ESTADO_KEY) || 'null'); }catch(e){ salvo = null; }
-  if(!salvo || typeof salvo.tab !== 'string' || !document.getElementById('v-' + salvo.tab)) return;
+  /* sem estado salvo (1ª visita): sem isto o + de Obras nascia escondido — o showView
+     que liga o dataset do + só roda ao trocar de tela, nunca no primeiro carregamento */
+  if(!salvo || typeof salvo.tab !== 'string' || !document.getElementById('v-' + salvo.tab)){ showView('inicio'); renderAll(); return; }
   if(salvo.obraAberta && obraById(salvo.obraAberta)){
     openObra(salvo.obraAberta);
     if(salvo.tab === 'relatorio'){ showView('relatorio'); renderRelatorio(); }
@@ -199,8 +201,15 @@ function showView(v){
   /* na barra de abas, a aba Obras segue acesa dentro da obra, do relatório e dos gráficos (iOS) */
   const aba = PILHA_OBRAS.includes(v) ? 'inicio' : v;
   document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
-  $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
-  document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
+  $('nav.tabs').dataset.aba = String(['inicio','simula','ajustes'].indexOf(aba)); // lente desliza até a aba
+  /* botão +: ao lado da cápsula de abas no celular, cria obra (Obras) ou lança gasto (obra);
+     no desktop só aparece na obra — lá o "+ Nova obra" do conteúdo continua (styles.css) */
+  const acao = v==='obra' ? 'gasto' : v==='inicio' ? 'obra' : '';
+  const fab = $('#fab');
+  fab.dataset.acao = acao;
+  fab.classList.toggle('hidden', !acao);
+  fab.setAttribute('aria-label', acao==='obra' ? 'Nova obra' : 'Lançar gasto');
+  document.body.classList.toggle('com-fab', !!acao); // respiro: o + não cobre o fim da página
   window.scrollTo({top:0});
   atualizaTitulo();
   lembraEstado();
@@ -262,7 +271,7 @@ function renderInicio(){
     ((a.fase==='vendida')-(b.fase==='vendida')) || b.dataInicio.localeCompare(a.dataInicio));
   $('#obraCount').textContent = arr.length ? `${arr.length} obra${arr.length>1?'s':''}` : '';
   const list = $('#obrasList');
-  list.innerHTML = arr.length ? '' : emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque em “+ Nova obra” pra começar.');
+  list.innerHTML = arr.length ? '' : emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque no + pra criar a primeira obra.');
   arr.forEach(o=>{
     const f = FASES[o.fase];
     const li = el('li');
@@ -1853,6 +1862,7 @@ $('#btnNovaObra').onclick = formNovaObra;
 
 /* FAB: lançar gasto (ou criar 1ª obra) */
 $('#fab').onclick = ()=>{
+  if($('#fab').dataset.acao==='obra'){ formNovaObra(); return; }
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   if(!abertas.length){ formNovaObra(); return; }
   const atual = obraAberta && obraById(obraAberta);

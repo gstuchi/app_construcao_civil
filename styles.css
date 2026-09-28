@@ -29,7 +29,8 @@
     --vidro:rgba(8,26,20,.40); --vidro-folha:rgba(10,30,24,.72);
     /* --vidro-luz: brilho dentro do filtro escurece o que passa por baixo do vidro no escuro
        e clareia no claro — truque da Apple pra manter o rótulo legível com preenchimento mais fino */
-    --vidro-luz:.78;
+    /* .66: rótulo inativo da cápsula de abas ≥4,5:1 até sobre o card de saldo (4,63) */
+    --vidro-luz:.66;
     --vidro-tinta:rgba(20,179,154,.82); --vidro-tinta-ink:#04100C;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 .5px rgba(255,255,255,.10);
     --vidro-sombra:0 10px 30px rgba(0,0,0,.35);
@@ -53,7 +54,10 @@
     --chart-rec:#177A4A; --chart-gasto:#1F6FA8; --chart-desp:#B8437C;
     --glow-1:rgba(11,122,104,.12); --glow-2:rgba(23,122,74,.08);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    --vidro:rgba(246,250,248,.55); --vidro-folha:rgba(250,253,251,.78); --vidro-luz:1.1;
+    /* .83/1.22: o card de saldo é escuro mesmo no claro (marca), e o --muted claro não tem
+       contraste sobre ele nem no --vidro-luz máximo sozinho — precisou subir o alfa também;
+       rótulo inativo da cápsula de abas ≥4,5:1 até sobre o card de saldo (4,58) */
+    --vidro:rgba(246,250,248,.83); --vidro-folha:rgba(250,253,251,.78); --vidro-luz:1.22;
     --vidro-tinta:rgba(11,122,104,.88); --vidro-tinta-ink:#fff;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(20,43,35,.10);
     --vidro-sombra:0 8px 26px rgba(20,43,35,.16);
@@ -103,7 +107,10 @@
     --chart-rec:#187a44; --chart-gasto:#2a63c4; --chart-desp:#c22759;
     --glow-1:rgba(91,140,255,.14); --glow-2:rgba(140,90,220,.09);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    --vidro:rgba(247,249,253,.58); --vidro-folha:rgba(251,252,255,.80); --vidro-luz:1.1;
+    /* .88/1.22: mesmo caso do esmeralda claro — o card de saldo roxo/azul é escuro demais
+       pro --vidro-luz sozinho resolver; rótulo inativo da cápsula de abas ≥4,5:1 até sobre
+       o card de saldo (4,60) */
+    --vidro:rgba(247,249,253,.88); --vidro-folha:rgba(251,252,255,.80); --vidro-luz:1.22;
     --vidro-tinta:rgba(53,96,207,.88); --vidro-tinta-ink:#fff;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(23,43,77,.10);
     --vidro-sombra:0 8px 26px rgba(23,43,77,.16);
@@ -268,13 +275,16 @@
   nav.tabs button{flex:1;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;cursor:pointer;font-size:11.5px;font-weight:500;border-radius:12px}
   nav.tabs button .ti{font-size:21px;line-height:1}
   nav.tabs button.on{color:var(--brand)}
-  nav.tabs button.on .ti{transform:translateY(-1px)}
 
   /* FAB */
-  .fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(140deg,var(--fab-a),var(--fab-b));color:var(--fab-ink);font-size:28px;box-shadow:0 6px 24px var(--fab-shadow);cursor:pointer;z-index:41;display:grid;place-items:center}
+  .fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:var(--vidro-tinta);color:var(--vidro-tinta-ink);font-size:30px;-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);box-shadow:var(--vidro-brilho),var(--vidro-sombra);transition:transform var(--mola-dur) var(--mola);cursor:pointer;z-index:41;display:grid;place-items:center}
   /* na tela da obra o FAB flutua sobre o conteúdo: padding extra pro fim da página nunca ficar preso embaixo dele */
   body.com-fab{padding-bottom:calc(156px + env(safe-area-inset-bottom))}
-  .fab:active{transform:scale(.94)}
+  .fab:active{transform:scale(.94);transition:transform .1s ease-out}
+  /* materializa ao aparecer (display none → grid dispara a animação); o toque encolhe na hora */
+  .fab:not(.hidden){animation:materializa var(--mola-dur) var(--mola)}
+  @keyframes materializa{from{opacity:0;transform:scale(.6)}}
+  .esfumado-abas{display:none}
 
   /* modal */
   /* --vvh/--vvtop vêm do visualViewport (app.js): no iPhone o teclado NÃO encolhe a
@@ -496,7 +506,7 @@
   #auth{position:fixed;inset:0;z-index:100}
   #auth.hidden{display:none}
   body.locked{overflow:hidden}
-  body.locked .app,body.locked nav.tabs,body.locked .fab{visibility:hidden}
+  body.locked .app,body.locked nav.tabs,body.locked .fab,body.locked .esfumado-abas{visibility:hidden}
   .auth-scroll{height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .auth-stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:11vh 18px 0;perspective:1000px}
   .auth-title{text-align:center;margin-bottom:32px;will-change:transform}
@@ -610,6 +620,8 @@
     .cards{grid-template-columns:repeat(4,1fr)}
     header.top .sair{display:none}
     body.locked .side{visibility:hidden}
+    #fab[data-acao="obra"]{display:none}
+    .esfumado-abas{display:none}
   }
   /* celular: superfícies opacas — o globo animado não pode aparecer através do conteúdo */
   @media (max-width:899px){
@@ -651,15 +663,37 @@
     /* a barra de navegação cobre a área do relógio: a capa da barra de status sai no celular */
     html.nativo body::after, html.standalone body::after{display:none}
 
-    nav.tabs{background:var(--vidro);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);border-top:.5px solid var(--border);
-      padding:0 0 env(safe-area-inset-bottom);min-height:calc(49px + env(safe-area-inset-bottom))}
-    nav.tabs button{border-radius:0;padding:6px 0 2px;font-size:11px;gap:3px;min-height:49px}
-    nav.tabs button .ti{font-size:25px}
-    nav.tabs button:active{opacity:.5}
-    body{padding-bottom:calc(49px + 16px + env(safe-area-inset-bottom))}
-    body.com-fab{padding-bottom:calc(49px + 96px + env(safe-area-inset-bottom))}
-    .fab{bottom:calc(49px + 16px + env(safe-area-inset-bottom));box-shadow:0 4px 14px var(--fab-shadow)}
-    .toast-wrap{bottom:calc(49px + 90px + env(safe-area-inset-bottom))}
+    /* ===== Liquid Glass: cápsula de abas + botão + (iOS 26) =====
+       A barra de abas vira uma cápsula de vidro que flutua sobre o conteúdo; o + é um círculo
+       de vidro da marca ao lado dela. --abas-base: no iPhone com barra de início, a área segura
+       (34px) já afasta do pé; o −10px aproxima a cápsula do indicador, como no iOS 26. */
+    :root{--abas-h:62px;--abas-base:max(12px,calc(env(safe-area-inset-bottom) - 10px));--abas-margem:12px;--fab-vao:10px}
+    nav.tabs{left:var(--abas-margem);right:var(--abas-margem);bottom:var(--abas-base);height:var(--abas-h);min-height:0;padding:4px;border:0;
+      border-radius:calc(var(--abas-h) / 2);background:var(--vidro);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);
+      box-shadow:var(--vidro-brilho),var(--vidro-sombra);transition:right var(--mola-dur) var(--mola)}
+    /* com o + à vista a cápsula recua para dar lugar a ele — a borda direita desliza com mola */
+    body.com-fab nav.tabs{right:calc(var(--abas-margem) + var(--abas-h) + var(--fab-vao))}
+    /* lente da aba selecionada: desliza entre as abas (data-aba vem do showView) */
+    nav.tabs::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 3);border-radius:calc((var(--abas-h) - 8px) / 2);
+      background:var(--brand-soft);transform:translateX(calc(var(--aba-i,0) * 100%));transition:transform var(--mola-dur) var(--mola);pointer-events:none}
+    nav.tabs[data-aba="1"]{--aba-i:1}
+    nav.tabs[data-aba="2"]{--aba-i:2}
+    nav.tabs[data-aba="-1"]::before{opacity:0}
+    nav.tabs button{position:relative;z-index:1;border-radius:calc((var(--abas-h) - 8px) / 2);padding:4px 0 2px;min-height:0;font-size:11px;font-weight:600;gap:2px;
+      transition:transform var(--mola-dur) var(--mola)}
+    nav.tabs button .ti{font-size:24px}
+    /* resposta no toque, não no soltar: encolhe em 0,1s e volta com a mola */
+    nav.tabs button:active{opacity:1;transform:scale(.94);transition:transform .1s ease-out}
+    /* tinta da aba sobre a lente: a --brand sobre a --brand-soft dá 4,4:1 no escuro; a do chip ligado passa */
+    nav.tabs button.on{color:var(--chip-on-ink)}
+    html[data-theme="light"] nav.tabs button.on{color:var(--brand-600)}
+    .fab{right:var(--abas-margem);bottom:var(--abas-base);width:var(--abas-h);height:var(--abas-h)}
+    .esfumado-abas{display:block;position:fixed;left:0;right:0;bottom:0;height:calc(var(--abas-h) + var(--abas-base) + 28px);z-index:39;pointer-events:none;
+      background:linear-gradient(to top,var(--bg) 0%,transparent 100%)}
+    body,body.com-fab{padding-bottom:calc(var(--abas-h) + var(--abas-base) + 24px)}
+    .toast-wrap{bottom:calc(var(--abas-h) + var(--abas-base) + 14px)}
+    /* o "+ Nova obra" do conteúdo repetia o + da cápsula */
+    #btnNovaObra{display:none}
 
     /* transições (direção vem do showView): a obra entra pela direita, voltar entra pela
        esquerda, trocar de aba é um fade curto; o título grande acompanha a tela */

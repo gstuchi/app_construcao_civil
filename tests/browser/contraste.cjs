@@ -26,6 +26,7 @@ const rgb = s => s.match(/\d+/g).slice(0,3).map(Number);
 const rgba = s => { const m = s.match(/[\d.]+/g).map(Number); return [m[0], m[1], m[2], m[3]===undefined ? 1 : m[3]]; };
 const misturar = (fg, fundoOpaco) => { const a = fg[3];
   return [0,1,2].map(i => fg[i]*a + fundoOpaco[i]*(1-a)); };
+const hex = h => { h = h.trim().replace('#', ''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
 /* WCAG: texto grande (>=24px, ou negrito >=18.66px) pede só 3:1; o resto, 4,5:1 */
 const minimoContraste = (fontSizePx, fontWeight) => {
   const negrito = Number(fontWeight) >= 700;
@@ -87,7 +88,6 @@ const minimoContraste = (fontSizePx, fontWeight) => {
         ['#ajAddTopico', '.btn.primary'],
         ['#ajJson', '.btn.ghost'],
         ['#ajApagar', 'ghost destrutivo'],
-        ['nav.tabs button.on', 'aba ativa'],
       ];
       const dados = await page.evaluate(sels => sels.map(([s]) => {
         const el = document.querySelector(s);
@@ -110,6 +110,33 @@ const minimoContraste = (fontSizePx, fontWeight) => {
         if(!ok) falhas++;
         console.log(`${ok?'ok   ':'FALHA'} - 390x844/${tema}/${skin}/${nome}: contraste ${c.toFixed(2)} (min ${minimo}) · ${d.cor} sobre ${d.fundo}`);
       }
+
+      /* cápsula de abas (Liquid Glass): o rótulo inativo fica sobre o --vidro, translúcido, que
+         passa por cima do fundo do app, dos grupos e do card de saldo (pior caso); a aba ativa
+         fica sobre a lente opaca (--brand-soft). */
+      const abas = await page.evaluate(() => {
+        const raiz = getComputedStyle(document.documentElement);
+        return {
+          vidro: getComputedStyle(document.querySelector('nav.tabs')).backgroundColor,
+          inativa: getComputedStyle(document.querySelector('nav.tabs button:not(.on)')).color,
+          ativa: getComputedStyle(document.querySelector('nav.tabs button.on')).color,
+          lente: raiz.getPropertyValue('--brand-soft'),
+          luz: raiz.getPropertyValue('--vidro-luz'),
+          fundos: ['--bg', '--surface-solid', '--saldo-a', '--saldo-b'].map(v => [v, raiz.getPropertyValue(v)]),
+        };
+      });
+      // o brightness() do filtro (--vidro-luz) age sobre o que passa por baixo, antes do preenchimento
+      const luz = parseFloat(abas.luz) || 1;
+      const sob = cor => hex(cor).map(v => Math.min(255, v * luz));
+      for(const [nomeFundo, cor] of abas.fundos){
+        const c = contraste(rgba(abas.inativa).slice(0, 3), misturar(rgba(abas.vidro), sob(cor)));
+        const ok = c >= 4.5; if(!ok) falhas++;
+        console.log(`${ok?'ok   ':'FALHA'} - 390x844/${tema}/${skin}/aba inativa sobre ${nomeFundo}: contraste ${c.toFixed(2)} (min 4.5)`);
+      }
+      const cAtiva = contraste(rgba(abas.ativa).slice(0, 3), hex(abas.lente));
+      if(cAtiva < 4.5) falhas++;
+      console.log(`${cAtiva >= 4.5 ? 'ok   ' : 'FALHA'} - 390x844/${tema}/${skin}/aba ativa sobre a lente: contraste ${cAtiva.toFixed(2)} (min 4.5)`);
+
       await page.close();
     }
   }

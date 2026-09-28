@@ -212,7 +212,7 @@ async function checarTela(page, nome){
          entra de baixo, o Safari rola o #backdrop e o sheet para no meio do caminho, com o topo
          cortado. O Chromium não rola sozinho, então o teste força a rolagem e exige que ela não pegue. */
       await page.evaluate(() => { showView('inicio'); renderAll(); });
-      await page.locator('#btnNovaObra').click();
+      await page.locator('#fab').click(); // celular: #btnNovaObra some, o + da cápsula abre Nova obra
       const rolagem = await page.evaluate(() => {
         const bd = document.getElementById('backdrop');
         bd.scrollTop = 9999;

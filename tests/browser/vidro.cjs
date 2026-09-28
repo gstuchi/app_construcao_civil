@@ -64,6 +64,84 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- cápsula de abas e botão + (celular) ---- */
+    await teste('cápsula de abas flutua descolada das bordas, em vidro', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      const n = await caixa(page, 'nav.tabs');
+      assert.ok(perto(n.left, 12), `esquerda ${n.left}`);
+      assert.ok(perto(n.bottom, 844 - 12), `base ${n.bottom}`);
+      assert.ok(perto(n.height, 62), `altura ${n.height}`);
+      assert.ok(parseFloat(await estilo(page, 'nav.tabs', 'borderTopLeftRadius')) >= 30);
+      assert.match(await estilo(page, 'nav.tabs', 'backdropFilter'), /blur\(24px\)/);
+      await ctx.close();
+    });
+    await teste('+ em Obras é "Nova obra", fica à direita da cápsula e abre o formulário', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.waitForTimeout(700);
+      assert.equal(await page.getAttribute('#fab', 'aria-label'), 'Nova obra');
+      const f = await caixa(page, '#fab'), n = await caixa(page, 'nav.tabs');
+      assert.ok(perto(f.right, 390 - 12) && perto(f.bottom, n.bottom), `+ em ${JSON.stringify(f)}`);
+      assert.ok(perto(n.right, 390 - 12 - 62 - 10), `cápsula termina em ${n.right}`);
+      await page.locator('#fab').click();
+      await page.waitForFunction(() => /Nova obra/.test(document.querySelector('#sheet h3')?.textContent || ''));
+      await ctx.close();
+    });
+    await teste('+ na obra é "Lançar gasto" e abre o teclado de valor', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      assert.equal(await page.getAttribute('#fab', 'aria-label'), 'Lançar gasto');
+      await page.locator('#fab').click();
+      await page.waitForFunction(() => document.body.classList.contains('teclado-open'));
+      await ctx.close();
+    });
+    await teste('em Vale a pena? e Ajustes o + some e a cápsula ocupa a largura', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      for(const v of ['simula', 'ajustes']){
+        await page.evaluate(x => showView(x), v);
+        await page.waitForTimeout(700);
+        assert.equal(await page.isVisible('#fab'), false, `+ visível em ${v}`);
+        assert.ok(perto((await caixa(page, 'nav.tabs')).right, 390 - 12), `cápsula estreita em ${v}`);
+      }
+      await ctx.close();
+    });
+    await teste('lente da aba desliza para a aba da tela', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      for(const [v, i] of [['ajustes', 2], ['simula', 1], ['inicio', 0]]){
+        await page.evaluate(x => showView(x), v);
+        await page.waitForTimeout(700);
+        assert.equal(await page.getAttribute('nav.tabs', 'data-aba'), String(i));
+        const { tx, w } = await page.evaluate(() => {
+          const cs = getComputedStyle(document.querySelector('nav.tabs'), '::before');
+          const m = cs.transform === 'none' ? [1,0,0,1,0,0] : cs.transform.match(/-?[\d.]+/g).map(Number);
+          return { tx:m[4], w:parseFloat(cs.width) };
+        });
+        assert.ok(perto(tx, i * w), `lente em ${tx}, esperado ${i * w}`);
+      }
+      await page.evaluate(() => openObra('o1'));
+      assert.equal(await page.getAttribute('nav.tabs', 'data-aba'), '0', 'dentro da obra a aba Obras segue selecionada');
+      await ctx.close();
+    });
+    await teste('fim da obra rola até acima da cápsula (nada preso atrás das abas)', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(300);
+      const { fim, topoAbas } = await page.evaluate(() => {
+        const vis = [...document.querySelectorAll('section.view.active *')].filter(e => e.getClientRects().length && e.children.length === 0);
+        return { fim:Math.max(...vis.map(e => e.getBoundingClientRect().bottom)), topoAbas:document.querySelector('nav.tabs').getBoundingClientRect().top };
+      });
+      assert.ok(fim <= topoAbas, `último conteúdo termina em ${fim}, cápsula começa em ${topoAbas}`);
+      await ctx.close();
+    });
+    await teste('conteúdo nunca é vidro', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      const vidrados = await page.evaluate(() => [...document.querySelectorAll('.panel,.card,.kpi,ul.list,ul.list li')]
+        .filter(e => getComputedStyle(e).backdropFilter !== 'none').map(e => e.className));
+      assert.deepEqual(vidrados, []);
+      await ctx.close();
+    });
+
     /* (as tarefas seguintes acrescentam blocos aqui, antes do fechamento do try) */
   }finally{
     await browser.close();

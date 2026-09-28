@@ -148,6 +148,32 @@ const minimoContraste = (fontSizePx, fontWeight) => {
     }
   }
 
+  /* item ativo da lateral do desktop (achado da revisão da T9): --brand-soft é opaco, então o
+     contraste do texto não depende do vidro do painel — mas muda por tema (o claro usa
+     --brand-600 em vez de --brand, que sobre o --brand-soft claro não chegava a 4,5:1). */
+  for(const tema of ['escuro', 'claro']){
+    for(const skin of ['esmeralda', 'azul']){
+      const page = await browser.newPage({ viewport: { width:1440, height:900 } });
+      await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
+      await page.addInitScript(FAKE);
+      await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
+      if(skin === 'azul') await page.addInitScript(() => localStorage.setItem('mo_skin', 'azul'));
+      await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
+      await page.goto('http://localhost:8123/index.html');
+      await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
+        document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
+      const item = await page.evaluate(() => {
+        const raiz = getComputedStyle(document.documentElement);
+        const on = document.querySelector('.side button[data-tab].on');
+        return { cor: getComputedStyle(on).color, lente: raiz.getPropertyValue('--brand-soft') };
+      });
+      const c = contraste(rgba(item.cor).slice(0, 3), hex(item.lente));
+      const ok = c >= 4.5; if(!ok) falhas++;
+      console.log(`${ok?'ok   ':'FALHA'} - 1440x900/${tema}/${skin}/item ativo da lateral: contraste ${c.toFixed(2)} (min 4.5) · ${item.cor} sobre ${item.lente}`);
+      await page.close();
+    }
+  }
+
   await browser.close();
   console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTodos os combos legíveis');
   process.exit(falhas ? 1 : 0);

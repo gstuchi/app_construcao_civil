@@ -630,7 +630,7 @@
     .side button[data-tab].on{background:var(--brand-soft);color:var(--side-on-ink)}
     .side .s-sair{margin-top:auto;display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--muted);padding:11px 12px;border-radius:999px;font-size:14px;cursor:pointer;width:100%} /* sem vidro próprio: já está dentro do vidro da lateral */
     .side .s-sair:hover{background:var(--surface-2);color:var(--text)}
-    html[data-theme="light"] .side button[data-tab].on{color:var(--brand)}
+    html[data-theme="light"] .side button[data-tab].on{color:var(--brand-600)} /* --brand sobre --brand-soft não chega a 4,5:1 no claro/esmeralda (T9, review) */
     :root{--lateral:258px}
     .app{margin:0 auto 0 var(--lateral);max-width:880px;padding-top:64px}
     .cards{grid-template-columns:repeat(4,1fr)}
@@ -946,6 +946,10 @@ body .layout-45{font-size:30px}
     .panel.grupo-obras{background:transparent;padding:0}
     .grupo-obras > h2{margin:0 4px 8px}
     .grupo-obras > h2 .muted{font-weight:500}
+    /* o grupo é a lista: o cartão arredondado e opaco vale em qualquer largura, senão o
+       desktop mostra uma lista nua em vez do grupo (review da T9) */
+    .grupo-obras > ul.list{background:var(--surface-solid);border-radius:14px;overflow:hidden}
+    .grupo-obras > ul.list li{padding:10px 14px 10px 16px}
     .rotulo-grupo,.obra-head h2 > .layout-33,#v-simula > .panel:first-child > h2{
       position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
     /* obra: o nome já está no título grande; o painel do topo vira a linha de subtítulo
@@ -975,10 +979,8 @@ body .layout-45{font-size:30px}
     ul.list li:active{background:var(--surface-2);border-radius:10px}
     .chevron{display:block;color:var(--muted);font-size:22px;line-height:1;margin-left:-4px;flex:none}
 
-    /* Obras: a lista é o grupo (o nome dela some em qualquer largura, ver @media screen acima);
-       o realce do toque vai de borda a borda do grupo, recortado pelos cantos dele */
-    .grupo-obras > ul.list{background:var(--surface-solid);border-radius:14px;overflow:hidden}
-    .grupo-obras > ul.list li{padding:10px 14px 10px 16px}
+    /* Obras: o cartão do grupo mora no @media screen acima (vale em qualquer largura); aqui só
+       o padrão iOS — separador recuado e realce de borda a borda no toque */
     .grupo-obras > ul.list li + li::before{left:67px}
     .grupo-obras > ul.list li:active{border-radius:0}
     #obrasList .obra-tempo{white-space:nowrap} /* quebra antes do "· 16 meses", nunca no meio dele */

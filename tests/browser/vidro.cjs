@@ -189,6 +189,12 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       assert.ok(parseFloat(await estilo(page, '.side button.on', 'borderTopLeftRadius')) >= 18, 'item selecionado não é cápsula');
       await ctx.close();
     });
+    await teste('desktop: lista de Obras continua um cartão em grupo, não uma lista nua', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      assert.match(await estilo(page, '#obrasList', 'backgroundColor'), /^rgb\(/);
+      assert.equal(await estilo(page, '#obrasList', 'borderTopLeftRadius'), '14px');
+      await ctx.close();
+    });
     await teste('desktop: nome da obra some do painel do topo, não repete o título grande', async ()=>{
       const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
       await page.evaluate(() => openObra('o1'));

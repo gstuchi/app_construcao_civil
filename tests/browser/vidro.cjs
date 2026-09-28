@@ -173,6 +173,7 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       assert.equal(await page.isVisible('header.top h1'), false);
       assert.equal(await page.isVisible('section.view.active > .back'), false);
       assert.ok((await caixa(page, 'header.top')).left >= 224, 'barra não pode ficar sob a lateral');
+      assert.equal(await page.getAttribute('aside.side button.on', 'data-tab'), 'inicio', 'Obras apagou na lateral dentro da obra');
       await page.locator('#navVoltar').click();
       await page.waitForFunction(() => document.querySelector('#v-inicio').classList.contains('active'));
       await ctx.close();

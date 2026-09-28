@@ -197,9 +197,10 @@ function showView(v){
   tab = v;
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
   $('#v-'+v).classList.add('active');
-  document.querySelectorAll('aside.side button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
-  /* na barra de abas, a aba Obras segue acesa dentro da obra, do relatório e dos gráficos (iOS) */
+  /* a aba Obras segue acesa dentro da obra, do relatório e dos gráficos: na barra de abas (iOS)
+     e na lateral do desktop (macOS) */
   const aba = PILHA_OBRAS.includes(v) ? 'inicio' : v;
+  document.querySelectorAll('aside.side button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
   document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
   $('nav.tabs').dataset.aba = String(['inicio','simula','ajustes'].indexOf(aba)); // lente desliza até a aba
   /* botão +: ao lado da cápsula de abas no celular, cria obra (Obras) ou lança gasto (obra);

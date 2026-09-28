@@ -303,7 +303,6 @@
   /* sheet precisa de teto de altura + scroll próprio: com muitos tópicos/parcelas o conteúdo
      passa da viewport e, sem isso, o topo (título, campo Valor) fica inacessível no iPhone. */
   .sheet{background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);width:100%;max-width:760px;max-height:min(88dvh,100%);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--vidro-brilho),var(--vidro-sombra);animation:sobe var(--mola-dur) var(--mola)}
-  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
   .sheet h3{font-size:17px;font-weight:700;margin-bottom:16px}
   .sheet{min-width:0;max-height:100%;overflow-x:hidden;overscroll-behavior:none;scroll-padding-block:16px}
   .sheet>*{min-width:0;max-width:100%}
@@ -361,7 +360,7 @@
 
   /* tela de valor com teclado próprio (teclado.js) — o display é uma div, não um
      input, então o teclado do iOS nunca abre aqui. Mesma ancoragem do backdrop. */
-  .valor-tela{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));z-index:70;background:var(--surface-solid);display:flex;flex-direction:column;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));animation:up .24s cubic-bezier(.2,.8,.2,1)}
+  .valor-tela{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));z-index:70;background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);display:flex;flex-direction:column;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));animation:sobe var(--mola-dur) var(--mola)}
   .valor-top{display:flex;align-items:center;gap:10px}
   .valor-x{width:38px;height:38px;border-radius:50%;border:0;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;cursor:pointer;flex:none}
   .valor-x svg{width:20px;height:20px}
@@ -389,10 +388,10 @@
   /* toast de feedback (ex: "Gasto lançado") — empilha acima da tab bar/FAB */
   /* 150px = acima do FAB (58px + 84px de base), pra não tampar o botão de novo lançamento */
   .toast-wrap{position:fixed;left:0;right:0;bottom:calc(150px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:80;pointer-events:none;padding:0 16px}
-  .toast{display:flex;align-items:center;gap:9px;background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:var(--shadow);max-width:420px;
-    opacity:0;transform:translateY(10px) scale(.96);animation:toastIn .22s ease-out forwards}
+  .toast{display:flex;align-items:center;gap:9px;background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);color:var(--text);border:0;border-radius:999px;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:var(--vidro-brilho),var(--vidro-sombra);max-width:420px;
+    opacity:0;transform:translateY(10px) scale(.96);animation:toastIn var(--mola-dur) var(--mola) forwards}
   .toast svg{width:18px;height:18px;flex:none;color:var(--green)}
-  .toast.erro{border-color:var(--red);color:var(--red)}
+  .toast.erro{color:var(--red);box-shadow:var(--vidro-brilho),inset 0 0 0 1px var(--red),var(--vidro-sombra)}
   .toast.erro svg{color:var(--red)}
   .toast.out{animation:toastOut .18s ease-in forwards}
   @keyframes toastIn{to{opacity:1;transform:none}}
@@ -791,7 +790,7 @@
   .money{display:flex;align-items:center;gap:8px}
   .money>b{font-weight:600;color:var(--muted);font-size:.95em}
   .money>input{flex:1;min-width:0}
-.panel a{color:var(--accent)}.conta-dialog{background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:22px;padding:24px;width:calc(100% - 32px);max-width:480px;max-height:90dvh;overflow:auto;margin:auto;font-size:16px}.conta-dialog::backdrop{background:rgba(0,0,0,.65)}
+.panel a{color:var(--accent)}.conta-dialog{background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);box-shadow:var(--vidro-brilho),var(--vidro-sombra);color:var(--text);border:0;border-radius:28px;padding:24px;width:calc(100% - 32px);max-width:480px;max-height:90dvh;overflow:auto;margin:auto;font-size:16px;animation:materializa var(--mola-dur) var(--mola)}.conta-dialog::backdrop{background:rgba(0,0,0,.4)}
 .confirma-dialog .confirma-msg{margin:0 0 18px;font-size:16px;line-height:1.45;overflow-wrap:anywhere}.conta-dialog p{margin:16px 0;line-height:1.5}.conta-dialog input{width:100%;font-size:16px}.conta-dialog button{min-height:44px}
 
 /* Declarações estáticas extraídas dos templates. */

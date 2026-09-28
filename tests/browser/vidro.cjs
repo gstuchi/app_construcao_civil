@@ -252,6 +252,46 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- diálogos, tela de valor, toasts, globo ---- */
+    await teste('diálogo de confirmação é vidro com cantos de 28px', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => { window.__resp = OBRA_CONFIRM.perguntar('Excluir este gasto?', { confirmar:'Excluir' }); });
+      await page.waitForSelector('dialog.confirma-dialog[open]');
+      assert.match(await estilo(page, 'dialog.confirma-dialog', 'backdropFilter'), /blur\(40px\)/);
+      assert.equal(await estilo(page, 'dialog.confirma-dialog', 'borderTopLeftRadius'), '28px');
+      await ctx.close();
+    });
+    await teste('tela de valor é vidro denso', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      await page.locator('#fab').click();
+      await page.waitForFunction(() => document.body.classList.contains('teclado-open'));
+      assert.match(await estilo(page, '.valor-tela', 'backdropFilter'), /blur\(40px\)/);
+      await ctx.close();
+    });
+    await teste('toast é cápsula de vidro acima da cápsula de abas', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => toast('Gasto lançado'));
+      await page.waitForTimeout(300);
+      const t = await caixa(page, '.toast'), n = await caixa(page, 'nav.tabs');
+      assert.ok(t.bottom <= n.top - 8, `toast termina em ${t.bottom}, cápsula começa em ${n.top}`);
+      assert.match(await estilo(page, '.toast', 'backdropFilter'), /blur/);
+      assert.ok(parseFloat(await estilo(page, '.toast', 'borderTopLeftRadius')) >= t.height / 2 - 1);
+      await ctx.close();
+    });
+    await teste('globo pausa sob sheet e diálogo e volta depois', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(h => openSheet(h), '<h3>x</h3>');
+      await page.waitForTimeout(150);
+      assert.equal(await page.evaluate(() => __globeEstado().rodando), false, 'globo rodando sob a sheet');
+      await page.evaluate(() => closeSheet());
+      await page.waitForFunction(() => __globeEstado().rodando, null, { timeout:2000 });
+      await page.evaluate(() => { OBRA_CONFIRM.perguntar('x?'); });
+      await page.waitForTimeout(150);
+      assert.equal(await page.evaluate(() => __globeEstado().rodando), false, 'globo rodando sob o diálogo');
+      await ctx.close();
+    });
+
     /* (as tarefas seguintes acrescentam blocos aqui, antes do fechamento do try) */
   }finally{
     await browser.close();

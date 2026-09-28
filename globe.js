@@ -143,8 +143,12 @@
     running=false;
     if(quadro!==null){ cancelAnimationFrame(quadro); quadro=null; }
   }
+  /* sheet, diálogo ou tela de valor por cima: o vidro grande teria de recompor o desfoque a
+     cada quadro do globo — pausa enquanto houver algo por cima e retoma quando sair */
+  const sobVidro = () => document.body.classList.contains('sheet-open') ||
+    document.body.classList.contains('teclado-open') || !!document.querySelector('dialog[open]');
   function retomar(){
-    if(document.hidden || running) return;
+    if(document.hidden || running || sobVidro()) return;
     running=true; last=performance.now();
     quadro = requestAnimationFrame(loop);
   }
@@ -162,6 +166,8 @@
     if(document.hidden){ paraQuadro(); return; }
     retomar();
   });
+  new MutationObserver(()=>{ if(sobVidro()) paraQuadro(); else retomar(); })
+    .observe(document.body, { attributes:true, attributeFilter:['class'], childList:true });
   window.__globeEstado=()=>({ rodando:running });
   quadro = requestAnimationFrame(loop);
 })();

@@ -1816,7 +1816,10 @@ function formNovaObra(){
     </div>`);
   maskMoney('#fEst');
   maskMoney('#fOrc');
-  $('#fNome').focus();
+  /* No toque o foco abre o teclado na hora e o sheet encolhe até o teclado: só os
+     primeiros campos aparecem e a Área (obrigatória) fica escondida. Lá o sheet abre
+     inteiro, sem campo selecionado; com teclado físico o nome já vem em foco. */
+  if(!matchMedia('(pointer:coarse)').matches) $('#fNome').focus();
   $('#fArea').addEventListener('input',()=>{
     $('#fAreaErro').classList.add('hidden');
     $('#fArea').removeAttribute('aria-invalid');

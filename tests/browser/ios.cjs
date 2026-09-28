@@ -206,18 +206,19 @@ async function checarTela(page, nome){
       assert.equal(await page.evaluate(() => document.querySelector('section.view.active').id), 'v-obra',
         'sem nativo/standalone o gesto de borda não deve voltar a tela (é o "voltar" do navegador)');
 
-      /* Nova obra foca o nome enquanto o sheet ainda entra de baixo (translateY(100%)): o Safari rola
-         o #backdrop para mostrar o campo e o sheet para no meio do caminho, com o topo cortado. O
-         Chromium não rola sozinho, então o teste força a rolagem que o Safari faria e exige que ela
-         não pegue. */
+      /* No toque, Nova obra abre sem campo em foco: focar o nome subia o teclado na hora e o sheet
+         encolhia até ele, escondendo a Área (obrigatória) e o resto do formulário.
+         A rolagem forçada do #backdrop continua coberta: se algum foco voltar enquanto o sheet
+         entra de baixo, o Safari rola o #backdrop e o sheet para no meio do caminho, com o topo
+         cortado. O Chromium não rola sozinho, então o teste força a rolagem e exige que ela não pegue. */
       await page.evaluate(() => { showView('inicio'); renderAll(); });
       await page.locator('#btnNovaObra').click();
       const rolagem = await page.evaluate(() => {
         const bd = document.getElementById('backdrop');
         bd.scrollTop = 9999;
-        return { scrollTop: bd.scrollTop, foco: document.activeElement.id };
+        return { scrollTop: bd.scrollTop, foco: document.activeElement.matches('input,select,textarea') ? document.activeElement.id : '' };
       });
-      assert.equal(rolagem.foco, 'fNome', 'Nova obra deve abrir com o nome em foco');
+      assert.equal(rolagem.foco, '', 'no toque, Nova obra não pode abrir com campo em foco (o teclado subiria)');
       assert.equal(rolagem.scrollTop, 0, 'o #backdrop não pode rolar enquanto o sheet entra (o Safari deixa o sheet cortado no alto)');
       await page.waitForTimeout(400); // fim da animação de entrada
       const caixa = await page.evaluate(() => {
@@ -226,6 +227,12 @@ async function checarTela(page, nome){
       });
       assert.ok(caixa.top >= 0, `topo do sheet de Nova obra fora da tela (top ${caixa.top})`);
       assert.ok(Math.abs(caixa.bottom - caixa.vh) < 1, `sheet de Nova obra deve encostar no fundo (bottom ${caixa.bottom}, tela ${caixa.vh})`);
+      const fimDoForm = await page.evaluate(() => {
+        const s = document.getElementById('sheet');
+        return { sobra: s.scrollHeight - s.clientHeight, botao: document.getElementById('cSave').getBoundingClientRect().bottom };
+      });
+      assert.ok(fimDoForm.sobra <= 1, `Nova obra deve caber inteira sem rolar (sobram ${fimDoForm.sobra}px)`);
+      assert.ok(fimDoForm.botao <= caixa.vh, `botão Criar obra fora da tela (bottom ${fimDoForm.botao})`);
       await page.locator('#cCancel').click();
       assert.deepEqual(await page.evaluate(() => errosPagina), []);
       await ctx.close();
@@ -249,6 +256,9 @@ async function checarTela(page, nome){
       assert.equal(r.navVoltarVisivel, false, '#navVoltar é só do celular; não deve aparecer no desktop');
       assert.equal(r.sideVisivel, true, 'aside.side (nav do desktop) deve estar visível');
       assert.equal(r.scrollWidth, 1280, `scrollWidth != 1280 no desktop (veio ${r.scrollWidth})`);
+      // com teclado físico o nome continua em foco ao abrir Nova obra
+      await page.evaluate(() => formNovaObra());
+      assert.equal(await page.evaluate(() => document.activeElement.id), 'fNome', 'no desktop, Nova obra deve abrir com o nome em foco');
       await ctx.close();
     }
 

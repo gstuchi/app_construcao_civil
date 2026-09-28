@@ -91,6 +91,17 @@
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
     --barra:rgba(238,242,249,.93); /* .93 (o --muted do azul claro é mais claro): rótulo inativo ≥4,5:1 até sobre o card de saldo (4,53–4,66); o ativo sobre ele fica em 4,41–4,53:1 de passagem, convenção do material do iOS */
   }
+  /* Molas no padrão da Apple (scripts/molas.mjs): amortecimento 1 é o padrão, sem quique;
+     a de quique (0,8) só entra depois de gesto com impulso. Recuo via @supports porque
+     declaração de recuo não funciona através de var(): sem linear(), fica a curva suave. */
+  :root{--mola:cubic-bezier(.2,.8,.2,1);--mola-dur:.35s;--mola-quique:cubic-bezier(.2,.8,.2,1);--mola-quique-dur:.3s}
+  @supports (transition-timing-function:linear(0, 1)){
+    :root{
+    --mola:linear(0, 0.0351, 0.1165, 0.2184, 0.3254, 0.4282, 0.5222, 0.6053, 0.6769, 0.7375, 0.7881, 0.83, 0.8642, 0.892, 0.9144, 0.9324, 0.9468, 0.9582, 0.9672, 0.9744, 0.98, 0.9844, 0.9879, 0.9906, 0.9927, 0.9944, 0.9956, 0.9966, 0.9974, 0.998, 0.9985, 0.9988, 1); --mola-dur:0.52s;
+    --mola-quique:linear(0, 0.0312, 0.1079, 0.2097, 0.322, 0.4345, 0.5407, 0.6365, 0.72, 0.7907, 0.8489, 0.8956, 0.932, 0.9597, 0.9801, 0.9945, 1.0042, 1.0103, 1.0136, 1.015, 1.015, 1.0142, 1.0128, 1.0112, 1.0094, 1.0078, 1.0062, 1.0049, 1.0037, 1.0027, 1.0019, 1.0013, 1); --mola-quique-dur:0.41s;
+    }
+  }
+  @media (prefers-reduced-motion: reduce){ :root{--mola-dur:0s;--mola-quique-dur:0s} }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%;touch-action:manipulation} /* mata zoom por duplo-toque (cara de app) */
   /* Logotipo — Hanken Grotesk 800, servida do próprio repo (offline é sagrado:

@@ -39,6 +39,8 @@ Cada bloco de tema×cor que hoje define `--barra` passa a definir o material int
 | `--vidro-sombra` | sombra externa suave, mais funda quanto maior a superfície |
 | `--vidro-filtro` | `saturate(180%) blur(24px)`; sheets e barra lateral usam `blur(40px)` |
 
+Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask` ou `backdrop-filter`: ele vira "raiz de fundo" e o vidro para de enxergar a página. Por isso o `.backdrop` escurece por `background-color` (sem `backdrop-filter` nem `opacity`), e o efeito de borda da barra de navegação mora num `::before`, não no `header`.
+
 Uma classe utilitária não é criada; os seletores que podem ter vidro são uma lista fechada (abaixo), e um teste garante que `backdrop-filter` só aparece neles.
 
 **Onde há vidro:** cápsula de abas e botão +; botões da barra de navegação (voltar, sair, pílula de sincronização); barra lateral do desktop; sheets; diálogos (`<dialog>` de conta e de confirmação); toasts; o cartão do login/cadastro; o fundo da tela de valor (teclado).
@@ -70,10 +72,10 @@ Uma classe utilitária não é criada; os seletores que podem ter vidro são uma
 
 ### 4. Sheets, diálogos e tela de valor
 
-- **Sheet no celular:** flutua descolada, 8px das laterais e da base (mais a área segura embaixo), cantos de 32px (concêntricos com a tela do iPhone), material `--vidro-folha` com `blur(40px)`, alça no topo. Quando o conteúdo passa de 88% da altura visível, a sheet vira folha cheia (classe `cheia`): encosta nas bordas, cantos só em cima, fundo sólido — como a Apple faz no detent grande. A medida é feita em `openSheet()` e refeita por um `ResizeObserver` no `#sheet` (conteúdo que cresce, como as parcelas) e no resize do `visualViewport`.
+- **Sheet no celular:** flutua descolada, 8px das laterais e da base (mais a área segura embaixo), cantos de 32px (concêntricos com a tela do iPhone), material `--vidro-folha` com `blur(40px)`, alça no topo. Quando o conteúdo passa de 88% da altura visível, a sheet vira folha cheia (classe `cheia`): encosta nas bordas, cantos só em cima, fundo sólido — como a Apple faz no detent grande. A medida (altura do conteúdo ÷ altura da janela, com folga: vira cheia acima de 0,88 e só volta abaixo de 0,84) é feita em `openSheet()` e refeita por um `ResizeObserver` nos filhos do `#sheet` (conteúdo que cresce, como as parcelas) e no resize da janela — não do `visualViewport`, senão o teclado abrindo trocaria a forma da sheet enquanto se digita.
 - A barra de ações fixa no pé da sheet troca o bloco sólido por um esfumado para o preenchimento da sheet.
 - **Entrada e saída pelo mesmo caminho:** hoje a sheet sobe animada e some de uma vez. Passa a descer ao fechar, com o fundo escurecido esmaecendo junto. O estado (`show`, `sheet-open`, rolagem restaurada) continua mudando na hora em `closeSheet()`; só a pintura da saída dura a animação (classe `saindo` no backdrop, sem cliques). Abrir outra sheet durante a saída cancela a saída.
-- **Sheet no desktop:** centralizada na tela como a "form sheet" do iPad/Mac, cantos de 28px, entra e sai crescendo de 96% para 100% com desfoque diminuindo ("materializar", não só fade).
+- **Sheet no desktop:** centralizada na tela como a "form sheet" do iPad/Mac, cantos de 28px, entra e sai crescendo de 96% para 100% junto com a opacidade ("materializar", não só fade). Sem `filter` animado no próprio vidro: custa caro e interfere no `backdrop-filter`.
 - **Diálogos** (`.conta-dialog`, `.confirma-dialog`): vidro `--vidro-folha`, cantos de 28px, botões em cápsula, `::backdrop` escurecido, entrada materializando.
 - **Tela de valor (teclado próprio):** fundo vira `--vidro-folha` sobre a obra desfocada; teclas continuam opacas (são conteúdo de digitação) e respondem no toque.
 
@@ -104,7 +106,7 @@ Molas no padrão da Apple, em dois parâmetros (amortecimento, resposta), gerada
 | `--mola` | 1,0 | 0,35s | padrão: sheet abrindo/fechando, lente das abas, cápsula mudando de largura, diálogos |
 | `--mola-quique` | 0,8 | 0,3s | só depois de gesto com impulso: sheet voltando ao lugar, linha de apagar, voltar pela borda |
 
-Cada token tem uma duração pareada (`--mola-dur`, `--mola-quique-dur`) igual ao tempo de acomodação calculado. Antes de cada `linear()` vai uma declaração com `cubic-bezier(.2,.8,.2,1)`, que o WebKit sem `linear()` usa. Um teste compara o CSS com a saída do gerador.
+Cada token tem uma duração pareada (`--mola-dur`, `--mola-quique-dur`) igual ao tempo de acomodação calculado. Por padrão os tokens valem `cubic-bezier(.2,.8,.2,1)` e só viram `linear()` dentro de `@supports (transition-timing-function: linear(0, 1))` — declaração de recuo não funciona através de `var()`. Com `prefers-reduced-motion` as durações viram `0s`. Um teste compara o CSS com a saída do gerador.
 
 Física dos gestos (`gestos.js`, funções puras testadas):
 

@@ -29,8 +29,8 @@
     --vidro:rgba(8,26,20,.40); --vidro-folha:rgba(10,30,24,.72);
     /* --vidro-luz: brilho dentro do filtro escurece o que passa por baixo do vidro no escuro
        e clareia no claro — truque da Apple pra manter o rótulo legível com preenchimento mais fino */
-    /* .66: rótulo inativo da cápsula de abas ≥4,5:1 até sobre o card de saldo (4,63) */
-    --vidro-luz:.66;
+    /* rótulo inativo da cápsula (--text, iOS 26) ≥4,5:1 já no --vidro mais transparente (mín. 9,92 sobre o card de saldo) */
+    --vidro-luz:.78;
     --vidro-tinta:rgba(20,179,154,.82); --vidro-tinta-ink:#04100C;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 .5px rgba(255,255,255,.10);
     --vidro-sombra:0 10px 30px rgba(0,0,0,.35);
@@ -54,10 +54,8 @@
     --chart-rec:#177A4A; --chart-gasto:#1F6FA8; --chart-desp:#B8437C;
     --glow-1:rgba(11,122,104,.12); --glow-2:rgba(23,122,74,.08);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    /* .83/1.22: o card de saldo é escuro mesmo no claro (marca), e o --muted claro não tem
-       contraste sobre ele nem no --vidro-luz máximo sozinho — precisou subir o alfa também;
-       rótulo inativo da cápsula de abas ≥4,5:1 até sobre o card de saldo (4,58) */
-    --vidro:rgba(246,250,248,.83); --vidro-folha:rgba(250,253,251,.78); --vidro-luz:1.22;
+    /* rótulo inativo da cápsula (--text, iOS 26) ≥4,5:1 já no --vidro mais transparente (mín. 7,43 sobre o card de saldo) */
+    --vidro:rgba(246,250,248,.55); --vidro-folha:rgba(250,253,251,.78); --vidro-luz:1.1;
     --vidro-tinta:rgba(11,122,104,.88); --vidro-tinta-ink:#fff;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(20,43,35,.10);
     --vidro-sombra:0 8px 26px rgba(20,43,35,.16);
@@ -107,10 +105,8 @@
     --chart-rec:#187a44; --chart-gasto:#2a63c4; --chart-desp:#c22759;
     --glow-1:rgba(91,140,255,.14); --glow-2:rgba(140,90,220,.09);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    /* .88/1.22: mesmo caso do esmeralda claro — o card de saldo roxo/azul é escuro demais
-       pro --vidro-luz sozinho resolver; rótulo inativo da cápsula de abas ≥4,5:1 até sobre
-       o card de saldo (4,60) */
-    --vidro:rgba(247,249,253,.88); --vidro-folha:rgba(251,252,255,.80); --vidro-luz:1.22;
+    /* rótulo inativo da cápsula (--text, iOS 26) ≥4,5:1 já no --vidro mais transparente (mín. 7,34 sobre o card de saldo) */
+    --vidro:rgba(247,249,253,.58); --vidro-folha:rgba(251,252,255,.80); --vidro-luz:1.1;
     --vidro-tinta:rgba(53,96,207,.88); --vidro-tinta-ink:#fff;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(23,43,77,.10);
     --vidro-sombra:0 8px 26px rgba(23,43,77,.16);
@@ -679,8 +675,9 @@
     nav.tabs[data-aba="1"]{--aba-i:1}
     nav.tabs[data-aba="2"]{--aba-i:2}
     nav.tabs[data-aba="-1"]::before{opacity:0}
+    /* aba não selecionada na cor do texto principal, como no iOS 26: lê bem sobre o vidro fino */
     nav.tabs button{position:relative;z-index:1;border-radius:calc((var(--abas-h) - 8px) / 2);padding:4px 0 2px;min-height:0;font-size:11px;font-weight:600;gap:2px;
-      transition:transform var(--mola-dur) var(--mola)}
+      color:var(--text);transition:transform var(--mola-dur) var(--mola)}
     nav.tabs button .ti{font-size:24px}
     /* resposta no toque, não no soltar: encolhe em 0,1s e volta com a mola */
     nav.tabs button:active{opacity:1;transform:scale(.94);transition:transform .1s ease-out}

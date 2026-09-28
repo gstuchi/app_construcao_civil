@@ -23,8 +23,16 @@
     --fab-a:#14B39A; --fab-b:#0C6350; --fab-ink:#04100C; --fab-shadow:rgba(20,179,154,.45);
     --btn-ink:#04100C; --chip-on-ink:#8FE8D5;
     --side-bg:rgba(7,26,20,.78); --side-on-ink:#C7F5E8;
-    /* material das barras do celular (navegação e abas): o --bg com alfa, desfocado por baixo */
-    --barra:rgba(4,16,12,.72);
+    /* Liquid Glass: material da camada de navegação (abas, +, itens da barra, sheets, diálogos).
+       --vidro é o comum; --vidro-folha, mais denso, leva formulário por cima; --vidro-tinta é o
+       vidro da marca (botão +). --vidro-brilho desenha a luz na borda; a sombra afasta do conteúdo. */
+    --vidro:rgba(8,26,20,.40); --vidro-folha:rgba(10,30,24,.72);
+    /* --vidro-luz: brilho dentro do filtro escurece o que passa por baixo do vidro no escuro
+       e clareia no claro — truque da Apple pra manter o rótulo legível com preenchimento mais fino */
+    --vidro-luz:.78;
+    --vidro-tinta:rgba(20,179,154,.82); --vidro-tinta-ink:#04100C;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 .5px rgba(255,255,255,.10);
+    --vidro-sombra:0 10px 30px rgba(0,0,0,.35);
     --globe-land-rgb:20,179,154; --globe-hi-rgb:168,255,224; --globe-ocean-rgb:15,124,106;
     --globe-halo-rgb:20,179,154; --globe-ring-rgb:58,209,126;
   }
@@ -45,7 +53,10 @@
     --chart-rec:#177A4A; --chart-gasto:#1F6FA8; --chart-desp:#B8437C;
     --glow-1:rgba(11,122,104,.12); --glow-2:rgba(23,122,74,.08);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    --barra:rgba(237,245,241,.90); /* .90: rótulo inativo ≥4,5:1 até sobre o card de saldo; o ativo (marca) sobre ele cai a ~3,9–4,2:1 de passagem, convenção do material do iOS */
+    --vidro:rgba(246,250,248,.55); --vidro-folha:rgba(250,253,251,.78); --vidro-luz:1.1;
+    --vidro-tinta:rgba(11,122,104,.88); --vidro-tinta-ink:#fff;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(20,43,35,.10);
+    --vidro-sombra:0 8px 26px rgba(20,43,35,.16);
   }
   /* ===== Skin Azul (paleta original) — mesmo esqueleto de variáveis ===== */
   html[data-skin="azul"]{
@@ -69,7 +80,10 @@
     /* tinta escura: branco sobre o #5b8cff dá 3,2:1; esta dá 6,2:1 */
     --btn-ink:#070c18; --chip-on-ink:#a8c2ff;
     --side-bg:rgba(11,18,36,.78); --side-on-ink:#cfe0ff;
-    --barra:rgba(7,12,24,.72);
+    --vidro:rgba(10,16,32,.40); --vidro-folha:rgba(14,22,40,.72); --vidro-luz:.78;
+    --vidro-tinta:rgba(59,108,240,.85); --vidro-tinta-ink:#fff;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 .5px rgba(255,255,255,.10);
+    --vidro-sombra:0 10px 30px rgba(0,0,0,.4);
     --globe-land-rgb:96,140,255; --globe-hi-rgb:160,196,255; --globe-ocean-rgb:78,114,224;
     --globe-halo-rgb:58,100,245; --globe-ring-rgb:100,140,255;
   }
@@ -89,12 +103,15 @@
     --chart-rec:#187a44; --chart-gasto:#2a63c4; --chart-desp:#c22759;
     --glow-1:rgba(91,140,255,.14); --glow-2:rgba(140,90,220,.09);
     --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    --barra:rgba(238,242,249,.93); /* .93 (o --muted do azul claro é mais claro): rótulo inativo ≥4,5:1 até sobre o card de saldo (4,53–4,66); o ativo sobre ele fica em 4,41–4,53:1 de passagem, convenção do material do iOS */
+    --vidro:rgba(247,249,253,.58); --vidro-folha:rgba(251,252,255,.80); --vidro-luz:1.1;
+    --vidro-tinta:rgba(53,96,207,.88); --vidro-tinta-ink:#fff;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(23,43,77,.10);
+    --vidro-sombra:0 8px 26px rgba(23,43,77,.16);
   }
   /* Molas no padrão da Apple (scripts/molas.mjs): amortecimento 1 é o padrão, sem quique;
      a de quique (0,8) só entra depois de gesto com impulso. Recuo via @supports porque
      declaração de recuo não funciona através de var(): sem linear(), fica a curva suave. */
-  :root{--mola:cubic-bezier(.2,.8,.2,1);--mola-dur:.35s;--mola-quique:cubic-bezier(.2,.8,.2,1);--mola-quique-dur:.3s}
+  :root{--mola:cubic-bezier(.2,.8,.2,1);--mola-dur:.35s;--mola-quique:cubic-bezier(.2,.8,.2,1);--mola-quique-dur:.3s;--vidro-filtro:saturate(180%) blur(24px) brightness(var(--vidro-luz));--vidro-filtro-forte:saturate(180%) blur(40px) brightness(var(--vidro-luz))}
   @supports (transition-timing-function:linear(0, 1)){
     :root{
     --mola:linear(0, 0.0351, 0.1165, 0.2184, 0.3254, 0.4282, 0.5222, 0.6053, 0.6769, 0.7375, 0.7881, 0.83, 0.8642, 0.892, 0.9144, 0.9324, 0.9468, 0.9582, 0.9672, 0.9744, 0.98, 0.9844, 0.9879, 0.9906, 0.9927, 0.9944, 0.9956, 0.9966, 0.9974, 0.998, 0.9985, 0.9988, 1); --mola-dur:0.52s;
@@ -243,7 +260,7 @@
   .empty p{font-size:13.5px}
 
   /* bottom nav */
-  /* no celular a barra vira o material do iOS (--barra + desfoque, em "barras no padrão iOS"):
+  /* no celular a barra vira o material do iOS (--vidro + desfoque, em "barras no padrão iOS"):
      o "flutuando" de antes era transparência crua sobre botões arredondados; com o --bg a
      72–78% de opacidade, saturação e desfoque, o conteúdo por baixo só passa como borrão,
      e a linha fina em cima ancora a barra na borda da tela, como nos apps da Apple */
@@ -262,7 +279,7 @@
   /* modal */
   /* --vvh/--vvtop vêm do visualViewport (app.js): no iPhone o teclado NÃO encolhe a
      viewport de elementos fixed, então sem isso o sheet inteiro fica atrás do teclado. */
-  .backdrop{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));background:rgba(8,15,20,.5);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
+  .backdrop{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));background:rgba(8,15,20,.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
   .backdrop.show{display:flex}
   body.sheet-open{position:fixed;top:var(--sheet-scroll-top,0px);left:0;right:0;overflow:hidden}
   /* clip, não só hidden: hidden ainda rola por código, e o Safari rola o backdrop ao focar um campo
@@ -580,7 +597,7 @@
     body{padding-bottom:28px}
     body.com-fab{padding-bottom:104px}
     .fab{bottom:28px}
-    .side{display:flex;position:fixed;left:0;top:0;bottom:0;width:224px;flex-direction:column;gap:3px;padding:22px 14px;background:var(--side-bg);border-right:1px solid var(--border);backdrop-filter:blur(12px);z-index:30}
+    .side{display:flex;position:fixed;left:0;top:0;bottom:0;width:224px;flex-direction:column;gap:3px;padding:22px 14px;background:var(--side-bg);border-right:1px solid var(--border);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);z-index:30}
     .side .s-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;margin-bottom:20px;padding:0 8px}
     .side button[data-tab]{display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--muted);padding:11px 12px;border-radius:11px;font-size:14.5px;font-weight:550;cursor:pointer;text-align:left;width:100%}
     .side button[data-tab] .ti{font-size:17px}
@@ -616,7 +633,7 @@
       background:transparent;border-bottom:.5px solid transparent;transition:background-color .2s,border-color .2s}
     header.top h1{display:none} /* a logo sai no celular; o título grande assume */
     header.top > .layout-22{grid-column:3;grid-row:1;justify-self:end}
-    header.top.colapsada{background:var(--barra);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom-color:var(--border)}
+    header.top.colapsada{background:var(--vidro);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);border-bottom-color:var(--border)}
     /* 96px de cada lado (voltar à esquerda, sair à direita): o título fica centrado e com respiro */
     .nav-titulo{display:block;grid-column:2;grid-row:1;font-size:17px;font-weight:600;opacity:0;transition:opacity .2s;max-width:min(60vw,calc(100vw - 192px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     header.top.colapsada .nav-titulo{opacity:1}
@@ -634,7 +651,7 @@
     /* a barra de navegação cobre a área do relógio: a capa da barra de status sai no celular */
     html.nativo body::after, html.standalone body::after{display:none}
 
-    nav.tabs{background:var(--barra);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--border);
+    nav.tabs{background:var(--vidro);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);border-top:.5px solid var(--border);
       padding:0 0 env(safe-area-inset-bottom);min-height:calc(49px + env(safe-area-inset-bottom))}
     nav.tabs button{border-radius:0;padding:6px 0 2px;font-size:11px;gap:3px;min-height:49px}
     nav.tabs button .ti{font-size:25px}
@@ -956,3 +973,16 @@ body .layout-45{font-size:30px}
     ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   }
   @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda,.titulo-grande.soltando-borda{transition:none} }
+/* ===== Liquid Glass: recuos =====
+   Sem backdrop-filter (WebKit muito antigo), com transparência reduzida (Ajustes › Acessibilidade)
+   ou com contraste aumentado, o vidro vira superfície sólida. Os quatro seletores repetem os
+   dos blocos de tema para empatar a especificidade — vale o que vem por último. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid)}
+}
+@media (prefers-reduced-transparency: reduce){
+  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-filtro:none;--vidro-filtro-forte:none}
+}
+@media (prefers-contrast: more){
+  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-luz:1;--vidro-brilho:inset 0 0 0 1px var(--line-strong)}
+}

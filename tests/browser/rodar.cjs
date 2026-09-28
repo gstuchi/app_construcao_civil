@@ -19,6 +19,7 @@ const run=(file,args=[])=>new Promise((resolve,reject)=>{
     await run('tests/browser/mobile.cjs');
     await run('tests/browser/orcamento.cjs');
     await run('tests/browser/ios.cjs');
+    await run('tests/browser/vidro.cjs');
     await run('tests/browser/cartao.cjs');
     await run('tests/browser/nativo.cjs');
     await run('tests/browser/sentry.cjs');

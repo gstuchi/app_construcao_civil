@@ -1,7 +1,8 @@
 
   /* Dark é o padrão; claro é opção (PRODUCT.md) — variáveis do claro em html[data-theme=light] */
-  /* --faint (usado só em ".field .opcional") subiu nos quatro combos pro cartão de login em
-     vidro: sobre --vidro-folha o valor antigo caía a ~3,7:1‑4,0:1, abaixo do mínimo de 4,5:1. */
+  /* --faint (usado só em ".field .opcional") subiu em três dos quatro combos pro cartão de
+     login em vidro (azul/escuro já passava): sobre --vidro-folha o valor antigo caía a
+     ~3,7:1‑4,0:1, abaixo do mínimo de 4,5:1. */
   :root{
     --bg:#04100C;
     --surface:rgba(12,36,29,.92); --surface-solid:#0C241D; --surface-2:#10322A;
@@ -22,7 +23,6 @@
     --brand-rgb:20,179,154; --accent-rgb:58,209,126;
     --glow-1:rgba(20,179,154,.18); --glow-2:rgba(58,209,126,.10);
     --saldo-a:#0D8577; --saldo-b:#0C6350; --saldo-border:rgba(61,214,187,.35); --saldo-shadow:rgba(13,133,119,.35);
-    --fab-a:#14B39A; --fab-b:#0C6350; --fab-ink:#04100C; --fab-shadow:rgba(20,179,154,.45);
     --btn-ink:#04100C; --chip-on-ink:#8FE8D5;
     --side-bg:rgba(7,26,20,.78); --side-on-ink:#C7F5E8;
     /* Liquid Glass: material da camada de navegação (abas, +, itens da barra, sheets, diálogos).
@@ -80,7 +80,6 @@
     --brand-rgb:91,140,255; --accent-rgb:167,139,250;
     --glow-1:rgba(37,72,180,.32); --glow-2:rgba(84,38,160,.22);
     --saldo-a:#2450c9; --saldo-b:#5b2fd1; --saldo-border:rgba(120,150,255,.35); --saldo-shadow:rgba(48,80,220,.35);
-    --fab-a:#3b6cf0; --fab-b:#5b2fd1; --fab-ink:#fff; --fab-shadow:rgba(70,100,240,.5);
     /* tinta escura: branco sobre o #5b8cff dá 3,2:1; esta dá 6,2:1 */
     --btn-ink:#070c18; --chip-on-ink:#a8c2ff;
     --side-bg:rgba(11,18,36,.78); --side-on-ink:#cfe0ff;

@@ -1699,7 +1699,9 @@ function terminaSaida(){
 /* Sheet que passa de 88% da altura da janela vira folha cheia (encosta nas bordas, fundo
    sólido), como o detent grande do iOS; volta a flutuar só abaixo de 84%, para não oscilar
    quando a própria troca de forma muda a altura. Mede pela janela, não pelo visualViewport:
-   o teclado abrindo não pode trocar a forma da sheet enquanto se digita. */
+   o teclado abrindo não pode trocar a forma da sheet enquanto se digita. Roda duas vezes:
+   síncrona no openSheet (mede o conteúdo inicial) e um quadro depois (requestAnimationFrame),
+   quando o ResizeObserver dispara por causa de conteúdo que ainda estava carregando. */
 function medeSheet(){
   if(!backdrop.classList.contains('show')) return;
   const r = sheet.scrollHeight / window.innerHeight;

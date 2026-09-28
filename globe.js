@@ -166,6 +166,8 @@
     if(document.hidden){ paraQuadro(); return; }
     retomar();
   });
+  /* childList sem subtree: só pega diálogo entrando/saindo como filho direto do body.
+     Se algum <dialog> passar a nascer aninhado, esse observer não percebe. */
   new MutationObserver(()=>{ if(sobVidro()) paraQuadro(); else retomar(); })
     .observe(document.body, { attributes:true, attributeFilter:['class'], childList:true });
   window.__globeEstado=()=>({ rodando:running });

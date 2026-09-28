@@ -42,7 +42,7 @@ Cada bloco de tema×cor que hoje define `--barra` passa a definir o material int
 | `--vidro-luz` | brilho aplicado ao que passa por baixo (≈0,78 no escuro, ≈1,1 no claro) |
 | `--vidro-filtro` | `saturate(180%) blur(24px) brightness(var(--vidro-luz))`; sheets e barra lateral usam `blur(40px)` |
 
-Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask` ou `backdrop-filter`: ele vira "raiz de fundo" e o vidro para de enxergar a página. Por isso o `.backdrop` escurece por `background-color` (sem `backdrop-filter` nem `opacity`), e o efeito de borda da barra de navegação mora num `::before`, não no `header`.
+Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask`, `clip-path` ou `backdrop-filter`: ele vira "raiz de fundo" e o vidro para de enxergar a página. Por isso o `.backdrop` escurece por `background-color` (sem `backdrop-filter` nem `opacity`), e o efeito de borda da barra de navegação mora num `::before`, não no `header`.
 
 Uma classe utilitária não é criada; os seletores que podem ter vidro são uma lista fechada (abaixo), e um teste garante que `backdrop-filter` só aparece neles.
 

@@ -47,3 +47,12 @@ test('todo backdrop-filter vem com -webkit-backdrop-filter (Safari)', ()=>{
 test('sem color-mix (WKWebView do iOS 15)', ()=>{
   assert.doesNotMatch(semComentario, /color-mix\(/);
 });
+
+test('efeito de borda da barra mora no ::before, não no header (raiz de fundo)', ()=>{
+  const antes = regras.find(r => r.sel === 'header.top::before');
+  assert.ok(antes, 'falta header.top::before');
+  assert.match(antes.decl, /-webkit-backdrop-filter:/);
+  assert.match(antes.decl, /mask-image:/);
+  const noHeader = regras.filter(r => /^header\.top(\.colapsada)?$/.test(r.sel) && /backdrop-filter:/.test(r.decl));
+  assert.deepEqual(noHeader.map(r => r.sel), []);
+});

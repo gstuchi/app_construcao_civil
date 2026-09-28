@@ -142,6 +142,42 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- barra de navegação ---- */
+    await teste('voltar, sair e sincronização são vidro; a barra em si não', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      assert.match(await estilo(page, '#navVoltar', 'backdropFilter'), /blur\(24px\)/);
+      assert.equal(await estilo(page, '#navVoltar', 'borderTopLeftRadius'), '22px');
+      assert.equal(await estilo(page, 'header.top', 'backdropFilter'), 'none');
+      await ctx.close();
+    });
+    await teste('rolar mostra o esfumado de borda; voltar ao topo esconde', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openObra('o1'));
+      await page.evaluate(() => window.scrollTo(0, 500));
+      await page.waitForFunction(() => document.querySelector('header.top').classList.contains('colapsada'));
+      await page.waitForTimeout(300);
+      assert.equal(await estilo(page, 'header.top', 'opacity', '::before'), '1');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForFunction(() => !document.querySelector('header.top').classList.contains('colapsada'));
+      await page.waitForTimeout(300);
+      assert.equal(await estilo(page, 'header.top', 'opacity', '::before'), '0');
+      await ctx.close();
+    });
+    await teste('desktop: título grande e voltar de vidro na barra, sem a logo repetida', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      await page.evaluate(() => openObra('o1'));
+      assert.equal(await page.isVisible('#tituloGrande'), true);
+      assert.equal(await page.textContent('#tituloGrande'), 'Casa Azul');
+      assert.equal(await page.isVisible('#navVoltar'), true);
+      assert.equal(await page.isVisible('header.top h1'), false);
+      assert.equal(await page.isVisible('section.view.active > .back'), false);
+      assert.ok((await caixa(page, 'header.top')).left >= 224, 'barra não pode ficar sob a lateral');
+      await page.locator('#navVoltar').click();
+      await page.waitForFunction(() => document.querySelector('#v-inicio').classList.contains('active'));
+      await ctx.close();
+    });
+
     /* (as tarefas seguintes acrescentam blocos aqui, antes do fechamento do try) */
   }finally{
     await browser.close();

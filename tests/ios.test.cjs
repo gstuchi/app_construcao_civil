@@ -47,7 +47,7 @@ test('barras translúcidas com material por tema', ()=>{
     assert.match(corpo, /--vidro:\s*rgba\(/, `${b} sem --vidro`);
   }
   assert.match(css, /nav\.tabs\{[^}]*-webkit-backdrop-filter/);
-  assert.match(css, /header\.top\.colapsada\{[^}]*-webkit-backdrop-filter/);
+  assert.match(css, /header\.top::before\{[^}]*-webkit-backdrop-filter/);
 });
 
 test('trocar de tela diz a direção da navegação', ()=>{

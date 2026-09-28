@@ -252,8 +252,8 @@ async function checarTela(page, nome){
         };
       });
       assert.equal(r.selecionavel, true, 'no desktop, o texto de ul.list li deve continuar selecionável');
-      assert.equal(r.tituloGrandeVisivel, false, '#tituloGrande é só do celular; não deve aparecer no desktop');
-      assert.equal(r.navVoltarVisivel, false, '#navVoltar é só do celular; não deve aparecer no desktop');
+      assert.equal(r.tituloGrandeVisivel, true, 'no desktop o título grande também aparece (padrão macOS)');
+      assert.equal(r.navVoltarVisivel, false, 'em Obras (raiz) não há pra onde voltar, mesmo no desktop');
       assert.equal(r.sideVisivel, true, 'aside.side (nav do desktop) deve estar visível');
       assert.equal(r.scrollWidth, 1280, `scrollWidth != 1280 no desktop (veio ${r.scrollWidth})`);
       // com teclado físico o nome continua em foco ao abrir Nova obra

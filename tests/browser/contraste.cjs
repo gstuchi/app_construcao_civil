@@ -46,6 +46,8 @@ const minimoContraste = (fontSizePx, fontWeight) => {
       await page.goto('http://localhost:8123/index.html');
       await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
         document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
+      /* a pílula agora tem fundo de vidro translúcido: compor sobre o --bg do body antes de medir */
+      const corBody = rgba(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
 
       for(const estado of ['salvando', 'offline', 'erro']){
         await page.evaluate(e => window.__emite(e, 'permission-denied'), estado);
@@ -57,7 +59,8 @@ const minimoContraste = (fontSizePx, fontWeight) => {
           while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo) && no.parentElement){ no = no.parentElement; fundo = getComputedStyle(no).backgroundColor; }
           return { cor: cs.color, fundo, visivel: r.width > 0 && r.height > 0 && cs.visibility === 'visible', texto: p.textContent.trim() };
         });
-        const c = contraste(rgb(m.cor), rgb(m.fundo));
+        const f = rgba(m.fundo);
+        const c = contraste(rgb(m.cor), f[3] < 1 ? misturar(f, corBody) : f.slice(0,3));
         const ok = m.visivel && c >= 4.5;
         if(!ok) falhas++;
         console.log(`${ok?'ok   ':'FALHA'} - ${tema}/${nome}/${estado}: contraste ${c.toFixed(2)} · "${m.texto}" · ${m.cor} sobre ${m.fundo}`);

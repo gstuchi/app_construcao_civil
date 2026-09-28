@@ -1688,22 +1688,58 @@ if(vv){
   syncViewport();
 }
 
+/* Saída da sheet pelo mesmo caminho da entrada: o estado (show, sheet-open, rolagem) muda na
+   hora; só a pintura dura a mola (classe .saindo, sem cliques). Abrir outra sheet no meio
+   cancela a saída — a nova assume a partir de onde a velha estava. */
+let saidaTimer = null;
+function terminaSaida(){
+  clearTimeout(saidaTimer); saidaTimer = null;
+  backdrop.classList.remove('saindo');
+}
+/* Sheet que passa de 88% da altura da janela vira folha cheia (encosta nas bordas, fundo
+   sólido), como o detent grande do iOS; volta a flutuar só abaixo de 84%, para não oscilar
+   quando a própria troca de forma muda a altura. Mede pela janela, não pelo visualViewport:
+   o teclado abrindo não pode trocar a forma da sheet enquanto se digita. */
+function medeSheet(){
+  if(!backdrop.classList.contains('show')) return;
+  const r = sheet.scrollHeight / window.innerHeight;
+  if(r > 0.88) backdrop.classList.add('cheia');
+  else if(r < 0.84) backdrop.classList.remove('cheia');
+}
+/* medeSheet muda classe (cheia) dentro do próprio callback do observer; mexer no DOM ali dentro,
+   com vários filhos observados de uma vez, faz o Chrome avisar "loop completed with undelivered
+   notifications" (a mudança de largura da folha cheia reabre a rodada de medição). Adiar pro
+   próximo quadro tira a mutação de dentro do próprio ciclo de entrega do ResizeObserver. */
+const observaSheet = 'ResizeObserver' in window ? new ResizeObserver(() => requestAnimationFrame(medeSheet)) : null;
+addEventListener('resize', medeSheet);
+
 function openSheet(html){
+  terminaSaida();
   if(sheetScrollY===null){
     sheetScrollY=window.scrollY;
     document.documentElement.style.setProperty('--sheet-scroll-top',`${-sheetScrollY}px`);
   }
   sheet.innerHTML = html;
+  backdrop.classList.remove('cheia');
   backdrop.classList.add('show');
   document.body.classList.add('sheet-open');
   sheet.scrollTop = 0;
   syncViewport();
+  medeSheet();
+  if(observaSheet){ observaSheet.disconnect(); for(const filho of sheet.children) observaSheet.observe(filho); }
 }
 function closeSheet(){
   clearTimeout(focusSheetTimer);
   if(sheet.contains(document.activeElement)) document.activeElement.blur();
+  const estavaAberta = backdrop.classList.contains('show');
   backdrop.classList.remove('show');
   document.body.classList.remove('sheet-open');
+  if(observaSheet) observaSheet.disconnect();
+  if(estavaAberta){
+    const dur = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mola-dur')) || 0) * 1000;
+    terminaSaida();
+    if(dur > 0){ backdrop.classList.add('saindo'); saidaTimer = setTimeout(terminaSaida, dur + 50); }
+  }
   if(sheetScrollY!==null){
     const posicao=sheetScrollY; sheetScrollY=null;
     document.documentElement.style.removeProperty('--sheet-scroll-top');

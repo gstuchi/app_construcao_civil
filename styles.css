@@ -285,22 +285,31 @@
   /* modal */
   /* --vvh/--vvtop vêm do visualViewport (app.js): no iPhone o teclado NÃO encolhe a
      viewport de elementos fixed, então sem isso o sheet inteiro fica atrás do teclado. */
-  .backdrop{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));background:rgba(8,15,20,.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:60}
+  .backdrop{position:fixed;left:0;right:0;top:0;height:var(--vvh,100dvh);transform:translateY(var(--vvtop,0px));background:rgba(0,0,0,0);transition:background-color var(--mola-dur) var(--mola);display:none;align-items:flex-end;justify-content:center;z-index:60}
   .backdrop.show{display:flex}
+  /* Liquid Glass: o véu escurece por background-color — opacity ou backdrop-filter aqui virariam
+     raiz de fundo e a sheet de vidro deixaria de enxergar a página. Entra com a mola; na saída
+     (.saindo, app.js) o véu clareia e a sheet desce pelo mesmo caminho por onde subiu. */
+  .backdrop.show{background:rgba(0,0,0,.4);animation:escurece var(--mola-dur) var(--mola)}
+  html[data-theme="light"] .backdrop.show{background:rgba(0,0,0,.2)}
+  .backdrop.saindo{display:flex;pointer-events:none}
+  .backdrop.saindo .sheet{transform:translateY(calc(100% + 24px));transition:transform var(--mola-dur) var(--mola)}
+  @keyframes escurece{from{background-color:rgba(0,0,0,0)}}
+  @keyframes sobe{from{transform:translateY(calc(100% + 24px))}}
   body.sheet-open{position:fixed;top:var(--sheet-scroll-top,0px);left:0;right:0;overflow:hidden}
   /* clip, não só hidden: hidden ainda rola por código, e o Safari rola o backdrop ao focar um campo
      do sheet enquanto ele entra de baixo — o sheet parava no meio do caminho, com o topo cortado */
   .backdrop{padding-top:max(12px,env(safe-area-inset-top));overflow:hidden;overflow:clip}
   /* sheet precisa de teto de altura + scroll próprio: com muitos tópicos/parcelas o conteúdo
      passa da viewport e, sem isso, o topo (título, campo Valor) fica inacessível no iPhone. */
-  .sheet{background:var(--surface-solid);width:100%;max-width:760px;max-height:min(88dvh,100%);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.3);animation:up .28s cubic-bezier(.2,.8,.2,1)}
+  .sheet{background:var(--vidro-folha);-webkit-backdrop-filter:var(--vidro-filtro-forte);backdrop-filter:var(--vidro-filtro-forte);width:100%;max-width:760px;max-height:min(88dvh,100%);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--vidro-brilho),var(--vidro-sombra);animation:sobe var(--mola-dur) var(--mola)}
   @keyframes up{from{transform:translateY(100%)}to{transform:none}}
   .sheet h3{font-size:17px;font-weight:700;margin-bottom:16px}
   .sheet{min-width:0;max-height:100%;overflow-x:hidden;overscroll-behavior:none;scroll-padding-block:16px}
   .sheet>*{min-width:0;max-width:100%}
   .sheet .field input,.sheet .field select{min-width:0;max-width:100%;font-size:16px}
   .sheet input[type="date"]{display:block;appearance:none;-webkit-appearance:none}
-  .sheet .sheet-actions{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom));background:var(--surface-solid);padding:12px 0 calc(20px + env(safe-area-inset-bottom));z-index:2}
+  .sheet .sheet-actions{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent 0,var(--vidro-folha) 18px);padding:12px 0 calc(20px + env(safe-area-inset-bottom));z-index:2}
   .sheet .btn{min-width:0;min-height:44px}
   /* folha do tópico: abre ao tocar na legenda/fatia do donut em Gráficos */
   .top-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
@@ -620,6 +629,11 @@
     body.locked .side{visibility:hidden}
     #fab[data-acao="obra"]{display:none}
     .esfumado-abas{display:none}
+    /* form sheet do iPad/Mac: centralizada, materializa crescendo junto com a opacidade */
+    .backdrop{align-items:center;padding:24px}
+    .sheet{max-width:560px;border-radius:28px;max-height:min(84dvh,100%);animation:materializa var(--mola-dur) var(--mola)}
+    .sheet::before{content:none}
+    .backdrop.saindo .sheet{transform:scale(.96);opacity:0;transition:transform var(--mola-dur) var(--mola),opacity .18s ease}
   }
   /* celular: superfícies opacas — o globo animado não pode aparecer através do conteúdo */
   @media (max-width:899px){
@@ -981,8 +995,15 @@ body .layout-45{font-size:30px}
     html body .btn.ghost.layout-41,html body .btn.ghost.layout-42,#ajApagar{background:var(--surface-2);color:var(--red)}
     .notif-invite-actions .btn{min-height:44px;font-size:15px}
 
-    /* sheet com alça: a faixa de cima (32px) é a zona de puxar para fechar (gestos.js) */
-    .sheet{border-radius:14px 14px 0 0;padding-top:22px;position:relative}
+    /* sheet flutuante do iOS 26: 8px das bordas, cantos de 32px concêntricos com a tela */
+    .backdrop{padding:max(12px,env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom))}
+    .sheet{border-radius:32px;padding:26px 20px 20px;position:relative}
+    .sheet .sheet-actions{bottom:-20px;padding-bottom:20px}
+    /* folha cheia (app.js, medeSheet): encosta nas bordas, fundo sólido, cantos só em cima */
+    .backdrop.cheia{padding:max(12px,env(safe-area-inset-top)) 0 0}
+    .backdrop.cheia .sheet{border-radius:32px 32px 0 0;background:var(--surface-solid);-webkit-backdrop-filter:none;backdrop-filter:none;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+    .backdrop.cheia .sheet .sheet-actions{bottom:calc(-20px - env(safe-area-inset-bottom));padding-bottom:calc(20px + env(safe-area-inset-bottom));background:var(--surface-solid)}
+    /* alça de puxar para fechar (gestos.js): os 32px de cima do sheet flutuante */
     .sheet::before{content:"";position:absolute;top:7px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--muted);opacity:.45}
 
     .card,.panel li,.chip,.chip2,.back,.li-del{-webkit-tap-highlight-color:transparent}
@@ -998,18 +1019,18 @@ body .layout-45{font-size:30px}
   /* branco sobre o --red do escuro (#fb7185) dá 2,7:1; o botão tem vermelho próprio: 5,5:1 nos quatro combos tema×skin */
   :root{--apagar:#c22e55}
   li.swipe{position:relative;overflow:hidden;touch-action:pan-y}
-  li.swipe > *{transform:translateX(var(--dx,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  li.swipe > *{transform:translateX(var(--dx,0px));transition:transform var(--mola-quique-dur) var(--mola-quique)}
   li.swipe.arrastando > *{transition:none}
   /* o botão fica além da borda direita e entra junto com o conteúdo, então parado não cobre o valor;
      120px (o máximo do arrasto) com o texto centrado nos 80 que aparecem com a linha aberta */
   .acao-apagar{position:absolute;top:0;bottom:0;left:100%;width:120px;padding:0 40px 0 0;border:0;border-radius:0;background:var(--apagar);color:#fff;font-size:15px;font-weight:600}
-  .sheet{transform:translateY(var(--dy,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  .sheet{transform:translateY(var(--dy,0px));transition:transform var(--mola-quique-dur) var(--mola-quique)}
   .sheet.arrastando{transition:none}
   /* transform só durante o arrasto: fora dele, transform na tela viraria bloco de contenção dos position:fixed internos.
      .titulo-grande mora fora de section.view (é o cabeçalho iOS): gestos.js marca as mesmas classes
      e o mesmo --dx-tela nela também, senão o título fica parado enquanto a tela segue o dedo. */
   section.view.active.arrastando-borda,.titulo-grande.arrastando-borda{transform:translateX(var(--dx-tela,0px))}
-  section.view.active.soltando-borda,.titulo-grande.soltando-borda{transform:translateX(var(--dx-tela,0px));transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  section.view.active.soltando-borda,.titulo-grande.soltando-borda{transform:translateX(var(--dx-tela,0px));transition:transform var(--mola-quique-dur) var(--mola-quique)}
   @media (pointer:coarse){
     ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   }

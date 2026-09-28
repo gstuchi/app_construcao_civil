@@ -178,6 +178,80 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await ctx.close();
     });
 
+    /* ---- sheets ---- */
+    const CURTA = '<h3>Teste</h3><p>linha</p><div class="sheet-actions"><button class="btn primary" id="bOk">Ok</button></div>';
+    await teste('sheet flutua em vidro no celular, e o véu não vira raiz de fundo', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(h => openSheet(h), CURTA);
+      await page.waitForTimeout(700);
+      const s = await caixa(page, '#sheet');
+      assert.ok(perto(s.left, 8) && perto(s.right, 390 - 8) && perto(s.bottom, 844 - 8), `sheet em ${JSON.stringify(s)}`);
+      assert.equal(await estilo(page, '#sheet', 'borderTopLeftRadius'), '32px');
+      assert.match(await estilo(page, '#sheet', 'backdropFilter'), /blur\(40px\)/);
+      assert.equal(await estilo(page, '#backdrop', 'backdropFilter'), 'none');
+      assert.equal(await estilo(page, '#backdrop', 'opacity'), '1');
+      await ctx.close();
+    });
+    await teste('fechar muda o estado na hora e a pintura sai pelo mesmo caminho', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(h => openSheet(h), CURTA);
+      await page.waitForTimeout(700);
+      const agora = await page.evaluate(() => { closeSheet(); const b = document.getElementById('backdrop');
+        return { show:b.classList.contains('show'), saindo:b.classList.contains('saindo'), aberto:document.body.classList.contains('sheet-open') }; });
+      assert.deepEqual(agora, { show:false, saindo:true, aberto:false });
+      await page.waitForTimeout(700);
+      assert.equal(await page.evaluate(() => document.getElementById('backdrop').classList.contains('saindo')), false);
+      assert.equal(await estilo(page, '#backdrop', 'display'), 'none');
+      await ctx.close();
+    });
+    await teste('fechar e abrir no mesmo instante mostra a nova sheet clicável', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(h => openSheet(h), CURTA);
+      await page.waitForTimeout(700);
+      await page.evaluate(() => { closeSheet(); openSheet('<h3>B</h3><button class="btn primary" id="bNovo">Novo</button>'); });
+      assert.equal(await page.evaluate(() => document.getElementById('backdrop').classList.contains('saindo')), false);
+      await page.waitForTimeout(700);
+      await page.locator('#bNovo').click({ timeout:1000 });
+      await ctx.close();
+    });
+    await teste('sheet alta vira folha cheia, encostada nas bordas', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(() => openSheet('<h3>Longa</h3>' + '<p>linha de texto</p>'.repeat(80)));
+      await page.waitForTimeout(700);
+      assert.equal(await page.evaluate(() => document.getElementById('backdrop').classList.contains('cheia')), true);
+      const s = await caixa(page, '#sheet');
+      assert.ok(perto(s.left, 0) && perto(s.right, 390) && perto(s.bottom, 844), `folha cheia em ${JSON.stringify(s)}`);
+      assert.equal(await estilo(page, '#sheet', 'borderBottomLeftRadius'), '0px');
+      await ctx.close();
+    });
+    await teste('com o teclado aberto a sheet cabe na área visível', async ()=>{
+      const { ctx, page } = await abrir(browser);
+      await page.evaluate(h => openSheet(h), CURTA);
+      await page.evaluate(() => document.documentElement.style.setProperty('--vvh', '500px'));
+      await page.waitForTimeout(700);
+      const s = await caixa(page, '#sheet');
+      assert.ok(s.bottom <= 500 - 8 + 1.5, `sheet termina em ${s.bottom} com área visível de 500`);
+      await ctx.close();
+    });
+    await teste('movimento reduzido: fechar some na hora, sem saída presa', async ()=>{
+      const { ctx, page } = await abrir(browser, { movimento:'reduce' });
+      await page.evaluate(h => openSheet(h), CURTA);
+      const r = await page.evaluate(() => { closeSheet(); const b = document.getElementById('backdrop');
+        return { saindo:b.classList.contains('saindo'), display:getComputedStyle(b).display }; });
+      assert.deepEqual(r, { saindo:false, display:'none' });
+      await ctx.close();
+    });
+    await teste('desktop: sheet centralizada, sem alça', async ()=>{
+      const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
+      await page.evaluate(h => openSheet(h), CURTA);
+      await page.waitForTimeout(700);
+      const s = await caixa(page, '#sheet');
+      assert.ok(perto((s.top + s.bottom) / 2, 450, 2), `centro vertical ${(s.top + s.bottom) / 2}`);
+      assert.ok(s.width <= 560 + 1);
+      assert.equal(await estilo(page, '#sheet', 'content', '::before'), 'none');
+      await ctx.close();
+    });
+
     /* (as tarefas seguintes acrescentam blocos aqui, antes do fechamento do try) */
   }finally{
     await browser.close();

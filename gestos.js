@@ -161,16 +161,11 @@
       }
 
       /* ---- sheet ---- */
+      /* a saída do closeSheet (.saindo) parte de onde o dedo soltou: a transição do CSS
+         começa na posição atual, então o movimento continua sem emenda */
       function fecharSheet(){
-        const conteudo = sheet.firstChild;
-        const fim = () => {
-          // se outro sheet abriu nesse meio-tempo, não é ele que o gesto fecha
-          try{ if(sheetAberto() && sheet.firstChild === conteudo) win.closeSheet(); }
-          finally{ sheet.style.removeProperty('--dy'); }
-        };
-        if(semMovimento()){ fim(); return; }
-        sheet.style.setProperty('--dy', sheet.offsetHeight + 'px'); // termina de descer
-        win.setTimeout(() => { try{ fim(); }catch(err){ registra(err); } }, 200);
+        try{ win.closeSheet(); }
+        finally{ sheet.style.removeProperty('--dy'); }
       }
       function soltarSheet(cancelado){
         const p = puxada; puxada = null;
@@ -204,7 +199,9 @@
           el.classList.add('soltando-borda');
           el.style.setProperty('--dx-tela', '0px');
         }
-        win.setTimeout(() => { if(!borda || borda.tela !== b.tela) els.forEach(limparTela); }, 260);
+        // espera a mola de quique terminar (a duração vem do CSS; zero com movimento reduzido)
+        const dur = (parseFloat(win.getComputedStyle(html).getPropertyValue('--mola-quique-dur')) || 0) * 1000;
+        win.setTimeout(() => { if(!borda || borda.tela !== b.tela) els.forEach(limparTela); }, dur + 40);
       }
 
       function soltarTudo(cancelado){
@@ -228,7 +225,7 @@
           const foco = doc.activeElement;
           const focoEmCampo = !!(foco && sheet.contains(foco) && foco.matches('input,select,textarea,[contenteditable]'));
           if(podePuxarSheet({ scrollTop:sheet.scrollTop, focoEmCampo, yNoSheet:t.clientY - sheet.getBoundingClientRect().top }))
-            puxada = { ativa:false };
+            puxada = { ativa:false, altura:sheet.offsetHeight };
         }
         if(bordaAtiva(t.clientX, html.classList)){
           const tela = doc.querySelector('section.view.active'), voltar = alvoVoltar();
@@ -272,7 +269,7 @@
         if(puxada){
           if(!puxada.ativa){ puxada.ativa = true; sheet.classList.add('arrastando'); }
           // voltando acima do ponto de partida, a sheet resiste (elástico) em vez de travar
-          sheet.style.setProperty('--dy', (dy >= 0 ? dy : elastico(dy, sheet.offsetHeight)) + 'px');
+          sheet.style.setProperty('--dy', (dy >= 0 ? dy : elastico(dy, puxada.altura)) + 'px');
         }
       }
       function fim(e){

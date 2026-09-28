@@ -220,13 +220,16 @@ async function checarTela(page, nome){
       });
       assert.equal(rolagem.foco, '', 'no toque, Nova obra não pode abrir com campo em foco (o teclado subiria)');
       assert.equal(rolagem.scrollTop, 0, 'o #backdrop não pode rolar enquanto o sheet entra (o Safari deixa o sheet cortado no alto)');
-      await page.waitForTimeout(400); // fim da animação de entrada
+      await page.waitForTimeout(700); // fim da mola de entrada (--mola-dur, 0,52s com linear())
       const caixa = await page.evaluate(() => {
         const r = document.getElementById('sheet').getBoundingClientRect();
-        return { top: r.top, bottom: r.bottom, vh: innerHeight };
+        return { top: r.top, bottom: r.bottom, vh: innerHeight, cheia: document.getElementById('backdrop').classList.contains('cheia') };
       });
       assert.ok(caixa.top >= 0, `topo do sheet de Nova obra fora da tela (top ${caixa.top})`);
-      assert.ok(Math.abs(caixa.bottom - caixa.vh) < 1, `sheet de Nova obra deve encostar no fundo (bottom ${caixa.bottom}, tela ${caixa.vh})`);
+      // sheet flutuante: base a 8px do fundo; folha cheia (conteúdo passou de 88% da tela): encostada
+      const baseEsperada = caixa.cheia ? caixa.vh : caixa.vh - 8;
+      assert.ok(Math.abs(caixa.bottom - baseEsperada) < 1,
+        `sheet de Nova obra deve terminar em ${baseEsperada} (bottom ${caixa.bottom}, tela ${caixa.vh}, cheia ${caixa.cheia})`);
       const fimDoForm = await page.evaluate(() => {
         const s = document.getElementById('sheet');
         return { sobra: s.scrollHeight - s.clientHeight, botao: document.getElementById('cSave').getBoundingClientRect().bottom };

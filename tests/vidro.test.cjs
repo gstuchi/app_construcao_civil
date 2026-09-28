@@ -20,11 +20,12 @@ test('material de vidro definido nos quatro combos tema×cor', ()=>{
 });
 
 test('filtros do vidro são tokens globais', ()=>{
-  assert.match(semComentario, /--vidro-filtro:saturate\(180%\) blur\(24px\)/);
-  assert.match(semComentario, /--vidro-filtro-forte:saturate\(180%\) blur\(40px\)/);
+  assert.match(semComentario, /--vidro-filtro:saturate\(180%\) blur\(24px\) brightness\(var\(--vidro-luz\)\)/);
+  assert.match(semComentario, /--vidro-filtro-forte:saturate\(180%\) blur\(40px\) brightness\(var\(--vidro-luz\)\)/);
 });
 
 test('recuos: sem backdrop-filter, transparência reduzida e contraste alto deixam o vidro sólido', ()=>{
+  let trechoContraste;
   for(const cab of ['@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)))',
                     '@media (prefers-reduced-transparency: reduce)', '@media (prefers-contrast: more)']){
     const i = semComentario.indexOf(cab);
@@ -32,8 +33,10 @@ test('recuos: sem backdrop-filter, transparência reduzida e contraste alto deix
     const trecho = semComentario.slice(i, i + 700);
     assert.match(trecho, /--vidro:var\(--surface-solid\)/, `${cab} não deixa --vidro sólido`);
     assert.match(trecho, /--vidro-folha:var\(--surface-solid\)/, `${cab} não deixa --vidro-folha sólido`);
+    if(cab === '@media (prefers-contrast: more)') trechoContraste = trecho;
   }
   assert.match(semComentario.slice(semComentario.indexOf('@media (prefers-reduced-transparency: reduce)')), /--vidro-filtro:none/);
+  assert.match(trechoContraste, /--vidro-luz:1(?![.\d])/, 'contraste alto não fixa --vidro-luz:1 (brilho volta ao neutro)');
 });
 
 test('todo backdrop-filter vem com -webkit-backdrop-filter (Safari)', ()=>{

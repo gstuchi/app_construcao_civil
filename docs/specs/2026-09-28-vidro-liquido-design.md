@@ -58,7 +58,7 @@ Uma classe utilitária não é criada; os seletores que podem ter vidro são uma
 
 - `nav.tabs` vira uma cápsula flutuante: 62px de altura, cantos 31px, 12px das bordas laterais, base em `max(12px, safe-area-inset-bottom − 10px)` acima do rodapé, material `--vidro`. Sem linha no topo.
 - Aba selecionada: um realce em cápsula (lente) atrás do ícone e do rótulo, que **desliza** de uma aba para outra com mola (o `nav.tabs` ganha `data-aba` com o índice, e a lente se move por `transform`). Ícone e rótulo da selecionada na cor da marca.
-- Ao tocar, a aba responde no toque (sem esperar soltar): a lente cresce levemente.
+- A aba responde no toque (sem esperar soltar): encolhe levemente e volta ao soltar.
 - O botão + (`#fab`) vira um círculo de vidro tingido de 62px, alinhado à base da cápsula, 10px à direita dela. Aparece em **Obras** ("Nova obra") e **na obra** ("Lançar gasto"); nas outras telas some e a cápsula ocupa a largura toda, com a borda direita deslizando com mola. `aria-label` acompanha a ação.
 - O "+ Nova obra" dentro do conteúdo some no celular (o + da barra faz a mesma coisa); o texto da lista vazia vira "Toque no + pra criar a primeira obra.". No desktop o botão do conteúdo fica.
 - Esfumado de borda embaixo: uma faixa fixa de ~90px com gradiente do `--bg` para transparente atrás da cápsula, para o conteúdo sumir suave em vez de cortar sob o vidro.

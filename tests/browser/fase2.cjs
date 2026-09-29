@@ -103,10 +103,22 @@ const ROOT=path.resolve(__dirname,'../..');
     await outra.close();
     console.log('ok - outra aba aberta impede saída e preserva sessão');
     const antesDeSair=await page.evaluate(()=>window.__documentoId);
-    await page.evaluate(()=>{ CLOUD.logout().catch(e=>window.__falhaSaida=e.code); });
-    /* Esperas de recarga: flush da fila (teto de 5s no cloud.js) + terminate + clearIndexedDbPersistence
-       + reload. No runner do GitHub isso passa dos 15s padrão da suíte, então estas duas ganham folga. */
-    await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked'),antesDeSair,{timeout:30000});
+    /* A aba fechada acima solta a trava compartilhada da conta (Web Locks) um pouco depois do
+       close(). Com o runner lento, a saída chegava antes, era recusada com 'outra-aba' e a recarga
+       nunca vinha (30s de espera). Recusa por 'outra-aba' vira nova tentativa, com as travas no log;
+       qualquer outra recusa para na hora dizendo o motivo.
+       Esperas de recarga: flush da fila (teto de 5s no cloud.js) + terminate + clearIndexedDbPersistence
+       + reload. No runner do GitHub isso passa dos 15s padrão da suíte, então ganham folga. */
+    for(let tentativa=1;;tentativa++){
+      await page.evaluate(()=>{ window.__falhaSaida=undefined; CLOUD.logout().catch(e=>window.__falhaSaida=e.code); });
+      await page.waitForFunction(antes=>window.__falhaSaida || (window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked')),antesDeSair,{timeout:30000});
+      const falha=await page.evaluate(()=>window.__falhaSaida);
+      if(falha===undefined) break;
+      const travas=await page.evaluate(async()=>JSON.stringify(await navigator.locks.query()));
+      assert.ok(falha==='outra-aba' && tentativa<10,`saída recusada (${falha}) na tentativa ${tentativa}; travas: ${travas}`);
+      console.log(`  saída recusada por outra-aba na tentativa ${tentativa}; travas: ${travas}`);
+      await page.waitForTimeout(500);
+    }
     assert.equal(await page.evaluate(()=>localStorage.getItem('custta-limpar-cache')),null);
     console.log('ok - logout normal sincroniza, limpa cache e recarrega sem sessão');
     await page.locator('#lEmail').fill('logout-fase2@example.com');

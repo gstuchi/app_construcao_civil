@@ -147,7 +147,10 @@ async function sair(page){
       await escolherConta(popup,'ana.google@example.com');
     }
     await page.waitForFunction(()=>document.body.classList.contains('locked') && !CLOUD.user(),null,{timeout:20000});
-    assert.equal(await page.locator('#fLogin').isVisible(),true);
+    /* apagar a conta limpa o cache local e recarrega: a condição acima pode valer ainda na página
+       velha, e o formulário só aparece depois da recarga. Espera ele em vez de conferir na hora
+       (no runner da CI, com a página mais pesada de pintar, a conferência imediata pegava o meio) */
+    await page.locator('#fLogin').waitFor({ state:'visible', timeout:20000 });
     for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uidAna)).exists(),false,`${colecao}/${uidAna} sobrou`);
     console.log('ok - apagar conta Google reautentica pelo popup e remove dados, perfis e push');
 

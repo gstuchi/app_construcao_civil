@@ -1085,8 +1085,10 @@ body .layout-45{font-size:30px}
   :root{--vidro-filtro-conteudo:saturate(170%) blur(28px) brightness(var(--vidro-luz-conteudo))}
 
   /* aurora: manchas desfocadas nas cores do skin, presas ao topo da tela e apagando para baixo.
-     A máscara e o filter moram no próprio #aurora, que não é ancestral de nenhum vidro. Deriva
-     devagar (26s por ida, bem abaixo do ritmo que incomoda); com movimento reduzido fica parada. */
+     A máscara mora no próprio #aurora, que não é ancestral de nenhum vidro. Sem filter de
+     desfoque: as manchas já são degradês suaves, e o blur custava ~20% de CPU a cada quadro da
+     deriva. Deriva devagar (26s por ida, bem abaixo do ritmo que incomoda); com movimento
+     reduzido fica parada. */
   #aurora{position:fixed;left:0;right:0;top:0;height:78vh;z-index:0;pointer-events:none;overflow:hidden;
     -webkit-mask-image:linear-gradient(to bottom,#000 40%,transparent);mask-image:linear-gradient(to bottom,#000 40%,transparent)}
   #aurora::before{content:"";position:absolute;inset:-15% -30%;
@@ -1096,7 +1098,7 @@ body .layout-45{font-size:30px}
       radial-gradient(48% 44% at 52% 52%, rgba(var(--aurora-3),var(--aurora-a)), transparent 74%),
       radial-gradient(24% 24% at 44% 12%, rgba(var(--aurora-4),var(--aurora-a)), transparent 70%),
       linear-gradient(100deg, rgba(var(--aurora-3),var(--aurora-a)), rgba(var(--aurora-1),var(--aurora-a)) 35%, rgba(var(--aurora-2),var(--aurora-a)) 65%, rgba(var(--aurora-3),var(--aurora-a)));
-    filter:blur(30px);animation:aurora-deriva 26s ease-in-out infinite alternate}
+    animation:aurora-deriva 26s ease-in-out infinite alternate}
   @keyframes aurora-deriva{
     0%{transform:translate3d(-4%,-2%,0) rotate(0deg) scale(1)}
     50%{transform:translate3d(5%,3%,0) rotate(8deg) scale(1.08)}

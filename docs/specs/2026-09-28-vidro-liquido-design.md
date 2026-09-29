@@ -1,5 +1,7 @@
 # Custta no padrão Apple com Liquid Glass
 
+> **Atualização (2026-09-28, noite):** a regra "o conteúdo nunca é de vidro" foi ampliada a pedido do Giovani: cards, painéis e indicadores agora são vidro sobre uma aurora nas cores do skin. Ver `2026-09-28-vidro-maximo-design.md`.
+
 Data: 2026-09-28. Continuação do visual iOS do PR #18 (título grande, abas translúcidas, listas agrupadas, gestos). O pedido do Giovani: "atualize toda a interface para a interface Apple e aplique Liquid Glass onde a Apple sugerir".
 
 ## O que é o Liquid Glass e onde a Apple manda usar

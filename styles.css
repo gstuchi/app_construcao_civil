@@ -641,8 +641,8 @@
     .sheet::before{content:none}
     .backdrop.saindo .sheet{transform:scale(.96);opacity:0;transition:transform var(--mola-dur) var(--mola),opacity .18s ease}
   }
-  /* conteúdo é opaco em qualquer largura: vidro só na navegação — o globo animado não pode
-     aparecer através do conteúdo, nem no desktop */
+  /* base sólida do conteúdo em qualquer largura; o bloco "Vidro máximo", no fim do arquivo, troca
+     por vidro sobre a aurora — esta base volta a valer nos recuos de acessibilidade */
   .card:not(.saldo),.panel,.notif-invite{background:var(--surface-solid)}
   @media (max-width:899px){
     /* relatório da simulação: a 1ª coluna quebra linha para as duas colunas de valor caberem sem rolar */
@@ -925,14 +925,14 @@ body .layout-45{font-size:30px}
 
 /* ===== conteúdo no padrão iOS (celular) =====
    Painéis e cards viram os grupos "inset grouped" dos apps da Apple (Ajustes, Carteira,
-   Saúde): cantos de 14px, sem borda nem sombra, superfície sólida um degrau acima do fundo —
-   vale em qualquer largura, porque vidro é só da navegação (o desktop também perde a borda e
-   a sombra de site). Listas com linha alta, separador fino recuado a partir do texto e realce
+   Saúde): cantos de 14px, sem borda nem sombra — vale em qualquer largura (o desktop também
+   perde a borda e a sombra de site). O material (vidro sobre a aurora) vem do bloco "Vidro
+   máximo", no fim do arquivo. Listas com linha alta, separador fino recuado a partir do texto e realce
    ao tocar; busca com lupa; botão preenchido e tingido de 50px; sheet com alça. As regras
    soltas abaixo valem em qualquer largura; o resto do desktop segue como antes. */
   .panel,.card,.kpi{border-radius:14px;border:0;box-shadow:none}
   .card.saldo,.card.saldo.saldo-abaixo{box-shadow:none}
-  .kpi{background:var(--surface-solid)} /* opaco como os painéis: o globo não passa através */
+  .kpi{background:var(--surface-solid)} /* base sólida como a dos painéis; vira vidro no bloco "Vidro máximo" */
   .chevron,.busca-ic{display:none}
   .busca{display:flex;flex:1;min-width:0} /* o rótulo da busca ocupa o lugar que era do campo */
   /* Obras e obra aberta: o nome da obra some daqui porque o título grande já mostra — no celular
@@ -945,8 +945,8 @@ body .layout-45{font-size:30px}
     .panel.grupo-obras{background:transparent;padding:0}
     .grupo-obras > h2{margin:0 4px 8px}
     .grupo-obras > h2 .muted{font-weight:500}
-    /* o grupo é a lista: o cartão arredondado e opaco vale em qualquer largura, senão o
-       desktop mostra uma lista nua em vez do grupo (review da T9) */
+    /* o grupo é a lista: o cartão arredondado (vidro, no bloco "Vidro máximo") vale em qualquer
+       largura, senão o desktop mostra uma lista nua em vez do grupo (review da T9) */
     .grupo-obras > ul.list{background:var(--surface-solid);border-radius:14px;overflow:hidden}
     .grupo-obras > ul.list li{padding:10px 14px 10px 16px}
     .rotulo-grupo,.obra-head h2 > .layout-33,#v-simula > .panel:first-child > h2{
@@ -1056,12 +1056,12 @@ body .layout-45{font-size:30px}
     ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   }
   @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda,.titulo-grande.soltando-borda{transition:none} }
-/* ===== Teste: vidro máximo (branch teste/vidro-maximo) =====
-   Experimento para sentir no iPhone um Custta com muito mais Liquid Glass, no espírito de apps
-   como o Pierre: uma aurora colorida nas cores do skin atrás do topo das telas, e o conteúdo
-   (cards, painéis, indicadores e a lista de obras) também em vidro, para a cor aparecer através
-   dele. Quebra de propósito a regra "vidro só na navegação" do spec de 2026-09-28; não é para
-   a main sem decisão do Giovani. Os recuos de acessibilidade logo abaixo cobrem os tokens novos. */
+/* ===== Vidro máximo (spec docs/specs/2026-09-28-vidro-maximo-design.md) =====
+   Muito mais Liquid Glass, no espírito de apps como o Pierre: uma aurora colorida nas cores do
+   skin atrás do topo das telas, e o conteúdo (cards, painéis, indicadores e a lista de obras)
+   também em vidro, para a cor aparecer através dele. Amplia a regra "vidro só na navegação" do
+   spec do Liquid Glass, por decisão do Giovani depois de testar no iPhone (build 10.1). Nunca
+   vidro dentro de vidro. Os recuos de acessibilidade logo abaixo cobrem os tokens novos. */
   :root{
     --aurora-1:16,185,160; --aurora-2:40,200,110; --aurora-3:8,90,150; --aurora-4:120,235,195; --aurora-a:.92;
     --vidro-conteudo:rgba(6,22,17,.42); --vidro-luz-conteudo:.62;

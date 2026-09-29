@@ -169,13 +169,15 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       const { ctx, page } = await abrir(browser);
       await page.evaluate(() => openObra('o1'));
       await page.evaluate(() => window.scrollTo(0, 500));
+      /* espera a transição (.2s) chegar ao fim em vez de um tempo fixo: com o conteúdo em vidro a
+         página pesa mais para pintar e, no runner da CI, 300ms pararam em 0,996 */
+      const esfumado = alvo => page.waitForFunction(v => getComputedStyle(document.querySelector('header.top'), '::before').opacity === v, alvo, { timeout:3000 })
+        .catch(async () => assert.fail(`esfumado parou em ${await estilo(page, 'header.top', 'opacity', '::before')}, esperado ${alvo}`));
       await page.waitForFunction(() => document.querySelector('header.top').classList.contains('colapsada'));
-      await page.waitForTimeout(300);
-      assert.equal(await estilo(page, 'header.top', 'opacity', '::before'), '1');
+      await esfumado('1');
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.waitForFunction(() => !document.querySelector('header.top').classList.contains('colapsada'));
-      await page.waitForTimeout(300);
-      assert.equal(await estilo(page, 'header.top', 'opacity', '::before'), '0');
+      await esfumado('0');
       await ctx.close();
     });
     await teste('desktop: título grande e voltar de vidro na barra, sem a logo repetida', async ()=>{

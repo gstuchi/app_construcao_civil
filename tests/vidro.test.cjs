@@ -76,12 +76,12 @@ test('toque encolhe na hora e volta com mola; troca de tela com mola', ()=>{
   }
 });
 
-/* Vidro só na camada de navegação (spec, "Onde há vidro"): qualquer backdrop-filter que não
-   seja "none" precisa estar num destes seletores. */
+/* Vidro numa lista fechada (spec do Liquid Glass, "Onde há vidro", ampliada pelo do vidro
+   máximo): qualquer backdrop-filter que não seja "none" precisa estar num destes seletores. */
 const PERMITIDOS = [
   /^nav\.tabs$/, /^\.fab$/, /^header\.top::before$/, /^\.nav-voltar$/, /^header\.top \.sair$/, /^header\.top \.sync-pill$/,
   /^\.sheet$/, /^\.conta-dialog$/, /^\.toast$/, /^\.valor-tela$/, /^\.auth-card$/, /^\.side$/, /^\.tgl-tema:active \.bola$/,
-  /* teste/vidro-maximo: conteúdo e ações da obra em vidro, de propósito (ver o bloco no styles.css) */
+  /* vidro máximo (spec 2026-09-28-vidro-maximo): conteúdo sobre a aurora e as pílulas de ação da obra */
   /^\.card:not\(\.saldo\)$/, /^\.panel:not\(\.grupo-obras\):not\(\.obra-head\)$/, /^\.kpi$/, /^\.notif-invite$/, /^\.grupo-obras > ul\.list$/,
   /^html body \.obra-actions \.btn\.ghost$/, /^html body \.btn\.ghost\.orc-editar$/,
 ];

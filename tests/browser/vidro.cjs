@@ -133,12 +133,26 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       assert.ok(fim <= topoAbas, `último conteúdo termina em ${fim}, cápsula começa em ${topoAbas}`);
       await ctx.close();
     });
-    await teste('conteúdo nunca é vidro', async ()=>{
+    /* vidro máximo (spec 2026-09-28-vidro-maximo): cards, painéis e indicadores são vidro sobre a
+       aurora; os invólucros transparentes e as linhas da lista não, e nenhum vidro mora dentro de
+       outro (o de dentro só enxergaria o de fora, não a página) */
+    await teste('conteúdo em vidro sobre a aurora, sem vidro dentro de vidro', async ()=>{
       const { ctx, page } = await abrir(browser);
       await page.evaluate(() => openObra('o1'));
-      const vidrados = await page.evaluate(() => [...document.querySelectorAll('.panel,.card,.kpi,ul.list,ul.list li')]
-        .filter(e => getComputedStyle(e).backdropFilter !== 'none').map(e => e.className));
-      assert.deepEqual(vidrados, []);
+      const r = await page.evaluate(() => {
+        const vidro = e => getComputedStyle(e).backdropFilter !== 'none';
+        const CONTEUDO = '.panel,.card,.kpi,ul.list';
+        const vistos = [...document.querySelectorAll('section.view.active :is(.panel,.card,.kpi,ul.list,ul.list li)')].filter(e => e.getClientRects().length);
+        return {
+          kpis: vistos.filter(e => e.matches('.kpi')).length,
+          semVidro: vistos.filter(e => e.matches('.kpi,.card:not(.saldo),.panel:not(.grupo-obras):not(.obra-head)') && !vidro(e)).map(e => e.className),
+          transparentes: [...document.querySelectorAll('.panel.obra-head,.panel.grupo-obras,ul.list li')].filter(vidro).map(e => e.className),
+          aninhados: vistos.filter(e => { const pai = e.parentElement.closest(CONTEUDO); return vidro(e) && pai && vidro(pai); }).map(e => e.className),
+          aurora: getComputedStyle(document.getElementById('aurora')).position,
+        };
+      });
+      assert.ok(r.kpis > 0, 'obra sem indicadores na tela');
+      assert.deepEqual({ ...r, kpis:0 }, { kpis:0, semVidro:[], transparentes:[], aninhados:[], aurora:'fixed' });
       await ctx.close();
     });
 
@@ -192,7 +206,8 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
     });
     await teste('desktop: lista de Obras continua um cartão em grupo, não uma lista nua', async ()=>{
       const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
-      assert.match(await estilo(page, '#obrasList', 'backgroundColor'), /^rgb\(/);
+      assert.match(await estilo(page, '#obrasList', 'backdropFilter'), /blur\(28px\)/, 'o grupo é um cartão de vidro');
+      assert.notEqual(await estilo(page, '#obrasList', 'backgroundColor'), 'rgba(0, 0, 0, 0)');
       assert.equal(await estilo(page, '#obrasList', 'borderTopLeftRadius'), '14px');
       await ctx.close();
     });
@@ -259,6 +274,11 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
     await teste('com o teclado aberto a sheet cabe na área visível', async ()=>{
       const { ctx, page } = await abrir(browser);
       await page.evaluate(h => openSheet(h), CURTA);
+      /* abrir a sheet trava a rolagem do body, e o visualViewport avisa isso num quadro seguinte:
+         o syncViewport do app regrava --vvh com a altura real. Com a página mais pesada de pintar
+         (vidro no conteúdo) esse aviso chegava depois do valor falso e o apagava — espera dois
+         quadros antes de simular o teclado */
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       await page.evaluate(() => document.documentElement.style.setProperty('--vvh', '500px'));
       await page.waitForTimeout(700);
       const s = await caixa(page, '#sheet');
@@ -345,14 +365,17 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await page.mouse.up();
       await ctx.close();
     });
-    await teste('desktop: grupos sem borda nem sombra, opacos', async ()=>{
+    await teste('desktop: grupos sem borda nem sombra de site, em vidro', async ()=>{
       const { ctx, page } = await abrir(browser, { viewport:{ width:1440, height:900 } });
       await page.evaluate(() => openObra('o1'));
-      assert.equal(await estilo(page, '.panel', 'borderTopWidth'), '0px');
-      assert.equal(await estilo(page, '.panel', 'boxShadow'), 'none');
-      /* .grupo-obras e .obra-head são o invólucro sem material da lista/subtítulo (T9): o
-         painel de verdade é opaco */
-      assert.match(await estilo(page, '.panel:not(.grupo-obras):not(.obra-head)', 'backgroundColor'), /^rgb\(/);
+      const sel = '.panel:not(.grupo-obras):not(.obra-head)';
+      assert.equal(await estilo(page, sel, 'borderTopWidth'), '0px');
+      /* só a borda de luz (sombras internas); nada de sombra projetada de card de site */
+      const sombra = await estilo(page, sel, 'boxShadow');
+      assert.ok(sombra.split(/,(?![^(]*\))/).every(s => /inset/.test(s)), `sombra externa: ${sombra}`);
+      /* .grupo-obras e .obra-head são o invólucro sem material da lista/subtítulo (T9); o painel
+         de verdade é vidro (spec 2026-09-28-vidro-maximo) */
+      assert.match(await estilo(page, sel, 'backdropFilter'), /blur\(28px\)/);
       await ctx.close();
     });
 

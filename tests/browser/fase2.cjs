@@ -113,6 +113,8 @@ const ROOT=path.resolve(__dirname,'../..');
     await page.locator('#lSenha').fill('Local-emulador-123!');
     await page.locator('#fLogin button[type="submit"]').click();
     await page.waitForFunction(()=>CLOUD.user() && !document.body.classList.contains('locked'));
+    /* aqui a página segue em 1440x900 (o loop de larguras acima não volta pro celular): desktop
+       continua com #btnNovaObra — só o celular troca pelo + da cápsula (styles.css) */
     await page.locator('#btnNovaObra').click();
     await page.locator('#fNome').fill('  Obra pelo formulário  ');
     await page.locator('#fArea').fill('180,5');

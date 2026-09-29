@@ -92,6 +92,8 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 - **A navegação existe duplicada**: `aside.side` (desktop ≥900px) e `nav.tabs` (mobile), com os mesmos `data-tab`. Ao dirigir por browser, qualifique o seletor. Verifique mudanças visuais nos dois viewports.
 - Modais: `openSheet(html)` / `closeSheet()` (bottom sheet + backdrop); conta e confirmações usam `<dialog>` (`OBRA_CONTA.abrir`, `OBRA_CONFIRM.perguntar`). Feedback: `toast(msg, tipo)`.
 - Campos de dinheiro: `maskMoney(sel)` na entrada, `OBRA_CALC.parseNum` na leitura.
+- **Liquid Glass** (spec `docs/specs/2026-09-28-vidro-liquido-design.md`): vidro só na camada de navegação — cápsula de abas e botão +, itens da barra, lateral do desktop, sheets, diálogos, toasts, tela de valor e cartão do login. Conteúdo é opaco. Use os tokens `--vidro`, `--vidro-folha`, `--vidro-tinta`, `--vidro-luz`, `--vidro-brilho`, `--vidro-sombra` e `--vidro-filtro(-forte)`, definidos nos quatro combos; `--vidro-luz` é o brilho dentro do filtro — mantém rótulo legível com o vidro o mais transparente possível. `tests/vidro.test.cjs` barra vidro fora da lista. Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask`, `clip-path` ou `backdrop-filter` (vira raiz de fundo e o vidro deixa de ver a página).
+- **Molas**: transições usam `var(--mola-dur) var(--mola)` (padrão, sem quique) ou `--mola-quique` (só depois de gesto com impulso). Toque: encolhe na hora (`.1s ease-out`) e volta com `--mola`. As curvas saem de `node scripts/molas.mjs`; mudar os parâmetros exige colar a saída nova no `@supports` das molas (`tests/molas.test.mjs` confere).
 
 Um hook PostToolUse (`.claude/settings.local.json`) roda o detector da skill `impeccable` após cada Edit/Write em arquivo de UI e devolve achados como system reminder.
 
@@ -99,6 +101,6 @@ Um hook PostToolUse (`.claude/settings.local.json`) roda o detector da skill `im
 
 Features maiores começam por um documento em `docs/specs/AAAA-MM-DD-nome-design.md` (e às vezes um plano em `docs/plans/`) antes do código — vale ler o spec correspondente antes de mexer numa tela existente.
 
-Commits em português, estilo `feat: `/`fix: `/`docs: `, minúsculas, sem acento no assunto.
+Commits em português, estilo `feat: `/`fix: `/`docs: `, minúsculas, com acentos no assunto e corpo em prosa quando a mudança não é trivial.
 
 `.gitignore` bloqueia service accounts, `.env`, chaves VAPID e certificados iOS. A apiKey do Firebase é a única credencial que pode aparecer em commit.

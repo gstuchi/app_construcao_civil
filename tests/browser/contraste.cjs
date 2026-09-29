@@ -1,5 +1,6 @@
-/* Retratos da pill de sincronização nos 4 combos (tema × viewport) e contraste
-   WCAG do texto. Precisa do servidor de tests/browser/servidor.cjs no ar.
+/* Retratos da pill de sincronização nos 8 combos (tema × cor × viewport) e contraste
+   WCAG do texto — a pill tem fundo de vidro translúcido, então varia com a cor do skin
+   (esmeralda/azul) além do tema. Precisa do servidor de tests/browser/servidor.cjs no ar.
    Uso: NODE_PATH=<cache do npx com playwright> node tests/browser/contraste.cjs [pasta] */
 const { chromium } = require('playwright');
 const SAIDA = process.argv[2] || '.';
@@ -26,6 +27,7 @@ const rgb = s => s.match(/\d+/g).slice(0,3).map(Number);
 const rgba = s => { const m = s.match(/[\d.]+/g).map(Number); return [m[0], m[1], m[2], m[3]===undefined ? 1 : m[3]]; };
 const misturar = (fg, fundoOpaco) => { const a = fg[3];
   return [0,1,2].map(i => fg[i]*a + fundoOpaco[i]*(1-a)); };
+const hex = h => { h = h.trim().replace('#', ''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
 /* WCAG: texto grande (>=24px, ou negrito >=18.66px) pede só 3:1; o resto, 4,5:1 */
 const minimoContraste = (fontSizePx, fontWeight) => {
   const negrito = Number(fontWeight) >= 700;
@@ -36,34 +38,40 @@ const minimoContraste = (fontSizePx, fontWeight) => {
   const browser = await chromium.launch();
   let falhas = 0;
   for(const tema of ['escuro', 'claro']){
-    for(const [nome, vp] of [['mobile', { width:414, height:896 }], ['desktop', { width:1440, height:900 }]]){
-      const page = await browser.newPage({ viewport: vp });
-      await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
-      await page.addInitScript(FAKE);
-      await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
-      await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
-      await page.goto('http://localhost:8123/index.html');
-      await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
-        document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
+    for(const skin of ['esmeralda', 'azul']){
+      for(const [nome, vp] of [['mobile', { width:414, height:896 }], ['desktop', { width:1440, height:900 }]]){
+        const page = await browser.newPage({ viewport: vp });
+        await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
+        await page.addInitScript(FAKE);
+        await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
+        if(skin === 'azul') await page.addInitScript(() => localStorage.setItem('mo_skin', 'azul'));
+        await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
+        await page.goto('http://localhost:8123/index.html');
+        await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
+          document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
+        /* a pílula agora tem fundo de vidro translúcido: compor sobre o --bg do body antes de medir */
+        const corBody = rgba(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
 
-      for(const estado of ['salvando', 'offline', 'erro']){
-        await page.evaluate(e => window.__emite(e, 'permission-denied'), estado);
-        await page.waitForTimeout(120);
-        const m = await page.evaluate(() => {
-          const p = document.getElementById('syncPill'), cs = getComputedStyle(p);
-          const r = p.getBoundingClientRect();
-          let fundo = cs.backgroundColor, no = p;
-          while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo) && no.parentElement){ no = no.parentElement; fundo = getComputedStyle(no).backgroundColor; }
-          return { cor: cs.color, fundo, visivel: r.width > 0 && r.height > 0 && cs.visibility === 'visible', texto: p.textContent.trim() };
-        });
-        const c = contraste(rgb(m.cor), rgb(m.fundo));
-        const ok = m.visivel && c >= 4.5;
-        if(!ok) falhas++;
-        console.log(`${ok?'ok   ':'FALHA'} - ${tema}/${nome}/${estado}: contraste ${c.toFixed(2)} · "${m.texto}" · ${m.cor} sobre ${m.fundo}`);
+        for(const estado of ['salvando', 'offline', 'erro']){
+          await page.evaluate(e => window.__emite(e, 'permission-denied'), estado);
+          await page.waitForTimeout(120);
+          const m = await page.evaluate(() => {
+            const p = document.getElementById('syncPill'), cs = getComputedStyle(p);
+            const r = p.getBoundingClientRect();
+            let fundo = cs.backgroundColor, no = p;
+            while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo) && no.parentElement){ no = no.parentElement; fundo = getComputedStyle(no).backgroundColor; }
+            return { cor: cs.color, fundo, visivel: r.width > 0 && r.height > 0 && cs.visibility === 'visible', texto: p.textContent.trim() };
+          });
+          const f = rgba(m.fundo);
+          const c = contraste(rgb(m.cor), f[3] < 1 ? misturar(f, corBody) : f.slice(0,3));
+          const ok = m.visivel && c >= 4.5;
+          if(!ok) falhas++;
+          console.log(`${ok?'ok   ':'FALHA'} - ${tema}/${skin}/${nome}/${estado}: contraste ${c.toFixed(2)} · "${m.texto}" · ${m.cor} sobre ${m.fundo}`);
+        }
+        await page.evaluate(() => window.__emite('erro', 'permission-denied'));
+        await page.screenshot({ path: `${SAIDA}/pill-${tema}-${skin}-${nome}.png`, clip: { x:0, y:0, width: vp.width, height: 120 } });
+        await page.close();
       }
-      await page.evaluate(() => window.__emite('erro', 'permission-denied'));
-      await page.screenshot({ path: `${SAIDA}/pill-${tema}-${nome}.png`, clip: { x:0, y:0, width: vp.width, height: 120 } });
-      await page.close();
     }
   }
   /* contraste dos 4 combos tema×skin a 390x844 (achados da revisão final): primário, tingido,
@@ -87,7 +95,6 @@ const minimoContraste = (fontSizePx, fontWeight) => {
         ['#ajAddTopico', '.btn.primary'],
         ['#ajJson', '.btn.ghost'],
         ['#ajApagar', 'ghost destrutivo'],
-        ['nav.tabs button.on', 'aba ativa'],
       ];
       const dados = await page.evaluate(sels => sels.map(([s]) => {
         const el = document.querySelector(s);
@@ -110,6 +117,59 @@ const minimoContraste = (fontSizePx, fontWeight) => {
         if(!ok) falhas++;
         console.log(`${ok?'ok   ':'FALHA'} - 390x844/${tema}/${skin}/${nome}: contraste ${c.toFixed(2)} (min ${minimo}) · ${d.cor} sobre ${d.fundo}`);
       }
+
+      /* cápsula de abas (Liquid Glass): o rótulo inativo fica sobre o --vidro, translúcido, que
+         passa por cima do fundo do app, dos grupos e do card de saldo (pior caso); a aba ativa
+         fica sobre a lente opaca (--brand-soft). */
+      const abas = await page.evaluate(() => {
+        const raiz = getComputedStyle(document.documentElement);
+        return {
+          vidro: getComputedStyle(document.querySelector('nav.tabs')).backgroundColor,
+          inativa: getComputedStyle(document.querySelector('nav.tabs button:not(.on)')).color,
+          ativa: getComputedStyle(document.querySelector('nav.tabs button.on')).color,
+          lente: raiz.getPropertyValue('--brand-soft'),
+          luz: raiz.getPropertyValue('--vidro-luz'),
+          fundos: ['--bg', '--surface-solid', '--saldo-a', '--saldo-b'].map(v => [v, raiz.getPropertyValue(v)]),
+        };
+      });
+      // o brightness() do filtro (--vidro-luz) age sobre o que passa por baixo, antes do preenchimento
+      const luz = parseFloat(abas.luz) || 1;
+      const sob = cor => hex(cor).map(v => Math.min(255, v * luz));
+      for(const [nomeFundo, cor] of abas.fundos){
+        const c = contraste(rgba(abas.inativa).slice(0, 3), misturar(rgba(abas.vidro), sob(cor)));
+        const ok = c >= 4.5; if(!ok) falhas++;
+        console.log(`${ok?'ok   ':'FALHA'} - 390x844/${tema}/${skin}/aba inativa sobre ${nomeFundo}: contraste ${c.toFixed(2)} (min 4.5)`);
+      }
+      const cAtiva = contraste(rgba(abas.ativa).slice(0, 3), hex(abas.lente));
+      if(cAtiva < 4.5) falhas++;
+      console.log(`${cAtiva >= 4.5 ? 'ok   ' : 'FALHA'} - 390x844/${tema}/${skin}/aba ativa sobre a lente: contraste ${cAtiva.toFixed(2)} (min 4.5)`);
+
+      await page.close();
+    }
+  }
+
+  /* item ativo da lateral do desktop (achado da revisão da T9): --brand-soft é opaco, então o
+     contraste do texto não depende do vidro do painel — mas muda por tema (o claro usa
+     --brand-600 em vez de --brand, que sobre o --brand-soft claro não chegava a 4,5:1). */
+  for(const tema of ['escuro', 'claro']){
+    for(const skin of ['esmeralda', 'azul']){
+      const page = await browser.newPage({ viewport: { width:1440, height:900 } });
+      await page.addInitScript(() => sessionStorage.setItem('splashVista','1'));
+      await page.addInitScript(FAKE);
+      await page.addInitScript(t => localStorage.setItem('mo_tema', t), tema);
+      if(skin === 'azul') await page.addInitScript(() => localStorage.setItem('mo_skin', 'azul'));
+      await page.route('**/cloud.js', r => r.fulfill({ contentType:'text/javascript', body:'' }));
+      await page.goto('http://localhost:8123/index.html');
+      await page.evaluate(() => { document.getElementById('auth').classList.add('hidden');
+        document.body.classList.remove('locked'); db = normaliza({ obras: [] }); renderAll(); });
+      const item = await page.evaluate(() => {
+        const raiz = getComputedStyle(document.documentElement);
+        const on = document.querySelector('.side button[data-tab].on');
+        return { cor: getComputedStyle(on).color, lente: raiz.getPropertyValue('--brand-soft') };
+      });
+      const c = contraste(rgba(item.cor).slice(0, 3), hex(item.lente));
+      const ok = c >= 4.5; if(!ok) falhas++;
+      console.log(`${ok?'ok   ':'FALHA'} - 1440x900/${tema}/${skin}/item ativo da lateral: contraste ${c.toFixed(2)} (min 4.5) · ${item.cor} sobre ${item.lente}`);
       await page.close();
     }
   }

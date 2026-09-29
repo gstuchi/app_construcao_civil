@@ -165,7 +165,9 @@ function restauraEstado(){
   estadoRestaurado = true;
   let salvo = null;
   try{ salvo = JSON.parse(localStorage.getItem(ESTADO_KEY) || 'null'); }catch(e){ salvo = null; }
-  if(!salvo || typeof salvo.tab !== 'string' || !document.getElementById('v-' + salvo.tab)) return;
+  /* sem estado salvo (1ª visita): sem isto o + de Obras nascia escondido — o showView
+     que liga o dataset do + só roda ao trocar de tela, nunca no primeiro carregamento */
+  if(!salvo || typeof salvo.tab !== 'string' || !document.getElementById('v-' + salvo.tab)){ showView('inicio'); renderAll(); return; }
   if(salvo.obraAberta && obraById(salvo.obraAberta)){
     openObra(salvo.obraAberta);
     if(salvo.tab === 'relatorio'){ showView('relatorio'); renderRelatorio(); }
@@ -195,12 +197,20 @@ function showView(v){
   tab = v;
   document.querySelectorAll('section.view').forEach(s=>s.classList.remove('active'));
   $('#v-'+v).classList.add('active');
-  document.querySelectorAll('aside.side button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===v));
-  /* na barra de abas, a aba Obras segue acesa dentro da obra, do relatório e dos gráficos (iOS) */
+  /* a aba Obras segue acesa dentro da obra, do relatório e dos gráficos: na barra de abas (iOS)
+     e na lateral do desktop (macOS) */
   const aba = PILHA_OBRAS.includes(v) ? 'inicio' : v;
+  document.querySelectorAll('aside.side button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
   document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab===aba));
-  $('#fab').classList.toggle('hidden', v!=='obra'); // lançar gasto só dentro da obra
-  document.body.classList.toggle('com-fab', v==='obra'); // respiro extra: FAB não cobre o fim da página
+  $('nav.tabs').dataset.aba = String(['inicio','simula','ajustes'].indexOf(aba)); // lente desliza até a aba
+  /* botão +: ao lado da cápsula de abas no celular, cria obra (Obras) ou lança gasto (obra);
+     no desktop só aparece na obra — lá o "+ Nova obra" do conteúdo continua (styles.css) */
+  const acao = v==='obra' ? 'gasto' : v==='inicio' ? 'obra' : '';
+  const fab = $('#fab');
+  fab.dataset.acao = acao;
+  fab.classList.toggle('hidden', !acao);
+  fab.setAttribute('aria-label', acao==='obra' ? 'Nova obra' : 'Lançar gasto');
+  document.body.classList.toggle('com-fab', !!acao); // respiro: o + não cobre o fim da página
   window.scrollTo({top:0});
   atualizaTitulo();
   lembraEstado();
@@ -262,7 +272,7 @@ function renderInicio(){
     ((a.fase==='vendida')-(b.fase==='vendida')) || b.dataInicio.localeCompare(a.dataInicio));
   $('#obraCount').textContent = arr.length ? `${arr.length} obra${arr.length>1?'s':''}` : '';
   const list = $('#obrasList');
-  list.innerHTML = arr.length ? '' : emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque em “+ Nova obra” pra começar.');
+  list.innerHTML = arr.length ? '' : emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque no + pra criar a primeira obra.');
   arr.forEach(o=>{
     const f = FASES[o.fase];
     const li = el('li');
@@ -1679,22 +1689,60 @@ if(vv){
   syncViewport();
 }
 
+/* Saída da sheet pelo mesmo caminho da entrada: o estado (show, sheet-open, rolagem) muda na
+   hora; só a pintura dura a mola (classe .saindo, sem cliques). Abrir outra sheet no meio
+   cancela a saída — a nova assume a partir de onde a velha estava. */
+let saidaTimer = null;
+function terminaSaida(){
+  clearTimeout(saidaTimer); saidaTimer = null;
+  backdrop.classList.remove('saindo');
+}
+/* Sheet que passa de 88% da altura da janela vira folha cheia (encosta nas bordas, fundo
+   sólido), como o detent grande do iOS; volta a flutuar só abaixo de 84%, para não oscilar
+   quando a própria troca de forma muda a altura. Mede pela janela, não pelo visualViewport:
+   o teclado abrindo não pode trocar a forma da sheet enquanto se digita. Roda duas vezes:
+   síncrona no openSheet (mede o conteúdo inicial) e um quadro depois (requestAnimationFrame),
+   quando o ResizeObserver dispara por causa de conteúdo que ainda estava carregando. */
+function medeSheet(){
+  if(!backdrop.classList.contains('show')) return;
+  const r = sheet.scrollHeight / window.innerHeight;
+  if(r > 0.88) backdrop.classList.add('cheia');
+  else if(r < 0.84) backdrop.classList.remove('cheia');
+}
+/* medeSheet muda classe (cheia) dentro do próprio callback do observer; mexer no DOM ali dentro,
+   com vários filhos observados de uma vez, faz o Chrome avisar "loop completed with undelivered
+   notifications" (a mudança de largura da folha cheia reabre a rodada de medição). Adiar pro
+   próximo quadro tira a mutação de dentro do próprio ciclo de entrega do ResizeObserver. */
+const observaSheet = 'ResizeObserver' in window ? new ResizeObserver(() => requestAnimationFrame(medeSheet)) : null;
+addEventListener('resize', medeSheet);
+
 function openSheet(html){
+  terminaSaida();
   if(sheetScrollY===null){
     sheetScrollY=window.scrollY;
     document.documentElement.style.setProperty('--sheet-scroll-top',`${-sheetScrollY}px`);
   }
   sheet.innerHTML = html;
+  backdrop.classList.remove('cheia');
   backdrop.classList.add('show');
   document.body.classList.add('sheet-open');
   sheet.scrollTop = 0;
   syncViewport();
+  medeSheet();
+  if(observaSheet){ observaSheet.disconnect(); for(const filho of sheet.children) observaSheet.observe(filho); }
 }
 function closeSheet(){
   clearTimeout(focusSheetTimer);
   if(sheet.contains(document.activeElement)) document.activeElement.blur();
+  const estavaAberta = backdrop.classList.contains('show');
   backdrop.classList.remove('show');
   document.body.classList.remove('sheet-open');
+  if(observaSheet) observaSheet.disconnect();
+  if(estavaAberta){
+    const dur = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mola-dur')) || 0) * 1000;
+    terminaSaida();
+    if(dur > 0){ backdrop.classList.add('saindo'); saidaTimer = setTimeout(terminaSaida, dur + 50); }
+  }
   if(sheetScrollY!==null){
     const posicao=sheetScrollY; sheetScrollY=null;
     document.documentElement.style.removeProperty('--sheet-scroll-top');
@@ -1853,6 +1901,7 @@ $('#btnNovaObra').onclick = formNovaObra;
 
 /* FAB: lançar gasto (ou criar 1ª obra) */
 $('#fab').onclick = ()=>{
+  if($('#fab').dataset.acao==='obra'){ formNovaObra(); return; }
   const abertas = db.obras.filter(o=>o.fase!=='vendida');
   if(!abertas.length){ formNovaObra(); return; }
   const atual = obraAberta && obraById(obraAberta);

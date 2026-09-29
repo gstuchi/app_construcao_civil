@@ -6,20 +6,33 @@
   const LARGURA_APAGAR = 80;
   const ARRASTO_MAXIMO = 120; // a linha passa um pouco do botão, como no iOS
 
+  /* Projeção de impulso da Apple ("Designing Fluid Interfaces"): onde o dedo iria parar se o
+     movimento continuasse desacelerando. v em px/ms; a taxa é por ms. 0,995 fica entre o 0,998
+     da rolagem e o 0,99 "rápido" da Apple: um peteleco de 1px/ms projeta ~200px. */
+  const TAXA_DESACELERACAO = 0.995;
+  function projeta(v, taxa = TAXA_DESACELERACAO){
+    return v * taxa / (1 - taxa);
+  }
+  /* Elástico nos limites: quanto mais passa, menos acompanha — nunca além da dimensão. */
+  function elastico(excesso, dimensao, c = 0.55){
+    const r = (Math.abs(excesso) * dimensao * c) / (dimensao + c * Math.abs(excesso));
+    return excesso < 0 ? -r : r;
+  }
+
   /* Só decide depois de 10px; horizontal precisa predominar (diagonal é rolagem). */
   function eixo(dx, dy){
     const ax = Math.abs(dx), ay = Math.abs(dy);
     if(ax < 10 && ay < 10) return null;
     return ax > ay * 1.2 ? 'h' : 'v';
   }
-  /* dx: posição final da linha (negativa = aberta para a esquerda); vx em px/ms. */
+  /* dx: posição final da linha (negativa = aberta para a esquerda); vx em px/ms.
+     Decide pelo ponto projetado: arrasto curto e rápido abre, longo e devolvido fecha. */
   function fimArrastoLinha(dx, vx){
-    if(vx < -0.5) return 'abrir';
-    if(vx > 0.5) return 'fechar';
-    return -dx > LARGURA_APAGAR / 2 ? 'abrir' : 'fechar';
+    return -(dx + projeta(vx)) > LARGURA_APAGAR / 2 ? 'abrir' : 'fechar';
   }
+  /* 30px de piso: tremida curta não fecha mesmo com velocidade. */
   function fimArrastoSheet(dy, vy){
-    return dy > 120 || (vy > 0.8 && dy > 30) ? 'fechar' : 'voltar';
+    return dy > 30 && dy + projeta(vy) > 120 ? 'fechar' : 'voltar';
   }
   /* No WKWebView o UIKit pode iniciar o próprio rubber-band nos primeiros ~10px, antes de eixo()
      decidir o eixo — e o touchmove seguinte às vezes já vem não-cancelable. Por isso o listener do
@@ -27,8 +40,9 @@
   function bloqueiaPuxada(dx, dy){
     return dy > 0 && Math.abs(dy) >= Math.abs(dx);
   }
+  /* 40px de piso: peteleco acidental na borda não volta de tela. */
   function fimArrastoBorda(dx, vx, largura){
-    return dx > largura * 0.35 || (vx > 0.5 && dx > 40) ? 'voltar' : 'cancelar';
+    return dx > 40 && dx + projeta(vx) > largura * 0.35 ? 'voltar' : 'cancelar';
   }
   /* No Safari comum a borda esquerda é o "voltar" do navegador: só no app e no PWA instalado. */
   function bordaAtiva(x, classes){
@@ -123,7 +137,12 @@
           }
           li.classList.add('swipe', 'arrastando');
         }
-        const pos = Math.min(0, Math.max(-ARRASTO_MAXIMO, dx + (l.aberta ? -LARGURA_APAGAR : 0)));
+        /* além dos limites (fechada para a direita, aberta além do máximo) a linha resiste
+           em vez de parar seco */
+        const bruto = dx + (l.aberta ? -LARGURA_APAGAR : 0);
+        const pos = bruto > 0 ? elastico(bruto, 60)
+          : bruto < -ARRASTO_MAXIMO ? -ARRASTO_MAXIMO + elastico(bruto + ARRASTO_MAXIMO, 60)
+          : bruto;
         li.style.setProperty('--dx', pos + 'px');
         if(!l.vibrou && !l.aberta && pos <= -LARGURA_APAGAR / 2){ l.vibrou = true; vibrar(); }
         return pos;
@@ -142,16 +161,11 @@
       }
 
       /* ---- sheet ---- */
+      /* a saída do closeSheet (.saindo) parte de onde o dedo soltou: a transição do CSS
+         começa na posição atual, então o movimento continua sem emenda */
       function fecharSheet(){
-        const conteudo = sheet.firstChild;
-        const fim = () => {
-          // se outro sheet abriu nesse meio-tempo, não é ele que o gesto fecha
-          try{ if(sheetAberto() && sheet.firstChild === conteudo) win.closeSheet(); }
-          finally{ sheet.style.removeProperty('--dy'); }
-        };
-        if(semMovimento()){ fim(); return; }
-        sheet.style.setProperty('--dy', sheet.offsetHeight + 'px'); // termina de descer
-        win.setTimeout(() => { try{ fim(); }catch(err){ registra(err); } }, 200);
+        try{ win.closeSheet(); }
+        finally{ sheet.style.removeProperty('--dy'); }
       }
       function soltarSheet(cancelado){
         const p = puxada; puxada = null;
@@ -185,7 +199,9 @@
           el.classList.add('soltando-borda');
           el.style.setProperty('--dx-tela', '0px');
         }
-        win.setTimeout(() => { if(!borda || borda.tela !== b.tela) els.forEach(limparTela); }, 260);
+        // espera a mola de quique terminar (a duração vem do CSS; zero com movimento reduzido)
+        const dur = (parseFloat(win.getComputedStyle(html).getPropertyValue('--mola-quique-dur')) || 0) * 1000;
+        win.setTimeout(() => { if(!borda || borda.tela !== b.tela) els.forEach(limparTela); }, dur + 40);
       }
 
       function soltarTudo(cancelado){
@@ -209,7 +225,7 @@
           const foco = doc.activeElement;
           const focoEmCampo = !!(foco && sheet.contains(foco) && foco.matches('input,select,textarea,[contenteditable]'));
           if(podePuxarSheet({ scrollTop:sheet.scrollTop, focoEmCampo, yNoSheet:t.clientY - sheet.getBoundingClientRect().top }))
-            puxada = { ativa:false };
+            puxada = { ativa:false, altura:sheet.offsetHeight };
         }
         if(bordaAtiva(t.clientX, html.classList)){
           const tela = doc.querySelector('section.view.active'), voltar = alvoVoltar();
@@ -252,7 +268,8 @@
         }
         if(puxada){
           if(!puxada.ativa){ puxada.ativa = true; sheet.classList.add('arrastando'); }
-          sheet.style.setProperty('--dy', Math.max(0, dy) + 'px');
+          // voltando acima do ponto de partida, a sheet resiste (elástico) em vez de travar
+          sheet.style.setProperty('--dy', (dy >= 0 ? dy : elastico(dy, puxada.altura)) + 'px');
         }
       }
       function fim(e){
@@ -308,7 +325,7 @@
     }catch(err){ registra(err); }
   }
 
-  const api = { eixo, fimArrastoLinha, fimArrastoSheet, fimArrastoBorda, bordaAtiva, podePuxarSheet, podeVoltarBorda, bloqueiaPuxada, LARGURA_APAGAR };
+  const api = { eixo, fimArrastoLinha, fimArrastoSheet, fimArrastoBorda, bordaAtiva, podePuxarSheet, podeVoltarBorda, bloqueiaPuxada, LARGURA_APAGAR, projeta, elastico, TAXA_DESACELERACAO };
   if(typeof module !== 'undefined') module.exports = api;
   if(root && root.document){ api.iniciar = win => iniciar(win); root.OBRA_GESTOS = api; api.iniciar(root); }
 })(typeof window !== 'undefined' ? window : null);

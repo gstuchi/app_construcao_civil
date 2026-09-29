@@ -64,3 +64,35 @@ test('borda: só com a tela livre por cima e o voltar à vista', ()=>{
   assert.equal(G.podeVoltarBorda({ ...livre, temVoltar:false }), false);    // aba sem voltar
   assert.equal(G.podeVoltarBorda({ ...livre, voltarCoberto:true }), false); // qualquer overlay por cima do voltar
 });
+
+test('projeta: impulso vira distância (Apple, desaceleração 0,995 por ms)', ()=>{
+  assert.equal(G.projeta(0), 0);
+  assert.ok(Math.abs(G.projeta(1) - 199) < 0.5);    // 1px/ms ≈ 199px adiante
+  assert.ok(Math.abs(G.projeta(-1) + 199) < 0.5);   // sinal preservado
+  assert.ok(Math.abs(G.projeta(1, 0.99) - 99) < 0.5);
+});
+
+test('elástico: resiste cada vez mais e nunca passa da dimensão', ()=>{
+  assert.equal(G.elastico(0, 100), 0);
+  const a = G.elastico(50, 100), b = G.elastico(100, 100), c = G.elastico(1000, 100);
+  assert.ok(a > 0 && a < 50);
+  assert.ok(b > a && c > b && c < 100);
+  assert.equal(G.elastico(-50, 100), -a);
+});
+
+test('sheet: o destino projetado decide, não só onde soltou', ()=>{
+  assert.equal(G.fimArrastoSheet(200, -1.5), 'voltar'); // desceu muito mas jogou para cima
+  assert.equal(G.fimArrastoSheet(40, 0.5), 'fechar');   // curto e rápido para baixo
+  assert.equal(G.fimArrastoSheet(100, 0), 'voltar');
+});
+
+test('linha: arrasto longo devolvido para a direita fecha', ()=>{
+  assert.equal(G.fimArrastoLinha(-100, 1), 'fechar');
+  assert.equal(G.fimArrastoLinha(-10, -0.3), 'abrir');
+});
+
+test('borda: peteleco curto não volta, lento e longo sim', ()=>{
+  assert.equal(G.fimArrastoBorda(30, 2, 390), 'cancelar'); // menos de 40px: toque acidental
+  assert.equal(G.fimArrastoBorda(140, 0, 390), 'voltar');
+  assert.equal(G.fimArrastoBorda(200, -1, 390), 'cancelar'); // arrastou e devolveu
+});

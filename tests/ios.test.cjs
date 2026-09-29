@@ -44,10 +44,10 @@ test('barras translúcidas com material por tema', ()=>{
   for(const b of blocos){
     const i = css.indexOf(b); assert.ok(i >= 0, `bloco ${b} sumiu`);
     const corpo = css.slice(i, css.indexOf('}', i));
-    assert.match(corpo, /--barra:\s*rgba\(/, `${b} sem --barra`);
+    assert.match(corpo, /--vidro:\s*rgba\(/, `${b} sem --vidro`);
   }
   assert.match(css, /nav\.tabs\{[^}]*-webkit-backdrop-filter/);
-  assert.match(css, /header\.top\.colapsada\{[^}]*-webkit-backdrop-filter/);
+  assert.match(css, /header\.top::before\{[^}]*-webkit-backdrop-filter/);
 });
 
 test('trocar de tela diz a direção da navegação', ()=>{

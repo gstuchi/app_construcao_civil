@@ -1056,16 +1056,87 @@ body .layout-45{font-size:30px}
     ul.list li > .li-del{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   }
   @media (prefers-reduced-motion: reduce){ li.swipe > *,.sheet,section.view.active.soltando-borda,.titulo-grande.soltando-borda{transition:none} }
+/* ===== Teste: vidro máximo (branch teste/vidro-maximo) =====
+   Experimento para sentir no iPhone um Custta com muito mais Liquid Glass, no espírito de apps
+   como o Pierre: uma aurora colorida nas cores do skin atrás do topo das telas, e o conteúdo
+   (cards, painéis, indicadores e a lista de obras) também em vidro, para a cor aparecer através
+   dele. Quebra de propósito a regra "vidro só na navegação" do spec de 2026-09-28; não é para
+   a main sem decisão do Giovani. Os recuos de acessibilidade logo abaixo cobrem os tokens novos. */
+  :root{
+    --aurora-1:16,185,160; --aurora-2:40,200,110; --aurora-3:8,90,150; --aurora-4:120,235,195; --aurora-a:.92;
+    --vidro-conteudo:rgba(6,22,17,.42); --vidro-luz-conteudo:.62;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.30),inset 0 -1px 0 rgba(255,255,255,.05),inset 0 0 0 .5px rgba(255,255,255,.16);
+  }
+  html[data-theme="light"]{
+    --aurora-1:20,179,154; --aurora-2:58,209,126; --aurora-3:60,150,200; --aurora-4:150,240,210; --aurora-a:.55;
+    --vidro-conteudo:rgba(255,255,255,.52); --vidro-luz-conteudo:1.06;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(255,255,255,.35),inset 0 0 0 .5px rgba(20,43,35,.10);
+  }
+  html[data-skin="azul"]{
+    --aurora-1:59,108,240; --aurora-2:110,150,255; --aurora-3:110,50,200; --aurora-4:120,210,255; --aurora-a:1;
+    --vidro-conteudo:rgba(8,12,28,.42); --vidro-luz-conteudo:.62;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.30),inset 0 -1px 0 rgba(255,255,255,.05),inset 0 0 0 .5px rgba(255,255,255,.16);
+  }
+  html[data-skin="azul"][data-theme="light"]{
+    --aurora-1:59,108,240; --aurora-2:96,140,255; --aurora-3:140,90,220; --aurora-4:150,210,255; --aurora-a:.52;
+    --vidro-conteudo:rgba(255,255,255,.52); --vidro-luz-conteudo:1.06;
+    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(255,255,255,.35),inset 0 0 0 .5px rgba(23,43,77,.10);
+  }
+  :root{--vidro-filtro-conteudo:saturate(170%) blur(28px) brightness(var(--vidro-luz-conteudo))}
+
+  /* aurora: manchas desfocadas nas cores do skin, presas ao topo da tela e apagando para baixo.
+     A máscara e o filter moram no próprio #aurora, que não é ancestral de nenhum vidro. Deriva
+     devagar (26s por ida, bem abaixo do ritmo que incomoda); com movimento reduzido fica parada. */
+  #aurora{position:fixed;left:0;right:0;top:0;height:78vh;z-index:0;pointer-events:none;overflow:hidden;
+    -webkit-mask-image:linear-gradient(to bottom,#000 40%,transparent);mask-image:linear-gradient(to bottom,#000 40%,transparent)}
+  #aurora::before{content:"";position:absolute;inset:-15% -30%;
+    background:
+      radial-gradient(55% 55% at 16% 26%, rgba(var(--aurora-1),var(--aurora-a)), transparent 70%),
+      radial-gradient(50% 52% at 84% 16%, rgba(var(--aurora-2),var(--aurora-a)), transparent 70%),
+      radial-gradient(48% 44% at 52% 52%, rgba(var(--aurora-3),var(--aurora-a)), transparent 74%),
+      radial-gradient(24% 24% at 44% 12%, rgba(var(--aurora-4),var(--aurora-a)), transparent 70%),
+      linear-gradient(100deg, rgba(var(--aurora-3),var(--aurora-a)), rgba(var(--aurora-1),var(--aurora-a)) 35%, rgba(var(--aurora-2),var(--aurora-a)) 65%, rgba(var(--aurora-3),var(--aurora-a)));
+    filter:blur(30px);animation:aurora-deriva 26s ease-in-out infinite alternate}
+  @keyframes aurora-deriva{
+    0%{transform:translate3d(-4%,-2%,0) rotate(0deg) scale(1)}
+    50%{transform:translate3d(5%,3%,0) rotate(8deg) scale(1.08)}
+    100%{transform:translate3d(-2%,4%,0) rotate(-6deg) scale(1.02)}}
+  @media (prefers-reduced-motion: reduce){ #aurora::before{animation:none} }
+  @media print{ #aurora{display:none} }
+
+  /* conteúdo em vidro: cards, painéis, indicadores e o grupo da lista de obras. Os painéis
+     transparentes (cabeçalho da obra, moldura da lista) ficam de fora: um backdrop-filter neles
+     viraria raiz de fundo e o vidro de dentro deixaria de ver a aurora. */
+  @media screen{
+    .card:not(.saldo),.panel:not(.grupo-obras):not(.obra-head),.kpi,.notif-invite,.grupo-obras > ul.list{
+      background:var(--vidro-conteudo);-webkit-backdrop-filter:var(--vidro-filtro-conteudo);backdrop-filter:var(--vidro-filtro-conteudo);
+      box-shadow:var(--vidro-brilho)}
+    /* ações da obra e "Editar orçamento": pílulas de vidro (o primário continua sólido, como o
+       botão de destaque do Pierre — cor chapada ao lado do vidro é o que faz o vidro aparecer) */
+    html body .obra-actions .btn.ghost,html body .btn.ghost.orc-editar{
+      background:var(--vidro);-webkit-backdrop-filter:var(--vidro-filtro);backdrop-filter:var(--vidro-filtro);
+      box-shadow:var(--vidro-brilho),var(--vidro-sombra);color:var(--chip-on-ink)}
+    html[data-theme="light"] body .obra-actions .btn.ghost,html[data-theme="light"] body .btn.ghost.orc-editar{color:var(--brand-600)}
+    /* chips: vidro claro fosco no selecionado, vidro fino nos outros */
+    .chip{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:var(--text)}
+    .chip.on{background:rgba(255,255,255,.90);border-color:transparent;color:#0B1A15}
+    html[data-theme="light"] .chip{background:rgba(255,255,255,.55);border-color:rgba(20,43,35,.10)}
+    html[data-theme="light"] .chip.on{background:var(--text);color:#fff}
+    /* no escuro, o que fica direto sobre a aurora (subtítulos e botões da barra) passa para a
+       cor do texto: o cinza e a tinta da marca somem sobre o verde/azul claro da aurora */
+    html:not([data-theme="light"]) .grupo-obras > h2 .muted,html:not([data-theme="light"]) .obra-head .obra-meta{color:var(--text);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+    html:not([data-theme="light"]) .nav-voltar,html:not([data-theme="light"]) header.top .sair{color:var(--text)}
+  }
 /* ===== Liquid Glass: recuos =====
    Sem backdrop-filter (WebKit muito antigo), com transparência reduzida (Ajustes › Acessibilidade)
    ou com contraste aumentado, o vidro vira superfície sólida. Os quatro seletores repetem os
    dos blocos de tema para empatar a especificidade — vale o que vem por último. */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid)}
+  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
 }
 @media (prefers-reduced-transparency: reduce){
-  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-filtro:none;--vidro-filtro-forte:none}
+  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-filtro:none;--vidro-filtro-forte:none;--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
 }
 @media (prefers-contrast: more){
-  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-luz:1;--vidro-brilho:inset 0 0 0 1px var(--line-strong)}
+  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-luz:1;--vidro-brilho:inset 0 0 0 1px var(--line-strong);--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
 }

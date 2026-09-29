@@ -81,6 +81,9 @@ test('toque encolhe na hora e volta com mola; troca de tela com mola', ()=>{
 const PERMITIDOS = [
   /^nav\.tabs$/, /^\.fab$/, /^header\.top::before$/, /^\.nav-voltar$/, /^header\.top \.sair$/, /^header\.top \.sync-pill$/,
   /^\.sheet$/, /^\.conta-dialog$/, /^\.toast$/, /^\.valor-tela$/, /^\.auth-card$/, /^\.side$/, /^\.tgl-tema:active \.bola$/,
+  /* teste/vidro-maximo: conteúdo e ações da obra em vidro, de propósito (ver o bloco no styles.css) */
+  /^\.card:not\(\.saldo\)$/, /^\.panel:not\(\.grupo-obras\):not\(\.obra-head\)$/, /^\.kpi$/, /^\.notif-invite$/, /^\.grupo-obras > ul\.list$/,
+  /^html body \.obra-actions \.btn\.ghost$/, /^html body \.btn\.ghost\.orc-editar$/,
 ];
 test('backdrop-filter só nos seletores da camada de navegação', ()=>{
   const fora = regras

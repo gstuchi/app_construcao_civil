@@ -1122,9 +1122,10 @@ body .layout-45{font-size:30px}
     .chip.on{background:rgba(255,255,255,.90);border-color:transparent;color:#0B1A15}
     html[data-theme="light"] .chip{background:rgba(255,255,255,.55);border-color:rgba(20,43,35,.10)}
     html[data-theme="light"] .chip.on{background:var(--text);color:#fff}
-    /* no escuro, o que fica direto sobre a aurora (subtítulos e botões da barra) passa para a
-       cor do texto: o cinza e a tinta da marca somem sobre o verde/azul claro da aurora */
-    html:not([data-theme="light"]) .grupo-obras > h2 .muted,html:not([data-theme="light"]) .obra-head .obra-meta{color:var(--text);text-shadow:0 1px 8px rgba(0,0,0,.35)}
+    /* o que fica direto sobre a aurora passa para a cor do texto: o cinza some sobre ela nos dois
+       temas, e no escuro também a tinta da marca dos botões da barra */
+    .grupo-obras > h2 .muted,.obra-head .obra-meta{color:var(--text)}
+    html:not([data-theme="light"]) .grupo-obras > h2 .muted,html:not([data-theme="light"]) .obra-head .obra-meta{text-shadow:0 1px 8px rgba(0,0,0,.35)}
     html:not([data-theme="light"]) .nav-voltar,html:not([data-theme="light"]) header.top .sair{color:var(--text)}
   }
 /* ===== Liquid Glass: recuos =====

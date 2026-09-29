@@ -128,12 +128,18 @@
   if(reduced){ draw(1.2); window.__globeDraw=()=>draw(1.2); window.__globeEstado=()=>({ rodando:false }); return; }
   window.__globeDraw=()=>{}; // animando, o próximo frame já pega a cor nova
 
-  let angle=1.2, last=performance.now(), running=true, timerRetomada=null, quadro=null;
+  /* giro calmo (0,04 rad/s): a 30 quadros por segundo o passo continua imperceptível, e cada
+     redesenho a menos poupa o canvas e o desfoque de todo vidro que está por cima dele (desde o
+     vidro máximo, os cards também) */
+  const INTERVALO = 1000/30;
+  let angle=1.2, last=performance.now(), ultimoDesenho=0, running=true, timerRetomada=null, quadro=null;
   function loop(now){
     if(!running) return;
-    angle += (now-last)*0.00004;              // giro calmo
-    last=now;
-    draw(angle);
+    if(now-ultimoDesenho >= INTERVALO-1){
+      angle += (now-last)*0.00004;
+      last=now; ultimoDesenho=now;
+      draw(angle);
+    }
     quadro = requestAnimationFrame(loop);
   }
   /* cancela o frame agendado (se houver) — sem isto, um requestAnimationFrame já enfileirado

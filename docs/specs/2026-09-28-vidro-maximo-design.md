@@ -32,4 +32,6 @@ Os recuos continuam valendo: sem `backdrop-filter`, com transparência reduzida 
 
 ## Risco conhecido
 
-Vidro em muitos cards custa mais para pintar, principalmente ao rolar no iPhone. Nos testes, a página mais pesada expôs uma corrida no teste "com o teclado aberto a sheet cabe na área visível" (o aviso do `visualViewport` chegava depois do valor simulado); o teste passou a esperar dois quadros. Se a rolagem pesar no aparelho, o primeiro recuo é tirar o vidro dos cards que ficam abaixo da aurora (onde ele quase não aparece).
+Vidro em muitos cards custa mais para pintar, principalmente ao rolar no iPhone. Tudo que anima por baixo (o globo e a aurora) obriga cada card de vidro a refazer o desfoque a cada quadro. Medido no Chromium sem GPU, parado na tela da obra, o CPU total subiu de cerca de 60% (antes do #24) para 111%. Depois do merge, a CI da `main` passou a falhar em testes sensíveis a tempo (esfumado da barra, login depois de apagar conta, sair com recarga).
+
+Duas correções baixaram para cerca de 69% sem mudar o que se vê: a aurora perdeu o `filter: blur` (as manchas já são degradês suaves, e o desfoque custava cerca de 20 pontos) e o globo passou a redesenhar a 30 quadros por segundo em vez de 60 (gira a 0,04 rad/s, então o passo continua imperceptível). Os testes que conferiam sem esperar passaram a esperar o estado final. Se a rolagem ainda pesar no aparelho, o próximo recuo é tirar o vidro dos cards que ficam abaixo da aurora (onde ele quase não aparece).

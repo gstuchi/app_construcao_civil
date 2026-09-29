@@ -102,11 +102,17 @@ const ROOT=path.resolve(__dirname,'../..');
     assert.ok(await page.evaluate(()=>CLOUD.user()));
     await outra.close();
     console.log('ok - outra aba aberta impede saída e preserva sessão');
+    /* a aba fechada solta a trava compartilhada da conta (Web Locks) um pouco depois do close();
+       com o runner lento, a saída chegava antes, era recusada com 'outra-aba' e a recarga nunca
+       vinha. Espera só esta aba segurar a trava antes de sair. */
+    await page.waitForFunction(async()=>(await navigator.locks.query()).held.filter(l=>l.name.startsWith('custta-conta-')).length===1,null,{timeout:10000});
     const antesDeSair=await page.evaluate(()=>window.__documentoId);
     await page.evaluate(()=>{ CLOUD.logout().catch(e=>window.__falhaSaida=e.code); });
     /* Esperas de recarga: flush da fila (teto de 5s no cloud.js) + terminate + clearIndexedDbPersistence
-       + reload. No runner do GitHub isso passa dos 15s padrão da suíte, então estas duas ganham folga. */
-    await page.waitForFunction(antes=>window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked'),antesDeSair,{timeout:30000});
+       + reload. No runner do GitHub isso passa dos 15s padrão da suíte, então estas duas ganham folga.
+       Se a saída for recusada, para na hora e diz o motivo em vez de esperar os 30s. */
+    await page.waitForFunction(antes=>window.__falhaSaida || (window.__documentoId !== antes && typeof db !== 'undefined' && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && localStorage.getItem('custta-limpar-cache') === null && document.body.classList.contains('locked')),antesDeSair,{timeout:30000});
+    assert.equal(await page.evaluate(()=>window.__falhaSaida),undefined,'saída recusada');
     assert.equal(await page.evaluate(()=>localStorage.getItem('custta-limpar-cache')),null);
     console.log('ok - logout normal sincroniza, limpa cache e recarrega sem sessão');
     await page.locator('#lEmail').fill('logout-fase2@example.com');

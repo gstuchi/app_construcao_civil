@@ -88,7 +88,7 @@ async function sair(page){
   /* No contexto nativo o documento sai de um route (CSP da <meta> do www/) e o Chromium o trata
      como espaço público: nega (Local Network Access) as chamadas aos emuladores em 127.0.0.1,
      que em produção não existem. A flag desliga só essa checagem, neste navegador de teste. */
-  const browser=await chromium.launch({args:['--disable-features=LocalNetworkAccessChecks,BlockInsecurePrivateNetworkRequests,PrivateNetworkAccessSendPreflights,PrivateNetworkAccessRespectPreflightResults']});
+  const browser=await chromium.launch({args:['--disable-features=LocalNetworkAccessChecks']});
   // withSecurityRulesDisabled descarta o retorno do callback: grava em variável de fora.
   const leDoc=async(colecao,uid)=>{
     let snap; await env.withSecurityRulesDisabled(async ctx=>{ snap=await getDoc(doc(ctx.firestore(),colecao,uid)); });
@@ -133,7 +133,11 @@ async function sair(page){
       assert.equal(await page.locator('#btnApple').isVisible(),true);
       assert.equal(await page.locator('#btnGoogle').isVisible(),true);
       // a troca de aba anima o cartão com transform: espera assentar para medir o tamanho real
-      await page.waitForTimeout(1200);
+      await page.waitForFunction(()=>{
+        // animações finitas (entrada do cartão) terminadas e altura do botão já no tamanho cheio
+        const correndo=document.getAnimations().filter(an=>an.effect.getComputedTiming().iterations!==Infinity && an.playState!=='finished');
+        return correndo.length===0 && document.getElementById('btnApple').getBoundingClientRect().height>=44;
+      });
       const a=await page.locator('#btnApple').boundingBox(), g=await page.locator('#btnGoogle').boundingBox();
       assert.ok(a.y<g.y,`Apple deve ficar acima do Google (${a.y} vs ${g.y})`);
       assert.ok(a.height>=44,`altura da Apple ${a.height}`);

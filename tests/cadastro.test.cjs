@@ -71,7 +71,7 @@ test('nomeDoGoogle corta nos limites do perfil',()=>{
 test('mensagemErroGoogle: desistência é silenciosa, o resto em português',()=>{
   for(const c of ['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'])
     assert.equal(C.mensagemErroGoogle(c),'');
-  assert.equal(C.mensagemErroGoogle('auth/account-exists-with-different-credential'),'Este e-mail já tem conta com senha. Entre com e-mail e senha.');
+  assert.equal(C.mensagemErroGoogle('auth/account-exists-with-different-credential'),'Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez.');
   assert.equal(C.mensagemErroGoogle('auth/unauthorized-domain'),'Login com Google indisponível neste endereço. Use custta.com.br.');
   assert.equal(C.mensagemErroGoogle('auth/operation-not-supported-in-this-environment'),'Seu navegador bloqueou o login com Google. Use e-mail e senha.');
   assert.equal(C.mensagemErroGoogle('auth/web-storage-unsupported'),'Seu navegador bloqueou o login com Google. Use e-mail e senha.');
@@ -80,4 +80,32 @@ test('mensagemErroGoogle: desistência é silenciosa, o resto em português',()=
   assert.equal(C.mensagemErroGoogle('auth/qualquer-outro'),'Não deu certo entrar com o Google. Tente de novo.');
   assert.equal(C.mensagemErroGoogle(undefined),'Não deu certo entrar com o Google. Tente de novo.');
   assert.equal(C.mensagemErroGoogle('toString'),'Não deu certo entrar com o Google. Tente de novo.');
+});
+test('mensagemErroSocial: Apple com artigo, Google como antes',()=>{
+  const A=c=>C.mensagemErroSocial(c,'apple.com');
+  for(const c of ['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled']) assert.equal(A(c),'');
+  assert.equal(A('auth/unauthorized-domain'),'Login com a Apple indisponível neste endereço. Use custta.com.br.');
+  assert.equal(A('auth/operation-not-allowed'),'Login com a Apple ainda não está disponível. Use e-mail e senha.');
+  assert.equal(A('auth/operation-not-supported-in-this-environment'),'Seu navegador bloqueou o login com a Apple. Use e-mail e senha.');
+  assert.equal(A('auth/web-storage-unsupported'),'Seu navegador bloqueou o login com a Apple. Use e-mail e senha.');
+  assert.equal(A('auth/account-exists-with-different-credential'),'Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez.');
+  assert.equal(A('auth/network-request-failed'),'Sem internet. Conecte pra entrar.');
+  assert.equal(A('auth/too-many-requests'),'Muitas tentativas. Espere um pouco.');
+  assert.equal(A('auth/qualquer'),'Não deu certo entrar com a Apple. Tente de novo.');
+  assert.equal(A('toString'),'Não deu certo entrar com a Apple. Tente de novo.');
+  assert.equal(A(undefined),'Não deu certo entrar com a Apple. Tente de novo.');
+  assert.equal(C.mensagemErroSocial('auth/qualquer','toString'),'Não deu certo entrar com o Google. Tente de novo.','provedor desconhecido cai no Google');
+  assert.equal(C.mensagemErroSocial('auth/operation-not-allowed','google.com'),'Login com Google ainda não está disponível. Use e-mail e senha.');
+  for(const c of ['auth/unauthorized-domain','auth/web-storage-unsupported','auth/qualquer'])
+    assert.equal(C.mensagemErroSocial(c,'google.com'),C.mensagemErroGoogle(c));
+});
+test('normalizaPerfil com nomeOpcional: nome da Apple entra; ausente ou inválido fica de fora',()=>{
+  const opc={nomeOpcional:true};
+  assert.deepEqual(C.normalizaPerfil({nome:'Bia',sobrenome:'Lima',origem:'instagram'},opc).perfil,{nome:'Bia',sobrenome:'Lima',origem:'instagram'});
+  assert.deepEqual(C.normalizaPerfil({nome:'',sobrenome:'',origem:'instagram'},opc).perfil,{origem:'instagram'});
+  assert.deepEqual(C.normalizaPerfil({origem:'google'},opc).perfil,{origem:'google'});
+  assert.deepEqual(C.normalizaPerfil({nome:'J',origem:'google'},opc).perfil,{origem:'google'},'nome de 1 letra não trava quem não vê o campo');
+  const semOrigem=C.normalizaPerfil({nome:''},opc);
+  assert.equal(semOrigem.ok,false); assert.equal(semOrigem.campo,'origem');
+  assert.equal(C.normalizaPerfil({nome:'',origem:'instagram'}).campo,'nome','sem a opção o nome continua obrigatório');
 });

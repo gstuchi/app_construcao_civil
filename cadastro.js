@@ -56,9 +56,12 @@
     if(sobrenome) perfil.sobrenome = sobrenome;
     return {ok:true, campo:'', erro:'', perfil};
   }
-  function normalizaPerfil(d){
+  /* nomeOpcional: conta Apple. O nome vem da Apple e a tela não o pede de novo (a
+     revisão da Apple reprova); nome ausente ou fora das regras fica de fora do perfil. */
+  function normalizaPerfil(d, opcoes){
     const o = d && typeof d === 'object' ? d : {};
-    const base = normalizaNome(o);
+    let base = normalizaNome(o);
+    if(!base.ok && opcoes && opcoes.nomeOpcional) base = {ok:true, perfil:{}};
     if(!base.ok) return base;
     const origem = ORIGENS.find(x=>x.id === o.origem);
     if(!origem) return falhou('origem','Conte como conheceu o Custta.');
@@ -71,7 +74,7 @@
     return {ok:true, campo:'', erro:'', perfil};
   }
 
-  /* displayName do Google → nome + sobrenome: primeira palavra é o nome, o resto
+  /* Nome de exibição (Google ou Apple) → nome + sobrenome: primeira palavra é o nome, o resto
      o sobrenome, cortados nos limites. "Falta pouco" deixa a pessoa corrigir. */
   function nomeDoGoogle(displayName){
     const partes = limpa(displayName).split(' ').filter(Boolean);
@@ -80,22 +83,30 @@
       sobrenome: partes.slice(1).join(' ').slice(0, LIMITES_PERFIL.sobrenome),
     };
   }
-  /* '' = a pessoa desistiu (fechou o popup): não é erro pra mostrar. */
-  const SEM_GOOGLE = 'Seu navegador bloqueou o login com Google. Use e-mail e senha.';
-  const ERROS_GOOGLE = Object.freeze({
-    'auth/popup-closed-by-user':'', 'auth/cancelled-popup-request':'', 'auth/user-cancelled':'',
-    'auth/account-exists-with-different-credential':'Este e-mail já tem conta com senha. Entre com e-mail e senha.',
-    'auth/unauthorized-domain':'Login com Google indisponível neste endereço. Use custta.com.br.',
-    'auth/operation-not-supported-in-this-environment':SEM_GOOGLE,
-    'auth/web-storage-unsupported':SEM_GOOGLE,
-    'auth/network-request-failed':'Sem internet. Conecte pra entrar.',
-    'auth/too-many-requests':'Muitas tentativas. Espere um pouco.',
+  /* Como cada provedor aparece nas frases: "Login com a Apple", "entrar com o Google". */
+  const PROVEDORES = Object.freeze({
+    'google.com': Object.freeze({ curto:'com Google', longo:'com o Google' }),
+    'apple.com':  Object.freeze({ curto:'com a Apple', longo:'com a Apple' }),
   });
-  function mensagemErroGoogle(code){
-    return Object.hasOwn(ERROS_GOOGLE, code) ? ERROS_GOOGLE[code] : 'Não deu certo entrar com o Google. Tente de novo.';
+  /* '' = a pessoa desistiu (fechou o popup ou a tela da Apple): não é erro pra mostrar. */
+  const DESISTIU = new Set(['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled']);
+  function mensagemErroSocial(code, provedor){
+    const p = Object.hasOwn(PROVEDORES, provedor) ? PROVEDORES[provedor] : PROVEDORES['google.com'];
+    if(DESISTIU.has(code)) return '';
+    switch(code){
+      case 'auth/account-exists-with-different-credential': return 'Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez.';
+      case 'auth/unauthorized-domain': return `Login ${p.curto} indisponível neste endereço. Use custta.com.br.`;
+      case 'auth/operation-not-allowed': return `Login ${p.curto} ainda não está disponível. Use e-mail e senha.`;
+      case 'auth/operation-not-supported-in-this-environment':
+      case 'auth/web-storage-unsupported': return `Seu navegador bloqueou o login ${p.curto}. Use e-mail e senha.`;
+      case 'auth/network-request-failed': return 'Sem internet. Conecte pra entrar.';
+      case 'auth/too-many-requests': return 'Muitas tentativas. Espere um pouco.';
+      default: return `Não deu certo entrar ${p.longo}. Tente de novo.`;
+    }
   }
+  const mensagemErroGoogle = code => mensagemErroSocial(code, 'google.com');
 
-  const api = {REGRAS_SENHA, validaSenha, ORIGENS, LIMITES_PERFIL, normalizaPerfil, normalizaNome, nomeDoGoogle, mensagemErroGoogle};
+  const api = {REGRAS_SENHA, validaSenha, ORIGENS, LIMITES_PERFIL, normalizaPerfil, normalizaNome, nomeDoGoogle, mensagemErroSocial, mensagemErroGoogle};
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CADASTRO = api;
 })(typeof window !== 'undefined' ? window : globalThis);

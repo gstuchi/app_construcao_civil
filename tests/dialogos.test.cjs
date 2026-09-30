@@ -28,7 +28,8 @@ test('login com Apple: botão acima do Google, bloco social e "Falta pouco" sem 
   assert.match(social[1], /<svg[^>]*aria-hidden="true"[\s\S]*?fill="currentColor"/);
   assert.match(social[1], /<span id="btnAppleTexto">Continuar com a Apple<\/span>/);
   assert.doesNotMatch(html, /id="authGoogle"/);
-  assert.match(html, /<div id="pNomes">[\s\S]*id="pNome"[\s\S]*id="pSobrenome"[\s\S]*?<\/div><\/div>/);
+  assert.match(html, /<div id="pNomes">[\s\S]*?id="pNome"[\s\S]*?id="pSobrenome"[^>]*><\/div><\/div>/);
+  assert.equal((html.match(/<div\b/g) || []).length, (html.match(/<\/div>/g) || []).length, '<div> e </div> balanceados no index.html');
   assert.match(html, /<p class="auth-perfil-texto" id="pTexto">/);
   const auth = readFileSync(join(__dirname, '..', 'auth.js'), 'utf8');
   assert.match(auth, /CLOUD\.entrarApple\(\)/);

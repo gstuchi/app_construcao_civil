@@ -48,6 +48,10 @@ const { chromium } = require('playwright');
       export const signInWithRedirect = ()=>Promise.reject(new Error('Não usado'));
       export const getRedirectResult = ()=>Promise.resolve(null);
       export const reauthenticateWithPopup = ()=>Promise.resolve();
+      export class OAuthProvider { constructor(id){ this.providerId=id; } addScope(){} setCustomParameters(){} credential(){ return {}; } static credentialFromResult(){ return null; } }
+      export const signInWithCredential = ()=>Promise.reject(new Error('Não usado'));
+      export const revokeAccessToken = ()=>Promise.resolve();
+      export const updateProfile = ()=>Promise.resolve();
     ` }));
     await context.addInitScript(()=>sessionStorage.setItem('splashVista', '1'));
     let page = await context.newPage();

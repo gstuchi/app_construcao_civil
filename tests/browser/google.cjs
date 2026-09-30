@@ -184,8 +184,8 @@ async function sair(page){
 
     // 9. erro na volta do redirect aparece na tela de login
     await sair(page);
-    await page.evaluate(()=>window.dispatchEvent(new CustomEvent('cloud-google-erro',{detail:{code:'auth/account-exists-with-different-credential'}})));
-    assert.equal(await page.textContent('#lMsg'),'Este e-mail já tem conta com senha. Entre com e-mail e senha.');
+    await page.evaluate(()=>window.dispatchEvent(new CustomEvent('cloud-social-erro',{detail:{code:'auth/account-exists-with-different-credential',provedor:'google.com'}})));
+    assert.equal(await page.textContent('#lMsg'),'Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez.');
     console.log('ok - erro do redirect vira mensagem em português no login');
 
     // 9b. a mensagem velha do Google não volta depois de entrar por e-mail e sair
@@ -232,10 +232,12 @@ async function sair(page){
       await ctxNativo.addInitScript(()=>{ window.Capacitor={ isNativePlatform:()=>true, getPlatform:()=>'ios', Plugins:{} }; });
       const pNativo=await abrirApp(ctxNativo);
       assert.equal(await pNativo.evaluate(()=>OBRA_NATIVO.ehNativo()),true);
-      assert.equal(await pNativo.locator('#authGoogle').isVisible(),false);
+      assert.equal(await pNativo.locator('#btnGoogle').isVisible(),false);
+      assert.equal(await pNativo.locator('#btnApple').isVisible(),true);
       await pNativo.locator('#authTabs button[data-k="cad"]').click();
-      assert.equal(await pNativo.locator('#authGoogle').isVisible(),false);
-      console.log('ok - no app nativo o botão do Google fica escondido');
+      assert.equal(await pNativo.locator('#btnGoogle').isVisible(),false);
+      assert.equal(await pNativo.locator('#btnApple').isVisible(),true);
+      console.log('ok - no app nativo o Google fica escondido e a Apple aparece');
       await ctxNativo.close();
     }
 

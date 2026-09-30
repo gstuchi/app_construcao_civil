@@ -28,5 +28,6 @@ const run=(file,args=[])=>new Promise((resolve,reject)=>{
     await run('tests/browser/fase2.cjs');
     await run('tests/browser/cadastro.cjs');
     await run('tests/browser/google.cjs');
+    await run('tests/browser/apple.cjs');
   }finally{server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

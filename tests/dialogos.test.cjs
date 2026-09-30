@@ -19,3 +19,21 @@ test('conta só Google: sem trocar senha e apagar sem campo de senha', ()=>{
   assert.match(ui, /auth\/popup-blocked/);
   assert.match(ui, /auth\/user-mismatch/);
 });
+
+test('login com Apple: botão acima do Google, bloco social e "Falta pouco" sem nome', ()=>{
+  const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
+  const social = html.match(/<div id="authSocial" class="auth-social">([\s\S]*?)<\/div>\s*<form id="fLogin"/);
+  assert.ok(social, 'bloco #authSocial antes do formulário de login');
+  assert.ok(social[1].indexOf('id="btnApple"') < social[1].indexOf('id="btnGoogle"'), 'Apple antes do Google (HIG)');
+  assert.match(social[1], /<svg[^>]*aria-hidden="true"[\s\S]*?fill="currentColor"/);
+  assert.match(social[1], /<span id="btnAppleTexto">Continuar com a Apple<\/span>/);
+  assert.doesNotMatch(html, /id="authGoogle"/);
+  assert.match(html, /<div id="pNomes">[\s\S]*id="pNome"[\s\S]*id="pSobrenome"[\s\S]*?<\/div><\/div>/);
+  assert.match(html, /<p class="auth-perfil-texto" id="pTexto">/);
+  const auth = readFileSync(join(__dirname, '..', 'auth.js'), 'utf8');
+  assert.match(auth, /CLOUD\.entrarApple\(\)/);
+  assert.match(auth, /cloud-social-erro/);
+  assert.match(auth, /nomeOpcional/);
+  const ui = readFileSync(join(__dirname, '..', 'ui-confirm.js'), 'utf8');
+  assert.match(ui, /provedores\?\.includes\('apple\.com'\)/);
+});

@@ -1,7 +1,8 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { criar } = require('../nativo.js');
+const { criar, sha256Puro } = require('../nativo.js');
+const { createHash, webcrypto } = require('node:crypto');
 
 function janelaNativa(extra = {}){
   const chamadas = [], erros = [];
@@ -94,4 +95,43 @@ test('marcarAmbiente: nativo e standalone viram classe no <html>', ()=>{
   classes.clear();
   criar({ matchMedia:()=>({ matches:false }), navigator:{ standalone:true } }).marcarAmbiente(doc);
   assert.deepEqual([...classes], ['standalone']);
+});
+
+test('sha256Puro bate com o crypto do Node (vários blocos e UTF-8)', ()=>{
+  const entradas = ['', 'abc', 'a'.repeat(55), 'a'.repeat(56), 'a'.repeat(64), 'a'.repeat(200), 'ção 🍎', '0f'.repeat(32)];
+  for(const e of entradas) assert.equal(sha256Puro(e), createHash('sha256').update(e, 'utf8').digest('hex'), JSON.stringify(e));
+});
+
+test('entrarApple: fora do app devolve null', async()=>{
+  assert.equal(await criar({}).entrarApple({ rawNonce:'x' }), null);
+});
+
+test('entrarApple: pede e-mail e nome e manda o SHA-256 do nonce, com e sem crypto.subtle', async()=>{
+  const pedidos = [];
+  const resposta = { idToken:'id', authorizationCode:'cod', givenName:'Bia', familyName:'Lima' };
+  for(const cripto of [undefined, webcrypto]){
+    const { win } = janelaNativa({ AppleSignIn:{ signIn:async a=>{ pedidos.push(a); return resposta; } } });
+    if(cripto) win.crypto = cripto;
+    assert.deepEqual(await criar(win).entrarApple({ rawNonce:'abc' }), resposta);
+  }
+  const esperado = createHash('sha256').update('abc').digest('hex');
+  assert.deepEqual(pedidos, [
+    { scopes:['EMAIL','FULL_NAME'], nonce:esperado },
+    { scopes:['EMAIL','FULL_NAME'], nonce:esperado },
+  ]);
+});
+
+test('entrarApple: desistência vira auth/user-cancelled sem registrar erro', async()=>{
+  for(const code of ['SIGN_IN_CANCELED', '1001', 1001]){
+    const { win, erros } = janelaNativa({ AppleSignIn:{ signIn:async()=>{ throw Object.assign(new Error('Sign in was canceled.'), { code }); } } });
+    await assert.rejects(criar(win).entrarApple({ rawNonce:'n' }), { code:'auth/user-cancelled' });
+    assert.deepEqual(erros, []);
+  }
+});
+
+test('entrarApple: outra falha sobe e fica no diagnóstico', async()=>{
+  const { win, erros } = janelaNativa({ AppleSignIn:{ signIn:async()=>{ throw Object.assign(new Error('falhou'), { code:'1000' }); } } });
+  await assert.rejects(criar(win).entrarApple({ rawNonce:'n' }), { message:'falhou' });
+  assert.equal(erros.length, 1);
+  assert.equal(erros[0][0], 'nativo-apple');
 });

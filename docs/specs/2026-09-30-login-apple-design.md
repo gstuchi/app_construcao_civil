@@ -161,8 +161,8 @@ No diálogo de conta (`ui-confirm.js`) as mensagens de cancelamento e de
   do Google. Tema escuro: fundo branco, texto e logo pretos; tema claro: fundo
   preto, texto e logo brancos. Botão sólido, sem vidro (a Apple exige as cores
   dela), com o mesmo toque de mola dos outros botões.
-- Logo em SVG inline pelo `icons.js` (`data-ico="apple"`, `fill: currentColor`),
-  para herdar a cor do tema sem arquivo novo.
+- Logo em SVG inline no `index.html` (`fill="currentColor"`), porque os ícones
+  do `icons.js` são de traço e o logo da Apple é preenchido.
 - O bloco social (`#authGoogle`) vira `#authSocial` com os dois botões e o
   separador "ou". No nativo só o Google some; o bloco fica.
 
@@ -176,12 +176,13 @@ No diálogo de conta (`ui-confirm.js`) as mensagens de cancelamento e de
 | `auth.js` | botão Apple, estado de carregando, erro por provedor, "Falta pouco" sem nome para Apple |
 | `ui-confirm.js` | textos do "Apagar conta" e erros pelo provedor |
 | `index.html` | bloco `#authSocial` com o botão Apple |
-| `icons.js` | ícone `apple` |
 | `styles.css` | `.btn.apple` nos quatro combos tema×skin |
 | `sw.js` | bump de `CACHE` |
 | `package.json` / `ios/App/CapApp-SPM/Package.swift` | plugin `@capawesome/capacitor-apple-sign-in` (via `cap sync`) |
 | `ios/App/App/App.entitlements` | `com.apple.developer.applesignin` = `Default` |
 | `privacidade.html` | login com Apple entre os provedores; e-mail de retransmissão da Apple |
+| `docs/sdks-fase4.md` | linha do plugin `@capawesome/capacitor-apple-sign-in` |
+| `tests/privacidade.test.cjs` | filtro de SDKs `@capawesome`, data da política, teste do login com Apple |
 | `docs/app-store-metadados.md` | nota de revisão citando Sign in with Apple |
 | `CLAUDE.md` | uma linha sobre o plugin e o fluxo Apple |
 
@@ -191,8 +192,8 @@ No diálogo de conta (`ui-confirm.js`) as mensagens de cancelamento e de
   `normalizaPerfil` com `nomeOpcional`; `nativo.entrarApple` (repasse de
   escopos e nonce, cancelamento normalizado, erro propagado, nulo fora do
   nativo); SHA-256 do nonce contra vetor conhecido; entitlement presente;
-  plugin no `package.json` e no `Package.swift` do CapApp-SPM; ícone `apple`
-  registrado; `sw.js` com cache novo; CSP nativa inalterada.
+  plugin no `package.json` e no `Package.swift` do CapApp-SPM;
+  `sw.js` com cache novo; CSP nativa inalterada.
 - **Navegador (emuladores), suíte nova `tests/browser/apple.cjs`:**
   - web: popup do emulador para `apple.com` → "Falta pouco" **sem** campos de
     nome, só origem → app destravado e `perfis/{uid}` com o nome vindo da

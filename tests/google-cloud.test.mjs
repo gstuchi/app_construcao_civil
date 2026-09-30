@@ -61,11 +61,11 @@ test('popup bloqueado cai no redirect; outro erro sobe',async()=>{
   await assert.rejects(cloud.entrarGoogle(),{code:'auth/popup-closed-by-user'});
   assert.deepEqual(ctrl.passos,['popup']);
 });
-test('falha na volta do redirect vira evento cloud-google-erro',async()=>{
+test('falha na volta do redirect vira evento cloud-social-erro do Google',async()=>{
   ctrl.falhas.redirectResult={code:'auth/account-exists-with-different-credential'};
   await carregar(); await tique();
-  const ev=eventos.find(e=>e.type==='cloud-google-erro');
-  assert.ok(ev); assert.equal(ev.detail.code,'auth/account-exists-with-different-credential');
+  const ev=eventos.find(e=>e.type==='cloud-social-erro');
+  assert.ok(ev); assert.deepEqual(ev.detail,{code:'auth/account-exists-with-different-credential',provedor:'google.com'});
 });
 test('perfilPendente: perfil no cache responde sem ir ao servidor',async()=>{
   await entraComo(['google.com']); ctrl.passos=[];

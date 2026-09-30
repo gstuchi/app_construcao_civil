@@ -8,6 +8,7 @@ import {
   EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
   sendEmailVerification, reload,
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, reauthenticateWithPopup,
+  OAuthProvider, signInWithCredential, revokeAccessToken, updateProfile,
 } from './vendor/firebase/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager,
@@ -29,15 +30,66 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+/* Qual botão mandou para o redirect: o erro na volta diz "Apple" ou "Google". */
+const CHAVE_REDIRECT = 'custta-redirect';
+function lembraRedirect(provedor){ try{ sessionStorage.setItem(CHAVE_REDIRECT, provedor); }catch{} }
+function provedorDoRedirect(){
+  try{
+    const p = sessionStorage.getItem(CHAVE_REDIRECT);
+    sessionStorage.removeItem(CHAVE_REDIRECT);
+    return p === 'apple.com' ? 'apple.com' : 'google.com';
+  }catch{ return 'google.com'; }
+}
 /* Volta do signInWithRedirect (PWA instalado / popup bloqueado). O usuário
-   chega pelo onAuthStateChanged; aqui só interessa o erro, pra tela de login. */
-getRedirectResult(auth).catch(err=>{
-  window.dispatchEvent(new CustomEvent('cloud-google-erro', { detail:{ code:(err && err.code) || 'desconhecido' } }));
+   chega pelo onAuthStateChanged; aqui interessa o erro, pra tela de login, e o
+   nome que a Apple manda só no primeiro login. */
+getRedirectResult(auth).then(r=>{ provedorDoRedirect(); return guardaNomeApple(r); }, err=>{
+  window.dispatchEvent(new CustomEvent('cloud-social-erro', { detail:{ code:(err && err.code) || 'desconhecido', provedor:provedorDoRedirect() } }));
 });
 function provedorGoogle(){
   const p = new GoogleAuthProvider();
   p.setCustomParameters({ prompt:'select_account' });
   return p;
+}
+function provedorApple(){
+  const p = new OAuthProvider('apple.com');
+  p.addScope('email'); p.addScope('name');
+  p.setCustomParameters({ locale:'pt_BR' });
+  return p;
+}
+/* Nonce do login nativo: 32 bytes aleatórios em hex. A Apple assina o SHA-256
+   dele (nativo.js) e o Firebase confere com este valor cru. */
+function nonceAleatorio(){
+  const b = new Uint8Array(32); crypto.getRandomValues(b);
+  return Array.from(b, x=>x.toString(16).padStart(2,'0')).join('');
+}
+async function credencialAppleNativa(){
+  const rawNonce = nonceAleatorio();
+  const r = await window.OBRA_NATIVO.entrarApple({ rawNonce });
+  if(!r || !r.idToken) throw Object.assign(new Error('A Apple não devolveu a credencial.'), { code:'auth/invalid-credential' });
+  return {
+    credencial: new OAuthProvider('apple.com').credential({ idToken:r.idToken, rawNonce }),
+    codigo: r.authorizationCode || '',
+    nome: [r.givenName, r.familyName].filter(Boolean).join(' ').trim(),
+  };
+}
+/* A Apple só manda o nome no primeiro login. No displayName ele chega ao "Falta
+   pouco" (nomeExibicao) sem a tela pedir de novo. Melhor esforço: falhar aqui
+   não desfaz o login. Na abertura (volta do redirect) currentUser pode ainda não
+   existir; o try cobre. */
+async function gravaNome(u, nome){
+  if(!u || u.displayName || !nome) return;
+  try{
+    await updateProfile(u, { displayName:nome });
+    if(currentUser && currentUser.uid === u.uid) currentUser.nomeExibicao = nome;
+  }catch{}
+}
+/* Web: o Firebase costuma guardar o nome sozinho; quando não guarda, ele vem só
+   na resposta desta vez (firstName/lastName). */
+function guardaNomeApple(resultado){
+  const r = resultado && resultado._tokenResponse;
+  if(!r || r.providerId !== 'apple.com') return;
+  return gravaNome(resultado.user, [r.firstName, r.lastName].filter(Boolean).join(' ').trim());
 }
 /* PWA instalado no iPhone: o popup abre fora do app e não volta. */
 function pwaInstalado(){
@@ -259,13 +311,48 @@ function usuarioOnline(){
   if(cacheBloqueado || !auth.currentUser) throw Object.assign(new Error('Entre novamente.'), { code:'cancelled' });
   return auth.currentUser;
 }
+/* Conta sem senha confirma no provedor dela; com Google e Apple, Apple primeiro
+   (é o que funciona também no app). Devolve a prova da Apple pra revogação. */
+function provedorDaConta(){
+  if(currentUser?.temSenha !== false) return 'password';
+  return currentUser.provedores.includes('apple.com') ? 'apple.com' : 'google.com';
+}
 async function reautenticar(senha){
   const u = usuarioOnline();
-  // Conta só Google não tem senha: confirma a identidade no próprio Google.
-  if(currentUser?.temSenha === false) await reauthenticateWithPopup(u, provedorGoogle());
+  const provedor = provedorDaConta();
+  let prova = null;
+  if(provedor === 'apple.com'){
+    if(nativo){
+      const { credencial, codigo } = await credencialAppleNativa();
+      await reauthenticateWithCredential(u, credencial);
+      prova = { codigo };
+    }else{
+      const r = await reauthenticateWithPopup(u, provedorApple());
+      prova = { accessToken: OAuthProvider.credentialFromResult(r)?.accessToken || '' };
+    }
+  }
+  else if(provedor === 'google.com') await reauthenticateWithPopup(u, provedorGoogle());
   else await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, senha));
   if(auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Sessão alterada.'), { code:'cancelled' });
-  return u;
+  return { u, prova };
+}
+/* A Apple exige revogar o token ao apagar a conta (Guideline 5.1.1(v)). Na web o
+   popup devolve access token, que o SDK revoga; no app a Apple devolve
+   authorizationCode, que só o endpoint REST aceita (tokenType CODE, o mesmo pedido
+   do SDK nativo do Firebase). Falha aqui não segura a exclusão: fica no diagnóstico. */
+async function revogarApple(u, prova){
+  if(!prova) return;
+  try{
+    if(prova.accessToken){ await revokeAccessToken(auth, prova.accessToken); return; }
+    if(!prova.codigo) throw new Error('Apple sem token para revogar');
+    const resp = await fetch('https://identitytoolkit.googleapis.com/v2/accounts:revokeToken?key=' + firebaseConfig.apiKey, {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ providerId:'apple.com', tokenType:'CODE', token:prova.codigo, idToken: await getIdToken(u) }),
+    });
+    if(!resp.ok) throw new Error('revokeToken HTTP ' + resp.status);
+  }catch(err){
+    try{ window.OBRA_DIAG?.registra('apple-revogar', (err && err.message) || String(err), err && err.stack); }catch{}
+  }
 }
 async function aguardarFila(){
   let timer;
@@ -335,14 +422,30 @@ window.CLOUD = {
   async entrarGoogle(){
     if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
     auth.languageCode = 'pt-BR';
-    if(pwaInstalado()) return signInWithRedirect(auth, provedorGoogle());
+    if(pwaInstalado()){ lembraRedirect('google.com'); return signInWithRedirect(auth, provedorGoogle()); }
     try{ await signInWithPopup(auth, provedorGoogle()); }
     catch(err){
-      if(err?.code === 'auth/popup-blocked') return signInWithRedirect(auth, provedorGoogle());
+      if(err?.code === 'auth/popup-blocked'){ lembraRedirect('google.com'); return signInWithRedirect(auth, provedorGoogle()); }
       throw err;
     }
   },
-  /* Só conta Google: o cadastro por e-mail já grava o perfil. Perfil no cache
+  async entrarApple(){
+    if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
+    auth.languageCode = 'pt-BR';
+    if(nativo){
+      const { credencial, nome } = await credencialAppleNativa();
+      const r = await signInWithCredential(auth, credencial);
+      await gravaNome(r?.user, nome);
+      return;
+    }
+    if(pwaInstalado()){ lembraRedirect('apple.com'); return signInWithRedirect(auth, provedorApple()); }
+    try{ await guardaNomeApple(await signInWithPopup(auth, provedorApple())); }
+    catch(err){
+      if(err?.code === 'auth/popup-blocked'){ lembraRedirect('apple.com'); return signInWithRedirect(auth, provedorApple()); }
+      throw err;
+    }
+  },
+  /* Só conta Google ou Apple: o cadastro por e-mail já grava o perfil. Perfil no cache
      basta (e não segura a tela de login a cada abertura com rede ruim); cache
      vazio não prova que o documento não existe, então aí pergunta ao servidor.
      Qualquer falha do servidor responde "não pendente": travar quem está sem
@@ -350,7 +453,7 @@ window.CLOUD = {
      provedores de currentUser, o mesmo retrato que auth.js consultou. */
   async perfilPendente(){
     const u = auth.currentUser;
-    if(!u || !currentUser?.provedores.includes('google.com')) return false;
+    if(!u || !currentUser?.provedores.some(p=>p === 'google.com' || p === 'apple.com')) return false;
     const ref = doc(db, 'perfis', u.uid);
     try{ if((await getDocFromCache(ref)).exists()) return false; }catch{}
     try{ return !(await getDocFromServer(ref)).exists(); }
@@ -391,7 +494,7 @@ window.CLOUD = {
   async trocarSenha(atual, nova){
     const regra = window.OBRA_CADASTRO.validaSenha(nova, auth.currentUser?.email);
     if(!regra.ok) throw Object.assign(new Error(regra.erro), { code:'auth/weak-password' });
-    const u = await reautenticar(atual);
+    const { u } = await reautenticar(atual);
     await updatePassword(u, nova);
   },
   async apagarConta(senha, confirmacao, opcoes){
@@ -401,13 +504,15 @@ window.CLOUD = {
     saindo = true;
     let dadosApagados = false;
     try{
-      /* Conta só Google: o popup precisa sair ainda no gesto do usuário. Depois
-         dos awaits da trava entre abas o Safari o bloqueia. reautenticar confere
-         o uid, e o corpo da trava confere de novo antes do batch. */
-      const soGoogle = currentUser?.temSenha === false;
-      if(soGoogle){ await reautenticar(); opcoes?.aoConfirmar?.(); }
+      /* Conta sem senha (Google ou Apple): a confirmação precisa sair ainda no
+         gesto do usuário. Depois dos awaits da trava entre abas o Safari bloqueia
+         o popup. reautenticar confere o uid, e o corpo da trava confere de novo
+         antes do batch. */
+      const semSenha = currentUser?.temSenha === false;
+      let prova = null;
+      if(semSenha){ ({ prova } = await reautenticar()); opcoes?.aoConfirmar?.(); }
       return await contaExclusiva(async()=>{
-        if(!soGoogle) await reautenticar(senha);
+        if(!semSenha) await reautenticar(senha);
         await aguardarFila();
         if(offline() || auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Conexão ou sessão alterada.'), { code:'cancelled' });
         // Desativa a inscrição antes do batch: removePushSub não pode recriar push depois dele.
@@ -418,6 +523,7 @@ window.CLOUD = {
         await lote.commit();
         dadosApagados = true;
         marcaCache(true);
+        await revogarApple(u, prova);
         try{ await deleteUser(u); }catch(err){ marcaCache(false); throw err; }
         await limparCache();
         });

@@ -153,14 +153,16 @@ async function capturar(saidaDir, { escala = ESCALA, mapa = null } = {}) {
     await foto('03-relatorio.png');
 
     // 4) Gráficos — evolução + gasto por mês inteiros na tela (o donut+legenda
-    // por si só já é mais alto que a viewport). Rola exatamente até o topo do
-    // card "Evolução da obra" — ele começa inteiro na borda superior, sem
-    // sobrar tirinha cortada de outro card acima.
+    // por si só já é mais alto que a viewport). Rola até o card "Evolução da
+    // obra" encostar logo abaixo da barra de navegação fixa (header.top) — ele
+    // começa inteiro, com o título à vista, sem tirinha cortada de outro card
+    // acima. Rolar até a borda da tela escondia o título atrás da barra.
     await page.evaluate(() => { showView('graficos'); renderGraficos(); });
     await page.waitForFunction(() => document.querySelectorAll('#grafBody svg').length >= 3);
     await page.evaluate(() => {
       const evo = document.querySelector('#evoSvgG').closest('.panel');
-      window.scrollTo(0, evo.getBoundingClientRect().top + window.scrollY);
+      const barra = document.querySelector('header.top').getBoundingClientRect().bottom;
+      window.scrollTo(0, evo.getBoundingClientRect().top + window.scrollY - barra - 8);
       // o botão "Imprimir/salvar PDF" vem logo depois do card "Gasto por mês" e
       // sobra bem pertinho da nav fixa — só a pontinha dele apareceria, cortada.
       // Melhor escondê-lo nessa foto do que deixar essa tirinha.

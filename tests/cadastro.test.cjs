@@ -94,6 +94,9 @@ test('mensagemErroSocial: Apple com artigo, Google como antes',()=>{
   assert.equal(A('auth/qualquer'),'Não deu certo entrar com a Apple. Tente de novo.');
   assert.equal(A('toString'),'Não deu certo entrar com a Apple. Tente de novo.');
   assert.equal(A(undefined),'Não deu certo entrar com a Apple. Tente de novo.');
+  const SEM_ID='Confira se o iPhone está conectado a um ID Apple (em Ajustes) ou entre com e-mail e senha.';
+  assert.equal(A('1000'),SEM_ID); assert.equal(A(1000),SEM_ID);
+  assert.equal(C.mensagemErroSocial('1000','google.com'),'Não deu certo entrar com o Google. Tente de novo.');
   assert.equal(C.mensagemErroSocial('auth/qualquer','toString'),'Não deu certo entrar com o Google. Tente de novo.','provedor desconhecido cai no Google');
   assert.equal(C.mensagemErroSocial('auth/operation-not-allowed','google.com'),'Login com Google ainda não está disponível. Use e-mail e senha.');
   for(const c of ['auth/unauthorized-domain','auth/web-storage-unsupported','auth/qualquer'])

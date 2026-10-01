@@ -15,7 +15,10 @@
       ? 'Os dados foram apagados, mas a conta ainda existe. Tente apagar novamente.'
       : 'Os dados foram apagados, mas a conta ainda existe. Digite sua senha e tente apagar novamente.';
     if(['offline','pendente'].includes(err.code)) return 'Conecte à internet e aguarde a sincronização para continuar.';
-    if(['auth/invalid-credential','auth/wrong-password'].includes(err.code)) return 'Senha atual incorreta.';
+    if(['auth/invalid-credential','auth/wrong-password'].includes(err.code)){
+      if(CLOUD.user()?.temSenha === false) return `Não deu certo confirmar ${provedorSemSenha().com}. Tente de novo.`;
+      return 'Senha atual incorreta.';
+    }
     if(err.code === 'auth/weak-password') return err.message || 'Senha fraca: use 8 caracteres ou mais, com letra e número.';
     if(err.code === 'auth/too-many-requests') return 'Muitas tentativas. Aguarde antes de tentar novamente.';
     if(err.code === 'auth/network-request-failed') return 'Falha na conexão. Tente novamente quando a internet voltar.';

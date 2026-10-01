@@ -93,6 +93,7 @@
   function mensagemErroSocial(code, provedor){
     const p = Object.hasOwn(PROVEDORES, provedor) ? PROVEDORES[provedor] : PROVEDORES['google.com'];
     if(DESISTIU.has(code)) return '';
+    if((code === '1000' || code === 1000) && provedor === 'apple.com') return 'Confira se o iPhone está conectado a um ID Apple (em Ajustes) ou entre com e-mail e senha.';
     switch(code){
       case 'auth/account-exists-with-different-credential': return 'Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez.';
       case 'auth/unauthorized-domain': return `Login ${p.curto} indisponível neste endereço. Use custta.com.br.`;

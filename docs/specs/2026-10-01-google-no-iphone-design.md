@@ -157,9 +157,9 @@ e o app recebe do Google o mesmo que a web (identificador, e-mail, nome).
   - Apple e Google visíveis, Apple em cima;
   - desistir não mostra erro e não registra diagnóstico;
   - primeiro login: `initialize` com o client web, "Falta pouco" com nome do
-    Google pré-preenchido, perfil gravado; o mesmo `sub` da web cai no mesmo
-    `uid` (conta criada antes pelo popup do emulador);
-  - sair chama `GoogleSignIn.signOut`;
+    Google pré-preenchido, perfil gravado;
+  - sair chama `GoogleSignIn.signOut`; entrar de novo com o mesmo `sub` cai
+    no mesmo `uid`, direto, sem "Falta pouco";
   - apagar conta só Google: reautentica pelo plugin (segundo `signIn`), não
     chama `accounts:revokeToken`, remove documentos e usuário.
 - **`tests/browser/apple.cjs`:** no app o Google passa a estar visível.

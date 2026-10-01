@@ -654,9 +654,10 @@
      por vidro sobre a aurora — esta base volta a valer nos recuos de acessibilidade */
   .card:not(.saldo),.panel,.notif-invite{background:var(--surface-solid)}
   @media (max-width:899px){
-    /* relatório da simulação: a 1ª coluna quebra linha para as duas colunas de valor caberem sem rolar */
-    .rep-table th,.rep-table td{padding:7px 6px}
-    .rep-table th:first-child,.rep-table td:first-child{white-space:normal}
+    /* relatório da simulação: a 1ª coluna quebra linha para as duas colunas de valor caberem sem rolar.
+       Só ele — o relatório da obra tem 5 colunas, rola para o lado e mantém cada gasto numa linha. */
+    .rep-sim th,.rep-sim td{padding:7px 6px}
+    .rep-sim th:first-child,.rep-sim td:first-child{white-space:normal}
   }
   /* ===== Liquid Glass: barra de navegação (todas as larguras) =====
      A barra não tem material: os itens é que são vidro (voltar, sair, sincronização), como no

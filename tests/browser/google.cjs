@@ -146,7 +146,8 @@ async function sair(page){
       assert.equal(await page.locator('#contaMensagem').textContent(),'Confirme sua conta Google na janela que abriu.');
       await escolherConta(popup,'ana.google@example.com');
     }
-    await page.waitForFunction(()=>document.body.classList.contains('locked') && !CLOUD.user(),null,{timeout:20000});
+    // window.CLOUD: durante a recarga o documento novo ainda não tem CLOUD, e CLOUD solto estoura ReferenceError
+    await page.waitForFunction(()=>document.body.classList.contains('locked') && window.CLOUD && !CLOUD.user(),null,{timeout:20000});
     /* apagar a conta limpa o cache local e recarrega: a condição acima pode valer ainda na página
        velha, e o formulário só aparece depois da recarga. Espera ele em vez de conferir na hora
        (no runner da CI, com a página mais pesada de pintar, a conferência imediata pegava o meio) */

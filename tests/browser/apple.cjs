@@ -119,7 +119,8 @@ async function sair(page){
     await page.locator('#contaConfirmacao').fill('APAGAR');
   };
   const esperaContaApagada=async page=>{
-    await page.waitForFunction(()=>document.body.classList.contains('locked') && !CLOUD.user(),null,{timeout:20000});
+    // window.CLOUD: durante a recarga o documento novo ainda não tem CLOUD, e CLOUD solto estoura ReferenceError
+    await page.waitForFunction(()=>document.body.classList.contains('locked') && window.CLOUD && !CLOUD.user(),null,{timeout:20000});
     // o apagar recarrega a página; espera o formulário em vez de conferir na hora
     await page.locator('#fLogin').waitFor({ state:'visible', timeout:20000 });
   };

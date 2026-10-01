@@ -12,6 +12,12 @@ export const __ctrl = {
   token: Promise.resolve('token-teste'),
   passos: [], falhas: {},
   perfil: null,
+  credenciais: [],        // credenciais passadas a signInWithCredential/reauthenticateWithCredential
+  revogados: [],          // tokens passados a revokeAccessToken
+  perfisAtualizados: [],  // argumentos de updateProfile
+  popups: [],             // provedores passados a signInWithPopup/reauthenticateWithPopup
+  resultadoLogin: null,   // o que signInWithCredential devolve
+  resultadoPopup: null,   // o que signInWithPopup/reauthenticateWithPopup devolvem
   perfilCache: null,     // conteúdo de perfis/{uid} no cache local; null = não está no cache
 };
 
@@ -20,11 +26,24 @@ export function getAuth(){ return { nome: 'auth-stub', currentUser:{ uid:'u-test
 export function getIdToken(){ return __ctrl.token; }
 export const EmailAuthProvider = { credential:(email,senha)=>({email,senha}) };
 function passo(nome){ __ctrl.passos.push(nome); return __ctrl.falhas[nome] ? Promise.reject(__ctrl.falhas[nome]) : Promise.resolve(); }
-export function reauthenticateWithCredential(){ return passo('reauth'); }
-export class GoogleAuthProvider{ setCustomParameters(p){ this.parametros = p; } }
-export function signInWithPopup(){ return passo('popup'); }
+export function reauthenticateWithCredential(_u, cred){
+  __ctrl.credenciais.push(cred);
+  return passo(cred && cred.providerId === 'apple.com' ? 'reauthApple' : 'reauth');
+}
+export class GoogleAuthProvider{ constructor(){ this.providerId = 'google.com'; } setCustomParameters(p){ this.parametros = p; } }
+export class OAuthProvider{
+  constructor(providerId){ this.providerId = providerId; this.escopos = []; }
+  addScope(s){ this.escopos.push(s); return this; }
+  setCustomParameters(p){ this.parametros = p; return this; }
+  credential({ idToken, rawNonce }){ return { providerId:this.providerId, idToken, rawNonce }; }
+  static credentialFromResult(r){ return (r && r.credencial) || null; }
+}
+export function signInWithPopup(_a, provedor){ __ctrl.popups.push(provedor); return passo('popup').then(()=>__ctrl.resultadoPopup); }
+export function reauthenticateWithPopup(_u, provedor){ __ctrl.popups.push(provedor); return passo('reauthPopup').then(()=>__ctrl.resultadoPopup); }
+export function signInWithCredential(_a, cred){ __ctrl.credenciais.push(cred); return passo('credencial').then(()=>__ctrl.resultadoLogin); }
+export function revokeAccessToken(_a, token){ __ctrl.revogados.push(token); return passo('revogar'); }
+export function updateProfile(_u, dados){ __ctrl.perfisAtualizados.push(dados); return passo('updateProfile'); }
 export function signInWithRedirect(){ return passo('redirect'); }
-export function reauthenticateWithPopup(){ return passo('reauthPopup'); }
 export function getRedirectResult(){
   return __ctrl.falhas.redirectResult ? Promise.reject(__ctrl.falhas.redirectResult) : Promise.resolve(null);
 }

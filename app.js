@@ -1497,7 +1497,7 @@ window.addEventListener('perfil-alterado', ()=>carregaPerfilAjustes(window.CLOUD
 /* Aviso fixo enquanto o e-mail não for confirmado: e-mail errado só aparece
    quando a pessoa esquece a senha e o link de redefinição não chega. */
 function renderAvisoEmail(conta){
-  const pendente = !!conta && !conta.emailVerificado;
+  const pendente = !!conta && !conta.emailVerificado && conta.temSenha !== false;
   $('#avisoEmail').classList.toggle('hidden', !pendente);
   if(!pendente) return;
   $('#avisoEmailTexto').textContent = `Enviamos um link para ${conta.email}. Abra o e-mail e toque no link para proteger sua conta.`;

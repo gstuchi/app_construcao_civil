@@ -107,6 +107,8 @@ Derivados de `docs/sdks-fase4.md`. Não chute: label que não bate com o binári
 | Diagnóstico — dados de falha | Sim | Não | Não | Funcionalidade do app (Sentry, sem mensagem livre, sem dado de obra, IP substituído por 0.0.0.0) |
 | Outros dados — como conheceu o Custta | Sim | Sim | Não | Análise (entender por quais canais o app é conhecido) |
 
+O login com Apple não cria tipo de dado novo: Nome e Endereço de e-mail (inclusive o de retransmissão da Apple) já estão declarados acima, vinculados à identidade, com finalidade Funcionalidade do app.
+
 O App Store Connect não tem finalidade "Diagnóstico": dado de falha usado para corrigir erro entra em **Funcionalidade do app**. A mesma tabela está declarada em `ios/App/App/PrivacyInfo.xcprivacy`; mudou uma, muda a outra (o teste `tests/capacitor.test.cjs` confere).
 
 Nada é usado para publicidade ou rastreamento entre apps, então a resposta sobre App Tracking Transparency é **não**.
@@ -143,9 +145,9 @@ The account is already populated with construction projects and expenses, so you
 
 A few notes that may help the review:
 
-1. Account-based by design. Every user's projects and expenses sync across their own devices (iPhone and web), so the app requires an account. Sign-in is email and password through Firebase Authentication. There is no third-party or social login, so Guideline 4.8 does not apply.
+1. Account-based by design. Every user's projects and expenses sync across their own devices (iPhone and web), so the app requires an account. Sign-in is email and password, or Sign in with Apple, through Firebase Authentication. Sign in with Apple is offered on the login screen. The demo account above uses email and password. Google sign-in exists only on the web version, not in the iOS app.
 
-2. Account deletion is available in the app: Ajustes (Settings) > Apagar conta (Delete account). It asks for the current password, requires typing APAGAR to confirm, deletes the user's documents and then the authentication account.
+2. Account deletion is available in the app: Ajustes (Settings) > Apagar conta (Delete account). It asks for the current password (or, for Apple accounts, a fresh Sign in with Apple), requires typing APAGAR to confirm, deletes the user's documents, revokes the Sign in with Apple token and then deletes the authentication account.
 
 3. Data export is available in Ajustes > Seus dados, in CSV or JSON.
 

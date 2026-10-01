@@ -2,6 +2,12 @@
 'use strict';
 (function(){
   let aberto = null;
+  /* Conta sem senha confirma pela Apple ou pelo Google (Apple primeiro, como no cloud.js). */
+  function provedorSemSenha(){
+    return CLOUD.user()?.provedores?.includes('apple.com')
+      ? { nome:'Apple', com:'com a Apple', da:'da Apple' }
+      : { nome:'Google', com:'com o Google', da:'do Google' };
+  }
   function mensagem(err){
     if(err.code === 'outra-aba') return 'Feche outras abas do Custta e tente novamente.';
     if(err.code === 'navegador') return 'Atualize seu navegador para gerenciar a conta.';
@@ -9,13 +15,17 @@
       ? 'Os dados foram apagados, mas a conta ainda existe. Tente apagar novamente.'
       : 'Os dados foram apagados, mas a conta ainda existe. Digite sua senha e tente apagar novamente.';
     if(['offline','pendente'].includes(err.code)) return 'Conecte à internet e aguarde a sincronização para continuar.';
-    if(['auth/invalid-credential','auth/wrong-password'].includes(err.code)) return 'Senha atual incorreta.';
+    if(['auth/invalid-credential','auth/wrong-password'].includes(err.code)){
+      if(CLOUD.user()?.temSenha === false) return `Não deu certo confirmar ${provedorSemSenha().com}. Tente de novo.`;
+      return 'Senha atual incorreta.';
+    }
     if(err.code === 'auth/weak-password') return err.message || 'Senha fraca: use 8 caracteres ou mais, com letra e número.';
     if(err.code === 'auth/too-many-requests') return 'Muitas tentativas. Aguarde antes de tentar novamente.';
     if(err.code === 'auth/network-request-failed') return 'Falha na conexão. Tente novamente quando a internet voltar.';
-    if(['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'].includes(err.code)) return 'Confirmação com o Google cancelada.';
-    if(err.code === 'auth/popup-blocked') return 'O navegador bloqueou a janela do Google. Permita pop-ups e tente de novo.';
-    if(err.code === 'auth/user-mismatch') return 'Entre com a mesma conta Google desta conta.';
+    const p = provedorSemSenha();
+    if(['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled'].includes(err.code)) return `Confirmação ${p.com} cancelada.`;
+    if(err.code === 'auth/popup-blocked') return `O navegador bloqueou a janela ${p.da}. Permita pop-ups e tente de novo.`;
+    if(err.code === 'auth/user-mismatch') return `Entre com a mesma conta ${p.nome} desta conta.`;
     return 'Não foi possível concluir. Tente novamente.';
   }
   /* Boilerplate comum dos dialogs de conta: criação, guard `aberto`, foco inicial,
@@ -60,7 +70,7 @@
     const semSenha = apagar && CLOUD.user()?.temSenha === false;
     const html = `<form id="contaForm">
       <h2 id="contaTitulo">${apagar ? 'Apagar conta' : 'Trocar senha'}</h2>
-      <p>${apagar ? 'Isso apaga sua conta, obras, gastos e notificações. Não pode ser desfeito. Exporte seus dados antes de continuar.' + (semSenha ? ' Para confirmar, você vai entrar com o Google de novo.' : '') : 'Confirme sua senha atual e escolha uma nova senha.'}</p>
+      <p>${apagar ? 'Isso apaga sua conta, obras, gastos e notificações. Não pode ser desfeito. Exporte seus dados antes de continuar.' + (semSenha ? ' Para confirmar, você vai entrar ' + provedorSemSenha().com + ' de novo.' : '') : 'Confirme sua senha atual e escolha uma nova senha.'}</p>
       ${semSenha ? '' : '<div class="field"><label for="contaSenha">Senha atual</label><input id="contaSenha" type="password" autocomplete="current-password" required></div>'}
       ${apagar
         ? `<div class="field"><label for="contaConfirmacao">Digite APAGAR para confirmar</label>
@@ -92,8 +102,8 @@
       },
       async executar({ atual, nova }, { msg, fechar }){
         const apagando = 'Apagando conta. Aguarde…';
-        // Conta só Google: a janela do Google abre primeiro; só depois dela a conta é apagada.
-        msg.textContent = !apagar ? 'Salvando senha…' : semSenha ? 'Confirme sua conta Google na janela que abriu.' : apagando;
+        // Conta sem senha: a confirmação (Google ou Apple) abre primeiro; só depois dela a conta é apagada.
+        msg.textContent = !apagar ? 'Salvando senha…' : semSenha ? `Confirme sua conta ${provedorSemSenha().nome} na janela que abriu.` : apagando;
         if(apagar) await CLOUD.apagarConta(atual, nova, {
           aoConfirmar:()=>{ msg.textContent = apagando; },
           antesDeApagar:()=>window.OBRA_PUSH?.desativa(),

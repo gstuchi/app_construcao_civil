@@ -31,7 +31,7 @@ As rules só rodam com o emulador — use `npm run test:rules`.
 
 CSP estrita no `vercel.json` (`default-src 'none'`, `script-src 'self'`, `style-src-attr 'none'`): nada de `<style>`, `style="..."` em atributo ou `onclick=` no HTML; Firebase e Sentry ficam versionados em `vendor/` (`npm run vendor:firebase` / `vendor:sentry`, a CI falha se o diff não estiver limpo).
 
-`https://apis.google.com` (em `script-src`) e o `frame-src` existem só para o login com Google da web (gapi e o iframe do handler de auth). `/__/auth` e `/__/firebase` são proxy do Firebase via rewrite da Vercel: ficam fora da CSP do Custta (o header não casa com `/__/`) e fora do service worker (`sw.js` nunca cacheia `/__/`).
+`https://apis.google.com` (em `script-src`) e o `frame-src` existem só para o login social da web (Google e Apple), isto é, gapi e o iframe do handler de auth. `/__/auth` e `/__/firebase` são proxy do Firebase via rewrite da Vercel: ficam fora da CSP do Custta (o header não casa com `/__/`) e fora do service worker (`sw.js` nunca cacheia `/__/`).
 
 Para dirigir o app num browser de verdade, suba `node tests/browser/servidor.cjs` (serve a raiz em :8123 com os headers do `vercel.json`) e chame a suíte direto — `tests/browser/rodar.cjs` só orquestra. As suítes com dados sintéticos (`mobile`, `cartao`, `nativo`, `contraste`) fazem stub de `window.CLOUD` e de `sessionStorage.splashVista` via `addInitScript`; as que usam SDK real (`fase1/2/3`, `persistencia`, `sync`) exigem os emuladores (`CUSTTA_EMULADORES=1`).
 
@@ -83,7 +83,7 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 ### App iOS (Capacitor)
 
-`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/plans/2026-09-16-fase4-checklist-aparelho.md`.
+`ios/` é versionado; `www/` é gerado. Condicione comportamento nativo só via `OBRA_NATIVO.ehNativo()`. `confirm()`/`alert()` são proibidos (somem no WKWebView) — use `OBRA_CONFIRM`. Arquivo novo na raiz entra em `sw.js` `ASSETS`, que também alimenta `build-www`. Pendências de aparelho: `docs/plans/2026-09-16-fase4-checklist-aparelho.md`. Login com Apple: no app, plugin `@capawesome/capacitor-apple-sign-in` via `OBRA_NATIVO.entrarApple` (nonce em SHA-256) + `signInWithCredential`; na web, `OAuthProvider('apple.com')` por popup/redirect. Conta só Apple reautentica pela Apple e `apagarConta` revoga o token (spec `docs/specs/2026-09-30-login-apple-design.md`). Services ID da web: `br.com.custta.web`.
 
 ## UI
 

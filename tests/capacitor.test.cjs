@@ -107,3 +107,14 @@ test('manifesto de privacidade empacotado e igual aos labels da loja', ()=>{
   // IONFilesystemLib (via @capacitor/filesystem) lê data de arquivo e não traz manifesto próprio.
   assert.match(xml, /NSPrivacyAccessedAPICategoryFileTimestamp<\/string>\s*<key>NSPrivacyAccessedAPITypeReasons<\/key>\s*<array>\s*<string>C617\.1<\/string>/);
 });
+
+test('Sign in with Apple: entitlement e plugin nativo no pacote SPM', ()=>{
+  const ent = ler('ios/App/App/App.entitlements');
+  assert.match(ent, /<key>com\.apple\.developer\.applesignin<\/key>\s*<array>\s*<string>Default<\/string>\s*<\/array>/);
+  assert.match(ent, /<key>aps-environment<\/key>/, 'push continua');
+  const pkg = JSON.parse(ler('package.json'));
+  assert.ok(pkg.devDependencies['@capawesome/capacitor-apple-sign-in'], 'plugin no package.json');
+  const spm = ler('ios/App/CapApp-SPM/Package.swift');
+  assert.match(spm, /\.package\(name: "CapawesomeCapacitorAppleSignIn", path: "\.\.\/\.\.\/\.\.\/node_modules\/@capawesome\/capacitor-apple-sign-in"\)/);
+  assert.match(spm, /\.product\(name: "CapawesomeCapacitorAppleSignIn", package: "CapawesomeCapacitorAppleSignIn"\)/);
+});

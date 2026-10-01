@@ -44,14 +44,14 @@
      ficar offline não desloga) — acontece quando a conta é apagada/desativada,
      a senha muda em outro aparelho, ou o token é revogado. Sem esta distinção,
      a tela de login aparecia do nada e o usuário não sabia o que tinha havido. */
-  /* Conta Google entra sem perfil: fica na tela de entrada até completar.
+  /* Conta Google ou Apple entra sem perfil: fica na tela de entrada até completar.
      `checagem` descarta a resposta se o usuário trocou durante a leitura. */
-  let jaLogou = false, checagem = 0, erroGoogle = '';
+  let jaLogou = false, checagem = 0, erroSocial = '';
   async function aoTrocarUsuario(u){
     const minha = ++checagem;
     if(u){
-      jaLogou = true; erroGoogle = ''; // entrou: erro de tentativa anterior não volta na próxima tela de login
-      if(u.provedores?.includes('google.com') && await CLOUD.perfilPendente()){
+      jaLogou = true; erroSocial = ''; // entrou: erro de tentativa anterior não volta na próxima tela de login
+      if(u.provedores?.some(p=>p === 'google.com' || p === 'apple.com') && await CLOUD.perfilPendente()){
         if(minha === checagem) mostrarPerfil(u);
         return;
       }
@@ -62,15 +62,20 @@
     jaLogou = false; saindoDeProposito = false;
     locked(true); // limpa #lMsg, então a mensagem vem depois
     if(expirou) $('#lMsg').textContent = 'Sua sessão expirou por segurança. Entre de novo pra continuar.';
-    /* Não zera erroGoogle aqui: o onAuth(null) chega duas vezes na abertura
+    /* Não zera erroSocial aqui: o onAuth(null) chega duas vezes na abertura
        (loop do onAuthStateChanged e ready.then) e a segunda apagaria a
-       mensagem. Ela sai ao entrar ou ao clicar em "Continuar com Google". */
-    else if(erroGoogle){ $('#lMsg').textContent = erroGoogle; }
+       mensagem. Ela sai ao entrar ou ao clicar em um botão de login social. */
+    else if(erroSocial){ $('#lMsg').textContent = erroSocial; }
   }
+  /* Conta Apple: o nome vem da Apple e a revisão reprova pedir de novo. */
+  const contaApple = u => !!u?.provedores?.includes('apple.com');
   function mostrarPerfil(u){
-    $('#authTabs').classList.add('hidden'); $('#authGoogle').classList.add('hidden');
+    $('#authTabs').classList.add('hidden'); $('#authSocial').classList.add('hidden');
     $('#fLogin').classList.add('hidden'); $('#fCad').classList.add('hidden');
     $('#fPerfil').classList.remove('hidden');
+    const apple = contaApple(u);
+    $('#pNomes').classList.toggle('hidden', apple);
+    $('#pTexto').textContent = apple ? 'Só falta contar como você conheceu o Custta.' : 'Confirme seu nome e conte como conheceu o Custta.';
     const {nome, sobrenome} = OBRA_CADASTRO.nomeDoGoogle(u.nomeExibicao);
     $('#pNome').value = nome; $('#pSobrenome').value = sobrenome; $('#pMsg').textContent = '';
     $('#pOrigem').focus();
@@ -101,16 +106,17 @@
   /* ---------- tabs ---------- */
   function mostrarAba(k){
     $('#authTabs').classList.remove('hidden');
-    $('#authGoogle').classList.toggle('hidden', !!window.OBRA_NATIVO?.ehNativo());
+    $('#authSocial').classList.remove('hidden');
+    $('#btnGoogle').classList.toggle('hidden', !!window.OBRA_NATIVO?.ehNativo());
     $('#fPerfil').classList.add('hidden');
     $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
     $('#fLogin').classList.toggle('hidden',k!=='login');
     $('#fCad').classList.toggle('hidden',k!=='cad');
     $('#lMsg').textContent=''; $('#cMsg').textContent=''; $('#pMsg').textContent='';
   }
-  /* Zera o erro do Google no clique, não em mostrarAba: locked(true) a chama
+  /* Zera o erro do login social no clique, não em mostrarAba: locked(true) a chama
      antes de o onAuth(null) reescrever a mensagem que chegou do redirect. */
-  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{ erroGoogle = ''; mostrarAba(b.dataset.k); });
+  $('#authTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{ erroSocial = ''; mostrarAba(b.dataset.k); });
 
   /* ---------- olho de mostrar senha ---------- */
   document.querySelectorAll('.pw-eye').forEach(b=>b.onclick=()=>{
@@ -224,35 +230,40 @@
     });
   });
 
-  /* ---------- Google ---------- */
-  const btnGoogle = $('#btnGoogle');
-  btnGoogle.onclick = async()=>{
-    const msg = $('#fCad').classList.contains('hidden') ? $('#lMsg') : $('#cMsg');
-    msg.textContent = ''; erroGoogle = '';
-    const texto = $('#btnGoogleTexto');
-    btnGoogle.disabled = true; texto.textContent = 'Abrindo o Google…';
-    try{ await CLOUD.entrarGoogle(); }
-    catch(err){ msg.textContent = err?.code === 'cache' ? 'Limpe os dados locais antes de entrar.' : OBRA_CADASTRO.mensagemErroGoogle(err?.code); }
-    finally{ btnGoogle.disabled = false; texto.textContent = 'Continuar com Google'; }
-  };
+  /* ---------- Apple e Google ---------- */
+  function ligaSocial({ botao, texto, rotulo, abrindo, entrar, provedor }){
+    const btn = $(botao), t = $(texto);
+    btn.onclick = async()=>{
+      const msg = $('#fCad').classList.contains('hidden') ? $('#lMsg') : $('#cMsg');
+      msg.textContent = ''; erroSocial = '';
+      // Um login por vez: o outro botão também trava até este voltar.
+      const botoes = [...document.querySelectorAll('#authSocial .btn')];
+      botoes.forEach(b=>{ b.disabled = true; }); t.textContent = abrindo;
+      try{ await entrar(); }
+      catch(err){ msg.textContent = err?.code === 'cache' ? 'Limpe os dados locais antes de entrar.' : OBRA_CADASTRO.mensagemErroSocial(err?.code, provedor); }
+      finally{ botoes.forEach(b=>{ b.disabled = false; }); t.textContent = rotulo; }
+    };
+  }
+  ligaSocial({ botao:'#btnApple', texto:'#btnAppleTexto', rotulo:'Continuar com a Apple', abrindo:'Abrindo a Apple…', entrar:()=>CLOUD.entrarApple(), provedor:'apple.com' });
+  ligaSocial({ botao:'#btnGoogle', texto:'#btnGoogleTexto', rotulo:'Continuar com Google', abrindo:'Abrindo o Google…', entrar:()=>CLOUD.entrarGoogle(), provedor:'google.com' });
   /* Erro na volta do redirect. Pode chegar antes do onAuth(null), que limpa
      #lMsg: guarda pra reescrever depois. */
-  window.addEventListener('cloud-google-erro', e=>{
-    erroGoogle = OBRA_CADASTRO.mensagemErroGoogle(e.detail?.code);
-    $('#lMsg').textContent = erroGoogle;
+  window.addEventListener('cloud-social-erro', e=>{
+    erroSocial = OBRA_CADASTRO.mensagemErroSocial(e.detail?.code, e.detail?.provedor);
+    $('#lMsg').textContent = erroSocial;
   });
 
-  /* ---------- Falta pouco (conta Google sem perfil) ---------- */
+  /* ---------- Falta pouco (conta Google ou Apple sem perfil) ---------- */
   const CAMPO_PERFIL = {nome:'pNome', sobrenome:'pSobrenome', origem:'pOrigem', origemDetalhe:'pDetalhe'};
   $('#fPerfil').addEventListener('input', e=>e.target.removeAttribute?.('aria-invalid'));
   $('#fPerfil').addEventListener('change', e=>e.target.removeAttribute?.('aria-invalid'));
   $('#fPerfil').addEventListener('submit', async e=>{
     e.preventDefault();
     const msg = $('#pMsg'); msg.textContent = '';
-    const r = OBRA_CADASTRO.normalizaPerfil({
-      nome:$('#pNome').value, sobrenome:$('#pSobrenome').value,
-      origem:$('#pOrigem').value, origemDetalhe:$('#pDetalhe').value,
-    });
+    const apple = contaApple(CLOUD.user());
+    const nomes = apple ? OBRA_CADASTRO.nomeDoGoogle(CLOUD.user()?.nomeExibicao)
+      : { nome:$('#pNome').value, sobrenome:$('#pSobrenome').value };
+    const r = OBRA_CADASTRO.normalizaPerfil({ ...nomes, origem:$('#pOrigem').value, origemDetalhe:$('#pDetalhe').value }, { nomeOpcional:apple });
     if(!r.ok) return marca(CAMPO_PERFIL[r.campo], r.erro, 'pMsg');
     await comLoading(e.target.querySelector('button[type=submit]'), 'Salvando…', async()=>{
       try{ await CLOUD.completarPerfil(r.perfil); locked(false); }

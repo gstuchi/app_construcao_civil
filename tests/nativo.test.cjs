@@ -135,3 +135,62 @@ test('entrarApple: outra falha sobe e fica no diagnóstico', async()=>{
   assert.equal(erros.length, 1);
   assert.equal(erros[0][0], 'nativo-apple');
 });
+
+test('entrarGoogle e sairGoogle: fora do app devolvem null', async()=>{
+  const n = criar({});
+  assert.equal(await n.entrarGoogle({ clientId:'web' }), null);
+  assert.equal(await n.sairGoogle(), null);
+});
+
+test('entrarGoogle: initialize com o client web uma vez só, depois signIn', async()=>{
+  const chamadas = [];
+  const resposta = { idToken:'id-google', email:'bia@gmail.com', displayName:'Bia Lima' };
+  const { win } = janelaNativa({ GoogleSignIn:{
+    initialize:async a=>{ chamadas.push(['initialize', a]); },
+    signIn:async()=>{ chamadas.push(['signIn']); return resposta; } } });
+  const n = criar(win);
+  assert.deepEqual(await n.entrarGoogle({ clientId:'web-id' }), resposta);
+  assert.deepEqual(await n.entrarGoogle({ clientId:'web-id' }), resposta);
+  assert.deepEqual(chamadas, [['initialize', { clientId:'web-id' }], ['signIn'], ['signIn']]);
+});
+
+test('entrarGoogle: initialize que falha é tentado de novo no login seguinte', async()=>{
+  let falhar = true;
+  const chamadas = [];
+  const { win, erros } = janelaNativa({ GoogleSignIn:{
+    initialize:async()=>{ chamadas.push('initialize'); if(falhar) throw new Error('GIDClientID is missing from Info.plist.'); },
+    signIn:async()=>{ chamadas.push('signIn'); return { idToken:'id' }; } } });
+  const n = criar(win);
+  await assert.rejects(n.entrarGoogle({ clientId:'web' }), { message:/GIDClientID/ });
+  assert.equal(erros.length, 1);
+  assert.equal(erros[0][0], 'nativo-google');
+  falhar = false;
+  assert.deepEqual(await n.entrarGoogle({ clientId:'web' }), { idToken:'id' });
+  assert.deepEqual(chamadas, ['initialize', 'initialize', 'signIn']);
+});
+
+test('entrarGoogle: desistência vira auth/user-cancelled sem registrar erro', async()=>{
+  const { win, erros } = janelaNativa({ GoogleSignIn:{ initialize:async()=>{},
+    signIn:async()=>{ throw Object.assign(new Error('The user canceled the sign-in flow.'), { code:'SIGN_IN_CANCELED' }); } } });
+  await assert.rejects(criar(win).entrarGoogle({ clientId:'web' }), { code:'auth/user-cancelled' });
+  assert.deepEqual(erros, []);
+});
+
+test('entrarGoogle: outra falha sobe e fica no diagnóstico', async()=>{
+  const { win, erros } = janelaNativa({ GoogleSignIn:{ initialize:async()=>{},
+    signIn:async()=>{ throw new Error('The Internet connection appears to be offline.'); } } });
+  await assert.rejects(criar(win).entrarGoogle({ clientId:'web' }), { message:/offline/ });
+  assert.equal(erros.length, 1);
+  assert.equal(erros[0][0], 'nativo-google');
+});
+
+test('sairGoogle: chama signOut no app e nunca propaga erro', async()=>{
+  let saiu = 0;
+  const { win } = janelaNativa({ GoogleSignIn:{ signOut:async()=>{ saiu++; } } });
+  assert.equal(await criar(win).sairGoogle(), true);
+  assert.equal(saiu, 1);
+  const falha = janelaNativa({ GoogleSignIn:{ signOut:async()=>{ throw new Error('keychain'); } } });
+  assert.equal(await criar(falha.win).sairGoogle(), null);
+  assert.equal(falha.erros.length, 1);
+  assert.equal(falha.erros[0][0], 'nativo-google');
+});

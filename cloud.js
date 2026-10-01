@@ -28,6 +28,11 @@ const firebaseConfig = {
   appId: '1:111188093030:web:da78b67181554d30f8a5a7',
 };
 
+/* Client OAuth web do projeto. É público: vai na URL de todo login do Google na
+   web. O plugin nativo do Google exige o client web, e o Firebase aceita o
+   idToken porque o client é do mesmo projeto (111188093030). */
+const GOOGLE_CLIENT_ID_WEB = '111188093030-76cph7rdbibirr8l61jn72r3i3f92e8u.apps.googleusercontent.com';
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 /* Qual botão mandou para o redirect: o erro na volta diz "Apple" ou "Google". */
@@ -72,6 +77,13 @@ async function credencialAppleNativa(){
     codigo: r.authorizationCode || '',
     nome: [r.givenName, r.familyName].filter(Boolean).join(' ').trim(),
   };
+}
+/* Google no app: a folha nativa devolve o idToken e o SDK JavaScript entra com
+   ele. O Firebase reconhece a conta pelo sub, o mesmo da web: mesmo uid. */
+async function credencialGoogleNativa(){
+  const r = await window.OBRA_NATIVO.entrarGoogle({ clientId: GOOGLE_CLIENT_ID_WEB });
+  if(!r || !r.idToken) throw Object.assign(new Error('O Google não devolveu a credencial.'), { code:'auth/invalid-credential' });
+  return GoogleAuthProvider.credential(r.idToken);
 }
 /* A Apple só manda o nome no primeiro login. No displayName ele chega ao "Falta
    pouco" (nomeExibicao) sem a tela pedir de novo. Melhor esforço: falhar aqui
@@ -331,7 +343,10 @@ async function reautenticar(senha){
       prova = { accessToken: OAuthProvider.credentialFromResult(r)?.accessToken || '' };
     }
   }
-  else if(provedor === 'google.com') await reauthenticateWithPopup(u, provedorGoogle());
+  else if(provedor === 'google.com'){
+    if(nativo) await reauthenticateWithCredential(u, await credencialGoogleNativa());
+    else await reauthenticateWithPopup(u, provedorGoogle());
+  }
   else await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, senha));
   if(auth.currentUser?.uid !== u.uid) throw Object.assign(new Error('Sessão alterada.'), { code:'cancelled' });
   return { u, prova };
@@ -356,6 +371,12 @@ async function revogarApple(u, prova){
   }catch(err){
     try{ window.OBRA_DIAG?.registra('apple-revogar', (err && err.message) || String(err), err && err.stack); }catch{}
   }finally{ clearTimeout(timer); }
+}
+/* Depois de sair (ou apagar a conta) no app, o SDK do Google esquece a sessão que
+   guarda no aparelho. Sem await: a limpeza recarrega a página e não pode esperar
+   o SDK; sairGoogle nunca rejeita. Na web e em OBRA_NATIVO antigo não faz nada. */
+function esquecerGoogle(){
+  if(nativo) window.OBRA_NATIVO?.sairGoogle?.();
 }
 async function aguardarFila(){
   let timer;
@@ -425,6 +446,7 @@ window.CLOUD = {
   async entrarGoogle(){
     if(cacheBloqueado) throw Object.assign(new Error('Limpe os dados locais antes de entrar.'), { code:'cache' });
     auth.languageCode = 'pt-BR';
+    if(nativo){ await signInWithCredential(auth, await credencialGoogleNativa()); return; }
     if(pwaInstalado()){ lembraRedirect('google.com'); return signInWithRedirect(auth, provedorGoogle()); }
     try{ await signInWithPopup(auth, provedorGoogle()); }
     catch(err){
@@ -528,6 +550,7 @@ window.CLOUD = {
         marcaCache(true);
         await revogarApple(u, prova);
         try{ await deleteUser(u); }catch(err){ marcaCache(false); throw err; }
+        esquecerGoogle();
         await limparCache();
         });
     }catch(err){
@@ -560,6 +583,7 @@ window.CLOUD = {
           throw Object.assign(new Error('Sessão alterada durante a saída.'), { code: 'cancelled' });
         marcaCache(true);
         try{ await signOut(auth); }catch(err){ marcaCache(false); throw err; }
+        esquecerGoogle();
         clearTimeout(retryTimer); retryTimer = null;
         pendingBlob = null; dirty = false; tentativa = 0; emVoo = false; pendenciaCache = false;
         versaoEscrita++;

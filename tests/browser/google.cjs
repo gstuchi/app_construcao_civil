@@ -50,9 +50,38 @@ async function sair(page){
   await page.waitForFunction(antes=>window.__documentoId !== antes && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && document.body.classList.contains('locked'),antes,{timeout:30000});
 }
 
+/* App nativo: CSP da <meta> do www/ (libera a checagem de versão) e plugin GoogleSignIn
+   falso. O id_token em JSON é aceito pelo Auth emulator sem assinatura. Pedidos ficam
+   espelhados no sessionStorage porque sair e apagar recarregam a página. */
+async function contextoNativo(novoContexto){
+  const ctx=await novoContexto();
+  await ctx.route(BASE+'/',async r=>{
+    const resp=await r.fetch(); const h=resp.headers();
+    h['content-security-policy']=h['content-security-policy'].replace("connect-src 'self'","connect-src 'self' https://app-construcao-civil.vercel.app");
+    await r.fulfill({response:resp,headers:h});
+  });
+  await ctx.route('https://app-construcao-civil.vercel.app/versao.json',r=>r.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(path.join(ROOT,'versao.json'),'utf8')}));
+  await ctx.addInitScript(()=>{
+    const registra=p=>{ const l=JSON.parse(sessionStorage.getItem('__pedidosGoogle')||'[]'); l.push(p); sessionStorage.setItem('__pedidosGoogle',JSON.stringify(l)); };
+    window.Capacitor={ isNativePlatform:()=>true, getPlatform:()=>'ios', Plugins:{
+      GoogleSignIn:{
+        initialize:async a=>{ registra(['initialize',a]); },
+        signIn:async()=>{ registra(['signIn']); const r=JSON.parse(sessionStorage.getItem('__respostaGoogle')||'null');
+          if(r && r.erro) throw Object.assign(new Error(r.erro.message),{code:r.erro.code}); return r; },
+        signOut:async()=>{ registra(['signOut']); } } } };
+  });
+  return ctx;
+}
+const idTokenGoogle=(sub,email,name)=>JSON.stringify({sub,email,email_verified:true,name});
+const pedidosGoogle=page=>page.evaluate(()=>JSON.parse(sessionStorage.getItem('__pedidosGoogle')||'[]'));
+const respostaGoogle=(page,r)=>page.evaluate(r=>sessionStorage.setItem('__respostaGoogle',JSON.stringify(r)),r);
+
 (async()=>{
   const env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:'127.0.0.1',port:8080,rules:fs.readFileSync(path.join(ROOT,'firestore.rules'),'utf8')}});
-  const browser=await chromium.launch();
+  /* No contexto nativo o documento sai de um route (CSP da <meta> do www/) e o Chromium o trata
+     como espaço público: nega (Local Network Access) as chamadas aos emuladores em 127.0.0.1,
+     que em produção não existem. A flag desliga só essa checagem, neste navegador de teste. */
+  const browser=await chromium.launch({args:['--disable-features=LocalNetworkAccessChecks']});
   // withSecurityRulesDisabled descarta o retorno do callback: grava em variável de fora.
   const leDoc=async(colecao,uid)=>{
     let snap; await env.withSecurityRulesDisabled(async ctx=>{ snap=await getDoc(doc(ctx.firestore(),colecao,uid)); });
@@ -220,29 +249,78 @@ async function sair(page){
       await ctxAbas.close();
     }
 
-    // 10. app nativo (WKWebView) não mostra o Google
+    // 10-14. app nativo (WKWebView) com o plugin GoogleSignIn falso
     {
-      const ctxNativo=await novoContexto();
-      // no aparelho a CSP vem da <meta> do www/ (libera a checagem de versão); o servidor serve a CSP web
-      await ctxNativo.route(BASE+'/',async r=>{
-        const resp=await r.fetch(); const h=resp.headers();
-        h['content-security-policy']=h['content-security-policy'].replace("connect-src 'self'","connect-src 'self' https://app-construcao-civil.vercel.app");
-        await r.fulfill({response:resp,headers:h});
-      });
-      await ctxNativo.route('https://app-construcao-civil.vercel.app/versao.json',r=>r.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:fs.readFileSync(path.join(ROOT,'versao.json'),'utf8')}));
-      await ctxNativo.addInitScript(()=>{ window.Capacitor={ isNativePlatform:()=>true, getPlatform:()=>'ios', Plugins:{} }; });
+      const ctxNativo=await contextoNativo(novoContexto);
       const pNativo=await abrirApp(ctxNativo);
       assert.equal(await pNativo.evaluate(()=>OBRA_NATIVO.ehNativo()),true);
-      assert.equal(await pNativo.locator('#btnGoogle').isVisible(),false);
-      assert.equal(await pNativo.locator('#btnApple').isVisible(),true);
-      await pNativo.locator('#authTabs button[data-k="cad"]').click();
-      assert.equal(await pNativo.locator('#btnGoogle').isVisible(),false);
-      assert.equal(await pNativo.locator('#btnApple').isVisible(),true);
-      console.log('ok - no app nativo o Google fica escondido e a Apple aparece');
+
+      // 10. Apple e Google nas duas abas, Apple em cima, mesmo tamanho
+      for(const aba of ['cad','login']){
+        await pNativo.locator(`#authTabs button[data-k="${aba}"]`).click();
+        assert.equal(await pNativo.locator('#btnGoogle').isVisible(),true);
+        assert.equal(await pNativo.locator('#btnApple').isVisible(),true);
+        // a troca de aba anima o cartão com transform: espera assentar para medir o tamanho real
+        await pNativo.waitForFunction(()=>document.getAnimations().every(an=>an.effect.getComputedTiming().iterations===Infinity || an.playState==='finished'));
+        const a=await pNativo.locator('#btnApple').boundingBox(), g=await pNativo.locator('#btnGoogle').boundingBox();
+        assert.ok(a.y<g.y,`Apple deve ficar acima do Google (${a.y} vs ${g.y})`);
+        assert.equal(Math.round(a.width),Math.round(g.width)); assert.equal(Math.round(a.height),Math.round(g.height));
+      }
+      console.log('ok - app: Google aparece abaixo da Apple, do mesmo tamanho, nas abas Entrar e Criar conta');
+
+      // 11. desistência: nenhum erro na tela, botões voltam
+      await respostaGoogle(pNativo,{erro:{code:'SIGN_IN_CANCELED',message:'The user canceled the sign-in flow.'}});
+      await pNativo.locator('#btnGoogle').click();
+      await pNativo.waitForFunction(()=>!document.querySelector('#btnGoogle').disabled && JSON.parse(sessionStorage.getItem('__pedidosGoogle')||'[]').some(p=>p[0]==='signIn'));
+      assert.equal(await pNativo.textContent('#lMsg'),'');
+      assert.equal(await travado(pNativo),true);
+      assert.deepEqual((await pedidosGoogle(pNativo))[0],['initialize',{clientId:'111188093030-76cph7rdbibirr8l61jn72r3i3f92e8u.apps.googleusercontent.com'}]);
+      console.log('ok - app: desistir da folha do Google não mostra erro; initialize com o client web');
+
+      // 12. primeiro login no app: "Falta pouco" com o nome do Google
+      await respostaGoogle(pNativo,{idToken:idTokenGoogle('google-gabi','gabi.app@example.com','Gabi Souza Lima')});
+      await pNativo.locator('#btnGoogle').click();
+      await pNativo.waitForSelector('#fPerfil',{state:'visible'});
+      assert.equal(await pNativo.inputValue('#pNome'),'Gabi');
+      assert.equal(await pNativo.inputValue('#pSobrenome'),'Souza Lima');
+      assert.deepEqual(await pNativo.evaluate(()=>CLOUD.user().provedores),['google.com']);
+      await pNativo.selectOption('#pOrigem','instagram');
+      await pNativo.locator('#fPerfil button[type=submit]').click();
+      await pNativo.waitForFunction(()=>!document.body.classList.contains('locked'));
+      const uidGabi=await pNativo.evaluate(()=>CLOUD.user().uid);
+      const perfilGabi=(await leDoc('perfis',uidGabi)).data();
+      assert.equal(perfilGabi.nome,'Gabi'); assert.equal(perfilGabi.sobrenome,'Souza Lima');
+      assert.equal(perfilGabi.email,'gabi.app@example.com');
+      console.log('ok - app: primeiro login Google abre "Falta pouco" com o nome do Google e grava o perfil');
+
+      // 13. sair esquece o Google; entrar de novo com a mesma conta cai no mesmo uid, direto
+      await sair(pNativo);
+      assert.ok((await pedidosGoogle(pNativo)).some(p=>p[0]==='signOut'),'sair deveria chamar GoogleSignIn.signOut');
+      await pNativo.locator('#btnGoogle').click();
+      await pNativo.waitForFunction(()=>!document.body.classList.contains('locked'));
+      assert.equal(await pNativo.evaluate(()=>CLOUD.user().uid),uidGabi);
+      assert.equal(await pNativo.locator('#fPerfil').isVisible(),false);
+      console.log('ok - app: sair esquece o Google e voltar com a mesma conta entra direto no mesmo uid');
+
+      // 14. apagar conta só Google no app: reautentica pelo plugin, não revoga, remove tudo
+      const revogacoes=[];
+      await ctxNativo.route(/accounts:revokeToken/,r=>{ revogacoes.push(r.request().url()); return r.fulfill({status:200,contentType:'application/json',body:'{}'}); });
+      const signInsAntes=(await pedidosGoogle(pNativo)).filter(p=>p[0]==='signIn').length;
+      await pNativo.locator('nav.tabs [data-tab="ajustes"]').click();
+      await pNativo.locator('#ajApagar').click();
+      await pNativo.waitForSelector('#contaConfirmacao',{state:'visible'});
+      await pNativo.locator('#contaConfirmacao').fill('APAGAR');
+      await pNativo.locator('#contaEnviar').click();
+      await pNativo.waitForFunction(()=>document.body.classList.contains('locked') && window.CLOUD && !CLOUD.user(),null,{timeout:20000});
+      await pNativo.locator('#fLogin').waitFor({state:'visible',timeout:20000});
+      for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uidGabi)).exists(),false,`${colecao}/${uidGabi} sobrou`);
+      assert.equal((await pedidosGoogle(pNativo)).filter(p=>p[0]==='signIn').length,signInsAntes+1,'reautenticação pelo plugin');
+      assert.deepEqual(revogacoes,[],'conta Google não revoga token (isso é só da Apple)');
+      console.log('ok - app: apagar conta só Google reautentica pelo plugin, não revoga e remove os dados');
       await ctxNativo.close();
     }
 
-    // 11.
+    // 15.
     assert.deepEqual(violacoes,[]); assert.deepEqual(errosPagina,[]);
     console.log('ok - nenhuma violação de CSP nem erro de página');
   }finally{ await browser.close(); await env.cleanup(); }

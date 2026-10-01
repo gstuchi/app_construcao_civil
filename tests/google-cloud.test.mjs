@@ -152,3 +152,66 @@ test('conta com senha reautentica dentro da trava, como antes',async()=>{
   assert.ok(ctrl.passos.indexOf('reauth') > ctrl.passos.indexOf('trava:exclusiva'));
   assert.ok(!ctrl.passos.includes('reauthPopup'));
 });
+
+/* App iOS: OBRA_NATIVO falso com o plugin do Google. ehNativo é lido na importação. */
+let pedidosGoogle, respostaGoogle, falhaGoogle;
+async function carregarNativo(){
+  pedidosGoogle=[]; respostaGoogle={ idToken:'id-google' }; falhaGoogle=null;
+  window.OBRA_NATIVO={ ehNativo:()=>true,
+    entrarGoogle:async a=>{ pedidosGoogle.push(a); if(falhaGoogle) throw falhaGoogle; return respostaGoogle; },
+    sairGoogle:()=>{ ctrl.passos.push('sairGoogle'); return Promise.resolve(true); } };
+  Object.assign(ctrl,{ credenciais:[], popups:[], resultadoLogin:{ user:{ uid:'u-teste' } } });
+  await carregar();
+}
+test('app: entrarGoogle usa o plugin com o client web do projeto e entra com a credencial do Google',async()=>{
+  await carregarNativo();
+  await cloud.entrarGoogle();
+  assert.deepEqual(ctrl.popups,[]);
+  assert.equal(pedidosGoogle.length,1);
+  const { clientId }=pedidosGoogle[0];
+  // client web do mesmo projeto do Firebase: senão o Firebase recusa o idToken
+  assert.match(clientId,/^(\d+)-[a-z0-9]+\.apps\.googleusercontent\.com$/);
+  assert.equal(clientId.split('-')[0],ctrl.config.messagingSenderId);
+  assert.deepEqual(ctrl.credenciais,[{ providerId:'google.com', idToken:'id-google' }]);
+});
+test('app: desistir do Google sobe sem tentar entrar',async()=>{
+  await carregarNativo();
+  falhaGoogle={ code:'auth/user-cancelled' };
+  await assert.rejects(cloud.entrarGoogle(),{ code:'auth/user-cancelled' });
+  assert.deepEqual(ctrl.credenciais,[]);
+});
+test('app: Google sem idToken é erro, não login',async()=>{
+  await carregarNativo();
+  respostaGoogle={ idToken:'' };
+  await assert.rejects(cloud.entrarGoogle(),{ code:'auth/invalid-credential' });
+  assert.deepEqual(ctrl.credenciais,[]);
+});
+test('app: apagar conta só Google reautentica pelo plugin, não revoga e esquece o Google',async()=>{
+  await carregarNativo();
+  const fetchOriginal=globalThis.fetch;
+  try{
+    let fetchs=0; globalThis.fetch=async()=>{ fetchs++; return { ok:true, status:200 }; };
+    await entraComo(['google.com']); ctrl.passos=[]; ctrl.revogados=[];
+    await cloud.apagarConta('','APAGAR');
+    assert.equal(ctrl.passos[0],'reauthGoogle');
+    assert.deepEqual(ctrl.popups,[]);
+    assert.equal(fetchs,0,'revogação é só da Apple');
+    assert.deepEqual(ctrl.revogados,[]);
+    const i=n=>ctrl.passos.indexOf(n);
+    assert.ok(i('deleteUser')>=0 && i('deleteUser')<i('sairGoogle'),'esquece o Google depois de apagar o usuário: '+ctrl.passos);
+  }finally{ globalThis.fetch=fetchOriginal; }
+});
+test('app: sair esquece o Google depois do signOut do Firebase',async()=>{
+  await carregarNativo();
+  await entraComo(['google.com']); ctrl.passos=[];
+  await cloud.logout();
+  const i=n=>ctrl.passos.indexOf(n);
+  assert.ok(i('signOut')>=0 && i('signOut')<i('sairGoogle'),'ordem: '+ctrl.passos);
+});
+test('app: sairGoogle que nunca responde não segura a saída',async()=>{
+  await carregarNativo();
+  window.OBRA_NATIVO.sairGoogle=()=>new Promise(()=>{});
+  await entraComo(['google.com']); ctrl.passos=[];
+  await cloud.logout();
+  assert.ok(ctrl.passos.includes('signOut'));
+});

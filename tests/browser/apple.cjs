@@ -244,7 +244,7 @@ async function sair(page){
       await pNativo.waitForFunction(()=>!document.querySelector('#btnApple').disabled && window.__pedidosApple.length===1);
       assert.equal(await pNativo.textContent('#lMsg'),'');
       assert.equal(await travado(pNativo),true);
-      assert.equal(await pNativo.locator('#btnGoogle').isVisible(),false);
+      assert.equal(await pNativo.locator('#btnGoogle').isVisible(),true);
       assert.equal(await pNativo.locator('#btnApple').isVisible(),true);
       console.log('ok - app: desistir da tela da Apple não mostra erro e mantém o login disponível');
 

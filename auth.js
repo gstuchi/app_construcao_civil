@@ -107,7 +107,6 @@
   function mostrarAba(k){
     $('#authTabs').classList.remove('hidden');
     $('#authSocial').classList.remove('hidden');
-    $('#btnGoogle').classList.toggle('hidden', !!window.OBRA_NATIVO?.ehNativo());
     $('#fPerfil').classList.add('hidden');
     $('#authTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.k===k));
     $('#fLogin').classList.toggle('hidden',k!=='login');

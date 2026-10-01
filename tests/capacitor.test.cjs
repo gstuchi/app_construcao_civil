@@ -118,3 +118,18 @@ test('Sign in with Apple: entitlement e plugin nativo no pacote SPM', ()=>{
   assert.match(spm, /\.package\(name: "CapawesomeCapacitorAppleSignIn", path: "\.\.\/\.\.\/\.\.\/node_modules\/@capawesome\/capacitor-apple-sign-in"\)/);
   assert.match(spm, /\.product\(name: "CapawesomeCapacitorAppleSignIn", package: "CapawesomeCapacitorAppleSignIn"\)/);
 });
+
+test('Google Sign-In: plugin no SPM e Info.plist com o client iOS do GoogleService-Info.plist', ()=>{
+  const pkg = JSON.parse(ler('package.json'));
+  assert.ok(pkg.devDependencies['@capawesome/capacitor-google-sign-in'], 'plugin no package.json');
+  const spm = ler('ios/App/CapApp-SPM/Package.swift');
+  assert.match(spm, /\.package\(name: "CapawesomeCapacitorGoogleSignIn", path: "\.\.\/\.\.\/\.\.\/node_modules\/@capawesome\/capacitor-google-sign-in"\)/);
+  assert.match(spm, /\.product\(name: "CapawesomeCapacitorGoogleSignIn", package: "CapawesomeCapacitorGoogleSignIn"\)/);
+  const google = ler('ios/App/App/GoogleService-Info.plist');
+  const valor = chave => google.match(new RegExp(`<key>${chave}</key>\\s*<string>([^<]+)</string>`))[1];
+  const plist = ler('ios/App/App/Info.plist');
+  assert.equal(plist.match(/<key>GIDClientID<\/key>\s*<string>([^<]+)<\/string>/)?.[1], valor('CLIENT_ID'));
+  // Sem o esquema de URL o SDK do Google lança exceção ao abrir o login e o app fecha.
+  const esquemas = plist.match(/<key>CFBundleURLSchemes<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1] || '';
+  assert.ok(esquemas.includes(`<string>${valor('REVERSED_CLIENT_ID')}</string>`), 'esquema REVERSED_CLIENT_ID no Info.plist');
+});

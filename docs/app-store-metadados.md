@@ -109,6 +109,8 @@ Derivados de `docs/sdks-fase4.md`. Não chute: label que não bate com o binári
 
 O login com Apple não cria tipo de dado novo: Nome e Endereço de e-mail (inclusive o de retransmissão da Apple) já estão declarados acima, vinculados à identidade, com finalidade Funcionalidade do app.
 
+O login com Google no app traz o SDK GoogleSignIn-iOS 8 (via `@capawesome/capacitor-google-sign-in`), que tem manifesto de privacidade próprio (`GoogleSignIn/Sources/Resources/PrivacyInfo.xcprivacy`) e entra no Privacy Report do archive somado ao do app. Ele declara, todos vinculados à identidade e sem rastreamento: Nome, Endereço de e-mail, Número de telefone e Localização aproximada (Funcionalidade do app); ID de usuário e Outros tipos de dados (Funcionalidade do app e Análise); ID de dispositivo e Outros dados de uso (Análise). Nome e e-mail já estão na tabela. **Pendente antes de enviar à revisão:** gerar o Privacy Report do archive (Xcode → Organizer → Generate Privacy Report) e decidir se os outros tipos entram nos labels. A recomendação é declarar como o SDK declara, porque o Privacy Report vai listar esses tipos e os labels devem cobrir o que o app e os SDKs dele coletam. Se entrarem, separar no teste `tests/capacitor.test.cjs` o que é do app (`ios/App/App/PrivacyInfo.xcprivacy`) do que é declarado pelo SDK de terceiro: o manifesto do app não repete o do SDK.
+
 O App Store Connect não tem finalidade "Diagnóstico": dado de falha usado para corrigir erro entra em **Funcionalidade do app**. A mesma tabela está declarada em `ios/App/App/PrivacyInfo.xcprivacy`; mudou uma, muda a outra (o teste `tests/capacitor.test.cjs` confere).
 
 Nada é usado para publicidade ou rastreamento entre apps, então a resposta sobre App Tracking Transparency é **não**.
@@ -145,9 +147,9 @@ The account is already populated with construction projects and expenses, so you
 
 A few notes that may help the review:
 
-1. Account-based by design. Every user's projects and expenses sync across their own devices (iPhone and web), so the app requires an account. Sign-in is email and password, or Sign in with Apple, through Firebase Authentication. Sign in with Apple is offered on the login screen. The demo account above uses email and password. Google sign-in exists only on the web version, not in the iOS app.
+1. Account-based by design. Every user's projects and expenses sync across their own devices (iPhone and web), so the app requires an account. Sign-in is email and password, Sign in with Apple, or Sign in with Google, through Firebase Authentication. Sign in with Apple is offered on the login screen, above Google, as the equivalent login option (Guideline 4.8). The demo account above uses email and password.
 
-2. Account deletion is available in the app: Ajustes (Settings) > Apagar conta (Delete account). It asks for the current password (or, for Apple accounts, a fresh Sign in with Apple), requires typing APAGAR to confirm, deletes the user's documents, revokes the Sign in with Apple token and then deletes the authentication account.
+2. Account deletion is available in the app: Ajustes (Settings) > Apagar conta (Delete account). It asks for the current password (or, for Apple or Google accounts, a fresh sign-in with that provider), requires typing APAGAR to confirm, deletes the user's documents, revokes the Sign in with Apple token for Apple accounts and then deletes the authentication account.
 
 3. Data export is available in Ajustes > Seus dados, in CSV or JSON.
 

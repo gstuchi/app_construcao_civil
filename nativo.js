@@ -93,6 +93,25 @@
         throw err;
       }
     }
+    /* Google Sign-In nativo: o WKWebView não abre o popup do Google. O plugin exige
+       initialize (com o client web) antes do signIn; vale uma vez por abertura, e
+       se falhar a próxima tentativa chama de novo. Propaga o erro como entrarApple. */
+    let googlePronto = null;
+    async function entrarGoogle({ clientId } = {}){
+      const p = plugin('GoogleSignIn');
+      if(!p) return null;
+      try{
+        if(!googlePronto) googlePronto = Promise.resolve().then(() => p.initialize({ clientId }))
+          .catch(err => { googlePronto = null; throw err; });
+        await googlePronto;
+        return await p.signIn();
+      }catch(err){
+        if(err && err.code === 'SIGN_IN_CANCELED')
+          throw Object.assign(new Error('Login com o Google cancelado.'), { code:'auth/user-cancelled' });
+        registra('google', err);
+        throw err;
+      }
+    }
     function aoSegundoPlano(fn){
       const app = plugin('App');
       if(!app) return;
@@ -109,7 +128,9 @@
       if(mm('(display-mode: standalone)') || (win.navigator && win.navigator.standalone === true)) cl.add('standalone');
     }
     return {
-      ehNativo, plugin, compartilharArquivo, aoSegundoPlano, marcarAmbiente, entrarApple,
+      ehNativo, plugin, compartilharArquivo, aoSegundoPlano, marcarAmbiente, entrarApple, entrarGoogle,
+      // Esquece a sessão que o SDK do Google guarda no keychain; nunca segura a saída.
+      sairGoogle: () => chama('GoogleSignIn', 'signOut', undefined, 'google'),
       vibrar: () => chama('Haptics', 'impact', { style:'LIGHT' }, 'haptics'),
       // DARK = texto claro, para fundo escuro
       barraStatus: claro => chama('StatusBar', 'setStyle', { style: claro ? 'LIGHT' : 'DARK' }, 'statusbar'),

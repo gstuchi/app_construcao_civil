@@ -106,7 +106,9 @@ O `Package.swift` do CapApp-SPM ganha o pacote pelo `npm run cap:sync` (a CI
 falha se o arquivo versionado divergir). O SPM resolve `GoogleSignIn-iOS` 8.x
 junto do `firebase-ios-sdk` 12 do plugin de push (dependências comuns:
 `AppCheckCore` 11, `GTMSessionFetcher` 3+, `GoogleUtilities` 8); quem confere é
-o `ios-build.yml`. O SDK do Google traz o próprio `PrivacyInfo.xcprivacy`.
+o `ios-build.yml`. O SDK do Google traz o próprio `PrivacyInfo.xcprivacy`, que declara mais tipos de dado que os
+labels atuais (telefone, localização aproximada, IDs e dados de uso); a decisão sobre os
+labels fica para antes da submissão, registrada em `docs/app-store-metadados.md`.
 Entitlements e perfil de assinatura não mudam.
 
 ## Erros

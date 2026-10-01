@@ -320,7 +320,7 @@ const respostaGoogle=(page,r)=>page.evaluate(r=>sessionStorage.setItem('__respos
       await ctxNativo.close();
     }
 
-    // 11.
+    // 15.
     assert.deepEqual(violacoes,[]); assert.deepEqual(errosPagina,[]);
     console.log('ok - nenhuma violação de CSP nem erro de página');
   }finally{ await browser.close(); await env.cleanup(); }

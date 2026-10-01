@@ -83,9 +83,10 @@ falha na assinatura. O `ios-build.yml` (sem assinatura) não depende disso.
 ### Entrar com Apple — app iOS
 
 1. Só o botão da Apple aparece (Google continua escondido no nativo).
-2. `cloud.js` gera um nonce aleatório (32 bytes, `crypto.getRandomValues`),
-   manda o SHA-256 dele (hex) para `OBRA_NATIVO.entrarApple({ nonce })`, que
-   chama o plugin `AppleSignIn.signIn({ scopes: ['EMAIL', 'FULL_NAME'], nonce })`.
+2. `cloud.js` gera o nonce cru aleatório (32 bytes, `crypto.getRandomValues`) e
+   chama `OBRA_NATIVO.entrarApple({ rawNonce })`. `nativo.js` calcula o SHA-256
+   (hex, com `crypto.subtle` ou implementação pura) e chama o plugin
+   `AppleSignIn.signIn({ scopes: ['EMAIL', 'FULL_NAME'], nonce })` com o hash.
 3. Com o `idToken` devolvido, `signInWithCredential(auth,
    OAuthProvider('apple.com').credential({ idToken, rawNonce }))`.
 4. `givenName`/`familyName` só chegam no primeiro login: se vierem e a conta
@@ -119,7 +120,8 @@ falha na assinatura. O `ios-build.yml` (sem assinatura) não depende disso.
   novo" (ou "com o Google", pelo provedor). Como no Google, a reautenticação
   roda antes da trava entre abas, ainda dentro do gesto do usuário.
 - **Revogação**, depois do batch que apaga os documentos e antes do
-  `deleteUser`:
+  `deleteUser` (no app, o `fetch` tem timeout de 10 s via `AbortController`:
+  estourar cai no diagnóstico e a exclusão segue):
   - web: `OAuthProvider.credentialFromResult(resultado).accessToken` →
     `revokeAccessToken(auth, token)`;
   - nativo: o SDK JavaScript só revoga `ACCESS_TOKEN`, e o nativo tem
@@ -134,7 +136,7 @@ falha na assinatura. O `ios-build.yml` (sem assinatura) não depende disso.
 
 ## Erros (português)
 
-`OBRA_CADASTRO.mensagemErroSocial(code, 'Apple' | 'Google')` substitui
+`OBRA_CADASTRO.mensagemErroSocial(code, 'apple.com' | 'google.com')` substitui
 `mensagemErroGoogle` (que continua existindo como atalho para 'Google'). Os
 textos do Google passam a ser os desta tabela — só o de
 `account-exists-with-different-credential` muda de fato, porque "entre com
@@ -149,6 +151,7 @@ e-mail e senha" deixa de ser o único caminho certo.
 | `operation-not-allowed` | Login com a Apple ainda não está disponível. Use e-mail e senha. |
 | `operation-not-supported-in-this-environment`, `web-storage-unsupported` | Seu navegador bloqueou o login com a {Apple/o Google}. Use e-mail e senha. |
 | `network-request-failed` | Sem internet. Conecte pra entrar. |
+| `1000` (ASAuthorizationError, só Apple; chega como string) | Confira se o iPhone está conectado a um ID Apple (em Ajustes) ou entre com e-mail e senha. |
 | outro | Não deu certo entrar com a {Apple/o Google}. Tente de novo. |
 
 No diálogo de conta (`ui-confirm.js`) as mensagens de cancelamento e de
@@ -170,8 +173,8 @@ No diálogo de conta (`ui-confirm.js`) as mensagens de cancelamento e de
 
 | Arquivo | Muda |
 | --- | --- |
-| `cloud.js` | `entrarApple`, nonce/SHA-256, `provedorApple`, `reautenticar` por provedor, revogação, `perfilPendente` com Apple, erro de redirect com provedor |
-| `nativo.js` | `entrarApple({ nonce })`, propaga erro, normaliza cancelamento |
+| `cloud.js` | `entrarApple`, nonce cru, `provedorApple`, `reautenticar` por provedor, revogação, `perfilPendente` com Apple, erro de redirect com provedor |
+| `nativo.js` | `entrarApple({ rawNonce })` (calcula o SHA-256), propaga erro, normaliza cancelamento |
 | `cadastro.js` | `mensagemErroSocial`, `normalizaPerfil(d, { nomeOpcional })` |
 | `auth.js` | botão Apple, estado de carregando, erro por provedor, "Falta pouco" sem nome para Apple |
 | `ui-confirm.js` | textos do "Apagar conta" e erros pelo provedor |

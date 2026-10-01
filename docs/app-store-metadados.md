@@ -117,7 +117,7 @@ Nada é usado para publicidade ou rastreamento entre apps, então a resposta sob
 
 O app inteiro fica atrás de login, então a revisão precisa de uma conta pronta.
 
-Os passos 1 e 2 são feitos por `scripts/conta-demo.mjs`, que cria o usuário e grava as mesmas 3 obras e 69 gastos das capturas da loja — o revisor precisa ver o app cheio, não a tela vazia.
+Os passos 1 e 2 são feitos por `scripts/conta-demo.mjs`, que cria o usuário e grava as mesmas 3 obras e 97 gastos das capturas da loja — o revisor precisa ver o app cheio, não a tela vazia.
 
 ```bash
 npm run conta:demo             # ensaio no emulador, não toca em nada real

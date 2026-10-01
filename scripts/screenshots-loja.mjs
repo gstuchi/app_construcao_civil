@@ -171,14 +171,15 @@ async function capturar(saidaDir, { escala = ESCALA, mapa = null } = {}) {
     });
     await foto('04-graficos.png');
 
-    // 5) Será que vale a pena? — simulador com cenário preenchido. Sem rolagem
-    // horizontal: o rótulo da linha (1ª coluna) tem prioridade e fica inteiro;
-    // a coluna "Pelo corrigido" é que fica cortada à direita.
+    // 5) Será que vale a pena? — a reforma vendida pelo preço anunciado daqui a
+    // 3 meses. Cenário de propósito modesto (rende um pouco acima do banco): é o
+    // que uma reforma para revenda entrega de verdade, e a loja não pode mostrar
+    // lucro de centenas de por cento como se fosse o normal.
     await page.evaluate(() => { showView('simula'); renderSimula(); });
     await page.evaluate(() => {
       document.querySelector('#simObra').value = 'o2';
-      const v = document.querySelector('#simValor'); v.value = '480.000,00'; v.dataset.touched = '1';
-      document.querySelector('#simMeses').value = '4';
+      const v = document.querySelector('#simValor'); v.value = '510.000,00'; v.dataset.touched = '1';
+      document.querySelector('#simMeses').value = '3';
       simulaCompute();
     });
     await page.waitForFunction(() => document.querySelector('.card.saldo .k-val')?.textContent.trim().length > 0);

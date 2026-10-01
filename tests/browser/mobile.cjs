@@ -63,7 +63,31 @@ const {chromium}=require('playwright');
         assert.ok(Math.abs(await page.evaluate(()=>scrollY)-pos)<2,'fechar restaura posição da lista');
       }
     }
+    /* O relatório da obra rola para o lado e mantém cada gasto numa linha só. Quem quebra
+       a 1ª coluna para caber sem rolar é só o relatório da simulação (.rep-sim). */
+    for(const width of [320,393,430]){
+      await page.setViewportSize({width,height:852});
+      await page.evaluate(()=>{closeSheet();openObra('o');showView('relatorio');renderRelatorio();});
+      const alturas=await page.$$eval('#v-relatorio .rep-table tbody tr:not(.rt-top) td:first-child',tds=>tds.map(td=>td.getBoundingClientRect().height));
+      assert.ok(alturas.length>0 && alturas.every(h=>h<50),`relatório da obra a ${width}px: descrição deve caber numa linha (alturas ${alturas.slice(0,3).join(', ')})`);
+      await page.evaluate(()=>{showView('simula');renderSimula();$('#simObra').value='o';const v=$('#simValor');v.value='90.000,00';v.dataset.touched='1';$('#simMeses').value='3';simulaCompute();});
+      assert.equal(await page.locator('#simOut .rep-sim td').first().evaluate(td=>getComputedStyle(td).whiteSpace),'normal','relatório da simulação continua quebrando a 1ª coluna');
+    }
+    /* No limite (venda logo acima/abaixo do custo corrigido) o veredito e o "% ao mês" do
+       cartão têm de concordar: a TIR só passa do banco quando a venda passa do corrigido. */
+    for(const delta of [500,-500]){
+      const {rotulo,pct,taxaBanco}=await page.evaluate(delta=>{
+        const o=obraById('o');o.dataInicio='2026-01-01';o.gastos.forEach((g,i)=>{g.data=`2026-0${1+i%8}-15`;});
+        const alvo=OBRA_CALC.addMesesClampado(todayISO(),2);
+        const corr=OBRA_CALC.totalCorrigido(o,taxa(),alvo);
+        showView('simula');renderSimula();$('#simObra').value='o';$('#simMeses').value='2';
+        const v=$('#simValor');v.value=OBRA_CALC.numParaCampo(Math.round(corr+delta));v.dataset.touched='1';simulaCompute();
+        return {rotulo:$('#simOut .card.saldo .k-label').textContent.trim(),pct:parseFloat($('#simOut .card.saldo .k-val').textContent.replace(',','.')),taxaBanco:taxa()};
+      },delta);
+      if(delta>0){assert.match(rotulo,/Vale a pena/);assert.ok(pct>taxaBanco,`vale a pena com ${pct}% ao mês e banco a ${taxaBanco}%`);}
+      else{assert.match(rotulo,/menos que o banco/);assert.ok(pct<taxaBanco,`rende menos com ${pct}% ao mês e banco a ${taxaBanco}%`);}
+    }
     assert.deepEqual(await page.evaluate(()=>errosMobile),[]);
-    console.log('ok - formulário, botões de tópicos e vencimentos em 5 larguras e 2 temas');
+    console.log('ok - formulário, botões de tópicos e vencimentos em 5 larguras e 2 temas; relatórios no celular; veredito do simulador');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

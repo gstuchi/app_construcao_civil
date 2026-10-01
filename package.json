@@ -34,6 +34,7 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@capawesome/capacitor-apple-sign-in": "^0.1.4",
+    "@capawesome/capacitor-google-sign-in": "^0.1.4",
     "@firebase/rules-unit-testing": "^5.0.2",
     "@sentry/browser": "10.74.0",
     "esbuild": "0.28.2",

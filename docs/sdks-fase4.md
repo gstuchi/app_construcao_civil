@@ -10,6 +10,7 @@ Mudou algo aqui? Revisar `privacidade.html` e os labels **antes** de publicar.
 | @sentry/browser | 10.74.0 | web + iOS (JS) | diagnóstico sanitizado (sem mensagem livre, conta ou dado de obra) | diagnóstico |
 | @capacitor-firebase/messaging | 8.5.1 | iOS (nativo) | token de dispositivo FCM/APNs | notificações |
 | @capawesome/capacitor-apple-sign-in | 0.1.4 | iOS (nativo) | token de identidade e código de autorização da Apple; nome e e-mail no 1º login (repassados ao Firebase Auth) | conta |
+| @capawesome/capacitor-google-sign-in | 0.1.4 | iOS (nativo) | token de identidade do Google; e-mail e nome da conta Google (repassados ao Firebase Auth) | conta |
 | @capacitor/core, @capacitor/cli, @capacitor/ios | 8.5.2 | iOS | nenhum dado próprio | ponte nativa |
 | @capacitor/app | 8.1.1 | iOS | nenhum | estado do app |
 | @capacitor/share, @capacitor/filesystem | 8.0.2, 8.1.3 | iOS | arquivo exportado, só no aparelho | exportação |

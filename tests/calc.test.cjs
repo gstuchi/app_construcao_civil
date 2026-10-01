@@ -91,18 +91,56 @@ t('mesesDeObra usa venda como fim quando vendida', () => {
   perto(C.mesesDeObra(vendida, '2027-01-01'), 90 / 30.44, 0.01);
 });
 
-t('taxaEquivalenteMensal: dobrar em 24 meses ≈ 2,93% a.m.', () => {
-  perto(C.taxaEquivalenteMensal(2000000, 1000000, 24), 2.9302, 0.001);
+/* TIR: a taxa que zera venda − Σ gasto × (1 + r)^(dias até a venda / 30,44).
+   Ver docs/specs/2026-09-30-simulador-tir-design.md. */
+const g = (valor, data) => ({ valor, data });
+
+t('tirMensal: custo todo no 1º dia = fórmula composta simples (dobrar em 731 dias)', () => {
+  const meses = C.diasEntre('2024-01-01', '2026-01-01') / C.DIAS_MES;
+  perto(C.tirMensal([g(1000000, '2024-01-01')], 2000000, '2026-01-01'), (Math.pow(2, 1 / meses) - 1) * 100, 1e-6);
 });
 
-t('taxaEquivalenteMensal: sem lucro = 0%', () => {
-  perto(C.taxaEquivalenteMensal(1000, 1000, 12), 0, 1e-9);
+t('tirMensal: venda igual ao custo corrigido rende exatamente a taxa do banco', () => {
+  const gastos = [g(230000, '2026-01-15'), g(28600, '2026-02-18'), g(16200, '2026-04-30'), g(24100, '2026-05-23'), g(6600, '2026-10-10')];
+  const obra = { dataInicio: '2026-01-15', gastos };
+  for(const taxa of [0.5, 1, 1.8]){
+    const venda = C.totalCorrigido(obra, taxa, '2027-03-30');
+    perto(C.tirMensal(gastos, venda, '2027-03-30'), taxa, 1e-6);
+    perto(C.rendimentoAcima(C.tirMensal(gastos, venda, '2027-03-30'), taxa), 0, 1e-6);
+  }
 });
 
-t('taxaEquivalenteMensal: entradas inválidas viram null', () => {
-  assert.strictEqual(C.taxaEquivalenteMensal(0, 1000, 12), null);
-  assert.strictEqual(C.taxaEquivalenteMensal(1000, 0, 12), null);
-  assert.strictEqual(C.taxaEquivalenteMensal(1000, 1000, 0), null);
+t('tirMensal: veredito e taxa concordam — passa do banco só quando a venda passa do corrigido', () => {
+  const gastos = [g(240000, '2026-01-15'), g(120000, '2026-04-15'), g(260000, '2026-08-15')];
+  const obra = { dataInicio: '2026-01-15', gastos };
+  const corr = C.totalCorrigido(obra, 1, '2026-09-30');
+  assert.ok(C.tirMensal(gastos, corr + 1000, '2026-09-30') > 1);
+  assert.ok(C.tirMensal(gastos, corr - 1000, '2026-09-30') < 1);
+});
+
+t('tirMensal: gasto espalhado rende mais que a conta que põe tudo no 1º dia', () => {
+  const gastos = [g(100000, '2026-01-01'), g(100000, '2026-07-01')];
+  const tir = C.tirMensal(gastos, 240000, '2027-01-01');
+  const meses = C.diasEntre('2026-01-01', '2027-01-01') / C.DIAS_MES;
+  const tudoNoInicio = (Math.pow(240000 / 200000, 1 / meses) - 1) * 100;
+  assert.ok(tir > tudoNoInicio + 0.3, `TIR ${tir} deveria passar bem de ${tudoNoInicio}`);
+});
+
+t('tirMensal: prejuízo dá taxa negativa', () => {
+  assert.ok(C.tirMensal([g(200000, '2026-01-01')], 150000, '2027-01-01') < 0);
+});
+
+t('tirMensal: sem venda, sem gasto ou sem tempo decorrido vira null', () => {
+  assert.strictEqual(C.tirMensal([g(1000, '2026-01-01')], 0, '2027-01-01'), null);
+  assert.strictEqual(C.tirMensal([], 1000, '2027-01-01'), null);
+  assert.strictEqual(C.tirMensal([g(1000, '2027-01-01')], 2000, '2027-01-01'), null);
+  assert.strictEqual(C.tirMensal([g(1000, '2027-02-01')], 2000, '2027-01-01'), null); // parcela depois da venda conta como paga na venda
+});
+
+t('rendimentoAcima: desconta a taxa do banco de forma composta', () => {
+  perto(C.rendimentoAcima(2.01, 1), 1, 1e-9); // 1,0201 / 1,01 − 1 = 1%
+  perto(C.rendimentoAcima(0.5, 1), -0.495, 1e-3);
+  assert.strictEqual(C.rendimentoAcima(null, 1), null);
 });
 
 t('addMesesClampado: mês normal e clamp no fim do mês', () => {
@@ -162,26 +200,22 @@ t('blobCabe barra o que o Firestore recusaria', () => {
   assert.ok(C.LIMITE_BLOB < 1048576, 'limite precisa ter folga pro teto de 1MB do documento');
 });
 
-t('resumoVenda: exemplo canônico (3mi/2mi em 24 meses)', () => {
-  const r = C.resumoVenda(3000000, 2000000, 24);
+t('resumoVenda: exemplo canônico (3mi/2mi)', () => {
+  const r = C.resumoVenda(3000000, 2000000);
   assert.strictEqual(r.lucro, 1000000);
   perto(r.pctCusto, 50, 0.001);
   perto(r.pctVenda, 33.333, 0.001);
-  perto(r.taxaMes, 1.7037, 0.001); // 1.5^(1/24)-1
 });
 
 t('resumoVenda: prejuízo fica negativo', () => {
-  const r = C.resumoVenda(1500000, 2000000, 12);
+  const r = C.resumoVenda(1500000, 2000000);
   assert.strictEqual(r.lucro, -500000);
-  assert.ok(r.pctCusto < 0 && r.pctVenda < 0 && r.taxaMes < 0);
+  assert.ok(r.pctCusto < 0 && r.pctVenda < 0);
 });
 
 t('resumoVenda: base inválida vira null', () => {
-  const z = C.resumoVenda(0, 2000000, 12);
-  assert.deepStrictEqual(z, { lucro:null, pctCusto:null, pctVenda:null, taxaMes:null });
-  const c = C.resumoVenda(3000000, 0, 12);
-  assert.deepStrictEqual(c, { lucro:null, pctCusto:null, pctVenda:null, taxaMes:null });
-  assert.strictEqual(C.resumoVenda(3000000, 2000000, 0).taxaMes, null);
+  assert.deepStrictEqual(C.resumoVenda(0, 2000000), { lucro:null, pctCusto:null, pctVenda:null });
+  assert.deepStrictEqual(C.resumoVenda(3000000, 0), { lucro:null, pctCusto:null, pctVenda:null });
 });
 
 const obraEvo = {

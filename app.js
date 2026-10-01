@@ -1367,16 +1367,17 @@ function simulaCompute(){
     out.innerHTML = `<div class="panel"><p class="muted-note">Digite o preço de venda pra ver a conta.</p></div>`;
     return;
   }
-  const mesesTot = Math.max(1, OBRA_CALC.mesesDeObra(o, alvoISO));
   // obra com menos de 1 mês: o % ao mês explode (divide por quase zero) e vira número absurdo
   const novaDemais = OBRA_CALC.mesesDeObra(o, alvoISO) < 1;
-  const rate = novaDemais ? null : OBRA_CALC.taxaEquivalenteMensal(venda, bruto, mesesTot);
+  // TIR: cada gasto na sua data — passa da taxa do banco exatamente quando venda > corrigido
+  const rate = novaDemais ? null : OBRA_CALC.tirMensal(o.gastos, venda, alvoISO);
+  const acima = OBRA_CALC.rendimentoAcima(rate, taxa());
   const bate = venda > corr;
   const mult = (rate!=null && taxa()>0) ? rate/taxa() : 0;
   const quando = meses===0 ? 'vendendo hoje' : `vendendo daqui a ${meses} ${meses===1?'mês':'meses'}`;
 
-  const rb = OBRA_CALC.resumoVenda(venda, bruto, mesesTot);
-  const rc = OBRA_CALC.resumoVenda(venda, corr,  mesesTot);
+  const rb = OBRA_CALC.resumoVenda(venda, bruto);
+  const rc = OBRA_CALC.resumoVenda(venda, corr);
   const pct1  = v => v==null ? '—' : v.toFixed(1).replace('.',',')+'%';
   const taxa2 = v => v==null ? '—' : v.toFixed(2).replace('.',',')+'% a.m.';
   const din   = v => v==null ? '—' : money(v);
@@ -1398,7 +1399,7 @@ function simulaCompute(){
           <tr class="rep-total"><td>Lucro</td><td class="${sinal(rb.lucro)}">${din(rb.lucro)}</td><td class="${sinal(rc.lucro)}">${din(rc.lucro)}</td></tr>
           <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
           <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
-          <tr><td>Rendimento ao mês</td><td>${taxa2(novaDemais ? null : rb.taxaMes)}</td><td>${taxa2(novaDemais ? null : rc.taxaMes)}</td></tr>
+          <tr><td>Rendimento ao mês</td><td>${taxa2(rate)}</td><td>${taxa2(acima)}</td></tr>
           ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${String(o.areaM2).replace('.',',')} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
         </tbody>
       </table></div>

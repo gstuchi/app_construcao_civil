@@ -86,23 +86,42 @@
     return diasEntre(obra.dataInicio, fimCorrecao(obra, hojeISO)) / DIAS_MES;
   }
 
-  /* % ao mês composto equivalente: quanto o dinheiro "rendeu" por mês
-     ao transformar custoBruto em venda ao longo de N meses. */
-  function taxaEquivalenteMensal(venda, custoBruto, meses){
-    if(venda <= 0 || custoBruto <= 0 || meses <= 0) return null;
-    return (Math.pow(venda / custoBruto, 1 / meses) - 1) * 100;
+  /* TIR mensal, em %: a taxa r que zera venda − Σ gasto × (1 + r)^(meses do gasto
+     até a venda). É a conta de `corrigido` resolvida para a taxa, então a TIR passa
+     da taxa do banco exatamente quando a venda passa do custo corrigido — o número
+     e o veredito do simulador não se contradizem. O valor dos gastos na data da
+     venda só cresce com r, então a raiz é única e a bissecção acha. Gasto depois
+     da venda conta como pago nela (diasEntre não fica negativo), como em corrigido.
+     Ver docs/specs/2026-09-30-simulador-tir-design.md. */
+  function tirMensal(gastos, venda, alvoISO){
+    if(!(venda > 0) || !gastos.length) return null;
+    const fluxos = gastos.map(g => ({ valor: g.valor, meses: diasEntre(g.data, alvoISO) / DIAS_MES }));
+    if(!fluxos.some(f => f.meses > 0)) return null; // nenhum tempo passou: taxa ao mês não existe
+    const saldo = r => venda - fluxos.reduce((s, f) => s + f.valor * Math.pow(1 + r, f.meses), 0);
+    let baixo = -0.99, alto = 10; // −99% a +1000% ao mês
+    if(saldo(baixo) < 0 || saldo(alto) > 0) return null;
+    for(let i = 0; i < 100; i++){
+      const meio = (baixo + alto) / 2;
+      if(saldo(meio) > 0) baixo = meio; else alto = meio;
+    }
+    return (baixo + alto) / 2 * 100;
+  }
+
+  /* Quanto a TIR rende por mês acima do banco, descontado de forma composta. */
+  function rendimentoAcima(tirPct, taxaPct){
+    if(tirPct == null) return null;
+    return ((1 + tirPct / 100) / (1 + taxaPct / 100) - 1) * 100;
   }
 
   /* Conta da venda numa base de custo (bruto OU corrigido):
-     lucro em R$, % sobre o custo, % sobre a venda, % ao mês composto. */
-  function resumoVenda(venda, custo, meses){
+     lucro em R$, % sobre o custo e % sobre a venda. */
+  function resumoVenda(venda, custo){
     if(venda <= 0 || custo <= 0)
-      return { lucro:null, pctCusto:null, pctVenda:null, taxaMes:null };
+      return { lucro:null, pctCusto:null, pctVenda:null };
     return {
       lucro: venda - custo,
       pctCusto: (venda / custo - 1) * 100,
       pctVenda: (venda - custo) / venda * 100,
-      taxaMes: taxaEquivalenteMensal(venda, custo, meses),
     };
   }
 
@@ -360,7 +379,7 @@
     return { modo:'total', ...itemOrcamento(totalBruto(obra), orc.total), topicos:[], fora:[], foraTotal:0 };
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, taxaEquivalenteMensal, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra };
+  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

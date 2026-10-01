@@ -28,9 +28,14 @@ export const EmailAuthProvider = { credential:(email,senha)=>({email,senha}) };
 function passo(nome){ __ctrl.passos.push(nome); return __ctrl.falhas[nome] ? Promise.reject(__ctrl.falhas[nome]) : Promise.resolve(); }
 export function reauthenticateWithCredential(_u, cred){
   __ctrl.credenciais.push(cred);
-  return passo(cred && cred.providerId === 'apple.com' ? 'reauthApple' : 'reauth');
+  const p = cred && cred.providerId;
+  return passo(p === 'apple.com' ? 'reauthApple' : p === 'google.com' ? 'reauthGoogle' : 'reauth');
 }
-export class GoogleAuthProvider{ constructor(){ this.providerId = 'google.com'; } setCustomParameters(p){ this.parametros = p; } }
+export class GoogleAuthProvider{
+  constructor(){ this.providerId = 'google.com'; }
+  setCustomParameters(p){ this.parametros = p; }
+  static credential(idToken){ return { providerId:'google.com', idToken }; }
+}
 export class OAuthProvider{
   constructor(providerId){ this.providerId = providerId; this.escopos = []; }
   addScope(s){ this.escopos.push(s); return this; }

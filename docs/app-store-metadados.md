@@ -145,9 +145,9 @@ The account is already populated with construction projects and expenses, so you
 
 A few notes that may help the review:
 
-1. Account-based by design. Every user's projects and expenses sync across their own devices (iPhone and web), so the app requires an account. Sign-in is email and password, or Sign in with Apple, through Firebase Authentication. Sign in with Apple is offered on the login screen. The demo account above uses email and password. Google sign-in exists only on the web version, not in the iOS app.
+1. Account-based by design. Every user's projects and expenses sync across their own devices (iPhone and web), so the app requires an account. Sign-in is email and password, Sign in with Apple, or Sign in with Google, through Firebase Authentication. Sign in with Apple is offered on the login screen, above Google, as the equivalent login option (Guideline 4.8). The demo account above uses email and password.
 
-2. Account deletion is available in the app: Ajustes (Settings) > Apagar conta (Delete account). It asks for the current password (or, for Apple accounts, a fresh Sign in with Apple), requires typing APAGAR to confirm, deletes the user's documents, revokes the Sign in with Apple token and then deletes the authentication account.
+2. Account deletion is available in the app: Ajustes (Settings) > Apagar conta (Delete account). It asks for the current password (or, for Apple or Google accounts, a fresh sign-in with that provider), requires typing APAGAR to confirm, deletes the user's documents, revokes the Sign in with Apple token for Apple accounts and then deletes the authentication account.
 
 3. Data export is available in Ajustes > Seus dados, in CSV or JSON.
 

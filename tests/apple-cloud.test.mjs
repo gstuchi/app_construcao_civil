@@ -1,4 +1,4 @@
-import { test, beforeEach, afterEach } from 'node:test';
+import { test, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { register, createRequire } from 'node:module';
 register('./helpers/loader-firebase.mjs', import.meta.url);
@@ -148,6 +148,22 @@ test('revogação que falha não impede apagar a conta e fica no diagnóstico',a
   globalThis.fetch=async()=>({ok:false,status:400});
   await entraComo(['apple.com']); ctrl.passos=[];
   await cloud.apagarConta('','APAGAR');
+  assert.ok(ctrl.passos.includes('deleteUser'));
+  assert.equal(diag[0][0],'apple-revogar');
+});
+test('app: revogação sem resposta aborta em 10 s e a exclusão segue',async()=>{
+  await preparar({ehNativo:true});
+  globalThis.fetch=(url,init)=>new Promise((_,rej)=>{
+    init.signal.addEventListener('abort',()=>rej(Object.assign(new Error('abortado'),{name:'AbortError'})));
+  });
+  await entraComo(['apple.com']); ctrl.passos=[];
+  mock.timers.enable({ apis:['setTimeout'] });
+  try{
+    let pronto=false;
+    const p=cloud.apagarConta('','APAGAR').then(()=>{ pronto=true; });
+    for(let i=0;i<40 && !pronto;i++){ for(let j=0;j<20;j++) await Promise.resolve(); mock.timers.tick(1000); }
+    await p;
+  }finally{ mock.timers.reset(); }
   assert.ok(ctrl.passos.includes('deleteUser'));
   assert.equal(diag[0][0],'apple-revogar');
 });

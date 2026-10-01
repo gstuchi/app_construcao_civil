@@ -340,19 +340,22 @@ async function reautenticar(senha){
    popup devolve access token, que o SDK revoga; no app a Apple devolve
    authorizationCode, que só o endpoint REST aceita (tokenType CODE, o mesmo pedido
    do SDK nativo do Firebase). Falha aqui não segura a exclusão: fica no diagnóstico. */
+const LIMITE_REVOGAR_MS = 10000; /* AbortSignal.timeout não existe no iOS 15 */
 async function revogarApple(u, prova){
   if(!prova) return;
+  const ctl = new AbortController();
+  const timer = setTimeout(()=>ctl.abort(), LIMITE_REVOGAR_MS);
   try{
     if(prova.accessToken){ await revokeAccessToken(auth, prova.accessToken); return; }
     if(!prova.codigo) throw new Error('Apple sem token para revogar');
     const resp = await fetch('https://identitytoolkit.googleapis.com/v2/accounts:revokeToken?key=' + firebaseConfig.apiKey, {
-      method:'POST', headers:{ 'Content-Type':'application/json' },
+      method:'POST', headers:{ 'Content-Type':'application/json' }, signal: ctl.signal,
       body: JSON.stringify({ providerId:'apple.com', tokenType:'CODE', token:prova.codigo, idToken: await getIdToken(u) }),
     });
     if(!resp.ok) throw new Error('revokeToken HTTP ' + resp.status);
   }catch(err){
     try{ window.OBRA_DIAG?.registra('apple-revogar', (err && err.message) || String(err), err && err.stack); }catch{}
-  }
+  }finally{ clearTimeout(timer); }
 }
 async function aguardarFila(){
   let timer;

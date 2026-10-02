@@ -23,6 +23,7 @@ const HOSTIL={
         {id:'g3',valor:300,topico:'fundacao',descricao:P,data:emDias(1),pagamento:'cartao',grupoId:'gr'+C,parcela:{n:1,de:2},
           jurosCartao:{taxaMensal:P,nParcelas:P,jurosCompra:P,totalCompra:P,valorCompra:P}},
         {id:'g4',valor:300,topico:'fundacao',descricao:P,data:emDias(31),pagamento:'cartao',grupoId:'gr'+C,parcela:{n:2,de:2}},
+        {id:'g5',valor:100,topico:'f'+C,descricao:'x',data:'2025-04-01',pagamento:'pix'},
       ]},
     {id:'o2',nome:P,fase:'pronta',dataInicio:'2025-01-01',valorEstimadoVenda:null,areaM2:80,
       gastos:[{id:'h1',valor:5000,topico:'fundacao',descricao:P,data:'2025-01-15',pagamento:'pix'}]},
@@ -72,7 +73,7 @@ async function percorre(browser,semCSP){
 
     await confere('início',()=>temHostil('#obrasList')&&temHostil('#compBars'));
     await page.evaluate(id=>openObra(id),ID1);
-    await confere('obra',()=>temHostil('#obraBody .obra-head')&&temHostil('#obraBody .orc-lista')&&temHostil('#oAfazeres')&&temHostil('#oDonutLeg')&&temHostil('#oGastos'));
+    await confere('obra',()=>temHostil('#obraBody .obra-head')&&temHostil('#obraBody .orc-lista')&&temHostil('#oAfazeres')&&temHostil('#oDonutLeg')&&temHostil('#oGastos')&&temHostil('#obraBody .orc-fora'));
     await page.evaluate(p=>{filtroTexto=p;renderObra();},P);
     await confere('busca',p=>$('#fBusca').value===p,P);
     await page.evaluate(()=>{filtroTexto='';renderObra();});

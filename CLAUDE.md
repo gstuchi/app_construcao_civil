@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## O que é
 
-Custta (ex-ObraControl, ex-"Minhas Obras") — PWA offline-first de controle de custos por obra. Vanilla JS, **sem framework, sem bundler, sem etapa de build**: os arquivos da raiz são servidos como estão. Deploy na Vercel; backend é Firebase (Auth + Firestore).
+Custta (ex-ObraControl, ex-"Minhas Obras") — PWA offline-first de controle de custos por obra. Vanilla JS, **sem framework, sem bundler, sem etapa de build**: os arquivos da raiz são servidos como estão — menos o que o `.vercelignore` tira do deploy (testes, scripts, docs, configs e notas `.md`) e `notificacoes/`, que só a função `api/` usa e a Vercel redireciona para a raiz. Arquivo de desenvolvimento novo fora dessas pastas entra no `.vercelignore` (`tests/vercel.test.cjs` confere). Deploy na Vercel; backend é Firebase (Auth + Firestore).
 
 Código, comentários, identificadores e UI são em **português**. Mantenha assim ao editar (`obra`, `gasto`, `topico`, `fase`, `corrigido`).
 

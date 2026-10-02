@@ -1,3 +1,15 @@
+# Deploy leva só o app. A Vercel serve a raiz como está: o que não é do app sai daqui
+# (tests/vercel.test.cjs confere os dois lados). notificacoes/ fica, porque a função
+# api/ depende dela, e é redirecionada no vercel.json.
 ios/
 www/
 docs/
+tests/
+scripts/
+.github/
+*.md
+firebase.json
+firebase.test.json
+.firebaserc
+firestore.rules
+capacitor.config.json

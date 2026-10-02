@@ -1,12 +1,15 @@
 /* XSS com dados hostis: o blob entra pelo caminho real (watchDados → normaliza → renderAll)
    e percorre todas as telas, folhas e diálogos. Nenhum elemento, atributo ou handler pode
-   nascer de texto do usuário — com a CSP ligada e com ela desligada (bypassCSP), o que
-   prova que o escape segura sozinho. Sem contas ou serviços externos. */
+   nascer de texto do usuário — com a CSP ligada e com ela desligada (bypassCSP): sem a CSP
+   um handler injetado rodaria e acusaria em __xss, então a segunda passada prova que o
+   escape do texto segura sozinho. Datas, números e parcela não chegam hostis aqui (o
+   dados.js valida o tipo antes); o escape deles é travado pelo tests/xss.test.cjs.
+   Sem contas ou serviços externos. */
 const assert=require('node:assert/strict');
 const {chromium}=require('playwright');
 
-// Fecha aspas simples e duplas, injeta atributo com handler e cria elementos com handler.
-const P=`'" data-xss="1" autofocus onfocus="window.__xss=1"><img data-xss src=x onerror="window.__xss=1"><svg data-xss onload="window.__xss=1"></svg>`;
+// Começa com &amp; (o value tem de voltar igual: prova o escape do &), fecha aspas simples e duplas, injeta atributo com handler e cria elementos com handler.
+const P=`&amp; '" data-xss="1" autofocus onfocus="window.__xss=1"><img data-xss src=x onerror="window.__xss=1"><svg data-xss onload="window.__xss=1"></svg>`;
 // Curto: ids e chaves do orçamento (dados.js descarta tópico de orçamento com mais de 80 caracteres).
 const C=`'" data-xss="1"><img data-xss src=x>`;
 const ID1='o1'+C;

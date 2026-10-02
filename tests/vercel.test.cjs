@@ -36,9 +36,9 @@ while(fila.length){
 }
 
 /* Sobe sem ser referenciado: a Vercel precisa (package*.json instala as dependências da função;
-   vercel.json, .vercelignore e .gitignore ela lê e não serve), o app busca por código
+   vercel.json e .vercelignore ela lê e não serve), o app busca por código
    (sw.js pelo pwa.js, versao.json pelo app nativo) ou é licença (a OFL acompanha a fonte). */
-const tambemSobe = ['package.json', 'package-lock.json', 'vercel.json', '.vercelignore', '.gitignore',
+const tambemSobe = ['package.json', 'package-lock.json', 'vercel.json', '.vercelignore',
   'sw.js', 'versao.json', 'LICENSE', 'fontes/OFL.txt', 'vendor/firebase/LICENSE', 'vendor/sentry/LICENSE'];
 
 const usados = new Set([...daPagina, ...doServidor, ...tambemSobe]);

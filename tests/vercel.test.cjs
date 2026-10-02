@@ -19,9 +19,9 @@ const semPrefixo = u => u.replace(/^\.?\//, '');
 const bloco = /const ASSETS = (\[[^\]]*\]);/.exec(ler('sw.js'));
 assert.ok(bloco, 'sw.js mudou o formato do ASSETS: ajuste este teste e o scripts/build-www.mjs');
 const assets = JSON.parse(bloco[1].replace(/'/g, '"')).map(semPrefixo).filter(Boolean);
-const doHtml = f => [...ler(f).matchAll(/(?:src|href)="([^"#:]+)"/g)].map(m => semPrefixo(m[1])).filter(Boolean);
+const doHtml = f => [...ler(f).matchAll(/(?:src|href)="([^"#:]+)"/g)].map(m => semPrefixo(m[1].split(/[?#]/)[0])).filter(Boolean);
 const doCss = f => [...ler(f).matchAll(/url\(['"]?([^'")]+)['"]?\)/g)].map(m => m[1])
-  .filter(u => !u.startsWith('data:')).map(semPrefixo);
+  .filter(u => !u.startsWith('data:')).map(u => semPrefixo(u.split(/[?#]/)[0])).filter(Boolean);
 const daPagina = new Set([...assets, ...doHtml('index.html'), ...doHtml('privacidade.html'),
   ...doCss('styles.css'), ...doCss('privacidade.css')]);
 

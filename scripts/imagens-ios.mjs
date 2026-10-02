@@ -1,4 +1,4 @@
-/* Imagens do app iOS a partir das do site, para as duas não se separarem:
+/* Imagens do iPhone a partir das do site, para não se separarem:
    - ícone: o icon-512.png em 1024×1024 e sem canal alfa, que a App Store exige
      (ITMS-90717). O PNG original tem 1px de borda semitransparente (antialiasing
      do recorte): sai antes de ampliar, senão vira contorno.
@@ -7,7 +7,9 @@
      animada), no quadrado de 2732px que o iOS recorta com aspectFill. Renderizado
      em 874×874 px CSS, a altura de um iPhone em pontos: 1px CSS ≈ 1pt na tela,
      o mesmo tamanho da abertura do site.
-   `node scripts/imagens-ios.mjs` regrava os dois; mudou o ícone ou a marca da
+   - abertura do PWA instalado (apple-touch-startup-image do index.html): o mesmo
+     quadro, no tamanho exato de cada aparelho que o index.html lista.
+   `node scripts/imagens-ios.mjs` regrava tudo; mudou o ícone ou a marca da
    abertura do site, rode de novo. */
 import { chromium } from 'playwright';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -20,8 +22,11 @@ const ASSETS = path.join(raiz, 'ios/App/App/Assets.xcassets');
 const ICONE = { origem: path.join(raiz, 'icon-512.png'), destino: path.join(ASSETS, 'AppIcon.appiconset/AppIcon-512@2x.png'), lado: 1024 };
 const ABERTURA = {
   destinos: ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'].map(n => path.join(ASSETS, 'Splash.imageset', n)),
-  lado: 2732, pontos: 874,
+  tela: { largura: 874, altura: 874, escala: 2732 / 874 },
 };
+/* <link rel="apple-touch-startup-image" href="splash/…" media="(device-width:…)…"> */
+const aberturasPWA = html => [...html.matchAll(/<link rel="apple-touch-startup-image" href="([^"]+)" media="\(device-width:(\d+)px\) and \(device-height:(\d+)px\) and \(-webkit-device-pixel-ratio:(\d)\)">/g)]
+  .map(([, arquivo, largura, altura, escala]) => ({ destino: path.join(raiz, arquivo), tela: { largura: +largura, altura: +altura, escala: +escala } }));
 
 /* Desenha o PNG num canvas lado×lado (suavização alta) e devolve os pixels RGBA.
    `borda` recorta essa quantidade de pixels de cada lado da origem antes. */
@@ -40,11 +45,10 @@ async function rgbaDe(page, png, lado, borda = 0){
 /* Quadro parado da abertura do site: animações desligadas e cada peça no estado
    em que a animação termina. A marca vem do index.html, não de cópia. O print já
    sai no tamanho final (a abertura pode ter alfa; só o ícone não pode). */
-async function fotografarAbertura(browser, { lado, pontos }){
-  const html = await readFile(path.join(raiz, 'index.html'), 'utf8');
+async function fotografarAbertura(browser, html, { largura, altura, escala }){
   const marca = html.match(/<div class="sp-logo">[\s\S]*?<\/div>\s*<\/div>/)?.[0];
   if(!marca) throw new Error('não achei .sp-logo no index.html');
-  const page = await browser.newPage({ viewport: { width: pontos, height: pontos }, deviceScaleFactor: lado / pontos });
+  const page = await browser.newPage({ viewport: { width: largura, height: altura }, deviceScaleFactor: escala });
   // Origem file:// para o styles.css e a fonte locais carregarem.
   await page.goto(pathToFileURL(path.join(raiz, 'styles.css')).href);
   await page.setContent(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
@@ -103,7 +107,12 @@ try{
   const page = await browser.newPage();
   await writeFile(ICONE.destino, pngRGB(await rgbaDe(page, await readFile(ICONE.origem), ICONE.lado, 1), ICONE.lado));
   console.log('ícone gravado em', path.relative(raiz, ICONE.destino));
-  const abertura = await fotografarAbertura(browser, ABERTURA);
+  const html = await readFile(path.join(raiz, 'index.html'), 'utf8');
+  const abertura = await fotografarAbertura(browser, html, ABERTURA.tela);
   for(const destino of ABERTURA.destinos) await writeFile(destino, abertura);
   console.log('abertura gravada em', path.relative(raiz, path.dirname(ABERTURA.destinos[0])));
+  for(const { destino, tela } of aberturasPWA(html)){
+    await writeFile(destino, await fotografarAbertura(browser, html, tela));
+    console.log('abertura do PWA gravada em', path.relative(raiz, destino));
+  }
 }finally{ await browser.close(); }

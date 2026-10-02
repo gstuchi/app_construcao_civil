@@ -52,3 +52,21 @@ runInNewContext(trecho,contexto);
 })().catch(err=>{console.error(err);process.exitCode=1;});
 
 console.log('ok - precache contém ícones e ignora respostas HTTP com erro');
+
+/* Abertura do PWA instalado no iPhone: cada apple-touch-startup-image existe no
+   tamanho exato do aparelho (o iOS ignora imagem de tamanho errado e mostra branco)
+   e é a gerada por scripts/imagens-ios.mjs, não a antiga que dizia "Custo". */
+{
+  const antigas = new Set(['27befa11b789fc0de0bc4005a559878f3c9301004be327d44c5ba0e11c7c8e79',
+    'ad3677c6b2b5a559c540559b923446a317a2e77afe762c402161e755e542d9a3', 'e884e4c445e19f7885a023bebaa02e310a9c02cf9c0851b4d5ca039fe083be66',
+    '47753e531f6f73509868ef2783ed03fb0d502413c680c5db5e84dfe9bfea9c90', 'a0b1317351b387b01907c903f7ee08c5ca9e0fca7d9aa72295f7f817c8762a44']);
+  const links = [...html.matchAll(/<link rel="apple-touch-startup-image" href="([^"]+)" media="\(device-width:(\d+)px\) and \(device-height:(\d+)px\) and \(-webkit-device-pixel-ratio:(\d)\)">/g)];
+  assert.equal(links.length, 5, 'cinco aberturas de PWA no index.html');
+  for(const [, arquivo, largura, altura, escala] of links){
+    const png = readFileSync(join(raiz, arquivo));
+    assert.equal(png.readUInt32BE(16), largura * escala, `${arquivo}: largura`);
+    assert.equal(png.readUInt32BE(20), altura * escala, `${arquivo}: altura`);
+    assert.ok(!antigas.has(require('crypto').createHash('sha256').update(png).digest('hex')), `${arquivo} ainda é a abertura antiga`);
+  }
+  console.log('ok - aberturas do PWA no tamanho de cada aparelho, geradas pelo script');
+}

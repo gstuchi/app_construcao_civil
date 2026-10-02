@@ -20,6 +20,8 @@ const perigos = [
   'Parcela ${gasto.parcela.n}/${gasto.parcela.de}',
   "${String(o.areaM2).replace('.',',')}",
   '/${m.slice(2,4)}',
+  "${String(tx).replace('.',',')}",
+  "${String(taxa()).replace('.',',')}",
 ];
 
 for(const trecho of perigos){

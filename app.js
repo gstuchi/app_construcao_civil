@@ -75,7 +75,7 @@ const moneyCurto = n => moneyShort(n).replace(/,0+ (mil|mi)$/, ' $1');
 const semCifrao = s => s.replace(/^R\$\s/, '');
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const todayISO = () => OBRA_CALC.dataLocalISO();
-const fmtData = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
+const fmtData = iso => { const [y,m,d] = iso.split('-'); return escapeHtml(`${d}/${m}/${y.slice(2)}`); };
 const parseNum = OBRA_CALC.parseNum;
 /* máscara de dinheiro: formata ao digitar, completa centavos ao sair */
 function maskMoney(sel){
@@ -409,7 +409,7 @@ function renderObra(){
         <div class="k-top"><span class="k-nome">Venda estimada</span>
           <span class="chip2 green">estimativa</span></div>
         <div class="k-num">${money(o.valorEstimadoVenda)}</div>
-        <div class="k-obs">${ppm2 ? `${moneyShort(ppm2)}/m² · ${String(o.areaM2).replace('.',',')} m²` : `margem ${moneyShort(o.valorEstimadoVenda-corr)}`}</div>
+        <div class="k-obs">${ppm2 ? `${moneyShort(ppm2)}/m² · ${escapeHtml(String(o.areaM2).replace('.',','))} m²` : `margem ${moneyShort(o.valorEstimadoVenda-corr)}`}</div>
       </div>`;
   } else {
     kpiVenda = `
@@ -488,7 +488,7 @@ function renderObra(){
         <label class="busca"><span class="busca-ic" aria-hidden="true">${ICON('lupa')}</span>
           <input id="fBusca" placeholder="${dicaBusca}" aria-label="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}"></label>
         <select id="fMes"><option value="">Todos os meses</option>
-          ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${m.slice(2,4)}</option>`).join('')}
+          ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${escapeHtml(m.slice(2,4))}</option>`).join('')}
         </select>
       </div>
       <ul class="list" id="oGastos"></ul>
@@ -803,8 +803,8 @@ function gastoRow(o, g, opts){
     }
     const irmas = oo.gastos.filter(x=>x.grupoId===g.grupoId);
     openSheet(`
-      <h3>Excluir parcela ${g.parcela.n}/${g.parcela.de}</h3>
-      <p class="muted-note">Esta parcela faz parte de uma compra em ${g.parcela.de}x no cartão.</p>
+      <h3>Excluir parcela ${escapeHtml(g.parcela.n)}/${escapeHtml(g.parcela.de)}</h3>
+      <p class="muted-note">Esta parcela faz parte de uma compra em ${escapeHtml(g.parcela.de)}x no cartão.</p>
       <div class="layout-40 sheet-actions">
         <button class="layout-19 btn primary" id="dUma">Excluir só esta parcela</button>
         <button class="layout-41 btn ghost" id="dTodas">Excluir a compra toda (${irmas.length} parcela${irmas.length>1?'s':''})</button>
@@ -908,7 +908,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   // parcela de compra parcelada: pagamento/parcelas fixos, edita só esta parcela
   const isParcela = isEdit && !!gasto.grupoId;
   const pagtoHtml = isParcela
-    ? `<p class="muted-note">${ICON('cartao')} Parcela ${gasto.parcela.n}/${gasto.parcela.de} de uma compra no cartão — a edição vale só pra esta parcela.</p>`
+    ? `<p class="muted-note">${ICON('cartao')} Parcela ${escapeHtml(gasto.parcela.n)}/${escapeHtml(gasto.parcela.de)} de uma compra no cartão — a edição vale só pra esta parcela.</p>`
     : `<div class="field"><label>Pagamento</label><div class="chips" id="fPagto"></div></div>
        <div class="field hidden" id="fParcWrap"><label>Parcelas</label>
          <select id="fParc">${Array.from({length:36},(_,i)=>`<option value="${i+1}">${i+1}x</option>`).join('')}</select>
@@ -1400,7 +1400,7 @@ function simulaCompute(){
           <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
           <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
           <tr><td>Rendimento ao mês</td><td>${taxa2(rate)}</td><td>${taxa2(acima)}</td></tr>
-          ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${String(o.areaM2).replace('.',',')} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
+          ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${escapeHtml(String(o.areaM2).replace('.',','))} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
         </tbody>
       </table></div>
     </div>`;

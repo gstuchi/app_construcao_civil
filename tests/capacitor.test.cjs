@@ -133,3 +133,32 @@ test('Google Sign-In: plugin no SPM e Info.plist com o client iOS do GoogleServi
   const esquemas = plist.match(/<key>CFBundleURLSchemes<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1] || '';
   assert.ok(esquemas.includes(`<string>${valor('REVERSED_CLIENT_ID')}</string>`), 'esquema REVERSED_CLIENT_ID no Info.plist');
 });
+
+test('ícone do app: 1024×1024, sem canal alfa e não é o padrão do Capacitor', ()=>{
+  const png = readFileSync(join(raiz, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'));
+  assert.equal(png.toString('ascii', 12, 16), 'IHDR');
+  assert.equal(png.readUInt32BE(16), 1024);
+  assert.equal(png.readUInt32BE(20), 1024);
+  // A App Store recusa ícone com canal alfa (ITMS-90717): tipo de cor 2 é RGB puro.
+  assert.equal(png[25], 2, 'PNG com canal alfa');
+  // O "X" azul que o Capacitor põe ao criar o projeto iOS.
+  const padrao = '29e4777e319de3ee5a52c3a8004ec19d0568414004257e36d7c94a077d71c93b';
+  assert.notEqual(require('node:crypto').createHash('sha256').update(png).digest('hex'), padrao);
+});
+
+test('abertura do app: imagem do Custta e fundo escuro, não a do Capacitor', ()=>{
+  // O branco com o X azul que o Capacitor põe ao criar o projeto iOS.
+  const padrao = '1b5002b74a5500e697298ced06ca2811ac33f2771f236f3c720ff23243890530';
+  const pasta = 'ios/App/App/Assets.xcassets/Splash.imageset/';
+  for(const nome of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png']){
+    const png = readFileSync(join(raiz, pasta + nome));
+    assert.equal(png.readUInt32BE(16), 2732, nome);
+    assert.equal(png.readUInt32BE(20), 2732, nome);
+    assert.notEqual(require('node:crypto').createHash('sha256').update(png).digest('hex'), padrao, nome);
+  }
+  // Fundo da tela de abertura = backgroundColor do Capacitor (#04100C): sem clarão branco.
+  const tela = ler('ios/App/App/Base.lproj/LaunchScreen.storyboard');
+  assert.doesNotMatch(tela, /systemBackgroundColor/);
+  assert.match(tela, /<color key="backgroundColor" red="0\.0157" green="0\.0627" blue="0\.0471" alpha="1"/);
+  assert.equal(JSON.parse(ler('capacitor.config.json')).backgroundColor, '#04100C');
+});

@@ -133,3 +133,15 @@ test('Google Sign-In: plugin no SPM e Info.plist com o client iOS do GoogleServi
   const esquemas = plist.match(/<key>CFBundleURLSchemes<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1] || '';
   assert.ok(esquemas.includes(`<string>${valor('REVERSED_CLIENT_ID')}</string>`), 'esquema REVERSED_CLIENT_ID no Info.plist');
 });
+
+test('ícone do app: 1024×1024, sem canal alfa e não é o padrão do Capacitor', ()=>{
+  const png = readFileSync(join(raiz, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'));
+  assert.equal(png.toString('ascii', 12, 16), 'IHDR');
+  assert.equal(png.readUInt32BE(16), 1024);
+  assert.equal(png.readUInt32BE(20), 1024);
+  // A App Store recusa ícone com canal alfa (ITMS-90717): tipo de cor 2 é RGB puro.
+  assert.equal(png[25], 2, 'PNG com canal alfa');
+  // O "X" azul que o Capacitor põe ao criar o projeto iOS.
+  const padrao = '29e4777e319de3ee5a52c3a8004ec19d0568414004257e36d7c94a077d71c93b';
+  assert.notEqual(require('node:crypto').createHash('sha256').update(png).digest('hex'), padrao);
+});

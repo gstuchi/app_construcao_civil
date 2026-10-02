@@ -13,3 +13,5 @@ firebase.test.json
 .firebaserc
 firestore.rules
 capacitor.config.json
+vendor/firebase/assets.json
+icon.svg

@@ -69,6 +69,8 @@ function foraDoRegistro(lock){
 }
 /* Só faixa de versão do registro: git:, github:, file:, URL, alias npm: e "latest" pulam o lockfile revisado. */
 const FAIXA = /^[~^]?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+/* Linhas que valem num .npmrc: sem comentário (# ou ;) e sem linha em branco. */
+const linhasDoNpmrc = texto => texto.split(/\r?\n/).map(l => l.trim()).filter(l => l && !/^[#;]/.test(l));
 
 test('funções do teste: nome com escopo e aninhado, política e registro', ()=>{
   assert.equal(nomeDaChave('node_modules/a/node_modules/@b/c'), '@b/c');
@@ -84,6 +86,20 @@ test('funções do teste: nome com escopo e aninhado, política e registro', ()=
   assert.deepEqual(foraDoRegistro(lock), ['node_modules/x/node_modules/@mal/pacote']);
   for(const v of ['^14.3.0', '10.74.0', '~1.2.3-beta.1']) assert.ok(FAIXA.test(v), v);
   for(const v of ['github:a/b', 'git+https://x/y.git', 'file:../p', 'https://x/p.tgz', 'npm:outro@1.0.0', 'latest', '*', '>=1.0.0']) assert.ok(!FAIXA.test(v), v);
+});
+
+test('funções do teste: .npmrc só vale com a linha estrita e mais nada', ()=>{
+  const ESTRITO = ['strict-allow-scripts=true'];
+  assert.deepEqual(linhasDoNpmrc('# c\n; d\n\n  strict-allow-scripts=true  \r\n'), ESTRITO, 'comentário, linha em branco e fim de linha CRLF não contam');
+  for(const texto of [
+    'strict-allow-scripts=true\ndangerously-allow-all-scripts=true\n',
+    'strict-allow-scripts=true\nstrict-allow-scripts=false\n',
+    'strict-allow-scripts=true\nallow-scripts=esbuild\n',
+    'strict-allow-scripts=false\n',
+    'strict-allow-scripts=true # e o resto?\n',
+    '# strict-allow-scripts=true\n',
+    '',
+  ]) assert.notDeepEqual(linhasDoNpmrc(texto), ESTRITO, JSON.stringify(texto));
 });
 
 test('funções do teste: registro só aceita o tarball do próprio pacote', ()=>{
@@ -120,6 +136,7 @@ test('funções do teste: registro só aceita o tarball do próprio pacote', ()=
 
 for(const dir of Object.keys(REVISADOS)){
   const em = rel => dir === '.' ? rel : `${dir}/${rel}`;
+  const naPasta = dir === '.' ? '' : `cd ${dir}; `;
   const pkg = lerJson(em('package.json'));
   const lock = lerJson(em('package-lock.json'));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.optionalDependencies, ...pkg.peerDependencies };
@@ -140,17 +157,18 @@ for(const dir of Object.keys(REVISADOS)){
   });
   test(`${em('package.json')}: script de instalação só roda com política no allowScripts`, ()=>{
     assert.deepEqual(scriptsSemPolitica(lock, pkg.allowScripts), [],
-      'leia o script (npm install-scripts ls) e aprove ou negue por nome: npm install-scripts approve --no-allow-scripts-pin <pacote>');
+      `script de instalação sem política. Rode: ${naPasta}npm ci --ignore-scripts; npm install-scripts ls; leia o script; npm install-scripts approve --no-allow-scripts-pin <pacote> (ou deny). Sem o --ignore-scripts o npm ci estrito para antes de instalar e o ls não vê nada. Nunca use --dangerously-allow-all-scripts`);
     const comScript = new Set(Object.entries(lock.packages).filter(([c, p]) => c && p.hasInstallScript).map(([c]) => nomeDaChave(c)));
     assert.deepEqual(Object.keys(pkg.allowScripts || {}).filter(n => !comScript.has(n)), [],
-      'allowScripts com pacote que não tem mais script: npm install-scripts prune');
+      `allowScripts com pacote que não tem mais script. Rode no Mac: ${naPasta}npm ci --ignore-scripts; npm install-scripts prune (o prune só vale com node_modules instalado: sem ele apaga todas as aprovações; fora do macOS tira também o fsevents)`);
     for(const [n, v] of Object.entries(pkg.allowScripts || {})){
       assert.equal(typeof v, 'boolean', `${n}: aprovação é true ou false`);
       assert.ok(!/.@/.test(n), `${n}: aprovação por nome, sem versão, para versão nova do Dependabot não travar`);
     }
   });
-  test(`${em('.npmrc')}: npm 11 barra script de instalação não revisado`, ()=>{
-    assert.match(lerTexto(em('.npmrc')), /^strict-allow-scripts=true$/m);
+  test(`${em('.npmrc')}: npm 11 barra script de instalação não revisado, e nada mais no arquivo`, ()=>{
+    assert.deepEqual(linhasDoNpmrc(lerTexto(em('.npmrc'))), ['strict-allow-scripts=true'],
+      'o .npmrc só pode ter strict-allow-scripts=true: dangerously-allow-all-scripts, allow-scripts ou strict-allow-scripts=false numa linha a mais desligam a trava. Para destravar um install, pare e avise o Giovani');
   });
 }
 

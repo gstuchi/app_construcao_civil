@@ -90,9 +90,14 @@
   });
   /* '' = a pessoa desistiu (fechou o popup ou a tela da Apple): não é erro pra mostrar. */
   const DESISTIU = new Set(['auth/popup-closed-by-user','auth/cancelled-popup-request','auth/user-cancelled']);
+  /* A cota por IP da Identity Toolkit API chega com o texto do Google no código
+     ("quota-exceeded-for-quota-metric-…") e vale para qualquer tela de entrada. */
+  const MUITAS_TENTATIVAS = 'Muitas tentativas. Espere um pouco.';
+  const cotaEstourada = code => typeof code === 'string' && code.includes('quota-exceeded');
   function mensagemErroSocial(code, provedor){
     const p = Object.hasOwn(PROVEDORES, provedor) ? PROVEDORES[provedor] : PROVEDORES['google.com'];
     if(DESISTIU.has(code)) return '';
+    if(cotaEstourada(code)) return MUITAS_TENTATIVAS;
     if((code === '1000' || code === 1000) && provedor === 'apple.com') return 'Confira se o iPhone está conectado a um ID Apple (em Ajustes) ou entre com e-mail e senha.';
     switch(code){
       case 'auth/account-exists-with-different-credential': return 'Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez.';
@@ -101,13 +106,30 @@
       case 'auth/operation-not-supported-in-this-environment':
       case 'auth/web-storage-unsupported': return `Seu navegador bloqueou o login ${p.curto}. Use e-mail e senha.`;
       case 'auth/network-request-failed': return 'Sem internet. Conecte pra entrar.';
-      case 'auth/too-many-requests': return 'Muitas tentativas. Espere um pouco.';
+      case 'auth/too-many-requests': return MUITAS_TENTATIVAS;
       default: return `Não deu certo entrar ${p.longo}. Tente de novo.`;
     }
   }
   const mensagemErroGoogle = code => mensagemErroSocial(code, 'google.com');
 
-  const api = {REGRAS_SENHA, validaSenha, ORIGENS, LIMITES_PERFIL, normalizaPerfil, normalizaNome, nomeDoGoogle, mensagemErroSocial, mensagemErroGoogle};
+  /* Erros do login com e-mail e senha. No login, too-many-requests é a conta
+     travada pelo Firebase depois de muitas senhas erradas — redefinir a senha
+     libera na hora; nas outras telas é só esperar. */
+  function mensagemErroSenha(code, tela){
+    const c = typeof code === 'string' ? code : '';
+    if(c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found'))
+      return 'E-mail ou senha incorretos.';
+    if(c.includes('email-already-in-use')) return 'Este e-mail já tem conta. Use "Entrar".';
+    if(c.includes('invalid-email'))        return 'E-mail inválido.';
+    if(c.includes('weak-password'))        return 'Senha fraca: use 8 caracteres ou mais, com letra e número.';
+    if(c.includes('too-many-requests'))
+      return tela === 'login' ? 'Muitas tentativas. Espere alguns minutos ou redefina a senha em "Esqueci minha senha".' : MUITAS_TENTATIVAS;
+    if(cotaEstourada(c))                   return MUITAS_TENTATIVAS;
+    if(c.includes('network-request-failed')) return 'Sem internet. Conecte pra entrar.';
+    return 'Não deu certo. Tente de novo.';
+  }
+
+  const api = {REGRAS_SENHA, validaSenha, ORIGENS, LIMITES_PERFIL, normalizaPerfil, normalizaNome, nomeDoGoogle, mensagemErroSocial, mensagemErroGoogle, mensagemErroSenha};
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CADASTRO = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -208,6 +208,7 @@ jobs:
       # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem
       # aprove macro ou plugin de pacote na primeira resolução, e sem as flags o
       # xcodebuild falha em vez de perguntar.
+      # -onlyUsePackageVersionsFromResolvedFile: só as versões do Package.resolved versionado.
       # Sem overrides de assinatura na linha de comando (ver comentário do
       # cabeçalho) — o Release do target App já está configurado como manual,
       # com o perfil e a identidade certos, pelo project.pbxproj.
@@ -223,6 +224,7 @@ jobs:
             -derivedDataPath ios/App/build \
             -skipMacroValidation \
             -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}.${{ github.run_attempt }}" \
             archive
 
@@ -242,7 +244,7 @@ jobs:
 
       - name: Resumo
         run: |
-          echo "Build \`${{ github.run_number }}.${{ github.run_attempt }}\` enviado ao TestFlight (branch \`${{ github.ref_name }}\`, commit \`${GITHUB_SHA::7}\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Build \`${{ github.run_number }}.${{ github.run_attempt }}\` enviado ao TestFlight (branch \`${GITHUB_REF_NAME}\`, commit \`${GITHUB_SHA::7}\`)." >> "$GITHUB_STEP_SUMMARY"
 
       # always(): a keychain e o perfil temporários não podem sobreviver a uma
       # falha no meio do job — o runner é reciclado, mas não custa garantir.

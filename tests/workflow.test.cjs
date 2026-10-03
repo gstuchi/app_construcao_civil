@@ -38,6 +38,22 @@ assert.deepStrictEqual(expressoesEmRun([
 ].join('\n')), ['github.head_ref', 'secrets.A']);
 let expressoesVistas = 0;
 
+// Gatilhos que rodam com segredo em resposta a código ou texto de terceiros.
+// O GitHub aceita várias grafias do gatilho: mapa (on:\n  trigger:), curta
+// (on: trigger), lista (on: [a, trigger]), mapa inline (on: {trigger: {}}) e
+// até comentário — por isso o teste tira comentários e procura a palavra.
+const GATILHO_PERIGOSO = /\b(pull_request_target|workflow_run|issue_comment)\b/;
+const temGatilhoPerigoso = texto => GATILHO_PERIGOSO.test(texto.replace(/#.*$/gm, ''));
+// Testa cada grafia e certifica que comentário não ativa o alerta.
+assert.ok(temGatilhoPerigoso('on: pull_request_target'), 'forma curta não foi detectada');
+assert.ok(temGatilhoPerigoso('on: [push, pull_request_target]'), 'forma lista não foi detectada');
+assert.ok(temGatilhoPerigoso('on:\n  - workflow_run'), 'forma híbrida não foi detectada');
+assert.ok(temGatilhoPerigoso('on: {pull_request_target: {}}'), 'forma mapa inline não foi detectada');
+assert.ok(temGatilhoPerigoso('on: issue_comment'), 'forma curta issue_comment não foi detectada');
+assert.ok(temGatilhoPerigoso('on:\n  pull_request_target:'), 'forma mapa tradicional não foi detectada');
+assert.ok(!temGatilhoPerigoso('# não usar pull_request_target\non:\n  push:'), 'comentário ativou alerta indevido');
+assert.ok(!temGatilhoPerigoso('on:\n  pull_request:\n  push:'), 'pull_request normal foi bloqueado');
+
 // Regras que valem para todo workflow, não só para o do push.
 for(const arquivo of arquivos){
   const texto = readFileSync(join(dir, arquivo), 'utf8');
@@ -48,8 +64,7 @@ for(const arquivo of arquivos){
     assert.match(ref, /^[0-9a-f]{40}$/, `${arquivo}: action sem SHA imutável: ${uso}`);
   }
   assert.match(texto, /permissions:\s*\n\s*contents:\s*read/, `${arquivo}: sem permissão mínima`);
-  // Gatilhos que rodam com segredo em resposta a código ou texto de terceiros.
-  assert.ok(!/^\s*(pull_request_target|workflow_run|issue_comment)\s*:/m.test(texto),
+  assert.ok(!temGatilhoPerigoso(texto),
     `${arquivo}: gatilho que roda com segredo para texto de terceiros`);
   for(const expr of expressoesEmRun(texto)){
     expressoesVistas++;

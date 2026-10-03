@@ -171,4 +171,29 @@ assert.match(exportOpts, /<key>br\.com\.custta\.app<\/key>\s*<string>Custta App 
 // novo, que é como a versão travada é atualizada.
 assert.match(ios, /resolver_de_novo:/, 'ios-build sem o botão de resolver os pacotes Swift de novo');
 
+/* Pacotes Swift travados: o xcodebuild dos dois workflows usa só as versões do
+   Package.resolved versionado, e cada pacote vem de repositório de dono revisado,
+   preso por versão e commit — nunca por branch. Versão nova entra por commit. */
+// googleads: google-ads-on-device-conversion-ios-sdk, puxado pelo GoogleAppMeasurement do Firebase.
+const DONOS_SWIFT = new Set(['ionic-team', 'firebase', 'google', 'openid', 'googleads']);
+function pinsForaDaLista(pins){
+  return pins.filter(p => {
+    const m = /^https:\/\/github\.com\/([^/]+)\/[^/]+?(?:\.git)?$/.exec(p.location || '');
+    return !m || !DONOS_SWIFT.has(m[1]) || !/^[0-9a-f]{40}$/.test(p.state?.revision || '') || !p.state?.version;
+  }).map(p => p.identity || p.location);
+}
+const commit40 = 'a'.repeat(40);
+assert.deepStrictEqual(pinsForaDaLista([
+  { identity: 'estranho', location: 'https://github.com/outro-dono/x.git', state: { revision: commit40, version: '1.0.0' } },
+  { identity: 'em-branch', location: 'https://github.com/firebase/y.git', state: { revision: commit40, branch: 'main' } },
+  { identity: 'ok', location: 'https://github.com/google/z', state: { revision: commit40, version: '2.0.0' } },
+]), ['estranho', 'em-branch']);
+for(const [nome, yml] of [['ios-build', iosSemComentario], ['ios-testflight', tfSemComentario]])
+  assert.match(yml, /-onlyUsePackageVersionsFromResolvedFile/, `${nome}: xcodebuild sem trava de versão dos pacotes Swift`);
+const resolved = join(__dirname, '..', 'ios', 'App', 'App.xcodeproj', 'project.xcworkspace', 'xcshareddata', 'swiftpm', 'Package.resolved');
+assert.ok(existsSync(resolved), 'falta o Package.resolved versionado');
+const pins = JSON.parse(readFileSync(resolved, 'utf8')).pins || [];
+assert.ok(pins.some(p => /capacitor-swift-pm/.test(p.location)), 'o Package.resolved não tem o Capacitor — arquivo errado?');
+assert.deepStrictEqual(pinsForaDaLista(pins), [], 'pacote Swift de dono não revisado ou preso a branch');
+
 console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda; envio ao TestFlight assinado e sob demanda');

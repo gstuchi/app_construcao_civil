@@ -84,6 +84,7 @@ jobs:
       # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem
       # aprove macro ou plugin de pacote na primeira resolução, e sem as flags o
       # xcodebuild falha em vez de perguntar.
+      # -onlyUsePackageVersionsFromResolvedFile: só as versões do Package.resolved versionado.
       # CODE_SIGNING_* zerados de propósito: a Release do pbxproj está
       # configurada para assinatura manual (perfil "Custta App Store"), e é
       # exatamente essa configuração que este build ignora, sem secret nenhum.
@@ -98,6 +99,7 @@ jobs:
             -derivedDataPath ios/App/build \
             -skipMacroValidation \
             -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY= \

@@ -26,6 +26,11 @@ on:
       - 'scripts/build-www.mjs'
       - '.github/workflows/ios-build.yml'
   workflow_dispatch:
+    inputs:
+      resolver_de_novo:
+        description: 'Resolver os pacotes Swift de novo e mostrar o Package.resolved novo no resumo'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -61,6 +66,20 @@ jobs:
       # pbxproj saírem diferentes, é porque o commit está defasado do package.json.
       - name: O cap sync não mudou nada versionado
         run: git diff --exit-code -- ios
+
+      # Pacotes Swift travados: o build usa só as versões do Package.resolved
+      # versionado. Para atualizar (plugin novo, faixa nova), rode este workflow no
+      # botão com "resolver de novo": ele apaga o arquivo, resolve, mostra o novo no
+      # resumo e compila com ele. Confira os repositórios e versione o arquivo.
+      - name: Resolver os pacotes Swift de novo
+        if: inputs.resolver_de_novo
+        run: |
+          set -o pipefail
+          ARQ=ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          rm -f "$ARQ"
+          xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
+          { echo '### Package.resolved novo'; echo '```json'; cat "$ARQ"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat "$ARQ"
 
       # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem
       # aprove macro ou plugin de pacote na primeira resolução, e sem as flags o

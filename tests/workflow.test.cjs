@@ -167,4 +167,8 @@ assert.match(exportOpts, /<key>signingStyle<\/key>\s*<string>manual<\/string>/);
 assert.match(exportOpts, /<key>teamID<\/key>\s*<string>4S7JKDKN27<\/string>/);
 assert.match(exportOpts, /<key>br\.com\.custta\.app<\/key>\s*<string>Custta App Store<\/string>/);
 
+// Pacotes Swift: o ios-build tem um botão para resolver de novo e mostrar o Package.resolved
+// novo, que é como a versão travada é atualizada.
+assert.match(ios, /resolver_de_novo:/, 'ios-build sem o botão de resolver os pacotes Swift de novo');
+
 console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda; envio ao TestFlight assinado e sob demanda');

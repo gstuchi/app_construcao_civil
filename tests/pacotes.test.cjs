@@ -117,3 +117,10 @@ for(const dir of Object.keys(REVISADOS)){
     assert.match(lerTexto(em('.npmrc')), /^strict-allow-scripts=true$/m);
   });
 }
+
+test('CI confere a assinatura do registro de tudo que instalou', ()=>{
+  const ci = lerTexto('.github/workflows/testes.yml');
+  assert.match(ci, /^\s*- run: npm audit signatures\s*$/m);
+  assert.match(ci, /^\s*- run: npm audit signatures --prefix notificacoes\s*$/m);
+  assert.ok(ci.indexOf('npm audit signatures') > ci.indexOf('npm ci --prefix notificacoes'), 'assinatura se confere depois de instalar');
+});

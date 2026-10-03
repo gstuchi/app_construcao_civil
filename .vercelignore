@@ -16,3 +16,4 @@ capacitor.config.json
 vendor/firebase/assets.json
 icon.svg
 .gitignore
+.npmrc

@@ -7,6 +7,37 @@ const dir = join(__dirname, '..', '.github', 'workflows');
 const arquivos = readdirSync(dir).filter(f => f.endsWith('.yml'));
 assert.ok(arquivos.length >= 3, `poucos workflows: ${arquivos}`);
 
+/* Em run:, ${{ }} vira texto do script antes de o shell rodar: título de PR, nome
+   de branch ou mensagem de commit ali viram comando. Só passam números do run e
+   segredos; o resto entra por env: e o shell lê como variável. */
+const PERMITIDAS_EM_RUN = /^(github\.run_number|github\.run_attempt|secrets\.[A-Z0-9_]+)$/;
+function expressoesEmRun(texto){
+  const linhas = texto.split('\n');
+  const blocos = [];
+  for(let i = 0; i < linhas.length; i++){
+    const m = /^(\s*)(?:-\s+)?run:\s*(.*)$/.exec(linhas[i]);
+    if(!m) continue;
+    if(!/^[|>]/.test(m[2])){ blocos.push(m[2]); continue; }
+    const recuo = m[1].length;
+    const corpo = [];
+    for(let j = i + 1; j < linhas.length; j++){
+      const l = linhas[j];
+      if(l.trim() && l.length - l.trimStart().length <= recuo) break;
+      corpo.push(l);
+    }
+    blocos.push(corpo.join('\n'));
+  }
+  return blocos.flatMap(b => [...b.matchAll(/\$\{\{([^}]*)\}\}/g)].map(m => m[1].trim()));
+}
+// O leitor pega bloco com linha em branco no meio e ignora env: (lá a expressão é segura).
+assert.deepStrictEqual(expressoesEmRun([
+  'jobs:', '  x:', '    steps:',
+  '      - run: |', '          echo um', '', '          echo "${{ github.head_ref }}"',
+  '      - name: y', '        env:', '          T: ${{ github.event.issue.title }}',
+  '        run: echo "${{ secrets.A }}"',
+].join('\n')), ['github.head_ref', 'secrets.A']);
+let expressoesVistas = 0;
+
 // Regras que valem para todo workflow, não só para o do push.
 for(const arquivo of arquivos){
   const texto = readFileSync(join(dir, arquivo), 'utf8');
@@ -17,7 +48,16 @@ for(const arquivo of arquivos){
     assert.match(ref, /^[0-9a-f]{40}$/, `${arquivo}: action sem SHA imutável: ${uso}`);
   }
   assert.match(texto, /permissions:\s*\n\s*contents:\s*read/, `${arquivo}: sem permissão mínima`);
+  // Gatilhos que rodam com segredo em resposta a código ou texto de terceiros.
+  assert.ok(!/^\s*(pull_request_target|workflow_run|issue_comment)\s*:/m.test(texto),
+    `${arquivo}: gatilho que roda com segredo para texto de terceiros`);
+  for(const expr of expressoesEmRun(texto)){
+    expressoesVistas++;
+    assert.match(expr, PERMITIDAS_EM_RUN,
+      `${arquivo}: \${{ ${expr} }} dentro de run: — passe por env: e leia como variável do shell`);
+  }
 }
+assert.ok(expressoesVistas >= 2, 'o leitor de run: não achou nem o número do build do TestFlight — está quebrado');
 
 const workflow = readFileSync(join(dir, 'push-diario.yml'), 'utf8');
 

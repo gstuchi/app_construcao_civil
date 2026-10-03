@@ -242,7 +242,7 @@ jobs:
 
       - name: Resumo
         run: |
-          echo "Build \`${{ github.run_number }}.${{ github.run_attempt }}\` enviado ao TestFlight (branch \`${{ github.ref_name }}\`, commit \`${GITHUB_SHA::7}\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Build \`${{ github.run_number }}.${{ github.run_attempt }}\` enviado ao TestFlight (branch \`${GITHUB_REF_NAME}\`, commit \`${GITHUB_SHA::7}\`)." >> "$GITHUB_STEP_SUMMARY"
 
       # always(): a keychain e o perfil temporários não podem sobreviver a uma
       # falha no meio do job — o runner é reciclado, mas não custa garantir.

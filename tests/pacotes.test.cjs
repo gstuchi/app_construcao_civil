@@ -57,11 +57,14 @@ function scriptsSemPolitica(lock, allowScripts = {}){
   for(const [chave, p] of Object.entries(lock.packages || {})) if(chave && p.hasInstallScript) nomes.add(nomeDaChave(chave));
   return [...nomes].filter(n => !Object.hasOwn(allowScripts, n)).sort();
 }
-/* Entradas do lockfile que não vieram do registro oficial com hash sha512. */
+/* Entradas do lockfile que não são o tarball do próprio pacote no registro oficial, com hash
+   sha512. Só o host não basta: `node_modules/foo` apontando para o tarball de `bar`, com a
+   integridade de `bar`, também é do registro. O pacote é o `name` (alias do npm) ou o nome da chave. */
 function foraDoRegistro(lock){
   return Object.entries(lock.packages || {})
     .filter(([chave, p]) => chave && !p.link &&
-      !(String(p.resolved).startsWith('https://registry.npmjs.org/') && String(p.integrity).startsWith('sha512-')))
+      !(String(p.resolved).startsWith(`https://registry.npmjs.org/${p.name ?? nomeDaChave(chave)}/-/`) &&
+        String(p.integrity).startsWith('sha512-')))
     .map(([chave]) => chave);
 }
 /* Só faixa de versão do registro: git:, github:, file:, URL, alias npm: e "latest" pulam o lockfile revisado. */
@@ -83,6 +86,38 @@ test('funções do teste: nome com escopo e aninhado, política e registro', ()=
   for(const v of ['github:a/b', 'git+https://x/y.git', 'file:../p', 'https://x/p.tgz', 'npm:outro@1.0.0', 'latest', '*', '>=1.0.0']) assert.ok(!FAIXA.test(v), v);
 });
 
+test('funções do teste: registro só aceita o tarball do próprio pacote', ()=>{
+  const reg = 'https://registry.npmjs.org';
+  const entrada = (resolved, extra = {}) => ({ resolved, integrity: 'sha512-x', ...extra });
+  const passam = {
+    'node_modules/esbuild': entrada(`${reg}/esbuild/-/esbuild-0.28.2.tgz`),
+    'node_modules/@firebase/util': entrada(`${reg}/@firebase/util/-/util-1.15.3.tgz`),
+    'node_modules/a/node_modules/@b/c': entrada(`${reg}/@b/c/-/c-1.0.0.tgz`),
+    // alias: a chave é o apelido e o name é o pacote de verdade, que dá o tarball
+    'node_modules/string-width-cjs': entrada(`${reg}/string-width/-/string-width-4.2.3.tgz`, { name: 'string-width' }),
+    'node_modules/@x/apelido': entrada(`${reg}/@y/real/-/real-1.0.0.tgz`, { name: '@y/real' }),
+    'node_modules/linkado': { link: true },
+  };
+  const reprovam = {
+    // tarball (e integridade) de outro pacote do registro: o nome da chave engana quem só olha o host
+    'node_modules/foo': entrada(`${reg}/bar/-/bar-1.0.0.tgz`),
+    'node_modules/@firebase/util': entrada(`${reg}/util/-/util-1.15.3.tgz`),
+    // nome que só começa igual: lib não pode usar o tarball de lib-evil
+    'node_modules/lib': entrada(`${reg}/lib-evil/-/lib-evil-1.0.0.tgz`),
+    // alias cujo tarball é o do apelido, e não o do pacote que o name diz ser
+    'node_modules/apelido': entrada(`${reg}/apelido/-/apelido-1.0.0.tgz`, { name: 'real' }),
+    'node_modules/velho': { resolved: `${reg}/velho/-/velho-1.0.0.tgz`, integrity: 'sha1-y' },
+    'node_modules/sem-integridade': { resolved: `${reg}/sem-integridade/-/sem-integridade-1.0.0.tgz` },
+    'node_modules/sem-resolved': { integrity: 'sha512-x' },
+    // host que só começa igual ao do registro
+    'node_modules/falso': entrada('https://registry.npmjs.org.exemplo.invalid/falso/-/falso-1.0.0.tgz'),
+  };
+  for(const [chave, p] of Object.entries(passam))
+    assert.deepEqual(foraDoRegistro({ packages: { '': {}, [chave]: p } }), [], `${chave} devia passar`);
+  for(const [chave, p] of Object.entries(reprovam))
+    assert.deepEqual(foraDoRegistro({ packages: { '': {}, [chave]: p } }), [chave], `${chave} devia reprovar`);
+});
+
 for(const dir of Object.keys(REVISADOS)){
   const em = rel => dir === '.' ? rel : `${dir}/${rel}`;
   const pkg = lerJson(em('package.json'));
@@ -98,9 +133,10 @@ for(const dir of Object.keys(REVISADOS)){
   test(`${em('package.json')}: dependência só por faixa de versão do registro`, ()=>{
     assert.deepEqual(Object.entries(deps).filter(([, v]) => !FAIXA.test(v)).map(([n, v]) => `${n}@${v}`), []);
   });
-  test(`${em('package-lock.json')}: tudo do registro oficial, com hash sha512`, ()=>{
+  test(`${em('package-lock.json')}: tudo do registro oficial, tarball do próprio pacote, com hash sha512`, ()=>{
     assert.ok(Object.keys(lock.packages).length > 100, 'lockfile quase vazio não prova nada');
-    assert.deepEqual(foraDoRegistro(lock), []);
+    assert.deepEqual(foraDoRegistro(lock), [],
+      'entrada que não é https://registry.npmjs.org/<pacote>/-/… com integridade sha512: confira o resolved e o integrity');
   });
   test(`${em('package.json')}: script de instalação só roda com política no allowScripts`, ()=>{
     assert.deepEqual(scriptsSemPolitica(lock, pkg.allowScripts), [],

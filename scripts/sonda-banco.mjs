@@ -52,9 +52,9 @@
    A única credencial é a apiKey pública, lida de cloud.js na hora. */
 'use strict';
 import { randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const IDENTITY = 'https://identitytoolkit.googleapis.com/v1';
 const TIMEOUT_MS = 15000;
@@ -207,10 +207,13 @@ async function limpa({ pede, apiKey, doc, contas, registra, suspeitos = new Set(
         const r = await pede('DELETE', doc(`${colecao}/${conta.uid}`), { token: conta.idToken });
         if(r.status === 404) continue;
         const c = classifica('sucesso', r);
-        if(!c.ok) registra(`limpeza: ${conta.rotulo} apaga ${colecao}/<${conta.rotulo}>`, false, c.detalhe);
+        if(!c.ok) registra(`limpeza: ${conta.rotulo} apaga ${colecao}/${conta.uid}`, false, c.detalhe);
       }catch{ /* segue para o próximo documento */ }
     }
-    /* 404 e, onde o ataque foi barrado, 403 são o esperado e ficam em silêncio.
+    /* (A linha de falha acima leva o uid real de propósito: com a conta apagada logo
+       depois, é a única pista de qual documento ficou no banco; uid é opaco e não
+       é segredo.)
+       404 e, onde o ataque foi barrado, 403 são o esperado e ficam em silêncio.
        O que não pode é um caminho suspeito continuar lá: aí a linha mostra o
        caminho REAL (com o uid), para quem for limpar saber o que apagar. */
     for(const caminho of caminhosDeAtaque(conta.uid)){
@@ -419,8 +422,16 @@ async function principal(argv){
   return r.ok ? 0 : 1;
 }
 
-const executadoDireto = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if(executadoDireto){
+/* Compara os caminhos REAIS: process.argv[1] mantém o caminho como foi digitado
+   (inclusive via symlink), enquanto import.meta.url do módulo principal já é o
+   real. Comparar como texto dava falso por symlink, a CLI não rodava e o processo
+   saía com 0, o mesmo código de "banco fechado". */
+function executadoDireto(){
+  if(!process.argv[1]) return false;
+  try{ return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); }
+  catch{ return false; }
+}
+if(executadoDireto()){
   principal(process.argv.slice(2))
     .then(codigo => process.exit(codigo))
     .catch(err => { console.error(err.message || err); process.exit(1); });

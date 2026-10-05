@@ -8,7 +8,8 @@
    Sem o segundo lado, um verde da sonda não valeria nada. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmdirSync, symlinkSync, unlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -363,7 +364,12 @@ test('limpeza continua apesar de um erro: documento que não apaga não impede a
   assert.equal(f.contas.size, 0, 'a limpeza parou no primeiro erro');
   assert.ok(f.docs.has('dados/uid-1'), 'o teste devia ter deixado o documento de Ana para trás');
   assert.equal(r.ok, false, 'documento órfão tem de reprovar para alguém limpar');
-  assert.ok(r.linhas.some(l => !l.ok && l.nome.startsWith('limpeza')));
+  /* O nome tem o uid REAL: com a conta apagada em seguida, é a única pista de qual
+     documento ficou no banco (o uid é opaco, não é segredo). */
+  assert.ok(r.linhas.some(l => !l.ok && l.nome === 'limpeza: Ana apaga dados/uid-1'),
+    r.linhas.filter(l => !l.ok).map(l => l.nome).join('\n'));
+  assert.ok(!r.linhas.some(l => l.nome.startsWith('limpeza') && /<\w+>/.test(l.nome)),
+    'placeholder no lugar do uid na linha de limpeza');
 });
 
 test('cadastro que falha no meio: a sonda lança e apaga a conta que já existia', async () => {
@@ -624,4 +630,22 @@ test('CLI sem --producao sai com 2 e explica o uso, sem tocar a rede', () => {
   const r = spawnSync(process.execPath, ['scripts/sonda-banco.mjs'], { cwd: RAIZ, encoding: 'utf8', timeout: 15000 });
   assert.equal(r.status, 2, r.stdout + r.stderr);
   assert.match(r.stdout + r.stderr, /--producao/);
+});
+
+test('CLI chamada por um caminho com symlink também roda (sem --producao: 2, nunca 0 em silêncio)', t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'sonda-symlink-'));
+  const elo = path.join(dir, 'repo');
+  try {
+    try { symlinkSync(RAIZ, elo, 'dir'); }
+    catch (erro) { t.skip('este ambiente não deixa criar symlink em ' + tmpdir() + ' (' + (erro.code || erro.message) + ')'); return; }
+    /* argv[1] mantém o caminho do symlink e import.meta.url vira o caminho real:
+       comparar os dois como texto dava falso, a CLI não rodava e saía com 0, o
+       mesmo código de "banco fechado". */
+    const r = spawnSync(process.execPath, [path.join(elo, 'scripts', 'sonda-banco.mjs')], { cwd: dir, encoding: 'utf8', timeout: 15000 });
+    assert.equal(r.status, 2, 'status ' + r.status + '\n' + r.stdout + r.stderr);
+    assert.match(r.stdout + r.stderr, /--producao/);
+  } finally {
+    try { unlinkSync(elo); } catch { /* não chegou a criar */ }
+    try { rmdirSync(dir); } catch { /* idem */ }
+  }
 });

@@ -59,8 +59,9 @@ de `CUSTTA_EMULADORES=1`; as de dados sintéticos (`mobile`, `cartao`, `nativo`,
    atributo nem de `onclick=` no HTML. CSS vai para `styles.css`.
 3. **Mudar o formato do estado** sem atualizar `firestore.rules` derruba a
    escrita em produção. Edite as rules, some um caso em `tests/rules.test.mjs`,
-   rode `npm run test:rules` e `npm run rules:deploy`. Nunca edite rules pelo
-   console do Firebase.
+   rode `npm run test:rules`, `npm run rules:deploy` e, depois de publicar,
+   `npm run sonda:banco` (ataca o banco no ar com contas descartáveis; código 0
+   = fechado). Nunca edite rules pelo console do Firebase.
 4. **Os SDKs ficam versionados em `vendor/`**, gerados por
    `npm run vendor:firebase` e `npm run vendor:sentry`. A CI falha se o diff
    não estiver limpo.

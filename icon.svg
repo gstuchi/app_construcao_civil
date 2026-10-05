@@ -1,39 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Ícone do Custta: o pórtico — duas colunas e uma viga, o mesmo desenho
-       dos dois "t" do logotipo e do ícone `portico` em icons.js. A geometria é
-       a mesma malha de 24, só ampliada: viga alta e colunas longas embaixo, que
-       é o que separa o pórtico de um "H". Sangra até a borda de propósito — o
-       manifest declara purpose "any maskable", então quem recorta é o sistema. -->
-  <defs>
-    <linearGradient id="bg" x1="0.15" y1="0" x2="0.85" y2="1">
-      <stop offset="0" stop-color="#14B39A"/>
-      <stop offset="0.52" stop-color="#0D8577"/>
-      <stop offset="1" stop-color="#0A3F30"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.55">
-      <stop offset="0" stop-color="#3AD17E" stop-opacity="0.42"/>
-      <stop offset="1" stop-color="#3AD17E" stop-opacity="0"/>
-    </radialGradient>
-    <!-- planta baixa: mesma malha da splash, quase imperceptível -->
-    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
-      <path d="M64 0H0V64" fill="none" stroke="#EAFFF6" stroke-opacity="0.055" stroke-width="2"/>
-    </pattern>
-    <filter id="sombra" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#04100C" flood-opacity="0.28"/>
-    </filter>
-  </defs>
-
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <rect width="512" height="512" fill="url(#grid)"/>
-  <rect width="512" height="512" fill="url(#glow)"/>
-
-  <!-- Cabe no círculo central de 80% que as máscaras preservam: o ponto mais
-       distante do centro fica a 177px, e o limite seguro é 205px. -->
-  <g transform="translate(256 256) scale(14) translate(-12 -12)"
-     fill="none" stroke="#EAFFF6" stroke-width="2.4"
-     stroke-linecap="round" filter="url(#sombra)">
-    <path d="M4.5 9h15"/>
-    <path d="M8.5 4v16"/>
-    <path d="M15.5 4v16"/>
-  </g>
+  <!-- Ícone do Custta (10/2026): o "tt." — os dois t de custta. com o ponto final
+       virando pilar, em verde-noite sobre o verde da marca, e o pilar em menta.
+       Desenho próprio (haste 40 na malha de 256, pontas redondas, viga de 36, pilar
+       de 40 com canto 10); masters, guia e versões em ~/Documents/custta-mockups/logo/kit.
+       Sangra até a borda de propósito — o manifest declara purpose "any maskable",
+       então quem recorta é o sistema; o desenho cabe no círculo seguro de 80%
+       (ponto mais distante a 183px do centro; o limite é 205).
+       Os PNGs saem daqui:
+         rsvg-convert -w 512 icon.svg  -> icon-512.png
+         rsvg-convert -w 192 icon.svg  -> icon-192.png
+         rsvg-convert -w 180 icon.svg  -> apple-touch-icon.png
+       (achatados em RGB, sem alfa), e o ícone do iOS sai do icon-512.png pelo
+       scripts/imagens-ios.mjs. -->
+  <defs><linearGradient id="fundo" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#14B39A"/><stop offset="1" stop-color="#0D8577"/></linearGradient></defs>
+<rect width="512" height="512" fill="url(#fundo)"/><g transform="translate(148.48 90.05) scale(1.32743)"><path fill="#04100C" d="M-20 52A20 20 0 0 1 20 52V160A12 12 0 0 0 32 172A20 20 0 0 1 32 212A52 52 0 0 1 -20 160ZM68 52A20 20 0 0 1 108 52V160A12 12 0 0 0 120 172A20 20 0 0 1 120 212A52 52 0 0 1 68 160ZM-14 78H106A18 18 0 0 1 124 96V96A18 18 0 0 1 106 114H-14A18 18 0 0 1 -32 96V96A18 18 0 0 1 -14 78Z"/><path fill="#EAFFF6" d="M164 172H184A10 10 0 0 1 194 182V202A10 10 0 0 1 184 212H164A10 10 0 0 1 154 202V182A10 10 0 0 1 164 172Z"/></g>
 </svg>

@@ -17,7 +17,14 @@ async function abrir(browser, { nativo = false, abertura = false, reduzir = fals
     window.errosPagina = [];
     addEventListener('error', e => errosPagina.push(e.message));
     addEventListener('securitypolicyviolation', e => errosPagina.push('csp:' + e.violatedDirective));
-    window.CLOUD = { user:()=>null, onAuth:cb => { window.__auth = cb; cb(null); }, estado:()=>'ocioso', ready:Promise.resolve() };
+    // onAuth guarda todos os ouvintes (auth.js e app.js): __auth(u) simula entrar e sair
+    const ouvintes = [];
+    window.__auth = u => ouvintes.forEach(f => f(u));
+    window.CLOUD = { user:()=>null, onAuth:cb => { ouvintes.push(cb); cb(null); }, estado:()=>'ocioso', ready:Promise.resolve(),
+      watchDados:cb => { setTimeout(() => cb({ obras:[], config:{ taxaMensal:1, topicosCustom:[] } },
+        { fromCache:false, pendingWrites:false, localDirty:false })); return () => {}; },
+      saveDados:() => Promise.resolve(), tentarDeNovo:() => Promise.resolve(), perfilPendente:() => Promise.resolve(false),
+      savePushSub:() => Promise.resolve(), removePushSub:() => Promise.resolve() };
     if(!nativo) return;
     window.chamadasNativas = [];
     const plugin = nome => new Proxy({}, { get:(_, metodo) => {
@@ -34,6 +41,23 @@ async function abrir(browser, { nativo = false, abertura = false, reduzir = fals
   return { ctx, page };
 }
 
+/* Maior diferença de canal entre duas capturas, numa página em branco (a CSP do app não lê data:).
+   Pedaço de letra faltando dá ~200 (letra clara × aurora); a borda serrilhada muda até ~50,
+   porque o Chrome compõe diferente uma camada animada. */
+async function maiorDiferenca(ctx, a, b){
+  const p = await ctx.newPage();
+  const d = await p.evaluate(async ([a, b]) => {
+    const px = async src => { const i = new Image(); i.src = 'data:image/png;base64,' + src; await i.decode();
+      const c = document.createElement('canvas'); c.width = i.width; c.height = i.height;
+      const x = c.getContext('2d'); x.drawImage(i, 0, 0); return x.getImageData(0, 0, i.width, i.height).data; };
+    const [pa, pb] = [await px(a), await px(b)];
+    let max = 0; for(let i = 0; i < pa.length; i++) max = Math.max(max, Math.abs(pa[i] - pb[i]));
+    return max;
+  }, [a.toString('base64'), b.toString('base64')]);
+  await p.close();
+  return d;
+}
+
 const rodando = page => page.evaluate(() =>
   document.querySelector('.logo-escrito').getAnimations({ subtree:true }).filter(a => a.playState === 'running').length);
 const terminar = page => page.evaluate(() =>
@@ -47,10 +71,13 @@ const terminar = page => page.evaluate(() =>
       assert.equal(await page.getByRole('img', { name:'custta.' }).count(), 1, 'o título continua sendo lido como "custta."');
       assert.ok(await rodando(page) >= 9, 'a escrita começa com a tela de entrada à vista');
       await terminar(page);
+      // a aurora e o globo se mexem atrás do título: congela o fundo para comparar só o logo
+      await page.evaluate(() => { document.getAnimations().forEach(a => a.pause()); const g = document.querySelector('#globe'); if(g) g.hidden = true; });
       const animado = await page.locator('.logo-escrito').screenshot();
       await page.evaluate(() => document.querySelector('.logo-escrito').classList.remove('escrevendo'));
       const parado = await page.locator('.logo-escrito').screenshot();
-      assert.ok(animado.equals(parado), 'o fim da escrita é idêntico ao logo parado');
+      const dif = await maiorDiferenca(ctx, animado, parado);
+      assert.ok(dif < 80, `o fim da escrita é o logo parado (nenhum pedaço de letra de fora): diferença ${dif}`);
 
       // sair da conta: a tela de entrada volta e a escrita recomeça
       await page.evaluate(() => window.__auth({ uid:'u' }));

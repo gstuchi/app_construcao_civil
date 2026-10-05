@@ -4,13 +4,30 @@
 (function(){
   const $ = s => document.querySelector(s);
 
+  /* ---------- título escrito à mão (.logo-escrito; o desenho está no styles.css) ----------
+     Recomeça a escrita sempre que a tela de entrada aparece. Na primeira abertura espera o
+     #splash sair, para não escrever escondido atrás dele. `escrito` segura até a tela sumir:
+     o onAuth(null) chega duas vezes na abertura e não pode recomeçar no meio. */
+  const logo = $('.logo-escrito');
+  let escrito = false;
+  function escreverLogo(){
+    if(!logo || escrito) return;
+    escrito = true;
+    const vai = ()=>{ logo.classList.remove('escrevendo'); void logo.getBoundingClientRect(); logo.classList.add('escrevendo'); };
+    if(document.getElementById('splash')) addEventListener('splash-fim', ()=>setTimeout(vai, 450), { once:true });
+    else vai();
+  }
+  // o carimbo do ponto vibra de leve no iPhone (no navegador, vibrar() não faz nada)
+  logo?.addEventListener('animationstart', e=>{ if(e.animationName === 'leCarimba') setTimeout(()=>window.OBRA_NATIVO?.vibrar?.(), 120); });
+
   /* ---------- trava/destrava ---------- */
   const auth=$('#auth'), sair=$('#btnSair');
   function locked(on){
     auth.classList.toggle('hidden',!on);
     document.body.classList.toggle('locked',on);
     sair.classList.toggle('hidden',on);
-    if(on){ mostrarAba('login'); limpaSenhas(); }
+    if(on){ mostrarAba('login'); limpaSenhas(); escreverLogo(); }
+    else escrito = false;
   }
   locked(true); // começa travado até o CLOUD dizer quem é
 

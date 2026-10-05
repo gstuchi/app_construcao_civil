@@ -60,7 +60,7 @@ function pushOk(d){
     && (!('subs' in d) || (ehMapa(d.subs) && Object.keys(d.subs).length <= 10))
     && (!('tokens' in d) || (ehMapa(d.tokens) && Object.keys(d.tokens).length <= 10));
 }
-function escritaPermitida(colecao, atual, novo, email){
+function escritaPermitida(colecao, atual, novo, email, updateSolto = false){
   if(colecao === 'dados') return dadosOk(novo);
   if(colecao === 'push') return pushOk(novo);
   if(colecao !== 'perfis') return false;
@@ -69,7 +69,7 @@ function escritaPermitida(colecao, atual, novo, email){
   }
   const afetadas = [...new Set([...Object.keys(atual), ...Object.keys(novo)])]
     .filter(k => JSON.stringify(atual[k]) !== JSON.stringify(novo[k]));
-  return so(Object.fromEntries(afetadas.map(k => [k, 1])), ['email', 'tz', 'nome', 'sobrenome']) && perfilClienteOk(novo, email);
+  return (updateSolto || so(Object.fromEntries(afetadas.map(k => [k, 1])), ['email', 'tz', 'nome', 'sobrenome'])) && perfilClienteOk(novo, email);
 }
 
 /* opcoes:
@@ -78,15 +78,31 @@ function escritaPermitida(colecao, atual, novo, email){
    estourarEm: RegExp                 o fetch lança erro de rede quando "METODO url" casa com ela
    naoApagar                          accounts:delete diz ok, mas a conta continua viva
    mexerNoBento                       o updateTime de dados/uid-2 muda entre a 1ª e a 2ª leitura
-   falharCadastro: n                  o n-ésimo signUp responde 400 */
+   falharCadastro: n                  o n-ésimo signUp responde 400 (com ecoarSenha, o corpo ecoa a senha)
+   ignorarMascara                     PATCH com updateMask vira substituição do documento inteiro
+   perfilUpdateSolto                  a regra de update de perfis não confere affectedKeys
+   escritaForaLiberada: true|'sem-delete'
+                                      PATCH em qualquer/<uid> e dados/<uid>/extra/x passa; com
+                                      'sem-delete' nem o dono consegue apagar depois
+   falharDelete                       accounts:delete responde 400 e a conta continua viva
+   lookupErro: 'MSG'                  accounts:lookup responde 400 com essa mensagem
+   lookupStatus: n                    accounts:lookup responde esse status, sem corpo
+   lookupFalhaUmaVez                  o 1º accounts:lookup responde 503
+   ecoarToken                         corpo de erro do Firestore ecoa o token e uma mensagem longa */
 function firebaseFalso(opcoes = {}){
   const contas = new Map();        // uid -> { email, idToken }
   const donoDoToken = new Map();   // idToken -> uid
   const docs = new Map();          // 'colecao/uid' -> { fields, updateTime }
   const senhas = [], tokens = [], emails = [], chamadas = [];
-  let cadastros = 0, relogio = 0, leiturasBento = 0;
+  let cadastros = 0, relogio = 0, leiturasBento = 0, lookups = 0;
 
   const resp = (status, corpo = {}) => ({ status, ok: status >= 200 && status < 300, json: async () => corpo });
+  let tokenDaVez = '';
+  const negado = (emArray = false) => {
+    const erro = { code: 403, status: 'PERMISSION_DENIED',
+      message: 'Missing or insufficient permissions.' + (opcoes.ecoarToken ? ` credencial=${tokenDaVez} ${'x'.repeat(200)}` : '') };
+    return resp(403, emArray ? [{ error: erro }] : { error: erro });
+  };
   const agora = () => new Date(Date.UTC(2026, 9, 5, 12, 0, ++relogio)).toISOString();
   const nomeDoc = (chave, d) => ({ name: `projects/p/databases/(default)/documents/${chave}`, fields: d.fields, updateTime: d.updateTime });
 
@@ -103,10 +119,12 @@ function firebaseFalso(opcoes = {}){
       const acao = u.pathname.split('/').pop();
       if(acao === 'accounts:signUp'){
         cadastros++;
-        if(opcoes.falharCadastro === cadastros) return resp(400, { error: { message: 'OPERATION_NOT_ALLOWED' } });
         assert.equal(corpo.returnSecureToken, true);
         assert.ok(corpo.email && corpo.password, 'signUp sem e-mail ou senha');
         senhas.push(corpo.password);
+        if(opcoes.falharCadastro === cadastros){
+          return resp(400, { error: { message: 'OPERATION_NOT_ALLOWED' + (opcoes.ecoarSenha ? ` senha=${corpo.password}` : '') } });
+        }
         emails.push(corpo.email);
         const uid = `uid-${cadastros}`, idToken = `tok-${cadastros}`;
         contas.set(uid, { email: corpo.email, idToken });
@@ -114,9 +132,16 @@ function firebaseFalso(opcoes = {}){
         tokens.push(idToken);
         return resp(200, { idToken, localId: uid, email: corpo.email });
       }
+      if(acao === 'accounts:lookup'){
+        lookups++;
+        if(opcoes.lookupErro) return resp(400, { error: { message: opcoes.lookupErro } });
+        if(opcoes.lookupStatus) return resp(opcoes.lookupStatus, {});
+        if(opcoes.lookupFalhaUmaVez && lookups === 1) return resp(503, {});
+      }
       const uid = donoDoToken.get(corpo.idToken);
       if(!uid || !contas.has(uid)) return resp(400, { error: { message: 'USER_NOT_FOUND' } });
       if(acao === 'accounts:delete'){
+        if(opcoes.falharDelete) return resp(400, { error: { message: 'TOO_MANY_ATTEMPTS_TRY_LATER' } });
         if(!opcoes.naoApagar) contas.delete(uid);
         return resp(200, {});
       }
@@ -134,22 +159,26 @@ function firebaseFalso(opcoes = {}){
       let autor = null;
       const auth = init.headers?.Authorization;
       if(auth){
-        const uid = donoDoToken.get(auth.replace(/^Bearer /, ''));
+        tokenDaVez = auth.replace(/^Bearer /, '');
+        const uid = donoDoToken.get(tokenDaVez);
         if(!uid || !contas.has(uid)) return resp(401, { error: { status: 'UNAUTHENTICATED' } });
         autor = uid;
       }
 
-      if(resto === ':runQuery') return vaza ? resp(200, [{ readTime: 'x' }]) : resp(403);
+      if(resto === ':runQuery') return vaza ? resp(200, [{ readTime: 'x' }]) : negado(true);
       const segs = resto.split('/').filter(Boolean);
       if(segs.some(s => s.includes('..') || s.startsWith('__'))) return resp(400, { error: { status: 'INVALID_ARGUMENT' } });
-      if(segs.length === 1) return vaza ? resp(200, { documents: [] }) : resp(403);
+      if(segs.length === 1) return vaza ? resp(200, { documents: [] }) : negado();
       if(vaza) autor = segs[1];                     // a rota "vazada" age como o dono
-      else if(opcoes.negarDono) return resp(403);
+      else if(opcoes.negarDono) return negado();
 
       const colecao = segs[0], id = segs[1];
-      const chave = `${colecao}/${id}`;
+      const chave = segs.join('/');
       const meu = segs.length === 2 && ['dados', 'perfis', 'push'].includes(colecao) && autor === id;
-      if(!meu) return resp(403, { error: { status: 'PERMISSION_DENIED' } });
+      const foraLiberado = !!opcoes.escritaForaLiberada && !!autor && autor === id
+        && ((colecao === 'qualquer' && segs.length === 2) || (colecao === 'dados' && segs.length === 4 && segs[2] === 'extra'));
+      if(!meu && !foraLiberado) return negado();
+      if(foraLiberado && metodo === 'DELETE' && opcoes.escritaForaLiberada === 'sem-delete') return negado();
 
       if(metodo === 'GET'){
         const d = docs.get(chave);
@@ -160,15 +189,15 @@ function firebaseFalso(opcoes = {}){
       if(metodo === 'DELETE'){ docs.delete(chave); return resp(200, {}); }
       if(metodo === 'PATCH'){
         const atual = docs.get(chave);
-        const mascara = u.searchParams.getAll('updateMask.fieldPaths');
+        const mascara = opcoes.ignorarMascara ? [] : u.searchParams.getAll('updateMask.fieldPaths');
         let campos = corpo.fields || {};
         if(mascara.length){
           campos = { ...(atual?.fields || {}) };
           for(const m of mascara){ if(m in (corpo.fields || {})) campos[m] = corpo.fields[m]; else delete campos[m]; }
         }
         const email = contas.get(autor)?.email;
-        if(!escritaPermitida(colecao, atual ? decodificaCampos(atual.fields) : null, decodificaCampos(campos), email)){
-          return resp(403, { error: { status: 'PERMISSION_DENIED' } });
+        if(!foraLiberado && !escritaPermitida(colecao, atual ? decodificaCampos(atual.fields) : null, decodificaCampos(campos), email, !!opcoes.perfilUpdateSolto)){
+          return negado();
         }
         const novo = { fields: campos, updateTime: agora() };
         docs.set(chave, novo);
@@ -222,6 +251,12 @@ test('classifica: o detalhe diz o que veio e o que se esperava', () => {
   assert.match(classifica([403], { erroRede: 'ENOTFOUND' }).detalhe, /ENOTFOUND/);
 });
 
+test('classifica: quando o status não bate, o motivo do corpo de erro entra no detalhe; quando bate, não', () => {
+  assert.equal(classifica([403], { status: 400, motivo: 'INVALID_ARGUMENT: caminho ruim' }).detalhe, '400 — devia ser 403 [INVALID_ARGUMENT: caminho ruim]');
+  assert.equal(classifica('sucesso', { status: 403, motivo: 'PERMISSION_DENIED' }).detalhe, '403 — devia dar certo [PERMISSION_DENIED]');
+  assert.equal(classifica([403], { status: 403, motivo: 'PERMISSION_DENIED' }).detalhe, '403');
+});
+
 test('valor converte JS em valor Firestore', () => {
   assert.deepEqual(valor(null), { nullValue: null });
   assert.deepEqual(valor(true), { booleanValue: true });
@@ -258,7 +293,7 @@ test('controles positivos vêm antes de qualquer ataque', async () => {
   const ultimoControle = nomes.map(n => n.startsWith('controle')).lastIndexOf(true);
   const primeiroAtaque = nomes.findIndex(n => !n.startsWith('controle'));
   assert.ok(ultimoControle >= 0 && primeiroAtaque > ultimoControle, nomes.join('\n'));
-  assert.equal(nomes.filter(n => n.startsWith('controle')).length, 7);
+  assert.equal(nomes.filter(n => n.startsWith('controle')).length, 8);
 });
 
 test('cobre os ataques do brief: sem login, Ana contra Bento, campos proibidos, caminhos estranhos, outros bancos', async () => {
@@ -333,7 +368,7 @@ test('limpeza continua apesar de um erro: documento que não apaga não impede a
 
 test('cadastro que falha no meio: a sonda lança e apaga a conta que já existia', async () => {
   const f = firebaseFalso({ falharCadastro: 2 });
-  await assert.rejects(roda(f), /conta descartável/);
+  await assert.rejects(roda(f), /conta descartável.*OPERATION_NOT_ALLOWED/);
   assert.equal(f.contas.size, 0, 'Ana ficou para trás');
 });
 
@@ -390,12 +425,13 @@ test('toda requisição leva timeout, a apiKey só vai ao Identity Toolkit e nad
   }
 });
 
-test('o e-mail das contas vem do gerador injetado, em minúsculas e descartável', async () => {
+test('o e-mail das contas é sonda-<papel>-<timestamp>-<aleatório>@example.com, descartável e rastreável', async () => {
   const f = firebaseFalso();
   await roda(f, { aleatorio: () => 'abc123' });
   assert.equal(f.emails.length, 2);
   assert.notEqual(f.emails[0], f.emails[1]);
-  for (const e of f.emails) assert.match(e, /^sonda-abc123-[a-z]+@example\.com$/);
+  assert.match(f.emails[0], /^sonda-ana-\d{13}-abc123@example\.com$/);
+  assert.match(f.emails[1], /^sonda-bento-\d{13}-abc123@example\.com$/);
 });
 
 test('duas execuções seguidas não colidem: cada uma cria e-mails novos', async () => {
@@ -422,6 +458,164 @@ test('o log marca a linha reprovada com o que veio e o que se esperava', async (
   await rodaSonda({ fetch: f.fetch, apiKey: 'k', projeto: 'p', log: l => saida.push(l) });
   assert.ok(saida.some(l => /^✗ .*<bento>.*\(200 — devia ser 403\)$/.test(l)), saida.join('\n'));
   assert.match(saida.at(-1), /REPROVOU/);
+});
+
+/* ---------- fix round 1 ---------- */
+
+const linhaDe = (r, trecho) => r.linhas.find(l => l.nome.includes(trecho));
+
+test('I1: controle positivo prova que o updateMask é honrado antes de qualquer ataque de update', async () => {
+  const f = firebaseFalso();
+  const r = await roda(f);
+  const controle = linhaDe(r, 'via updateMask');
+  assert.ok(controle && controle.nome.startsWith('controle'), 'falta o controle do updateMask');
+  assert.equal(controle.ok, true);
+});
+
+test('I1: servidor que ignora o updateMask reprova pelo controle (sem falso verde)', async () => {
+  const f = firebaseFalso({ ignorarMascara: true });
+  const r = await roda(f);
+  assert.equal(r.ok, false);
+  assert.equal(linhaDe(r, 'via updateMask').ok, false);
+});
+
+test('I1: regra de update frouxa E máscara ignorada (o falso verde que a revisão reproduziu) reprova', async () => {
+  const f = firebaseFalso({ ignorarMascara: true, perfilUpdateSolto: true });
+  const r = await roda(f);
+  assert.equal(r.ok, false);
+  assert.equal(linhaDe(r, 'via updateMask').ok, false, 'sem o controle os 5 ataques dariam 403 pelo motivo errado');
+});
+
+test('I1: regra de update frouxa com máscara honrada reprova pelos ataques de update', async () => {
+  const f = firebaseFalso({ perfilUpdateSolto: true });
+  const r = await roda(f);
+  assert.equal(r.ok, false);
+  assert.equal(linhaDe(r, 'Ana grava plano em perfis/<ana>').ok, false);
+  assert.equal(linhaDe(r, 'via updateMask').ok, true, 'o controle é legítimo e tem de passar');
+});
+
+test('I2: limpeza tenta apagar qualquer/<uid> e a subcoleção, em silêncio quando o banco está fechado', async () => {
+  const f = firebaseFalso();
+  const r = await roda(f);
+  assert.equal(r.ok, true, JSON.stringify(r.linhas.filter(l => !l.ok)));
+  assert.ok(!r.linhas.some(l => l.nome.startsWith('limpeza')), 'o 403 esperado não pode virar linha');
+  for (const caminho of ['qualquer/uid-1', 'dados/uid-1/extra/x', 'qualquer/uid-2', 'dados/uid-2/extra/x']) {
+    assert.ok(f.chamadas.some(c => c.metodo === 'DELETE' && c.url.endsWith('/documents/' + caminho)), 'limpeza não tentou apagar ' + caminho);
+  }
+});
+
+test('I2: ataque que passa por engano em qualquer/ e na subcoleção reprova, e a limpeza apaga o resto', async () => {
+  const f = firebaseFalso({ escritaForaLiberada: true });
+  const r = await roda(f);
+  assert.equal(r.ok, false);
+  assert.equal(linhaDe(r, 'Ana grava em qualquer/<ana>').ok, false);
+  assert.equal(linhaDe(r, 'Ana grava em dados/<ana>/extra/x').ok, false);
+  assert.equal(f.docs.size, 0, 'documento órfão: ' + [...f.docs.keys()]);
+  assert.equal(f.contas.size, 0);
+});
+
+test('I2: resto de ataque que não dá para apagar vira linha limpeza com o caminho REAL', async () => {
+  const f = firebaseFalso({ escritaForaLiberada: 'sem-delete' });
+  const r = await roda(f);
+  assert.equal(r.ok, false);
+  assert.ok(f.docs.has('qualquer/uid-1') && f.docs.has('dados/uid-1/extra/x'), 'o teste devia deixar os restos para trás');
+  const qualquer = r.linhas.find(l => l.nome === 'limpeza: resto de ataque em qualquer/uid-1');
+  const extra = r.linhas.find(l => l.nome === 'limpeza: resto de ataque em dados/uid-1/extra/x');
+  assert.ok(qualquer && extra, r.linhas.map(l => l.nome).join('\n'));
+  assert.equal(qualquer.ok, false);
+  assert.equal(extra.ok, false);
+});
+
+test('I2: resposta perdida na rede num ataque de escrita fora também deixa a limpeza denunciando o caminho', async () => {
+  const f = firebaseFalso({ estourarEm: /^PATCH .*documents\/qualquer\/uid-1$/ });
+  const r = await roda(f);
+  assert.equal(r.ok, false);
+  assert.ok(r.linhas.some(l => l.nome === 'limpeza: resto de ataque em qualquer/uid-1' && !l.ok),
+    'o servidor pode ter gravado antes de a resposta se perder; a limpeza não consegue provar o contrário');
+});
+
+test('M2: accounts:delete falha e o lookup dá 400 por outro motivo: contas vivas viram sobra', async () => {
+  const f = firebaseFalso({ falharDelete: true, lookupErro: 'TOO_MANY_ATTEMPTS_TRY_LATER' });
+  const r = await roda(f);
+  assert.equal(f.contas.size, 2, 'o teste devia deixar as duas contas vivas');
+  assert.deepEqual(r.sobras, ['uid-1', 'uid-2']);
+  assert.equal(r.ok, false);
+});
+
+test('M2: delete ok mas lookup com 400 que não diz "usuário não existe" não prova nada: sobra', async () => {
+  const f = firebaseFalso({ lookupErro: 'TOO_MANY_ATTEMPTS_TRY_LATER' });
+  const r = await roda(f);
+  assert.equal(f.contas.size, 0);
+  assert.equal(r.sobras.length, 2);
+  assert.equal(r.ok, false);
+});
+
+test('M2: lookup com 5xx ou erro de rede não confirma: sobra', async () => {
+  for (const opcoes of [{ lookupStatus: 503 }, { estourarEm: /accounts:lookup/ }]) {
+    const f = firebaseFalso(opcoes);
+    const r = await roda(f);
+    assert.equal(r.sobras.length, 2, JSON.stringify(opcoes));
+    assert.equal(r.ok, false);
+  }
+});
+
+test('M2: INVALID_ID_TOKEN no lookup também prova a ausência', async () => {
+  const f = firebaseFalso({ lookupErro: 'INVALID_ID_TOKEN' });
+  const r = await roda(f);
+  assert.deepEqual(r.sobras, []);
+  assert.equal(r.ok, true, JSON.stringify(r.linhas.filter(l => !l.ok)));
+});
+
+test('M2: lookup que falha uma vez é tentado de novo, e o delete 2xx anterior vale (2ª tentativa não vira sobra)', async () => {
+  const f = firebaseFalso({ lookupFalhaUmaVez: true });
+  const r = await roda(f);
+  assert.deepEqual(r.sobras, []);
+  assert.equal(r.ok, true, JSON.stringify(r.linhas.filter(l => !l.ok)));
+  assert.equal(f.contas.size, 0);
+});
+
+test('M6: linha reprovada mostra o motivo do corpo de erro (status e mensagem)', async () => {
+  const f = firebaseFalso({ negarDono: true });
+  const saida = [];
+  await rodaSonda({ fetch: f.fetch, apiKey: 'k', projeto: 'p', log: l => saida.push(l) });
+  const linha = saida.find(l => l.startsWith('✗ controle: Ana grava dados/<ana>'));
+  assert.ok(linha, saida.join('\n'));
+  assert.match(linha, /403 — devia dar certo \[PERMISSION_DENIED: Missing or insufficient permissions\.\]/);
+});
+
+test('M6: motivo é truncado e sai sem token (mesmo quando o servidor ecoa a credencial)', async () => {
+  const f = firebaseFalso({ negarDono: true, ecoarToken: true });
+  const saida = [];
+  await rodaSonda({ fetch: f.fetch, apiKey: 'k', projeto: 'p', log: l => saida.push(l) });
+  const reprovadas = saida.filter(l => l.startsWith('✗'));
+  assert.ok(reprovadas.length > 0);
+  for (const l of reprovadas) {
+    assert.ok(!l.includes('tok-'), 'token na linha: ' + l);
+    assert.ok(l.length < 200, 'linha longa demais: ' + l.length);
+  }
+  assert.ok(reprovadas.some(l => l.includes('…')), 'o motivo longo devia ter sido truncado');
+  assert.ok(reprovadas.some(l => l.includes('***')), 'o token no corpo devia ter sido riscado');
+});
+
+test('M6: corpo de erro de runQuery (lista) também é lido, e 2xx de ataque não tem corpo lido', async () => {
+  const f = firebaseFalso({ vazar: { metodo: 'POST', caminho: /:runQuery$/ } });
+  const saida = [];
+  await rodaSonda({ fetch: f.fetch, apiKey: 'k', projeto: 'p', log: l => saida.push(l) });
+  const vazou = saida.find(l => /^✗ .*runQuery/.test(l));
+  assert.ok(vazou && /\(200 — devia ser 403\)$/.test(vazou), 'ataque 2xx não mostra corpo: ' + vazou);
+  const f2 = firebaseFalso({ negarDono: true });
+  const saida2 = [];
+  await rodaSonda({ fetch: f2.fetch, apiKey: 'k', projeto: 'p', log: l => saida2.push(l) });
+  assert.ok(saida2.every(l => !/\[object|undefined/.test(l)), saida2.join('\n'));
+});
+
+test('M6: erro do signUp mostra o motivo curto e nunca ecoa a senha', async () => {
+  const f = firebaseFalso({ falharCadastro: 1, ecoarSenha: true });
+  await assert.rejects(roda(f), err => {
+    assert.match(err.message, /OPERATION_NOT_ALLOWED/);
+    assert.ok(f.senhas.length === 1 && !err.message.includes(f.senhas[0]), 'a senha vazou na mensagem de erro');
+    return true;
+  });
 });
 
 /* ---------- CLI ---------- */

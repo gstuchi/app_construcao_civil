@@ -34,8 +34,11 @@
    senha aleatória que nunca é impressa, e no fim (mesmo se algo estourar no
    meio) cada conta apaga os próprios documentos e a si mesma, e a sonda confirma
    que a conta sumiu. Conta que não for possível confirmar apagada aparece em
-   "sobras" e reprova a sonda. A sonda nunca imprime corpo de resposta (se uma
-   regra vazasse, seria dado de outra pessoa), só o status.
+   "sobras" e reprova a sonda. Corpo de resposta 2xx nunca é lido nem impresso
+   (se uma regra vazasse, seria dado de outra pessoa). Quando o status não bate,
+   a linha mostra também o motivo curto do corpo de erro (error.status e
+   error.message, truncado, sem token nem senha), que é o que diagnostica uma
+   regra, uma chave ou um protocolo errado na primeira rodada real.
 
    Quando rodar: depois de `npm run rules:deploy`, para conferir o que subiu.
 
@@ -75,7 +78,8 @@ const ehSucesso = status => status >= 200 && status < 300;
 /* esperado: 'sucesso' (controle positivo) ou a lista de status aceitos (ataque;
    inclui 'rede' onde um host que não responde também significa "fechado").
    Qualquer 2xx num ataque reprova, mesmo que alguém o liste como aceito: o
-   ataque deu certo. Erro de rede só passa onde 'rede' foi aceito. */
+   ataque deu certo. Erro de rede só passa onde 'rede' foi aceito. Quando não
+   bate, o `motivo` do corpo de erro (se houver) entra no detalhe. */
 export function classifica(esperado, resultado){
   const queria = esperado === 'sucesso' ? 'dar certo' : `ser ${esperado.join('/')}`;
   if(resultado.erroRede !== undefined){
@@ -84,7 +88,8 @@ export function classifica(esperado, resultado){
   }
   const { status } = resultado;
   const ok = esperado === 'sucesso' ? ehSucesso(status) : !ehSucesso(status) && esperado.includes(status);
-  return { ok, detalhe: ok ? String(status) : `${status} — devia ${queria}` };
+  const motivo = resultado.motivo ? ` [${resultado.motivo}]` : '';
+  return { ok, detalhe: ok ? String(status) : `${status} — devia ${queria}${motivo}` };
 }
 
 /* JS → valor Firestore (formato REST), para montar os corpos dos ataques sem
@@ -104,11 +109,31 @@ const documento = obj => ({ fields: campos(obj) });
 /* O blob que blobOk() aceita. Os ataques partem dele e estragam uma coisa. */
 const blobValido = () => ({ obras: [], config: { taxaMensal: 1, topicosCustom: [] } });
 
+const MOTIVO_MAX = 80;
+
+/* Motivo curto de um corpo de erro: `error.status: error.message` do Firestore e
+   do Identity Toolkit (o do RTDB é só uma string). Corpo de erro não carrega
+   dado de outro usuário, mas por garantia o texto sai sem token nem senha,
+   numa linha só e truncado. */
+function motivoDoCorpo(json, segredos){
+  const corpo = Array.isArray(json) ? json[0] : json;
+  const erro = corpo?.error;
+  if(!erro) return undefined;
+  let texto = typeof erro === 'string'
+    ? erro
+    : [erro.status, erro.message].filter(x => typeof x === 'string' && x).join(': ');
+  for(const segredo of segredos) if(segredo) texto = texto.split(segredo).join('***');
+  texto = texto.replace(/\s+/g, ' ').trim();
+  if(!texto) return undefined;
+  return texto.length > MOTIVO_MAX ? texto.slice(0, MOTIVO_MAX - 1) + '…' : texto;
+}
+
 /* Uma requisição. Nunca lança: erro de rede e timeout viram { erroRede }, para
-   uma queda no meio não impedir a limpeza nem passar por "banco fechado". Só lê
-   o corpo quando a sonda precisa dele (updateTime, idToken); nos ataques o corpo
-   é descartado sem baixar, porque numa regra quebrada seria dado alheio. */
-async function requisita(fetch, metodo, url, { token, corpo, lerJson = false } = {}){
+   uma queda no meio não impedir a limpeza nem passar por "banco fechado". O
+   corpo de 2xx só é lido quando a sonda precisa dele (updateTime, idToken);
+   nos ataques é descartado sem baixar, porque numa regra quebrada seria dado
+   alheio. O de erro é lido só para extrair o `motivo` (ver motivoDoCorpo). */
+async function requisita(fetch, metodo, url, { token, corpo, lerJson = false, segredos = [] } = {}){
   const headers = {};
   if(token) headers.Authorization = `Bearer ${token}`;
   if(corpo !== undefined) headers['Content-Type'] = 'application/json';
@@ -119,13 +144,20 @@ async function requisita(fetch, metodo, url, { token, corpo, lerJson = false } =
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if(!lerJson){
+    const sucesso = ehSucesso(res.status);
+    if(!lerJson && sucesso){
       try{ await res.body?.cancel(); }catch{ /* sem corpo para soltar */ }
       return { status: res.status };
     }
     let json = null;
     try{ json = await res.json(); }catch{ /* resposta sem JSON */ }
-    return { status: res.status, json };
+    const resultado = { status: res.status };
+    if(lerJson) resultado.json = json;
+    if(!sucesso){
+      const motivo = motivoDoCorpo(json, [token, ...segredos]);
+      if(motivo) resultado.motivo = motivo;
+    }
+    return resultado;
   }catch(erro){
     return { erroRede: erro?.cause?.code || erro?.name || 'erro de rede' };
   }
@@ -138,19 +170,36 @@ async function criaConta(pede, apiKey, rotulo, email){
   const r = await pede('POST', `${IDENTITY}/accounts:signUp?key=${apiKey}`, {
     corpo: { email, password: senha, returnSecureToken: true },
     lerJson: true,
+    segredos: [senha],
   });
   if(r.erroRede !== undefined) throw new Error(`não consegui criar a conta descartável ${rotulo}: erro de rede (${r.erroRede})`);
   if(r.status !== 200 || !r.json?.idToken || !r.json?.localId){
-    throw new Error(`não consegui criar a conta descartável ${rotulo} (HTTP ${r.status}${r.json?.error?.message ? ' ' + r.json.error.message : ''})`);
+    throw new Error(`não consegui criar a conta descartável ${rotulo} (HTTP ${r.status}${r.motivo ? ' ' + r.motivo : ''})`);
   }
   return { rotulo, email, uid: r.json.localId, idToken: r.json.idToken };
+}
+
+/* Caminhos que os ataques tentam gravar fora de dados|perfis|push/<uid>. Se a
+   regra estivesse quebrada, ficariam documentos órfãos que apagar a conta não
+   remove (documento de subcoleção sobrevive ao pai). */
+const caminhosDeAtaque = uid => [`qualquer/${uid}`, `dados/${uid}/extra/x`];
+
+/* accounts:lookup depois de apagar: o que prova a ausência é o erro de usuário
+   inexistente no corpo, ou um 2xx sem usuário. 400 por outro motivo (limite de
+   tentativas, chave) não prova nada, e erro de rede ou 5xx muito menos. */
+function lookupConfirmaAusencia(l){
+  if(l.erroRede !== undefined) return false;
+  if(ehSucesso(l.status)) return !l.json?.users?.length;
+  return l.status === 400 && /^(USER_NOT_FOUND|INVALID_ID_TOKEN)/.test(String(l.json?.error?.message ?? ''));
 }
 
 /* Cada conta apaga os próprios documentos (as rules só deixam o dono) e depois a
    si mesma, e a sonda confere com accounts:lookup. Nada aqui lança nem para no
    primeiro erro: sobrar uma conta por causa de um erro na outra seria o pior
-   resultado possível. Devolve os uids que não deu para confirmar apagados. */
-async function limpa({ pede, apiKey, doc, contas, registra }){
+   resultado possível. `suspeitos` são os caminhos de ataque cuja resposta não
+   foi um 403 limpo (o documento pode ter sido gravado). Devolve os uids que não
+   deu para confirmar apagados. */
+async function limpa({ pede, apiKey, doc, contas, registra, suspeitos = new Set() }){
   const sobras = [];
   for(const conta of contas){
     for(const colecao of ['dados', 'perfis', 'push']){
@@ -161,15 +210,27 @@ async function limpa({ pede, apiKey, doc, contas, registra }){
         if(!c.ok) registra(`limpeza: ${conta.rotulo} apaga ${colecao}/<${conta.rotulo}>`, false, c.detalhe);
       }catch{ /* segue para o próximo documento */ }
     }
-    let apagada = false;
+    /* 404 e, onde o ataque foi barrado, 403 são o esperado e ficam em silêncio.
+       O que não pode é um caminho suspeito continuar lá: aí a linha mostra o
+       caminho REAL (com o uid), para quem for limpar saber o que apagar. */
+    for(const caminho of caminhosDeAtaque(conta.uid)){
+      try{
+        const r = await pede('DELETE', doc(caminho), { token: conta.idToken });
+        if(r.erroRede === undefined && (ehSucesso(r.status) || r.status === 404)) continue;
+        if(r.status === 403 && !suspeitos.has(caminho)) continue;
+        registra(`limpeza: resto de ataque em ${caminho}`, false, classifica('sucesso', r).detalhe);
+      }catch{ /* segue */ }
+    }
+    /* Conta apagada = accounts:delete devolveu 2xx (em alguma tentativa) E o
+       lookup confirma a ausência. Na 2ª tentativa o delete responde "usuário não
+       existe", por isso o 2xx anterior é lembrado. */
+    let apagou = false, apagada = false;
     for(let tentativa = 0; tentativa < 2 && !apagada; tentativa++){
       try{
-        await pede('POST', `${IDENTITY}/accounts:delete?key=${apiKey}`, { corpo: { idToken: conta.idToken } });
+        const d = await pede('POST', `${IDENTITY}/accounts:delete?key=${apiKey}`, { corpo: { idToken: conta.idToken } });
+        if(d.erroRede === undefined && ehSucesso(d.status)) apagou = true;
         const l = await pede('POST', `${IDENTITY}/accounts:lookup?key=${apiKey}`, { corpo: { idToken: conta.idToken }, lerJson: true });
-        /* Só conta como apagada com resposta de erro do cliente (USER_NOT_FOUND e
-           afins) ou sem usuário. Erro de rede ou 5xx não confirma nada. */
-        apagada = l.erroRede === undefined
-          && ([400, 401, 403, 404].includes(l.status) || (ehSucesso(l.status) && !l.json?.users?.length));
+        apagada = apagou && lookupConfirmaAusencia(l);
       }catch{ /* tenta de novo, depois vira sobra */ }
     }
     if(!apagada) sobras.push(conta.uid);
@@ -193,12 +254,16 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
   };
 
   const contas = [];   // criadas até agora: a limpeza do finally olha esta lista
+  const suspeitos = new Set();   // caminhos de ataque que não deram 403 limpo (ver limpa)
   let sobras = [];
   try{
-    const id = aleatorio();
-    const ana = await criaConta(pede, apiKey, 'Ana', `sonda-${id}-ana@example.com`);
+    /* sonda-<papel>-<timestamp>-<aleatório>: o timestamp diz, no console do Auth,
+       qual execução deixou sobra; o aleatório impede colisão na mesma hora. */
+    const id = aleatorio(), agora = Date.now();
+    const emailDe = papel => `sonda-${papel}-${agora}-${id}@example.com`;
+    const ana = await criaConta(pede, apiKey, 'Ana', emailDe('ana'));
     contas.push(ana);
-    const bento = await criaConta(pede, apiKey, 'Bento', `sonda-${id}-bento@example.com`);
+    const bento = await criaConta(pede, apiKey, 'Bento', emailDe('bento'));
     contas.push(bento);
 
     const dadosAna = `dados/${ana.uid}`, perfilAna = `perfis/${ana.uid}`, pushAna = `push/${ana.uid}`;
@@ -206,11 +271,19 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
     const gravaComo = (conta, caminho, obj, mascara = '') =>
       pede('PATCH', doc(caminho) + mascara, { token: conta.idToken, corpo: documento(obj) });
     const perfil = email => ({ email, criado: new Date().toISOString(), tz: 'America/Sao_Paulo', nome: 'Sonda', origem: 'outro' });
+    const mascara = campo => `?updateMask.fieldPaths=${campo}`;
 
     /* ----- Controles positivos: o que as rules permitem tem de funcionar ----- */
     checa('controle: Ana grava dados/<ana>', 'sucesso', await gravaComo(ana, dadosAna, blobValido()));
     checa('controle: Ana lê dados/<ana>', 'sucesso', await pede('GET', doc(dadosAna), { token: ana.idToken }));
     checa('controle: Ana cria perfis/<ana>', 'sucesso', await gravaComo(ana, perfilAna, perfil(ana.email)));
+    /* Os ataques de update em perfis mandam só o campo proibido com updateMask. Se
+       o servidor ignorasse a máscara, o PATCH viraria substituição do documento
+       por um campo só e levaria 403 pelo motivo errado (falta email e criado), e a
+       sonda daria verde mesmo com a regra de update frouxa. Este controle manda a
+       mesma forma com um campo PERMITIDO: só dá certo se a máscara for honrada. */
+    checa('controle: Ana atualiza o próprio nome em perfis/<ana> via updateMask', 'sucesso',
+      await gravaComo(ana, perfilAna, { nome: 'Sonda 2' }, mascara('nome')));
     checa('controle: Bento grava dados/<bento>', 'sucesso', await gravaComo(bento, dadosBento, blobValido()));
     checa('controle: Bento cria perfis/<bento>', 'sucesso', await gravaComo(bento, perfilBento, perfil(bento.email)));
     /* Sem endpoint nenhum: o cron de push não tem para onde mandar e ignora. */
@@ -233,10 +306,9 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
     const comoAna = { token: ana.idToken };
     const corpoBlob = documento(blobValido());
     const campoPerfil = (campo, v) => ({ ...comoAna, corpo: documento({ [campo]: v }) });
-    const mascara = campo => `?updateMask.fieldPaths=${campo}`;
     const onzeSubs = Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`s${i}`, {}]));
 
-    /* [nome, método, url, opções do pedido, status aceitos] */
+    /* [nome, método, url, opções do pedido, status aceitos, caminho que pode virar resto] */
     const ataques = [
       // sem login
       ['sem login lê dados/<ana>',                         'GET',  doc(dadosAna), {}, BARRADO],
@@ -262,13 +334,13 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
       ['Ana grava avisosOrcamento em perfis/<ana>',        'PATCH', doc(perfilAna) + mascara('avisosOrcamento'), campoPerfil('avisosOrcamento', { x: 1 }), BARRADO],
       ['Ana grava cpf em perfis/<ana>',                    'PATCH', doc(perfilAna) + mascara('cpf'), campoPerfil('cpf', '00000000000'), BARRADO],
       ['Ana muda origem para google em perfis/<ana>',      'PATCH', doc(perfilAna) + mascara('origem'), campoPerfil('origem', 'google'), BARRADO],
-      ['Ana muda email em perfis/<ana>',                   'PATCH', doc(perfilAna) + mascara('email'), campoPerfil('email', `sonda-${id}-outro@example.com`), BARRADO],
+      ['Ana muda email em perfis/<ana>',                   'PATCH', doc(perfilAna) + mascara('email'), campoPerfil('email', emailDe('outro')), BARRADO],
       ['Ana grava dados/<ana> com chave extra admin',      'PATCH', doc(dadosAna), { ...comoAna, corpo: documento({ ...blobValido(), admin: true }) }, BARRADO],
       ['Ana grava dados/<ana> com taxaMensal 999',         'PATCH', doc(dadosAna), { ...comoAna, corpo: documento({ ...blobValido(), config: { taxaMensal: 999, topicosCustom: [] } }) }, BARRADO],
       ['Ana grava dados/<ana> com obras como mapa',        'PATCH', doc(dadosAna), { ...comoAna, corpo: documento({ ...blobValido(), obras: {} }) }, BARRADO],
       ['Ana grava push/<ana> com 11 subs',                 'PATCH', doc(pushAna), { ...comoAna, corpo: documento({ subs: onzeSubs }) }, BARRADO],
-      ['Ana grava em qualquer/<ana>',                      'PATCH', doc(`qualquer/${ana.uid}`), { ...comoAna, corpo: corpoBlob }, BARRADO],
-      ['Ana grava em dados/<ana>/extra/x',                 'PATCH', doc(`${dadosAna}/extra/x`), { ...comoAna, corpo: corpoBlob }, BARRADO],
+      ['Ana grava em qualquer/<ana>',                      'PATCH', doc(`qualquer/${ana.uid}`), { ...comoAna, corpo: corpoBlob }, BARRADO, `qualquer/${ana.uid}`],
+      ['Ana grava em dados/<ana>/extra/x',                 'PATCH', doc(`${dadosAna}/extra/x`), { ...comoAna, corpo: corpoBlob }, BARRADO, `${dadosAna}/extra/x`],
 
       // caminhos estranhos
       ['Ana lê dados/..%2Fperfis%2F<bento> (caminho com ..)', 'GET', doc(`dados/..%2Fperfis%2F${bento.uid}`), comoAna, CAMINHO_ESTRANHO],
@@ -278,8 +350,11 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
       ['RTDB aberto sem login (firebaseio.com)',           'GET',  `https://${projeto}-default-rtdb.firebaseio.com/.json`, {}, OUTROS_BANCOS],
       ['Storage listado sem login',                        'GET',  `https://firebasestorage.googleapis.com/v0/b/${projeto}.firebasestorage.app/o`, {}, OUTROS_BANCOS],
     ];
-    for(const [nome, metodo, url, opcoes, esperado] of ataques){
-      checa(nome, esperado, await pede(metodo, url, opcoes));
+    for(const [nome, metodo, url, opcoes, esperado, resto] of ataques){
+      const resultado = await pede(metodo, url, opcoes);
+      checa(nome, esperado, resultado);
+      /* Só um 403 limpo garante que nada foi gravado; 2xx ou erro de rede, não. */
+      if(resto && resultado.status !== 403) suspeitos.add(resto);
     }
 
     /* perfis/<ana> já existe (o controle o criou), então os ataques acima exercitam
@@ -293,7 +368,7 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
       ['Ana cria perfis/<ana> com avisosOrcamento',        { avisosOrcamento: { x: 1 } }],
       ['Ana cria perfis/<ana> com cpf',                    { cpf: '00000000000' }],
       ['Ana cria perfis/<ana> com origem fora da lista',   { origem: 'hacker' }],
-      ['Ana cria perfis/<ana> com e-mail de outra pessoa', { email: `sonda-${id}-outro@example.com` }],
+      ['Ana cria perfis/<ana> com e-mail de outra pessoa', { email: emailDe('outro') }],
     ];
     for(const [nome, estrago] of criacoes){
       checa(nome, BARRADO, await pede('PATCH', doc(perfilAna), { ...comoAna, corpo: documento({ ...perfil(ana.email), ...estrago }) }));
@@ -312,7 +387,7 @@ export async function rodaSonda({ fetch, apiKey, projeto, log = () => {}, aleato
       registra('integridade: dados/<bento> igual depois dos ataques', true, 'updateTime igual');
     }
   }finally{
-    sobras = await limpa({ pede, apiKey, doc, contas, registra });
+    sobras = await limpa({ pede, apiKey, doc, contas, registra, suspeitos });
     /* Se algo estourou no meio, o erro segue para quem chamou; a sobra não pode
        sumir junto com ele. */
     if(sobras.length) log(`contas descartáveis que não consegui confirmar apagadas: ${sobras.join(', ')}`);

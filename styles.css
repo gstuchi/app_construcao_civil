@@ -23,6 +23,8 @@
     /* cores compostas do skin (glow, saldo, FAB, splash, globo) — RGB cru p/ rgba() */
     --brand-rgb:20,179,154; --accent-rgb:58,209,126;
     --glow-1:rgba(20,179,154,.18); --glow-2:rgba(58,209,126,.10);
+    /* topo do degradê do tt no título do login (embaixo vai o --accent) */
+    --realce-0:#B8F5D2;
     --saldo-a:#0D8577; --saldo-b:#0C6350; --saldo-border:rgba(61,214,187,.35); --saldo-shadow:rgba(13,133,119,.35);
     --btn-ink:#04100C; --chip-on-ink:#8FE8D5;
     --side-bg:rgba(7,26,20,.78); --side-on-ink:#C7F5E8;
@@ -81,6 +83,7 @@
     --chart-rec:#2eae5e; --chart-gasto:#60a5fa; --chart-desp:#e0507f;
     --brand-rgb:91,140,255; --accent-rgb:167,139,250;
     --glow-1:rgba(37,72,180,.32); --glow-2:rgba(84,38,160,.22);
+    --realce-0:#D4E0FF;
     --saldo-a:#2450c9; --saldo-b:#5b2fd1; --saldo-border:rgba(120,150,255,.35); --saldo-shadow:rgba(48,80,220,.35);
     /* tinta escura: branco sobre o #5b8cff dá 3,2:1; esta dá 6,2:1 */
     --btn-ink:#070c18; --chip-on-ink:#a8c2ff;
@@ -518,8 +521,48 @@
   .auth-stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:11vh 18px 0;perspective:1000px}
   .auth-title{text-align:center;margin-bottom:32px;will-change:transform}
   .auth-title h1{font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--text)}
-  /* filho direto só: os spans internos do logotipo (tt e ponto) não podem virar bloco */
-  .auth-title h1 > .logotipo{display:block;font-size:46px;line-height:1.12;margin-top:6px}
+  /* custta. escrito à mão: as letras da Hanken 800 (em curvas, com o tracking do .logotipo)
+     aparecem por máscaras de traço — cada letra tem a sua, e a "caneta" percorre o meio dela.
+     No tema escuro o tt e o ponto são escritos em verde-noite (a cor da marca some na aurora)
+     e, depois que o ponto carimba, uma varredura os deixa no degradê do realce. Sem a classe
+     .escrevendo o SVG já é o logo pronto: se o JS não rodar, o título continua lá.
+     Altura = 46px de fonte (720/1000 em). */
+  .auth-title h1 > .logo-escrito{display:block;height:33px;width:auto;margin:15px auto 9px;overflow:visible}
+  .logo-escrito .le-neutra{fill:var(--text)}
+  .logo-escrito .le-tt,.logo-escrito .le-ponto{fill:var(--brand)}
+  html:not([data-theme="light"]) .logo-escrito .le-tt,html:not([data-theme="light"]) .logo-escrito .le-ponto{fill:var(--bg)}
+  html:not([data-theme="light"]) .logo-escrito .le-tt{opacity:0} /* pronto, o realce cobre o tt escuro */
+  html[data-theme="light"] .logo-escrito .le-realce{display:none} /* no claro a marca já lê: escreve direto nela */
+  .logo-escrito .le-realce{fill:url(#le-deg)}
+  .logo-escrito .le-rp{fill:url(#le-degp)}
+  .logo-escrito .le-d0{stop-color:var(--realce-0)}
+  .logo-escrito .le-d1{stop-color:var(--accent)}
+  /* máscara: branco mostra */
+  .logo-escrito .le-pena{fill:none;stroke:#fff;stroke-width:180;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1.2}
+  .logo-escrito .le-fim,.logo-escrito .le-varredura{fill:#fff}
+  .logo-escrito .le-ponto{transform-box:fill-box;transform-origin:50% 100%}
+  .logo-escrito .le-varredura{transform-box:fill-box;transform-origin:0 50%}
+  /* um traço por vez, com leve sobreposição, como mão escrevendo: c u s t(haste, barra) t(haste, barra) a(arco, barriga) */
+  .logo-escrito.escrevendo .le-p0{animation:leEscreve .3s cubic-bezier(.45,.05,.35,1) 0s both}
+  .logo-escrito.escrevendo .le-p1{animation:leEscreve .34s cubic-bezier(.45,.05,.35,1) .26s both}
+  .logo-escrito.escrevendo .le-p2{animation:leEscreve .3s cubic-bezier(.45,.05,.35,1) .56s both}
+  .logo-escrito.escrevendo .le-p3{animation:leEscreve .22s cubic-bezier(.45,.05,.35,1) .84s both}
+  .logo-escrito.escrevendo .le-p4{animation:leEscreve .12s cubic-bezier(.45,.05,.35,1) 1.02s both}
+  .logo-escrito.escrevendo .le-p5{animation:leEscreve .22s cubic-bezier(.45,.05,.35,1) 1.12s both}
+  .logo-escrito.escrevendo .le-p6{animation:leEscreve .12s cubic-bezier(.45,.05,.35,1) 1.3s both}
+  .logo-escrito.escrevendo .le-p7{animation:leEscreve .24s cubic-bezier(.45,.05,.35,1) 1.4s both}
+  .logo-escrito.escrevendo .le-p8{animation:leEscreve .24s cubic-bezier(.45,.05,.35,1) 1.6s both}
+  .logo-escrito.escrevendo .le-ponto{animation:leCarimba .34s cubic-bezier(.3,1.6,.5,1) 1.86s both} /* auth.js vibra aqui */
+  /* rede de segurança: ao fim, cada letra aparece inteira mesmo onde a caneta não passou */
+  .logo-escrito.escrevendo .le-fim{animation:leAparece .01s linear 2.25s both}
+  .logo-escrito.escrevendo .le-varredura{animation:leVarre .65s cubic-bezier(.65,0,.35,1) 2.35s both}
+  html:not([data-theme="light"]) .logo-escrito.escrevendo .le-tt{animation:leSome .01s linear 3s both}
+  @keyframes leEscreve{from{stroke-dashoffset:1.1}to{stroke-dashoffset:0}}
+  @keyframes leCarimba{from{transform:scale(0)}to{transform:none}}
+  @keyframes leAparece{from{opacity:0}to{opacity:1}}
+  @keyframes leVarre{from{transform:scaleX(0)}to{transform:none}}
+  @keyframes leSome{from{opacity:1}to{opacity:0}}
+  @media (prefers-reduced-motion:reduce){ .logo-escrito.escrevendo *{animation:none!important} } /* como o #splash: vence a especificidade dos traços */
   .auth-hint{margin-top:14px;font-size:13px;color:var(--muted)}
   /* cartão de entrada em vidro denso sobre o globo e o brilho (antes: moldura cinza fixa,
      fora das variáveis de tema) */

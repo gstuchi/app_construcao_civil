@@ -31,6 +31,7 @@
 
   function sair(){
     sessionStorage.setItem('splashVista','1');
+    dispatchEvent(new Event('splash-fim')); // o título do login espera isto para começar a escrever
     splash.classList.add('sp-out');
     splash.addEventListener('transitionend', ()=>splash.remove(), {once:true});
     setTimeout(()=>splash.remove(), 1200); // garantia se transitionend não vier

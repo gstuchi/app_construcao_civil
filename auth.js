@@ -157,18 +157,8 @@
   montaOrigem($('#cOrigem'), $('#cDetalheWrap'), $('#cDetalheLabel'), $('#cDetalhe'));
   montaOrigem($('#pOrigem'), $('#pDetalheWrap'), $('#pDetalheLabel'), $('#pDetalhe'));
 
-  /* ---------- erros do Firebase em português ---------- */
-  function msgErro(e){
-    const c = (e && e.code) || '';
-    if(c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found'))
-      return 'E-mail ou senha incorretos.';
-    if(c.includes('email-already-in-use')) return 'Este e-mail já tem conta. Use "Entrar".';
-    if(c.includes('invalid-email'))        return 'E-mail inválido.';
-    if(c.includes('weak-password'))        return 'Senha fraca: use 8 caracteres ou mais, com letra e número.';
-    if(c.includes('too-many-requests'))    return 'Muitas tentativas. Espere um pouco.';
-    if(c.includes('network-request-failed')) return 'Sem internet. Conecte pra entrar.';
-    return 'Não deu certo. Tente de novo.';
-  }
+  /* ---------- erros do Firebase em português (o mapa mora no cadastro.js) ---------- */
+  const msgErro = (e, tela) => OBRA_CADASTRO.mensagemErroSenha(e && e.code, tela);
 
   /* botão em estado "trabalhando": desabilita e troca o texto até a promise resolver
      (sem isso o login parece travado nos ~3s que o Firebase leva pra responder) */
@@ -188,7 +178,7 @@
     if(!senha){ msg.textContent='Digite a senha.'; return; }
     await comLoading(e.target.querySelector('button[type=submit]'), 'Entrando…', async()=>{
       try{ await CLOUD.login(email, senha); }
-      catch(err){ msg.textContent=msgErro(err); }
+      catch(err){ msg.textContent=msgErro(err,'login'); }
     });
   });
 
@@ -198,7 +188,7 @@
     const email=$('#lEmail').value.trim();
     if(!/^\S+@\S+\.\S+$/.test(email)){ msg.textContent='Digite seu e-mail no campo acima primeiro.'; return; }
     try{ await CLOUD.resetSenha(email); msg.textContent='Enviamos um link de redefinição pro seu e-mail.'; }
-    catch(err){ msg.textContent=msgErro(err); }
+    catch(err){ msg.textContent=msgErro(err,'redefinir'); }
   };
 
   /* ---------- cadastro ---------- */
@@ -225,7 +215,7 @@
     if(!perfil.ok) return marca(CAMPO_ID[perfil.campo], perfil.erro);
     await comLoading(e.target.querySelector('button[type=submit]'), 'Criando conta…', async()=>{
       try{ await CLOUD.signup(email, senha, perfil.perfil); }
-      catch(err){ msg.textContent=msgErro(err); }
+      catch(err){ msg.textContent=msgErro(err,'cadastro'); }
     });
   });
 

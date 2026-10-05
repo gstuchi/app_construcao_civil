@@ -1,7 +1,7 @@
 /* Imagens do iPhone a partir das do site, para não se separarem:
    - ícone: o icon-512.png em 1024×1024 e sem canal alfa, que a App Store exige
-     (ITMS-90717). O PNG original tem 1px de borda semitransparente (antialiasing
-     do recorte): sai antes de ampliar, senão vira contorno.
+     (ITMS-90717). O icon-512.png sai do icon.svg sangrando até a borda, sem
+     contorno semitransparente: amplia inteiro.
    - abertura: o quadro final da abertura do site (#splash do index.html com o
      styles.css: grade, brilho e marca, sem barra de progresso nem decoração
      animada), no quadrado de 2732px que o iOS recorta com aspectFill. Renderizado
@@ -105,7 +105,7 @@ function pngRGB(rgba, lado){
 const browser = await chromium.launch();
 try{
   const page = await browser.newPage();
-  await writeFile(ICONE.destino, pngRGB(await rgbaDe(page, await readFile(ICONE.origem), ICONE.lado, 1), ICONE.lado));
+  await writeFile(ICONE.destino, pngRGB(await rgbaDe(page, await readFile(ICONE.origem), ICONE.lado), ICONE.lado));
   console.log('ícone gravado em', path.relative(raiz, ICONE.destino));
   const html = await readFile(path.join(raiz, 'index.html'), 'utf8');
   const abertura = await fotografarAbertura(browser, html, ABERTURA.tela);

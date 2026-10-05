@@ -112,3 +112,33 @@ test('normalizaPerfil com nomeOpcional: nome da Apple entra; ausente ou inválid
   assert.equal(semOrigem.ok,false); assert.equal(semOrigem.campo,'origem');
   assert.equal(C.normalizaPerfil({nome:'',origem:'instagram'}).campo,'nome','sem a opção o nome continua obrigatório');
 });
+const CODIGO_COTA="auth/quota-exceeded-for-quota-metric-'queries'-and-limit-'queries-per-minute-per-user'-of-service-'identitytoolkit.googleapis.com'-for-consumer-'project-number:111188093030'.";
+test('mensagemErroSenha: bloqueio no login ensina a sair dele; nas outras telas, espera',()=>{
+  const S=C.mensagemErroSenha;
+  assert.equal(S('auth/too-many-requests','login'),'Muitas tentativas. Espere alguns minutos ou redefina a senha em "Esqueci minha senha".');
+  assert.equal(S('auth/too-many-requests','cadastro'),'Muitas tentativas. Espere um pouco.');
+  assert.equal(S('auth/too-many-requests','redefinir'),'Muitas tentativas. Espere um pouco.');
+});
+test('mensagemErroSenha: cota por IP vira "muitas tentativas" em qualquer tela',()=>{
+  const S=C.mensagemErroSenha;
+  for(const tela of ['login','cadastro','redefinir']){
+    assert.equal(S(CODIGO_COTA,tela),'Muitas tentativas. Espere um pouco.');
+    assert.equal(S('auth/quota-exceeded',tela),'Muitas tentativas. Espere um pouco.');
+  }
+});
+test('mensagemErroSenha: o resto continua com as frases de antes',()=>{
+  const S=C.mensagemErroSenha;
+  for(const c of ['auth/invalid-credential','auth/wrong-password','auth/user-not-found']) assert.equal(S(c,'login'),'E-mail ou senha incorretos.');
+  assert.equal(S('auth/email-already-in-use','cadastro'),'Este e-mail já tem conta. Use "Entrar".');
+  assert.equal(S('auth/invalid-email','redefinir'),'E-mail inválido.');
+  assert.equal(S('auth/weak-password','cadastro'),'Senha fraca: use 8 caracteres ou mais, com letra e número.');
+  assert.equal(S('auth/network-request-failed','login'),'Sem internet. Conecte pra entrar.');
+  assert.equal(S('auth/qualquer','login'),'Não deu certo. Tente de novo.');
+  assert.equal(S(undefined,'login'),'Não deu certo. Tente de novo.');
+  assert.equal(S(1000,'login'),'Não deu certo. Tente de novo.');
+});
+test('mensagemErroSocial: cota por IP vira "muitas tentativas"',()=>{
+  assert.equal(C.mensagemErroSocial(CODIGO_COTA,'google.com'),'Muitas tentativas. Espere um pouco.');
+  assert.equal(C.mensagemErroSocial(CODIGO_COTA,'apple.com'),'Muitas tentativas. Espere um pouco.');
+  assert.equal(C.mensagemErroSocial(undefined,'google.com'),'Não deu certo entrar com o Google. Tente de novo.');
+});

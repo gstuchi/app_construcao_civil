@@ -18,6 +18,7 @@ npm run test:unit        # node --test nos tests/*.cjs e *.mjs (sem browser, sem
 npm run test:browser     # emuladores + servidor estático + suítes Playwright de tests/browser/
 npm run test:rules       # sobe o emulador do Firestore e roda tests/rules.test.mjs (precisa Java)
 npm run rules:deploy     # firebase deploy --only firestore:rules
+npm run sonda:banco      # ataca o banco de produção (2 contas descartáveis) e confere que as rules no ar barram
 npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
 npm run cap:sync         # build:www + cap sync ios
 
@@ -71,7 +72,9 @@ Consequências práticas:
 
 A `apiKey` em `cloud.js` é **pública por design**. A segurança está em [firestore.rules](firestore.rules), que valida a forma do blob (`hasOnly`, limites de tamanho, faixa de `taxaMensal`) em `dados/{uid}`, `perfis/{uid}` e `push/{uid}`.
 
-Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as rules não forem atualizadas junto. Ao mudar o formato do estado: editar `firestore.rules`, adicionar caso em `tests/rules.test.mjs`, `npm run test:rules`, `npm run rules:deploy`. Nunca editar rules pelo console do Firebase.
+Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as rules não forem atualizadas junto. Ao mudar o formato do estado: editar `firestore.rules`, adicionar caso em `tests/rules.test.mjs`, `npm run test:rules`, `npm run rules:deploy`, `npm run sonda:banco`. Nunca editar rules pelo console do Firebase.
+
+`npm run sonda:banco` ([scripts/sonda-banco.mjs](scripts/sonda-banco.mjs)) prova o que está **no ar** (`test:rules` prova o arquivo, no emulador). Só com a apiKey pública, cria 2 contas descartáveis `@example.com` e faz 45 verificações: controles positivos (o dono grava, lê e atualiza o que é dele, inclusive o próprio nome via máscara; sem isso um 403 não prova nada) e ataques (sem login, uma conta contra a outra, campo ou formato proibido, caminhos estranhos, os outros bancos do projeto), confere que o dado da vítima não mudou e apaga contas e documentos no fim. Saída 0 = banco fechado e nada sobrou; 1 = algum ataque passou, controle positivo falhou ou sobrou conta ou documento (a saída mostra o caminho ou o uid para apagar no console). Sem `--producao` sai com 2 sem tocar a rede; o script do npm já passa a flag.
 
 ### Service worker
 

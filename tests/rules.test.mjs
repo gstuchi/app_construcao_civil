@@ -13,6 +13,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, updateDoc,
+  collectionGroup, query, where, documentId,
 } from 'firebase/firestore';
 
 const ANA  = { uid: 'ana',  email: 'ana@exemplo.com' };
@@ -323,5 +324,59 @@ describe('resto do banco', () => {
   test('Bento também não alcança nada da Ana', async () => {
     await semeia(db => setDoc(doc(db, 'dados', ANA.uid), blobOk()));
     await assertFails(getDoc(doc(comoBento(), 'dados', ANA.uid)));
+  });
+});
+
+describe('atalhos para dado alheio — injeção de caminho e de consulta', () => {
+  test('consulta de grupo de coleções em dados é negada', async () => {
+    await semeia(db => setDoc(doc(db, 'dados', BENTO.uid), blobOk()));
+    await assertFails(getDocs(collectionGroup(comoAna(), 'dados')));
+  });
+
+  test('deslogado não faz consulta de grupo em perfis', async () => {
+    await assertFails(getDocs(collectionGroup(deslogado(), 'perfis')));
+  });
+
+  test('consulta filtrando pelo próprio id também é negada (list é sempre não)', async () => {
+    await semeia(db => setDoc(doc(db, 'dados', ANA.uid), blobOk()));
+    await assertFails(getDocs(query(collection(comoAna(), 'dados'), where(documentId(), '==', ANA.uid))));
+  });
+
+  test('subcoleção dentro do próprio documento é negada', async () => {
+    await assertFails(setDoc(doc(comoAna(), 'dados', ANA.uid, 'extra', 'x'), { x: 1 }));
+    await assertFails(getDoc(doc(comoAna(), 'dados', ANA.uid, 'extra', 'x')));
+  });
+
+  test('id parecido com o uid não vale como dono', async () => {
+    /* espaço no fim, maiúscula e espaço de largura zero (U+200B) */
+    for (const id of ['ana ', 'Ana', 'ana​']) {
+      await assertFails(setDoc(doc(comoAna(), 'dados', id), blobOk()));
+    }
+  });
+
+  test('Ana não lê o push do Bento', async () => {
+    await semeia(db => setDoc(doc(db, 'push', BENTO.uid), { tokens: {} }));
+    await assertFails(getDoc(doc(comoAna(), 'push', BENTO.uid)));
+  });
+
+  test('Ana não apaga dados, perfil nem push do Bento', async () => {
+    await semeia(async db => {
+      await setDoc(doc(db, 'dados', BENTO.uid), blobOk());
+      await setDoc(doc(db, 'perfis', BENTO.uid), { email: BENTO.email, criado: '2026-10-05T00:00:00.000Z' });
+      await setDoc(doc(db, 'push', BENTO.uid), { tokens: {} });
+    });
+    for (const colecao of ['dados', 'perfis', 'push']) {
+      await assertFails(deleteDoc(doc(comoAna(), colecao, BENTO.uid)));
+    }
+  });
+
+  test('tokens que não é mapa é rejeitado', async () => {
+    await assertFails(setDoc(doc(comoAna(), 'push', ANA.uid), { tokens: 'nada disso' }));
+  });
+
+  test('Ana não cria o perfil do Bento nem usando o próprio e-mail', async () => {
+    await assertFails(setDoc(doc(comoAna(), 'perfis', BENTO.uid), {
+      email: ANA.email, criado: '2026-10-05T00:00:00.000Z',
+    }));
   });
 });

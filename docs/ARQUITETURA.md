@@ -28,11 +28,16 @@ flowchart TD
     D --> R
 ```
 
-Duas consequências práticas que já custaram bug:
+Três consequências práticas que já custaram bug:
 
 - **`saveDados` reescreve o blob inteiro.** Qualquer coisa que não possa ser
   sobrescrita por outro aparelho mora em documento separado — foi por isso que
   as inscrições de push viraram `push/{uid}`.
+- **Só grava quem viu os dados.** Até chegar o snapshot do servidor (com ou
+  sem documento) ou o do cache com o documento, `saveDados` recusa com
+  `nao-carregado` e a lista fica em "Carregando suas obras…". Num aparelho novo
+  sem rede o cache vem vazio; gravar ali reescreveria o documento por cima das
+  obras que só o servidor tem.
 - Depois de mexer em `db`, sempre `save()` **e** `renderAll()` (ou o `render*`
   da view afetada). Um sem o outro salva sem mostrar, ou mostra sem salvar.
 

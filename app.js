@@ -1615,6 +1615,8 @@ function renderAjustes(){
   if(document.activeElement !== inp)
     inp.value = String(db.config.taxaMensal).replace('.',',');
   inp.onchange = ()=>{
+    // antes de ver os dados nada muda: a gravação seria recusada e o servidor desfaria a tela
+    if(!dadosCarregados){ inp.value = String(db.config.taxaMensal).replace('.',','); avisaNaoCarregado(); return; }
     const v = parseNum(inp.value);
     if(!(v>0 && v<=20)){
       toast('Informe uma taxa maior que 0 e até 20% ao mês.', 'erro');
@@ -1635,6 +1637,7 @@ function renderAjustes(){
     const del = el('button','li-del','×');
     del.setAttribute('aria-label','Apagar tópico');
     del.onclick = async()=>{
+      if(!dadosCarregados){ avisaNaoCarregado(); return; }
       const emUso = db.obras.some(o=>o.gastos.some(g=>g.topico===t.id));
       if(emUso){ await OBRA_CONFIRM.avisar('Este tópico tem gastos lançados. Mova ou apague os gastos antes.'); return; }
       const noOrcamento = db.obras.some(o=>o.orcamento && o.orcamento.modo==='topicos' && o.orcamento.topicos && o.orcamento.topicos[t.id]>0);
@@ -1649,6 +1652,7 @@ function renderAjustes(){
   });
 
   $('#ajAddTopico').onclick = ()=>{
+    if(!dadosCarregados){ avisaNaoCarregado(); return; } // o nome digitado fica no campo
     const nm = $('#ajNovoTopico').value.trim();
     if(!nm){ $('#ajNovoTopico').focus(); return; }
     if(!textoValido(nm, 'topico', $('#ajNovoTopico'))) return;

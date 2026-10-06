@@ -78,6 +78,30 @@ function checa(nome, ok, detalhe){
     await page.locator('#fNome').count() === 0 && await avisou(ESPERE), await toasts(page));
   await limpaAvisos(); await recusaDoCloud();
   checa('com rede, a recusa do cloud.js pede para esperar', await avisou(ESPERE), await toasts(page));
+  // Ajustes também gravam o documento inteiro: nada muda na tela antes de carregar.
+  await page.locator('nav.tabs button[data-tab=ajustes]').click();
+  await limpaAvisos();
+  await page.locator('#ajTaxa').fill('2');
+  await page.locator('#ajTaxa').dispatchEvent('change');
+  const taxa = await page.evaluate(() => ({ db: db.config.taxaMensal, campo: document.getElementById('ajTaxa').value }));
+  checa('a taxa não muda antes de carregar', taxa.db === 1 && taxa.campo === '1' && await avisou(ESPERE),
+    { taxa, avisos: await toasts(page) });
+  await limpaAvisos();
+  await page.locator('#ajNovoTopico').fill('Piscina');
+  await page.locator('#ajAddTopico').click();
+  checa('o tópico novo não entra antes de carregar', await page.evaluate(() => db.config.topicosCustom.length === 0)
+    && await page.locator('#ajNovoTopico').inputValue() === 'Piscina' && await avisou(ESPERE), await toasts(page));
+  await limpaAvisos();
+  // tópico próprio antes de carregar só existe se o db já tinha um (troca direta de conta)
+  await page.evaluate(() => { db.config.topicosCustom = [{ id: 'c_t', nm: 'Telhado', ic: 'etiqueta' }]; renderAjustes(); });
+  await page.locator('#ajTopicos .li-del').click();
+  const perguntou = await page.locator('dialog[open]').count() > 0;
+  if(perguntou) await page.keyboard.press('Escape'); // o código de antes perguntava; fecha para seguir
+  checa('o tópico não sai antes de carregar', !perguntou
+    && await page.evaluate(() => db.config.topicosCustom.length === 1) && await avisou(ESPERE), await toasts(page));
+  await page.evaluate(() => { db.config.topicosCustom = []; });
+  await limpaAvisos();
+  await page.locator('nav.tabs button[data-tab=inicio]').click();
   await page.context().setOffline(true);
   await limpaAvisos(); await page.locator('#fab').click();
   checa('sem rede, o + pede para conectar', await avisou(CONECTE), await toasts(page));

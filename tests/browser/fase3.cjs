@@ -19,7 +19,9 @@ const {chromium}=require('playwright');
     await page.waitForFunction(()=>typeof normaliza==='function');
     const ataque='<img src=x onerror=alert(1)>';
     await page.evaluate(ataque=>{
-      db=normaliza({config:{taxaMensal:1,topicosCustom:[{id:'custom',nm:ataque,ic:'etiqueta'}]},obras:[{id:'o1',nome:ataque,dataInicio:'2026-01-01',fase:'construcao',gastos:[{id:'g1',valor:100,topico:'custom',data:'2026-01-02',descricao:ataque}]},{id:'o2',nome:'Segunda',dataInicio:'2026-01-01',gastos:[{id:'g2',valor:50,topico:'terreno',data:'2026-01-02'}]}]});renderAll();
+      db=normaliza({config:{taxaMensal:1,topicosCustom:[{id:'custom',nm:ataque,ic:'etiqueta'}]},obras:[{id:'o1',nome:ataque,dataInicio:'2026-01-01',fase:'construcao',gastos:[{id:'g1',valor:100,topico:'custom',data:'2026-01-02',descricao:ataque}]},{id:'o2',nome:'Segunda',dataInicio:'2026-01-01',gastos:[{id:'g2',valor:50,topico:'terreno',data:'2026-01-02'}]}]});
+      dadosCarregados=true; // o duplê não entrega snapshot: os dados injetados contam como vistos
+      renderAll();
     },ataque);
     assert.ok(await page.locator('#compBars .hb-bruto').first().evaluate(e=>parseFloat(e.style.width)>0));
     for(const run of [()=>openObra('o1'),()=>renderGraficos(),()=>renderRelatorio(),()=>{closeSheet();showView('simula');renderSimula();document.querySelector('#simValor').value='1';simulaCompute();},()=>{closeSheet();showView('ajustes');renderAjustes();},()=>formGasto('o1'),()=>formEditarObra(obraById('o1'))]){

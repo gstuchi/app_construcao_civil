@@ -155,6 +155,14 @@ let retryTimer = null, pendingBlob = null, dirty = false;
 let tentativa = 0, emVoo = false, estadoAtual = 'ocioso';
 let versaoEscrita = 0;
 let saindo = false, pendenciaCache = false;
+/* Quem não viu os dados não grava. Vale como visto o snapshot do servidor (com ou
+   sem documento: conta nova de verdade recebe "não existe" dele) ou o do cache com
+   o documento. O cache sem documento é o aparelho novo que ainda não falou com o
+   servidor; gravar ali reescreveria o documento inteiro por cima das obras que só
+   o servidor tem. Limitação aceita: conta nova que ouviu "não existe", fechou o
+   app sem gravar e reabriu sem rede espera a rede para gravar (o mesmo no app
+   nativo; a marca "o servidor já respondeu" por conta fica para depois). */
+let carregado = false;
 const espera = []; // {resolve, reject} das chamadas de saveDados ainda sem resposta do servidor
 const leituras = new Set();
 let verificacao = null, ultimaVerificacao = 0;
@@ -303,7 +311,7 @@ onAuthStateChanged(auth, async u => {
     versaoEscrita++;
     clearTimeout(retryTimer);
     pendingBlob = null; dirty = false; emVoo = false; tentativa = 0;
-    pendenciaCache = false;
+    pendenciaCache = false; carregado = false;
     ultimaVerificacao = 0;
     terminaEspera('reject', Object.assign(new Error('Sessão alterada.'), { code: 'cancelled' }));
     setEstado(offline() ? 'offline' : 'ocioso');
@@ -649,6 +657,7 @@ window.CLOUD = {
         if(!dirty && estadoAtual !== 'erro')
           setEstado(offline() ? 'offline' : pendenciaCache ? 'salvando' : 'ocioso');
         const d = snap.data();
+        if(!snap.metadata.fromCache || d) carregado = true; // só vira falso com a troca de conta
         if(d) delete d._atualizado;
         cb(d || null, { fromCache: snap.metadata.fromCache,
                         pendingWrites: snap.metadata.hasPendingWrites,
@@ -673,6 +682,13 @@ window.CLOUD = {
     if(!currentUser || saindo || cacheBloqueado){
       window.dispatchEvent(new CustomEvent('cloud-erro', { detail:{ code:'cancelled', terminal:true } }));
       const p = Promise.reject(Object.assign(new Error('Sessão indisponível para salvar.'), { code: 'cancelled' }));
+      p.catch(()=>{});
+      return p;
+    }
+    if(!carregado){
+      // Nada vai para a fila e o estado de sincronização não muda: não é erro, é espera.
+      window.dispatchEvent(new CustomEvent('cloud-erro', { detail:{ code:'nao-carregado', terminal:false } }));
+      const p = Promise.reject(Object.assign(new Error('Os dados da conta ainda não foram carregados.'), { code: 'nao-carregado' }));
       p.catch(()=>{});
       return p;
     }

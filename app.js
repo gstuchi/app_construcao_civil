@@ -272,7 +272,9 @@ function renderInicio(){
     ((a.fase==='vendida')-(b.fase==='vendida')) || b.dataInicio.localeCompare(a.dataInicio));
   $('#obraCount').textContent = arr.length ? `${arr.length} obra${arr.length>1?'s':''}` : '';
   const list = $('#obrasList');
-  list.innerHTML = arr.length ? '' : emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque no + pra criar a primeira obra.');
+  list.innerHTML = arr.length ? '' : dadosCarregados
+    ? emptyBlock(ICON('guindaste'),'Nenhuma obra ainda.<br>Toque no + pra criar a primeira obra.')
+    : emptyBlock(ICON('guindaste'),'Carregando suas obras…');
   arr.forEach(o=>{
     const f = FASES[o.fase];
     const li = el('li');
@@ -1851,6 +1853,7 @@ function formOrcamento(obraId){
 }
 
 function formNovaObra(){
+  if(!dadosCarregados){ toast(AVISO_NAO_CARREGADO, 'erro'); return; }
   openSheet(`
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
@@ -1922,8 +1925,11 @@ $('#installBtn').onclick = async()=>{
 window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidden'));
 
 /* Aberturas que dependem dos dados reais (toque em notificação, restauração de estado)
-   só acontecem depois do primeiro snapshot — antes disso db está vazio. */
+   e a criação de obra só acontecem depois de ver os dados da conta: snapshot do
+   servidor, ou do cache com o documento. Antes disso db está vazio, e num aparelho
+   novo sem rede o cache vazio não prova que a conta não tem obra. */
 let dadosCarregados = false;
+const AVISO_NAO_CARREGADO = 'Conecte à internet para carregar suas obras antes de lançar.';
 let obraDaNotificacao; // undefined = nada pendente; null = abrir Início
 function depoisDoPrimeiroSnapshot(){
   if(!dadosCarregados) return;
@@ -1961,16 +1967,20 @@ function bootCloud(){
        tivesse usado este navegador e copiava pra conta logada no momento —
        num aparelho compartilhado, isso levava as obras de um pro outro. */
 
+    dadosCarregados = false; // a conta que entrou ainda não teve os dados vistos
     unwatch = CLOUD.watchDados((blob, meta)=>{
       if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
       const novo = normaliza(blob);
+      /* A mesma regra do saveDados no cloud.js: cache sem documento não é dado visto.
+         Depois de visto não volta atrás (conta nova que ouviu "não existe" e perdeu a rede). */
+      const carregou = !dadosCarregados && (!meta.fromCache || blob !== null);
+      if(carregou) dadosCarregados = true;
       // conteúdo igual: não troca os objetos (Firestore devolve chaves em ordem diferente)
       if(canon(novo) !== canon(db)){
         db = novo;
         if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
         renderAll();
-      }
-      dadosCarregados = true;
+      }else if(carregou) renderInicio(); // conta nova: o "não existe" do servidor não muda o db, mas a lista sai do "Carregando…"
       if(!tokenFcmSincronizado){
         tokenFcmSincronizado = true;
         OBRA_PUSH.sincronizarToken?.(); // no-op na web; nativo troca o token se o FCM já rotacionou o antigo
@@ -1990,6 +2000,8 @@ function avisoRaro(msg){
 }
 window.addEventListener('cloud-erro', e=>{
   const { code, terminal } = e.detail;
+  // recusa local antes de ver os dados: nada foi para a fila, o gesto precisa de resposta
+  if(code === 'nao-carregado'){ toast(AVISO_NAO_CARREGADO, 'erro'); return; }
   const msg = code === 'limite'
     ? 'Não salvou: limite de dados atingido. Reduza os dados e tente novamente.'
     : terminal

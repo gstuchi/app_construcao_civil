@@ -32,7 +32,9 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
   await page.goto('http://localhost:8123');
   await page.evaluate(obras=>{document.getElementById('auth')?.classList.add('hidden');document.body.classList.remove('locked');
     window.OBRAS_TESTE=structuredClone(obras);
-    db=normaliza({obras,config:{taxaMensal:1,topicosCustom:[]}});renderAll();},OBRAS);
+    db=normaliza({obras,config:{taxaMensal:1,topicosCustom:[]}});
+    dadosCarregados=true; // o duplê não entrega snapshot: os dados injetados contam como vistos
+    renderAll();},OBRAS);
   return {ctx,page};
 }
 

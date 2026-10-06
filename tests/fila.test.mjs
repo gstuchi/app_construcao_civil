@@ -40,11 +40,16 @@ before(async () => {
   assert.ok(CLOUD, 'cloud.js precisa expor window.CLOUD');
 });
 
-beforeEach(async () => {
+/* Sessão nova a cada teste. Por padrão a conta já viu os dados (snapshot do
+   servidor), como depois de abrir o app com rede; só os testes da guarda de
+   carregamento partem de antes disso. */
+const doServidor = { data: () => ({ obras: [], config: {} }), metadata: { fromCache: false, hasPendingWrites: false } };
+async function abreSessao({ carregada = true } = {}){
   montaJanela();
   await import('../cloud.js?teste=' + Math.random());
   CLOUD = globalThis.window.CLOUD;
   await CLOUD.ready;
+  if(carregada){ CLOUD.watchDados(() => {}); ctrl.snapshotCb(doServidor); }
   ctrl.setDocChamadas.length = 0;
   ctrl.respostas.length = 0;
   ctrl.signOutChamado = 0;
@@ -52,7 +57,8 @@ beforeEach(async () => {
   globalThis.navigator.onLine = true;
   ctrl.pendentesSDK = Promise.resolve();
   ctrl.token = Promise.resolve('token-teste');
-});
+}
+beforeEach(() => abreSessao());
 
 /* O backoff começa em 1s. Escritas são entregues ao SDK imediatamente. */
 const passa = ms => new Promise(r => setTimeout(r, ms));
@@ -269,4 +275,57 @@ test('refresh antigo não encerra usuário que entrou depois', async()=>{
   await verificou;
   assert.equal(ctrl.signOutChamado, 0);
   ctrl.authCb({ uid:'u-teste', email:'teste@exemplo.com' });
+});
+
+/* Quem não viu os dados não grava. Num aparelho novo sem rede o primeiro snapshot
+   vem do cache, sem documento; gravar ali reescreveria o documento inteiro por cima
+   das obras que só o servidor tem. Conta como visto: snapshot do servidor (com ou
+   sem documento; conta nova de verdade recebe "não existe" dele) ou do cache com
+   o documento. */
+const semDocumento = doCache => ({ data: () => undefined, metadata: { fromCache: doCache, hasPendingWrites: false } });
+const comDocumento = doCache => ({ data: () => ({ obras: [{ id: 'so-no-servidor' }], config: {} }), metadata: { fromCache: doCache, hasPendingWrites: false } });
+const recusouSemErroDeSincronizacao = async p => {
+  await assert.rejects(p, { code: 'nao-carregado' });
+  assert.strictEqual(ctrl.setDocChamadas.length, 0, 'nada vai para a fila do SDK');
+  assert.strictEqual(CLOUD.temPendencia(), false);
+  assert.ok(!estados().includes('erro'), 'recusa não é erro de sincronização: ' + estados());
+  assert.deepStrictEqual(eventos.filter(e => e.tipo === 'cloud-erro').map(e => e.detail),
+    [{ code: 'nao-carregado', terminal: false }], 'a tela precisa saber o motivo');
+};
+
+for(const [abertura, chega, grava] of [
+  ['sem snapshot nenhum', null, false],
+  ['com o cache sem documento', semDocumento(true), false],
+  ['com o cache com documento', comDocumento(true), true],
+  ['com o servidor sem documento (conta nova)', semDocumento(false), true],
+  ['com o servidor com documento', comDocumento(false), true],
+]){
+  test(`abertura ${abertura}: ${grava ? 'grava' : 'recusa com nao-carregado'}`, async () => {
+    await abreSessao({ carregada: false });
+    CLOUD.watchDados(() => {});
+    if(chega) ctrl.snapshotCb(chega);
+    eventos.length = 0;
+    const p = CLOUD.saveDados({ obras: [{ id: 'nova' }], config: {} });
+    if(!grava) return recusouSemErroDeSincronizacao(p);
+    await p;
+    assert.strictEqual(ctrl.setDocChamadas.length, 1);
+  });
+}
+
+test('depois de ver os dados, snapshot do cache sem documento não volta a recusar', async () => {
+  // conta nova que já ouviu "não existe" do servidor e então perdeu a rede
+  await abreSessao({ carregada: false });
+  CLOUD.watchDados(() => {});
+  ctrl.snapshotCb(semDocumento(false));
+  ctrl.snapshotCb(semDocumento(true));
+  await CLOUD.saveDados({ obras: [{ id: 'nova' }], config: {} });
+  assert.strictEqual(ctrl.setDocChamadas.length, 1);
+});
+
+test('troca de conta volta a exigir os dados da conta que entrou', async () => {
+  ctrl.authCb({ uid: 'outra', email: 'outra@exemplo.com' });
+  await espera();
+  eventos.length = 0;
+  await recusouSemErroDeSincronizacao(CLOUD.saveDados({ obras: [], config: {} }));
+  ctrl.authCb({ uid: 'u-teste', email: 'teste@exemplo.com' });
 });

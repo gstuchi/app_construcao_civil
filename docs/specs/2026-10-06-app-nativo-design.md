@@ -18,6 +18,7 @@ O objetivo é um app de iPhone feito com a linguagem e os componentes da Apple, 
 - **Visual:** iOS de verdade com a marca Custta. Componentes padrão do sistema (abas, listas, sheets, Liquid Glass da Apple) com as cores, o logo tt., os números grandes e o tema escuro do Custta. Aurora, globo e vidro próprio do site não são recriados.
 - **Paridade de funções, não de visual.** O app nativo precisa fazer tudo o que o site faz. O desenho de cada tela pode ser repensado (o Giovani quer rever, por exemplo, os gráficos). A decisão de desenho acontece no começo de cada etapa, quando o Croqui mostrar as opções.
 - **Lançamento completo.** Só vai para a revisão da Apple quando tiver todas as telas do site. Qualidade vem antes de prazo.
+- **Padrão profissional em tudo.** Desenho, código, testes e textos de loja no nível mais profissional possível. A referência-base são os apps da própria Apple (Ajustes, Carteira, Saúde) e as Human Interface Guidelines. Quando uma tela ou decisão precisar de uma referência que o time não tem, ninguém improvisa: a falta é listada e o Giovani procura a referência junto.
 - **Construção em etapas pelo TestFlight.** Cada etapa termina num build que o Giovani testa no iPhone. A etapa só fecha com o ok dele.
 - **iOS mínimo: 26.** É onde existe o Liquid Glass do sistema. Roda do iPhone 11 em diante; o pai usa um iPhone 16 Pro com iOS 27. Quem tiver aparelho mais antigo usa o site.
 - **Só iPhone, só em pé**, como hoje (`TARGETED_DEVICE_FAMILY = 1`).

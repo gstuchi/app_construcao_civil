@@ -14,7 +14,7 @@
 
 **Spec:** `docs/specs/2026-10-06-app-nativo-design.md` (Decisões; Desenho 1 a 8; Etapas, linha 1; Testes e validação 2, 4, 5, 6 e 7). Depende da Parte A (`docs/plans/2026-10-06-app-nativo-etapa1a-nucleo.md`) já na `main`. Inventário do site, com arquivo e linha: `docs/plans/2026-10-06-app-nativo-inventario.md` (seções 5 e 6).
 
-**Validação deste plano:** o Prumo extraiu o código das Partes A e B do texto dos dois planos para uma cópia limpa do worktree e rodou tudo com Xcode 27 e o simulador do iOS 27: `npm run test:unit` (340 testes, inclusive as guardas novas); o núcleo (108 testes em 22 suítes, 42 desta parte); o app com os serviços falsos (28 testes de unidade e 20 de tela, inclusive as auditorias de acessibilidade no maior tamanho de letra e o contraste nos quatro combos); os testes contra os emuladores (inclusive o login com Google pelo token falso do emulador, a recusa das rules a chave nova e a saída que limpa o cache); a conferência cruzada site ↔ app de ponta a ponta, que agora falha se um dos testes for pulado; e o arquivamento da Release sem assinatura. O projeto escrito à mão resolveu os pacotes com os pins do app Capacitor de hoje e continuou idêntico ao texto do plano depois de todos os builds. Os trechos vêm de um protótipo cujas auditorias acharam, e o plano já corrige: texto branco sobre a cor da marca no tema escuro (contraste 2,6:1), cabeçalho de seção com a cor do sistema, placeholder longo cortando e e-mail sem rótulo legível. Não validado: a CI com o Xcode 26.6 (a primeira prova é o PR 1, aberto como rascunho), o envio assinado ao TestFlight (Tarefa 15) e o login de verdade com Apple e Google no aparelho (checklist da Tarefa 15).
+**Validação deste plano:** o Prumo extraiu o código das Partes A e B do texto dos dois planos para uma cópia limpa do worktree e rodou tudo com Xcode 27 e o simulador do iOS 27: `npm run test:unit` (340 testes, inclusive as guardas novas); o núcleo (111 testes em 22 suítes, 45 desta parte); o app com os serviços falsos (28 testes de unidade e 21 de tela, inclusive as auditorias de acessibilidade no maior tamanho de letra e o contraste nos quatro combos); os testes contra os emuladores (inclusive o login com Google pelo token falso do emulador, a recusa das rules a chave nova e a saída que limpa o cache e deixa outra conta gravar e ler do servidor pelo mesmo banco); a conferência cruzada site ↔ app de ponta a ponta, que agora falha se um dos testes for pulado; e o arquivamento da Release sem assinatura. O projeto escrito à mão resolveu os pacotes com os pins do app Capacitor de hoje e continuou idêntico ao texto do plano depois de todos os builds. Os trechos vêm de um protótipo cujas auditorias acharam, e o plano já corrige: texto branco sobre a cor da marca no tema escuro (contraste 2,6:1), cabeçalho de seção com a cor do sistema, placeholder longo cortando e e-mail sem rótulo legível. Não validado: a CI com o Xcode 26.6 (a primeira prova é o PR 1, aberto como rascunho), o envio assinado ao TestFlight (Tarefa 15) e o login de verdade com Apple e Google no aparelho (checklist da Tarefa 15).
 
 ## Global Constraints
 
@@ -43,7 +43,7 @@
 | Par de versões dos SDKs | firebase-ios-sdk **12.19.2** e GoogleSignIn-iOS **8.0.0**, `exactVersion`. | É o par que já resolve no `Package.resolved` do app Capacitor (app-check 11.3.2, gtm-session-fetcher 3.5.0); o Firebase 13 não fecha com o GoogleSignIn 8 (`docs/sdks-fase4.md`). Versão exata porque a subida é decisão: muda o `project.pbxproj` e o `Package.resolved` juntos, pelo botão "resolver de novo". FirebaseMessaging entra na etapa 5, do mesmo pacote, sem mudar os pins. |
 | Client do Google | O client **iOS** do `GoogleService-Info.plist` (`GIDClientID` no `Info.plist`), não o client web que o plugin do Capacitor usava. | É o caminho padrão do SDK nativo do Google com o Firebase iOS. A conta Google é a mesma (o Firebase reconhece pelo `sub`), então o uid é o mesmo do site e do app de hoje. |
 | Login com a Apple | `SignInWithAppleButton` do SwiftUI com nonce (32 bytes aleatórios; a Apple recebe o SHA-256) e `OAuthProvider.appleCredential(withIDToken:rawNonce:fullName:)`. O nome do primeiro login vai para o `displayName`. | Botão e fluxo do sistema, sem `ASAuthorizationController` à mão. Gravar o nome repete o `gravaNome` do `cloud.js`: o "Falta pouco" não pede o nome de novo (a revisão da Apple reprova). |
-| Estado e sincronização | `Sincronizador` no núcleo, `@MainActor @Observable`, com `TransporteDados` e `Relogio` injetados; `TransporteFirebase` só converte tipos e códigos. Retornos do Firestore na fila principal (`dispatchQueue = .main`). | A regra da fila, do backoff, da guarda de tamanho, do eco e de só gravar depois de ver os dados fica testável sem simulador (27 testes com falsos). O transporte fino é coberto pelos testes contra o emulador. |
+| Estado e sincronização | `Sincronizador` no núcleo, `@MainActor @Observable`, com `TransporteDados` e `Relogio` injetados; `TransporteFirebase` só converte tipos e códigos. Retornos do Firestore na fila principal (`dispatchQueue = .main`). | A regra da fila, do backoff, da guarda de tamanho, do eco e de só gravar depois de ver os dados fica testável sem simulador (29 testes com falsos). O transporte fino é coberto pelos testes contra o emulador. |
 | Sair da conta | Na ordem do `cloud.js`: espera a fila (o que a sessão gravou e o que o SDK guardou), 5 s no máximo, e sem rede pede para conectar e não sai; confere que a conta é a mesma, para a escuta, grava a marca de limpeza, faz `signOut` e `GIDSignIn.signOut()`, encerra o Firestore e apaga o cache (`terminate` + `clearPersistence`) e só então tira a marca. Se o app fechar no meio, a próxima abertura termina a limpeza antes de ler. Sessão que cai sozinha não limpa o cache. | Igual ao `logout` do `cloud.js` (`cloud.js:263-292` e `572-592`), que marca a limpeza antes do `signOut` e a retoma na abertura. Durante a limpeza nada lê nem grava (`BancoFirebase.quandoPronto`): mexer numa instância em encerramento derruba o app. Na queda de sessão a fila persistente do SDK é da conta e sobe quando ela entra de novo. |
 | Nome do Google ou da Apple no limite (`nomeDoGoogle`) | Corta em unidades UTF-16 como o site, mas sem partir um emoji ao meio (`prefixoUTF16`). | O `slice` do site pode deixar meia letra (surrogate solto) num emoji exatamente no limite de 60 ou 80; a `String` do Swift não representa isso. Os vetores não têm emoji no limite; a diferença é de um caractere num caso raríssimo. |
 | Abas | Só **Obras** e **Ajustes** nesta etapa. | "Vale a pena?" chega na etapa 4; aba vazia é pior que aba ausente. O botão + da cápsula de abas entra com a escrita (etapa 2); o portão decide como a cápsula aparece sem ele. |
@@ -54,7 +54,8 @@
 | Visual da etapa 1 | Esqueleto funcional com componentes do sistema nas Tarefas 10 a 12; a identidade do PWA (aurora, globo, vidro, cápsula de abas, título escrito à mão) entra depois do portão, em tarefas próprias do PR 4. | O spec trocou "iOS de verdade com a marca" por "a cara do PWA em código nativo" depois que este plano estava escrito e validado. O esqueleto continua valendo: fluxos, sincronização e acessibilidade foram provados com ele, e os testes de fluxo e de acessibilidade sobrevivem à troca de visual. |
 | Lista de obras só leitura | Entra na etapa 1 por decisão do Orquestrador; no spec ela abre a etapa 2. | É o que torna a sincronização testável no aparelho: sem lista, o build da etapa 1 não mostraria os totais nem a mudança chegando do site. |
 | Gravar só depois de ver os dados | `Sincronizador.salvar` recusa (`nao-carregado`) até chegar um snapshot do servidor ou um do cache com o documento; cache sem documento não conta. | Sem a guarda, quem entrasse, perdesse a rede antes do primeiro snapshot do servidor e criasse uma obra (etapa 2) regravaria o documento inteiro por cima das obras que só o servidor tem. O site tem esse risco hoje: `app.js:1964-1973` marca `dadosCarregados` em qualquer snapshot, inclusive o do cache sem documento, e `cloud.js:672` grava sem conferir. O app nativo nasce mais seguro que o site neste ponto. |
-| Documento com tipo que o JSON não tem | A leitura falha com `formato-desconhecido` (indicador "Não sincronizou") e, como os dados não foram vistos, nada é gravado. | Converter para null apagaria o dado na próxima gravação, que reescreve o documento inteiro. Nenhum dos dois apps grava esses tipos; só um documento editado à mão chega aqui. |
+| Guarda de gravação: pendências obrigatórias da etapa 2 | Antes da primeira tela que grava: (1) uma marca por conta "o servidor já respondeu", apagada junto com o cache, entrando na condição da guarda; (2) uma mensagem própria para `nao-carregado` na tela que grava. | Hoje a guarda é conservadora: a conta nova que já viu "não existe" no servidor, fechou o app sem gravar e reabriu sem rede fica sem gravar até a rede voltar (o site deixaria). Na etapa 1 nenhuma tela grava; a lista já explica o erro de leitura antes de carregar. |
+| Documento com tipo que o JSON não tem | A leitura falha com `formato-desconhecido` e o app para de gravar, antes ou depois de já ter carregado (`dadosCarregados` volta a falso); a lista diz que os dados não puderam ser lidos e que nada foi alterado, com "Tentar de novo", em vez de carregar para sempre. | Converter para null apagaria o dado na próxima gravação, que reescreve o documento inteiro: quem não leu o documento inteiro não grava. Nenhum dos dois apps grava esses tipos; só um documento editado à mão chega aqui. |
 | `Package.resolved` | Semeado do `Package.resolved` do app de hoje (`ios/`), sem os dois pins do Capacitor; o Xcode só recalcula o `originHash`. | As 14 dependências transitivas ficam nas versões que já estão em produção e revisadas, em vez de "a mais nova do dia" em que alguém resolveu. Atualizar continua sendo pelo botão "resolver de novo". |
 | Manifesto de privacidade | `PrivacyInfo.xcprivacy` mínimo já na etapa 1: sem rastreamento, `UserDefaults` pelo motivo CA92.1 e os dados coletados da política de privacidade do site (e-mail, nome, id da conta, conteúdo do usuário, "como conheceu"). | Sem o manifesto a Apple manda o aviso ITMS-91053 a cada envio. Os SDKs do Firebase e do Google trazem os deles; o token do FCM entra na etapa 5, com as notificações. |
 | Esqueci a senha | Mesma resposta do site: e-mail sem conta mostra "E-mail ou senha incorretos." | Paridade. Não revelar se o e-mail existe é decisão de produto e do console do Firebase (proteção contra enumeração), não desta etapa. |
@@ -1956,7 +1957,7 @@ git commit -m "feat: regras do cadastro do site no núcleo do app nativo" -m "Se
 
 **Interfaces:**
 - Consumes: `normalizaPerfil`, `validaSenha`, `PerfilCadastro`, `mensagemErroSocial`, `mensagemErroSenha` (Tarefa 3); `ordenadoEstavel`, `menorJS`, `moedaCurtaSemZero`, `numeroJS`, `orcamentoObra`, `Fase`, `Obra`, `erroEhTerminal` (Parte A).
-- Produces: `public func emailParece(_:) -> Bool`; `public func validarEntrada(email:senha:) -> String?`; `public enum ResultadoCadastro { case ok(PerfilCadastro), falhou(campo: String, erro: String) }`; `public func validarCadastro(nome:sobrenome:email:senha:confirmacao:origem:origemDetalhe:) -> ResultadoCadastro`; `Fase.rotulo: String`; `public func obrasOrdenadas(_:) -> [Obra]`; `public func textoOrcamentoNaLista(_:) -> String`; `public enum Nonce { static func gerar() -> String; static func sha256(_:) -> String }`; `public let dominioAuth, dominioFirestore, dominioApple, dominioGoogle: String`; `public func codigoDeErroDeConta(dominio:codigo:) -> String`; `public func codigoDeErroFirestore(dominio:codigo:) -> String`; `public func sessaoInvalida(_:) -> Bool`.
+- Produces: `public func emailParece(_:) -> Bool`; `public func validarEntrada(email:senha:) -> String?`; `public enum ResultadoCadastro { case ok(PerfilCadastro), falhou(campo: String, erro: String) }`; `public func validarCadastro(nome:sobrenome:email:senha:confirmacao:origem:origemDetalhe:) -> ResultadoCadastro`; `Fase.rotulo: String`; `public func obrasOrdenadas(_:) -> [Obra]`; `public func textoOrcamentoNaLista(_:) -> String`; `public func textoErroDeLeitura(_ codigo: String) -> String`; `public enum Nonce { static func gerar() -> String; static func sha256(_:) -> String }`; `public let dominioAuth, dominioFirestore, dominioApple, dominioGoogle: String`; `public func codigoDeErroDeConta(dominio:codigo:) -> String`; `public func codigoDeErroFirestore(dominio:codigo:) -> String`; `public func sessaoInvalida(_:) -> Bool`.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -2014,6 +2015,13 @@ struct TelasTests {
         }
         #expect(textoOrcamentoNaLista(orcamentoObra(obra(total: 100_000, gasto: 45_000))!) == "45% do orçamento")
         #expect(textoOrcamentoNaLista(orcamentoObra(obra(total: 100_000, gasto: 108_000))!) == "108% · passou R$ 8 mil")
+    }
+
+    @Test func erroDeLeituraDizQueNadaFoiAlterado() {
+        #expect(textoErroDeLeitura("formato-desconhecido").contains("formato"))
+        for codigo in ["formato-desconhecido", "permission-denied", "unavailable"] {
+            #expect(textoErroDeLeitura(codigo).contains("Nada foi alterado"), "\(codigo)")
+        }
     }
 
     @Test func nonceDaApple() {
@@ -2144,6 +2152,15 @@ public func textoOrcamentoNaLista(_ r: ResumoOrcamento) -> String {
     return r.geral.nivel == .passou ? "\(pct)% · passou \(moedaCurtaSemZero(-r.geral.sobra))" : "\(pct)% do orçamento"
 }
 
+/// Texto da lista de obras quando a leitura falha antes de carregar. Nada foi gravado: o app só grava
+/// depois de ver os dados (Sincronizador).
+public func textoErroDeLeitura(_ codigo: String) -> String {
+    if codigo == "formato-desconhecido" {
+        return "Seus dados na nuvem têm um formato que este app ainda não sabe ler. Nada foi alterado: as obras continuam salvas como estavam."
+    }
+    return "Não deu para buscar suas obras agora. Confira a internet e tente de novo. Nada foi alterado: as obras continuam salvas como estavam."
+}
+
 /// Nonce do login com a Apple: 32 bytes aleatórios em hexadecimal (a Apple assina o SHA-256 dele).
 public enum Nonce {
     public static func gerar() -> String {
@@ -2215,7 +2232,7 @@ public func sessaoInvalida(_ codigo: String) -> Bool {
 - [ ] **Step 4: Rodar e ver passar**
 
 Run: `swift test --package-path app-ios/CusttaNucleo --filter "TelasTests|ErrosFirebaseTests"`
-Expected: `Test run with 9 tests in 2 suites passed`. Os números das tabelas são conferidos contra as constantes dos próprios SDKs na Tarefa 7 (`ErrosDoSDKTests`), onde o Firebase e o GoogleSignIn já estão ligados.
+Expected: `Test run with 10 tests in 2 suites passed`. Os números das tabelas são conferidos contra as constantes dos próprios SDKs na Tarefa 7 (`ErrosDoSDKTests`), onde o Firebase e o GoogleSignIn já estão ligados.
 
 - [ ] **Step 5: Commit**
 
@@ -2244,7 +2261,7 @@ git commit -m "feat: regras das telas de conta e códigos de erro do Firebase no
   - `public struct ErroSinc: Error, Equatable { let codigo: String }`
   - `public enum AvisoSinc: Equatable { case pertoDoLimite, naoSalvou(codigo:terminal:), naoLeu(codigo:); var mensagem: String }`
   - `public struct IndicadorSinc { rotulo: String; girando: Bool; erro: Bool; dica: String }`; `public func indicador(_ e: EstadoSinc) -> IndicadorSinc?`
-  - `@MainActor @Observable public final class Sincronizador { estadoSinc: EstadoSinc; estado: Estado; dadosCarregados: Bool; aoAvisar: ((AvisoSinc) -> Void)?; aoPedirVerificacaoDeSessao: (() -> Void)?; init(transporte:relogio:online:); temPendencia: Bool; iniciar(uid:); parar(); salvar(_:) async throws; tentarDeNovo(); aguardarFila(timeoutMs:) async -> Bool; redeMudou(online:) }`. `dadosCarregados` só fica verdadeiro com snapshot do servidor ou de cache com documento; antes disso `salvar` lança `ErroSinc(codigo: "nao-carregado")`.
+  - `@MainActor @Observable public final class Sincronizador { estadoSinc: EstadoSinc; estado: Estado; dadosCarregados: Bool; aoAvisar: ((AvisoSinc) -> Void)?; aoPedirVerificacaoDeSessao: (() -> Void)?; init(transporte:relogio:online:); temPendencia: Bool; iniciar(uid:); parar(); salvar(_:) async throws; tentarDeNovo(); aguardarFila(timeoutMs:) async -> Bool; redeMudou(online:) }`. `dadosCarregados` só fica verdadeiro com snapshot do servidor ou de cache com documento, e volta a falso com `formato-desconhecido`; enquanto for falso, `salvar` lança `ErroSinc(codigo: "nao-carregado")`.
 
 - [ ] **Step 1: Escrever os falsos e os testes que falham**
 
@@ -2333,6 +2350,20 @@ func blobCom(_ nomes: [String], taxa: Double = 1, extra: [String: ValorJSON] = [
     .objeto(["obras": .lista(nomes.enumerated().map { i, nome in
         .objeto(["id": .texto("o\(i)"), "nome": .texto(nome), "dataInicio": .texto("2026-01-01"), "gastos": .lista([])].merging(extra) { $1 })
     }), "config": .objeto(["taxaMensal": .numero(taxa), "topicosCustom": .lista([])])])
+}
+
+/// Roda a operação sem deixar o teste travar: o teste espera o fim com `ate` e, se ela não terminar,
+/// falha em vez de esperar para sempre. O `.timeLimit` sozinho não basta: a espera de `salvar` não
+/// responde a cancelamento, e o teste ficaria preso mesmo depois de registrar a falha.
+@MainActor final class Desfecho {
+    private(set) var terminou = false
+    private(set) var erro: (any Error)?
+    init(_ operacao: @escaping @MainActor () async throws -> Void) {
+        Task { @MainActor in
+            do { try await operacao() } catch { self.erro = error }
+            self.terminou = true
+        }
+    }
 }
 ```
 
@@ -2686,7 +2717,11 @@ private let cenariosDeAbertura = [
     CenarioDeAbertura(nome: "sem rede e com o blob no cache", doCache: true, comDocumento: true, podeGravar: true),
 ]
 
+/* Sem a guarda, `salvar` ficaria esperando uma confirmação que o transporte falso nunca dá. As esperas
+   destes testes são limitadas (`Desfecho` e `ate`), então eles falham na hora em vez de travar; o
+   limite de tempo é a última trava. */
 @MainActor
+@Suite(.timeLimit(.minutes(1)))
 struct SincronizadorCarregamentoTests {
     @Test(arguments: cenariosDeAbertura)
     func salvarSoDepoisDeVerOsDados(_ c: CenarioDeAbertura) async {
@@ -2695,14 +2730,17 @@ struct SincronizadorCarregamentoTests {
         s.iniciar(uid: "u1")
         transporte.chega(c.comDocumento ? blobCom(["Casa"]) : nil, doCache: c.doCache)
         #expect(s.dadosCarregados == c.podeGravar)
-        let tarefa = Task { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
+        let d = Desfecho { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
         if c.podeGravar {
             await ate { transporte.gravacoes.count == 1 }
             #expect(transporte.gravacoes.count == 1)
             transporte.gravacoes.first?.concluir(nil)
-            await #expect(throws: Never.self) { try await tarefa.value }
+            await ate { d.terminou }
+            #expect(d.terminou && d.erro == nil)
         } else {
-            await #expect(throws: ErroSinc(codigo: "nao-carregado")) { try await tarefa.value }
+            await ate { d.terminou }
+            #expect(d.terminou, "salvar tem de recusar na hora")
+            #expect(d.erro as? ErroSinc == ErroSinc(codigo: "nao-carregado"))
             #expect(transporte.gravacoes.isEmpty, "nada sobe por cima do documento que só o servidor tem")
             #expect(s.estado == .vazio, "a edição recusada não troca o estado")
         }
@@ -2713,9 +2751,37 @@ struct SincronizadorCarregamentoTests {
         let s = Sincronizador(transporte: transporte, relogio: RelogioFalso())
         s.iniciar(uid: "u1")
         transporte.escutas[0].aoFalhar("formato-desconhecido")
-        await #expect(throws: ErroSinc(codigo: "nao-carregado")) { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
+        let d = Desfecho { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
+        await ate { d.terminou }
+        #expect(d.erro as? ErroSinc == ErroSinc(codigo: "nao-carregado"))
         #expect(transporte.gravacoes.isEmpty)
         #expect(indicador(s.estadoSinc)?.rotulo == "Não sincronizou")
+    }
+
+    @Test func documentoIlegivelDepoisDeCarregadoVoltaANaoGravar() async {
+        let transporte = TransporteFalso()
+        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso())
+        s.iniciar(uid: "u1")
+        transporte.chega(blobCom(["Casa"]), doCache: true)
+        #expect(s.dadosCarregados)
+        transporte.escutas[0].aoFalhar("formato-desconhecido")
+        #expect(!s.dadosCarregados, "quem não leu o documento inteiro não grava")
+        let d = Desfecho { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
+        await ate { d.terminou }
+        #expect(d.erro as? ErroSinc == ErroSinc(codigo: "nao-carregado"))
+        #expect(transporte.gravacoes.isEmpty)
+        #expect(s.estado.obras.map(\.nome) == ["Casa"], "a tela continua com o que já tinha lido")
+        transporte.chega(blobCom(["Casa", "Sobrado"]))
+        #expect(s.dadosCarregados, "um snapshot bom depois volta a deixar gravar")
+    }
+
+    @Test func erroDoFirestoreDepoisDeCarregadoNaoBloqueia() {
+        let transporte = TransporteFalso()
+        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso())
+        s.iniciar(uid: "u1")
+        transporte.chega(blobCom(["Casa"]))
+        transporte.escutas[0].aoFalhar("unavailable")
+        #expect(s.dadosCarregados, "o que foi lido continua inteiro; como no site, dá para gravar")
     }
 }
 ```
@@ -2747,9 +2813,9 @@ import Observation
      normalização e só trocam o estado se o conteúdo mudou.
 
    Uma regra a mais que o site: nunca grava antes de ver os dados. Até chegar um snapshot do
-   servidor, ou do cache com o documento, `salvar` recusa com "nao-carregado". Sem isso, uma
-   edição feita com a rede caída antes do primeiro snapshot regravaria o documento inteiro por
-   cima das obras que só o servidor tem. */
+   servidor, ou do cache com o documento, `salvar` recusa com "nao-carregado"; e volta a recusar
+   se chegar um documento que não deu para ler inteiro ("formato-desconhecido"). Sem isso, uma
+   edição regravaria o documento inteiro por cima do que o app não viu. */
 
 public enum OrigemErro: String, Sendable {
     case escrita, leitura
@@ -2851,6 +2917,7 @@ public final class Sincronizador {
     public private(set) var estado: Estado = .vazio
     /// Já chegou um snapshot em que dá para confiar: do servidor, ou do cache com o documento.
     /// Cache sem documento (app recém-instalado, sem rede) não conta: o servidor pode ter obras.
+    /// Volta a falso se chegar um documento que o app não conseguiu ler inteiro.
     public private(set) var dadosCarregados = false
 
     @ObservationIgnored public var aoAvisar: ((AvisoSinc) -> Void)?
@@ -3044,6 +3111,7 @@ public final class Sincronizador {
         }, aoFalhar: { [weak self] codigo in
             guard let self, revisao == self.revisaoLeitura, self.uid == uid else { return }
             self.erroLeitura = codigo
+            if codigo == "formato-desconhecido" { self.dadosCarregados = false }   // quem não leu o documento inteiro não grava
             self.publicar(.erro(codigo: codigo, origem: .leitura))
             self.avisar(.naoLeu(codigo: codigo))
         })
@@ -3106,13 +3174,13 @@ public final class Sincronizador {
 - [ ] **Step 4: Rodar e ver passar**
 
 Run: `swift test --package-path app-ios/CusttaNucleo --filter Sincronizador`
-Expected: `Test run with 27 tests in 3 suites passed`. Rode também o pacote inteiro (`swift test --package-path app-ios/CusttaNucleo`): todos verdes.
+Expected: `Test run with 29 tests in 3 suites passed`. Rode também o pacote inteiro (`swift test --package-path app-ios/CusttaNucleo`): todos verdes.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add app-ios/CusttaNucleo
-git commit -m "feat: sincronização do documento no núcleo do app nativo" -m "Porte da fila de escrita do cloud.js e do eco do app.js: grava o documento inteiro na hora, só a confirmação da versão mais nova conta, erro terminal para e transitório tenta de novo de 1 s a 30 s, guarda de 700 e 900 mil bytes, snapshot com gravação local pendente não desfaz a edição e erro de leitura vira 'não sincronizou'. Uma regra a mais que o site: só grava depois de ver os dados (snapshot do servidor ou cache com documento), para uma edição feita sem rede não regravar o documento por cima das obras do servidor. Sem Firebase: transporte e relógio entram por protocolo e os 27 testes usam falsos."
+git commit -m "feat: sincronização do documento no núcleo do app nativo" -m "Porte da fila de escrita do cloud.js e do eco do app.js: grava o documento inteiro na hora, só a confirmação da versão mais nova conta, erro terminal para e transitório tenta de novo de 1 s a 30 s, guarda de 700 e 900 mil bytes, snapshot com gravação local pendente não desfaz a edição e erro de leitura vira 'não sincronizou'. Uma regra a mais que o site: só grava depois de ver os dados (snapshot do servidor ou cache com documento) e para de gravar se chegar um documento que não deu para ler inteiro, para uma edição não regravar o documento por cima do que o app não viu. Sem Firebase: transporte e relógio entram por protocolo e os 29 testes usam falsos; os da guarda esperam de forma limitada, para falharem na hora em vez de travar."
 ```
 
 ---
@@ -3126,7 +3194,7 @@ git commit -m "feat: sincronização do documento no núcleo do app nativo" -m "
 
 **Interfaces:**
 - Consumes: `TransporteDados`, `Cancelavel`, `Relogio`, `Instantaneo`, `ValorJSON.paraFoundation`, `ValorJSON(foundation:)`, `codigoDeErroFirestore`, `agoraEmMilissegundos` (núcleo); `scripts/simulador-ios.mjs` (Tarefa 2).
-- Produces: `@MainActor final class BancoFirebase { static let chaveLimpeza; init(app: FirebaseApp, emulador: (host: String, porta: Int)?, preferencias: UserDefaults = .standard); func quandoPronto(_ uso: @escaping @MainActor (Firestore) -> Void); func aguardarPronto() async; func firestore() -> Firestore; var limpezaPendente: Bool; func marcarLimpeza(); func desmarcarLimpeza(); func limparCache() async throws }`; `@MainActor final class TransporteFirebase: TransporteDados { init(banco:); nonisolated static func valor(_: [String: Any]) -> ValorJSON?; nonisolated static func codigo(_: Error) -> String }` (documento com tipo fora do JSON chega como `aoFalhar("formato-desconhecido")`); `@MainActor final class RelogioDoSistema: Relogio`; `@MainActor @Observable final class MonitorDeRede { online: Bool; aoMudar: ((Bool) -> Void)?; init(forcarSemRede: Bool = false) }`; `@MainActor func controladorNoTopo() -> UIViewController?`. Nos testes: `let comEmuladores: Bool`, `enum Emulador { static let projeto: String; static let app: FirebaseApp; static let banco: BancoFirebase; static func novaConta() async throws -> User }`, `@MainActor final class Bandeira { var ligada: Bool }`.
+- Produces: `@MainActor final class BancoFirebase { static let chaveLimpeza; init(app: FirebaseApp, emulador: (host: String, porta: Int)?, preferencias: UserDefaults = .standard); func quandoPronto(_ uso: @escaping @MainActor (Firestore) -> Void); func aguardarPronto() async; func firestore() -> Firestore; var limpezaPendente: Bool; func marcarLimpeza(); func desmarcarLimpeza(); func limparCache() async throws }`; `@MainActor final class TransporteFirebase: TransporteDados { init(banco:); nonisolated static func valor(_: [String: Any]) -> ValorJSON?; nonisolated static func codigo(_: Error) -> String }` (documento com tipo fora do JSON chega como `aoFalhar("formato-desconhecido")`); `@MainActor final class RelogioDoSistema: Relogio`; `@MainActor @Observable final class MonitorDeRede { online: Bool; aoMudar: ((Bool) -> Void)?; init(forcarSemRede: Bool = false) }`; `@MainActor func controladorNoTopo() -> UIViewController?`. Nos testes: `let comEmuladores: Bool`, `struct NoEmulador` (suíte-mãe em série das suítes que dividem o `Emulador.banco`), `enum Emulador { static let projeto: String; static let app: FirebaseApp; static let banco: BancoFirebase; static func novaConta() async throws -> User }`, `@MainActor final class Bandeira { var ligada: Bool }`.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -3143,6 +3211,12 @@ import FirebaseAuth
    usam isto pulam. Projeto e portas do firebase.test.json; um FirebaseApp com nome próprio, para
    nunca encostar no de produção. */
 let comEmuladores = ProcessInfo.processInfo.environment["CUSTTA_EMULADORES"] == "1"
+
+/// Suíte-mãe das suítes que dividem o `Emulador.banco`: tudo em série, porque `sair()` encerra a
+/// instância que a outra suíte estaria usando. Fora dos emuladores, todas pulam.
+@MainActor
+@Suite(.serialized, .enabled(if: comEmuladores))
+struct NoEmulador {}
 
 @MainActor
 enum Emulador {
@@ -3176,40 +3250,41 @@ import FirebaseFirestore
 @testable import Custta
 import CusttaNucleo
 
-@MainActor
-@Suite(.enabled(if: comEmuladores), .serialized)
-struct TransporteFirebaseTests {
-    @Test func gravaELeODocumentoInteiroSemPerderCampoDoSite() async throws {
-        let u = try await Emulador.novaConta()
-        let transporte = TransporteFirebase(banco: Emulador.banco)
-        let blob = ValorJSON.objeto([
-            "obras": .lista([.objeto(["id": .texto("o1"), "nome": .texto("Casa"), "dataInicio": .texto("2026-01-01"), "campoDoSite": .texto("fica"),
-                                      "gastos": .lista([.objeto(["id": .texto("g"), "valor": .numero(1500), "data": .texto("2026-01-02"), "nota": .numero(1500.5)])])])]),
-            "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])]),
-        ])
-        let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
-        #expect(codigo == nil)
+extension NoEmulador {
+    @MainActor
+    @Suite struct TransporteFirebaseTests {
+        @Test func gravaELeODocumentoInteiroSemPerderCampoDoSite() async throws {
+            let u = try await Emulador.novaConta()
+            let transporte = TransporteFirebase(banco: Emulador.banco)
+            let blob = ValorJSON.objeto([
+                "obras": .lista([.objeto(["id": .texto("o1"), "nome": .texto("Casa"), "dataInicio": .texto("2026-01-01"), "campoDoSite": .texto("fica"),
+                                          "gastos": .lista([.objeto(["id": .texto("g"), "valor": .numero(1500), "data": .texto("2026-01-02"), "nota": .numero(1500.5)])])])]),
+                "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])]),
+            ])
+            let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
+            #expect(codigo == nil)
 
-        var recebido: Instantaneo?
-        let escuta = transporte.escutar(uid: u.uid, aoReceber: { if !$0.doCache { recebido = $0 } }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
-        for _ in 0..<100 where recebido == nil { try await Task.sleep(for: .milliseconds(50)) }
-        escuta.cancelar()
-        let dados = try #require(recebido?.dados)
-        #expect(canonico(dados) == canonico(blob), "volta igual, sem _atualizado e com o campo que só o site conhece")
+            var recebido: Instantaneo?
+            let escuta = transporte.escutar(uid: u.uid, aoReceber: { if !$0.doCache { recebido = $0 } }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
+            for _ in 0..<100 where recebido == nil { try await Task.sleep(for: .milliseconds(50)) }
+            escuta.cancelar()
+            let dados = try #require(recebido?.dados)
+            #expect(canonico(dados) == canonico(blob), "volta igual, sem _atualizado e com o campo que só o site conhece")
 
-        let bruto = try await Emulador.banco.firestore().collection("dados").document(u.uid).getDocument(source: .server).data()
-        #expect(bruto?["_atualizado"] is Timestamp, "_atualizado é a hora do servidor")
-        let gasto = ((bruto?["obras"] as? [[String: Any]])?.first?["gastos"] as? [[String: Any]])?.first
-        #expect((gasto?["valor"] as? NSNumber).map { CFNumberIsFloatType($0) } == false, "1500 vai como inteiro, como o JavaScript grava")
-    }
+            let bruto = try await Emulador.banco.firestore().collection("dados").document(u.uid).getDocument(source: .server).data()
+            #expect(bruto?["_atualizado"] is Timestamp, "_atualizado é a hora do servidor")
+            let gasto = ((bruto?["obras"] as? [[String: Any]])?.first?["gastos"] as? [[String: Any]])?.first
+            #expect((gasto?["valor"] as? NSNumber).map { CFNumberIsFloatType($0) } == false, "1500 vai como inteiro, como o JavaScript grava")
+        }
 
-    @Test func rulesRecusamChaveNovaNoBlob() async throws {
-        let u = try await Emulador.novaConta()
-        let transporte = TransporteFirebase(banco: Emulador.banco)
-        let blob = ValorJSON.objeto(["obras": .lista([]), "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([]), "nova": .numero(1)])])
-        let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
-        #expect(codigo == "permission-denied")
-        #expect(erroEhTerminal(codigo: codigo))
+        @Test func rulesRecusamChaveNovaNoBlob() async throws {
+            let u = try await Emulador.novaConta()
+            let transporte = TransporteFirebase(banco: Emulador.banco)
+            let blob = ValorJSON.objeto(["obras": .lista([]), "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([]), "nova": .numero(1)])])
+            let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
+            #expect(codigo == "permission-denied")
+            #expect(erroEhTerminal(codigo: codigo))
+        }
     }
 }
 
@@ -3287,8 +3362,12 @@ Expected: FAIL na compilação: `cannot find 'BancoFirebase' in scope`.
 
 ```swift
 import Foundation
+import os
 import FirebaseCore
 import FirebaseFirestore
+
+/// Diagnóstico no registro do sistema (Console do Mac, sysdiagnose): a marca de limpeza que sobra fica anotada.
+private let registro = Logger(subsystem: "br.com.custta.app", category: "banco")
 
 /* Acesso ao Firestore do app. Sair da conta encerra a instância para limpar o cache, e o SDK
    devolve uma instância nova na próxima chamada; por isso ninguém guarda a instância: todo mundo
@@ -3363,19 +3442,25 @@ final class BancoFirebase {
     func limparCache() async throws {
         ocupado = true
         defer { liberar() }
-        let db = firestore()
-        try await db.terminate()
-        try await db.clearPersistence()
-        desmarcarLimpeza()
+        do {
+            let db = firestore()
+            try await db.terminate()
+            try await db.clearPersistence()
+            desmarcarLimpeza()
+        } catch {
+            registro.error("limpeza do cache falhou; a marca fica para a próxima abertura: \(String(describing: error), privacy: .public)")
+            throw error
+        }
     }
 
     private func terminarLimpezaInterrompida() async {
+        registro.notice("limpeza do cache interrompida encontrada na abertura; terminando antes de ler")
         defer { liberar() }
         do {
             try await firestore().clearPersistence()      // instância nova, ainda sem uso
             desmarcarLimpeza()
         } catch {
-            // A marca fica: a próxima abertura tenta de novo.
+            registro.error("limpeza retomada falhou; a marca fica para a próxima abertura: \(String(describing: error), privacy: .public)")
         }
     }
 
@@ -3547,7 +3632,7 @@ Expected: os 2 testes de `TransporteFirebaseTests` verdes (o log do Firestore mo
 
 ```bash
 git add app-ios/Custta/Dados app-ios/CusttaTests package.json tests/app-ios.test.cjs
-git commit -m "feat: camada do Firestore do app nativo" -m "Transporte fino do Sincronizador sobre o Firestore: escuta com metadados de cache e gravação pendente, gravação do documento inteiro com _atualizado do servidor e espera da fila do SDK, retornos na fila principal. O teste contra o emulador prova que o documento volta igual, com o campo que só o site conhece, que 1500 vai como inteiro como no JavaScript e que as rules recusam chave nova. Documento com tipo que o JSON não tem falha a leitura em vez de virar null. A limpeza do cache segue o cloud.js: marca persistida, nada lê ou grava durante a limpeza e a próxima abertura termina uma limpeza interrompida. Relógio, rede e janela do sistema também entram aqui."
+git commit -m "feat: camada do Firestore do app nativo" -m "Transporte fino do Sincronizador sobre o Firestore: escuta com metadados de cache e gravação pendente, gravação do documento inteiro com _atualizado do servidor e espera da fila do SDK, retornos na fila principal. O teste contra o emulador prova que o documento volta igual, com o campo que só o site conhece, que 1500 vai como inteiro como no JavaScript e que as rules recusam chave nova. Documento com tipo que o JSON não tem falha a leitura em vez de virar null. A limpeza do cache segue o cloud.js: marca persistida, nada lê ou grava durante a limpeza e a próxima abertura termina uma limpeza interrompida; a marca que sobra fica anotada no registro do sistema. Relógio, rede e janela do sistema também entram aqui."
 ```
 
 ---
@@ -3561,7 +3646,7 @@ git commit -m "feat: camada do Firestore do app nativo" -m "Transporte fino do S
 
 **Interfaces:**
 - Consumes: `BancoFirebase` (`aguardarPronto`, `firestore`, `marcarLimpeza`, `desmarcarLimpeza`, `limparCache`, `limpezaPendente`), `TransporteFirebase`, `controladorNoTopo`, `Emulador` (Tarefa 6); do núcleo `PerfilCadastro`, `ValorJSON`, `codigoDeErroDeConta`, `codigoDeErroFirestore`, `dominioAuth`, `dominioFirestore`, `dominioApple`, `dominioGoogle`, `sessaoInvalida`, `mensagemErroSenha`; dos SDKs `Auth`, `User`, `OAuthProvider`, `GoogleAuthProvider`, `AuthErrorCode`, `FirestoreErrorCode`, `GIDSignIn`, `GIDSignInError` e `ASAuthorizationError`.
-- Produces: `struct Usuario { uid, email: String; emailVerificado: Bool; provedores: [String]; nomeExibicao: String; temSenha, contaSocial, contaApple, precisaConfirmarEmail: Bool }`; `struct CredencialApple { idToken, nonce: String; nomeCompleto: PersonNameComponents? }`; `struct ErroConta: Error, Equatable { codigo: String }`; `@MainActor protocol ServicoConta` (assinaturas no código abaixo); `@MainActor final class ContaFirebase: ServicoConta { init(app:banco:online:); nonisolated static func erro(_:) -> ErroConta }`; em Debug: `ContaFalsa(inicial: String)` (cenários `nenhuma`, `senha`, `senha-nao-confirmada`, `senha-confirma-ao-conferir`, `apple-sem-perfil`, `google-sem-perfil`, `google-perfil-concorrente`) com `static let senhaCerta = "Casa2026x"`, `TransporteFalsoApp(dados:semRede:falharLeitura:)` com `gravacoes: Int`, `DadosDeExemplo.blob`.
+- Produces: `struct Usuario { uid, email: String; emailVerificado: Bool; provedores: [String]; nomeExibicao: String; temSenha, contaSocial, contaApple, precisaConfirmarEmail: Bool }`; `struct CredencialApple { idToken, nonce: String; nomeCompleto: PersonNameComponents? }`; `struct ErroConta: Error, Equatable { codigo: String }`; `@MainActor protocol ServicoConta` (assinaturas no código abaixo); `@MainActor final class ContaFirebase: ServicoConta { init(app:banco:online:); nonisolated static func erro(_:) -> ErroConta }`; em Debug: `ContaFalsa(inicial: String)` (cenários `nenhuma`, `senha`, `senha-nao-confirmada`, `senha-confirma-ao-conferir`, `apple-sem-perfil`, `google-sem-perfil`, `google-perfil-concorrente`) com `static let senhaCerta = "Casa2026x"`, `TransporteFalsoApp(dados:semRede:falhaDeLeitura:)` com `gravacoes: Int`, `DadosDeExemplo.blob`.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -3576,65 +3661,78 @@ import FirebaseFirestore
 import CusttaNucleo
 
 /* ContaFirebase contra os emuladores (npm run test:app-ios:emuladores). Fora deles, pulam. */
-@MainActor
-@Suite(.enabled(if: comEmuladores), .serialized)
-struct ContaFirebaseTests {
-    func conta() -> ContaFirebase { ContaFirebase(app: Emulador.app, banco: Emulador.banco, online: { true }) }
+extension NoEmulador {
+    @MainActor
+    @Suite struct ContaFirebaseTests {
+        func conta() -> ContaFirebase { ContaFirebase(app: Emulador.app, banco: Emulador.banco, online: { true }) }
 
-    @Test func criarContaGravaPerfilAceitoPelasRules() async throws {
-        let c = conta()
-        let email = "cadastro-\(UUID().uuidString.prefix(8).lowercased())@example.com"
-        try await c.criarConta(email: email, senha: "Casa2026x", perfil: PerfilCadastro(nome: "Ana", sobrenome: "Lima", origem: "indicacao", origemDetalhe: "Pedro"))
-        let uid = try #require(Auth.auth(app: Emulador.app).currentUser?.uid)
-        let dados = try #require(try await Emulador.banco.firestore().collection("perfis").document(uid).getDocument(source: .server).data())
-        #expect(Set(dados.keys) == ["email", "criado", "tz", "nome", "sobrenome", "origem", "origemDetalhe"])
-        #expect(dados["email"] as? String == email)
-        #expect((dados["criado"] as? String)?.count == 24, "ISO com milissegundos, como o toISOString do site")
-        #expect(await c.lerNome() == "Ana Lima")
-        try await c.sair()
-    }
-
-    @Test func senhaErradaViraAMensagemDoSite() async throws {
-        let c = conta()
-        let u = try await Emulador.novaConta()
-        try Auth.auth(app: Emulador.app).signOut()
-        await #expect(throws: ErroConta.self) { try await c.entrar(email: u.email!, senha: "Errada123") }
-        do { try await c.entrar(email: u.email!, senha: "Errada123") }
-        catch let e as ErroConta { #expect(mensagemErroSenha(codigo: e.codigo, tela: "login") == "E-mail ou senha incorretos.") }
-    }
-
-    @Test func contaGoogleSemPerfilFicaPendenteAteCompletar() async throws {
-        let c = conta()
-        let sub = UUID().uuidString.lowercased()
-        // O emulador do Auth aceita um token "falso" em JSON para os provedores federados.
-        let tokenFalso = #"{"sub":"\#(sub)","email":"\#(sub.prefix(8))@example.com","email_verified":true}"#
-        _ = try await Auth.auth(app: Emulador.app).signIn(with: GoogleAuthProvider.credential(withIDToken: tokenFalso, accessToken: "x"))
-        for _ in 0..<100 where c.usuario?.contaSocial != true { try await Task.sleep(for: .milliseconds(20)) }
-        #expect(await c.perfilPendente())
-        try await c.completarPerfil(PerfilCadastro(nome: "Gi", origem: "google"))
-        #expect(await c.perfilPendente() == false)
-        try await c.sair()
-    }
-
-    @Test func sairLimpaOCacheETiraAMarca() async throws {
-        let c = conta()
-        let u = try await Emulador.novaConta()
-        let transporte = TransporteFirebase(banco: Emulador.banco)
-        let blob = ValorJSON.objeto(["obras": .lista([]), "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])])])
-        let codigo: String? = await withCheckedContinuation { cont in transporte.gravar(uid: u.uid, blob: blob) { cont.resume(returning: $0) } }
-        #expect(codigo == nil)
-        _ = try await Emulador.banco.firestore().collection("dados").document(u.uid).getDocument(source: .cache)
-        try await c.sair()
-        #expect(!Emulador.banco.limpezaPendente, "a marca sai quando o cache foi apagado")
-        await #expect(throws: (any Error).self, "o documento da conta que saiu não fica no aparelho") {
-            _ = try await Emulador.banco.firestore().collection("dados").document(u.uid).getDocument(source: .cache)
+        @Test func criarContaGravaPerfilAceitoPelasRules() async throws {
+            let c = conta()
+            let email = "cadastro-\(UUID().uuidString.prefix(8).lowercased())@example.com"
+            try await c.criarConta(email: email, senha: "Casa2026x", perfil: PerfilCadastro(nome: "Ana", sobrenome: "Lima", origem: "indicacao", origemDetalhe: "Pedro"))
+            let uid = try #require(Auth.auth(app: Emulador.app).currentUser?.uid)
+            let dados = try #require(try await Emulador.banco.firestore().collection("perfis").document(uid).getDocument(source: .server).data())
+            #expect(Set(dados.keys) == ["email", "criado", "tz", "nome", "sobrenome", "origem", "origemDetalhe"])
+            #expect(dados["email"] as? String == email)
+            #expect((dados["criado"] as? String)?.count == 24, "ISO com milissegundos, como o toISOString do site")
+            #expect(await c.lerNome() == "Ana Lima")
+            try await c.sair()
         }
-    }
 
-    @Test func esqueciASenhaAceitaNoEmulador() async throws {
-        let u = try await Emulador.novaConta()
-        try await conta().redefinirSenha(email: u.email!)
-        try Auth.auth(app: Emulador.app).signOut()
+        @Test func senhaErradaViraAMensagemDoSite() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            try Auth.auth(app: Emulador.app).signOut()
+            await #expect(throws: ErroConta.self) { try await c.entrar(email: u.email!, senha: "Errada123") }
+            do { try await c.entrar(email: u.email!, senha: "Errada123") }
+            catch let e as ErroConta { #expect(mensagemErroSenha(codigo: e.codigo, tela: "login") == "E-mail ou senha incorretos.") }
+        }
+
+        @Test func contaGoogleSemPerfilFicaPendenteAteCompletar() async throws {
+            let c = conta()
+            let sub = UUID().uuidString.lowercased()
+            // O emulador do Auth aceita um token "falso" em JSON para os provedores federados.
+            let tokenFalso = #"{"sub":"\#(sub)","email":"\#(sub.prefix(8))@example.com","email_verified":true}"#
+            _ = try await Auth.auth(app: Emulador.app).signIn(with: GoogleAuthProvider.credential(withIDToken: tokenFalso, accessToken: "x"))
+            for _ in 0..<100 where c.usuario?.contaSocial != true { try await Task.sleep(for: .milliseconds(20)) }
+            #expect(await c.perfilPendente())
+            try await c.completarPerfil(PerfilCadastro(nome: "Gi", origem: "google"))
+            #expect(await c.perfilPendente() == false)
+            try await c.sair()
+        }
+
+        private func gravar(_ t: TransporteFirebase, _ uid: String, _ blob: ValorJSON) async -> String? {
+            await withCheckedContinuation { c in t.gravar(uid: uid, blob: blob) { c.resume(returning: $0) } }
+        }
+
+        @Test func sairLimpaOCacheEOutraContaUsaOMesmoBanco() async throws {
+            let c = conta()
+            let transporte = TransporteFirebase(banco: Emulador.banco)
+            let config = ValorJSON.objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])])
+            let u = try await Emulador.novaConta()
+            #expect(await gravar(transporte, u.uid, .objeto(["obras": .lista([]), "config": config])) == nil)
+            _ = try await Emulador.banco.firestore().collection("dados").document(u.uid).getDocument(source: .cache)
+            try await c.sair()
+            #expect(!Emulador.banco.limpezaPendente, "a marca sai quando o cache foi apagado")
+
+            // Outra conta no mesmo BancoFirebase: instância nova depois do terminate, com settings e host do emulador.
+            let outra = try await Emulador.novaConta()
+            let blob = ValorJSON.objeto(["obras": .lista([.objeto(["id": .texto("o9"), "nome": .texto("Da outra conta"),
+                                                                    "dataInicio": .texto("2026-01-01"), "gastos": .lista([])])]), "config": config])
+            #expect(await gravar(transporte, outra.uid, blob) == nil)
+            let lido = try await Emulador.banco.firestore().collection("dados").document(outra.uid).getDocument(source: .server).data()
+            #expect(TransporteFirebase.valor(try #require(lido)).map(canonico) == canonico(blob), "a outra conta grava e lê do servidor pelo mesmo banco")
+            // Com a instância viva (provado acima), a conta que saiu não está no cache: foi apagada, não só encerrada.
+            await #expect(throws: (any Error).self, "o documento da conta que saiu não fica no aparelho") {
+                _ = try await Emulador.banco.firestore().collection("dados").document(u.uid).getDocument(source: .cache)
+            }
+        }
+
+        @Test func esqueciASenhaAceitaNoEmulador() async throws {
+            let u = try await Emulador.novaConta()
+            try await conta().redefinirSenha(email: u.email!)
+            try Auth.auth(app: Emulador.app).signOut()
+        }
     }
 }
 ```
@@ -4082,28 +4180,29 @@ import Foundation
 import CusttaNucleo
 
 /// Transporte falso dos testes (só Debug): entrega um blob fixo e confirma gravações depois de
-/// 300 ms (nunca, sem rede). CUSTTA_LEITURA=erro faz a escuta falhar com permission-denied.
+/// 300 ms (nunca, sem rede). `falhaDeLeitura` faz a escuta falhar com esse código antes do primeiro
+/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido).
 @MainActor
 final class TransporteFalsoApp: TransporteDados {
     private final class Nada: Cancelavel { func cancelar() {} }
     private let dados: ValorJSON?
     private let semRede: Bool
-    private let falharLeitura: Bool
+    private let falhaDeLeitura: String?
     /// Quantas gravações chegaram (os testes conferem que abrir o app não grava nada).
     private(set) var gravacoes = 0
 
-    init(dados: ValorJSON?, semRede: Bool, falharLeitura: Bool) {
+    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil) {
         self.dados = dados
         self.semRede = semRede
-        self.falharLeitura = falharLeitura
+        self.falhaDeLeitura = falhaDeLeitura
     }
 
     func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
                  aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
-        let dados = self.dados, semRede = self.semRede, falhar = falharLeitura
+        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
-            if falhar { aoFalhar("permission-denied"); return }
+            if let falha { aoFalhar(falha); return }
             aoReceber(Instantaneo(dados: dados, doCache: semRede, gravacaoPendente: false))
         }
         return Nada()
@@ -4156,7 +4255,7 @@ enum DadosDeExemplo {
 - [ ] **Step 4: Rodar e ver passar**
 
 Run: `npm run test:app-ios:emuladores`
-Expected: `TransporteFirebaseTests` (2) e `ContaFirebaseTests` (5, inclusive sair limpando o cache e tirando a marca) verdes, e `ErrosDoSDKTests` (4), que também roda sem emulador. Rode também `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaTests`: compila e os de emulador aparecem pulados.
+Expected: `TransporteFirebaseTests` (2) e `ContaFirebaseTests` (5, inclusive sair, entrar com outra conta e gravar e ler do servidor pelo mesmo `BancoFirebase`) verdes, e `ErrosDoSDKTests` (4), que também roda sem emulador. Rode também `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaTests`: compila e os de emulador aparecem pulados.
 
 - [ ] **Step 5: Commit**
 
@@ -4177,7 +4276,7 @@ git commit -m "feat: conta do app nativo no Firebase Auth" -m "E-mail e senha, A
 
 **Interfaces:**
 - Consumes: `ServicoConta`, `ContaFirebase`, `ContaFalsa`, `TransporteFalsoApp`, `DadosDeExemplo` (Tarefa 7); `BancoFirebase`, `TransporteFirebase`, `RelogioDoSistema`, `MonitorDeRede` e, nos testes, `Bandeira` (Tarefa 6); `Sincronizador`, `validarEntrada`, `emailParece`, `aparadoJS`, `mensagemErroSenha`, `mensagemErroSocial`, `PerfilCadastro` (núcleo).
-- Produces: `@MainActor @Observable final class ModeloApp { enum Fase: Equatable { carregando, entrada, faltaPouco(Usuario), principal(Usuario) }; fase; mensagemEntrada: String?; aviso: String?; nome: String?; sincronizador; rede; conta; usuario: Usuario? /* derivado da fase, observável */; init(conta:sincronizador:rede:); entrar(email:senha:) async -> String?; entrarComApple(_:) async -> String?; entrarComGoogle() async -> String?; criarConta(email:senha:perfil:) async -> String?; redefinirSenha(email:) async -> String; completarPerfil(_:) async -> String?; sair() async -> String? /* espera a fila, confere a conta, para a escuta e só então sai */; reenviarVerificacao() async -> String; conferirVerificacao() async -> String?; voltouParaFrente() async; tentarDeNovo(); avisar(_:) }`; `@MainActor enum Composicao { static let projetoDosEmuladores; static func montar(ambiente:) -> ModeloApp; static func configurarFirebase(emuladores:) -> FirebaseApp; static func montarFalso(_:) -> ModeloApp /* Debug */ }`. Nos testes: `ate(_:) async`, `ModeloApp.Fase.ehPrincipal`, `ehFaltaPouco`.
+- Produces: `@MainActor @Observable final class ModeloApp { enum Fase: Equatable { carregando, entrada, faltaPouco(Usuario), principal(Usuario) }; fase; mensagemEntrada: String?; aviso: String?; nome: String?; sincronizador; rede; conta; usuario: Usuario? /* derivado da fase, observável */; init(conta:sincronizador:rede:); entrar(email:senha:) async -> String?; entrarComApple(_:) async -> String?; entrarComGoogle() async -> String?; criarConta(email:senha:perfil:) async -> String?; redefinirSenha(email:) async -> String; completarPerfil(_:) async -> String?; sair() async -> String? /* espera a fila, confere a conta, para a escuta e só então sai */; reenviarVerificacao() async -> String; conferirVerificacao() async -> String?; voltouParaFrente() async; tentarDeNovo(); avisar(_:) }`; `@MainActor enum Composicao { static let projetoDosEmuladores; static func montar(ambiente:) -> ModeloApp; static func configurarFirebase(emuladores:) -> FirebaseApp; static func montarFalso(_:) -> ModeloApp /* Debug */ }`. Nos testes: `ate(_:) async`, `Desfecho` (espera limitada de uma operação), `ModeloApp.Fase.ehPrincipal`, `ehFaltaPouco`.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -4190,6 +4289,20 @@ import Foundation
 /// Deixa as tarefas da fila principal andarem até a condição valer (desiste em uns 4 s).
 @MainActor func ate(_ condicao: @MainActor () -> Bool) async {
     for _ in 0..<200 where !condicao() { try? await Task.sleep(for: .milliseconds(20)) }
+}
+
+/// Roda a operação sem deixar o teste travar: o teste espera o fim com `ate` e, se ela não terminar,
+/// falha em vez de esperar para sempre. O `.timeLimit` sozinho não basta: a espera de `salvar` não
+/// responde a cancelamento, e o teste ficaria preso mesmo depois de registrar a falha.
+@MainActor final class Desfecho {
+    private(set) var terminou = false
+    private(set) var erro: (any Error)?
+    init(_ operacao: @escaping @MainActor () async throws -> Void) {
+        Task { @MainActor in
+            do { try await operacao() } catch { self.erro = error }
+            self.terminou = true
+        }
+    }
 }
 
 extension ModeloApp.Fase {
@@ -4234,7 +4347,7 @@ struct ModeloAppTests {
 
     func montar(conta inicial: String = "nenhuma", semRede: Bool = false, dados: ValorJSON? = DadosDeExemplo.blob) -> Montagem {
         let conta = ContaFalsa(inicial: inicial)
-        let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falharLeitura: false)
+        let transporte = TransporteFalsoApp(dados: dados, semRede: semRede)
         let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede)
         let modelo = ModeloApp(conta: conta, sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: semRede))
         return Montagem(modelo: modelo, conta: conta, transporte: transporte)
@@ -4306,7 +4419,7 @@ struct ModeloAppTests {
         #expect(m.fase.ehPrincipal)
     }
 
-    @Test(arguments: aberturas)
+    @Test(.timeLimit(.minutes(1)), arguments: aberturas)       // espera limitada (Desfecho); o limite de tempo é a última trava
     func abrirOAppNaoGravaNada(_ a: Abertura) async {
         let montagem = montar(conta: "senha", semRede: a.semRede, dados: a.comDados ? DadosDeExemplo.blob : nil)
         let m = montagem.modelo
@@ -4315,7 +4428,9 @@ struct ModeloAppTests {
         #expect(montagem.transporte.gravacoes == 0, "carregar nunca regrava o documento")
         #expect(m.sincronizador.dadosCarregados == a.carrega)
         if !a.carrega {
-            await #expect(throws: ErroSinc(codigo: "nao-carregado")) { try await m.sincronizador.salvar(.vazio) }
+            let d = Desfecho { try await m.sincronizador.salvar(.vazio) }
+            await ate { d.terminou }
+            #expect(d.erro as? ErroSinc == ErroSinc(codigo: "nao-carregado"), "sem ver os dados, salvar recusa na hora")
             #expect(montagem.transporte.gravacoes == 0, "sem ver os dados, nem uma edição sobe")
         }
     }
@@ -4629,13 +4744,18 @@ import CusttaNucleo
                   google-sem-perfil, google-perfil-concorrente)
    CUSTTA_DADOS   exemplo | vazio
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
-   CUSTTA_LEITURA erro (a escuta falha com permission-denied) */
+   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) */
 extension Composicao {
     static func montarFalso(_ ambiente: [String: String]) -> ModeloApp {
         let semRede = ambiente["CUSTTA_REDE"] == "offline"
         let conta = ContaFalsa(inicial: ambiente["CUSTTA_CONTA"] ?? "nenhuma")
+        let falha: String? = switch ambiente["CUSTTA_LEITURA"] {
+        case "erro": "permission-denied"
+        case "formato": "formato-desconhecido"
+        default: nil
+        }
         let transporte = TransporteFalsoApp(dados: ambiente["CUSTTA_DADOS"] == "vazio" ? nil : DadosDeExemplo.blob,
-                                            semRede: semRede, falharLeitura: ambiente["CUSTTA_LEITURA"] == "erro")
+                                            semRede: semRede, falhaDeLeitura: falha)
         let rede = MonitorDeRede(forcarSemRede: semRede)
         let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede)
         return ModeloApp(conta: conta, sincronizador: sincronizador, rede: rede)
@@ -4963,8 +5083,8 @@ git commit -m "feat: cores do app nativo por tokens" -m "Onze tokens nas peles e
 - Delete: `app-ios/CusttaUITests/AberturaUITests.swift` (a abertura de verdade é a tela de entrar, coberta por `EntradaUITests`)
 
 **Interfaces:**
-- Consumes: `ModeloApp` (`fase`, `mensagemEntrada`, `aviso`, `nome`, `usuario`, `sincronizador`, `entrar`, `entrarComApple`, `entrarComGoogle`, `criarConta`, `redefinirSenha`, `completarPerfil`, `sair`, `reenviarVerificacao`, `conferirVerificacao`, `voltouParaFrente`, `tentarDeNovo`, `avisar`) e `Composicao.montar()` (Tarefa 8); `Paleta`, `botaoPrincipal`, `Aparencia` (Tarefa 10); `ContaFirebase.erro` e `CredencialApple` (Tarefa 7); do núcleo, `Nonce`, `validarCadastro`, `validaSenha`, `origens`, `normalizaPerfil`, `nomeDoGoogle`, `mensagemErroSocial`, `obrasOrdenadas`, `textoOrcamentoNaLista`, `Fase.rotulo`, `indicador`, `totalBruto`, `orcamentoObra`, `mesesDeObra`, `fmtMeses`, `moeda`, `moedaCurta`, `dataLocalISO`.
-- Produces: identificadores de acessibilidade que os testes usam — `email`, `senha`, `entrar`, `mensagemEntrada`, `esqueciSenha`, `emailRedefinir`, `enviarLink`, `mensagemRedefinir`, `entrarComApple`, `entrarComGoogle`, `irParaCriarConta`, `nome`, `sobrenome`, `emailCadastro`, `senhaCadastro`, `confirmacao`, `checklistSenha`, `origem`, `origemDetalhe`, `mensagemCadastro`, `criarConta`, `textoFaltaPouco`, `comecarAUsar`, `usarOutraConta`, `mensagemFaltaPouco`, `obra-<id>`, `obrasVazio`, `indicadorSincronizacao`, `avisoEmail`, `reenviarLink`, `jaConfirmei`, `mensagemAvisoEmail`, `nomeConta`, `emailConta`, `sair`, `aviso`; nos testes de tela, `abrirApp(conta:dados:rede:leitura:argumentos:) -> XCUIApplication`, `XCUIApplication.elemento(_:)` e `XCUIApplication.digitar(_:em:seguro:)` (Tarefas 12 e 13).
+- Consumes: `ModeloApp` (`fase`, `mensagemEntrada`, `aviso`, `nome`, `usuario`, `sincronizador`, `entrar`, `entrarComApple`, `entrarComGoogle`, `criarConta`, `redefinirSenha`, `completarPerfil`, `sair`, `reenviarVerificacao`, `conferirVerificacao`, `voltouParaFrente`, `tentarDeNovo`, `avisar`) e `Composicao.montar()` (Tarefa 8); `Paleta`, `botaoPrincipal`, `Aparencia` (Tarefa 10); `ContaFirebase.erro` e `CredencialApple` (Tarefa 7); do núcleo, `Nonce`, `validarCadastro`, `validaSenha`, `origens`, `normalizaPerfil`, `nomeDoGoogle`, `mensagemErroSocial`, `obrasOrdenadas`, `textoOrcamentoNaLista`, `Fase.rotulo`, `indicador`, `totalBruto`, `orcamentoObra`, `mesesDeObra`, `fmtMeses`, `moeda`, `moedaCurta`, `dataLocalISO`, `textoErroDeLeitura`.
+- Produces: identificadores de acessibilidade que os testes usam — `email`, `senha`, `entrar`, `mensagemEntrada`, `esqueciSenha`, `emailRedefinir`, `enviarLink`, `mensagemRedefinir`, `entrarComApple`, `entrarComGoogle`, `irParaCriarConta`, `nome`, `sobrenome`, `emailCadastro`, `senhaCadastro`, `confirmacao`, `checklistSenha`, `origem`, `origemDetalhe`, `mensagemCadastro`, `criarConta`, `textoFaltaPouco`, `comecarAUsar`, `usarOutraConta`, `mensagemFaltaPouco`, `obra-<id>`, `obrasVazio`, `obrasErroLeitura`, `tentarLerDeNovo`, `indicadorSincronizacao`, `avisoEmail`, `reenviarLink`, `jaConfirmei`, `mensagemAvisoEmail`, `nomeConta`, `emailConta`, `sair`, `aviso`; nos testes de tela, `abrirApp(conta:dados:rede:leitura:argumentos:) -> XCUIApplication`, `XCUIApplication.elemento(_:)` e `XCUIApplication.digitar(_:em:seguro:)` (Tarefas 12 e 13).
 
 Textos e valores seguem o registro do portão (Tarefa 9); os trechos abaixo são o esqueleto validado no protótipo, com os textos do site.
 
@@ -5181,8 +5301,16 @@ final class ObrasUITests: XCTestCase {
         let indicador = app.buttons["indicadorSincronizacao"]
         XCTAssertTrue(indicador.waitForExistence(timeout: 10))
         XCTAssertEqual(indicador.label, "Não sincronizou")
+        XCTAssertTrue(app.elemento("obrasErroLeitura").exists, "a lista explica o erro em vez de carregar para sempre")
         indicador.tap()
         XCTAssertTrue(app.staticTexts["Tentando de novo…"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor func testDocumentoIlegivelExplicaQueNadaMudou() {
+        let app = abrirApp(conta: "senha", leitura: "formato")
+        XCTAssertTrue(app.elemento("obrasErroLeitura").waitForExistence(timeout: 10), "nada de carregando para sempre")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Nada foi alterado")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["tentarLerDeNovo"].exists)
     }
 
     @MainActor func testAvisoDeEmailNaoConfirmado() {
@@ -5238,7 +5366,7 @@ Apague `app-ios/CusttaUITests/AberturaUITests.swift`.
 - [ ] **Step 2: Rodar e ver falhar**
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests`
-Expected: FAIL; os 15 testes falham esperando o primeiro elemento (`entrar`, `email`, `obra-o3`…), porque o app ainda mostra só o texto da Tarefa 1.
+Expected: FAIL; os 16 testes falham esperando o primeiro elemento (`entrar`, `email`, `obra-o3`…), porque o app ainda mostra só o texto da Tarefa 1.
 
 - [ ] **Step 3: Implementar as telas**
 
@@ -5775,7 +5903,20 @@ struct ObrasView: View {
                 }
             }
             .overlay {
-                if !sinc.dadosCarregados {
+                if !sinc.dadosCarregados, case .erro(let codigo, .leitura) = sinc.estadoSinc {
+                    // Nada de carregando para sempre: diz o que houve e que nada foi alterado.
+                    ContentUnavailableView {
+                        // O identificador fica no título: no contêiner inteiro, ele encobriria o do botão.
+                        Label("Não deu para ler suas obras", systemImage: "exclamationmark.icloud")
+                            .accessibilityIdentifier("obrasErroLeitura")
+                    } description: {
+                        Text(textoErroDeLeitura(codigo))
+                    } actions: {
+                        Button("Tentar de novo") { modelo.tentarDeNovo() }
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("tentarLerDeNovo")
+                    }
+                } else if !sinc.dadosCarregados {
                     ProgressView("Carregando suas obras…")
                 } else if obras.isEmpty {
                     ContentUnavailableView("Nenhuma obra ainda", systemImage: "building.2",
@@ -5994,7 +6135,7 @@ cp google-g.svg app-ios/Custta/Assets.xcassets/LogoGoogle.imageset/google-g.svg
 - [ ] **Step 4: Rodar e ver passar**
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO`
-Expected: `** TEST SUCCEEDED **`, com os 15 testes de tela desta tarefa e os de unidade verdes (os de emulador pulados).
+Expected: `** TEST SUCCEEDED **`, com os 16 testes de tela desta tarefa e os de unidade verdes (os de emulador pulados).
 
 Run: `node --test tests/app-ios.test.cjs`
 Expected: verde, inclusive "cores só por tokens" com as telas novas.
@@ -6005,7 +6146,7 @@ Conferência visual (Verniz, no simulador): as telas em escuro e claro, esmerald
 
 ```bash
 git add app-ios/Custta app-ios/CusttaUITests
-git commit -m "feat: telas da etapa 1 do app nativo" -m "Entrar (Apple acima do Google, e-mail e senha, esqueci a senha), criar conta com o checklist de senha e a origem, falta pouco que não pede de novo o nome que a Apple mandou, lista de obras só leitura na ordem e com os totais do site, indicador de sincronização, aviso de e-mail não confirmado e Ajustes com sair da conta. Os testes de tela abrem o app com os serviços falsos: entrar, criar conta, sem internet, erro de leitura e sair sem rede."
+git commit -m "feat: telas da etapa 1 do app nativo" -m "Entrar (Apple acima do Google, e-mail e senha, esqueci a senha), criar conta com o checklist de senha e a origem, falta pouco que não pede de novo o nome que a Apple mandou, lista de obras só leitura na ordem e com os totais do site (e, se a leitura falhar antes de carregar, explicando que nada foi alterado), indicador de sincronização, aviso de e-mail não confirmado e Ajustes com sair da conta. Os testes de tela abrem o app com os serviços falsos: entrar, criar conta, sem internet, erro de leitura e sair sem rede."
 ```
 
 ---
@@ -6142,10 +6283,10 @@ git commit -m "test: auditorias de acessibilidade do app nativo" -m "Os requisit
 - Modify: `package.json` (script `test:app-ios:cruzado`), `tests/app-ios.test.cjs` (o teste de scripts da Tarefa 6 passa a cobrir os dois)
 
 **Interfaces:**
-- Consumes: `testarNoSimulador(alvos, env)` (Tarefa 2); `Sincronizador` (Tarefa 5); `TransporteFirebase`, `RelogioDoSistema`, `Emulador` (Tarefa 6); `Composicao` com `CUSTTA_EMULADORES` e `CUSTTA_SAIR_AO_ABRIR` (Tarefa 8); `Gasto` e `ValorJSON` (Parte A); identificadores `email`, `senha`, `entrar`, `obra-<id>` e o valor de acessibilidade da linha de obra ("total gasto R$ …" e a linha do orçamento) (Tarefa 11); no site, `C.money`, `C.moneyCurto`, `C.totalBruto`, `C.orcamentoObra`, `C.canon` (`calc.js`), `D.normaliza` (`dados.js`) e o SDK JavaScript `firebase` 12.18.0.
+- Consumes: `testarNoSimulador(alvos, env)` (Tarefa 2); `Sincronizador` (Tarefa 5); `TransporteFirebase`, `RelogioDoSistema`, `Emulador` (Tarefa 6); `Composicao` com `CUSTTA_EMULADORES` e `CUSTTA_SAIR_AO_ABRIR` (Tarefa 8); `Gasto` e `ValorJSON` (Parte A); identificadores `email`, `senha`, `entrar`, `obra-<id>` e o valor de acessibilidade da linha de obra ("total gasto R$ …" e a linha do orçamento) (Tarefa 11); no site, `C.money`, `C.moneyCurto`, `C.totalBruto`, `C.orcamentoObra`, `C.parcelamentoCartao`, `C.canon` (`calc.js`), `D.normaliza` (`dados.js`) e o SDK JavaScript `firebase` 12.18.0.
 - Produces: `npm run test:app-ios:cruzado` (portão local antes de cada build do TestFlight, Tarefa 15).
 
-O teste 5 da seção "Testes e validação" do spec: na mesma conta, contra os emuladores, o site grava e o app mostra os totais e os orçamentos que o `calc.js` calculou (obra com orçamento total, obra vendida com orçamento por tópico estourado e obra com compra parcelada no cartão); o site muda e o app vê sozinho; o app lança um gasto e o site soma esse gasto, sem perder nada que só o site conhece. O roteiro falha se qualquer um dos dois testes for pulado: exige o pedido de mudança que só o teste de tela faz e que o `_atualizado` avance depois do teste do app. O documento final é comparado sem normalizar, para a forma que o app gravou aparecer.
+O teste 5 da seção "Testes e validação" do spec: na mesma conta, contra os emuladores, o site grava e o app mostra os totais e os orçamentos que o `calc.js` calculou (obra com orçamento total, obra vendida com orçamento por tópico estourado e obra com compra parcelada no cartão com juros, cujo total é diferente do valor da compra); o site muda e o app vê sozinho; o app lança um gasto e o site soma esse gasto, sem perder nada que só o site conhece. O roteiro falha se qualquer um dos dois testes for pulado: exige o pedido de mudança que só o teste de tela faz e que o `_atualizado` avance depois do teste do app. O documento final é comparado sem normalizar, para a forma que o app gravou aparecer.
 
 - [ ] **Step 1: Escrever as metades do app e a guarda**
 
@@ -6274,7 +6415,7 @@ Expected: FAIL em "scripts dos testes locais do app" (`test:app-ios:cruzado` nã
    inteiro com _atualizado do servidor), com as regras de verdade do site (dados.js, calc.js).
    O app é o build Debug no simulador:
      1. o site cria a conta e grava a v1 (obra com orçamento, obra vendida com orçamento por
-        tópico estourado, obra com compra parcelada no cartão e campos que só o site conhece);
+        tópico estourado, obra com compra parcelada no cartão com juros e campos que só o site conhece);
      2. CruzadoUITests entra pelo formulário e confere o total e o orçamento que o calc.js calculou;
      3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos;
      4. CruzadoTests lança um gasto no app e grava pelo Sincronizador;
@@ -6305,9 +6446,13 @@ const { user } = await createUserWithEmailAndPassword(auth, email, senha);
 const documento = doc(db, 'dados', user.uid);
 const gravarComoOSite = blob => setDoc(documento, { ...blob, _atualizado: serverTimestamp() });
 
-const parcela = n => ({ id: `z${n}`, grupoId: 'gz', parcela: { n, de: 3 }, valor: n < 3 ? 1033.33 : 1033.34, topico: 'eletrica',
-  descricao: 'Fios e disjuntores', data: `2026-0${2 + n}-10`, pagamento: 'cartao',
-  jurosCartao: { taxaMensal: 0, valorCompra: 3100, nParcelas: 3, totalCompra: 3100, jurosCompra: 0 } });
+/* Compra no cartão com juros, montada pelo próprio calc.js: o total da obra (a soma das parcelas,
+   com juros) é diferente do valor da compra. */
+const compra = C.parcelamentoCartao(3000, 3, 2.5, '2026-03-10');
+const { parcelas: vencimentos, ...jurosCartao } = compra;
+const parcelasComJuros = vencimentos.map((p, i) => ({ id: `z${i + 1}`, grupoId: 'gz', parcela: { n: i + 1, de: compra.nParcelas },
+  valor: p.valor, topico: 'eletrica', descricao: 'Fios e disjuntores', data: p.data, pagamento: 'cartao', jurosCartao }));
+assert.notEqual(C.totalBruto({ gastos: parcelasComJuros }), compra.valorCompra, 'as parcelas têm juros');
 const v1 = {
   obras: [
     { id: 'c1', nome: 'Casa do teste cruzado', dataInicio: '2026-01-10', fase: 'construcao', campoSoDoSite: { versao: 7 },
@@ -6320,7 +6465,7 @@ const v1 = {
         { id: 'y2', valor: 61000.5, topico: 'acabamento', descricao: 'Porcelanato', data: '2025-09-02', pagamento: 'pix' },
         { id: 'y3', valor: 2500, topico: 'outros', descricao: 'Limpeza', data: '2025-12-01', pagamento: 'pix' },
       ] },
-    { id: 'c3', nome: 'Reforma com compra parcelada', dataInicio: '2026-02-15', fase: 'construcao', gastos: [1, 2, 3].map(parcela) },
+    { id: 'c3', nome: 'Reforma com compra parcelada', dataInicio: '2026-02-15', fase: 'construcao', gastos: parcelasComJuros },
   ],
   config: { taxaMensal: 1, topicosCustom: [] },
 };
@@ -6395,7 +6540,7 @@ Três mutações, uma de cada vez, desfazendo cada uma depois:
 
 ```bash
 git add tests/app-ios/cruzado.mjs app-ios/CusttaUITests/CruzadoUITests.swift app-ios/CusttaTests/CruzadoTests.swift package.json tests/app-ios.test.cjs
-git commit -m "test: conferência cruzada entre o site e o app nativo" -m "Na mesma conta, contra os emuladores: o SDK JavaScript grava como o cloud.js, o app entra pelo formulário e mostra os totais e orçamentos que o calc.js calculou (obra vendida, parcelada e com orçamento estourado), uma mudança do site chega sozinha à lista e um gasto lançado no app chega ao site sem perder campo que só o site conhece. Teste pulado não passa: o roteiro exige o pedido de mudança do teste de tela e que o _atualizado avance depois do teste do app. Roda só no Mac (npm run test:app-ios:cruzado), antes de cada build do TestFlight."
+git commit -m "test: conferência cruzada entre o site e o app nativo" -m "Na mesma conta, contra os emuladores: o SDK JavaScript grava como o cloud.js, o app entra pelo formulário e mostra os totais e orçamentos que o calc.js calculou (obra vendida, parcelada com juros e com orçamento estourado), uma mudança do site chega sozinha à lista e um gasto lançado no app chega ao site sem perder campo que só o site conhece. Teste pulado não passa: o roteiro exige o pedido de mudança do teste de tela e que o _atualizado avance depois do teste do app. Roda só no Mac (npm run test:app-ios:cruzado), antes de cada build do TestFlight."
 ```
 
 ---

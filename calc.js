@@ -196,7 +196,7 @@
   function aPagar(obras, hojeISO, dias = 30){
     const fim = new Date(hojeISO + 'T00:00:00');
     fim.setDate(fim.getDate() + dias);
-    const limISO = fim.toISOString().slice(0, 10);
+    const limISO = dataLocalISO(fim); // hora local, como o resto: toISOString puxava o limite para o dia anterior a leste de Greenwich
     let total = 0, qtd = 0;
     const itens = [];
     obras.forEach(o => o.gastos.forEach(g => {

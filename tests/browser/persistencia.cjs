@@ -149,6 +149,8 @@ async function aparelho(browser, uid, email, opcoes = {}){
       setTimeout(()=>resolve('na fila do SDK'), 300);
     }));
     const estadoDepoisDaRecusa = await page.evaluate(()=>CLOUD.estado());
+    const avisoDaRecusa = await page.locator('#toastWrap').textContent();
+    await page.evaluate(()=>{ document.getElementById('toastWrap').innerHTML = ''; }); // o aviso do + tem de ser só dele
     await page.locator('nav.tabs button[data-tab=inicio]').click();
     await page.locator('#fab').click();
     const abriuNovaObra = await page.locator('#fNome').count() > 0;
@@ -157,7 +159,7 @@ async function aparelho(browser, uid, email, opcoes = {}){
       await page.locator('#fArea').fill('80');
       await page.locator('#cSave').click();
     }
-    const avisos = await page.locator('#toastWrap').textContent();
+    const avisoDoMais = await page.locator('#toastWrap').textContent();
     const pendenteSemRede = await page.evaluate(()=>CLOUD.temPendencia());
     await page.evaluate(()=>window.__reconecta());
     await page.waitForFunction(()=>window.__visto.doCache === false && !CLOUD.temPendencia());
@@ -166,8 +168,9 @@ async function aparelho(browser, uid, email, opcoes = {}){
     assert.match(listaSemRede, /Carregando suas obras/, 'sem ver o servidor, a lista não pode dizer que não há obra');
     assert.equal(gravacaoDireta, 'nao-carregado', 'o cloud.js também recusa');
     assert.notEqual(estadoDepoisDaRecusa, 'erro', 'a recusa não vira erro de sincronização');
+    assert.match(avisoDaRecusa, /Conecte à internet para carregar suas obras antes de lançar/, 'a recusa do cloud.js avisa');
     assert.equal(abriuNovaObra, false, 'o + não abre Nova obra antes de carregar');
-    assert.match(avisos, /Conecte à internet para carregar suas obras antes de lançar/);
+    assert.match(avisoDoMais, /Conecte à internet para carregar suas obras antes de lançar/, 'o + avisa');
     assert.equal(pendenteSemRede, false, 'nada foi para a fila do SDK');
     console.log('ok - aparelho novo sem rede não grava por cima do servidor antes de ver os dados');
 

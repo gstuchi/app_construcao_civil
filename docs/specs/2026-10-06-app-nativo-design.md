@@ -7,7 +7,7 @@ Data: 2026-10-06. Decisão do Giovani antes de enviar o app à revisão da Apple
 O app que está no TestFlight (build 17.1) é o site empacotado com Capacitor. Isso traz dois problemas:
 
 - **Risco de recusa pela Guideline 4.2** (app que é só um site numa casca). É o maior risco da revisão hoje.
-- **Teto de qualidade.** Barras, sheets, vidro, gestos e teclado de valor foram recriados à mão em CSS e JavaScript para imitar o iOS. No app nativo eles vêm do sistema.
+- **Teto de qualidade.** Rolagem, gestos, sheets e teclado foram recriados à mão em CSS e JavaScript para imitar o iOS. No app nativo o comportamento vem do sistema, e o visual do Custta é desenhado por cima dele.
 
 O objetivo é um app de iPhone feito com a linguagem e os componentes da Apple, que vá para a loja **completo**, com tudo o que o site faz hoje.
 
@@ -15,12 +15,12 @@ O objetivo é um app de iPhone feito com a linguagem e os componentes da Apple, 
 
 - **Plataformas:** app nativo no iPhone **e** o site. O site (`custta.com.br`, PWA) continua como está, para computador e para quem não tem iPhone.
 - **Tecnologia:** SwiftUI puro. React Native e Flutter foram descartados: trazem centenas de pacotes de terceiros ou desenham a própria interface, e o Android não está no plano.
-- **Visual:** iOS de verdade com a marca Custta. Componentes padrão do sistema (abas, listas, sheets, Liquid Glass da Apple) com as cores, o logo tt., os números grandes e o tema escuro do Custta. Aurora, globo e vidro próprio do site não são recriados.
+- **Visual: a cara do PWA de hoje, escrita em código nativo.** Decisão revista pelo Giovani no mesmo dia, ao ver o primeiro mockup no padrão iOS: ele acha o visual atual do PWA muito bonito e quer o app igual, só que nativo. A identidade é recriada em Swift: aurora nas cores do skin, globo, superfícies de vidro, cápsula de abas com o botão +, título do login escrito à mão, números grandes e o tema escuro como padrão. O **comportamento** continua sendo o do sistema: rolagem, gestos, sheets, teclado, vibração e acessibilidade. A primeira escolha, "iOS de verdade com a marca" (componentes padrão do sistema, sem aurora nem globo), fica registrada como descartada. O detalhe de cada tela é fechado no mockup do Croqui, comparado lado a lado com o print do PWA.
 - **Paridade de funções, não de visual.** O app nativo precisa fazer tudo o que o site faz. O desenho de cada tela pode ser repensado (o Giovani quer rever, por exemplo, os gráficos). A decisão de desenho acontece no começo de cada etapa, quando o Croqui mostrar as opções.
 - **Lançamento completo.** Só vai para a revisão da Apple quando tiver todas as telas do site. Qualidade vem antes de prazo.
-- **Padrão profissional em tudo.** Desenho, código, testes e textos de loja no nível mais profissional possível. A referência-base são os apps da própria Apple (Ajustes, Carteira, Saúde) e as Human Interface Guidelines. Quando uma tela ou decisão precisar de uma referência que o time não tem, ninguém improvisa: a falta é listada e o Giovani procura a referência junto.
+- **Padrão profissional em tudo.** Desenho, código, testes e textos de loja no nível mais profissional possível. A referência de visual é o PWA de hoje; a de comportamento são os apps da própria Apple (Ajustes, Carteira, Saúde) e as Human Interface Guidelines. Quando uma tela ou decisão precisar de uma referência que o time não tem, ninguém improvisa: a falta é listada e o Giovani procura a referência junto.
 - **Construção em etapas pelo TestFlight.** Cada etapa termina num build que o Giovani testa no iPhone. A etapa só fecha com o ok dele.
-- **iOS mínimo: 26.** É onde existe o Liquid Glass do sistema. Roda do iPhone 11 em diante; o pai usa um iPhone 16 Pro com iOS 27. Quem tiver aparelho mais antigo usa o site.
+- **iOS mínimo: 26.** É onde existe o Liquid Glass do sistema, que serve de material para as superfícies de vidro do Custta. Roda do iPhone 11 em diante; o pai usa um iPhone 16 Pro com iOS 27. Quem tiver aparelho mais antigo usa o site.
 - **Só iPhone, só em pé**, como hoje (`TARGETED_DEVICE_FAMILY = 1`).
 
 ## O que não muda
@@ -62,8 +62,9 @@ Cada camada tem um papel só e é testável sem as outras.
 **Telas (SwiftUI).** Um estado observável único (`{obras, config}`), como o `db` do site. Toda mudança passa por ele: altera, grava, a tela reage.
 
 - Navegação do sistema: `TabView` com as três abas (Obras, Vale a pena?, Ajustes) e `NavigationStack` para obra, relatório e gráficos.
-- Sheets, diálogos de confirmação, arrastar para apagar, puxar o sheet e voltar pela borda são os do sistema. `gestos.js`, `teclado.js` e `ui-confirm.js` não têm equivalente a escrever.
-- Gráficos com Swift Charts (rosca, linha e barras).
+- Sheets, diálogos de confirmação, arrastar para apagar, puxar o sheet e voltar pela borda usam o comportamento do sistema, vestidos com o visual do Custta. `gestos.js` e `ui-confirm.js` não têm equivalente a escrever.
+- **Componentes de identidade, escritos uma vez e reusados em todas as telas:** fundo com aurora (nas cores do skin) e globo; superfície de vidro para cartões, painéis e barras; cápsula de abas com o botão +; título do login escrito à mão; entrada de valor com teclado próprio. Cada um respeita "reduzir movimento", o tema claro e a letra grande, e não pode custar rolagem lisa nem bateria: animação pausa fora da tela e durante a rolagem.
+- Gráficos com Swift Charts (rosca, linha e barras), no visual do Custta.
 - Compartilhar e salvar PDF com a folha de compartilhamento do sistema.
 
 ### 3. Dados e sincronização
@@ -183,7 +184,7 @@ Cada etapa tem spec curto de telas (quando houver decisão de desenho), plano, c
 | 5. Conta e avisos | Ajustes, notificações, exportar, trocar senha, apagar conta, aparência |
 | 6. Acabamento | Acessibilidade completa, tela de abertura e ícone, capturas novas, pré-revisão das regras da Apple |
 
-Estimativa: 4 a 6 semanas de calendário até o envio à revisão, ditadas pelos testes no aparelho ao fim de cada etapa.
+Estimativa inicial: 4 a 6 semanas de calendário até o envio à revisão, ditadas pelos testes no aparelho ao fim de cada etapa. Ela foi feita antes da revisão da decisão de visual: recriar a identidade do PWA em Swift acrescenta trabalho, concentrado na etapa 1 (os componentes de identidade nascem nela). O plano da etapa 1 refaz a conta.
 
 ### Como testar sem perder o app de hoje
 

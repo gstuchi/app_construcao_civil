@@ -58,6 +58,34 @@ function checa(nome, ok, detalhe){
   // ele substitui o duplê pelo Firebase de verdade e a tela trava sem login
   await page.route('**/cloud.js', r => r.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.goto('http://localhost:8123/index.html');
+
+  /* 0. Antes de ver os dados (este duplê nunca entrega snapshot) nada se grava, e o
+     aviso depende da rede: com rede o primeiro snapshot só está demorando; sem rede,
+     é preciso conectar. */
+  const ESPERE = 'Carregando suas obras, tente em instantes.';
+  const CONECTE = 'Conecte à internet para carregar suas obras antes de lançar.';
+  const avisou = async texto => (await toasts(page)).some(t => t.includes(texto));
+  const limpaAvisos = () => page.evaluate(() => { document.getElementById('toastWrap').innerHTML = ''; });
+  const recusaDoCloud = () => page.evaluate(() => window.dispatchEvent(new CustomEvent('cloud-erro',
+    { detail: { code: 'nao-carregado', terminal: false } })));
+  await page.evaluate(() => {
+    document.getElementById('auth').classList.add('hidden');
+    document.body.classList.remove('locked');
+  });
+  await page.locator('nav.tabs button[data-tab=inicio]').click();
+  await page.locator('#fab').click();
+  checa('com rede, o + não abre Nova obra e pede para esperar',
+    await page.locator('#fNome').count() === 0 && await avisou(ESPERE), await toasts(page));
+  await limpaAvisos(); await recusaDoCloud();
+  checa('com rede, a recusa do cloud.js pede para esperar', await avisou(ESPERE), await toasts(page));
+  await page.context().setOffline(true);
+  await limpaAvisos(); await page.locator('#fab').click();
+  checa('sem rede, o + pede para conectar', await avisou(CONECTE), await toasts(page));
+  await limpaAvisos(); await recusaDoCloud();
+  checa('sem rede, a recusa do cloud.js pede para conectar', await avisou(CONECTE), await toasts(page));
+  await page.context().setOffline(false);
+  await limpaAvisos();
+
   await page.evaluate(() => {
     document.getElementById('auth').classList.add('hidden');
     document.body.classList.remove('locked');

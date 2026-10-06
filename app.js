@@ -1853,7 +1853,7 @@ function formOrcamento(obraId){
 }
 
 function formNovaObra(){
-  if(!dadosCarregados){ toast(AVISO_NAO_CARREGADO, 'erro'); return; }
+  if(!dadosCarregados){ avisaNaoCarregado(); return; }
   openSheet(`
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
@@ -1929,7 +1929,13 @@ window.addEventListener('appinstalled',()=>$('#installHint').classList.add('hidd
    servidor, ou do cache com o documento. Antes disso db está vazio, e num aparelho
    novo sem rede o cache vazio não prova que a conta não tem obra. */
 let dadosCarregados = false;
-const AVISO_NAO_CARREGADO = 'Conecte à internet para carregar suas obras antes de lançar.';
+/* Com rede, o primeiro snapshot só está demorando (o SDK só entrega o cache vazio
+   depois de se declarar offline); sem rede, é preciso conectar. */
+function avisaNaoCarregado(){
+  toast(navigator.onLine === false
+    ? 'Conecte à internet para carregar suas obras antes de lançar.'
+    : 'Carregando suas obras, tente em instantes.', 'erro');
+}
 let obraDaNotificacao; // undefined = nada pendente; null = abrir Início
 function depoisDoPrimeiroSnapshot(){
   if(!dadosCarregados) return;
@@ -2001,7 +2007,7 @@ function avisoRaro(msg){
 window.addEventListener('cloud-erro', e=>{
   const { code, terminal } = e.detail;
   // recusa local antes de ver os dados: nada foi para a fila, o gesto precisa de resposta
-  if(code === 'nao-carregado'){ toast(AVISO_NAO_CARREGADO, 'erro'); return; }
+  if(code === 'nao-carregado'){ avisaNaoCarregado(); return; }
   const msg = code === 'limite'
     ? 'Não salvou: limite de dados atingido. Reduza os dados e tente novamente.'
     : terminal

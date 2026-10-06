@@ -326,6 +326,20 @@ t('aPagar: janela de 30 dias', () => {
   assert.deepStrictEqual(venc.itens.map(x=>x.gasto), os[0].gastos.slice(0,2));
 });
 
+t('aPagar: o 30º dia entra em qualquer fuso (limite em hora local, não em UTC)', () => {
+  const tzAnterior = process.env.TZ;
+  const obras = [{ dataInicio:'2026-07-01', gastos:[{ valor:100, data:'2026-08-05' }] }]; // hoje + 30
+  try{
+    for(const tz of ['Asia/Tokyo', 'Europe/Lisbon', 'America/Sao_Paulo']){
+      process.env.TZ = tz;
+      assert.strictEqual(C.aPagar(obras, '2026-07-06').qtd, 1, `${tz}: o 30º dia precisa entrar`);
+    }
+  }finally{
+    if(tzAnterior === undefined) delete process.env.TZ;
+    else process.env.TZ = tzAnterior;
+  }
+});
+
 t('gastosRecentes: ordena e limita', () => {
   const os = [
     { id:'a', nome:'A', dataInicio:'2026-01-01', gastos:[{ id:'g1', valor:1, data:'2026-01-02' },{ id:'g3', valor:3, data:'2026-03-01' }] },

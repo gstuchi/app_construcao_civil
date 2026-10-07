@@ -19,6 +19,9 @@ struct PrimitivasJSTests {
         // Literal acima de 1024 bits estoura para +infinito, como o Number(); no vetor ele só aparece como null.
         #expect(numeroDeTextoJS("0x" + String(repeating: "f", count: 300)) == .infinity)
         #expect(numeroDeTextoJS("0b" + String(repeating: "1", count: 1100)) == .infinity)
+        // Dígitos demais para o Double(String), que desiste acima de 16.384 caracteres; zero à esquerda não conta.
+        #expect(numeroDeTextoJS("0x" + String(repeating: "f", count: 20_000)) == .infinity)
+        #expect(numeroDeTextoJS("0x" + String(repeating: "0", count: 20_000) + "f") == 15)
     }
 
     @Test func toFixed() {

@@ -61,6 +61,7 @@ struct ModeloTests {
         let mapa = mapaDeTopicos([TopicoProprio(campos: ["id": .texto("c_x"), "nm": .texto("Automação"), "ic": .texto("etiqueta")]),
                                   TopicoProprio(campos: ["id": .texto("pintura"), "nm": .texto("Pintura fina"), "ic": .texto("rolo")])])
         #expect(mapa["c_x"]?.nome == "Automação")
+        #expect(mapa["c_x"]?.icone == "etiqueta")
         #expect(mapa["pintura"]?.nome == "Pintura fina")
         #expect(mapa["terreno"]?.nome == "Terreno")
     }
@@ -69,5 +70,22 @@ struct ModeloTests {
         #expect(Gasto(campos: ["grupoId": .texto("")]).grupoId == nil)
         #expect(Gasto(campos: ["grupoId": .texto("gr1")]).grupoId == "gr1")
         #expect(Gasto(campos: [:]).grupoId == nil)
+    }
+
+    @Test func parcelaEGrupoNulosRemovemAChave() {
+        var gasto = Gasto(campos: ["id": .texto("g"), "grupoId": .texto("gr"), "parcela": .objeto(["n": .numero(1), "de": .numero(2)])])
+        gasto.parcela = nil
+        gasto.grupoId = nil
+        #expect(gasto.campos["parcela"] == nil)
+        #expect(gasto.campos["grupoId"] == nil)
+        #expect(gasto.campos["id"] == .texto("g"))
+    }
+
+    @Test func estimadoEAreaNulosGravamNull() {
+        var obra = Obra(arvore: ["valorEstimadoVenda": .numero(10), "areaM2": .numero(5)])
+        obra.valorEstimadoVenda = nil
+        obra.areaM2 = nil
+        #expect(obra.arvore["valorEstimadoVenda"] == .nulo)
+        #expect(obra.arvore["areaM2"] == .nulo)
     }
 }

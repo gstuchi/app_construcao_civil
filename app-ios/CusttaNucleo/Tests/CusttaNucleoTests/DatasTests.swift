@@ -42,4 +42,14 @@ struct DatasTests {
             #expect(addMesesClampado(c.args[0].comoTexto!, Int(c.args[1].numero)) == c.saida.comoTexto, "\(c.caso)")
         }
     }
+
+    @Test func diaAbsolutoIdaEVolta() {
+        for iso in ["1970-01-01", "2000-02-29", "2400-02-29", "2100-02-28", "1900-03-01", "0100-01-01", "9999-12-31"] {
+            let c = componentesISO(iso)!
+            #expect(dataDeDiaAbsoluto(diaAbsoluto(ano: c.ano, mes: c.mes, dia: c.dia)) == c, "\(iso)")
+            #expect(somarDias(iso, 0) == iso)
+        }
+        #expect(somarDias("2000-02-28", 1) == "2000-02-29")
+        #expect(somarDias("2100-02-28", 1) == "2100-03-01")
+    }
 }

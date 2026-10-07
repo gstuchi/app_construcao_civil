@@ -5,13 +5,15 @@ import Testing
 struct SerializadorTests {
     @Test func canonIgualAoDoSite() {
         for c in Vetores.casos("calc.canon") {
-            #expect(canonico(c.args[0]) == c.saida.comoTexto, "\(c.caso)")
+            let obtido = canonico(c.args[0]), esperado = c.saida.comoTexto!
+            #expect(obtido.utf8.elementsEqual(esperado.utf8), "\(c.caso): \(obtido) ≠ \(esperado)")
         }
     }
 
     @Test func stringifyDePrimitivasIgualAoDoSite() {
         for c in Vetores.casos("js.stringify") {
-            #expect(canonico(c.args[0]) == c.saida.comoTexto, "\(c.caso)")
+            let obtido = canonico(c.args[0]), esperado = c.saida.comoTexto!
+            #expect(obtido.utf8.elementsEqual(esperado.utf8), "\(c.caso): \(obtido) ≠ \(esperado)")
         }
     }
 
@@ -65,5 +67,10 @@ struct SerializadorTests {
         #expect(volta["grande"] as? Double == 9_007_199_254_740_992, "acima de 2^53 − 1 vai como decimal")
         #expect((volta["menosZero"] as? Double)?.sign == .minus)
         #expect(volta["b"] as? Bool == true)
+
+        let blob: ValorJSON = .objeto(["obras": .lista([.objeto(["id": .texto("o"), "areaM2": .nulo,
+                                                                 "orcamento": .objeto(["modo": .texto("total"), "total": .numero(250_000)])])]),
+                                       "config": .objeto(["taxaMensal": .numero(1.5), "topicosCustom": .lista([])])])
+        #expect(ValorJSON(foundation: blob.paraFoundation) == blob, "ida e volta, com inteiro seguro aninhado (vai como Int64)")
     }
 }

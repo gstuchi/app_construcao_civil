@@ -67,6 +67,7 @@ func confere(_ obtido: ValorJSON, _ esperado: ValorJSON, _ tolerancia: Toleranci
         let ok: Bool = switch tolerancia {
         case .exata: a == b
         case .dinheiro: abs(a - b) < 0.005
+        case .continua where a.isFinite && b.isFinite && a.rounded() == a && b.rounded() == b: a == b   // inteiro dos dois lados: exato, como no site
         case .continua: a == b || abs(a - b) <= max(1e-9 * max(abs(a), abs(b)), 1e-12)   // piso: perto de zero o relativo não fecha
         }
         #expect(ok, "\(onde): obtido \(a), esperado \(b)", sourceLocation: sourceLocation)

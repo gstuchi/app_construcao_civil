@@ -16,7 +16,7 @@ struct ParcelasTests {
                 #expect(c.saida == .lista([]), "\(c.caso): n não inteiro dá lista vazia no site")
                 continue
             }
-            confere(.lista(gerarParcelas(c.args[0].numero, n, c.args[2].comoTexto!).map(\.json)), c.saida, .dinheiro, c.caso)
+            confere(.lista(gerarParcelas(c.args[0].numero, n, c.args[2].comoTexto!).map(\.json)), c.saida, .exata, c.caso)
         }
     }
 
@@ -27,7 +27,7 @@ struct ParcelasTests {
                 continue
             }
             let r = parcelamentoCartao(c.args[0].numero, n, c.args[2].numero, c.args[3].comoTexto!)
-            confere(r?.json ?? .nulo, c.saida, .dinheiro, c.caso)
+            confere(r?.json ?? .nulo, c.saida, .exata, c.caso)
         }
     }
 }

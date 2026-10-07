@@ -39,4 +39,18 @@ struct CorrecaoTests {
             confere(opcional(precoPorM2(c.args[0].numeroOuNil, c.args[1].numeroOuNil)), c.saida, .dinheiro, c.caso)
         }
     }
+
+    @Test func vendaSemDataCorrigeAteHoje() {
+        var obra = Obra(arvore: ["id": .texto("o"), "dataInicio": .texto("2026-01-01")])
+        obra.venda = Venda(valor: 500, data: "")
+        #expect(fimCorrecao(obra, hoje: "2026-10-06") == "2026-10-06")
+        obra.venda = Venda(valor: 500, data: "2026-02-01")
+        #expect(fimCorrecao(obra, hoje: "2026-10-06") == "2026-02-01")
+    }
+
+    @Test func precoPorM2ComAreaOuValorNegativosDaNil() {
+        #expect(precoPorM2(100, -5) == nil)
+        #expect(precoPorM2(-100, 5) == nil)
+        #expect(precoPorM2(nil, 5) == nil)
+    }
 }

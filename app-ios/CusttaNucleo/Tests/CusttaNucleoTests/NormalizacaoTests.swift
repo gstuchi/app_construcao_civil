@@ -4,7 +4,7 @@ import Testing
 struct NormalizacaoTests {
     @Test func normalizaComoODadosJs() {
         for c in Vetores.casos("dados.normaliza") {
-            #expect(canonico(normaliza(c.args[0])) == canonico(c.saida), "\(c.caso)")
+            #expect(mesmoConteudo(normaliza(c.args[0]), c.saida), "\(c.caso): \(canonico(normaliza(c.args[0]))) ≠ \(canonico(c.saida))")
         }
     }
 

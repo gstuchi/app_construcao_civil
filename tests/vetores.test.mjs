@@ -17,12 +17,13 @@ const vetores = JSON.parse(arquivo);
 
 /* Estrutura, não bytes: o Math.pow do V8 muda o último ULP entre versões do Node (o corrigido
    sai 1 ULP diferente no Node 22 da CI e no 24 do Mac), e byte a byte o teste falharia sem
-   regra nenhuma ter mudado. Texto, booleano, inteiro e estrutura são exatos; número não inteiro
+   regra nenhuma ter mudado. Texto, booleano e estrutura são exatos, e número também quando os
+   dois lados são inteiros; se um dos lados não é inteiro (o ULP pode tirar um valor do inteiro),
    tolera 1e-12 relativo (o app nativo usa 1e-9). Não volte para byte a byte. */
 function confere(obtido, esperado, onde){
   const falha = () => assert.fail(`${onde}: ${JSON.stringify(obtido)?.slice(0, 120)} × ${JSON.stringify(esperado)?.slice(0, 120)}`);
-  if(typeof esperado === 'number' && !Number.isInteger(esperado)){
-    if(typeof obtido !== 'number' || !(Math.abs(obtido - esperado) <= 1e-12 * Math.max(Math.abs(obtido), Math.abs(esperado)))) falha();
+  if(typeof esperado === 'number' && typeof obtido === 'number' && !(Number.isInteger(esperado) && Number.isInteger(obtido))){
+    if(!(Math.abs(obtido - esperado) <= 1e-12 * Math.max(Math.abs(obtido), Math.abs(esperado)))) falha();
     return;
   }
   if(esperado === null || typeof esperado !== 'object'){ if(obtido !== esperado) falha(); return; }

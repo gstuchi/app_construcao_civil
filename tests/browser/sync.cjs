@@ -58,6 +58,58 @@ function checa(nome, ok, detalhe){
   // ele substitui o duplê pelo Firebase de verdade e a tela trava sem login
   await page.route('**/cloud.js', r => r.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.goto('http://localhost:8123/index.html');
+
+  /* 0. Antes de ver os dados (este duplê nunca entrega snapshot) nada se grava, e o
+     aviso depende da rede: com rede o primeiro snapshot só está demorando; sem rede,
+     é preciso conectar. */
+  const ESPERE = 'Carregando suas obras, tente em instantes.';
+  const CONECTE = 'Conecte à internet para carregar suas obras antes de lançar.';
+  const avisou = async texto => (await toasts(page)).some(t => t.includes(texto));
+  const limpaAvisos = () => page.evaluate(() => { document.getElementById('toastWrap').innerHTML = ''; });
+  const recusaDoCloud = () => page.evaluate(() => window.dispatchEvent(new CustomEvent('cloud-erro',
+    { detail: { code: 'nao-carregado', terminal: false } })));
+  await page.evaluate(() => {
+    document.getElementById('auth').classList.add('hidden');
+    document.body.classList.remove('locked');
+  });
+  await page.locator('nav.tabs button[data-tab=inicio]').click();
+  await page.locator('#fab').click();
+  checa('com rede, o + não abre Nova obra e pede para esperar',
+    await page.locator('#fNome').count() === 0 && await avisou(ESPERE), await toasts(page));
+  await limpaAvisos(); await recusaDoCloud();
+  checa('com rede, a recusa do cloud.js pede para esperar', await avisou(ESPERE), await toasts(page));
+  // Ajustes também gravam o documento inteiro: nada muda na tela antes de carregar.
+  await page.locator('nav.tabs button[data-tab=ajustes]').click();
+  await limpaAvisos();
+  await page.locator('#ajTaxa').fill('2');
+  await page.locator('#ajTaxa').dispatchEvent('change');
+  const taxa = await page.evaluate(() => ({ db: db.config.taxaMensal, campo: document.getElementById('ajTaxa').value }));
+  checa('a taxa não muda antes de carregar', taxa.db === 1 && taxa.campo === '1' && await avisou(ESPERE),
+    { taxa, avisos: await toasts(page) });
+  await limpaAvisos();
+  await page.locator('#ajNovoTopico').fill('Piscina');
+  await page.locator('#ajAddTopico').click();
+  checa('o tópico novo não entra antes de carregar', await page.evaluate(() => db.config.topicosCustom.length === 0)
+    && await page.locator('#ajNovoTopico').inputValue() === 'Piscina' && await avisou(ESPERE), await toasts(page));
+  await limpaAvisos();
+  // tópico próprio antes de carregar só existe se o db já tinha um (troca direta de conta)
+  await page.evaluate(() => { db.config.topicosCustom = [{ id: 'c_t', nm: 'Telhado', ic: 'etiqueta' }]; renderAjustes(); });
+  await page.locator('#ajTopicos .li-del').click();
+  const perguntou = await page.locator('dialog[open]').count() > 0;
+  if(perguntou) await page.keyboard.press('Escape'); // o código de antes perguntava; fecha para seguir
+  checa('o tópico não sai antes de carregar', !perguntou
+    && await page.evaluate(() => db.config.topicosCustom.length === 1) && await avisou(ESPERE), await toasts(page));
+  await page.evaluate(() => { db.config.topicosCustom = []; });
+  await limpaAvisos();
+  await page.locator('nav.tabs button[data-tab=inicio]').click();
+  await page.context().setOffline(true);
+  await limpaAvisos(); await page.locator('#fab').click();
+  checa('sem rede, o + pede para conectar', await avisou(CONECTE), await toasts(page));
+  await limpaAvisos(); await recusaDoCloud();
+  checa('sem rede, a recusa do cloud.js pede para conectar', await avisou(CONECTE), await toasts(page));
+  await page.context().setOffline(false);
+  await limpaAvisos();
+
   await page.evaluate(() => {
     document.getElementById('auth').classList.add('hidden');
     document.body.classList.remove('locked');

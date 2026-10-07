@@ -44,7 +44,8 @@ public func gastosRecentes(_ obras: [Obra], n: Int = 5) -> [GastoRecente] {
 
 /// `semAcento` do calc.js: minúsculas, sem os acentos combinantes (U+0300 a U+036F).
 public func semAcento(_ s: String?) -> String {
-    let decomposto = (s ?? "").lowercased().decomposedStringWithCanonicalMapping
+    // lowercased(with:), do Foundation, põe o sigma final (ς) como o toLowerCase; o lowercased() do Swift não.
+    let decomposto = (s ?? "").lowercased(with: nil).decomposedStringWithCanonicalMapping
     var r = String.UnicodeScalarView()
     r.append(contentsOf: decomposto.unicodeScalars.filter { !(0x300...0x36F).contains($0.value) })
     return String(r)

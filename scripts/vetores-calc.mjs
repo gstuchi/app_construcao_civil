@@ -142,7 +142,8 @@ for(const [nome, ms] of [
 ]) (grupos[local] ||= []).push({ caso: nome, args: [ms], saida: C.dataLocalISO(new Date(ms)) });
 const valida = calc('dataISOValida');
 for(const s of ['2026-02-28', '2026-02-29', '2026-02-30', '2028-02-29', '2100-02-29', '2000-02-29', '2026-04-31',
-  '2026-13-01', '2026-00-10', '2026-1-01', '20260101', '0050-01-01', '0099-12-31', '0100-01-01', '9999-12-31', '', 'abcd-ef-gh'])
+  '2026-13-01', '2026-00-10', '2026-1-01', '20260101', '0050-01-01', '0099-12-31', '0100-01-01', '9999-12-31', '', 'abcd-ef-gh',
+  '2026-0:-01', '2026-01--1', '2026-06-31', '2026-09-31', '2026-11-31']) // bordas: ':' logo depois do '9', sinal no dia, dia 31 nos meses de 30
   valida(JSON.stringify(s), s);
 valida('nulo', null);
 const igualOuDepois = calc('dataIgualOuDepois');
@@ -165,6 +166,7 @@ meses('31/01 + 1 mês', '2026-01-31', 1);
 meses('31/01 + 1 mês em ano bissexto', '2028-01-31', 1);
 meses('31/01 + 13 meses', '2026-01-31', 13);
 meses('30/11 + 3 meses', '2026-11-30', 3);
+meses('ano de três dígitos, sem zero à esquerda', '0100-01-31', 1);
 meses('zero meses', '2026-05-15', 0);
 meses('virada de ano', '2026-12-15', 1);
 meses('36 meses', '2026-02-28', 36);
@@ -211,6 +213,8 @@ tir('sem raiz: venda absurda passa de 1000% ao mês', [{ id: 'x', valor: 1, data
 for(const [nome, venda] of [['acima de +1000% ao mês não tem raiz', 12.03], ['perto do teto de +1000%', 10.6],
   ['abaixo de −99% ao mês não tem raiz', 0.0045], ['perto do piso de −99%', 0.014]])
   tir(nome, [{ id: 'x', valor: 1, data: '2026-01-01' }], venda, '2026-02-01');
+/* Saldo exatamente 0: os R$ 50 de cinco anos antes somem na soma com os R$ 1.000, e a bissecção, que só sobe com saldo > 0, desce até o piso. */
+tir('saldo exatamente zero desce até o piso', [{ id: 'x', valor: 1000, data: HOJE }, { id: 'y', valor: 50, data: '2021-10-06' }], 1000, HOJE);
 const acima = calc('rendimentoAcima');
 acima('TIR acima do banco', 2.5, 1);
 acima('TIR abaixo do banco', 0.4, 1);
@@ -251,7 +255,7 @@ recentes('n negativo conta do fim, como o slice', BLOB.obras, -2);
 recentes('desempate pelo id', [{ id: 'a', nome: 'A', gastos: [{ id: 'g1', valor: 1, data: '2026-01-02' }, { id: 'g3', valor: 3, data: '2026-01-02' }] },
   { id: 'b', nome: 'B', gastos: [{ id: 'g2', valor: 2, data: '2026-01-02' }] }], 2);
 const acento = calc('semAcento');
-for(const s of ['Mão de Obra', 'ÇÃO', 'pintura', '', 'Encanamento Hidráulico', 'Ünïcödé']) acento(JSON.stringify(s), s);
+for(const s of ['Mão de Obra', 'ÇÃO', 'pintura', '', 'Encanamento Hidráulico', 'Ünïcödé', 'ΟΔΟΣ']) acento(JSON.stringify(s), s);
 acento('nulo', null);
 const filtra = calc('filtraGastos');
 filtra('sem filtro', O1.gastos, TOPICOS_MAPA, null);
@@ -342,8 +346,11 @@ versao('dois números só', '1.0', '0.9.9');
 const canon = calc('canon');
 canon('chaves fora de ordem e aninhadas', { b: 1, a: [{ d: 1, c: 2 }], c: { z: null, y: true } });
 canon('chaves numéricas vêm antes, em ordem numérica', { b: 1, '10': 2, '2': 3, a: 4, '01': 5, '-1': 6 });
+canon('índice de array vai até 4294967294; 4294967295 já é chave de texto', { '4294967294': 1, '4294967295': 2, '-1': 3, a: 4, '5': 5 });
 canon('blob de exemplo', BLOB);
 canon('unicode e escapes', { 'é': 'ção', 'a': 'aspas "x"', '😀': '\u0001\n' });
+// O sort() compara unidade UTF-16: o emoji (D83D DE00) vem antes de U+E000; por escalar, como o < do Swift, viria depois.
+canon('ordem UTF-16 do sort()', { '\u{ff5e}': 1, '\u{1f600}': 2, a: 3, '\u{e000}': 4 });
 
 /* ---------- dados.js ---------- */
 constante('dados.LIMITES', D.LIMITES);
@@ -378,6 +385,7 @@ n('obra vendida com venda negativa volta para construção', obraCom({ fase: 've
 n('venda em texto vira número', obraCom({ fase: 'vendida', venda: { valor: '980000', data: '2026-03-01', obs: 'x' } }));
 n('fase desconhecida vira construção', obraCom({ fase: 'demolida' }));
 n('obra com data inválida (30/02) some', obraCom({ dataInicio: '2026-02-30' }));
+n('data com mês 00, mês 13 e dia 00 some', { obras: ['2026-00-10', '2026-13-10', '2026-01-00'].map((d, i) => ({ id: 'o' + i, dataInicio: d })) });
 n('obra sem id some', { obras: [{ nome: 'Sem id', dataInicio: '2026-01-01' }] });
 n('ano 0050 vale para o dados.js', obraCom({ dataInicio: '0050-01-01' }));
 n('id e nome numéricos viram texto', { obras: [{ id: 123, nome: 42, dataInicio: '2026-01-01' }, { id: 1.5, dataInicio: '2026-01-01' }] });
@@ -393,6 +401,8 @@ n('gasto negativo some', gastoCom({ valor: -5 }));
 n('gasto zero fica', gastoCom({ valor: 0 }));
 n('gasto em texto com ponto vira número', gastoCom({ valor: '1500.5' }));
 n('gasto em texto com vírgula some', gastoCom({ valor: '1.234,56' }));
+n('gasto de valor em branco some', obraCom({}, ['', '  '].map((valor, i) => ({ id: 'g' + i, valor, data: '2026-01-02' }))));
+n('estimado e área em branco viram nulo', obraCom({ valorEstimadoVenda: '  ', areaM2: '' }));
 n('tópico e pagamento vazios ganham padrão', gastoCom({ topico: '', pagamento: '' }));
 n('parcela inválida perde grupo e parcela', obraCom({}, [
   { id: 'g1', valor: 1, data: '2026-01-02', grupoId: 'gr', parcela: { n: 0, de: 3 } },
@@ -428,16 +438,22 @@ for(const x of [0, 1, -1, 0.1, 0.30000000000000004, 1e21, 1e-7, 1e-6, 1234567890
   100, 1500.5, 2 ** 53, 1 / 3, -1e-7, 12345.6789, 1e16, 1.5e300])
   caso('js.numeroParaTexto', String(x), [x], v => String(v));
 for(const s of ['  12 ', '0x10', '0X1f', '1,5', '1e3', '1E-2', '.5', '5.', '+5', '-5', '-0x10', 'Infinity', '1_0', '0b11', '0o7',
-  ' \u{a0}12\u{2028}', '\u{feff}3', '12abc', '', '   ', '0x', '1e', '.', '00012', '1.2.3', '0b2', '\t\n7\r', '1 2'])
+  ' \u{a0}12\u{2028}', '\u{feff}3', '12abc', '', '   ', '0x', '1e', '.', '00012', '1.2.3', '0b2', '\t\n7\r', '1 2',
+  // bordas: U+180E, U+0085 e U+200B não são espaço para o JavaScript; "infinity" em minúscula não é número;
+  // literais com mais de 53 bits, que o Number() arredonda uma vez só
+  '\u{180e}5', '\u{85}5', '\u{200b}5', 'infinity',
+  '0x200000000000018', '0o20000000000000003', '0b1000000000000000000000000000000000000000000000000000011', '0o4000000000000000014'])
   caso('js.textoParaNumero', JSON.stringify(s), [s], v => { const x = Number(v); return Number.isFinite(x) ? x : null; });
-for(const [x, casas] of [[8.25, 1], [1.005, 2], [2.5, 0], [0.5, 0], [10.25, 1], [12.35, 1], [1.45, 1], [999.95, 1], [0.05, 1], [1.25, 1], [1234.5678, 2], [0, 2]])
+for(const [x, casas] of [[8.25, 1], [1.005, 2], [2.5, 0], [0.5, 0], [10.25, 1], [12.35, 1], [1.45, 1], [999.95, 1], [0.05, 1], [1.25, 1], [1234.5678, 2], [0, 2],
+  [-1.5, 0], [-0.001, 2], [1e21, 2]]) // bordas: negativo no empate, negativo que zera e o limite de 1e21
   caso('js.toFixed', `${x}.toFixed(${casas})`, [x, casas], (v, c) => v.toFixed(c));
 for(const x of [0.5, 1.5, 2.5, -0.5, -1.5, -2.5, 0.49999999999999994, 1e16 + 1, -0.4])
   caso('js.round', String(x), [x], v => Math.round(v) + 0); // + 0 tira o −0, que o JSON já não guarda
-for(const v of ['', 'simples', 'aspas "x"', 'barra \\', 'linha\nnova', 'tab\tx', '\u0000\u0001\u001f', 'ção', '😀🏗️', '\u{2028}\u{2029}', '/', '\u007f',
+for(const v of ['', 'simples', 'aspas "x"', 'barra \\', 'linha\nnova', 'tab\tx', '\u0000\u0001\u001f', 'ção', '😀🏗️', '\u{2028}\u{2029}', '/', '\u007f', '\b\f\r',
   [1, 'a', null, true, 0.5]])
   caso('js.stringify', JSON.stringify(v), [v], x => JSON.stringify(x));
-for(const s of [' a ', '\u{a0}a\u{a0}', '\u{feff}a\u{2028}', '\u{3000}a\u{205f}', 'a b', ''])
+for(const s of [' a ', '\u{a0}a\u{a0}', '\u{feff}a\u{2028}', '\u{3000}a\u{205f}', 'a b', '',
+  '\u{180e}5', '\u{85}5', '\u{200b}5', 'infinity']) // bordas: o trim não tira U+180E, U+0085 nem U+200B
   caso('js.trim', JSON.stringify(s), [s], x => x.trim());
 
 /* ---------- saída ---------- */

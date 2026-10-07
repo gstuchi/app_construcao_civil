@@ -20,6 +20,7 @@ npm run test:rules       # sobe o emulador do Firestore e roda tests/rules.test.
 npm run rules:deploy     # firebase deploy --only firestore:rules
 npm run sonda:banco      # ataca o banco de produção (2 contas descartáveis) e confere que as rules no ar barram
 npm run vetores          # regera tests/vetores/calc.json (casos de calc.js, dados.js e push.js que o app nativo confere)
+npm run test:nucleo      # swift test do núcleo do app nativo (app-ios/CusttaNucleo), só no Mac
 npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
 npm run cap:sync         # build:www + cap sync ios
 

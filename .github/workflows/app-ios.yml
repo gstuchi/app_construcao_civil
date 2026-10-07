@@ -1,0 +1,48 @@
+name: app-ios
+# App nativo em SwiftUI (app-ios/). O job nucleo roda o swift test do pacote CusttaNucleo, que confere
+# as regras reescritas em Swift contra os vetores gerados do site (tests/vetores/calc.json): por isso
+# também dispara quando calc.js, dados.js, push.js ou o gerador mudam.
+#
+# Por que macos-26 fixo, e não macos-latest: o pacote pede Swift 6.2 (Xcode 26); trocar de imagem
+# tem de ser decisão, não surpresa no meio de um PR. Pelo mesmo motivo o Xcode é fixo (DEVELOPER_DIR):
+# o padrão do runner muda sem aviso.
+on:
+  pull_request:
+    paths:
+      - 'app-ios/**'
+      - 'calc.js'
+      - 'dados.js'
+      - 'push.js'
+      - 'scripts/vetores-calc.mjs'
+      - 'tests/vetores/**'
+      - '.github/workflows/app-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+concurrency:
+  group: app-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nucleo:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Fica no log: o runner troca de Xcode com o tempo e é a primeira coisa a conferir
+      # quando um teste que passava começa a quebrar sozinho.
+      - name: Versão do Xcode e do Swift
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Núcleo contra os vetores do site
+        env:
+          TZ: America/Sao_Paulo
+        run: swift test --package-path app-ios/CusttaNucleo

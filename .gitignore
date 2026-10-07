@@ -27,5 +27,12 @@ vapid-keys.txt
 
 # Saída do empacotamento Capacitor (gerada por scripts/build-www.mjs)
 www/
+
+# Swift Package Manager e Xcode do app nativo (app-ios/)
+app-ios/**/.build/
+app-ios/**/.swiftpm/
+app-ios/build/
+app-ios/**/xcuserdata/
+
 firestore-debug.log
 firebase-debug.log

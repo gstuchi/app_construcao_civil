@@ -215,4 +215,15 @@ const pins = JSON.parse(readFileSync(resolved, 'utf8')).pins || [];
 assert.ok(pins.some(p => /capacitor-swift-pm/.test(p.location)), 'o Package.resolved não tem o Capacitor — arquivo errado?');
 assert.deepStrictEqual(pinsForaDaLista(pins), [], 'pacote Swift de dono não revisado ou preso a branch');
 
+/* App nativo (app-ios/): o núcleo roda swift test contra os vetores do site num macOS fixo. */
+const appIos = readFileSync(join(dir, 'app-ios.yml'), 'utf8');
+assert.match(appIos, /runs-on:\s*macos-26/, 'o app nativo precisa do runner macOS 26 (Xcode 26)');
+assert.match(appIos, /swift test --package-path app-ios\/CusttaNucleo/, 'sem o swift test do núcleo');
+assert.match(appIos, /TZ:\s*America\/Sao_Paulo/, 'os testes do núcleo rodam no fuso dos vetores');
+assert.match(appIos, /DEVELOPER_DIR:\s*\/Applications\/Xcode_26\.6\.app\/Contents\/Developer/, 'o Xcode da CI é fixo: o padrão do runner muda sem aviso');
+for(const caminho of ['app-ios/**', 'calc.js', 'dados.js', 'push.js', 'scripts/vetores-calc.mjs', 'tests/vetores/**'])
+  assert.ok(appIos.includes(`- '${caminho}'`), `app-ios.yml não dispara quando ${caminho} muda`);
+assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda em todo push');
+assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
+
 console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda; envio ao TestFlight assinado e sob demanda');

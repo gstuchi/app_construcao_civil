@@ -344,6 +344,8 @@ canon('chaves fora de ordem e aninhadas', { b: 1, a: [{ d: 1, c: 2 }], c: { z: n
 canon('chaves numéricas vêm antes, em ordem numérica', { b: 1, '10': 2, '2': 3, a: 4, '01': 5, '-1': 6 });
 canon('blob de exemplo', BLOB);
 canon('unicode e escapes', { 'é': 'ção', 'a': 'aspas "x"', '😀': '\u0001\n' });
+// O sort() compara unidade UTF-16: o emoji (D83D DE00) vem antes de U+E000; por escalar, como o < do Swift, viria depois.
+canon('ordem UTF-16 do sort()', { '\u{ff5e}': 1, '\u{1f600}': 2, a: 3, '\u{e000}': 4 });
 
 /* ---------- dados.js ---------- */
 constante('dados.LIMITES', D.LIMITES);

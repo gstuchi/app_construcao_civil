@@ -2,6 +2,7 @@
 .claude/
 .impeccable/
 .superpowers/
+.maestri/
 
 node_modules/
 notificacoes/node_modules/

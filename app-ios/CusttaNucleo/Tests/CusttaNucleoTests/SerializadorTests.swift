@@ -40,6 +40,11 @@ struct SerializadorTests {
         #expect(mesmoConteudo(.objeto(["a": .numero(1), "b": .lista([])]), .objeto(["b": .lista([]), "a": .numero(1.0)])))
         #expect(!mesmoConteudo(.objeto(["a": .numero(1)]), .objeto(["a": .texto("1")])))
     }
+    @Test func mesmoConteudoComparaBytesComoOSite() {
+        #expect(mesmoConteudo(.texto("Caf\u{E9}"), .texto("Caf\u{E9}")))
+        #expect(!mesmoConteudo(.texto("Caf\u{E9}"), .texto("Cafe\u{301}")),
+                "o === do site compara unidade por unidade; o == do Swift igualaria NFC e NFD")
+    }
 
     @Test func pontesComOFoundation() throws {
         let foundation: [String: Any] = ["inteiro": NSNumber(value: Int64(1500)), "decimal": NSNumber(value: 1500.5),

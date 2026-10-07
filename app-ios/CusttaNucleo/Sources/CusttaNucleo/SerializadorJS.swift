@@ -80,8 +80,9 @@ public func canonico(_ v: ValorJSON) -> String {
     return r
 }
 
-/// Mesmo conteúdo para o site (canon igual): o eco do snapshot usa isto, como o app.js.
-public func mesmoConteudo(_ a: ValorJSON, _ b: ValorJSON) -> Bool { canonico(a) == canonico(b) }
+/// Mesmo conteúdo para o site (canon igual): o eco do snapshot usa isto, como o app.js. Compara bytes,
+/// como o `===` do JavaScript: o `==` do Swift igualaria texto equivalente em outra normalização (NFC × NFD).
+public func mesmoConteudo(_ a: ValorJSON, _ b: ValorJSON) -> Bool { canonico(a).utf8.elementsEqual(canonico(b).utf8) }
 
 /// `tamanhoBlob` do calc.js: bytes UTF-8 do JSON.
 public func tamanhoBlob(_ v: ValorJSON) -> Int { canonico(v).utf8.count }

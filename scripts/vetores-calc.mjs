@@ -428,16 +428,22 @@ for(const x of [0, 1, -1, 0.1, 0.30000000000000004, 1e21, 1e-7, 1e-6, 1234567890
   100, 1500.5, 2 ** 53, 1 / 3, -1e-7, 12345.6789, 1e16, 1.5e300])
   caso('js.numeroParaTexto', String(x), [x], v => String(v));
 for(const s of ['  12 ', '0x10', '0X1f', '1,5', '1e3', '1E-2', '.5', '5.', '+5', '-5', '-0x10', 'Infinity', '1_0', '0b11', '0o7',
-  ' \u{a0}12\u{2028}', '\u{feff}3', '12abc', '', '   ', '0x', '1e', '.', '00012', '1.2.3', '0b2', '\t\n7\r', '1 2'])
+  ' \u{a0}12\u{2028}', '\u{feff}3', '12abc', '', '   ', '0x', '1e', '.', '00012', '1.2.3', '0b2', '\t\n7\r', '1 2',
+  // bordas: U+180E, U+0085 e U+200B não são espaço para o JavaScript; "infinity" em minúscula não é número;
+  // literais com mais de 53 bits, que o Number() arredonda uma vez só
+  '\u{180e}5', '\u{85}5', '\u{200b}5', 'infinity',
+  '0x200000000000018', '0o20000000000000003', '0b1000000000000000000000000000000000000000000000000000011', '0o4000000000000000014'])
   caso('js.textoParaNumero', JSON.stringify(s), [s], v => { const x = Number(v); return Number.isFinite(x) ? x : null; });
-for(const [x, casas] of [[8.25, 1], [1.005, 2], [2.5, 0], [0.5, 0], [10.25, 1], [12.35, 1], [1.45, 1], [999.95, 1], [0.05, 1], [1.25, 1], [1234.5678, 2], [0, 2]])
+for(const [x, casas] of [[8.25, 1], [1.005, 2], [2.5, 0], [0.5, 0], [10.25, 1], [12.35, 1], [1.45, 1], [999.95, 1], [0.05, 1], [1.25, 1], [1234.5678, 2], [0, 2],
+  [-1.5, 0], [-0.001, 2], [1e21, 2]]) // bordas: negativo no empate, negativo que zera e o limite de 1e21
   caso('js.toFixed', `${x}.toFixed(${casas})`, [x, casas], (v, c) => v.toFixed(c));
 for(const x of [0.5, 1.5, 2.5, -0.5, -1.5, -2.5, 0.49999999999999994, 1e16 + 1, -0.4])
   caso('js.round', String(x), [x], v => Math.round(v) + 0); // + 0 tira o −0, que o JSON já não guarda
 for(const v of ['', 'simples', 'aspas "x"', 'barra \\', 'linha\nnova', 'tab\tx', '\u0000\u0001\u001f', 'ção', '😀🏗️', '\u{2028}\u{2029}', '/', '\u007f',
   [1, 'a', null, true, 0.5]])
   caso('js.stringify', JSON.stringify(v), [v], x => JSON.stringify(x));
-for(const s of [' a ', '\u{a0}a\u{a0}', '\u{feff}a\u{2028}', '\u{3000}a\u{205f}', 'a b', ''])
+for(const s of [' a ', '\u{a0}a\u{a0}', '\u{feff}a\u{2028}', '\u{3000}a\u{205f}', 'a b', '',
+  '\u{180e}5', '\u{85}5', '\u{200b}5', 'infinity']) // bordas: o trim não tira U+180E, U+0085 nem U+200B
   caso('js.trim', JSON.stringify(s), [s], x => x.trim());
 
 /* ---------- saída ---------- */

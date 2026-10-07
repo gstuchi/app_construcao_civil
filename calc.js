@@ -8,6 +8,8 @@
   /* O documento do Firestore para em 1MB e a escrita falha inteira — sem isso o
      app dizia "salvo" e o dado ficava só na memória. Folga pro nome dos campos. */
   const LIMITE_BLOB = 900000;
+  /* A partir daqui o save() do app.js avisa que os dados estão perto do limite. */
+  const AVISO_BLOB = 700000;
 
   function tamanhoBlob(blob){
     return new TextEncoder().encode(JSON.stringify(blob)).length;
@@ -379,7 +381,31 @@
     return { modo:'total', ...itemOrcamento(totalBruto(obra), orc.total), topicos:[], fora:[], foraTotal:0 };
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra };
+  /* ---- exibição: moeda, meses e comparação de estados ----
+     Moravam no app.js. Vieram para cá por serem puras: o app nativo confere a
+     cópia dele contra estas pelos vetores (scripts/vetores-calc.mjs). */
+  const BRL = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
+  const money = n => BRL.format(n || 0);
+  const moneyShort = n => {
+    const a = Math.abs(n), s = n < 0 ? '-' : '';
+    if(a >= 1e6)  return s + 'R$ ' + (a / 1e6).toFixed(a >= 1e7 ? 1 : 2).replace('.', ',') + ' mi';
+    if(a >= 1000) return s + 'R$ ' + (a / 1000).toFixed(a >= 10000 ? 0 : 1).replace('.', ',') + ' mil';
+    return money(n);
+  };
+  /* "R$ 8,0 mil" → "R$ 8 mil": nas frases do orçamento o ",0" só ocupa espaço */
+  const moneyCurto = n => moneyShort(n).replace(/,0+ (mil|mi)$/, ' $1');
+  function fmtMeses(m){
+    if(m < 1) return 'começando';
+    const r = Math.round(m);
+    return r + (r === 1 ? ' mês' : ' meses');
+  }
+  /* stringify com chaves ordenadas — compara estados sem depender da ordem do Firestore */
+  function canon(x){
+    return JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
+  }
+
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

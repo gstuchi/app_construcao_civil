@@ -430,4 +430,37 @@ t('orcamentoObra modo topicos: compara só previstos, fora aparece separado', ()
   assert.strictEqual(r.foraTotal, 15000);
 });
 
+t('money, moneyShort e moneyCurto moram no calc.js, iguais aos que o app mostra', () => {
+  assert.strictEqual(C.money(1234.5), 'R$\u{a0}1.234,50');
+  assert.strictEqual(C.money(null), 'R$\u{a0}0,00');
+  assert.strictEqual(C.moneyShort(8250), 'R$ 8,3 mil');
+  assert.strictEqual(C.moneyShort(2.5e6), 'R$ 2,50 mi');
+  assert.strictEqual(C.moneyShort(-500), '-R$\u{a0}500,00');
+  assert.strictEqual(C.moneyCurto(8000), 'R$ 8 mil');
+  assert.strictEqual(C.moneyCurto(1e6), 'R$ 1 mi');
+});
+
+t('fmtMeses: começando, 1 mês, N meses', () => {
+  assert.strictEqual(C.fmtMeses(0.5), 'começando');
+  assert.strictEqual(C.fmtMeses(1.4), '1 mês');
+  assert.strictEqual(C.fmtMeses(1.5), '2 meses');
+});
+
+t('canon: chaves em ordem para comparar estados', () => {
+  assert.strictEqual(C.canon({ b: 1, a: [{ d: 1, c: 2 }] }), '{"a":[{"c":2,"d":1}],"b":1}');
+});
+
+t('limite de aviso do blob mora no calc.js, abaixo do limite de gravação', () => {
+  assert.strictEqual(C.AVISO_BLOB, 700000);
+  assert.ok(C.AVISO_BLOB < C.LIMITE_BLOB);
+});
+
+t('app.js usa a formatação e o limite de aviso do calc.js, sem cópia própria', () => {
+  const app = require('fs').readFileSync(require('path').join(__dirname, '..', 'app.js'), 'utf8');
+  assert.match(app, /const \{ money, moneyShort, moneyCurto, fmtMeses, canon \} = OBRA_CALC;/);
+  assert.doesNotMatch(app, /const BRL = new Intl\.NumberFormat|function canon\(|function fmtMeses\(/);
+  assert.match(app, /OBRA_CALC\.AVISO_BLOB/);
+  assert.doesNotMatch(app, /700000/);
+});
+
 console.log(`OK: ${n} testes`);

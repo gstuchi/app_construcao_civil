@@ -32,11 +32,11 @@ function textoValido(valor, tipo, campo){
    dado sumia no próximo carregamento. */
 function save(){
   const tamanho = OBRA_CALC.tamanhoBlob(db);
-  if(tamanho >= 700000 && tamanho <= OBRA_CALC.LIMITE_BLOB && !avisouTamanho){
+  if(tamanho >= OBRA_CALC.AVISO_BLOB && tamanho <= OBRA_CALC.LIMITE_BLOB && !avisouTamanho){
     avisouTamanho = true;
     toast('Seus dados estão próximos do limite de armazenamento.', 'erro');
   }
-  if(tamanho < 700000) avisouTamanho = false;
+  if(tamanho < OBRA_CALC.AVISO_BLOB) avisouTamanho = false;
   return CLOUD.saveDados(db);
 }
 let avisouTamanho = false;
@@ -62,16 +62,8 @@ const nomeTopico = id => (TOP_MAP()[id] || {nm:id}).nm; // tópico próprio apag
 const taxa = () => db.config.taxaMensal;
 
 /* ---------- helpers ---------- */
-const BRL = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const money = n => BRL.format(n||0);
-const moneyShort = n => {
-  const a = Math.abs(n), s = n<0 ? '-' : '';
-  if(a>=1e6)  return s+'R$ '+(a/1e6).toFixed(a>=1e7?1:2).replace('.',',')+' mi';
-  if(a>=1000) return s+'R$ '+(a/1000).toFixed(a>=10000?0:1).replace('.',',')+' mil';
-  return money(n);
-};
-/* "R$ 8,0 mil" → "R$ 8 mil": nas frases do orçamento o ",0" só ocupa espaço */
-const moneyCurto = n => moneyShort(n).replace(/,0+ (mil|mi)$/, ' $1');
+/* Moeda, meses e canon moram no calc.js (puros; o app nativo confere a cópia dele pelos vetores). */
+const { money, moneyShort, moneyCurto, fmtMeses, canon } = OBRA_CALC;
 const semCifrao = s => s.replace(/^R\$\s/, '');
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const todayISO = () => OBRA_CALC.dataLocalISO();
@@ -138,17 +130,7 @@ function fitNums(scope){
     }
   });
 }
-function fmtMeses(m){
-  if(m < 1) return 'começando';
-  const r = Math.round(m);
-  return r + (r===1 ? ' mês' : ' meses');
-}
 const obraById = id => db.obras.find(o=>o.id===id);
-/* stringify com chaves ordenadas — comparar estados independente da ordem do Firestore */
-function canon(x){
-  return JSON.stringify(x, (k,v)=> v && typeof v==='object' && !Array.isArray(v)
-    ? Object.keys(v).sort().reduce((a,c)=>{ a[c]=v[c]; return a; },{}) : v);
-}
 
 /* ---------- navegação ---------- */
 /* iOS mata o app em segundo plano e o WKWebView recarrega do zero: lembra onde

@@ -113,14 +113,26 @@ public func numeroDeTextoJS(_ texto: String) -> Double {
     let t = Array(aparadoJS(texto).unicodeScalars)
     if t.isEmpty { return 0 }
     if t.count > 2, t[0] == "0" {
-        let base: Int? = switch t[1] { case "x", "X": 16; case "o", "O": 8; case "b", "B": 2; default: nil }
-        if let base {
-            var valor = 0.0
+        let bitsPorDigito: Int? = switch t[1] { case "x", "X": 4; case "o", "O": 3; case "b", "B": 1; default: nil }
+        if let bitsPorDigito {
+            // O Number() arredonda o valor exato uma vez só; somar dígito a dígito arredondaria a cada passo
+            // acima de 2^53 (0x200000000000018 sairia 1 ULP abaixo). Os dígitos viram bits, os bits viram
+            // hexadecimal, e o Double lê "0x…p0" de uma vez, estourando para +infinito como o JavaScript.
+            var bits = ""
             for u in t[2...] {
-                guard let d = Int(String(u), radix: base) else { return .nan }
-                valor = valor * Double(base) + Double(d)
+                guard let d = Int(String(u), radix: 1 << bitsPorDigito) else { return .nan }
+                let b = String(d, radix: 2)
+                bits += String(repeating: "0", count: bitsPorDigito - b.count) + b
             }
-            return valor
+            bits = String(repeating: "0", count: (4 - bits.count % 4) % 4) + bits
+            var hex = ""
+            var i = bits.startIndex
+            while i < bits.endIndex {
+                let fim = bits.index(i, offsetBy: 4)
+                hex += String(Int(bits[i..<fim], radix: 2)!, radix: 16)
+                i = fim
+            }
+            return Double("0x" + hex + "p0") ?? .nan
         }
     }
     var i = 0

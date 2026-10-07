@@ -16,6 +16,9 @@ struct PrimitivasJSTests {
             let n = numeroDeTextoJS(c.args[0].comoTexto!)
             confere(n.isFinite ? .numero(n) : .nulo, c.saida, .exata, c.caso)
         }
+        // Literal acima de 1024 bits estoura para +infinito, como o Number(); no vetor ele só aparece como null.
+        #expect(numeroDeTextoJS("0x" + String(repeating: "f", count: 300)) == .infinity)
+        #expect(numeroDeTextoJS("0b" + String(repeating: "1", count: 1100)) == .infinity)
     }
 
     @Test func toFixed() {

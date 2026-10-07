@@ -19,12 +19,15 @@ npm run test:browser     # emuladores + servidor estático + suítes Playwright 
 npm run test:rules       # sobe o emulador do Firestore e roda tests/rules.test.mjs (precisa Java)
 npm run rules:deploy     # firebase deploy --only firestore:rules
 npm run sonda:banco      # ataca o banco de produção (2 contas descartáveis) e confere que as rules no ar barram
+npm run vetores          # regera tests/vetores/calc.json (casos de calc.js, dados.js e push.js que o app nativo confere)
 npm run build:www        # copia o app para www/ com CSP em <meta> (webDir do Capacitor)
 npm run cap:sync         # build:www + cap sync ios
 
 node --test tests/calc.test.cjs                              # um arquivo só
 node --test --test-name-pattern="LICENSE" tests/docs.test.mjs  # um teste só (arquivos que usam node:test)
 ```
+
+**Vetores compartilhados.** O app nativo (`app-ios/`) reescreve em Swift as regras de `calc.js`, `dados.js` e a chave do token do `push.js`, e as confere contra `tests/vetores/calc.json`, gerado do código do site por `scripts/vetores-calc.mjs`. Mudou uma regra (ou exportou função nova) nesses arquivos: rode `npm run vetores` e faça commit do arquivo junto; `tests/vetores.test.mjs` falha enquanto ele estiver defasado, e o workflow `app-ios` mostra se o lado Swift precisa da mesma mudança.
 
 As rules só rodam com o emulador — use `npm run test:rules`.
 

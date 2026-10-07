@@ -863,7 +863,7 @@ Gere o arquivo:
 mkdir -p tests/vetores && npm run vetores
 ```
 
-Expected: `tests/vetores/calc.json: 52 grupos, 513 casos`.
+Expected: `tests/vetores/calc.json: 52 grupos, 518 casos` (os 513 dos casos acima, mais o `moneyShort` de −2,5 mi e os quatro limites da TIR que entraram na execução).
 
 Em `CLAUDE.md`, na seção "Comandos", depois da linha do `npm run sonda:banco`, acrescente ao bloco:
 

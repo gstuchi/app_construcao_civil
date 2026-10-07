@@ -3,6 +3,7 @@
 # api/ depende dela, e é redirecionada no vercel.json.
 ios/
 www/
+app-ios/
 docs/
 tests/
 scripts/

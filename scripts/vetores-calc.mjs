@@ -4,9 +4,10 @@
    confere que o arquivo está em dia com o código; o núcleo Swift (app-ios/CusttaNucleo) lê o mesmo
    arquivo. Se as duas cópias das regras divergirem, um dos lados falha.
 
-   Determinístico: "hoje" vem sempre do caso e o fuso é America/Sao_Paulo (sem TZ certo, o script se
-   executa de novo com ele). Os ids e as datas dos casos são os que o site gera (base 36 e AAAA-MM-DD):
-   para eles o localeCompare do calc.js dá a mesma ordem em qualquer língua.
+   Determinístico: "hoje" vem sempre do caso, o fuso é America/Sao_Paulo e a localidade pt_BR.UTF-8
+   (sem os dois certos, o script se executa de novo com eles). Os ids e as datas dos casos são os que o
+   site gera (base 36 e AAAA-MM-DD): para eles o localeCompare do calc.js dá a mesma ordem em qualquer
+   língua.
 
    Uso: npm run vetores                              grava tests/vetores/calc.json
         node scripts/vetores-calc.mjs --imprimir     só imprime (o teste do site usa) */
@@ -17,11 +18,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const FUSO = 'America/Sao_Paulo';
-if(process.env.TZ !== FUSO){
-  const r = spawnSync(process.execPath, process.argv.slice(1), { stdio: 'inherit', env: { ...process.env, TZ: FUSO } });
+/* O calc.js ordena com localeCompare sem locale, que segue a localidade do processo e muda de máquina
+   para máquina (o Mac do Giovani roda com en_US.UTF-8). pt_BR porque é a do navegador de quem usa o
+   site: os vetores guardam o que o localeCompare faz em produção. O ICU do Node lê a variável e usa os
+   próprios dados, sem depender da localidade instalada no sistema. */
+const LOCALIDADE = 'pt_BR.UTF-8';
+if(process.env.TZ !== FUSO || process.env.LC_ALL !== LOCALIDADE){
+  const r = spawnSync(process.execPath, process.argv.slice(1), { stdio: 'inherit', env: { ...process.env, TZ: FUSO, LC_ALL: LOCALIDADE } });
   process.exit(r.status ?? 1);
 }
 if(Intl.DateTimeFormat().resolvedOptions().timeZone !== FUSO) throw new Error(`fuso ${FUSO} não pegou`);
+if(new Intl.Collator().resolvedOptions().locale !== 'pt-BR') throw new Error(`localidade ${LOCALIDADE} não pegou`);
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);

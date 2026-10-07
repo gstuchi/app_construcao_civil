@@ -124,6 +124,11 @@ public func numeroDeTextoJS(_ texto: String) -> Double {
                 let b = String(d, radix: 2)
                 bits += String(repeating: "0", count: bitsPorDigito - b.count) + b
             }
+            // Zero à esquerda não conta; acima de 1024 bits o valor já passa de 2^1024 (e o Double(String)
+            // devolve nil acima de 16.384 caracteres, em vez de infinito).
+            guard let primeiro = bits.firstIndex(of: "1") else { return 0 }
+            bits = String(bits[primeiro...])
+            if bits.count > 1024 { return .infinity }
             bits = String(repeating: "0", count: (4 - bits.count % 4) % 4) + bits
             var hex = ""
             var i = bits.startIndex

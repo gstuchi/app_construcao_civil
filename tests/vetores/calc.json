@@ -3476,6 +3476,66 @@
           "2026-10-06"
         ],
         "saida": null
+      },
+      {
+        "caso": "acima de +1000% ao mês não tem raiz",
+        "args": [
+          [
+            {
+              "id": "x",
+              "valor": 1,
+              "data": "2026-01-01"
+            }
+          ],
+          12.03,
+          "2026-02-01"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "perto do teto de +1000%",
+        "args": [
+          [
+            {
+              "id": "x",
+              "valor": 1,
+              "data": "2026-01-01"
+            }
+          ],
+          10.6,
+          "2026-02-01"
+        ],
+        "saida": 915.743872056419
+      },
+      {
+        "caso": "abaixo de −99% ao mês não tem raiz",
+        "args": [
+          [
+            {
+              "id": "x",
+              "valor": 1,
+              "data": "2026-01-01"
+            }
+          ],
+          0.0045,
+          "2026-02-01"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "perto do piso de −99%",
+        "args": [
+          [
+            {
+              "id": "x",
+              "valor": 1,
+              "data": "2026-01-01"
+            }
+          ],
+          0.014,
+          "2026-02-01"
+        ],
+        "saida": -98.48777178898732
       }
     ],
     "calc.rendimentoAcima": [

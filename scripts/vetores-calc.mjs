@@ -200,6 +200,10 @@ tir('sem gastos', [], 100000, HOJE);
 tir('nenhum mês passou', [{ id: 'x', valor: 1000, data: HOJE }], 2000, HOJE);
 tir('sem raiz: venda menor que gasto feito no próprio dia', [{ id: 'x', valor: 1000, data: '2026-01-01' }, { id: 'y', valor: 5000, data: HOJE }], 3000, HOJE);
 tir('sem raiz: venda absurda passa de 1000% ao mês', [{ id: 'x', valor: 1, data: '2026-01-01' }], 1e15, HOJE);
+/* Os limites da bissecção (−99% a +1000% ao mês) também são regra: R$ 1 gasto um mês antes. */
+for(const [nome, venda] of [['acima de +1000% ao mês não tem raiz', 12.03], ['perto do teto de +1000%', 10.6],
+  ['abaixo de −99% ao mês não tem raiz', 0.0045], ['perto do piso de −99%', 0.014]])
+  tir(nome, [{ id: 'x', valor: 1, data: '2026-01-01' }], venda, '2026-02-01');
 const acima = calc('rendimentoAcima');
 acima('TIR acima do banco', 2.5, 1);
 acima('TIR abaixo do banco', 0.4, 1);

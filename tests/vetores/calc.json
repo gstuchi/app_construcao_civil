@@ -1103,6 +1103,41 @@
         "saida": false
       },
       {
+        "caso": "\"2026-0:-01\"",
+        "args": [
+          "2026-0:-01"
+        ],
+        "saida": false
+      },
+      {
+        "caso": "\"2026-01--1\"",
+        "args": [
+          "2026-01--1"
+        ],
+        "saida": false
+      },
+      {
+        "caso": "\"2026-06-31\"",
+        "args": [
+          "2026-06-31"
+        ],
+        "saida": false
+      },
+      {
+        "caso": "\"2026-09-31\"",
+        "args": [
+          "2026-09-31"
+        ],
+        "saida": false
+      },
+      {
+        "caso": "\"2026-11-31\"",
+        "args": [
+          "2026-11-31"
+        ],
+        "saida": false
+      },
+      {
         "caso": "nulo",
         "args": [
           null
@@ -1250,6 +1285,14 @@
           3
         ],
         "saida": "2027-02-28"
+      },
+      {
+        "caso": "ano de três dígitos, sem zero à esquerda",
+        "args": [
+          "0100-01-31",
+          1
+        ],
+        "saida": "100-02-28"
       },
       {
         "caso": "zero meses",
@@ -3536,6 +3579,26 @@
           "2026-02-01"
         ],
         "saida": -98.48777178898732
+      },
+      {
+        "caso": "saldo exatamente zero desce até o piso",
+        "args": [
+          [
+            {
+              "id": "x",
+              "valor": 1000,
+              "data": "2026-10-06"
+            },
+            {
+              "id": "y",
+              "valor": 50,
+              "data": "2021-10-06"
+            }
+          ],
+          1000,
+          "2026-10-06"
+        ],
+        "saida": -99
       }
     ],
     "calc.rendimentoAcima": [
@@ -7189,6 +7252,13 @@
           "Ünïcödé"
         ],
         "saida": "unicode"
+      },
+      {
+        "caso": "\"ΟΔΟΣ\"",
+        "args": [
+          "ΟΔΟΣ"
+        ],
+        "saida": "οδος"
       },
       {
         "caso": "nulo",
@@ -11272,6 +11342,19 @@
         "saida": "{\"2\":3,\"10\":2,\"-1\":6,\"01\":5,\"a\":4,\"b\":1}"
       },
       {
+        "caso": "índice de array vai até 4294967294; 4294967295 já é chave de texto",
+        "args": [
+          {
+            "5": 5,
+            "4294967294": 1,
+            "4294967295": 2,
+            "-1": 3,
+            "a": 4
+          }
+        ],
+        "saida": "{\"5\":5,\"4294967294\":1,\"-1\":3,\"4294967295\":2,\"a\":4}"
+      },
+      {
         "caso": "blob de exemplo",
         "args": [
           {
@@ -12587,6 +12670,34 @@
         }
       },
       {
+        "caso": "data com mês 00, mês 13 e dia 00 some",
+        "args": [
+          {
+            "obras": [
+              {
+                "id": "o0",
+                "dataInicio": "2026-00-10"
+              },
+              {
+                "id": "o1",
+                "dataInicio": "2026-13-10"
+              },
+              {
+                "id": "o2",
+                "dataInicio": "2026-01-00"
+              }
+            ]
+          }
+        ],
+        "saida": {
+          "obras": [],
+          "config": {
+            "taxaMensal": 1,
+            "topicosCustom": []
+          }
+        }
+      },
+      {
         "caso": "obra sem id some",
         "args": [
           {
@@ -13095,6 +13206,87 @@
               "venda": null,
               "valorEstimadoVenda": null,
               "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "config": {
+            "taxaMensal": 1,
+            "topicosCustom": []
+          }
+        }
+      },
+      {
+        "caso": "gasto de valor em branco some",
+        "args": [
+          {
+            "obras": [
+              {
+                "id": "o",
+                "nome": "Obra",
+                "dataInicio": "2026-01-01",
+                "gastos": [
+                  {
+                    "id": "g0",
+                    "valor": "",
+                    "data": "2026-01-02"
+                  },
+                  {
+                    "id": "g1",
+                    "valor": "  ",
+                    "data": "2026-01-02"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "saida": {
+          "obras": [
+            {
+              "id": "o",
+              "nome": "Obra",
+              "dataInicio": "2026-01-01",
+              "gastos": [],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "config": {
+            "taxaMensal": 1,
+            "topicosCustom": []
+          }
+        }
+      },
+      {
+        "caso": "estimado e área em branco viram nulo",
+        "args": [
+          {
+            "obras": [
+              {
+                "id": "o",
+                "nome": "Obra",
+                "dataInicio": "2026-01-01",
+                "gastos": [],
+                "valorEstimadoVenda": "  ",
+                "areaM2": ""
+              }
+            ]
+          }
+        ],
+        "saida": {
+          "obras": [
+            {
+              "id": "o",
+              "nome": "Obra",
+              "dataInicio": "2026-01-01",
+              "gastos": [],
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "fase": "construcao",
+              "venda": null,
               "afazeres": []
             }
           ],
@@ -14748,6 +14940,13 @@
           ""
         ],
         "saida": "\"\""
+      },
+      {
+        "caso": "\"\\b\\f\\r\"",
+        "args": [
+          "\b\f\r"
+        ],
+        "saida": "\"\\b\\f\\r\""
       },
       {
         "caso": "[1,\"a\",null,true,0.5]",

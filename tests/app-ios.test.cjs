@@ -66,6 +66,7 @@ test('Release assina com o perfil App Store e push de produção; Debug assina s
 
 test('pacotes: só Firebase e GoogleSignIn, em versão exata, e o Package.resolved bate', () => {
   const pbx = ler(PBX);
+  assert.doesNotMatch(pbx, /upToNext(Major|Minor)Version|versionRange|minimumVersion/, 'pacote de terceiros só por versão exata');
   const remotos = [...pbx.matchAll(/repositoryURL = "([^"]+)";\s*requirement = \{\s*kind = (\w+);\s*version = ([\d.]+);/g)]
     .map(m => ({ url: m[1], tipo: m[2], versao: m[3] }));
   assert.deepEqual(remotos.map(r => r.url).sort(), ['https://github.com/firebase/firebase-ios-sdk.git', 'https://github.com/google/GoogleSignIn-iOS']);

@@ -1,11 +1,17 @@
 name: app-ios
-# App nativo em SwiftUI (app-ios/). O job nucleo roda o swift test do pacote CusttaNucleo, que confere
-# as regras reescritas em Swift contra os vetores gerados do site (tests/vetores/calc.json): por isso
-# também dispara quando calc.js, dados.js, push.js ou o gerador mudam.
+# App nativo em SwiftUI (app-ios/), num macOS 26 (Xcode 26):
+# - nucleo: swift test do pacote CusttaNucleo, que confere as regras reescritas em Swift contra os
+#   vetores gerados do site (tests/vetores/calc.json); por isso também dispara quando calc.js,
+#   dados.js, push.js ou o gerador mudam;
+# - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
+#   unidade e de tela no simulador com os serviços falsos.
+# Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
+# (npm run test:app-ios:emuladores e npm run test:app-ios:cruzado): precisam de Java, dos
+# emuladores e da assinatura de simulador para o keychain do Firebase Auth.
 #
-# Por que macos-26 fixo, e não macos-latest: o pacote pede Swift 6.2 (Xcode 26); trocar de imagem
-# tem de ser decisão, não surpresa no meio de um PR. Pelo mesmo motivo o Xcode é fixo (DEVELOPER_DIR):
-# o padrão do runner muda sem aviso.
+# Por que macos-26 fixo, e não macos-latest: o projeto é do Xcode 16+ (objectVersion 77) e o pacote
+# pede Swift 6.2; trocar de imagem tem de ser decisão, não surpresa no meio de um PR. Pelo mesmo motivo
+# o Xcode é fixo (DEVELOPER_DIR): o padrão do runner muda sem aviso.
 on:
   pull_request:
     paths:
@@ -14,9 +20,15 @@ on:
       - 'dados.js'
       - 'push.js'
       - 'scripts/vetores-calc.mjs'
+      - 'scripts/simulador-ios.mjs'
       - 'tests/vetores/**'
       - '.github/workflows/app-ios.yml'
   workflow_dispatch:
+    inputs:
+      resolver_de_novo:
+        description: 'Resolver os pacotes Swift do app nativo de novo e mostrar o Package.resolved novo no resumo'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,3 +58,66 @@ jobs:
         env:
           TZ: America/Sao_Paulo
         run: swift test --package-path app-ios/CusttaNucleo
+
+  app:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # Pacotes Swift travados: o build usa só as versões do Package.resolved versionado. Para
+      # atualizar, rode este workflow no botão com "resolver de novo", confira repositórios e
+      # versões no resumo e versione o arquivo novo junto com a mudança do project.pbxproj.
+      - name: Resolver os pacotes Swift de novo
+        if: inputs.resolver_de_novo
+        run: |
+          set -o pipefail
+          ARQ=app-ios/Custta.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          rm -f "$ARQ"
+          xcodebuild -resolvePackageDependencies -project app-ios/Custta.xcodeproj -scheme Custta
+          { echo '### Package.resolved novo (app nativo)'; echo '```json'; cat "$ARQ"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat "$ARQ"
+
+      # -skipMacroValidation / -skipPackagePluginValidation: em CI não há quem aprove macro ou
+      # plugin de pacote, e sem as flags o xcodebuild falha em vez de perguntar.
+      # CODE_SIGNING_* zerados: a Release está configurada para o perfil "Custta App Store", e
+      # este build prova que ela compila sem segredo nenhum (a assinatura mora no envio).
+      - name: Compilar (Release, sem assinatura)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY= \
+            build
+
+      # Testes com os serviços falsos (nada de rede): unidade e tela, inclusive as auditorias de
+      # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui.
+      - name: Testes de unidade e de tela no simulador
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            CODE_SIGNING_ALLOWED=NO

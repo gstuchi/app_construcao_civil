@@ -1,0 +1,586 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C05A00000000000000000090 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000080 /* FirebaseAuth */; };
+		C05A00000000000000000091 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000081 /* FirebaseFirestore */; };
+		C05A00000000000000000092 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000082 /* GoogleSignIn */; };
+		C05A00000000000000000093 /* CusttaNucleo in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000083 /* CusttaNucleo */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C05A00000000000000000050 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C05A00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C05A00000000000000000030;
+			remoteInfo = Custta;
+		};
+		C05A00000000000000000052 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C05A00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C05A00000000000000000030;
+			remoteInfo = Custta;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		C05A00000000000000000010 /* Custta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Custta.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C05A00000000000000000011 /* CusttaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CusttaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C05A00000000000000000012 /* CusttaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CusttaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C05A00000000000000000023 /* Exceptions for "Custta" folder in "Custta" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C05A00000000000000000030 /* Custta */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		C05A00000000000000000020 /* Custta */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C05A00000000000000000023 /* Exceptions for "Custta" folder in "Custta" target */,
+			);
+			path = Custta;
+			sourceTree = "<group>";
+		};
+		C05A00000000000000000021 /* CusttaTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CusttaTests;
+			sourceTree = "<group>";
+		};
+		C05A00000000000000000022 /* CusttaUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CusttaUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C05A00000000000000000041 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C05A00000000000000000090 /* FirebaseAuth in Frameworks */,
+				C05A00000000000000000091 /* FirebaseFirestore in Frameworks */,
+				C05A00000000000000000092 /* GoogleSignIn in Frameworks */,
+				C05A00000000000000000093 /* CusttaNucleo in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C05A00000000000000000044 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C05A00000000000000000047 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C05A00000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				C05A00000000000000000020 /* Custta */,
+				C05A00000000000000000021 /* CusttaTests */,
+				C05A00000000000000000022 /* CusttaUITests */,
+				C05A00000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C05A00000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C05A00000000000000000010 /* Custta.app */,
+				C05A00000000000000000011 /* CusttaTests.xctest */,
+				C05A00000000000000000012 /* CusttaUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C05A00000000000000000030 /* Custta */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C05A00000000000000000063 /* Build configuration list for PBXNativeTarget "Custta" */;
+			buildPhases = (
+				C05A00000000000000000040 /* Sources */,
+				C05A00000000000000000041 /* Frameworks */,
+				C05A00000000000000000042 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C05A00000000000000000020 /* Custta */,
+			);
+			name = Custta;
+			packageProductDependencies = (
+				C05A00000000000000000080 /* FirebaseAuth */,
+				C05A00000000000000000081 /* FirebaseFirestore */,
+				C05A00000000000000000082 /* GoogleSignIn */,
+				C05A00000000000000000083 /* CusttaNucleo */,
+			);
+			productName = Custta;
+			productReference = C05A00000000000000000010 /* Custta.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C05A00000000000000000031 /* CusttaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C05A00000000000000000066 /* Build configuration list for PBXNativeTarget "CusttaTests" */;
+			buildPhases = (
+				C05A00000000000000000043 /* Sources */,
+				C05A00000000000000000044 /* Frameworks */,
+				C05A00000000000000000045 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C05A00000000000000000051 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C05A00000000000000000021 /* CusttaTests */,
+			);
+			name = CusttaTests;
+			packageProductDependencies = (
+			);
+			productName = CusttaTests;
+			productReference = C05A00000000000000000011 /* CusttaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C05A00000000000000000032 /* CusttaUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C05A00000000000000000069 /* Build configuration list for PBXNativeTarget "CusttaUITests" */;
+			buildPhases = (
+				C05A00000000000000000046 /* Sources */,
+				C05A00000000000000000047 /* Frameworks */,
+				C05A00000000000000000048 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C05A00000000000000000053 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C05A00000000000000000022 /* CusttaUITests */,
+			);
+			name = CusttaUITests;
+			packageProductDependencies = (
+			);
+			productName = CusttaUITests;
+			productReference = C05A00000000000000000012 /* CusttaUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C05A00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					C05A00000000000000000030 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					C05A00000000000000000031 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = C05A00000000000000000030;
+					};
+					C05A00000000000000000032 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = C05A00000000000000000030;
+					};
+				};
+			};
+			buildConfigurationList = C05A00000000000000000060 /* Build configuration list for PBXProject "Custta" */;
+			developmentRegion = "pt-BR";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				"pt-BR",
+				Base,
+			);
+			mainGroup = C05A00000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C05A00000000000000000070 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				C05A00000000000000000071 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				C05A00000000000000000072 /* XCLocalSwiftPackageReference "CusttaNucleo" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C05A00000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C05A00000000000000000030 /* Custta */,
+				C05A00000000000000000031 /* CusttaTests */,
+				C05A00000000000000000032 /* CusttaUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C05A00000000000000000042 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C05A00000000000000000045 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C05A00000000000000000048 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C05A00000000000000000040 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C05A00000000000000000043 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C05A00000000000000000046 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C05A00000000000000000051 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C05A00000000000000000030 /* Custta */;
+			targetProxy = C05A00000000000000000050 /* PBXContainerItemProxy */;
+		};
+		C05A00000000000000000053 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C05A00000000000000000030 /* Custta */;
+			targetProxy = C05A00000000000000000052 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		C05A00000000000000000061 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 4S7JKDKN27;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		C05A00000000000000000062 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 4S7JKDKN27;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C05A00000000000000000064 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APS_ENVIRONMENT = development;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Custta/Custta.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Custta/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Custta;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.custta.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C05A00000000000000000065 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APS_ENVIRONMENT = production;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Custta/Custta.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Custta/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Custta;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.custta.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Custta App Store";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C05A00000000000000000067 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.custta.app.testes;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Custta.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Custta";
+			};
+			name = Debug;
+		};
+		C05A00000000000000000068 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.custta.app.testes;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Custta.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Custta";
+			};
+			name = Release;
+		};
+		C05A0000000000000000006A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.custta.app.testes-de-tela;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Custta;
+			};
+			name = Debug;
+		};
+		C05A0000000000000000006B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.custta.app.testes-de-tela;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Custta;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C05A00000000000000000060 /* Build configuration list for PBXProject "Custta" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C05A00000000000000000061 /* Debug */,
+				C05A00000000000000000062 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C05A00000000000000000063 /* Build configuration list for PBXNativeTarget "Custta" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C05A00000000000000000064 /* Debug */,
+				C05A00000000000000000065 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C05A00000000000000000066 /* Build configuration list for PBXNativeTarget "CusttaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C05A00000000000000000067 /* Debug */,
+				C05A00000000000000000068 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C05A00000000000000000069 /* Build configuration list for PBXNativeTarget "CusttaUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C05A0000000000000000006A /* Debug */,
+				C05A0000000000000000006B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C05A00000000000000000072 /* XCLocalSwiftPackageReference "CusttaNucleo" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = CusttaNucleo;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C05A00000000000000000070 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = exactVersion;
+				version = 12.19.2;
+			};
+		};
+		C05A00000000000000000071 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = exactVersion;
+				version = 8.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C05A00000000000000000080 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C05A00000000000000000070 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		C05A00000000000000000081 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C05A00000000000000000070 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		C05A00000000000000000082 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C05A00000000000000000071 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		C05A00000000000000000083 /* CusttaNucleo */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C05A00000000000000000072 /* XCLocalSwiftPackageReference "CusttaNucleo" */;
+			productName = CusttaNucleo;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = C05A00000000000000000001 /* Project object */;
+}

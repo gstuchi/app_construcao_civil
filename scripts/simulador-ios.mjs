@@ -8,6 +8,7 @@
        pular). Assina para o simulador, como o Xcode faz: sem assinatura o app não tem
        entitlements e o Firebase Auth falha no keychain (erro -34018). */
 import { execFileSync, spawn } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -39,7 +40,7 @@ export function testarNoSimulador(alvos, env = {}){
     .on('exit', c => c === 0 ? resolve() : reject(new Error(`xcodebuild test falhou (${alvos.join(', ')})`))));
 }
 
-if(process.argv[1] === fileURLToPath(import.meta.url)){
+if(process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)){
   const args = process.argv.slice(2);
   try{
     if(args[0] === '--testar'){

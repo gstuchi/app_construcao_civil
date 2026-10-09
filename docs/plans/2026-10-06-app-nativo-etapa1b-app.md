@@ -19,19 +19,21 @@
 | 6, 7, 8 (partes com Firebase) | 12, 13, 14 | camada do Firestore, conta no Firebase, composição de produção |
 | 13, 14, 15 | 15, 16, 17 | conferência cruzada, envio ao TestFlight, documentação e build |
 
-**Portão e conselho de 08/10.** O Giovani aprovou o replanejamento com as recomendações do portão (cartão reto, seta ">" fora até a etapa 2, "Continuar com o Google"; seção "Resultado do portão de desenho") e levou duas decisões grandes ao conselho (aurora e globo; contraste no vidro; seção "Decisões"). O conselho manteve o desenho do fundo e mudou o motor (relógio único, só o disco do globo redesenhado, pausas novas) e trocou a falha esperada sobre o vidro por um laudo de leitura no simulador. A primeira medida achou o texto abaixo de 4,5:1 no escuro: a correção é do Giovani, com o Croqui; até lá o PR 2 segue, as cenas que reprovam ficam como pendência estrita na Tarefa 11 e nenhum build vai ao TestFlight.
+**Portão e conselho de 08/10.** O Giovani aprovou o replanejamento com as recomendações do portão (cartão reto, seta ">" fora até a etapa 2, "Continuar com o Google"; seção "Resultado do portão de desenho") e levou duas decisões grandes ao conselho (aurora e globo; contraste no vidro; seção "Decisões"). O conselho manteve o desenho do fundo e mudou o motor (relógio único, só o disco do globo redesenhado, pausas novas) e trocou a falha esperada sobre o vidro por um laudo de leitura no simulador. A primeira medida achou o texto abaixo de 4,5:1 no escuro.
+
+**Ajustes finais de 09/10.** O Giovani aprovou tudo ("tudo aprovado, pode mandar a tropa trabalhar"): a borda de rolagem suave do mockup `final-v2.html` no lugar da faixa escura, em todas as telas; a correção da leitura no escuro pela recomendação do Planejador, com o laudo como juiz (uma camada do tom do fundo sob o vidro do conteúdo e, segundo degrau da escada, o globo mais fundo dentro do app); e o ícone do sair na cor do texto. No caminho, o laudo achou um defeito no próprio pior caso da aurora, que deixava o fundo até três vezes mais claro do que qualquer quadro da deriva, corrigido. As 15 cenas do laudo passam de 4,5:1 (seção "Resultado do portão de desenho").
 
 **Goal:** Primeiro build 2.0 do app nativo no TestFlight: o Giovani entra na conta (e-mail e senha, Apple ou Google), vê as obras com os totais iguais aos do site, vê chegar ao iPhone uma mudança feita no site e abre o app em modo avião com tudo lá. No caminho, o PR 2 já mostra no simulador todas as telas da etapa 1 com a cara do mockup aprovado, com dados de exemplo.
 
 **Architecture:** Projeto Xcode `app-ios/Custta.xcodeproj` escrito à mão no formato do Xcode 16+ (pastas sincronizadas), com o app `Custta`, os testes de unidade `CusttaTests` (hospedados no app) e os de tela `CusttaUITests`. O app usa o pacote local `CusttaNucleo` (Parte A) e só dois pacotes de terceiros, travados: firebase-ios-sdk 12.19.2 e GoogleSignIn-iOS 8.0.0. Quatro camadas: o **núcleo** ganha as regras do cadastro, as regras das telas, a tradução dos erros do Firebase e o `Sincronizador` (porte da fila do `cloud.js` e do eco do `app.js`, puro, testado com transporte e relógio falsos); a **identidade** (`app-ios/Custta/Identidade/`) recria em SwiftUI a cara do PWA — tokens de cor e de vidro, aurora, globo, título escrito à mão, superfícies de vidro e a cápsula de abas —, escrita uma vez e reusada em todas as telas; as **telas** são SwiftUI sobre um `ModeloApp` observável, que é o `db` e o `auth.js` do site; a **camada de dados** é fina sobre o SDK (`TransporteFirebase`, `ContaFirebase`) e chega no PR 3. Em Debug o app aceita serviços falsos (telas e testes de tela, sem rede) e, a partir do PR 3, os emuladores do Firebase (integração e conferência cruzada com o site).
 
-**Visual:** a cara do PWA de hoje, escrita em código nativo, como o Giovani aprovou no mockup `~/Documents/custta-mockups/nativo/etapa1/final.html` em 06/10 (spec, "Decisões > Visual"; dose de vidro por tela no commit `9a84ae7`). O que o mockup decide e o que ainda falta decidir estão na seção "Resultado do portão de desenho".
+**Visual:** a cara do PWA de hoje, escrita em código nativo, como o Giovani aprovou no mockup `~/Documents/custta-mockups/nativo/etapa1/final.html` em 06/10 (spec, "Decisões > Visual"; dose de vidro por tela no commit `9a84ae7`), com a borda de rolagem suave do `final-v2.html` (09/10). O que o mockup decide e o que ainda falta decidir estão na seção "Resultado do portão de desenho".
 
 **Tech Stack:** Xcode 26.6 na CI (`macos-26`) e Xcode 27 no Mac do Giovani; Swift 6 com concorrência estrita; SwiftUI (iOS 26, com o Liquid Glass do sistema: `glassEffect`, `safeAreaBar`), Observation, Swift Testing, XCTest e XCUITest; FirebaseAuth e FirebaseFirestore 12.19.2; GoogleSignIn 8.0.0; AuthenticationServices, CryptoKit e Network do sistema; a fonte Roboto Medium (v3.016, OFL) só no botão do Google. No Node: firebase-tools (emuladores) e o SDK JavaScript `firebase` 12.18.0 que já está nas devDependencies, só no roteiro da conferência cruzada.
 
-**Spec:** `docs/specs/2026-10-06-app-nativo-design.md` (Decisões; Desenho 1 a 8; Etapas, linha 1; Testes e validação 2, 4, 5, 6 e 7). Depende da Parte A (`docs/plans/2026-10-06-app-nativo-etapa1a-nucleo.md`) já na `main`. Inventário do site, com arquivo e linha: `docs/plans/2026-10-06-app-nativo-inventario.md` (seções 5 e 6). Mockup aprovado: `~/Documents/custta-mockups/nativo/etapa1/final.html`, com os prints em `prints-com-refracao/final-*.png`.
+**Spec:** `docs/specs/2026-10-06-app-nativo-design.md` (Decisões; Desenho 1 a 8; Etapas, linha 1; Testes e validação 2, 4, 5, 6 e 7). Depende da Parte A (`docs/plans/2026-10-06-app-nativo-etapa1a-nucleo.md`) já na `main`. Inventário do site, com arquivo e linha: `docs/plans/2026-10-06-app-nativo-inventario.md` (seções 5 e 6). Mockup aprovado: `~/Documents/custta-mockups/nativo/etapa1/final.html`, com os prints em `prints-com-refracao/final-*.png`, e o `final-v2.html` para a borda de rolagem (09/10).
 
-**Validação deste plano (08/10/2026, replanejamento; refeita na madrugada de 09/10, depois do conselho):** o código das Tarefas 3 a 11 (PR 2) foi escrito e rodado num protótipo sobre a `origin/main` de 08/10 (`3acb6d6`), no Xcode 27 do Mac, e refeito no que o portão e o conselho de 08/10 mudaram (seta fora da lista, constante do botão do Google, relógio e pausas do fundo, globo e aurora, rolagem da entrada, laudo de leitura, auditorias e pares sólidos); o texto deste plano, aplicado numa cópia limpa da `origin/main` por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa), reproduz o protótipo byte a byte (176 arquivos). No protótipo: núcleo com 123 testes em 22 suítes (o conselho não mexeu no núcleo); `npm run test:unit` com 353; `tests/app-ios.test.cjs` com 19; `CusttaTests` com 35 testes em 7 suítes; `CusttaUITests` com 31 (19 de fluxo, 7 auditorias, os 3 do medidor do laudo com imagens sintéticas e os 2 do laudo, com as nove pendências registradas como falhas esperadas); nas provas de regressão, com o texto claro sobre a marca, a auditoria dos quatro combos reprova (2 achados) e a conta dos pares sólidos também (2,53:1), e com o secundário do Transparente claro no tom do site, o laudo reprova obras no claro esmeralda (3 palavras, de 3,29 a 4,08:1); o build Release compila. PR 3 (Tarefas 12 a 14, o código Firebase validado no plano anterior, recomposto), na cópia limpa: o build Release compila sobre o PR 2 novo; `xcodebuild test` com os falsos (46 testes de unidade e 26 de tela) e `npm run test:app-ios:emuladores` (os mesmos 46, nenhum pulado) passaram em 08/10, antes do conselho, e não foram refeitos (o conselho não mexeu no código do PR 3). PR 4 (Tarefas 15 a 17), na cópia limpa, depois do conselho: as guardas, `node tests/workflow.test.cjs` e `tests/docs.test.mjs` (28) e `npm run test:unit` (354) verdes; `npm run test:app-ios:cruzado` passou em 08/10, antes do conselho (`ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada`), e não foi refeito (o conselho não mudou o valor de acessibilidade da linha de obra nem o código do cruzado). O envio ao TestFlight (Tarefa 17, Step 6) não foi rodado. O Mac só tem o Swift 6.4: nenhum recurso só do 6.4 ou do SDK do iOS 27 foi usado (alvo iOS 26; o `TextRenderer` e o `ScrollPosition` do laudo são do iOS 18), e o job `app` da CI, no Xcode 26.6, confere no primeiro push do PR 2.
+**Validação deste plano (08/10/2026, replanejamento; refeita na madrugada de 09/10, depois do conselho, e de novo em 09/10, com os ajustes finais):** o código das Tarefas 3 a 11 (PR 2) foi escrito e rodado num protótipo sobre a `origin/main` de 08/10 (`3acb6d6`), no Xcode 27 do Mac, e refeito no que o portão e o conselho de 08/10 mudaram (seta fora da lista, constante do botão do Google, relógio e pausas do fundo, globo e aurora, rolagem da entrada, laudo de leitura, auditorias e pares sólidos) e no que os ajustes finais de 09/10 mudaram (borda de rolagem, escurecimento sob o vidro, globo mais fundo no app, ícone do sair, pior caso da aurora corrigido, laudo sem pendências, auditorias fora da faixa da borda); o texto deste plano, aplicado numa cópia limpa da `origin/main` por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa), reproduz o protótipo byte a byte (176 arquivos). No protótipo: núcleo com 123 testes em 22 suítes (nem o conselho nem os ajustes mexeram no núcleo); `npm run test:unit` com 353; `tests/app-ios.test.cjs` com 19; `CusttaTests` com 39 testes em 7 suítes; `CusttaUITests` com 31 (19 de fluxo, 7 auditorias, os 3 do medidor do laudo com imagens sintéticas e os 2 do laudo, com as 15 cenas acima de 4,5:1); nas provas de regressão, com o texto claro sobre a marca, a auditoria dos quatro combos reprova (2 achados) e a conta dos pares sólidos também (2,53:1); com o secundário do Transparente claro no tom do site, o laudo reprova obras no claro esmeralda (3 palavras, de 3,95 a 4,46:1); sem o escurecimento do Transparente, o laudo reprova obras no escuro (5 palavras a partir de 2,50:1 no esmeralda e 3 a partir de 2,94:1 no azul); e sem a composição de cada quadro no pior caso da aurora, o teste do envelope reprova (12.737 canais fora do mais claro dos dois quadros); o build Release compila (na cópia limpa, com o plano aplicado). PR 3 (Tarefas 12 a 14, o código Firebase validado no plano anterior, recomposto), na cópia limpa: o build Release compila sobre o PR 2 novo; `xcodebuild test` com os falsos (46 testes de unidade e 26 de tela) e `npm run test:app-ios:emuladores` (os mesmos 46, nenhum pulado) passaram em 08/10, antes do conselho, e não foram refeitos (nem o conselho nem os ajustes de 09/10 mexeram no código do PR 3; a Tarefa 14 acrescenta ao `RaizView` por âncoras que não mudaram). PR 4 (Tarefas 15 a 17), na cópia limpa, refeito com os ajustes de 09/10 (o checklist e a seção do CLAUDE.md novos): as guardas, `node tests/workflow.test.cjs` e `tests/docs.test.mjs` (28) e `npm run test:unit` (354) verdes; `npm run test:app-ios:cruzado` passou em 08/10, antes do conselho (`ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada`), e não foi refeito (nem o conselho nem os ajustes mudaram o valor de acessibilidade da linha de obra ou o código do cruzado). O envio ao TestFlight (Tarefa 17, Step 6) não foi rodado. O Mac só tem o Swift 6.4: nenhum recurso só do 6.4 ou do SDK do iOS 27 foi usado (alvo iOS 26; o `TextRenderer` e o `ScrollPosition` do laudo são do iOS 18, e o `scrollEdgeEffectStyle`, o `scrollEdgeEffectHidden` e o `safeAreaBar` da borda, do iOS 26), e o job `app` da CI, no Xcode 26.6, confere no primeiro push do PR 2.
 
 ## Global Constraints
 
@@ -76,13 +78,15 @@
 | Lista de obras | Cartão de vidro por obra (ícone da fase, nome, etiqueta da fase, meses, barra e texto do orçamento, total gasto), "N obras" em pílula de vidro e o **"Comparativo entre obras"** (gasto × corrigido pela taxa, com duas ou mais obras com gasto, como o `drawComp` do `app.js`). Sem a seta ">" do mockup até a etapa 2 (decisão do Giovani em 08/10): a obra ainda não abre. | O mockup aprovado traz o comparativo na etapa 1. A regra mora no núcleo (`comparativoEntreObras`, Tarefa 7). |
 | Esqueci a senha | Dentro do cartão de entrar, com o e-mail digitado nele, como no site: sem e-mail válido, "Digite seu e-mail no campo acima primeiro."; e-mail sem conta mostra "E-mail ou senha incorretos." | O mockup aprovado mostra o fluxo do site; a folha do esqueleto antigo (com `emailRedefinir`, `enviarLink` e `mensagemRedefinir`) saiu. Não revelar se o e-mail existe é decisão de produto e do console do Firebase, não desta etapa. |
 | Cores | 47 tokens × 2 peles × claro/escuro, gerados por `scripts/cores-app-ios.mjs` a partir do `styles.css` e do mockup aprovado (texto sobre o vidro por nível, contorno do "Aumentar contraste", tintas do vidro, aurora, globo, botão do Google). | Tokens com nome estável no código; mudança de cor é na tabela do script, nunca no catálogo nem na tela. A guarda confere que a aurora tem as cores do `styles.css`. |
-| Vidro | `VidroTokens.para(tela:escolha:opcoes:)`: entrada sempre Fosco (`Glass.regular`); app Transparente (`Glass.clear`, padrão) ou Fosco (escolha de Ajustes › Aparência, etapa 5, chave `custta.vidro`); "Aumentar contraste" → Fosco com contorno de 1,5 pt; "Reduzir transparência" → superfícies sólidas. Tintas do mockup por papel (cartão de entrada, segmentado, conteúdo, navegação). | Dose escolhida pelo Giovani em 06/10. Aro, sombra e refração vêm do `glassEffect` do sistema. |
+| Vidro | `VidroTokens.para(tela:escolha:opcoes:)`: entrada sempre Fosco (`Glass.regular`); app Transparente (`Glass.clear`, padrão) ou Fosco (escolha de Ajustes › Aparência, etapa 5, chave `custta.vidro`); "Aumentar contraste" → Fosco com contorno de 1,5 pt; "Reduzir transparência" → superfícies sólidas. Tintas do mockup por papel (cartão de entrada, segmentado, conteúdo, navegação). No escuro, uma camada do tom do fundo sob o vidro de tudo que não é navegação: 45% no Transparente e 20% no Fosco (decisão do Giovani em 09/10, laudo como juiz). | Dose escolhida pelo Giovani em 06/10. Aro, sombra e refração vêm do `glassEffect` do sistema. O vidro do mockup (CSS) escurecia o fundo (brilho de 0,84 e 0,56); o do iOS clareia e quase não desfoca, e o texto não fechava 4,5:1 no escuro. |
+| Borda de rolagem | Suave em todas as telas, num componente só (`.bordaDeRolagem(abas:)`): a borda `.soft` do iOS 26 desfoca o que passa por baixo das barras e um véu do tom do fundo some até 140 pt, de 50% no alto e 35% embaixo (70% e 60% nos tamanhos de acessibilidade; 88% e 80%, sem o desfoque, com "Reduzir transparência"). No alto só depois de rolar 40 pt; embaixo só nas telas com a cápsula. Decisão do Giovani em 09/10 (mockup `final-v2.html`). | A faixa escura do mockup v1 escondia a aurora e o conteúdo atrás do título pequeno e da cápsula. A borda do sistema já desfoca; o véu fecha o contraste do título, do relógio e das abas (no laudo, os rótulos da cápsula sobre a lista passaram de 2,76 e 3,32:1 para 4,62 e 5,67:1). |
 | Aurora | Camada desenhada uma vez (`Canvas`, a um terço do tamanho e ampliada) com os quatro brilhos e o degradê do `#aurora` do site, que só se move na deriva de 26 s (ida e volta); some para baixo pelo `fundo` posto por cima (o mesmo pixel da máscara do site, sem um passe fora da tela a cada quadro); intensidade por tela (a de hoje na entrada, a funda no app, a do site no claro) e transição de 0,9 s ao entrar e 0,6 s ao sair. Conselho de 08/10. | Fiel ao CSS do site e barata: o quadro custa uma transformação, não um redesenho. O mockup sugeria `MeshGradient`; o `Canvas` reproduz as elipses e o degradê do site sem aproximar. |
-| Globo | Os mesmos continentes e a mesma grade do `globe.js` (2,2°), pontos agrupados em dez faixas de profundidade (um desenho por faixa, não por ponto); halo e aro desenhados uma vez e, a cada quadro, só os pontos, no retângulo do disco e a 1,75 pixel por ponto (a densidade do `globe.js` e do globo do mockup), ampliados. Conselho de 08/10. | Mesmo desenho do site, com cerca de 86% menos área redesenhada por quadro (estimativa); a guarda confere que os continentes são os do `globe.js`. |
+| Globo | Os mesmos continentes e a mesma grade do `globe.js` (2,2°), pontos agrupados em dez faixas de profundidade (um desenho por faixa, não por ponto); halo e aro desenhados uma vez e, a cada quadro, só os pontos, no retângulo do disco e a 1,75 pixel por ponto (a densidade do `globe.js` e do globo do mockup), ampliados. Conselho de 08/10. No escuro, dentro do app, a 40% (`Globo.intensidade`), junto com a aurora funda; na entrada, inteiro (decisão do Giovani em 09/10, segundo degrau da escada da leitura). | Mesmo desenho do site, com cerca de 86% menos área redesenhada por quadro (estimativa); a guarda confere que os continentes são os do `globe.js`. |
 | Relógio e pausas do fundo | Um relógio só para a aurora e o globo (`CADisplayLink` com 30 quadros pedidos ao ProMotion), com o passo limitado a 1/15 s; tudo para com Reduzir movimento, Pouca Energia, calor (estado térmico sério ou crítico), app fora de ativo, rolagem, teclado aberto e alerta por cima; parado, a aurora fica no quadro 0 (onde o mockup mediu o contraste) e o globo no ângulo 1,2. Os avisos de energia e calor passam para a fila principal. Conselho de 08/10. | Cada quadro do fundo refaz o vidro da tela inteira: aurora e globo mudam juntos e só quando precisam, sem pular na volta do segundo plano. |
-| Leitura sobre o vidro | Auditoria do Xcode com superfícies sólidas (quatro combos e maior letra, com os rótulos da cápsula), pares de texto sobre sólido conferidos em Node e o laudo de leitura por pixel sobre o vidro de verdade, com portão de 4,5:1 no pior momento da deriva. O que reprova hoje fica como pendência estrita até a decisão do Giovani; na CI o laudo só relata. Conselho de 08/10. | A auditoria do Xcode não lê vidro; o print lê. A primeira medida mostrou o que só o aparelho mostraria (seção "Resultado do portão de desenho"). |
+| Leitura sobre o vidro | Auditoria do Xcode com superfícies sólidas (quatro combos e maior letra, com os rótulos da cápsula), pares de texto sobre sólido conferidos em Node e o laudo de leitura por pixel sobre o vidro de verdade, com portão de 4,5:1 no pior momento da deriva. As 15 cenas passam desde 09/10; na CI o laudo só relata. Conselho de 08/10. | A auditoria do Xcode não lê vidro; o print lê. A primeira medida mostrou o que só o aparelho mostraria, e a correção foi medida por ele (seção "Resultado do portão de desenho"). |
 | Título escrito à mão | Os caminhos do `.logo-escrito` do `index.html` (guarda compara), lidos por um leitor de SVG próprio, com os tempos do `styles.css` e a vibração leve do carimbo do ponto (como o app de hoje); pronto com Reduzir movimento ou Pouca Energia. | Uma fonte só para o logo: o site muda, a guarda avisa. |
 | Cartão de entrada | **Reto** (sem a inclinação 3D do site); ao rolar, o título sobe 80 pt e esmaece e a dica some, como no `auth.js`. | O vidro do iOS não acompanha a inclinação: no simulador do iOS 27, com `rotation3DEffect` a lâmina de vidro ignora a escala de 85% e fica maior que o conteúdo, e com uma projeção própria ela nem inclina. Confirmado pelo Giovani em 08/10. |
+| Ícone do sair do topo | Na cor do texto nos dois temas; no claro era a da marca (decisão do Giovani em 09/10). | Na cor da marca, no claro, o ícone caía para 2,5 a 3,0:1 quando o "Já confirmei", também da cor da marca, passava por baixo do vidro dele (medida do Croqui). |
 | Ícones | Os traços do `icons.js` do site viram image sets vetoriais em molde (`scripts/icones-app-ios.mjs`, só os usados); os ícones de mensagem (✓, !, cadeado) são SF Symbols. | Decisão do mockup ("os ícones do PWA viram símbolos próprios"). |
 | Serviços falsos | `ContaFalsa`, `TransporteFalsoApp` e `DadosDeExemplo` dentro do app, só em Debug, ligados por `CUSTTA_SERVICOS=falsos` (e, no PR 2, também sem variável nenhuma). Dados: `vitrine` (padrão, as três obras do mockup com as datas contadas de hoje, para comparar lado a lado), `exemplo` (os dos testes) e `vazio`. | Os testes de tela abrem o app de verdade; o falso precisa estar no binário. O Release (TestFlight) não leva nada disso. |
 | Opções do iPhone nos testes | Em Debug, `-custta.reduzirMovimento`, `-custta.reduzirTransparencia`, `-custta.aumentarContraste` e `-custta.quadroDaAurora` ligam as opções e congelam a aurora num quadro; para o laudo de leitura, `-custta.auroraPiorCaso` (a aurora no pior ponto da deriva inteira), `-custta.anguloDoGlobo`, `-custta.rolagem` (a lista parada numa rolagem dada) e `-custta.textoApagado` (`tudo` ou `navegacao`). | O XCUITest não muda os ajustes de acessibilidade do sistema, e o laudo precisa de dois prints do mesmo quadro. |
@@ -127,9 +131,9 @@
 
 A antiga Tarefa 9 (portão de desenho) aconteceu: o Giovani aprovou o mockup `~/Documents/custta-mockups/nativo/etapa1/final.html` em 06/10/2026 (prints em `prints-com-refracao/final-*.png`; spec atualizado no commit `9a84ae7`). O que ele decide, nos oito pontos que o portão pedia:
 
-1. **Mockups aprovados:** `final.html`, telas 1 a 11 (entrar, título sobre a aurora, estados, criar conta, falta pouco, transição, aviso de e-mail, obras, sincronização, Ajustes, letra máxima), mais as notas "Não fica igual", "Tokens", "Contraste" e "Referências".
+1. **Mockups aprovados:** `final.html`, telas 1 a 11 (entrar, título sobre a aurora, estados, criar conta, falta pouco, transição, aviso de e-mail, obras, sincronização, Ajustes, letra máxima), mais as notas "Não fica igual", "Tokens", "Contraste" e "Referências"; em 09/10, o `final-v2.html`, que troca a faixa escura do alto e de baixo pela borda de rolagem suave.
 2. **Fidelidade ao PWA:** as telas têm a cara do site (título escrito à mão com a dica "Role para entrar", segmentado "Entrar | Criar conta", cartão de vidro com Apple, Google, "ou", campos sólidos e links sublinhados; lista em cartões de vidro com ícone da fase, etiqueta, meses, orçamento e total; "N obras"; comparativo; aviso de e-mail; sincronização e sair na barra; cápsula de abas). Mudam, com motivo: o cartão de entrada reto (o vidro do iOS não acompanha a inclinação 3D do site); a seta ">" das linhas de obra, que só volta na etapa 2 (a obra ainda não abre); o botão oficial da Apple; o do Google pelas regras do Google; o halo atrás do título no escuro (o título branco sobre a aurora clara ficava em 2,6:1); sucesso e sessão expirada sem vermelho (✓ na cor do link, cadeado neutro); o "Não salvou" com rótulo na cor do texto e só o ponto vermelho; Ajustes só com a Conta e a versão.
-3. **Dose de vidro:** entrada sempre Fosco (vidro regular; cartão com tinta de 44%, claro 52%; segmentado 24%, claro 34%) com a aurora de hoje (92% esmeralda, 100% azul) e halo de 45% atrás do título, do logo e da dica, só no escuro; app Transparente (vidro claro; cartões e painéis 6%, claro 14%; abas e barra 8%, claro 16%) com a aurora funda no escuro (48% e 52%); no claro a aurora do site (55% e 52%) nas duas; Fosco como opção em Ajustes › Aparência (etapa 5: 24%/34% e 22%/36%). A aurora assenta em 0,9 s ao entrar e clareia em 0,6 s ao sair.
+3. **Dose de vidro:** entrada sempre Fosco (vidro regular; cartão com tinta de 44%, claro 52%; segmentado 24%, claro 34%) com a aurora de hoje (92% esmeralda, 100% azul) e halo de 45% atrás do título, do logo e da dica, só no escuro; app Transparente (vidro claro; cartões e painéis 6%, claro 14%; abas e barra 8%, claro 16%) com a aurora funda no escuro (48% e 52%); no claro a aurora do site (55% e 52%) nas duas; Fosco como opção em Ajustes › Aparência (etapa 5: 24%/34% e 22%/36%). A aurora assenta em 0,9 s ao entrar e clareia em 0,6 s ao sair. Desde 09/10, no escuro: uma camada do tom do fundo sob o vidro do conteúdo (45% no Transparente, 20% no Fosco) e, dentro do app, o globo a 40%.
 4. **Onde o nativo não pode ou não deve ficar igual ao PWA:** os 20 itens do mockup (botões da Apple e do Google, áreas seguras, cápsula própria, teclado e app Senhas, menu do sistema na origem, mensagens sem vermelho, alerta do sistema para sair, pílula de sincronização de 44 pt, letra grande até o AX5, aurora e vidro por tela, transição da aurora, cores de texto por nível, botão principal sólido, pausa do movimento, opções de acessibilidade, nunca vidro dentro de vidro, ícones em catálogo, sair no topo de Obras).
 5. **Tokens aprovados:** a tabela de vidro por tela e as cores de texto sobre o vidro (secundário, link e erro nos quatro combos), em `scripts/cores-app-ios.mjs` e `VidroTokens` (Tarefa 3).
 6. **Textos e ícones:** lista vazia "Nenhuma obra ainda." / "Nesta versão de teste, crie as obras pelo site. Elas aparecem aqui sozinhas."; "Você entrou com a Apple." e "Você entrou com o Google" com o e-mail; "Versão 2.0 (1)"; "Continuar com a Apple" e "Continuar com o Google"; sair com "Sair da conta?", Cancelar e Sair; o logo "tt." azul na pele azul como no PWA; ícones das fases do site (guindaste, casa, check).
@@ -145,27 +149,42 @@ Ele viu os prints do protótipo (cartão reto e inclinado, lista de obras) e apr
 3. **Cartão de entrada reto**, sem a inclinação 3D do site ("reto recomendado, ótimo"): o vidro do iOS não acompanha a inclinação (no simulador do iOS 27, a lâmina de vidro fica maior que o conteúdo inclinado). Ao rolar, o título sobe e esmaece e a dica some, como no site.
 4. **Seta ">" nas linhas de obra: fora até a etapa 2.** Na etapa 1 tocar na obra não abre nada, e a seta prometeria navegação. Sai só o visual: o valor de acessibilidade da linha (contrato da conferência cruzada) não muda. A seta volta na etapa 2, com a tela da obra, em `CartaoDeObra` (`ObrasView.swift`, Tarefa 10): no fim da linha e, na letra grande, ao lado do nome, com a margem da direita de volta a 14 pt.
 
-### Leitura sobre o vidro de verdade: pendência do Giovani (laudo de 08/10)
+### O que o Giovani decidiu em 09/10
 
-O conselho de 08/10 trocou a falha esperada sobre o vidro por um laudo que mede o vidro de verdade no simulador (Tarefa 11). A primeira medida achou um problema que o mockup não tinha como ver: **no escuro, o texto sobre o vidro não fecha 4,5:1** em Obras (Transparente), nos rótulos da cápsula de abas sobre a lista e, no pior momento da deriva, em entrar; no claro, só entrar na pele azul no pior momento. Números e prints na Tarefa 11 e no relatório do laudo.
+"Tudo aprovado, pode mandar a tropa trabalhar":
 
-A causa é o vidro, não as cores: o vidro imitado em CSS do mockup escurecia o que estava atrás (brilho de 0,84 no Transparente e 0,56 no Fosco) e desfocava 4 a 10 px, e as medidas dele dependiam disso; o vidro do iOS clareia um pouco o que está atrás e quase não desfoca, então a parte clara da aurora no alto da tela e os pontos claros do globo aparecem nítidos atrás do texto. Sem o globo, obras no escuro ainda reprova: a aurora pesa mais. Token de texto não resolve (o texto já é o branco do tema).
+1. **Borda de rolagem suave** (mockup `final-v2.html`): a faixa escura atrás do título pequeno e da cápsula de abas saiu. No lugar, a borda `.soft` do iOS 26 desfoca aos poucos o que passa por baixo, e um véu do tom do fundo, de 50% no alto e 35% embaixo, cai a zero em 140 pt (70% e 60% nos tamanhos de acessibilidade; 88% e 80%, sem o desfoque, com "Reduzir transparência"). É igual nos quatro combos e em todas as telas, num componente só (`BordaDeRolagem`, Tarefa 10, com os valores em `VeuDaBorda`, Tarefa 3). No app, o título pequeno fica de 7,4 a 13,7:1 e o relógio de 8,2 a 13,7:1 no pior ponto (medidos à parte: o sistema os desenha, e o laudo não os apaga); os rótulos da cápsula sobre a lista, de 4,62 a 8,32:1 no laudo.
+2. **Contraste no escuro: a recomendação do Planejador, com o laudo como juiz.** Detalhe na subseção abaixo.
+3. **Ícone do sair na cor do texto** nos dois temas (no claro era o da marca): o Croqui mediu 2,5 a 3,0:1 quando o "Já confirmei" passava por baixo do vidro dele. No app, no claro, com a lista passando por baixo, o pior pixel fica em 4,9:1 (azul) e 6,4:1 (esmeralda), medidos à parte.
 
-**Recomendação:** uma rodada curta de calibração do Croqui sobre o vidro de verdade (prints do protótipo; o laudo é o juiz, 4,5:1 no pior momento da deriva), começando pelo que devolve a cara aprovada: escurecer o fundo atrás do vidro do conteúdo no escuro como o mockup fazia (uma camada de escurecimento sob o vidro claro, que é o que a documentação do `Glass.clear` pede para texto). Se não fechar, nesta ordem: globo mais fundo atrás do conteúdo das telas do app; reforço local atrás do texto (o do mockup para os links, estendido); tinta maior na navegação para os rótulos da cápsula; Fosco no conteúdo do app no escuro. O Giovani aprova os prints. Até a decisão, as nove cenas que reprovam ficam como pendência estrita no laudo, o PR 2 segue, e **nenhum build vai ao TestFlight com pendência** (Tarefa 17). A correção entra como ajuste de tokens e da `Superficie` (Tarefas 3 e 10) e esvazia a lista de pendências da Tarefa 11.
+### Leitura sobre o vidro de verdade: corrigida (laudo de 09/10)
+
+O conselho de 08/10 trocou a falha esperada sobre o vidro por um laudo que mede o vidro de verdade no simulador (Tarefa 11). A primeira medida (08/10) achou o texto abaixo de 4,5:1 no escuro, em Obras, nos rótulos da cápsula sobre a lista e em entrar, e no claro azul, em entrar. Ao corrigir, apareceram duas causas:
+
+- **O pior caso da aurora do laudo estava errado.** O envelope (os 27 quadros da deriva combinados pelo mais claro) aplicava o "mais claro" à aurora semitransparente de cada quadro, e não ao quadro já composto com o fundo. Por isso, no alto da tela, ficava até três vezes mais claro que o mais claro dos quadros: L 0,42 contra 0,17 a 0,18. Agora cada quadro é composto antes (`EnvelopeDaAurora`, Tarefa 4, com um teste de unidade que confere o envelope contra os quadros). Com isso, entrar no claro azul passou (5,13:1) e Obras no escuro ficou em 1,82:1 (esmeralda) e 2,33:1 (azul).
+- **O vidro do iOS não escurece o fundo como o do mockup.** O vidro imitado em CSS escurecia o que estava atrás (brilho de 0,84 no Transparente e 0,56 no Fosco) e desfocava 4 a 10 px. O do iOS clareia um pouco e quase não desfoca, então a aurora no alto e os pontos do globo apareciam nítidos atrás do texto.
+
+A correção seguiu a escada aprovada, no mínimo que passa com folga de cerca de 0,25 no pior ponto:
+
+1. **Camada de escurecimento sob o vidro, no escuro** (`VidroTokens.escurecimento`, Tarefa 3; a `Superficie` a põe atrás do vidro): 45% do tom do fundo no Transparente e 20% no Fosco (cartão de entrada, segmentado e conteúdo no Fosco). A navegação fica sem ela: o véu da borda já fecha a cápsula. Com 30%, o miolo dos cartões fica igual ao do mockup (L 0,124 a 0,132 contra 0,125 a 0,135), mas o texto sobre os pontos do globo ainda reprovava; sozinha, mesmo com 50%, a camada deixava Obras no escuro esmeralda em 4,22:1 e a maior letra em 3,80:1.
+2. **Globo mais fundo dentro do app, no escuro** (`Globo.intensidade`, Tarefa 4, aplicado pela `RaizView`, Tarefa 10): 40%, junto com a aurora funda e na mesma transição. Os pontos entre os cartões ficam com o brilho dos do mockup (p90 de L 0,21 contra 0,22 no esmeralda; a 100% eram 0,52). Com o globo a 40%, o escurecimento de 40% deixava Obras no escuro esmeralda em 4,40:1; com 45%, fica em 4,77:1.
+3. Os outros degraus (reforço local atrás do texto, tinta maior na navegação, Fosco no conteúdo do escuro) não foram precisos.
+
+Resultado: **as 15 cenas do laudo passam de 4,5:1** no pior momento da deriva (números por cena na Tarefa 11). No claro, o escurecimento e o globo mais fundo não valem: as cenas do claro só mudaram pelo envelope corrigido (entrar no claro azul, de 3,31 para 5,13:1). O Croqui espelha os valores no mockup (`final-v3.html`). A calibração simulador × aparelho e o teste no sol continuam no checklist do aparelho (Tarefa 17).
 
 Ajustes que o código fez sobre o mockup, para o Giovani saber (não pedem decisão):
 
 - **Segmento escolhido sólido** ("Entrar | Criar conta"): no mockup a pílula escolhida tem 90% da tinta; a 90%, o branco sobre ela fica em 4,4:1 no claro (a auditoria do Xcode reprovou). Com 100% fecha 5,3:1.
-- **Contraste sobre o vidro:** a auditoria do Xcode não lê fundo de vidro (no simulador ela reprova até texto escuro sobre a pílula sólida do segmentado, e os mesmos textos com tinta de 6% ou de 50%). As cores passam com superfícies sólidas nos quatro combos e na maior letra (auditoria do Xcode) e pela conta dos pares sólidos (sem Xcode); sobre o vidro, quem mede é o laudo de leitura (Tarefa 11), e o que ele achou está na pendência acima.
+- **Contraste sobre o vidro:** a auditoria do Xcode não lê fundo de vidro (no simulador ela reprova até texto escuro sobre a pílula sólida do segmentado, e os mesmos textos com tinta de 6% ou de 50%). As cores passam com superfícies sólidas nos quatro combos e na maior letra (auditoria do Xcode) e pela conta dos pares sólidos (sem Xcode); sobre o vidro, quem mede é o laudo de leitura (Tarefa 11), em que as 15 cenas passam.
 
 ## Referências que faltam
 
 As seis do plano anterior, com o que o mockup resolveu:
 
-1. **Liquid Glass nativo para calibrar a dose:** decidido no mockup (dose por tela). Falta só a calibração fina do vidro claro no aparelho, com o print do app Tempo (pendência do Giovani que não trava; item do checklist da Tarefa 17).
+1. **Liquid Glass nativo para calibrar a dose:** decidido no mockup (dose por tela) e, no escuro, pelo laudo de 09/10 (escurecimento sob o vidro). Falta só a calibração fina do vidro claro no aparelho, com o print do app Tempo (pendência do Giovani que não trava; item do checklist da Tarefa 17).
 2. **Fundo animado que não pesa:** decidido pelo conselho de 08/10 (seção "Decisões"): aurora desenhada uma vez e só movida, globo em faixas de profundidade redesenhando só o disco a 1,75 pixel por ponto, os dois num relógio só a 30 quadros pedidos ao ProMotion, sem pular na volta; tudo para com Reduzir movimento, Pouca Energia, calor, app fora de ativo, rolagem, teclado e alerta por cima. A medida no iPhone fica no checklist do aparelho (Tarefa 17): rolar liso, dez minutos sem esquentar, faixas na aurora funda.
 3. **Identidade no maior tamanho de letra:** decidido no mockup (tela 11: tudo empilha e rola; logo, aurora, globo, cápsula e botões sociais não crescem).
-4. **Legibilidade sobre vidro e aurora:** decidido no mockup (halo de 45%, cores de texto por nível, medidas no pior ponto); no código, a auditoria do Xcode confere as cores com superfícies sólidas e o laudo de leitura mede o vidro de verdade no pior momento da deriva (Tarefa 11). O laudo mostrou que, no escuro, o vidro do iOS não repete o escurecimento do vidro do mockup: falta a decisão do Giovani sobre a correção (pendência acima).
+4. **Legibilidade sobre vidro e aurora:** decidido no mockup (halo de 45%, cores de texto por nível, medidas no pior ponto); no código, a auditoria do Xcode confere as cores com superfícies sólidas e o laudo de leitura mede o vidro de verdade no pior momento da deriva (Tarefa 11). O laudo mostrou que, no escuro, o vidro do iOS não repete o escurecimento do vidro do mockup; a correção de 09/10 (acima) fecha as 15 cenas, e falta só a calibração no aparelho (checklist da Tarefa 17).
 5. **Comportamento do sistema que o PWA imita:** decidido no mockup (os 20 itens).
 6. **Título escrito à mão:** decidido: os mesmos traços e tempos do site; com Reduzir movimento aparece pronto.
 
@@ -184,24 +203,24 @@ As seis do plano anterior, com o que o mockup resolveu:
 
 - **Vidro do iOS e animação 3D:** o `glassEffect` não acompanha escala nem projeção (motivo do cartão reto, decidido pelo Giovani em 08/10). Qualquer efeito novo sobre uma superfície de vidro precisa ser visto no simulador antes de entrar no plano.
 - **Desempenho da aurora e do globo na rolagem e bateria:** a aurora é uma camada pronta que só se move; o globo redesenha só o disco, a 1,75 pixel por ponto; os dois andam num relógio só, a 30 quadros pedidos ao ProMotion, e param na rolagem, com o teclado, com um alerta, fora de ativo, no Modo de Pouca Energia e com o aparelho quente (conselho de 08/10). Cada quadro do fundo ainda refaz o vidro da tela inteira, e esse custo só o aparelho mede (checklist da Tarefa 17: rolar liso no iPhone do Giovani e, antes da loja, no iPhone 16 Pro do pai; dez minutos sem esquentar). Se pesar, os planos B do conselho são a deriva da aurora em Core Animation e o `GlassEffectContainer`.
-- **Leitura sobre o vidro e a aurora:** o laudo de leitura (Tarefa 11) mede o vidro de verdade no simulador, no pior momento da deriva, e a primeira medida reprovou o escuro (pendência do Giovani na seção "Resultado do portão de desenho"). Riscos que sobram: o vidro do simulador pode não ser o do aparelho (calibração simulador × aparelho no checklist da Tarefa 17) e o da CI (iOS 26, máquina virtual) pode desenhar diferente do Mac (na CI o laudo só relata). Nenhum build vai ao TestFlight com pendência no laudo.
-- **Vidro claro (Transparente) sobre conteúdo:** a cápsula de abas e a barra mostram o que passa por baixo; a `safeAreaBar` dá o efeito de borda do sistema. A calibração final depende do print do app Tempo, pendência do Giovani que não trava (checklist da Tarefa 17), depois da correção da leitura no escuro.
+- **Leitura sobre o vidro e a aurora:** o laudo de leitura (Tarefa 11) mede o vidro de verdade no simulador, no pior momento da deriva. A primeira medida reprovou o escuro, e a correção de 09/10 (escurecimento sob o vidro e globo mais fundo no app; seção "Resultado do portão de desenho") fecha as 15 cenas, três delas com pouca folga: os rótulos da cápsula no escuro azul (4,62:1), entrar no escuro azul (4,58:1, a pílula sólida do segmentado) e a etiqueta "Vendida" no claro (4,56:1, sólida). Se a cápsula cair numa versão nova do iOS, o próximo degrau da escada é a tinta maior na navegação. Riscos que sobram: o vidro do simulador pode não ser o do aparelho (calibração simulador × aparelho no checklist da Tarefa 17) e o da CI (iOS 26, máquina virtual) pode desenhar diferente do Mac (na CI o laudo só relata). Nenhum build vai ao TestFlight com o laudo reprovando no Mac.
+- **Vidro claro (Transparente) sobre conteúdo:** a cápsula de abas e a barra mostram o que passa por baixo, separado delas pela borda de rolagem suave (a `.soft` do sistema e o véu do fundo). A calibração final depende do print do app Tempo, pendência do Giovani que não trava (checklist da Tarefa 17).
 - **Letra grande:** a cápsula de abas, o logo e os botões sociais não crescem (decisão do mockup); a auditoria de tipo dinâmico os deixa de fora pelo identificador, e o Visualizador de Conteúdo Grande cobre a leitura.
 
-**O que a etapa 1 tem de provar no aparelho** (checklist da Tarefa 17): rolar a lista com aurora e globo sem engasgar; dez minutos de uso sem esquentar; com Reduzir movimento, aurora e globo parados e o logo pronto; com Reduzir transparência, superfícies sólidas e legíveis; com Aumentar contraste, Fosco com contorno; no maior tamanho de letra, nada cortado sobre o vidro; o vidro claro calibrado com o print do Tempo; o print da tela de entrar no aparelho batendo com o do simulador (calibração do laudo); os cinco textos de menor margem do laudo legíveis no sol.
+**O que a etapa 1 tem de provar no aparelho** (checklist da Tarefa 17): rolar a lista com aurora e globo sem engasgar; dez minutos de uso sem esquentar; com Reduzir movimento, aurora e globo parados e o logo pronto; com Reduzir transparência, superfícies sólidas e legíveis; com Aumentar contraste, Fosco com contorno; no maior tamanho de letra, nada cortado sobre o vidro; o vidro claro calibrado com o print do Tempo; o título pequeno, o relógio e as abas legíveis com a lista passando por baixo da borda de rolagem; o print da tela de entrar no aparelho batendo com o do simulador (calibração do laudo); os cinco textos de menor margem do laudo legíveis no sol.
 
-**Outros riscos abertos:** o primeiro envio assinado ao TestFlight depende dos secrets e do perfil "Custta App Store" de hoje (mesmo App ID); o login de verdade com Apple e Google só se prova no aparelho; a correção da leitura sobre o vidro no escuro (pendência do Giovani, com uma rodada curta do Croqui) volta às Tarefas 3 e 10 e esvazia as pendências da Tarefa 11; o PR 2 é grande (nove tarefas): o ponto de controle depois da Tarefa 5 e o PR em rascunho desde o primeiro commit (CI com o Xcode 26.6 a cada push) servem para o erro aparecer cedo.
+**Outros riscos abertos:** o primeiro envio assinado ao TestFlight depende dos secrets e do perfil "Custta App Store" de hoje (mesmo App ID); o login de verdade com Apple e Google só se prova no aparelho; o escurecimento sob o vidro e o véu da borda foram medidos no simulador e podem pedir ajuste no aparelho (checklist da Tarefa 17); o PR 2 é grande (nove tarefas): o ponto de controle depois da Tarefa 5 e o PR em rascunho desde o primeiro commit (CI com o Xcode 26.6 a cada push) servem para o erro aparecer cedo.
 
 ## Como entregar
 
 | PR | Branch e worktree | Tarefas | Estimativa (dias de trabalho do time) |
 | --- | --- | --- | --- |
 | 1 | `feat/app-nativo-projeto` | 1 e 2 | feito (#59, `3acb6d6`, 08/10) |
-| 2 | `feat/app-nativo-telas` em `.claude/worktrees/app-nativo-telas` | 3 a 11 | 5 a 7 (ponto de controle visual ao fim da Tarefa 5, no 1º ou 2º dia); mais 1 a 1,5 para a correção da leitura no escuro, depois da decisão do Giovani |
+| 2 | `feat/app-nativo-telas` em `.claude/worktrees/app-nativo-telas` | 3 a 11 | 5 a 7 (ponto de controle visual ao fim da Tarefa 5, no 1º ou 2º dia) |
 | 3 | `feat/app-nativo-firebase` em `.claude/worktrees/app-nativo-firebase` | 12, 13 e 14 | 2 a 3 |
 | 4 | `feat/app-nativo-testflight` em `.claude/worktrees/app-nativo-testflight` | 15, 16 e 17 | 1,5 a 2 |
 
-A estimativa conta implementação, revisão do Lupa (e a conferência visual do Verniz nas Tarefas 4, 5 e 10), correções e a primeira passada na CI, com o código já escrito e validado neste plano; o conselho de 08/10 somou ao PR 2 o relógio e as pausas do fundo e o laudo de leitura (cerca de 1 dia a mais). As Tarefas 6, 7 e 8 são o código do núcleo já validado no plano anterior (a 7 ganhou o comparativo). Fica fora da conta do time o tempo do Giovani: responder às pendências do portão, aprovar os PRs, rodar o checklist do iPhone (cerca de 1 hora) e o vaivém das correções que ele pedir.
+A estimativa conta implementação, revisão do Lupa (e a conferência visual do Verniz nas Tarefas 4, 5 e 10), correções e a primeira passada na CI, com o código já escrito e validado neste plano; o conselho de 08/10 somou ao PR 2 o relógio e as pausas do fundo e o laudo de leitura (cerca de 1 dia a mais); os ajustes de 09/10 (borda de rolagem, escurecimento sob o vidro, globo mais fundo e ícone do sair) já vêm escritos e medidos e cabem na mesma conta. As Tarefas 6, 7 e 8 são o código do núcleo já validado no plano anterior (a 7 ganhou o comparativo). Fica fora da conta do time o tempo do Giovani: responder às pendências do portão, aprovar os PRs, rodar o checklist do iPhone (cerca de 1 hora) e o vaivém das correções que ele pedir.
 
 ```bash
 # na raiz do repositório principal; de dentro de um worktree, a linha abaixo sobe até ela
@@ -228,10 +247,10 @@ Todos os comandos rodam na raiz do worktree. `DESTINO` nos comandos de teste é 
 | `app-ios/Custta.xcodeproj/` (project.pbxproj, workspace, Package.resolved, scheme) | projeto, alvos, pacotes travados |
 | `app-ios/Custta/CusttaApp.swift` | entrada do app: a raiz com o modelo, ou a abertura sem ele |
 | `app-ios/Custta/Composicao.swift` | monta os serviços: falsos (Debug, PR 2); produção e emuladores (PR 3) |
-| `app-ios/Custta/Identidade/Paleta.swift`, `Vidro.swift` | tokens de cor, aparência, dose de vidro por tela, opções do iPhone, `.superficie(_:em:)` |
-| `app-ios/Custta/Identidade/Movimento.swift`, `Aurora.swift`, `Globo.swift` | tempo pausável, curvas do CSS, rolagem; aurora, halo e globo |
+| `app-ios/Custta/Identidade/Paleta.swift`, `Vidro.swift` | tokens de cor, aparência, dose de vidro por tela, escurecimento sob o vidro no escuro, véu da borda de rolagem, opções do iPhone, `.superficie(_:em:)` |
+| `app-ios/Custta/Identidade/Movimento.swift`, `Aurora.swift`, `Globo.swift` | tempo pausável, curvas do CSS, rolagem; aurora (e o pior caso do laudo), halo e globo (mais fundo no app, no escuro) |
 | `app-ios/Custta/Identidade/CaminhoSVG.swift`, `LogoEscrito.swift` | leitor de caminho SVG; título escrito à mão |
-| `app-ios/Custta/Identidade/Componentes.swift`, `CapsulaDeAbas.swift` | campo, botões (principal, secundário, Apple, Google), mensagem, link, etiqueta, barra; cápsula de abas |
+| `app-ios/Custta/Identidade/Componentes.swift`, `CapsulaDeAbas.swift` | campo, botões (principal, secundário, Apple, Google), mensagem, link, etiqueta, barra, borda de rolagem; cápsula de abas |
 | `app-ios/Custta/Fontes/Roboto-Medium.ttf`, `OFL-Roboto.txt` | fonte do botão do Google e a licença |
 | `app-ios/Custta/Conta/ServicoConta.swift` | protocolo da conta, `Usuario`, `CredencialApple`, `ErroConta` |
 | `app-ios/Custta/Dados/Sistema.swift` | relógio, rede e janela do sistema |
@@ -1635,9 +1654,9 @@ git commit -m "ci: app nativo compila e testa no simulador" -m "O workflow app-i
 
 **Interfaces:**
 - Consumes: catálogo da Tarefa 1; `styles.css` (aurora e cores dos quatro combos) e `icons.js` do site; tokens do mockup aprovado (seção "Resultado do portão de desenho").
-- Produces: em Swift, `enum Pele: String, CaseIterable { case esmeralda = "Esmeralda", azul = "Azul" }`; `enum Token: String, CaseIterable` (os nomes do catálogo, de `fundo` a `globoAro`); `struct Paleta: Equatable { var pele: Pele; static func nome(_ token: Token, _ pele: Pele) -> String; func cor(_ token: Token) -> Color }`; `EnvironmentValues.paleta`; `enum Aparencia { static let chaveTema = "custta.tema", chavePele = "custta.pele", chaveVidro = "custta.vidro"; static func esquema(_:) -> ColorScheme; static func pele(_:) -> Pele; static func vidro(_:) -> EscolhaDeVidro }`; `enum TelaDoVidro { entrada, app }`; `enum EscolhaDeVidro: String, CaseIterable { transparente, fosco }`; `enum NivelDeVidro { transparente, fosco, solido }`; `enum PapelDoVidro { cartaoEntrada, segmentado, conteudo, navegacao }`; `struct OpcoesDoAparelho: Equatable { var reduzirMovimento, reduzirTransparencia, aumentarContraste, poucaEnergia, calor: Bool; var animaFundo: Bool; static func quente(_: ProcessInfo.ThermalState) -> Bool }`; `struct VidroTokens: Equatable { let nivel: NivelDeVidro; let contorno: Bool; static func para(tela:escolha:opcoes:) -> VidroTokens; func tinta(_:escuro:) -> Double; func corDaTinta(_:) -> Token; var secundario: Token; var link: Token }`; `EnvironmentValues.opcoes`, `EnvironmentValues.vidro`; `View.superficie(_ papel: PapelDoVidro, em forma: some InsettableShape) -> some View`; só em Debug, para o laudo de leitura (Tarefa 11), `struct TextoApagado: TextRenderer`, `struct ApagaTexto: ViewModifier { init(ativo:) }` e `EnvironmentValues.apagaTextoDaNavegacao` (a `Superficie` de navegação apaga o próprio texto quando ele está ligado); image sets `Icones/predio`, `engrenagem`, `sair`, `guindaste`, `casa`, `check`, `olho`, `olhoFechado`, `setaBaixo`. Em Node, `scripts/cores-app-ios.mjs` exporta `CORES`, `PARES_SOLIDOS` (texto × fundo sólido, conferidos a 4,5:1 sem Xcode), `colorSet(valores)` e `arquivos()`; `scripts/icones-app-ios.mjs` exporta `USADOS`, `svg(nome)` e `arquivos()`.
+- Produces: em Swift, `enum Pele: String, CaseIterable { case esmeralda = "Esmeralda", azul = "Azul" }`; `enum Token: String, CaseIterable` (os nomes do catálogo, de `fundo` a `globoAro`); `struct Paleta: Equatable { var pele: Pele; static func nome(_ token: Token, _ pele: Pele) -> String; func cor(_ token: Token) -> Color }`; `EnvironmentValues.paleta`; `enum Aparencia { static let chaveTema = "custta.tema", chavePele = "custta.pele", chaveVidro = "custta.vidro"; static func esquema(_:) -> ColorScheme; static func pele(_:) -> Pele; static func vidro(_:) -> EscolhaDeVidro }`; `enum TelaDoVidro { entrada, app }`; `enum EscolhaDeVidro: String, CaseIterable { transparente, fosco }`; `enum NivelDeVidro { transparente, fosco, solido }`; `enum PapelDoVidro { cartaoEntrada, segmentado, conteudo, navegacao }`; `struct OpcoesDoAparelho: Equatable { var reduzirMovimento, reduzirTransparencia, aumentarContraste, poucaEnergia, calor: Bool; var animaFundo: Bool; static func quente(_: ProcessInfo.ThermalState) -> Bool }`; `struct VidroTokens: Equatable { let nivel: NivelDeVidro; let contorno: Bool; static func para(tela:escolha:opcoes:) -> VidroTokens; func tinta(_:escuro:) -> Double; func escurecimento(_:escuro:) -> Double; func corDaTinta(_:) -> Token; var secundario: Token; var link: Token }`; `enum VeuDaBorda { static func opacidade(grande:reduzirTransparencia:) -> (topo: Double, base: Double) }`; `EnvironmentValues.opcoes`, `EnvironmentValues.vidro`; `View.superficie(_ papel: PapelDoVidro, em forma: some InsettableShape) -> some View`; só em Debug, para o laudo de leitura (Tarefa 11), `struct TextoApagado: TextRenderer`, `struct ApagaTexto: ViewModifier { init(ativo:) }` e `EnvironmentValues.apagaTextoDaNavegacao` (a `Superficie` de navegação apaga o próprio texto quando ele está ligado); image sets `Icones/predio`, `engrenagem`, `sair`, `guindaste`, `casa`, `check`, `olho`, `olhoFechado`, `setaBaixo`. Em Node, `scripts/cores-app-ios.mjs` exporta `CORES`, `PARES_SOLIDOS` (texto × fundo sólido, conferidos a 4,5:1 sem Xcode), `colorSet(valores)` e `arquivos()`; `scripts/icones-app-ios.mjs` exporta `USADOS`, `svg(nome)` e `arquivos()`.
 
-As cores vêm do `styles.css` nos quatro combos e, para o que o mockup aprovado decidiu, da tabela "Tokens de vidro, agora por tela" do `final.html`: texto secundário, link e erro sobre o vidro por nível, contorno do "Aumentar contraste", tintas do vidro por papel, aurora, globo, o realce do logo e as cores fixas do botão do Google. Valor com transparência vai como `#RRGGBBAA`. Os ícones são os traços do `icons.js` do site, só os que as telas usam.
+As cores vêm do `styles.css` nos quatro combos e, para o que o mockup aprovado decidiu, da tabela "Tokens de vidro, agora por tela" do `final.html`: texto secundário, link e erro sobre o vidro por nível, contorno do "Aumentar contraste", tintas do vidro por papel, aurora, globo, o realce do logo e as cores fixas do botão do Google. Valor com transparência vai como `#RRGGBBAA`. Os ícones são os traços do `icons.js` do site, só os que as telas usam. Dois valores vêm das decisões de 09/10 (seção "Resultado do portão de desenho"): o escurecimento sob o vidro no escuro (uma camada do tom do fundo atrás do vidro de tudo que não é navegação, 45% no Transparente e 20% no Fosco, que a `Superficie` desenha) e o véu da borda de rolagem (50% no alto e 35% embaixo; 70% e 60% na letra grande; 88% e 80% com "Reduzir transparência"), que o componente da Tarefa 10 usa.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -1708,6 +1727,24 @@ struct VidroTokensTests {
         #expect(fosco.tinta(.cartaoEntrada, escuro: true) == 0.44 && fosco.tinta(.cartaoEntrada, escuro: false) == 0.52)
         #expect(fosco.tinta(.segmentado, escuro: true) == 0.24 && fosco.tinta(.conteudo, escuro: false) == 0.34)
         #expect(fosco.tinta(.navegacao, escuro: true) == 0.22 && fosco.tinta(.navegacao, escuro: false) == 0.36)
+    }
+
+    @Test func escurecimentoSobOVidroSoNoEscuro() {
+        let transparente = VidroTokens(nivel: .transparente, contorno: false), fosco = VidroTokens(nivel: .fosco, contorno: true)
+        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado] {
+            #expect(transparente.escurecimento(papel, escuro: true) == 0.45)
+            #expect(fosco.escurecimento(papel, escuro: true) == 0.2)
+            #expect(transparente.escurecimento(papel, escuro: false) == 0 && fosco.escurecimento(papel, escuro: false) == 0)
+        }
+        #expect(transparente.escurecimento(.navegacao, escuro: true) == 0, "a navegação tem o véu da borda")
+        #expect(VidroTokens(nivel: .solido, contorno: false).escurecimento(.conteudo, escuro: true) == 0)
+    }
+
+    @Test func veuDaBordaDoMockup() {
+        #expect(VeuDaBorda.opacidade(grande: false, reduzirTransparencia: false) == (0.50, 0.35))
+        #expect(VeuDaBorda.opacidade(grande: true, reduzirTransparencia: false) == (0.70, 0.60))
+        #expect(VeuDaBorda.opacidade(grande: false, reduzirTransparencia: true) == (0.88, 0.80))
+        #expect(VeuDaBorda.opacidade(grande: true, reduzirTransparencia: true) == (0.88, 0.80))
     }
 
     @Test func textoSobreOVidroPorNivel() {
@@ -2136,7 +2173,9 @@ import SwiftUI
    (padrão) ou o Fosco escolhido em Ajustes › Aparência (etapa 5). As opções do iPhone passam por
    cima das duas: "Aumentar contraste" leva tudo ao Fosco com contorno de 1,5 pt e "Reduzir
    transparência", a superfícies sólidas (a aurora continua). Aro especular, sombra e refração são
-   do glassEffect do sistema. Nunca vidro dentro de vidro: o que fica dentro de uma superfície é sólido. */
+   do glassEffect do sistema; no escuro, uma camada do tom do fundo sob o vidro do conteúdo faz o que o
+   vidro do mockup fazia ao escurecer o fundo. Nunca vidro dentro de vidro: o que fica dentro de uma
+   superfície é sólido. */
 
 enum TelaDoVidro: Sendable { case entrada, app }
 
@@ -2198,6 +2237,19 @@ struct VidroTokens: Equatable, Sendable {
         }
     }
 
+    /// Escurecimento sob o vidro: só no escuro e fora da navegação, 45% no Transparente e 20% no Fosco (decisão
+    /// do Giovani em 09/10, com o laudo de leitura como juiz). O vidro do iOS clareia o fundo e quase não o
+    /// desfoca, e o texto dos cartões não fechava 4,5:1 sobre a aurora e os pontos do globo; o vidro do mockup
+    /// escurecia o fundo (brilho de 0,84 no Transparente e 0,56 no Fosco). A navegação tem o véu da borda.
+    func escurecimento(_ papel: PapelDoVidro, escuro: Bool) -> Double {
+        guard escuro, papel != .navegacao else { return 0 }
+        switch nivel {
+        case .transparente: return 0.45
+        case .fosco: return 0.2
+        case .solido: return 0
+        }
+    }
+
     func corDaTinta(_ papel: PapelDoVidro) -> Token {
         switch papel {
         case .cartaoEntrada: return .tintaCartao
@@ -2219,6 +2271,16 @@ struct VidroTokens: Equatable, Sendable {
     var link: Token { nivel == .transparente ? .texto : .linkNoVidro }
 }
 
+/// O véu da borda de rolagem (mockup v2, decisão do Giovani em 09/10), em opacidade do tom do fundo na beirada
+/// de cima e na de baixo: 50% e 35%; nos tamanhos de acessibilidade, 70% e 60% (o texto grande que passa por
+/// baixo é mais claro); com Reduzir transparência, sem o desfoque, 88% e 80%.
+enum VeuDaBorda {
+    static func opacidade(grande: Bool, reduzirTransparencia: Bool) -> (topo: Double, base: Double) {
+        if reduzirTransparencia { return (0.88, 0.80) }
+        return grande ? (0.70, 0.60) : (0.50, 0.35)
+    }
+}
+
 extension EnvironmentValues {
     @Entry var opcoes = OpcoesDoAparelho()
     @Entry var vidro = VidroTokens.para(tela: .app, escolha: .transparente, opcoes: OpcoesDoAparelho())
@@ -2236,12 +2298,15 @@ struct Superficie<Forma: InsettableShape>: ViewModifier {
     #endif
 
     func body(content: Content) -> some View {
-        let tinta = paleta.cor(vidro.corDaTinta(papel)).opacity(vidro.tinta(papel, escuro: esquema == .dark))
+        let escuro = esquema == .dark
+        let tinta = paleta.cor(vidro.corDaTinta(papel)).opacity(vidro.tinta(papel, escuro: escuro))
+        // Atrás do vidro: o vidro vê o fundo já escurecido.
+        let sob = paleta.cor(.fundo).opacity(vidro.escurecimento(papel, escuro: escuro))
         Group {
             switch vidro.nivel {
             case .solido: conteudo(content).background(paleta.cor(.superficie), in: forma)
-            case .fosco: conteudo(content).glassEffect(.regular.tint(tinta), in: forma)
-            case .transparente: conteudo(content).glassEffect(.clear.tint(tinta), in: forma)
+            case .fosco: conteudo(content).glassEffect(.regular.tint(tinta), in: forma).background(sob, in: forma)
+            case .transparente: conteudo(content).glassEffect(.clear.tint(tinta), in: forma).background(sob, in: forma)
             }
         }
         .overlay {
@@ -2292,13 +2357,13 @@ Run: `node --test tests/app-ios.test.cjs`
 Expected: todos verdes, inclusive "catálogo de cores em dia", "aurora nas mesmas cores do site", "texto sobre sólido fecha 4,5:1 nos quatro combos" e "ícones em dia".
 
 Run: o `xcodebuild test` do Step 2.
-Expected: `CoresTests` (5 casos) e `VidroTokensTests` (6) verdes.
+Expected: `CoresTests` (5 casos) e `VidroTokensTests` (8) verdes.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add scripts/cores-app-ios.mjs scripts/icones-app-ios.mjs app-ios/Custta/Assets.xcassets app-ios/Custta/Identidade app-ios/CusttaTests/CoresTests.swift tests/app-ios.test.cjs
-git commit -m "feat: cores, vidro e ícones do app nativo por tokens" -m "As cores dos quatro combos do site e as do mockup aprovado (texto sobre o vidro por nível, contorno do Aumentar contraste, tintas do vidro, aurora, globo e botão do Google) viram color sets gerados por scripts/cores-app-ios.mjs, e os ícones do icons.js viram image sets vetoriais em molde. VidroTokens decide a dose por tela: a entrada sempre no Fosco, o app no Transparente ou no Fosco escolhido, o Aumentar contraste no Fosco com contorno e o Reduzir transparência em superfícies sólidas; toda superfície passa por .superficie(_:em:). As guardas barram cor solta nas telas, catálogo defasado e aurora ou ícone diferente do site."
+git commit -m "feat: cores, vidro e ícones do app nativo por tokens" -m "As cores dos quatro combos do site e as do mockup aprovado (texto sobre o vidro por nível, contorno do Aumentar contraste, tintas do vidro, aurora, globo e botão do Google) viram color sets gerados por scripts/cores-app-ios.mjs, e os ícones do icons.js viram image sets vetoriais em molde. VidroTokens decide a dose por tela: a entrada sempre no Fosco, o app no Transparente ou no Fosco escolhido, o Aumentar contraste no Fosco com contorno e o Reduzir transparência em superfícies sólidas; no escuro, uma camada do tom do fundo sob o vidro do conteúdo faz o que o vidro do mockup fazia ao escurecer o fundo. Toda superfície passa por .superficie(_:em:), e o véu da borda de rolagem também vira token. As guardas barram cor solta nas telas, catálogo defasado e aurora ou ícone diferente do site."
 ```
 
 ---
@@ -2314,9 +2379,9 @@ git commit -m "feat: cores, vidro e ícones do app nativo por tokens" -m "As cor
 
 **Interfaces:**
 - Consumes: `Paleta`, `Token` (`aurora1`…`aurora4`, `fundo`, `globo*`), `TelaDoVidro`, `Pele`, `OpcoesDoAparelho` (Tarefa 3); `#aurora` do `styles.css` e `globe.js` do site.
-- Produces: `struct TempoPausavel: Equatable { mutating func rodar(em:); mutating func parar(em:); func segundos(em:) -> TimeInterval }`; `struct CurvaBezier { init(x1:y1:x2:y2:); static let suave; func y(_:) -> Double }`; `@MainActor @Observable final class RelogioDoFundo { static let passoMaximo; var segundos: TimeInterval { get }; var rodando: Bool; func avancar(para:) }`; `OpcoesDoAparelho.fundoAnda(ativo:rolando:teclado:coberto:) -> Bool`; `@MainActor @Observable final class PausasDoFundo { var rolando: Bool { get }; var cobertas: Int { get }; func mudou(_: ScrollPhase); func cobrir(_: Bool) }`; `EnvironmentValues.pausasDoFundo: PausasDoFundo?`; `View.pausaOFundoAoRolar()`, `View.pausaOFundo(enquanto:)`, `View.acompanhaEnergia(poucaEnergia:calor:)`; `struct RelogioDoLogo<Conteudo: View>: View { init(rodando:conteudo:) }`; `enum Aurora { static func intensidade(tela:pele:escuro:) -> Double; static func transicao(paraOApp:) -> Animation }`; `struct Deriva: Equatable { x, y, giro, escala; static let quadros; static func em(segundos:) -> Deriva }`; `struct FundoAurora: View { init(intensidade: Double, relogio: RelogioDoFundo, deslocamento: TimeInterval = 0, piorCaso: Bool = false); static func movida(_:_:_:_:) }`; `struct EnvelopeDaAurora: View`; `struct CamadaAurora: View, Animatable, Equatable`; `struct HaloDoTitulo: View { init(grande: Bool) }`; `enum PontosDoGlobo { static let continentes; static func ehTerra(_:_:) -> Bool; static let todos: (terra: [SIMD3<Double>], oceano: [SIMD3<Double>]) }`; `struct GeometriaDoGlobo: Equatable { tamanho; centro; raio; disco }`; `struct Globo: View { init(relogio: RelogioDoFundo, anguloFixo: Double? = nil) }`; `struct AberturaView: View` (em `CusttaApp.swift`).
+- Produces: `struct TempoPausavel: Equatable { mutating func rodar(em:); mutating func parar(em:); func segundos(em:) -> TimeInterval }`; `struct CurvaBezier { init(x1:y1:x2:y2:); static let suave; func y(_:) -> Double }`; `@MainActor @Observable final class RelogioDoFundo { static let passoMaximo; var segundos: TimeInterval { get }; var rodando: Bool; func avancar(para:) }`; `OpcoesDoAparelho.fundoAnda(ativo:rolando:teclado:coberto:) -> Bool`; `@MainActor @Observable final class PausasDoFundo { var rolando: Bool { get }; var cobertas: Int { get }; func mudou(_: ScrollPhase); func cobrir(_: Bool) }`; `EnvironmentValues.pausasDoFundo: PausasDoFundo?`; `View.pausaOFundoAoRolar()`, `View.pausaOFundo(enquanto:)`, `View.acompanhaEnergia(poucaEnergia:calor:)`; `struct RelogioDoLogo<Conteudo: View>: View { init(rodando:conteudo:) }`; `enum Aurora { static func intensidade(tela:pele:escuro:) -> Double; static func transicao(paraOApp:) -> Animation }`; `struct Deriva: Equatable { x, y, giro, escala; static let quadros; static func em(segundos:) -> Deriva }`; `struct FundoAurora: View { init(intensidade: Double, relogio: RelogioDoFundo, deslocamento: TimeInterval = 0, piorCaso: Bool = false); static func movida(_:_:_:_:) }`; `struct EnvelopeDaAurora: View { init(camada:fundo:escuro:largura:altura:segundos:) }`; `struct CamadaAurora: View, Animatable, Equatable`; `struct HaloDoTitulo: View { init(grande: Bool) }`; `enum PontosDoGlobo { static let continentes; static func ehTerra(_:_:) -> Bool; static let todos: (terra: [SIMD3<Double>], oceano: [SIMD3<Double>]) }`; `struct GeometriaDoGlobo: Equatable { tamanho; centro; raio; disco }`; `struct Globo: View { init(relogio: RelogioDoFundo, anguloFixo: Double? = nil); static func intensidade(tela:escuro:) -> Double }`; `struct AberturaView: View` (em `CusttaApp.swift`).
 
-A aurora é a do `#aurora` do site, ponto por ponto: quatro brilhos elípticos e o degradê de 100° numa camada 60% mais larga e 30% mais alta que a área visível, que cobre 78% da altura da tela e some para baixo (de 40% a 100%), derivando 26 s de ida e 26 de volta pelos três quadros do `@keyframes aurora-deriva` (a guarda confere os quadros e o tempo). A camada é desenhada a um terço do tamanho e ampliada (degradê liso não perde nada) e só redesenha quando a cor ou a intensidade mudam; a deriva só a move. O sumir para baixo é o `fundo` por cima da aurora, transparente até 40% e opaco no fim: o mesmo pixel da máscara do site, sem um passe fora da tela a cada quadro. O globo é o do `globe.js`: mesmos continentes, mesma grade de 2,2°, mesmo centro, raio, halo, aro, cores e giro, com os pontos agrupados em dez faixas de profundidade. Halo e aro, que não mudam, são desenhados uma vez; a cada quadro só os pontos, no retângulo do disco e a 1,75 pixel por ponto (a densidade do `globe.js` e do globo do mockup aprovado), ampliados. Aurora e globo andam num relógio só (`RelogioDoFundo`, um `CADisplayLink` que pede 30 quadros por segundo ao ProMotion) e mudam no mesmo quadro, porque cada quadro do fundo refaz o vidro da tela inteira. O relógio soma o tempo quadro a quadro com o passo limitado a 1/15 s, então não pula depois do segundo plano ou de uma travada. Tudo para com Reduzir movimento, no Modo de Pouca Energia, com o aparelho quente (estado térmico sério ou crítico), com o app fora de ativo, durante a rolagem (a tela chama `.pausaOFundoAoRolar()`), com o teclado aberto e com um alerta por cima (`.pausaOFundo(enquanto:)`, o `sobVidro` do `globe.js`); parado, a aurora fica no quadro 0 da deriva, o mesmo em que o mockup mediu o contraste, e o globo no ângulo 1,2. Os avisos de Pouca Energia e de calor chegam numa fila qualquer e passam para a principal antes de mexer na tela (no Swift 6, um fecho da tela chamado fora dela derruba o app). Os pontos do globo são calculados fora da thread principal, na abertura. Em Debug, `FundoAurora(piorCaso:)` e `Globo(anguloFixo:)` são os ganchos do laudo de leitura (Tarefa 11). O halo atrás do título é desenhado aqui e usado na Tarefa 10.
+A aurora é a do `#aurora` do site, ponto por ponto: quatro brilhos elípticos e o degradê de 100° numa camada 60% mais larga e 30% mais alta que a área visível, que cobre 78% da altura da tela e some para baixo (de 40% a 100%), derivando 26 s de ida e 26 de volta pelos três quadros do `@keyframes aurora-deriva` (a guarda confere os quadros e o tempo). A camada é desenhada a um terço do tamanho e ampliada (degradê liso não perde nada) e só redesenha quando a cor ou a intensidade mudam; a deriva só a move. O sumir para baixo é o `fundo` por cima da aurora, transparente até 40% e opaco no fim: o mesmo pixel da máscara do site, sem um passe fora da tela a cada quadro. O globo é o do `globe.js`: mesmos continentes, mesma grade de 2,2°, mesmo centro, raio, halo, aro, cores e giro, com os pontos agrupados em dez faixas de profundidade. Halo e aro, que não mudam, são desenhados uma vez; a cada quadro só os pontos, no retângulo do disco e a 1,75 pixel por ponto (a densidade do `globe.js` e do globo do mockup aprovado), ampliados. Aurora e globo andam num relógio só (`RelogioDoFundo`, um `CADisplayLink` que pede 30 quadros por segundo ao ProMotion) e mudam no mesmo quadro, porque cada quadro do fundo refaz o vidro da tela inteira. O relógio soma o tempo quadro a quadro com o passo limitado a 1/15 s, então não pula depois do segundo plano ou de uma travada. Tudo para com Reduzir movimento, no Modo de Pouca Energia, com o aparelho quente (estado térmico sério ou crítico), com o app fora de ativo, durante a rolagem (a tela chama `.pausaOFundoAoRolar()`), com o teclado aberto e com um alerta por cima (`.pausaOFundo(enquanto:)`, o `sobVidro` do `globe.js`); parado, a aurora fica no quadro 0 da deriva, o mesmo em que o mockup mediu o contraste, e o globo no ângulo 1,2. Os avisos de Pouca Energia e de calor chegam numa fila qualquer e passam para a principal antes de mexer na tela (no Swift 6, um fecho da tela chamado fora dela derruba o app). Os pontos do globo são calculados fora da thread principal, na abertura. Em Debug, `FundoAurora(piorCaso:)` e `Globo(anguloFixo:)` são os ganchos do laudo de leitura (Tarefa 11). O pior caso da aurora é o mais claro dos quadros da deriva, pixel a pixel: cada quadro é composto com o fundo antes de entrar na conta, senão o envelope fica até três vezes mais claro que qualquer quadro (achado de 09/10; um teste confere o envelope contra os quadros). No escuro, dentro do app, o globo fica a 40% (`Globo.intensidade`, decisão de 09/10; a `RaizView` da Tarefa 10 aplica). O halo atrás do título é desenhado aqui e usado na Tarefa 10.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -2324,6 +2389,7 @@ A aurora é a do `#aurora` do site, ponto por ponto: quatro brilhos elípticos e
 
 ```swift
 import Foundation
+import SwiftUI
 import Testing
 @testable import Custta
 
@@ -2395,6 +2461,38 @@ struct FundoTests {
             #expect(Aurora.intensidade(tela: tela, pele: .esmeralda, escuro: false) == 0.55)
             #expect(Aurora.intensidade(tela: tela, pele: .azul, escuro: false) == 0.52)
         }
+    }
+
+    @Test func globoMaisFundoDentroDoAppNoEscuro() {
+        #expect(Globo.intensidade(tela: .app, escuro: true) == 0.4)
+        #expect(Globo.intensidade(tela: .entrada, escuro: true) == 1)
+        #expect(Globo.intensidade(tela: .app, escuro: false) == 1, "no claro a marca-d'água já deixa o globo a 40%")
+    }
+
+    /// O pior caso do laudo de leitura é o mais claro dos quadros, pixel a pixel, e nunca mais claro que ele.
+    @MainActor @Test func piorCasoDaAuroraEOMaisClaroDosQuadros() throws {
+        let paleta = Paleta(pele: .esmeralda)
+        let camada = CamadaAurora(cores: [paleta.cor(.aurora1), paleta.cor(.aurora2), paleta.cor(.aurora3), paleta.cor(.aurora4)],
+                                  intensidade: 0.48)
+        let fundo = paleta.cor(.fundo)
+        func pixels(_ vista: some View) throws -> [UInt8] {
+            let r = ImageRenderer(content: vista.frame(width: 60, height: 90).environment(\.colorScheme, .dark))
+            r.scale = 1
+            let imagem = try #require(r.cgImage)
+            var dados = [UInt8](repeating: 0, count: 60 * 90 * 4)
+            dados.withUnsafeMutableBytes { bytes in
+                let contexto = CGContext(data: bytes.baseAddress, width: 60, height: 90, bitsPerComponent: 8, bytesPerRow: 240,
+                                         space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+                contexto.draw(imagem, in: CGRect(x: 0, y: 0, width: 60, height: 90))
+            }
+            return dados
+        }
+        let quadros = try [0, 13].map { s in try pixels(FundoAurora.movida(camada, Deriva.em(segundos: Double(s)), 60, 90).background(fundo)) }
+        let envelope = try pixels(EnvelopeDaAurora(camada: camada, fundo: fundo, escuro: true, largura: 60, altura: 90, segundos: [0, 13]))
+        var longe = 0
+        for i in envelope.indices where i % 4 != 3 && abs(Int(envelope[i]) - Int(max(quadros[0][i], quadros[1][i]))) > 3 { longe += 1 }
+        #expect(longe == 0, "\(longe) canais fora do mais claro dos dois quadros")
     }
 
     @Test func derivaPassaPelosQuadrosDoSiteEVolta() {
@@ -2791,20 +2889,25 @@ struct FundoAurora: View {
 
 /// Só para o laudo de leitura (Debug, `-custta.auroraPiorCaso`): os 27 quadros da deriva (de 0 a 26 s)
 /// sobre o fundo, combinados pelo mais claro no escuro (o texto é claro) e pelo mais escuro no claro. Um
-/// print mede o pior ponto da aurora no ciclo inteiro.
+/// print mede o pior ponto da aurora no ciclo inteiro. Cada quadro é composto com o fundo antes de entrar
+/// na conta: sem isso, o mais claro agia sobre a aurora semitransparente de cada quadro e o envelope ficava
+/// até 3 vezes mais claro que o mais claro dos quadros (achado de 09/10).
 struct EnvelopeDaAurora: View {
     let camada: CamadaAurora
     let fundo: Color
     let escuro: Bool
     let largura: CGFloat
     let altura: CGFloat
+    /// Os segundos da deriva que entram na conta (os testes usam menos quadros).
+    var segundos = Array(0...26)
 
     var body: some View {
         ZStack {
-            ForEach(0...26, id: \.self) { s in
+            ForEach(segundos, id: \.self) { s in
                 FundoAurora.movida(camada, Deriva.em(segundos: Double(s)), largura, altura)
                     .background(fundo)
-                    .blendMode(s == 0 ? .normal : (escuro ? .lighten : .darken))
+                    .compositingGroup()
+                    .blendMode(s == segundos[0] ? .normal : (escuro ? .lighten : .darken))
             }
         }
         .compositingGroup()
@@ -2891,7 +2994,7 @@ import SwiftUI
    quadros por segundo). Centro em 80% da largura e 42% da altura; raio de 46% da altura ou 55% da
    largura, o menor. Halo atmosférico e aro de "planeta" em volta, desenhados uma vez; a cada quadro só
    os pontos, no retângulo do disco e a 1,75 pixel por ponto, a densidade do globe.js, ampliados. No
-   claro fica a 40%, como marca-d'água. Parado, fica no ângulo 1,2. */
+   claro fica a 40%, como marca-d'água, e no escuro também, dentro do app. Parado, fica no ângulo 1,2. */
 
 enum PontosDoGlobo {
     /// Continentes (longitude, latitude), aproximados: os mesmos do globe.js.
@@ -2962,6 +3065,12 @@ struct Globo: View {
     var anguloFixo: Double? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.colorScheme) private var esquema
+
+    /// No escuro, dentro do app, o globo fica mais fundo, a 40%, junto com a aurora funda (decisão do Giovani em
+    /// 09/10, com o laudo de leitura): atrás do vidro claro do iOS os pontos ficavam nítidos, e o texto dos
+    /// cartões não fechava 4,5:1 sobre eles. A 40%, os pontos entre os cartões ficam com o brilho dos do
+    /// mockup aprovado. Na entrada fica inteiro.
+    static func intensidade(tela: TelaDoVidro, escuro: Bool) -> Double { escuro && tela == .app ? 0.4 : 1 }
 
     var body: some View {
         let angulo = anguloFixo ?? 1.2 + 0.04 * relogio.segundos
@@ -3130,7 +3239,7 @@ Run: `node --test tests/app-ios.test.cjs`
 Expected: verde, inclusive "globo com os mesmos continentes do globe.js", "aurora com a deriva do site" e "animação própria respeita Reduzir movimento".
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO`
-Expected: `** TEST SUCCEEDED **`, com `MovimentoTests` (5), `FundoTests` (3) e `testAppAbre` verdes.
+Expected: `** TEST SUCCEEDED **`, com `MovimentoTests` (5), `FundoTests` (5) e `testAppAbre` verdes.
 
 Conferência visual (Verniz): abra o app no simulador (`xcrun simctl install` e `launch`) e compare com a tela 1 do `final.html` no escuro: a aurora no brilho de hoje, derivando devagar, e o globo girando à direita, passando por trás da barra de status. Com `xcrun simctl io <id> recordVideo` dá para ver a deriva; grave 60 s ao lado do PWA aberto no Safari do mesmo simulador e confira o ritmo e a curva. Compare o globo parado (com `-custta.reduzirMovimento YES`, ângulo 1,2) com `~/Documents/custta-mockups/nativo/etapa1/globo/esmeralda.png` e `azul.png` (o `globe.js` no mesmo ângulo, a 1,75 pixel por ponto): se aparecerem anéis de faixa nos continentes, o Orquestrador decide passar a vinte faixas.
 
@@ -3138,7 +3247,7 @@ Conferência visual (Verniz): abra o app no simulador (`xcrun simctl install` e 
 
 ```bash
 git add app-ios/Custta/Identidade/Movimento.swift app-ios/Custta/Identidade/Aurora.swift app-ios/Custta/Identidade/Globo.swift app-ios/Custta/CusttaApp.swift app-ios/CusttaTests/FundoTests.swift app-ios/CusttaUITests/AberturaUITests.swift tests/app-ios.test.cjs
-git commit -m "feat: aurora e globo do PWA no app nativo" -m "A aurora do site (quatro brilhos e o degradê de 100°, derivando 26 s de ida e volta) vira uma camada desenhada uma vez e só movida, com a intensidade por tela do mockup, sumindo para baixo pelo fundo por cima em vez de máscara. O globo usa os mesmos continentes e a mesma grade do globe.js, em dez faixas de profundidade: halo e aro desenhados uma vez e, a cada quadro, só os pontos do disco, a 1,75 pixel por ponto como no site. Os dois andam num relógio só, a 30 quadros por segundo pedidos ao ProMotion, sem pular depois do segundo plano, e param com Reduzir movimento, Pouca Energia, calor, app fora de ativo, rolagem, teclado e alerta por cima. A abertura passa a mostrar o fundo no lugar do texto; as guardas conferem que os continentes e a deriva são os do site."
+git commit -m "feat: aurora e globo do PWA no app nativo" -m "A aurora do site (quatro brilhos e o degradê de 100°, derivando 26 s de ida e volta) vira uma camada desenhada uma vez e só movida, com a intensidade por tela do mockup, sumindo para baixo pelo fundo por cima em vez de máscara. O globo usa os mesmos continentes e a mesma grade do globe.js, em dez faixas de profundidade: halo e aro desenhados uma vez e, a cada quadro, só os pontos do disco, a 1,75 pixel por ponto como no site; no escuro, dentro do app, fica a 40%. O pior caso da aurora do laudo de leitura compõe cada quadro com o fundo antes de pegar o mais claro. Os dois andam num relógio só, a 30 quadros por segundo pedidos ao ProMotion, sem pular depois do segundo plano, e param com Reduzir movimento, Pouca Energia, calor, app fora de ativo, rolagem, teclado e alerta por cima. A abertura passa a mostrar o fundo no lugar do texto; as guardas conferem que os continentes e a deriva são os do site."
 ```
 
 ---
@@ -6180,10 +6289,10 @@ git commit -m "feat: modelo das telas do app nativo com os serviços falsos" -m 
 - Modify: `tests/app-ios.test.cjs` (teste no fim)
 
 **Interfaces:**
-- Consumes: `ModeloApp` e `Composicao.montar()` (Tarefa 9); `Paleta`, `Aparencia`, `VidroTokens`, `OpcoesDoAparelho`, `.superficie(_:em:)`, ícones `Icones/*` (Tarefa 3); `FundoAurora`, `Aurora`, `HaloDoTitulo`, `Globo`, `RelogioDoFundo`, `PausasDoFundo`, `OpcoesDoAparelho.fundoAnda`, `.pausaOFundoAoRolar()`, `.pausaOFundo(enquanto:)`, `.acompanhaEnergia(poucaEnergia:calor:)` (Tarefa 4); `ApagaTexto` e `EnvironmentValues.apagaTextoDaNavegacao` (Tarefa 3, só Debug); `LogoEscrito`, `AberturaView` (Tarefa 5); `CredencialApple`, `Usuario` (Tarefa 9); do núcleo, `Nonce`, `validarEntrada`, `validarCadastro`, `validaSenha`, `origens`, `normalizaPerfil`, `nomeDoGoogle`, `mensagemErroSocial`, `codigoDeErroDeConta`, `obrasOrdenadas`, `textoOrcamentoNaLista`, `comparativoEntreObras`, `Fase.rotulo`, `indicador`, `totalBruto`, `orcamentoObra`, `mesesDeObra`, `fmtMeses`, `moeda`, `moedaCurta`, `dataLocalISO`, `textoErroDeLeitura`, `aparadoJS`, `emailParece`.
-- Produces: identificadores de acessibilidade que os testes usam — `email`, `senha`, `entrar`, `mensagemEntrada`, `esqueciSenha`, `entrarComApple`, `entrarComGoogle`, `irParaEntrar`, `irParaCriarConta`, `nome`, `sobrenome`, `emailCadastro`, `senhaCadastro`, `confirmacao`, `checklistSenha`, `origem`, `origemDetalhe`, `mensagemCadastro`, `criarConta`, `textoFaltaPouco`, `comecarAUsar`, `usarOutraConta`, `mensagemFaltaPouco`, `obra-<id>` (com o valor de acessibilidade da conferência cruzada), `comparativo`, `obrasVazio`, `obrasCarregando`, `obrasErroLeitura`, `tentarLerDeNovo`, `indicadorSincronizacao`, `sairTopo`, `avisoEmail`, `reenviarLink`, `jaConfirmei`, `mensagemAvisoEmail`, `nomeConta`, `emailConta`, `versao`, `sair`, `aba-obras`, `aba-ajustes`, `aviso`; `RolagemDaEntrada`; em Debug, os ganchos do laudo de leitura (Tarefa 11): `-custta.anguloDoGlobo`, `-custta.auroraPiorCaso` e `-custta.textoApagado` na `RaizView` e `-custta.rolagem` na `ObrasView`; nos testes de tela, `abrirApp(conta:dados:rede:leitura:argumentos:) -> XCUIApplication`, `XCUIApplication.elemento(_:)`, `XCUIApplication.abrirAba(_:)` e `XCUIApplication.digitar(_:em:seguro:)` (Tarefas 11 e 15).
+- Consumes: `ModeloApp` e `Composicao.montar()` (Tarefa 9); `Paleta`, `Aparencia`, `VidroTokens`, `OpcoesDoAparelho`, `.superficie(_:em:)`, ícones `Icones/*` (Tarefa 3); `FundoAurora`, `Aurora`, `HaloDoTitulo`, `Globo` e `Globo.intensidade`, `RelogioDoFundo`, `PausasDoFundo`, `OpcoesDoAparelho.fundoAnda`, `.pausaOFundoAoRolar()`, `.pausaOFundo(enquanto:)`, `.acompanhaEnergia(poucaEnergia:calor:)` (Tarefa 4); `VeuDaBorda` (Tarefa 3); `ApagaTexto` e `EnvironmentValues.apagaTextoDaNavegacao` (Tarefa 3, só Debug); `LogoEscrito`, `AberturaView` (Tarefa 5); `CredencialApple`, `Usuario` (Tarefa 9); do núcleo, `Nonce`, `validarEntrada`, `validarCadastro`, `validaSenha`, `origens`, `normalizaPerfil`, `nomeDoGoogle`, `mensagemErroSocial`, `codigoDeErroDeConta`, `obrasOrdenadas`, `textoOrcamentoNaLista`, `comparativoEntreObras`, `Fase.rotulo`, `indicador`, `totalBruto`, `orcamentoObra`, `mesesDeObra`, `fmtMeses`, `moeda`, `moedaCurta`, `dataLocalISO`, `textoErroDeLeitura`, `aparadoJS`, `emailParece`.
+- Produces: identificadores de acessibilidade que os testes usam — `email`, `senha`, `entrar`, `mensagemEntrada`, `esqueciSenha`, `entrarComApple`, `entrarComGoogle`, `irParaEntrar`, `irParaCriarConta`, `nome`, `sobrenome`, `emailCadastro`, `senhaCadastro`, `confirmacao`, `checklistSenha`, `origem`, `origemDetalhe`, `mensagemCadastro`, `criarConta`, `textoFaltaPouco`, `comecarAUsar`, `usarOutraConta`, `mensagemFaltaPouco`, `obra-<id>` (com o valor de acessibilidade da conferência cruzada), `comparativo`, `obrasVazio`, `obrasCarregando`, `obrasErroLeitura`, `tentarLerDeNovo`, `indicadorSincronizacao`, `sairTopo`, `avisoEmail`, `reenviarLink`, `jaConfirmei`, `mensagemAvisoEmail`, `nomeConta`, `emailConta`, `versao`, `sair`, `aba-obras`, `aba-ajustes`, `aviso`; `RolagemDaEntrada`; `struct BordaDeRolagem: ViewModifier` e `View.bordaDeRolagem(abas:)`; em Debug, os ganchos do laudo de leitura (Tarefa 11): `-custta.anguloDoGlobo`, `-custta.auroraPiorCaso` e `-custta.textoApagado` na `RaizView` e `-custta.rolagem` na `ObrasView`; nos testes de tela, `abrirApp(conta:dados:rede:leitura:argumentos:) -> XCUIApplication`, `XCUIApplication.elemento(_:)`, `XCUIApplication.abrirAba(_:)` e `XCUIApplication.digitar(_:em:seguro:)` (Tarefas 11 e 15).
 
-As telas seguem o mockup aprovado tela a tela (seção "Resultado do portão de desenho"): **entrar** com o título escrito à mão e o halo sobre a aurora de hoje, a dica "Role para entrar", o segmentado de vidro fora do cartão e o cartão Fosco com Apple acima do Google, "ou", campos sólidos, mensagens com ícone (erro, ✓, cadeado), "Esqueci minha senha" com o e-mail do cartão e "Política de Privacidade"; **criar conta** no mesmo cartão, com o checklist da senha em duas colunas (uma na letra grande) e "Como conheceu o Custta?" no menu do sistema; **falta pouco** no mesmo cartão, com "Você entrou com a Apple." ou "Você entrou com o Google" e o e-mail; **obras** no vidro Transparente sobre a aurora funda, com o título grande do sistema, sincronização e sair na barra, aviso de e-mail, "N obras", um cartão por obra (sem a seta ">" do mockup até a etapa 2, porque a obra ainda não abre; o valor de acessibilidade é o mesmo) e o comparativo; **Ajustes** só com a Conta e a versão. A aurora assenta ao entrar e clareia ao sair. A cápsula de abas é própria e só a aba escolhida fica montada (ver "Decisões"). Os fluxos e os textos são os do esqueleto validado no plano anterior, com três mudanças que o mockup trouxe: o esqueci a senha dentro do cartão, a saída pelo alerta do sistema e a lista vazia com o texto provisório. A raiz liga o relógio do fundo às pausas que o conselho de 08/10 pediu (app fora de ativo, teclado aberto, o alerta "Sair da conta?", Pouca Energia e calor, com os avisos do sistema passando pela fila principal), e a tela de entrar guarda a rolagem num objeto que só o título lê, para a rolagem não refazer a tela inteira a cada quadro.
+As telas seguem o mockup aprovado tela a tela (seção "Resultado do portão de desenho"): **entrar** com o título escrito à mão e o halo sobre a aurora de hoje, a dica "Role para entrar", o segmentado de vidro fora do cartão e o cartão Fosco com Apple acima do Google, "ou", campos sólidos, mensagens com ícone (erro, ✓, cadeado), "Esqueci minha senha" com o e-mail do cartão e "Política de Privacidade"; **criar conta** no mesmo cartão, com o checklist da senha em duas colunas (uma na letra grande) e "Como conheceu o Custta?" no menu do sistema; **falta pouco** no mesmo cartão, com "Você entrou com a Apple." ou "Você entrou com o Google" e o e-mail; **obras** no vidro Transparente sobre a aurora funda, com o título grande do sistema, sincronização e sair na barra, aviso de e-mail, "N obras", um cartão por obra (sem a seta ">" do mockup até a etapa 2, porque a obra ainda não abre; o valor de acessibilidade é o mesmo) e o comparativo; **Ajustes** só com a Conta e a versão. A aurora assenta ao entrar e clareia ao sair. A cápsula de abas é própria e só a aba escolhida fica montada (ver "Decisões"). Os fluxos e os textos são os do esqueleto validado no plano anterior, com três mudanças que o mockup trouxe: o esqueci a senha dentro do cartão, a saída pelo alerta do sistema e a lista vazia com o texto provisório. A raiz liga o relógio do fundo às pausas que o conselho de 08/10 pediu (app fora de ativo, teclado aberto, o alerta "Sair da conta?", Pouca Energia e calor, com os avisos do sistema passando pela fila principal), e a tela de entrar guarda a rolagem num objeto que só o título lê, para a rolagem não refazer a tela inteira a cada quadro. Três decisões de 09/10 (seção "Resultado do portão de desenho"): a borda de rolagem suave do `final-v2.html` em todas as telas, num componente só (`.bordaDeRolagem(abas:)` em `Componentes.swift`: a borda `.soft` do sistema e o véu do tom do fundo de `VeuDaBorda`, que some em 140 pt, no alto só depois de rolar 40 pt e embaixo só com a cápsula); o globo a 40% dentro do app no escuro, que a raiz aplica na mesma transição da aurora; e o ícone do sair do topo na cor do texto nos dois temas.
 
 - [ ] **Step 1: Escrever os testes de tela que falham**
 
@@ -6565,9 +6674,9 @@ import AuthenticationServices
 import CusttaNucleo
 
 /* Peças das telas com a cara do PWA, escritas uma vez: campo sólido com rótulo, botões (principal,
-   secundário, Apple e Google), mensagem com ícone, link sublinhado, divisor "ou", etiqueta de fase e
-   barra de orçamento. Cores só por token; textos com Dynamic Type, menos os botões da Apple e do
-   Google, que não crescem (decisão do mockup) e mostram o Visualizador de Conteúdo Grande. */
+   secundário, Apple e Google), mensagem com ícone, link sublinhado, divisor "ou", etiqueta de fase,
+   barra de orçamento e a borda de rolagem. Cores só por token; textos com Dynamic Type, menos os botões
+   da Apple e do Google, que não crescem (decisão do mockup) e mostram o Visualizador de Conteúdo Grande. */
 
 /// Campo sólido do cartão de entrada: rótulo em cima, exemplo na cor secundária, olho na senha.
 struct CampoDeEntrada: View {
@@ -6830,6 +6939,52 @@ struct BarraDeProgresso: View {
         .accessibilityHidden(true)
     }
 }
+
+/// Borda de rolagem suave, a mesma em todas as telas (mockup v2, decisão do Giovani em 09/10): a borda `.soft`
+/// do iOS 26 desfoca aos poucos o que passa por baixo das barras, e o véu do tom do fundo (`VeuDaBorda`), mais
+/// forte na beirada, some até 140 pt. A aurora e o conteúdo continuam aparecendo. No alto, só com conteúdo por
+/// baixo (rolou mais de 40 pt, como no mockup); embaixo, só nas telas com a cápsula de abas.
+struct BordaDeRolagem: ViewModifier {
+    let abas: Bool
+    @Environment(\.paleta) private var paleta
+    @Environment(\.opcoes) private var opcoes
+    @Environment(\.dynamicTypeSize) private var tamanho
+    @State private var rolou = false
+
+    func body(content: Content) -> some View {
+        let veu = VeuDaBorda.opacidade(grande: tamanho.isAccessibilitySize, reduzirTransparencia: opcoes.reduzirTransparencia)
+        content
+            .scrollEdgeEffectStyle(.soft, for: .all)
+            .scrollEdgeEffectHidden(opcoes.reduzirTransparencia, for: .all)
+            .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 40 } action: { _, agora in
+                rolou = agora
+            }
+            .overlay {
+                VStack(spacing: 0) {
+                    faixa(veu.topo, paradas: [(0, 1), (0.55, 0.85), (0.80, 0.4), (1, 0)], de: .top, ate: .bottom)
+                        .opacity(rolou ? 1 : 0)
+                        .animation(.easeOut(duration: 0.2), value: rolou)
+                    Spacer(minLength: 0)
+                    if abas { faixa(veu.base, paradas: [(0, 1), (0.50, 0.85), (0.78, 0.4), (1, 0)], de: .bottom, ate: .top) }
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+    }
+
+    private func faixa(_ a: Double, paradas: [(Double, Double)], de inicio: UnitPoint, ate fim: UnitPoint) -> some View {
+        let fundo = paleta.cor(.fundo)
+        return LinearGradient(stops: paradas.map { .init(color: fundo.opacity(a * $0.1), location: $0.0) },
+                              startPoint: inicio, endPoint: fim)
+            .frame(height: 140)
+    }
+}
+
+extension View {
+    /// A borda de rolagem suave da tela; `abas` liga a de baixo, sob a cápsula de abas.
+    func bordaDeRolagem(abas: Bool) -> some View { modifier(BordaDeRolagem(abas: abas)) }
+}
 ```
 
 `app-ios/Custta/Identidade/CapsulaDeAbas.swift`:
@@ -7005,6 +7160,8 @@ struct RaizView: View {
                         deslocamento: quadroFixo, piorCaso: laudo.auroraPiorCaso)
                 .animation(opcoes.reduzirMovimento ? nil : Aurora.transicao(paraOApp: tela == .app), value: tela)
             Globo(relogio: relogio, anguloFixo: laudo.anguloDoGlobo)
+                .opacity(Globo.intensidade(tela: tela, escuro: escuro))
+                .animation(opcoes.reduzirMovimento ? nil : Aurora.transicao(paraOApp: tela == .app), value: tela)
             conteudo
                 .transition(.opacity)
                 .animation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.25), value: tela)
@@ -7160,6 +7317,7 @@ struct EntradaView: View {
                 rolagem.deslocamento = y
             }
             .pausaOFundoAoRolar()
+            .bordaDeRolagem(abas: false)
         }
     }
 }
@@ -7633,7 +7791,7 @@ struct PrincipalView: View {
             case .ajustes: AjustesView()
             }
         }
-        // Barra própria com o efeito de borda do sistema: o que rola por baixo esmaece, como sob a barra de abas.
+        // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
         .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba) }
     }
 }
@@ -7679,18 +7837,19 @@ struct IndicadorDeSincronizacao: View {
     }
 }
 
-/// O sair do topo, mantido como no site: círculo de vidro com o ícone de saída.
+/// O sair do topo, mantido como no site: círculo de vidro com o ícone de saída, na cor do texto nos dois
+/// temas (decisão do Giovani em 09/10: na cor da marca, no claro, caía para 2,5:1 quando o "Já confirmei"
+/// passava por baixo).
 struct BotaoSairDoTopo: View {
     @Binding var confirmar: Bool
     @Environment(\.paleta) private var paleta
-    @Environment(\.colorScheme) private var esquema
 
     var body: some View {
         Button { confirmar = true } label: {
             Image(decorative: "Icones/sair")
                 .resizable()
                 .frame(width: 22, height: 22)
-                .foregroundStyle(paleta.cor(esquema == .dark ? .texto : .marca))
+                .foregroundStyle(paleta.cor(.texto))
                 .frame(width: 44, height: 44)
                 .superficie(.navegacao, em: .circle)
         }
@@ -7790,6 +7949,7 @@ struct ObrasView: View {
             }
             #endif
             .pausaOFundoAoRolar()
+            .bordaDeRolagem(abas: true)
             .containerBackground(.clear, for: .navigation)
             .navigationTitle("Obras")
             .toolbar { BarraDoApp(confirmarSaida: $confirmarSaida) }
@@ -8113,6 +8273,7 @@ struct AjustesView: View {
             }
             .scrollIndicators(.hidden)
             .pausaOFundoAoRolar()
+            .bordaDeRolagem(abas: true)
             .containerBackground(.clear, for: .navigation)
             .navigationTitle("Ajustes")
             .toolbar { BarraDoApp(confirmarSaida: $confirmarSaida) }
@@ -8136,7 +8297,7 @@ Expected: `** TEST SUCCEEDED **`, com os 19 testes de tela desta tarefa e os de 
 Run: `node --test tests/app-ios.test.cjs`
 Expected: verde, inclusive "cores só por tokens" com as telas novas e "fonte do botão do Google".
 
-Conferência visual (Verniz, no simulador, lado a lado com os prints `final-*.png`): abra o app sem variável nenhuma (conta deslogada; qualquer e-mail com a senha `Casa2026x` entra e mostra a vitrine) e com `SIMCTL_CHILD_CUSTTA_CONTA=senha`, `senha-nao-confirmada`, `apple-sem-perfil` e `google-sem-perfil`; nos quatro combos (`-custta.tema claro`, `-custta.pele azul`), no maior tamanho de letra (`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`), com `-custta.reduzirTransparencia YES` e `-custta.aumentarContraste YES`, e com o VoiceOver lendo a lista de obras. Diferenças que já são decisão (não são defeito): o cartão de entrada reto e a lista sem a seta ">" (seção "Resultado do portão de desenho"). Diferença que não se resolve pelo token vai para o Orquestrador, não para o código à mão.
+Conferência visual (Verniz, no simulador, lado a lado com os prints `final-*.png`): abra o app sem variável nenhuma (conta deslogada; qualquer e-mail com a senha `Casa2026x` entra e mostra a vitrine) e com `SIMCTL_CHILD_CUSTTA_CONTA=senha`, `senha-nao-confirmada`, `apple-sem-perfil` e `google-sem-perfil`; nos quatro combos (`-custta.tema claro`, `-custta.pele azul`), no maior tamanho de letra (`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`), com `-custta.reduzirTransparencia YES` e `-custta.aumentarContraste YES`, e com o VoiceOver lendo a lista de obras. Diferenças que já são decisão (não são defeito): o cartão de entrada reto, a lista sem a seta ">" e, no escuro, os cartões um pouco mais escuros que no `final-v2.html` e o globo mais fundo dentro do app (seção "Resultado do portão de desenho"; o Croqui espelha esses valores no `final-v3.html`). A borda de rolagem se confere com os quadros "Nativo · rolada" do `final-v2.html`. Diferença que não se resolve pelo token vai para o Orquestrador, não para o código à mão.
 
 **Ponto de controle (Orquestrador):** prints das telas ao Giovani, lado a lado com o mockup, nos quatro combos.
 
@@ -8144,7 +8305,7 @@ Conferência visual (Verniz, no simulador, lado a lado com os prints `final-*.pn
 
 ```bash
 git add app-ios/Custta app-ios/CusttaUITests tests/app-ios.test.cjs
-git commit -m "feat: telas da etapa 1 do app nativo com a cara do mockup" -m "Entrar com o título escrito à mão e o halo sobre a aurora, o segmentado de vidro e o cartão Fosco (Apple acima do Google, campos sólidos, esqueci a senha com o e-mail do cartão, como no site), criar conta com o checklist e a origem no menu do sistema, falta pouco que não pede de novo o nome que a Apple mandou, obras no vidro Transparente com a sincronização e o sair na barra, o aviso de e-mail, um cartão por obra com os totais do núcleo e o comparativo entre obras, e Ajustes com a conta, a versão e a saída pelo alerta do sistema. A cápsula de abas é própria e a aurora assenta ao entrar. O botão do Google segue as regras do Google, com a Roboto Medium travada. Os testes de tela abrem o app com os serviços falsos: entrar, criar conta, falta pouco, sem internet, erro de leitura, comparativo, abas e sair."
+git commit -m "feat: telas da etapa 1 do app nativo com a cara do mockup" -m "Entrar com o título escrito à mão e o halo sobre a aurora, o segmentado de vidro e o cartão Fosco (Apple acima do Google, campos sólidos, esqueci a senha com o e-mail do cartão, como no site), criar conta com o checklist e a origem no menu do sistema, falta pouco que não pede de novo o nome que a Apple mandou, obras no vidro Transparente com a sincronização e o sair na barra, o aviso de e-mail, um cartão por obra com os totais do núcleo e o comparativo entre obras, e Ajustes com a conta, a versão e a saída pelo alerta do sistema. A cápsula de abas é própria e a aurora assenta ao entrar. A borda de rolagem é a suave do mockup v2 em todas as telas (a .soft do sistema e um véu do tom do fundo), o globo fica mais fundo dentro do app no escuro e o sair do topo usa a cor do texto. O botão do Google segue as regras do Google, com a Roboto Medium travada. Os testes de tela abrem o app com os serviços falsos: entrar, criar conta, falta pouco, sem internet, erro de leitura, comparativo, abas e sair."
 ```
 
 ---
@@ -8160,13 +8321,13 @@ git commit -m "feat: telas da etapa 1 do app nativo com a cara do mockup" -m "En
 - Consumes: `abrirApp(conta:dados:rede:leitura:argumentos:)`, `XCUIApplication.elemento(_:)` e `abrirAba(_:)` (Tarefa 10); identificadores `email`, `irParaCriarConta`, `nome`, `avisoEmail`, `sair`, `aba-obras`, `aba-ajustes`, `entrarComGoogle`; argumentos `-custta.tema`, `-custta.pele`, `-custta.reduzirMovimento`, `-custta.reduzirTransparencia`, `-custta.aumentarContraste`, `-custta.quadroDaAurora`, `-custta.auroraPiorCaso`, `-custta.anguloDoGlobo` e `-custta.textoApagado` lidos pela `RaizView` (Tarefa 10; o apagador da navegação mora na `Superficie`, Tarefa 3) e `-custta.rolagem` lido pela `ObrasView` (Tarefa 10); obra o4 dos `DadosDeExemplo` (Tarefa 9).
 - Produces: `struct Retrato { init(_ imagem: CGImage); init(largura:altura:rgba:) }`; `enum LaudoDeContraste { struct Palavra { caixa, cor, nota, minimo, corHex }; struct CenaNaoDeterministica: Error; static func medir(normal:semTexto:escala:topo:somenteEm:ignorar:) throws -> [Palavra]; static func luminancia(_:_:_:) -> Double; static func contraste(_:_:) -> Double; static func dilatar(_:_:_:rx:ry:) -> [Bool] }`; os requisitos da seção 8 do spec como teste para as próximas etapas.
 
-Duas frentes, decididas pelo conselho de 08/10 (seção "Decisões"). **As auditorias do Xcode** continuam no que fazem bem: maior tamanho de letra em entrar, criar conta, obras e Ajustes; contraste nos quatro combos com o fundo parado (Reduzir movimento: aurora no quadro inicial, globo parado, logo pronto) e com a aurora congelada nos extremos da deriva para o título e a dica; a cápsula de abas e o botão do Google fora da auditoria de tipo dinâmico (não crescem por decisão do mockup e têm o Visualizador de Conteúdo Grande). O contraste delas é medido com superfícies sólidas, porque a auditoria do Xcode não lê fundo de vidro: no simulador do iOS 27 ela reprova sobre o vidro até texto escuro sobre a pílula sólida do segmentado. Duas brechas do protótipo anterior fecharam: os rótulos da própria cápsula de abas entram na auditoria de contraste (antes o filtro do conteúdo que passa por baixo dela os tirava) e o contraste também é auditado na maior letra. Sai a antiga falha esperada sobre o vidro: sem bloco e sem ser estrita, ela engolia até "a tela não abriu".
+Duas frentes, decididas pelo conselho de 08/10 (seção "Decisões"). **As auditorias do Xcode** continuam no que fazem bem: maior tamanho de letra em entrar, criar conta, obras e Ajustes; contraste nos quatro combos com o fundo parado (Reduzir movimento: aurora no quadro inicial, globo parado, logo pronto) e com a aurora congelada nos extremos da deriva para o título e a dica; a cápsula de abas e o botão do Google fora da auditoria de tipo dinâmico (não crescem por decisão do mockup e têm o Visualizador de Conteúdo Grande). O contraste delas é medido com superfícies sólidas, porque a auditoria do Xcode não lê fundo de vidro: no simulador do iOS 27 ela reprova sobre o vidro até texto escuro sobre a pílula sólida do segmentado. Duas brechas do protótipo anterior fecharam: os rótulos da própria cápsula de abas entram na auditoria de contraste (antes o filtro do conteúdo que passa por baixo dela os tirava) e o contraste também é auditado na maior letra. O conteúdo que passa por baixo da barra, da cápsula ou da borda de rolagem (140 pt no alto, depois de rolar, e embaixo, com a cápsula; véu de 88% e 80% com "Reduzir transparência") fica fora da conta do contraste: ele é auditado quando está à vista. Sai a antiga falha esperada sobre o vidro: sem bloco e sem ser estrita, ela engolia até "a tela não abriu".
 
-**O laudo de leitura** mede o vidro de verdade no simulador. Cada cena sai em dois prints do mesmo quadro: um normal e um com o texto apagado (um `TextRenderer` vazio, só em Debug, que não mexe no layout; o escopo `navegacao` apaga só os rótulos da cápsula, para medi-los sobre o conteúdo refratado por baixo). O fundo fica parado no pior caso: Reduzir movimento, globo no ângulo 1,2 e a aurora no pior momento da deriva inteira (os 27 quadros de 0 a 26 s combinados pelo mais claro no escuro e pelo mais escuro no claro). As letras são os pixels que mudam de um print para o outro; o contraste (WCAG) sai pixel a pixel, com a cor de fato desenhada no miolo das letras contra o fundo sob elas e a 2 px em volta; a nota de cada palavra é o percentil 1 e o pior pixel vai junto. Portão: 4,5:1 em qualquer tamanho de letra. Longe das letras os dois prints têm de ser iguais; se não forem, a cena dá erro em vez de medir. Cada cena deixa no resultado o print anotado (verde passa, vermelho não) e a tabela. Cenas: entrar (Fosco), obras (Transparente, com o aviso de e-mail) e os rótulos da cápsula sobre a lista rolada, nos quatro combos; obras na maior letra; entrar e obras com Aumentar contraste.
+**O laudo de leitura** mede o vidro de verdade no simulador. Cada cena sai em dois prints do mesmo quadro: um normal e um com o texto apagado (um `TextRenderer` vazio, só em Debug, que não mexe no layout; o escopo `navegacao` apaga só os rótulos da cápsula, para medi-los sobre o conteúdo refratado por baixo). O fundo fica parado no pior caso: Reduzir movimento, globo no ângulo 1,2 e a aurora no pior momento da deriva inteira (os 27 quadros de 0 a 26 s, cada um composto com o fundo, combinados pelo mais claro no escuro e pelo mais escuro no claro). As letras são os pixels que mudam de um print para o outro; o contraste (WCAG) sai pixel a pixel, com a cor de fato desenhada no miolo das letras contra o fundo sob elas e a 2 px em volta; a nota de cada palavra é o percentil 1 e o pior pixel vai junto. Portão: 4,5:1 em qualquer tamanho de letra. Longe das letras os dois prints têm de ser iguais; se não forem, a cena dá erro em vez de medir. Cada cena deixa no resultado o print anotado (verde passa, vermelho não) e a tabela. Cenas: entrar (Fosco), obras (Transparente, com o aviso de e-mail) e os rótulos da cápsula sobre a lista rolada, nos quatro combos; obras na maior letra; entrar e obras com Aumentar contraste. No escopo `tudo`, da cápsula até o pé da tela fica de fora: o que passa por baixo dela e da barra de início é desfocado e coberto pelo véu da borda de propósito.
 
-**Primeira medida (08/10, simulador do iOS 27):** das 15 cenas, 6 passam (entrar, obras e abas no claro esmeralda; obras e abas no claro azul; entrar no escuro azul) e 9 reprovam. Obras no escuro reprova mesmo com a aurora parada (o secundário do aviso de e-mail fica em 1,9 a 2,7:1 sobre a parte clara da aurora no alto; os totais e o secundário dos cartões, em 1,8 a 3,9:1 sobre os pontos claros do globo) e, no pior momento da deriva, chega a 1,33:1 (esmeralda) e 1,82:1 (azul). O rótulo "Obras" da cápsula sobre a lista fica em 3,32:1 (esmeralda) e 2,76:1 (azul); entrar, só no pior momento, em 4,37:1 no escuro esmeralda e 3,31:1 no claro azul; obras na maior letra, em 1,34:1; com Aumentar contraste (Fosco com contorno), em 4,37:1 em entrar e 3,28:1 em obras. Sem o globo, obras no escuro esmeralda ainda reprova (1,64:1). A causa e a decisão pendente estão na seção "Resultado do portão de desenho".
+**Medida (09/10, simulador do iOS 27, com as decisões de 09/10):** as 15 cenas passam de 4,5:1. A pior palavra de cada uma, nos combos escuro esmeralda, claro esmeralda, escuro azul e claro azul: entrar 4,88, 5,25, 4,58 (a pílula sólida do segmentado) e 5,13:1; obras 4,77, 4,56, 5,38 e 4,56:1 (no claro, a etiqueta sólida "Vendida"); os rótulos da cápsula sobre a lista 5,67, 7,90, 4,62 e 8,32:1; obras na maior letra, 5,15:1; com Aumentar contraste, entrar 4,88 e obras 4,76:1. A primeira medida (08/10) reprovava 9 das 15 cenas, de 1,33 a 4,37:1, com o pior caso da aurora errado (até três vezes mais claro que qualquer quadro da deriva) e sem a borda de rolagem, o escurecimento sob o vidro e o globo mais fundo (seção "Resultado do portão de desenho").
 
-As nove cenas que reprovam ficam em `pendencias`, com a falha esperada só na conta do contraste de cada uma e estrita: quando a correção entrar, o teste avisa que a cena passou a passar, e ela sai da lista. As outras seis são portão desde já. Na CI (`TEST_RUNNER_CUSTTA_LAUDO=relatorio` no `app-ios.yml`) o laudo só relata, porque o simulador do iOS 26 da máquina virtual pode desenhar o vidro diferente do Mac; o Orquestrador tira a variável depois de duas rodadas coerentes. Nenhum build vai ao TestFlight com pendência na lista (Tarefa 17).
+Todas as cenas são portão no Mac. Na CI (`TEST_RUNNER_CUSTTA_LAUDO=relatorio` no `app-ios.yml`) o laudo só relata, porque o simulador do iOS 26 da máquina virtual pode desenhar o vidro diferente do Mac; o Orquestrador tira a variável depois de duas rodadas coerentes. Nenhum build vai ao TestFlight com o laudo reprovando no Mac (Tarefa 17).
 
 - [ ] **Step 1: Escrever as auditorias e o laudo**
 
@@ -8192,16 +8353,19 @@ final class AuditoriaUITests: XCTestCase {
     private let parado = ["-custta.reduzirMovimento", "YES"]
     private let solido = ["-custta.reduzirTransparencia", "YES"]
     private let quatroCombos = [("escuro", "esmeralda"), ("claro", "esmeralda"), ("escuro", "azul"), ("claro", "azul")]
+    /// A borda de rolagem (`BordaDeRolagem`): o véu do fundo cobre 140 pt no alto, depois de rolar, e embaixo,
+    /// nas telas com a cápsula de abas (88% e 80% com "Reduzir transparência").
+    private let borda: CGFloat = 140
 
     /// Deixa fora o que não cresce de propósito (dinâmico: a cápsula de abas e o texto do botão do Google,
     /// pelo rótulo, porque a auditoria rola a tela sozinha) e o conteúdo que passa por baixo da barra de
-    /// navegação, da cápsula ou do indicador de início (contraste: ele é auditado quando está à vista). Os
-    /// rótulos da própria cápsula entram na auditoria de contraste.
+    /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
+    /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste.
     @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType) throws {
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
-        let fundoDaTela = abas.map(\.minY).min() ?? app.frame.maxY
+        let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
         let barra = app.navigationBars.firstMatch
-        let topoDoConteudo = barra.exists ? barra.frame.maxY : 0
+        let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         try app.performAccessibilityAudit(for: tipos) { achado in
             guard let elemento = achado.element else { return false }
@@ -8514,10 +8678,9 @@ import UIKit
    fundo parado no pior caso (aurora no pior ponto da deriva inteira, globo no ângulo de partida, logo
    pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra. Cada cena deixa no
    resultado o print anotado (verde passa, vermelho não) e a tabela, para o Lupa e o Giovani verem sem
-   abrir o simulador. As cenas que reprovavam na primeira medida (08/10) esperam a decisão do Giovani:
-   ficam em `pendencias`, com a falha esperada só na conta do contraste e estrita (quando a correção
-   entrar, o teste avisa que a cena passou a passar). Na CI (`CUSTTA_LAUDO=relatorio`) o laudo só relata:
-   o simulador do iOS 26 da CI pode desenhar o vidro diferente do Mac. */
+   abrir o simulador. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro
+   (decisão do Giovani em 09/10). Na CI (`CUSTTA_LAUDO=relatorio`) o laudo só relata: o simulador do
+   iOS 26 da CI pode desenhar o vidro diferente do Mac. */
 final class LeituraNoVidroUITests: XCTestCase {
     /// Fundo parado no pior momento: Reduzir movimento (globo em 1,2 e logo pronto) e a aurora no pior ponto
     /// da deriva inteira, que também cobre o quadro em que ela para com Reduzir movimento.
@@ -8529,14 +8692,6 @@ final class LeituraNoVidroUITests: XCTestCase {
     private static let barraDeStatus: CGFloat = 70
     /// Na CI, só o relatório (ver o comentário do topo).
     private static let soRelatorio = ProcessInfo.processInfo.environment["CUSTTA_LAUDO"] == "relatorio"
-    /// Cenas que reprovaram na primeira medida sobre o vidro de verdade (08/10). Pendência do Giovani, com o
-    /// Croqui: no escuro, o vidro do iOS clareia e não desfoca o fundo, e o texto não fecha 4,5:1 sobre a
-    /// parte clara da aurora e os pontos do globo (plano, "Resultado do portão de desenho").
-    private static let pendencias: Set<String> = [
-        "entrar, escuro, esmeralda", "obras, escuro, esmeralda", "abas sobre a lista, escuro, esmeralda",
-        "obras, escuro, azul", "abas sobre a lista, escuro, azul", "entrar, claro, azul",
-        "obras na maior letra", "entrar com Aumentar contraste", "obras com Aumentar contraste",
-    ]
 
     private struct Cena {
         let nome: String
@@ -8544,8 +8699,8 @@ final class LeituraNoVidroUITests: XCTestCase {
         let argumentos: [String]
         /// Elemento que diz que a tela abriu.
         let espera: String
-        /// "tudo" mede o conteúdo (a cápsula de abas fica de fora); "navegacao" mede só os rótulos da cápsula,
-        /// com o conteúdo que passa por baixo dela intacto nos dois prints.
+        /// "tudo" mede o conteúdo (da cápsula de abas para baixo fica de fora); "navegacao" mede só os rótulos
+        /// da cápsula, com o conteúdo que passa por baixo dela intacto nos dois prints.
         let escopo: String
     }
 
@@ -8560,7 +8715,7 @@ final class LeituraNoVidroUITests: XCTestCase {
         return (foto, abas, largura)
     }
 
-    /// Mede as cenas e cobra o portão de cada uma (menos as pendências, que falham de propósito).
+    /// Mede as cenas e cobra o portão de cada uma.
     @MainActor private func cobrar(_ cenas: [Cena]) {
         for cena in cenas {
             let falhas: [String]
@@ -8569,16 +8724,7 @@ final class LeituraNoVidroUITests: XCTestCase {
                 continue
             }
             guard !Self.soRelatorio else { continue }
-            let mensagem = "Abaixo de \(Self.portao):1 sobre o vidro:\n" + falhas.joined(separator: "\n")
-            if Self.pendencias.contains(cena.nome) {
-                let opcoes = XCTExpectedFailure.Options()
-                opcoes.isStrict = true
-                XCTExpectFailure("\(cena.nome): pendência do Giovani (leitura sobre o vidro no escuro)", options: opcoes) {
-                    XCTAssertTrue(falhas.isEmpty, mensagem)
-                }
-            } else {
-                XCTAssertTrue(falhas.isEmpty, mensagem)
-            }
+            XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 sobre o vidro:\n" + falhas.joined(separator: "\n"))
         }
     }
 
@@ -8590,10 +8736,13 @@ final class LeituraNoVidroUITests: XCTestCase {
         let escala = CGFloat(imagem.width) / largura
         let capsula = abas.reduce(CGRect.null) { $0.union($1) }
         let regiao = capsula.isNull ? [] : [capsula.insetBy(dx: -10, dy: -10)]
+        // O que passa por baixo da cápsula e da barra de início é desfocado e coberto pelo véu da borda de
+        // propósito: no "tudo", da cápsula até o pé da tela fica de fora.
+        let abaixo = capsula.isNull ? [] : [CGRect(x: 0, y: capsula.minY - 10, width: largura, height: CGFloat(imagem.height) / escala)]
         let palavras = try LaudoDeContraste.medir(normal: Retrato(imagem), semTexto: Retrato(semTexto.image.cgImage!),
                                                   escala: escala, topo: Self.barraDeStatus,
                                                   somenteEm: cena.escopo == "navegacao" ? regiao : nil,
-                                                  ignorar: cena.escopo == "tudo" ? regiao : [])
+                                                  ignorar: cena.escopo == "tudo" ? abaixo : [])
         XCTAssertFalse(palavras.isEmpty, "\(cena.nome): nenhum texto medido")
         anexar(cena.nome, normal.image, palavras, escala)
         Swift.print(String(format: "leitura | %@ | %d palavras, %d abaixo | pior nota %.2f", cena.nome, palavras.count,
@@ -8744,14 +8893,17 @@ Expected: FAIL com achados de contraste no escuro esmeralda (o texto claro sobre
 Agora troque o `SecundarioTransparente` da Esmeralda clara de `'#2B463B'` para `'#4D685C'` (o `--muted` do site) e rode `node scripts/cores-app-ios.mjs`.
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraNosQuatroCombos`
-Expected: FAIL em "obras, claro, esmeralda", que é portão: o secundário do aviso de e-mail e dos cartões cai abaixo de 4,5:1 (na validação deste plano, 3 palavras, de 3,29 a 4,08:1). Desfaça a troca do mesmo jeito.
+Expected: FAIL em "obras, claro, esmeralda", que é portão: o secundário do aviso de e-mail e dos cartões cai abaixo de 4,5:1 (na validação deste plano, 3 palavras, de 3,95 a 4,46:1). Desfaça a troca do mesmo jeito.
+
+Por último, em `app-ios/Custta/Identidade/Vidro.swift`, troque temporariamente o `return 0.45` do `escurecimento` (o Transparente) por `return 0` e rode de novo o mesmo teste.
+Expected: FAIL em "obras, escuro, esmeralda" e "obras, escuro, azul": sem a camada, o texto dos cartões volta a cair sobre a aurora e os pontos do globo (na validação deste plano, 5 palavras a partir de 2,50:1 no esmeralda e 3 a partir de 2,94:1 no azul). Desfaça com `git checkout app-ios/Custta/Identidade/Vidro.swift`.
 
 - [ ] **Step 3: Rodar e ver passar**
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests/AuditoriaUITests -only-testing:CusttaUITests/LaudoDeContrasteTests -only-testing:CusttaUITests/LeituraNoVidroUITests`
-Expected: `** TEST SUCCEEDED **`: as 7 auditorias (entrar, criar conta, obras com a obra o4, de nome longo e R$ 123,5 mi, e Ajustes no maior tamanho de letra; o contraste nos quatro combos e na maior letra; o título com a aurora nos extremos da deriva), os 3 testes do medidor com imagens sintéticas e os 2 do laudo, com as nove pendências registradas como falhas esperadas e os prints anotados no resultado.
+Expected: `** TEST SUCCEEDED **`: as 7 auditorias (entrar, criar conta, obras com a obra o4, de nome longo e R$ 123,5 mi, e Ajustes no maior tamanho de letra; o contraste nos quatro combos e na maior letra; o título com a aurora nos extremos da deriva), os 3 testes do medidor com imagens sintéticas e os 2 do laudo, com as 15 cenas acima de 4,5:1 e os prints anotados no resultado.
 
-Se uma auditoria estrita achar algo: contraste se resolve no valor do token (`scripts/cores-app-ios.mjs`), nunca com cor solta; texto cortado se resolve deixando o texto crescer (sem `lineLimit` fixo) ou mudando a disposição na letra grande, como a `CartaoDeObra` faz. Se uma cena do laudo fora das pendências reprovar, o print anotado mostra a palavra; a correção segue a escada da seção "Resultado do portão de desenho" e não engrossa a tinta do vidro sem o Giovani.
+Se uma auditoria estrita achar algo: contraste se resolve no valor do token (`scripts/cores-app-ios.mjs`), nunca com cor solta; texto cortado se resolve deixando o texto crescer (sem `lineLimit` fixo) ou mudando a disposição na letra grande, como a `CartaoDeObra` faz. Se uma cena do laudo reprovar, o print anotado mostra a palavra; a correção segue a escada da seção "Resultado do portão de desenho" e não engrossa a tinta do vidro sem o Giovani.
 
 Conferência manual (Verniz): com `xcrun simctl ui <id> increase_contrast enabled` (o ajuste de verdade do sistema, que também muda o vidro), abra entrar e obras e veja se o contorno de 1,5 pt do app soma com o reforço de borda do sistema; se ficarem dois contornos, anote para o Orquestrador qual fica (o do mockup). Desligue com `disabled` antes de rodar os testes.
 
@@ -8759,7 +8911,7 @@ Conferência manual (Verniz): com `xcrun simctl ui <id> increase_contrast enable
 
 ```bash
 git add app-ios/CusttaUITests/AuditoriaUITests.swift app-ios/CusttaUITests/LaudoDeContraste.swift app-ios/CusttaUITests/LeituraNoVidroUITests.swift .github/workflows/app-ios.yml
-git commit -m "test: acessibilidade do app nativo e laudo de leitura sobre o vidro" -m "Os requisitos da seção 8 do spec viram teste com a cara do PWA: no maior tamanho de letra nada corta e todo controle tem rótulo e alvo suficiente em entrar, criar conta, obras e Ajustes; as cores passam nos quatro combos e na maior letra, com superfícies sólidas, porque a auditoria do Xcode não lê fundo de vidro, e os rótulos da cápsula de abas agora entram na conta. A leitura sobre o vidro de verdade passa a ser medida pixel a pixel: dois prints do mesmo quadro, com e sem o texto, com a aurora no pior momento da deriva, e 4,5:1 no pior ponto de cada palavra. As cenas que reprovam no escuro ficam como pendência estrita até a decisão do Giovani, e na CI o laudo só relata."
+git commit -m "test: acessibilidade do app nativo e laudo de leitura sobre o vidro" -m "Os requisitos da seção 8 do spec viram teste com a cara do PWA: no maior tamanho de letra nada corta e todo controle tem rótulo e alvo suficiente em entrar, criar conta, obras e Ajustes; as cores passam nos quatro combos e na maior letra, com superfícies sólidas, porque a auditoria do Xcode não lê fundo de vidro, e os rótulos da cápsula de abas agora entram na conta. A leitura sobre o vidro de verdade passa a ser medida pixel a pixel: dois prints do mesmo quadro, com e sem o texto, com a aurora no pior momento da deriva, e 4,5:1 no pior ponto de cada palavra. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro, e na CI o laudo só relata."
 ```
 
 ---
@@ -10199,7 +10351,7 @@ Depois da seção "### App iOS (Capacitor)", a seção nova:
 ```markdown
 ### App nativo (app-ios/)
 
-App em SwiftUI que vai substituir o Capacitor (spec `docs/specs/2026-10-06-app-nativo-design.md`, planos `docs/plans/2026-10-06-app-nativo-*`, mockup aprovado da etapa 1 em `~/Documents/custta-mockups/nativo/etapa1/final.html`). O `app-ios/Custta.xcodeproj` é escrito à mão no formato do Xcode 16 (pastas sincronizadas): arquivo novo dentro de `Custta/`, `CusttaTests/` ou `CusttaUITests/` entra no alvo sozinho; não deixe o Xcode subir o `objectVersion` (77), porque a CI usa o Xcode 26 (`tests/app-ios.test.cjs` barra). As regras moram no pacote `app-ios/CusttaNucleo`, puro e conferido contra os vetores do site; o app tem a identidade em `Custta/Identidade/` (tokens de cor e de vidro, aurora, globo, título escrito à mão, superfícies de vidro e cápsula de abas, escritos uma vez e reusados), as telas, o `ModeloApp` e a camada fina do Firebase em `Custta/Dados/`. A cara é a do PWA: cores só por tokens (`scripts/cores-app-ios.mjs`; rode o script depois de mudar), ícones do `icons.js` (`scripts/icones-app-ios.mjs`), logo e globo iguais aos do site (as guardas comparam), toda superfície por `.superficie(_:em:)` com a dose de vidro da tela (`VidroTokens`), nunca vidro dentro de vidro, e animação própria só olhando o Reduzir movimento. O vidro do iOS não acompanha escala nem transformação 3D, e a auditoria de contraste do Xcode não lê vidro: as cores são auditadas com superfícies sólidas e a leitura sobre o vidro se confere no aparelho. Pacotes Swift: só firebase-ios-sdk e GoogleSignIn-iOS, em versão exata, com o `Package.resolved` versionado (para atualizar, botão "resolver de novo" do workflow `app-ios`); a Roboto Medium do botão do Google é a única fonte embutida, travada por SHA-256. Em Debug o app aceita `CUSTTA_SERVICOS=falsos` (telas e testes de tela; dados `vitrine` por padrão, as obras do mockup, e `exemplo` nos testes) e `CUSTTA_EMULADORES=1` (emuladores); o Release não tem nenhum dos dois. A CI (`app-ios.yml`) roda o núcleo, o build Release sem assinatura e os testes no simulador com os serviços falsos; os testes contra os emuladores e a conferência cruzada rodam no Mac e são obrigatórios antes de cada envio. O app nunca grava antes de ver os dados da conta (`Sincronizador`, erro `nao-carregado`). Sair segue o `cloud.js`: para a escuta, grava a marca `custta-limpar-cache` (`UserDefaults`), sai e apaga o cache; a abertura seguinte termina uma limpeza interrompida. Os identificadores de acessibilidade são contrato com os testes, inclusive a conferência cruzada. O Xcode da CI é fixo (`DEVELOPER_DIR` do 26.6). O `PrivacyInfo.xcprivacy` acompanha a política de privacidade do site: dado novo coletado entra nos dois. Envio: workflow `app-ios-testflight`, no botão, versão 2.0 no mesmo cadastro (`br.com.custta.app`). Pendências de aparelho: `docs/plans/2026-10-06-app-nativo-etapa1-checklist-aparelho.md`.
+App em SwiftUI que vai substituir o Capacitor (spec `docs/specs/2026-10-06-app-nativo-design.md`, planos `docs/plans/2026-10-06-app-nativo-*`, mockup aprovado da etapa 1 em `~/Documents/custta-mockups/nativo/etapa1/final.html`, com a borda de rolagem do `final-v2.html`). O `app-ios/Custta.xcodeproj` é escrito à mão no formato do Xcode 16 (pastas sincronizadas): arquivo novo dentro de `Custta/`, `CusttaTests/` ou `CusttaUITests/` entra no alvo sozinho; não deixe o Xcode subir o `objectVersion` (77), porque a CI usa o Xcode 26 (`tests/app-ios.test.cjs` barra). As regras moram no pacote `app-ios/CusttaNucleo`, puro e conferido contra os vetores do site; o app tem a identidade em `Custta/Identidade/` (tokens de cor e de vidro, aurora, globo, título escrito à mão, superfícies de vidro e cápsula de abas, escritos uma vez e reusados), as telas, o `ModeloApp` e a camada fina do Firebase em `Custta/Dados/`. A cara é a do PWA: cores só por tokens (`scripts/cores-app-ios.mjs`; rode o script depois de mudar), ícones do `icons.js` (`scripts/icones-app-ios.mjs`), logo e globo iguais aos do site (as guardas comparam), toda superfície por `.superficie(_:em:)` com a dose de vidro da tela (`VidroTokens`), nunca vidro dentro de vidro, a mesma borda de rolagem em toda tela que rola (`.bordaDeRolagem(abas:)`), e animação própria só olhando o Reduzir movimento. O vidro do iOS não acompanha escala nem transformação 3D, e a auditoria de contraste do Xcode não lê vidro: as cores são auditadas com superfícies sólidas (e os pares de texto sobre sólido, em Node, pelo `PARES_SOLIDOS`), e a leitura sobre o vidro de verdade é medida pelo laudo de leitura (`LeituraNoVidroUITests`: dois prints do mesmo quadro, com e sem o texto, e 4,5:1 no pior ponto de cada palavra; portão no Mac, só relatório na CI). No escuro, uma camada do tom do fundo sob o vidro do conteúdo (`VidroTokens.escurecimento`) e o globo mais fundo dentro do app fecham a leitura; mexer na dose de vidro, na aurora, no globo ou na borda pede o laudo de novo. Nenhum build vai ao TestFlight com o laudo reprovando no Mac. Pacotes Swift: só firebase-ios-sdk e GoogleSignIn-iOS, em versão exata, com o `Package.resolved` versionado (para atualizar, botão "resolver de novo" do workflow `app-ios`); a Roboto Medium do botão do Google é a única fonte embutida, travada por SHA-256. Em Debug o app aceita `CUSTTA_SERVICOS=falsos` (telas e testes de tela; dados `vitrine` por padrão, as obras do mockup, e `exemplo` nos testes) e `CUSTTA_EMULADORES=1` (emuladores); o Release não tem nenhum dos dois. A CI (`app-ios.yml`) roda o núcleo, o build Release sem assinatura e os testes no simulador com os serviços falsos; os testes contra os emuladores e a conferência cruzada rodam no Mac e são obrigatórios antes de cada envio. O app nunca grava antes de ver os dados da conta (`Sincronizador`, erro `nao-carregado`). Sair segue o `cloud.js`: para a escuta, grava a marca `custta-limpar-cache` (`UserDefaults`), sai e apaga o cache; a abertura seguinte termina uma limpeza interrompida. Os identificadores de acessibilidade são contrato com os testes, inclusive a conferência cruzada. O Xcode da CI é fixo (`DEVELOPER_DIR` do 26.6). O `PrivacyInfo.xcprivacy` acompanha a política de privacidade do site: dado novo coletado entra nos dois. Envio: workflow `app-ios-testflight`, no botão, versão 2.0 no mesmo cadastro (`br.com.custta.app`). Pendências de aparelho: `docs/plans/2026-10-06-app-nativo-etapa1-checklist-aparelho.md`.
 ```
 
 - [ ] **Step 2: Escrever o checklist do aparelho**
@@ -10267,6 +10419,7 @@ O app abre no escuro esmeralda, o padrão (claro e azul chegam com a Aparência,
 - [ ] Entrar, criar conta, falta pouco, obras e Ajustes batem com o mockup (cartão de vidro, campos, botões da Apple e do Google, lista em cartões, comparativo, cápsula de abas).
 - [ ] Ao entrar, a aurora escurece devagar (menos de um segundo); ao sair da conta, clareia de volta.
 - [ ] Rolar a lista de obras rápido, para cima e para baixo: nada engasga, e a aurora e o globo param enquanto a lista rola.
+- [ ] Borda de rolagem: com a lista rolada, os cartões passam desfocados e esmaecidos por baixo do título pequeno, do sair e da cápsula de abas, sem faixa escura, e a aurora continua aparecendo; o título, o relógio e os nomes das abas se leem bem. Na tela de entrar, o mesmo no alto ao rolar.
 - [ ] Dez minutos de uso, entrando e saindo das telas: o iPhone não esquenta.
 - [ ] Ajustes do iPhone > Acessibilidade > Movimento > Reduzir movimento: a aurora e o globo ficam parados, o "custta." já aparece pronto e o título da entrada não se mexe ao rolar.
 - [ ] Modo de Pouca Energia ligado: a aurora e o globo ficam parados.
@@ -10277,7 +10430,7 @@ O app abre no escuro esmeralda, o padrão (claro e azul chegam com a Aparência,
 - [ ] Leitura no sol: os cinco textos de menor margem do último laudo (o Orquestrador manda a lista) se leem bem com o sol na tela, com o brilho automático, com e sem óculos de leitura.
 - [ ] Com a opção Tingido do Liquid Glass (Ajustes do iPhone > Tela e Brilho, no iOS 26.1 ou mais novo), o vidro fica mais opaco: nada some e nada fica ilegível.
 - [ ] Aurora no escuro: sem faixas visíveis no degradê (a tela OLED mostra degraus que o simulador esconde).
-- [ ] Vidro claro: compare a lista de obras com o app Tempo do iPhone, no claro e no escuro (o print do Tempo é pendência do Giovani, sem travar o PR 2). Se os cartões, a cápsula ou a barra ficarem mais opacos ou mais transparentes que no Tempo, ajuste as tintas do Transparente em `VidroTokens.tinta` e anote os números aqui.
+- [ ] Vidro claro: compare a lista de obras com o app Tempo do iPhone, no claro e no escuro (o print do Tempo é pendência do Giovani, sem travar o PR 2). Se os cartões, a cápsula ou a barra ficarem mais opacos ou mais transparentes que no Tempo, ajuste as tintas do Transparente em `VidroTokens.tinta` (e, no escuro, o escurecimento sob o vidro em `VidroTokens.escurecimento`, hoje 45% no Transparente e 20% no Fosco), rode o laudo de leitura de novo e anote os números aqui.
 ```
 
 - [ ] **Step 3: Rodar e ver passar**
@@ -10300,7 +10453,7 @@ Run: `npm test && npm run test:nucleo && npm run test:app-ios:emuladores && npm 
 Expected: tudo verde, terminando em `ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada`.
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests/LeituraNoVidroUITests`
-Expected: `** TEST SUCCEEDED **` com a lista `pendencias` do `LeituraNoVidroUITests.swift` vazia (`private static let pendencias: Set<String> = []`): o laudo de leitura no Mac, sem cena esperando decisão. Sem isso, o envio não sai.
+Expected: `** TEST SUCCEEDED **`: as 15 cenas do laudo de leitura passam de 4,5:1 no Mac. Sem isso, o envio não sai.
 
 - [ ] **Step 6: Enviar ao TestFlight (só com o OK do Giovani)**
 

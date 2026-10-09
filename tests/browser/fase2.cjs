@@ -125,6 +125,9 @@ const ROOT=path.resolve(__dirname,'../..');
     await page.locator('#lSenha').fill('Local-emulador-123!');
     await page.locator('#fLogin button[type="submit"]').click();
     await page.waitForFunction(()=>CLOUD.user() && !document.body.classList.contains('locked'));
+    /* A saída limpou o cache, então só o snapshot do servidor libera Nova obra (app.js:formNovaObra).
+       Sem esperar, o clique chegava antes dele no runner lento: a sheet não abria e o #fNome nunca vinha. */
+    await page.waitForFunction(()=>dadosCarregados);
     /* aqui a página segue em 1440x900 (o loop de larguras acima não volta pro celular): desktop
        continua com #btnNovaObra — só o celular troca pelo + da cápsula (styles.css) */
     await page.locator('#btnNovaObra').click();

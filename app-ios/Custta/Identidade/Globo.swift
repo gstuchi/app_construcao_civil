@@ -81,7 +81,7 @@ struct Globo: View {
     /// 09/10, com o laudo de leitura): atrás do vidro claro do iOS os pontos ficavam nítidos, e o texto dos
     /// cartões não fechava 4,5:1 sobre eles. A 40%, os pontos entre os cartões ficam com o brilho dos do
     /// mockup aprovado. Na entrada fica inteiro.
-    static func intensidade(tela: TelaDoVidro, escuro: Bool) -> Double { escuro && tela == .app ? 0.4 : 1 }
+    nonisolated static func intensidade(tela: TelaDoVidro, escuro: Bool) -> Double { escuro && tela == .app ? 0.4 : 1 }
 
     var body: some View {
         let angulo = anguloFixo ?? 1.2 + 0.04 * relogio.segundos

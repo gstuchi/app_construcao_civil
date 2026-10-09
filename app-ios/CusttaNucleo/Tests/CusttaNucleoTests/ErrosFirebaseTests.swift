@@ -25,8 +25,9 @@ struct ErrosFirebaseTests {
     }
 
     @Test func sessaoQueEncerraAConta() {
-        #expect(sessaoInvalida("auth/user-token-expired"))
-        #expect(sessaoInvalida("auth/user-not-found"))
+        for codigo in ["auth/invalid-refresh-token", "auth/user-disabled", "auth/user-token-expired", "auth/user-not-found", "auth/invalid-user-token"] {
+            #expect(sessaoInvalida(codigo), "\(codigo): SESSAO_INVALIDA do cloud.js")
+        }
         #expect(!sessaoInvalida("auth/network-request-failed"), "falta de rede nunca desloga")
     }
 }

@@ -6,7 +6,8 @@ struct TelasTests {
     @Test func emailComoORegexDoSite() {
         let casos: [(String, Bool)] = [("a@b.c", true), ("joao@exemplo.com", true), ("a@@b.c", true), ("a@b.", false), ("a@.b", false),
             ("a.b@c", false), ("@b.c", false), ("a@b", false), ("a b@c.d", false), (" a@b.c", false), ("a@b.c ", false), ("a@b.c.d", true),
-            ("a@b..c", true), ("ção@é.br", true), ("a@b\u{00A0}.c", false), ("", false), ("a@.b.c", true), ("a.@b.c", true)]
+            ("a@b..c", true), ("ção@é.br", true), ("a@b\u{00A0}.c", false), ("", false), ("a@.b.c", true), ("a.@b.c", true),
+            ("a@.bc", false), ("a@bc.", false)]
         for (email, esperado) in casos { #expect(emailParece(email) == esperado, "\(email)") }
     }
 
@@ -17,14 +18,18 @@ struct TelasTests {
     }
 
     @Test func cadastroNaOrdemDoSite() {
-        func v(nome: String = "Ana", email: String = "ana@exemplo.com", senha: String = "Casa2026x", confirmacao: String = "Casa2026x",
-               origem: String? = "google", detalhe: String = "") -> ResultadoCadastro {
-            validarCadastro(nome: nome, sobrenome: "", email: email, senha: senha, confirmacao: confirmacao, origem: origem, origemDetalhe: detalhe)
+        func v(nome: String = "Ana", sobrenome: String = "", email: String = "ana@exemplo.com", senha: String = "Casa2026x",
+               confirmacao: String = "Casa2026x", origem: String? = "google", detalhe: String = "") -> ResultadoCadastro {
+            validarCadastro(nome: nome, sobrenome: sobrenome, email: email, senha: senha, confirmacao: confirmacao, origem: origem, origemDetalhe: detalhe)
         }
         #expect(v(nome: "A", email: "errado", senha: "x", confirmacao: "y", origem: nil) == .falhou(campo: "nome", erro: "O nome precisa de pelo menos 2 letras."))
+        #expect(v(sobrenome: String(repeating: "y", count: 81), email: "errado", senha: "x", confirmacao: "y", origem: nil)
+                == .falhou(campo: "sobrenome", erro: "Use no máximo 80 caracteres no sobrenome."))
         #expect(v(email: "errado", senha: "x", confirmacao: "y", origem: nil) == .falhou(campo: "email", erro: "E-mail inválido."))
         #expect(v(senha: "curta1", confirmacao: "y", origem: nil) == .falhou(campo: "senha", erro: "Use pelo menos 8 caracteres."))
         #expect(v(confirmacao: "outra", origem: nil) == .falhou(campo: "confirmacao", erro: "As senhas não são iguais."))
+        #expect(v(senha: "jos\u{E9}1234", confirmacao: "jose\u{301}1234", origem: nil) == .falhou(campo: "confirmacao", erro: "As senhas não são iguais."),
+                "o !== do site compara unidades: NFC e NFD são senhas diferentes")
         #expect(v(origem: nil) == .falhou(campo: "origem", erro: "Conte como conheceu o Custta."))
         #expect(v(origem: "outro", detalhe: String(repeating: "z", count: 81)) == .falhou(campo: "origemDetalhe", erro: "Use no máximo 80 caracteres."))
         #expect(v() == .ok(PerfilCadastro(nome: "Ana", origem: "google")))

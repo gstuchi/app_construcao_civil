@@ -47,13 +47,14 @@ private func ehLetra(_ u: Unicode.Scalar) -> Bool {
 /// `validaSenha` do cadastro.js; o checklist da tela usa `regras`.
 public func validaSenha(_ senha: String?, email: String?) -> ResultadoSenha {
     let s = senha ?? ""
-    let chave = aparadoJS(s).lowercased()
-    let e = aparadoJS(email ?? "").lowercased()
+    // lowercased(with:), do Foundation, põe o sigma final (ς) como o toLowerCase; o lowercased() do Swift não.
+    let chave = aparadoJS(s).lowercased(with: nil)
+    let e = aparadoJS(email ?? "").lowercased(with: nil)
     let passa: [String: Bool] = [
         "tamanho": s.utf16.count >= 8,
         "letra": s.unicodeScalars.contains(where: ehLetra),
         "numero": s.unicodeScalars.contains(where: ehDigito),
-        "email": !(!e.isEmpty && chave == e),
+        "email": !(!e.isEmpty && chave.unicodeScalars.elementsEqual(e.unicodeScalars)),   // o == do Swift junta NFC e NFD; o === não
         "comum": !senhasComuns.contains(chave),
     ]
     let regras = regrasSenha.map { RegraAvaliada(id: $0.id, texto: $0.texto, ok: passa[$0.id]!) }
@@ -170,7 +171,7 @@ func prefixoUTF16(_ s: String, _ n: Int) -> String {
 
 /// `nomeDoGoogle` do cadastro.js: a primeira palavra é o nome, o resto o sobrenome, cortados nos limites.
 public func nomeDoGoogle(_ nomeDeExibicao: String?) -> (nome: String, sobrenome: String) {
-    let partes = limpa(nomeDeExibicao).split(separator: " ").map(String.init)
+    let partes = limpa(nomeDeExibicao).unicodeScalars.split(separator: " ").map { String($0) }   // por escalar: acento depois do espaço não gruda
     return (prefixoUTF16(partes.first ?? "", LimitesPerfil.nome),
             prefixoUTF16(partes.dropFirst().joined(separator: " "), LimitesPerfil.sobrenome))
 }

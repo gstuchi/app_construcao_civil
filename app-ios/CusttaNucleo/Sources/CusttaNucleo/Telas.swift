@@ -39,7 +39,8 @@ public func validarCadastro(nome: String, sobrenome: String, email: String, senh
     if !emailParece(e) { return .falhou(campo: "email", erro: "E-mail inválido.") }
     let regra = validaSenha(senha, email: e)
     if !regra.ok { return .falhou(campo: "senha", erro: regra.erro) }
-    if confirmacao != senha { return .falhou(campo: "confirmacao", erro: "As senhas não são iguais.") }
+    // O != do Swift junta NFC e NFD; o !== do site compara unidades.
+    if !confirmacao.unicodeScalars.elementsEqual(senha.unicodeScalars) { return .falhou(campo: "confirmacao", erro: "As senhas não são iguais.") }
     if !perfil.ok { return .falhou(campo: perfil.campo, erro: perfil.erro) }
     return .ok(perfil.perfil!)
 }

@@ -147,6 +147,10 @@ struct SincronizadorEscritaTests {
         _ = try? await tarefa.value
         s.redeMudou(online: false)
         #expect(s.estadoSinc == .erro(codigo: "invalid-argument", origem: .escrita))
+        s.redeMudou(online: true)
+        relogio.avancar(0)
+        #expect(s.estadoSinc == .erro(codigo: "invalid-argument", origem: .escrita), "nem a rede que volta apaga o erro terminal")
+        #expect(transporte.gravacoes.count == 1, "erro terminal só sobe de novo pelo toque, como no cloud.js")
     }
 
     @Test func tentarDeNovoDepoisDeErroTerminalReenvia() async throws {
@@ -230,6 +234,20 @@ struct SincronizadorEscritaTests {
         #expect(s.estadoSinc == .ocioso)
         #expect(s.estado == .vazio)
         #expect(transporte.escutas[0].cancelada)
+    }
+
+    @Test func trocaDeContaNaoGravaNadaNaContaNova() async {
+        let s = montar()
+        let tarefa = Task { try await s.salvar(Estado.de(blobCom(["Da u1"]))) }
+        await ate { transporte.gravacoes.count == 1 }
+        s.iniciar(uid: "u2")
+        await #expect(throws: ErroSinc(codigo: "cancelled")) { try await tarefa.value }
+        let d = Desfecho { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
+        await ate { d.terminou }
+        #expect(d.erro as? ErroSinc == ErroSinc(codigo: "nao-carregado"), "a conta que entrou ainda não teve os dados vistos")
+        transporte.gravacoes[0].concluir("unavailable")
+        relogio.avancar(30_000)
+        #expect(transporte.gravacoes.count == 1, "a falha atrasada da u1 não volta para a fila e não sobe na u2")
     }
 }
 

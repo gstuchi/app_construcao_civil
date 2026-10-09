@@ -28,6 +28,17 @@ struct MovimentoTests {
                 "um minuto sem quadros (segundo plano, travada) anda no máximo 1/15 s")
     }
 
+    @MainActor @Test func relogioParadoNaoAnda() async throws {
+        let relogio = RelogioDoFundo()
+        relogio.rodando = true
+        try await Task.sleep(for: .milliseconds(300))
+        relogio.rodando = false
+        let parado = relogio.segundos
+        #expect(parado > 0, "rodando, o CADisplayLink soma os quadros")
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(relogio.segundos == parado, "parado não anda nem acorda o app (Reduzir movimento, Pouca Energia, alerta…)")
+    }
+
     @Test func fundoParaQuandoAlgoSegura() {
         let livre = OpcoesDoAparelho()
         #expect(livre.fundoAnda(ativo: true, rolando: false, teclado: false, coberto: false))
@@ -113,6 +124,7 @@ struct FundoTests {
         #expect(perto(Deriva.em(segundos: 13), Deriva.quadros[1]))
         #expect(perto(Deriva.em(segundos: 26), Deriva.quadros[2]))
         #expect(perto(Deriva.em(segundos: 39), Deriva.quadros[1]), "na volta passa pelo meio de novo")
+        #expect(perto(Deriva.em(segundos: 30), Deriva.em(segundos: 22)), "alternate: a volta refaz a ida ao contrário, sem pular")
         #expect(perto(Deriva.em(segundos: 52), Deriva.quadros[0]), "ciclo de 52 s")
     }
 

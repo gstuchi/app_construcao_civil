@@ -43,4 +43,21 @@ struct LogoTests {
         #expect(LogoCaminhos.vibracao > LogoCaminhos.carimbo.inicio && LogoCaminhos.inteiras < LogoCaminhos.varredura.inicio)
         #expect(LogoCaminhos.total > LogoCaminhos.some)
     }
+
+    @MainActor @Test func semAnimacaoAparecePronto() {
+        /// Pixels com tinta no primeiro quadro do logo.
+        func tinta(animado: Bool) -> Int {
+            guard let imagem = ImageRenderer(content: LogoEscrito(animado: animado)).cgImage else { return -1 }
+            var bytes = [UInt8](repeating: 0, count: imagem.width * imagem.height * 4)
+            bytes.withUnsafeMutableBytes { memoria in
+                let contexto = CGContext(data: memoria.baseAddress, width: imagem.width, height: imagem.height, bitsPerComponent: 8,
+                                         bytesPerRow: imagem.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+                contexto?.draw(imagem, in: CGRect(x: 0, y: 0, width: imagem.width, height: imagem.height))
+            }
+            return stride(from: 3, to: bytes.count, by: 4).filter { bytes[$0] > 0 }.count
+        }
+        #expect(tinta(animado: false) > 500, "com Reduzir movimento ou Pouca Energia o logo aparece pronto, sem esperar a caneta")
+        #expect(tinta(animado: true) == 0, "animado, o primeiro quadro ainda está em branco")
+    }
 }

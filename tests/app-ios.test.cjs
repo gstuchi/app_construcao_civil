@@ -132,7 +132,8 @@ test('manifesto de privacidade: sem rastreamento, UserDefaults pelo motivo certo
 });
 
 test('cores só por tokens: nenhuma cor solta no código do app', () => {
-  const solta = /\bColor\s*\(\s*(red|hue|white|\.sRGB|\.displayP3|uiColor)\b|\bUIColor\s*\(\s*(red|white|hue|displayP3)\b|#colorLiteral|\bColor\.(red|green|blue|orange|yellow|pink|purple|black|white|gray|brown|cyan|mint|indigo|teal)\b|\.foreground(Style|Color)\(\s*\.(red|green|blue|orange|yellow|pink|purple|black|white|gray)\b/;
+  const sistema = '(red|green|blue|orange|yellow|pink|purple|black|white|gray|brown|cyan|mint|indigo|teal|primary|secondary)';
+  const solta = new RegExp(String.raw`\bColor\s*\(\s*(red|hue|white|\.sRGB|\.displayP3|uiColor|\.system\w+)\b|\bUIColor\s*\(\s*(red|white|hue|displayP3)\b|\bUIColor\.(${sistema}|label|system\w+)\b|#colorLiteral|\bColor\.${sistema}\b|\.(foreground(Style|Color)|background|fill|stroke|strokeBorder|border|tint)\(\s*\.${sistema}\b|\.shadow\(\s*color:\s*\.${sistema}\b`);
   for(const f of arquivosSwift('app-ios/Custta')) assert.doesNotMatch(ler(f), solta, `${f}: use paleta.cor(.token)`);
 });
 
@@ -162,6 +163,22 @@ test('aurora nas mesmas cores do site, nos quatro combos', async () => {
   }
 });
 
+test('cores de base iguais às do site, nos quatro combos', async () => {
+  const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
+  const css = ler('styles.css');
+  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'], Azul: ['html[data-skin="azul"]{', 'html[data-skin="azul"][data-theme="light"]{'] };
+  const site = { Fundo: 'bg', Superficie: 'surface-solid', Linha: 'line', Texto: 'text', TextoSecundario: 'muted', Marca: 'brand',
+    Destaque: 'accent', Positivo: 'profit', Alerta: 'warn', Negativo: 'red', SobreMarca: 'btn-ink' };
+  const hex = v => '#' + (v.length === 4 ? [...v.slice(1)].map(c => c + c).join('') : v.slice(1)).toUpperCase();
+  for(const [pele, [escuro, claro]] of Object.entries(combos)){
+    for(const [lado, seletor] of [[0, escuro], [1, claro]]){
+      const bloco = css.slice(css.indexOf(seletor), css.indexOf('}', css.indexOf(seletor)));
+      for(const [token, variavel] of Object.entries(site))
+        assert.equal(CORES[pele][token][lado], hex(bloco.match(new RegExp(`--${variavel}:(#[0-9a-fA-F]+);`))[1]), `${pele} ${token} (--${variavel})`);
+    }
+  }
+});
+
 test('texto sobre sólido fecha 4,5:1 nos quatro combos', async () => {
   const { CORES, PARES_SOLIDOS } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
   const linear = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
@@ -180,8 +197,20 @@ test('texto sobre sólido fecha 4,5:1 nos quatro combos', async () => {
   }
 });
 
-test('ícones em dia com o icons.js do site', () => {
+test('ícones em dia com o icons.js do site', async () => {
   execFileSync(process.execPath, ['scripts/icones-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
+  // O quadro do SVG (viewBox, linha e pontas) e o traço de cada ícone iguais aos do ICON() do site.
+  const { USADOS, svg } = await import(join(RAIZ, 'scripts/icones-app-ios.mjs'));
+  const { ICON } = require(join(RAIZ, 'icons.js'));
+  const partes = s => {
+    const [, abre, traco] = s.trim().match(/^<svg([^>]*)>([\s\S]*)<\/svg>$/);
+    return { traco, ...Object.fromEntries([...abre.matchAll(/([\w-]+)="([^"]*)"/g)].map(m => [m[1], m[2]])) };
+  };
+  for(const nome of USADOS){
+    const app = partes(svg(nome)), site = partes(ICON(nome));
+    for(const chave of ['viewBox', 'fill', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'traco'])
+      assert.equal(app[chave], site[chave], `${nome}: ${chave} diferente do ICON() do site`);
+  }
 });
 
 test('globo com os mesmos continentes do globe.js', () => {
@@ -192,6 +221,35 @@ test('globo com os mesmos continentes do globe.js', () => {
   const doApp = pares(swift.slice(swift.indexOf('static let continentes'), swift.indexOf('    ]\n', swift.indexOf('static let continentes'))));
   assert.ok(doSite.length > 150);
   assert.deepEqual(doApp, doSite);
+});
+
+test('globo desenhado como o globe.js: giro, centro, raio, halo, aro, pontos e grade', () => {
+  const js = ler('globe.js'), swift = ler('app-ios/Custta/Identidade/Globo.swift'), mov = ler('app-ios/Custta/Identidade/Movimento.swift');
+  const n = (texto, re) => { const m = texto.match(re); assert.ok(m, `não achei ${re}`); return m.slice(1).map(Number); };
+  const paradas = (texto, re, ordem) => [...texto.matchAll(re)].flatMap(m => ordem.map(i => Number(m[i])));
+  const pares = {
+    'ângulo inicial e giro (rad/s)': [[...n(js, /let angle=([\d.]+)/), n(js, /\(now-last\)\*([\d.]+)/)[0] * 1000], n(swift, /\?\? ([\d.]+) \+ ([\d.]+) \* relogio\.segundos/)],
+    'centro': [n(js, /cx=W\*([\d.]+); cy=H\*([\d.]+)/), n(swift, /x: tamanho\.width \* ([\d.]+), y: tamanho\.height \* ([\d.]+)/)],
+    'raio': [n(js, /R=Math\.min\(H\*([\d.]+), W\*([\d.]+)\)/), n(swift, /min\(tamanho\.height \* ([\d.]+), tamanho\.width \* ([\d.]+)\)/)],
+    'halo: raios': [n(js, /createRadialGradient\(cx,cy,R\*([\d.]+),cx,cy,R\*([\d.]+)\)/), n(swift, /startRadius: r \* ([\d.]+), endRadius: r \* ([\d.]+)/)],
+    'halo: paradas': [paradas(js, /addColorStop\(([\d.]+),`rgba\(\$\{C\.halo\},([\d.]+)\)`\)/g, [1, 2]), paradas(swift, /halo\.opacity\(([\d.]+)\), location: ([\d.]+)\)/g, [2, 1])],
+    'aro': [[...n(js, /arc\(cx,cy,R\*([\d.]+)/), ...n(js, /\$\{C\.ring\},([\d.]+)\)/), ...n(js, /lineWidth=([\d.]+)/)],
+      [...n(swift, /c\.x - r \* ([\d.]+)/), ...n(swift, /aro\.opacity\(([\d.]+)\)\), lineWidth: ([\d.]+)/)]],
+    'alfa por profundidade': [n(js, /const a=bright \? ([\d.]+)\+depth\*([\d.]+) : ([\d.]+)\+depth\*([\d.]+)/),
+      n(swift, /alfa = terra \? ([\d.]+) \+ profundidade \* ([\d.]+) : ([\d.]+) \+ profundidade \* ([\d.]+)/)],
+    'lado por profundidade': [n(js, /const s=bright \? ([\d.]+)\+depth\*([\d.]+) : ([\d.]+)\+depth\*([\d.]+)/),
+      n(swift, /lado = terra \? ([\d.]+) \+ profundidade \* ([\d.]+) : ([\d.]+) \+ profundidade \* ([\d.]+)/)],
+    'hemisfério da frente, brilho e folga da tela': [[...n(js, /if\(z<([\d.]+)\)/), ...n(js, /depth>([\d.]+) \?/), ...n(js, /sx<-(\d+)\|\|sx>W\+(\d+)/)],
+      [...n(swift, /guard z >= ([\d.]+)/), ...n(swift, /terra && z > ([\d.]+)/), ...n(swift, /guard sx >= -(\d+), sx <= w \+ (\d+)/)]],
+    'grade do celular': [[...n(js, /innerWidth<700 \? ([\d.]+)/), ...n(js, /let lat=(-?\d+); lat<=(\d+)/), ...n(js, /max\(cosL,([\d.]+)\)/), ...n(js, /lat<(-\d+) \? true/)],
+      [...n(swift, /let passo = ([\d.]+)/), ...n(swift, /var lat = (-?[\d.]+)/), ...n(swift, /while lat <= (\d+)/), ...n(swift, /max\(cosL, ([\d.]+)\)/), ...n(swift, /lat < (-\d+) \|\|/)]],
+    'pixels por ponto': [n(js, /Math\.min\(([\d.]+), window\.devicePixelRatio/), n(swift, /densidade: CGFloat = ([\d.]+)/)],
+    'no claro a 40%': [n(ler('styles.css'), /html\[data-theme="light"\] #globe\{opacity:([\d.]+)\}/), n(swift, /compositingGroup\(\)\.opacity\(([\d.]+)\)/)],
+    '30 quadros por segundo': [n(js, /INTERVALO = 1000\/(\d+)/), n(mov, /preferred: (\d+)\)/)],
+    'volta 400 ms depois da rolagem': [n(js, /setTimeout\(retomar,(\d+)\)/), n(mov, /\.milliseconds\((\d+)\)/)],
+  };
+  const arred = x => Math.round(x * 1e6) / 1e6;
+  for(const [nome, [site, app]] of Object.entries(pares)) assert.deepEqual(app.map(arred), site.map(arred), nome);
 });
 
 test('aurora com a deriva do site: os três quadros, 26 s de ida e volta, ease-in-out', () => {
@@ -209,11 +267,38 @@ test('aurora com a deriva do site: os três quadros, 26 s de ida e volta, ease-i
     'o ease-in-out do CSS');
 });
 
+test('aurora desenhada como o #aurora do site: brilhos, base de 100°, camada, altura e máscara', () => {
+  const css = ler('styles.css'), swift = ler('app-ios/Custta/Identidade/Aurora.swift');
+  const regra = css.slice(css.indexOf('#aurora{'), css.indexOf('@keyframes aurora-deriva'));
+  const pct = x => Math.round(x * 100);
+  // No CSS o primeiro fundo fica por cima; no app os brilhos vão de baixo para cima.
+  const doSite = [...regra.matchAll(/radial-gradient\((\d+)% (\d+)% at (\d+)% (\d+)%, rgba\(var\(--aurora-(\d)\),var\(--aurora-a\)\), transparent (\d+)%\)/g)]
+    .map(m => [+m[1], +m[2], +m[3], +m[4], m[5] - 1, +m[6]]).reverse();
+  const doApp = [...swift.slice(swift.indexOf('static let brilhos')).matchAll(/\(([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+), (\d), ([\d.]+)\)/g)]
+    .slice(0, 4).map(m => [pct(m[1]), pct(m[2]), pct(m[3]), pct(m[4]), +m[5], pct(m[6])]);
+  assert.equal(doSite.length, 4);
+  assert.deepEqual(doApp, doSite, 'os quatro brilhos: tamanho, centro, cor e fim');
+  const linear = regra.slice(regra.indexOf('linear-gradient(100deg'));
+  const base = [...linear.slice(0, linear.indexOf(';')).matchAll(/rgba\(var\(--aurora-(\d)\),var\(--aurora-a\)\)(?: (\d+)%)?/g)]
+    .map((m, i) => [m[1] - 1, m[2] ? +m[2] : i ? 100 : 0]);
+  assert.deepEqual([...swift.matchAll(/\.init\(color: cores\[(\d)\]\.opacity\(a\), location: ([\d.]+)\)/g)].map(m => [+m[1], pct(m[2])]), base,
+    'base: linear-gradient(100deg, A3, A1 35%, A2 65%, A3)');
+  assert.equal(+swift.match(/let angulo = ([\d.]+) \* \.pi \/ 180/)[1], +regra.match(/linear-gradient\((\d+)deg/)[1], 'base a 100°');
+  const [, cima, lado] = regra.match(/inset:-(\d+)% -(\d+)%/);
+  const [, largura, altura] = swift.match(/\.frame\(width: largura \* ([\d.]+), height: altura \* ([\d.]+)\)/);
+  assert.deepEqual([pct((largura - 1) / 2), pct((altura - 1) / 2)], [+lado, +cima], 'camada −30% dos lados e −15% em cima e embaixo');
+  assert.equal(pct(swift.match(/geo\.size\.height \* ([\d.]+)/)[1]), +regra.match(/height:(\d+)vh/)[1], '78% da altura da tela');
+  assert.equal(pct(swift.match(/fundo\.opacity\(0\), location: ([\d.]+)/)[1]), +regra.match(/linear-gradient\(to bottom,#000 (\d+)%,transparent\)/)[1],
+    'some para baixo a partir de 40%');
+});
+
 test('animação própria respeita Reduzir movimento', () => {
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     if(/withAnimation|\.animation\(|\.transition\(/.test(t))
       assert.match(t, /accessibilityReduceMotion|reduzirMovimento/, `${f}: anima sem olhar o Reduzir movimento`);
+    for(const m of t.matchAll(/LogoEscrito\(animado: ([^,)]+)/g))
+      assert.match(m[1], /animaFundo/, `${f}: o logo se escreve sem olhar Reduzir movimento e Pouca Energia`);
   }
 });
 
@@ -223,4 +308,47 @@ test('o logo escrito do app usa os caminhos do logo do site', () => {
   const caminhos = [...svg.matchAll(/\sd="([^"]+)"/g)].map(m => m[1]);
   assert.ok(caminhos.length >= 16, 'caminhos do logo no index.html');
   for(const d of caminhos) assert.ok(swift.includes(`"${d}"`), `caminho do logo ausente no app: ${d.slice(0, 40)}…`);
+});
+
+test('logo escrito na ordem e nos tempos do site: letra, máscara, pena, traço, carimbo e varredura', () => {
+  const svg = ler('index.html').match(/<svg class="logo-escrito"[\s\S]*?<\/svg>/)[0], css = ler('styles.css');
+  const swift = ler('app-ios/Custta/Identidade/LogoEscrito.swift');
+  const n = (texto, re) => { const m = texto.match(re); assert.ok(m, `não achei ${re}`); return m.slice(1).join(',').split(',').map(Number); };
+  // Cada letra, na ordem do desenho, é revelada pelas penas da sua máscara (le-m0…le-m5), numeradas le-p0…le-p8.
+  const mascaras = Object.fromEntries([...svg.matchAll(/<mask id="(le-m\d)"[\s\S]*?<\/mask>/g)]
+    .map(m => [m[1], [...m[0].matchAll(/class="le-pena le-p(\d)" pathLength="1" d="([^"]+)"/g)]]));
+  const doSite = [...svg.matchAll(/<path class="le-(neutra|tt)" mask="url\(#(le-m\d)\)" d="([^"]+)"/g)]
+    .map(m => ({ glifo: m[3], penas: mascaras[m[2]].map(p => p[2]), tt: m[1] === 'tt' }));
+  const doApp = [...swift.matchAll(/Letra\(glifo: "([^"]+)",\s+penas: \[([^\]]+)\],\s+tt: (true|false)\)/g)]
+    .map(m => ({ glifo: m[1], penas: [...m[2].matchAll(/"([^"]+)"/g)].map(p => p[1]), tt: m[3] === 'true' }));
+  assert.equal(doSite.length, 6);
+  assert.deepEqual(doApp, doSite, 'as letras na ordem do site, cada uma com as penas da sua máscara');
+  assert.deepEqual(Object.values(mascaras).flat().map(p => +p[1]), [0, 1, 2, 3, 4, 5, 6, 7, 8], 'penas na ordem le-p0…le-p8');
+  // Os números do styles.css (duração, curva, início) e do desenho.
+  const traco = i => n(css, new RegExp(`\\.le-p${i}\\{animation:leEscreve ([\\d.]+)s cubic-bezier\\(([\\d.,]+)\\) ([\\d.]+)s both\\}`));
+  const carimbo = n(css, /\.le-ponto\{animation:leCarimba ([\d.]+)s cubic-bezier\(([\d.,]+)\) ([\d.]+)s both\}/);
+  const varre = n(css, /\.le-varredura\{animation:leVarre ([\d.]+)s cubic-bezier\(([\d.,]+)\) ([\d.]+)s both\}/);
+  const curva = nome => n(swift, new RegExp(`${nome} = CurvaBezier\\(x1: ([\\d.]+), y1: ([\\d.]+), x2: ([\\d.]+), y2: ([\\d.]+)\\)`));
+  const pares = {
+    'traços: início e duração (le-p0…le-p8)': [[0, 1, 2, 3, 4, 5, 6, 7, 8].flatMap(i => [traco(i)[5], traco(i)[0]]),
+      [...swift.match(/static let tracos[^=]+= \[([^\]]+)\]/)[1].matchAll(/\(([\d.]+), ([\d.]+)\)/g)].flatMap(m => [+m[1], +m[2]])],
+    'traços: a mesma curva nos nove': [[0, 1, 2, 3, 4, 5, 6, 7, 8].flatMap(i => traco(i).slice(1, 5)), Array(9).fill(curva('curvaDoTraco')).flat()],
+    'traço: largura e dashoffset de 1,1 a 0': [[...n(css, /\.le-pena\{[^}]*stroke-width:(\d+)/), ...n(css, /leEscreve\{from\{stroke-dashoffset:([\d.]+)\}/)],
+      [...n(swift, /larguraDaPena = ([\d.]+)/), ...n(swift, /let fim = 1 - ([\d.]+) \* \(1 -/)]],
+    'carimbo: início, duração e curva com repique': [[carimbo[5], carimbo[0], ...carimbo.slice(1, 5)],
+      [...n(swift, /carimbo = \(inicio: ([\d.]+), duracao: ([\d.]+)\)/), ...curva('curvaDoCarimbo')]],
+    'vibração 120 ms depois do carimbo (auth.js)': [[carimbo[5] + n(ler('auth.js'), /'leCarimba'\) setTimeout\([^,]+, (\d+)\)/)[0] / 1000],
+      n(swift, /vibracao = ([\d.]+)/)],
+    'letras inteiras (le-fim)': [n(css, /\.le-fim\{animation:leAparece [\d.]+s linear ([\d.]+)s both\}/), n(swift, /inteiras = ([\d.]+)/)],
+    'varredura: início, duração e curva': [[varre[5], varre[0], ...varre.slice(1, 5)],
+      [...n(swift, /varredura = \(inicio: ([\d.]+), duracao: ([\d.]+)\)/), ...curva('curvaDaVarredura')]],
+    'varredura: retângulo que cresce de x 1440': [n(svg, /class="le-varredura" x="(\d+)" y="(-\d+)" width="(\d+)" height="(\d+)"/),
+      n(swift, /CGRect\(x: (\d+), y: (-\d+), width: (\d+) \* v, height: (\d+)\)/)],
+    'degradê do tt (le-deg)': [n(svg, /id="le-deg" x1="0" y1="(-?\d+)" x2="0" y2="(-?\d+)"/),
+      n(swift, /startPoint: CGPoint\(x: 0, y: (-?\d+)\), endPoint: CGPoint\(x: 0, y: (-?\d+)\)/)],
+    'tt escuro some (leSome)': [n(css, /\.le-tt\{animation:leSome [\d.]+s linear ([\d.]+)s both\}/), n(swift, /static let some = ([\d.]+)/)],
+    'caixa (viewBox)': [n(svg, /viewBox="(-?\d+) (-?\d+) (\d+) (\d+)"/), n(swift, /caixa = CGRect\(x: (-?\d+), y: (-?\d+), width: (\d+), height: (\d+)\)/)],
+  };
+  const arred = x => Math.round(x * 1e6) / 1e6;
+  for(const [nome, [site, app]] of Object.entries(pares)) assert.deepEqual(app.map(arred), site.map(arred), nome);
 });

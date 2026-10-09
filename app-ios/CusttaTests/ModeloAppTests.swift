@@ -78,6 +78,14 @@ struct ModeloAppTests {
         #expect(m.fase.ehPrincipal)
     }
 
+    @Test func perfilRecusadoSemOutroAparelhoFicaNoFaltaPouco() async {
+        let sincronizador = Sincronizador(transporte: TransporteFalsoApp(dados: nil, semRede: false), relogio: RelogioDoSistema())
+        let m = ModeloApp(conta: ContaSemPerfilQueRecusa(), sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: true))
+        await ate { m.fase.ehFaltaPouco }
+        #expect(await m.completarPerfil(PerfilCadastro(nome: "Giovani", origem: "google")) == "Não deu certo salvar. Tente de novo.")
+        #expect(m.fase.ehFaltaPouco, "recusado e ainda pendente: não entra no app sem perfil, como no auth.js")
+    }
+
     @Test func sessaoQueCaiExplicaNaEntradaELimpaOsDados() async throws {
         let montagem = montar(conta: "senha")
         let m = montagem.modelo
@@ -96,11 +104,43 @@ struct ModeloAppTests {
         #expect(m.mensagemEntrada == nil)
     }
 
+    @Test func avisoDeSessaoExpiradaSoQuandoASessaoCai() async throws {
+        let montagem = montar(conta: "senha")
+        let m = montagem.modelo
+        await ate { m.fase.ehPrincipal }
+        try await montagem.conta.sair()                 // a sessão cai
+        await ate { m.fase == .entrada }
+        #expect(m.mensagemEntrada == ModeloApp.sessaoExpirada)
+        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == nil)
+        await ate { m.fase.ehPrincipal }
+        #expect(await m.sair() == nil)                  // agora de propósito
+        await ate { m.fase == .entrada }
+        #expect(m.mensagemEntrada == nil, "sair de propósito depois de uma queda não repete o aviso")
+        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == nil)
+        await ate { m.fase.ehPrincipal }
+        try await montagem.conta.sair()                 // e cai de novo
+        await ate { m.fase == .entrada }
+        #expect(m.mensagemEntrada == ModeloApp.sessaoExpirada, "a saída de propósito vale uma vez: a queda seguinte é explicada")
+    }
+
     @Test func sairSemRedePedeParaConectarEFicaNoApp() async {
         let m = montar(conta: "senha", semRede: true).modelo
         await ate { m.fase.ehPrincipal }
         #expect(await m.sair() == "Conecte à internet e aguarde a sincronização antes de sair.")
         #expect(m.fase.ehPrincipal)
+    }
+
+    @Test func sairEsperaAEdicaoEmVooSubir() async {
+        let montagem = montar(conta: "senha")
+        let m = montagem.modelo
+        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
+        let edicao = Desfecho { try await m.sincronizador.salvar(.vazio) }
+        await ate { montagem.transporte.gravacoes == 1 }
+        #expect(await m.sair() == nil)
+        await ate { edicao.terminou }
+        #expect(edicao.terminou && edicao.erro == nil, "a edição em voo sobe antes de sair, como no cloud.js")
+        await ate { m.fase == .entrada }
+        #expect(m.fase == .entrada)
     }
 
     @Test(.timeLimit(.minutes(1)), arguments: aberturas)       // espera limitada (Desfecho); o limite de tempo é a última trava
@@ -191,4 +231,29 @@ final class TransporteQueRecusa: TransporteDados {
     }
 
     func aguardarGravacoesPendentes(concluir: @escaping @MainActor (String?) -> Void) { concluir(nil) }
+}
+
+/// Conta Google sem perfil cujo perfil as rules recusam (permission-denied) sem outro aparelho ter
+/// gravado: o perfil continua pendente. A ContaFalsa grava o perfil antes de recusar.
+@MainActor
+final class ContaSemPerfilQueRecusa: ServicoConta {
+    let usuario: Usuario? = Usuario(uid: "google", email: "giovani@gmail.com", emailVerificado: true,
+                                    provedores: ["google.com"], nomeExibicao: "Giovani Stuchi")
+
+    func observar(_ aoMudar: @escaping @MainActor (Usuario?) -> Void) {
+        let atual = usuario
+        Task { @MainActor in aoMudar(atual) }
+    }
+    func entrar(email: String, senha: String) async throws {}
+    func entrarComApple(_ credencial: CredencialApple) async throws {}
+    func entrarComGoogle() async throws {}
+    func criarConta(email: String, senha: String, perfil: PerfilCadastro) async throws {}
+    func perfilPendente() async -> Bool { true }
+    func completarPerfil(_ perfil: PerfilCadastro) async throws { throw ErroConta(codigo: "permission-denied") }
+    func lerNome() async -> String? { nil }
+    func redefinirSenha(email: String) async throws {}
+    func reenviarVerificacao() async throws -> Bool { true }
+    func conferirVerificacao() async -> Bool { false }
+    func verificarSessao(forcar: Bool) async {}
+    func sair() async throws {}
 }

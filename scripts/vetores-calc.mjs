@@ -451,6 +451,11 @@ senha('128 caracteres', 'a1'.repeat(64), 'joao@exemplo.com');
 senha('letra acentuada conta como letra', 'çãoé1234', 'joao@exemplo.com');
 senha('emoji conta duas unidades no tamanho', '😀😀😀1a', 'joao@exemplo.com');
 senha('dígito árabe não é número', 'abcdefg٣', 'joao@exemplo.com');
+senha('letra de outra escrita conta como letra', '東京タワー1234', 'joao@exemplo.com');
+senha('acento sozinho não é letra', '\u0301'.repeat(4) + '1234', 'joao@exemplo.com');
+senha('130 unidades em 69 caracteres passa do limite', '😀'.repeat(61) + 'a1234567', 'joao@exemplo.com');
+senha('sigma final, como o toLowerCase', 'ΟΔΟΣ1234', 'οδος1234');
+senha('NFD e NFC são textos diferentes', 'jose\u03011234', 'jos\u00e91234');
 senha('sem e-mail', 'Casa2026x');
 senha('nula', null, null);
 const nomeK = (nome, d) => caso('cadastro.normalizaNome', nome, [d], K.normalizaNome);
@@ -460,6 +465,8 @@ nomeK('nome vazio', { nome: '   ' });
 nomeK('nome de uma letra', { nome: 'A' });
 nomeK('nome com 61', { nome: 'x'.repeat(61) });
 nomeK('sobrenome com 81', { nome: 'Ana', sobrenome: 'y'.repeat(81) });
+nomeK('nome com 31 emojis', { nome: '😀'.repeat(31) });
+nomeK('sobrenome com 41 emojis', { nome: 'Ana', sobrenome: '😀'.repeat(41) });
 nomeK('espaços variados viram um', { nome: 'Ana\u{a0}\tMaria', sobrenome: 'Souza\nLima' });
 nomeK('nulo', null);
 const perfilK = (nome, ...args) => caso('cadastro.normalizaPerfil', nome, args, K.normalizaPerfil);
@@ -467,13 +474,14 @@ perfilK('completo com indicação', { nome: 'Ana', sobrenome: 'Lima', origem: 'i
 perfilK('origem sem detalhe ignora o detalhe', { nome: 'Ana', origem: 'instagram', origemDetalhe: 'x' });
 perfilK('detalhe vazio some', { nome: 'Ana', origem: 'outro', origemDetalhe: '   ' });
 perfilK('detalhe com 81', { nome: 'Ana', origem: 'outro', origemDetalhe: 'z'.repeat(81) });
+perfilK('detalhe com 41 emojis', { nome: 'Ana', origem: 'outro', origemDetalhe: '😀'.repeat(41) });
 perfilK('sem origem', { nome: 'Ana' });
 perfilK('origem desconhecida', { nome: 'Ana', origem: 'facebook' });
 perfilK('nome inválido falha antes da origem', { nome: '', origem: 'google' });
 perfilK('conta Apple: nome opcional', { nome: '', origem: 'youtube' }, { nomeOpcional: true });
 perfilK('conta Apple com nome válido guarda o nome', { nome: 'Bia', origem: 'tiktok' }, { nomeOpcional: true });
 perfilK('nulo', null);
-for(const n of ['João da Silva Souza', '  Ana  ', '', 'Maria', 'x'.repeat(70) + ' Sobrenome', 'Maria ' + 'y'.repeat(90)])
+for(const n of ['João da Silva Souza', '  Ana  ', '', 'Maria', 'x'.repeat(70) + ' Sobrenome', 'Maria ' + 'y'.repeat(90), '😀'.repeat(31), 'Ana \u0301Maria'])
   caso('cadastro.nomeDoGoogle', JSON.stringify(n.length > 30 ? n.slice(0, 30) + '…' : n), [n], K.nomeDoGoogle);
 caso('cadastro.nomeDoGoogle', 'nulo', [null], K.nomeDoGoogle);
 const CODIGOS_SOCIAIS = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled', 'quota-exceeded-for-quota-metric-x',

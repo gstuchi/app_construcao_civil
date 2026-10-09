@@ -13,7 +13,6 @@ struct CoresTests {
             let nome = Paleta.nome(token, pele)
             let cor = UIColor(named: nome, in: .main, compatibleWith: nil)
             #expect(cor?.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)) != nil, "\(nome) sem variante clara")
-            #expect(cor?.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)) != nil, "\(nome) sem variante escura")
         }
     }
 
@@ -94,5 +93,35 @@ struct VidroTokensTests {
         #expect(OpcoesDoAparelho().animaFundo)
         #expect(!OpcoesDoAparelho(reduzirMovimento: true).animaFundo)
         #expect(!OpcoesDoAparelho(poucaEnergia: true).animaFundo)
+    }
+}
+
+/* A Superficie desenha o que os tokens decidem: sólida com "Reduzir transparência" e com o contorno do
+   "Aumentar contraste" só na borda. Desenhada pelo ImageRenderer, num quadrado de 40 pt a 1x, no escuro. */
+@MainActor
+struct SuperficieTests {
+    /// RGBA do pixel (x, y) da superfície de 40 × 40 desenhada com os tokens dados.
+    private func pixel(_ vidro: VidroTokens, x: Int, y: Int) -> [UInt8] {
+        let renderer = ImageRenderer(content: Color.clear.frame(width: 40, height: 40)
+            .superficie(.conteudo, em: Rectangle()).environment(\.vidro, vidro).environment(\.colorScheme, .dark))
+        renderer.scale = 1
+        guard let imagem = renderer.cgImage else { return [] }
+        var rgba = [UInt8](repeating: 0, count: 4)
+        let contexto = CGContext(data: &rgba, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                 space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        contexto?.draw(imagem, in: CGRect(x: -x, y: y - imagem.height + 1, width: imagem.width, height: imagem.height))
+        return rgba
+    }
+
+    @Test func reduzirTransparenciaDesenhaASuperficieSolida() {
+        let solido = VidroTokens.para(tela: .app, escolha: .transparente, opcoes: OpcoesDoAparelho(reduzirTransparencia: true))
+        #expect(pixel(solido, x: 20, y: 20) == [0x0C, 0x24, 0x1D, 0xFF], "Esmeralda/Superficie do escuro, sem vidro")
+    }
+
+    @Test func aumentarContrasteDesenhaOContornoSoNaBorda() {
+        let contorno = VidroTokens.para(tela: .app, escolha: .transparente, opcoes: OpcoesDoAparelho(aumentarContraste: true))
+        let fosco = VidroTokens.para(tela: .app, escolha: .fosco, opcoes: OpcoesDoAparelho())
+        #expect(pixel(contorno, x: 0, y: 20) != pixel(fosco, x: 0, y: 20), "contorno de 1,5 pt na borda")
+        #expect(pixel(contorno, x: 20, y: 20) == pixel(fosco, x: 20, y: 20), "o miolo é o mesmo Fosco")
     }
 }

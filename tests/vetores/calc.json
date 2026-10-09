@@ -14811,6 +14811,196 @@
         }
       },
       {
+        "caso": "letra de outra escrita conta como letra",
+        "args": [
+          "東京タワー1234",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "acento sozinho não é letra",
+        "args": [
+          "́́́́1234",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": false
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Inclua pelo menos uma letra."
+        }
+      },
+      {
+        "caso": "130 unidades em 69 caracteres passa do limite",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a1234567",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Use no máximo 128 caracteres."
+        }
+      },
+      {
+        "caso": "sigma final, como o toLowerCase",
+        "args": [
+          "ΟΔΟΣ1234",
+          "οδος1234"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": false
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "A senha não pode ser igual ao e-mail."
+        }
+      },
+      {
+        "caso": "NFD e NFC são textos diferentes",
+        "args": [
+          "josé1234",
+          "josé1234"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
         "caso": "sem e-mail",
         "args": [
           "Casa2026x"
@@ -14979,6 +15169,35 @@
         }
       },
       {
+        "caso": "nome com 31 emojis",
+        "args": [
+          {
+            "nome": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Use no máximo 60 caracteres no nome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "sobrenome com 41 emojis",
+        "args": [
+          {
+            "nome": "Ana",
+            "sobrenome": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "sobrenome",
+          "erro": "Use no máximo 80 caracteres no sobrenome.",
+          "perfil": null
+        }
+      },
+      {
         "caso": "espaços variados viram um",
         "args": [
           {
@@ -15077,6 +15296,22 @@
             "nome": "Ana",
             "origem": "outro",
             "origemDetalhe": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "origemDetalhe",
+          "erro": "Use no máximo 80 caracteres.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "detalhe com 41 emojis",
+        "args": [
+          {
+            "nome": "Ana",
+            "origem": "outro",
+            "origemDetalhe": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
           }
         ],
         "saida": {
@@ -15243,6 +15478,26 @@
         "saida": {
           "nome": "Maria",
           "sobrenome": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+        }
+      },
+      {
+        "caso": "\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀…\"",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        ],
+        "saida": {
+          "nome": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+          "sobrenome": ""
+        }
+      },
+      {
+        "caso": "\"Ana ́Maria\"",
+        "args": [
+          "Ana ́Maria"
+        ],
+        "saida": {
+          "nome": "Ana",
+          "sobrenome": "́Maria"
         }
       },
       {

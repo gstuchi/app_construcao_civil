@@ -42,6 +42,7 @@ enum CaminhoSVG {
                 atual = fim
             case "Z":
                 path.closeSubpath(); atual = inicio
+                comando = " "                                  // Z não se repete: número logo depois é erro
             default:
                 throw ErroDeLeitura(perto: String(comando))
             }

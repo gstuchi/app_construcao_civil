@@ -11,6 +11,7 @@ struct LogoTests {
         let curva = try CaminhoSVG.ler("M0 0Q5 10 10 0C10 -5 0 -5 0 0")
         #expect(curva.currentPoint == CGPoint(x: 0, y: 0))
         #expect(throws: CaminhoSVG.ErroDeLeitura.self) { try CaminhoSVG.ler("M0 0 X1 1") }
+        #expect(throws: CaminhoSVG.ErroDeLeitura.self) { try CaminhoSVG.ler("M0 0 10 0Z 5 5") }
     }
 
     @Test func arcoTerminaNoPontoDado() throws {

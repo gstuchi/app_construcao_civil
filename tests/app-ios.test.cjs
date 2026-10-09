@@ -130,3 +130,56 @@ test('manifesto de privacidade: sem rastreamento, UserDefaults pelo motivo certo
     assert.match(m, new RegExp(`NSPrivacyCollectedDataType${tipo}<`), `dado coletado ${tipo}`);
   assert.doesNotMatch(m, /<key>NSPrivacyCollectedDataTypeTracking<\/key>\s*<true\/>/, 'nada coletado para rastrear');
 });
+
+test('cores só por tokens: nenhuma cor solta no código do app', () => {
+  const solta = /\bColor\s*\(\s*(red|hue|white|\.sRGB|\.displayP3|uiColor)\b|\bUIColor\s*\(\s*(red|white|hue|displayP3)\b|#colorLiteral|\bColor\.(red|green|blue|orange|yellow|pink|purple|black|white|gray|brown|cyan|mint|indigo|teal)\b|\.foreground(Style|Color)\(\s*\.(red|green|blue|orange|yellow|pink|purple|black|white|gray)\b/;
+  for(const f of arquivosSwift('app-ios/Custta')) assert.doesNotMatch(ler(f), solta, `${f}: use paleta.cor(.token)`);
+});
+
+test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da Paleta', () => {
+  execFileSync(process.execPath, ['scripts/cores-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
+  const paleta = ler('app-ios/Custta/Identidade/Paleta.swift');
+  const enumToken = paleta.slice(paleta.indexOf('enum Token'), paleta.indexOf('}', paleta.indexOf('enum Token')));
+  const tokens = [...enumToken.matchAll(/case \w+ = "(\w+)"/g)].map(m => m[1]).sort();
+  const tabela = ler('scripts/cores-app-ios.mjs');
+  for(const pele of ['Esmeralda', 'Azul']){
+    const bloco = tabela.slice(tabela.indexOf(`${pele}: {`), tabela.indexOf('}', tabela.indexOf(`${pele}: {`)));
+    assert.deepEqual([...bloco.matchAll(/^\s+(\w+): \['/gm)].map(m => m[1]).sort(), tokens, `tokens da pele ${pele}`);
+  }
+});
+
+test('aurora nas mesmas cores do site, nos quatro combos', async () => {
+  const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
+  const css = ler('styles.css');
+  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'], Azul: ['html[data-skin="azul"]{', 'html[data-skin="azul"][data-theme="light"]{'] };
+  const hex = rgb => '#' + rgb.split(',').map(n => Number(n).toString(16).padStart(2, '0').toUpperCase()).join('');
+  for(const [pele, [escuro, claro]] of Object.entries(combos)){
+    for(const [lado, seletor] of [[0, escuro], [1, claro]]){
+      const bloco = css.slice(css.indexOf(seletor + '\n    --aurora-1'));
+      for(const n of [1, 2, 3, 4])
+        assert.equal(CORES[pele][`Aurora${n}`][lado], hex(bloco.match(new RegExp(`--aurora-${n}:([\\d,]+);`))[1]), `${pele} Aurora${n}`);
+    }
+  }
+});
+
+test('texto sobre sólido fecha 4,5:1 nos quatro combos', async () => {
+  const { CORES, PARES_SOLIDOS } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
+  const linear = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const luminancia = hex => {
+    const [r, g, b] = [1, 3, 5].map(i => linear(parseInt(hex.slice(i, i + 2), 16) / 255));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  for(const [pele, tokens] of Object.entries(CORES)){
+    for(const [lado, nome] of [[0, 'escuro'], [1, 'claro']]){
+      for(const [texto, fundo] of PARES_SOLIDOS){
+        const [a, b] = [luminancia(tokens[texto][lado]), luminancia(tokens[fundo][lado])];
+        const razao = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        assert.ok(razao >= 4.5, `${pele} ${nome}: ${texto} sobre ${fundo} fica em ${razao.toFixed(2)}:1`);
+      }
+    }
+  }
+});
+
+test('ícones em dia com o icons.js do site', () => {
+  execFileSync(process.execPath, ['scripts/icones-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
+});

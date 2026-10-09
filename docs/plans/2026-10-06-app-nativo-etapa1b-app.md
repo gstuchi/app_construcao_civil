@@ -72,6 +72,8 @@
 | Botão do Google | Botão próprio pelas regras do Google: cores fixas (claro `#FFFFFF`/`#747775`/`#1F1F1F`, escuro `#131314`/`#8E918F`/`#E3E3E3`), G oficial (`google-g.svg` do site) e Roboto Medium 14/20 embutida só nele (googlefonts/roboto-3-classic v3.016, OFL, SHA-256 conferido pela guarda). Texto "Continuar com o Google", confirmado pelo Giovani em 08/10, numa constante (`BotaoGoogle.texto`) para trocar se o Google pedir outro. | Decisão do mockup. O `GIDSignInButton` do SDK traria outro produto do pacote e outro texto ("Fazer login com o Google"). |
 | Estado e sincronização | `Sincronizador` no núcleo, `@MainActor @Observable`, com `TransporteDados` e `Relogio` injetados; `TransporteFirebase` só converte tipos e códigos. Retornos do Firestore na fila principal (`dispatchQueue = .main`). | A regra da fila, do backoff, da guarda de tamanho, do eco e de só gravar depois de ver os dados fica testável sem simulador (29 testes com falsos). |
 | Sair da conta | Na ordem do `cloud.js`: espera a fila (5 s no máximo; sem rede pede para conectar e não sai), confere que a conta é a mesma, para a escuta, grava a marca de limpeza, faz `signOut` e `GIDSignIn.signOut()`, encerra o Firestore e apaga o cache e só então tira a marca. Confirmação pelo **alerta do sistema** ("Sair da conta?", Cancelar e Sair), no sair do topo de Obras e de Ajustes e no botão de Ajustes; sem rede, um segundo alerta explica. | Igual ao `logout` do `cloud.js` (`cloud.js:263-292` e `572-592`). O alerta foi decidido pelo Giovani no mockup (o diálogo de vidro do site ficou descartado). |
+| Espera da fila ao sair (diferença A, aceita) | O `aguardarFila` do `Sincronizador` espera a gravação pendente e o SDK (5 s no máximo), mas não espera a leitura reaberta com erro persistente. O site espera as duas: o `tentarDeNovo` reabre as leituras com erro dentro da espera do sair (`cloud.js:583` e `615-628`). Decisão do Orquestrador no PR #61, revisada pelo Lupa. | Com a leitura presa num erro persistente, o site recusa sair; o app sai. Travar o logout é pior, e nenhum dado fica em risco: a leitura não grava nada, e a gravação pendente continua sendo esperada. |
+| Conferir a sessão (`forcar`) | O `Sincronizador` pede a conferência com `aoPedirVerificacaoDeSessao(forcar:)`: `true` quando a escrita volta `unauthenticated` e `false` quando a rede volta (`cloud.js:240` e `260`). Quem confere, o `ContaFirebase.verificarSessao` (Tarefa 13), pula a não forçada se a última foi há menos de 60 s (`cloud.js:176`). Decisão do Orquestrador no PR #61. | A Identity Toolkit tem cota por IP (60 pedidos por minuto), e cada conferência pede um token novo: sem a trava, cada volta da rede gastaria um. Forçar no `unauthenticated` faz uma sessão que de fato caiu ser vista na hora. A renovação só desloga com erro de sessão inválida, nunca por falta de rede. |
 | Nome do Google ou da Apple no limite (`nomeDoGoogle`) | Corta em unidades UTF-16 como o site, mas sem partir um emoji ao meio (`prefixoUTF16`). | A `String` do Swift não representa meia letra; a diferença é de um caractere num caso raríssimo. |
 | Abas | Só **Obras** e **Ajustes** nesta etapa, numa **cápsula de abas própria** (vidro da navegação, lente que desliza, VoiceOver com "1 de 2" e "selecionada", 44 pt, Visualizador de Conteúdo Grande); sem o +. Só a aba escolhida fica montada. | Decisão do mockup. O `TabView` do sistema pinta um fundo opaco por trás das abas no iOS 26 (a aurora sumia; visto no simulador) e uma aba só escondida continuava na árvore do VoiceOver pela barra de navegação. O que tiver de sobreviver à troca de aba (o caminho dentro de Obras, na etapa 2) mora no `PrincipalView`. |
 | Lista sem obras | "Nenhuma obra ainda." e "Nesta versão de teste, crie as obras pelo site. Elas aparecem aqui sozinhas." | Texto provisório confirmado pelo Giovani no mockup (o do site manda tocar no "+", que não existe na etapa 1). |
@@ -4472,7 +4474,7 @@ git commit -m "feat: regras das telas de conta e códigos de erro do Firebase no
   - `public struct ErroSinc: Error, Equatable { let codigo: String }`
   - `public enum AvisoSinc: Equatable { case pertoDoLimite, naoSalvou(codigo:terminal:), naoLeu(codigo:); var mensagem: String }`
   - `public struct IndicadorSinc { rotulo: String; girando: Bool; erro: Bool; dica: String }`; `public func indicador(_ e: EstadoSinc) -> IndicadorSinc?`
-  - `@MainActor @Observable public final class Sincronizador { estadoSinc: EstadoSinc; estado: Estado; dadosCarregados: Bool; aoAvisar: ((AvisoSinc) -> Void)?; aoPedirVerificacaoDeSessao: (() -> Void)?; init(transporte:relogio:online:); temPendencia: Bool; iniciar(uid:); parar(); salvar(_:) async throws; tentarDeNovo(); aguardarFila(timeoutMs:) async -> Bool; redeMudou(online:) }`. `dadosCarregados` só fica verdadeiro com snapshot do servidor ou de cache com documento, e volta a falso com `formato-desconhecido`; enquanto for falso, `salvar` lança `ErroSinc(codigo: "nao-carregado")`.
+  - `@MainActor @Observable public final class Sincronizador { estadoSinc: EstadoSinc; estado: Estado; dadosCarregados: Bool; aoAvisar: ((AvisoSinc) -> Void)?; aoPedirVerificacaoDeSessao: ((_ forcar: Bool) -> Void)?; init(transporte:relogio:online:); temPendencia: Bool; iniciar(uid:); parar(); salvar(_:) async throws; tentarDeNovo(); aguardarFila(timeoutMs:) async -> Bool; redeMudou(online:) }`. `dadosCarregados` só fica verdadeiro com snapshot do servidor ou de cache com documento, e volta a falso com `formato-desconhecido`; enquanto for falso, `salvar` lança `ErroSinc(codigo: "nao-carregado")`.
 
 - [ ] **Step 1: Escrever os falsos e os testes que falham**
 
@@ -4703,8 +4705,8 @@ struct SincronizadorEscritaTests {
 
     @Test func redeQueVoltaTentaJaOQueEstavaPendente() async throws {
         let s = montar()
-        var pedidosDeSessao = 0
-        s.aoPedirVerificacaoDeSessao = { pedidosDeSessao += 1 }
+        var pedidosDeSessao: [Bool] = []
+        s.aoPedirVerificacaoDeSessao = { pedidosDeSessao.append($0) }
         let tarefa = Task { try await s.salvar(Estado.de(blobCom(["A"]))) }
         await ate { transporte.gravacoes.count == 1 }
         transporte.gravacoes[0].concluir("unavailable")
@@ -4713,7 +4715,7 @@ struct SincronizadorEscritaTests {
         s.redeMudou(online: true)
         relogio.avancar(0)
         #expect(transporte.gravacoes.count == 3, "não espera os 2 s do backoff")
-        #expect(pedidosDeSessao == 1)
+        #expect(pedidosDeSessao == [false], "rede que volta confere a sessão sem forçar, como o cloud.js")
         transporte.gravacoes[2].concluir(nil)
         try await tarefa.value
     }
@@ -4747,13 +4749,13 @@ struct SincronizadorEscritaTests {
 
     @Test func naoAutenticadoPedeParaConferirASessao() async {
         let s = montar()
-        var pedidos = 0
-        s.aoPedirVerificacaoDeSessao = { pedidos += 1 }
+        var pedidos: [Bool] = []
+        s.aoPedirVerificacaoDeSessao = { pedidos.append($0) }
         let tarefa = Task { try await s.salvar(Estado.de(blobCom(["A"]))) }
         await ate { transporte.gravacoes.count == 1 }
         transporte.gravacoes[0].concluir("unauthenticated")
         _ = try? await tarefa.value
-        #expect(pedidos == 1)
+        #expect(pedidos == [true], "sessão recusada na escrita força a conferência, como o cloud.js")
     }
 
     @Test func semContaNaoSalva() async {
@@ -5132,8 +5134,10 @@ public final class Sincronizador {
     public private(set) var dadosCarregados = false
 
     @ObservationIgnored public var aoAvisar: ((AvisoSinc) -> Void)?
-    /// Erro "unauthenticated" ao gravar e rede que voltou pedem para conferir a sessão.
-    @ObservationIgnored public var aoPedirVerificacaoDeSessao: (() -> Void)?
+    /// Pede para conferir a sessão, como o `verificarSessao` do cloud.js: o erro "unauthenticated" ao
+    /// gravar força (true); a rede que voltou não força (false), e quem confere pula a conferência não
+    /// forçada se a última foi há menos de 60 s.
+    @ObservationIgnored public var aoPedirVerificacaoDeSessao: ((_ forcar: Bool) -> Void)?
 
     @ObservationIgnored private let transporte: TransporteDados
     @ObservationIgnored private let relogio: Relogio
@@ -5244,7 +5248,7 @@ public final class Sincronizador {
     public func redeMudou(online agora: Bool) {
         online = agora
         if agora {
-            aoPedirVerificacaoDeSessao?()
+            aoPedirVerificacaoDeSessao?(false)
             if estadoSinc.ehErro { return }
             if pendente != nil { tentativa = 0; agendarRepeticao(0) }
             else { publicar(emVoo || pendenciaCache ? .salvando : .ocioso) }
@@ -5282,7 +5286,7 @@ public final class Sincronizador {
         emVoo = false
         if pendente == nil { pendente = blob }
         let terminal = codigo == "limite" || erroEhTerminal(codigo: codigo)
-        if codigo == "unauthenticated" { aoPedirVerificacaoDeSessao?() }
+        if codigo == "unauthenticated" { aoPedirVerificacaoDeSessao?(true) }
         avisar(.naoSalvou(codigo: codigo, terminal: terminal))
         if terminal {
             tentativa = 0
@@ -6038,8 +6042,8 @@ final class ModeloApp {
         self.sincronizador = sincronizador
         self.rede = rede
         sincronizador.aoAvisar = { [weak self] aviso in self?.avisar(aviso.mensagem) }
-        sincronizador.aoPedirVerificacaoDeSessao = { [weak self] in
-            Task { await self?.conta.verificarSessao(forcar: true) }
+        sincronizador.aoPedirVerificacaoDeSessao = { [weak self] forcar in
+            Task { await self?.conta.verificarSessao(forcar: forcar) }
         }
         rede.aoMudar = { [weak sincronizador] online in sincronizador?.redeMudou(online: online) }
         conta.observar { [weak self] usuario in
@@ -9316,7 +9320,7 @@ git commit -m "feat: camada do Firestore do app nativo" -m "Transporte fino do S
 - Consumes: `BancoFirebase` (`aguardarPronto`, `firestore`, `marcarLimpeza`, `desmarcarLimpeza`, `limparCache`, `limpezaPendente`), `TransporteFirebase`, `Emulador`, `NoEmulador` (Tarefa 12); `ServicoConta`, `Usuario`, `CredencialApple`, `ErroConta`, `controladorNoTopo` (Tarefa 9); do núcleo `PerfilCadastro`, `ValorJSON`, `codigoDeErroDeConta`, `codigoDeErroFirestore`, `dominioAuth`, `dominioFirestore`, `dominioApple`, `dominioGoogle`, `sessaoInvalida`, `mensagemErroSenha`; dos SDKs `Auth`, `User`, `OAuthProvider`, `GoogleAuthProvider`, `AuthErrorCode`, `FirestoreErrorCode`, `GIDSignIn`, `GIDSignInError` e `ASAuthorizationError`.
 - Produces: `@MainActor final class ContaFirebase: ServicoConta { init(app:banco:online:); nonisolated static func erro(_:) -> ErroConta }`.
 
-É a antiga Tarefa 7 sem o que já entrou na Tarefa 9 (o protocolo `ServicoConta`, o `Usuario`, a `CredencialApple`, o `ErroConta`, a conta e o transporte falsos): a implementação de verdade do protocolo que as telas já usam. O código é o validado no plano anterior.
+É a antiga Tarefa 7 sem o que já entrou na Tarefa 9 (o protocolo `ServicoConta`, o `Usuario`, a `CredencialApple`, o `ErroConta`, a conta e o transporte falsos): a implementação de verdade do protocolo que as telas já usam. O código é o validado no plano anterior. A trava de 60 s da conferência da sessão mora aqui, no `verificarSessao`, como no `cloud.js:176`: o `Sincronizador` pede a conferência com `forcar` (`true` quando a escrita volta `unauthenticated`, `false` quando a rede volta; seção "Decisões"), e a não forçada sai no máximo uma vez por minuto.
 
 - [ ] **Step 1: Escrever os testes que falham**
 

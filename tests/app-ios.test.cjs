@@ -183,3 +183,36 @@ test('texto sobre sólido fecha 4,5:1 nos quatro combos', async () => {
 test('ícones em dia com o icons.js do site', () => {
   execFileSync(process.execPath, ['scripts/icones-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
 });
+
+test('globo com os mesmos continentes do globe.js', () => {
+  const pares = texto => [...texto.matchAll(/\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]|\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g)]
+    .map(m => (m[1] ?? m[3]) + ',' + (m[2] ?? m[4]));
+  const js = ler('globe.js'), swift = ler('app-ios/Custta/Identidade/Globo.swift');
+  const doSite = pares(js.slice(js.indexOf('const CONTINENTS'), js.indexOf('];', js.indexOf('const CONTINENTS'))));
+  const doApp = pares(swift.slice(swift.indexOf('static let continentes'), swift.indexOf('    ]\n', swift.indexOf('static let continentes'))));
+  assert.ok(doSite.length > 150);
+  assert.deepEqual(doApp, doSite);
+});
+
+test('aurora com a deriva do site: os três quadros, 26 s de ida e volta, ease-in-out', () => {
+  const css = ler('styles.css'), swift = ler('app-ios/Custta/Identidade/Aurora.swift');
+  assert.match(css, /animation:aurora-deriva 26s ease-in-out infinite alternate/);
+  const quadro = /translate3d\((-?[\d.]+)%,(-?[\d.]+)%,0\) rotate\((-?[\d.]+)deg\) scale\(([\d.]+)\)/g;
+  const doSite = [...css.slice(css.indexOf('@keyframes aurora-deriva')).matchAll(quadro)].slice(0, 3)
+    .map(m => [m[1] / 100, m[2] / 100, Number(m[3]), Number(m[4])]);
+  const doApp = [...swift.matchAll(/Deriva\(x: (-?[\d.]+), y: (-?[\d.]+), giro: (-?[\d.]+), escala: ([\d.]+)\)/g)]
+    .map(m => m.slice(1, 5).map(Number));
+  assert.equal(doSite.length, 3);
+  assert.deepEqual(doApp, doSite);
+  assert.match(swift, /truncatingRemainder\(dividingBy: 52\)/, 'ciclo de 52 s: 26 de ida e 26 de volta');
+  assert.match(ler('app-ios/Custta/Identidade/Movimento.swift'), /static let suave = CurvaBezier\(x1: 0\.42, y1: 0, x2: 0\.58, y2: 1\)/,
+    'o ease-in-out do CSS');
+});
+
+test('animação própria respeita Reduzir movimento', () => {
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    if(/withAnimation|\.animation\(|\.transition\(/.test(t))
+      assert.match(t, /accessibilityReduceMotion|reduzirMovimento/, `${f}: anima sem olhar o Reduzir movimento`);
+  }
+});

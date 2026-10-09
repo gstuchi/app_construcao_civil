@@ -4,6 +4,6 @@ final class AberturaUITests: XCTestCase {
     @MainActor func testAppAbre() {
         let app = XCUIApplication()
         app.launch()
-        XCTAssertTrue(app.staticTexts["abertura"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["abertura"].waitForExistence(timeout: 10))
     }
 }

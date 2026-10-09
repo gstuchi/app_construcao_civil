@@ -216,3 +216,11 @@ test('animação própria respeita Reduzir movimento', () => {
       assert.match(t, /accessibilityReduceMotion|reduzirMovimento/, `${f}: anima sem olhar o Reduzir movimento`);
   }
 });
+
+test('o logo escrito do app usa os caminhos do logo do site', () => {
+  const svg = ler('index.html').match(/<svg class="logo-escrito"[\s\S]*?<\/svg>/)[0];
+  const swift = ler('app-ios/Custta/Identidade/LogoEscrito.swift');
+  const caminhos = [...svg.matchAll(/\sd="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(caminhos.length >= 16, 'caminhos do logo no index.html');
+  for(const d of caminhos) assert.ok(swift.includes(`"${d}"`), `caminho do logo ausente no app: ${d.slice(0, 40)}…`);
+});

@@ -12,7 +12,7 @@ struct CusttaApp: App {
     }
 }
 
-/// A abertura: o fundo do Custta, a aurora e o globo, enquanto o app não tem a tela de entrar. Para como o resto
+/// A abertura: o fundo do Custta e o título se escrevendo, enquanto o app não tem a tela de entrar. Para como o resto
 /// do app: Reduzir movimento, Pouca Energia, calor e app fora de ativo.
 struct AberturaView: View {
     @Environment(\.accessibilityReduceMotion) private var reduzirMovimento
@@ -27,6 +27,7 @@ struct AberturaView: View {
         ZStack {
             FundoAurora(intensidade: Aurora.intensidade(tela: .entrada, pele: .esmeralda, escuro: true), relogio: relogio)
             Globo(relogio: relogio)
+            LogoEscrito(animado: opcoes.animaFundo)
         }
         .preferredColorScheme(.dark)
         .onChange(of: anda, initial: true) { _, novo in relogio.rodando = novo }

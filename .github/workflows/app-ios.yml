@@ -2,7 +2,7 @@ name: app-ios
 # App nativo em SwiftUI (app-ios/), num macOS 26 (Xcode 26):
 # - nucleo: swift test do pacote CusttaNucleo, que confere as regras reescritas em Swift contra os
 #   vetores gerados do site (tests/vetores/calc.json); por isso também dispara quando calc.js,
-#   dados.js, push.js ou o gerador mudam;
+#   dados.js, push.js, cadastro.js ou o gerador mudam;
 # - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
 #   unidade e de tela no simulador com os serviços falsos.
 # Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
@@ -19,6 +19,7 @@ on:
       - 'calc.js'
       - 'dados.js'
       - 'push.js'
+      - 'cadastro.js'
       - 'scripts/vetores-calc.mjs'
       - 'scripts/simulador-ios.mjs'
       - 'tests/vetores/**'

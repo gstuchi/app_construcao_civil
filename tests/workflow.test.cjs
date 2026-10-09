@@ -222,7 +222,7 @@ assert.match(appIos, /runs-on:\s*macos-26/, 'o app nativo precisa do runner macO
 assert.match(appIos, /swift test --package-path app-ios\/CusttaNucleo/, 'sem o swift test do núcleo');
 assert.match(appIos, /TZ:\s*America\/Sao_Paulo/, 'os testes do núcleo rodam no fuso dos vetores');
 assert.match(appIos, /DEVELOPER_DIR:\s*\/Applications\/Xcode_26\.6\.app\/Contents\/Developer/, 'o Xcode da CI é fixo: o padrão do runner muda sem aviso');
-for(const caminho of ['app-ios/**', 'calc.js', 'dados.js', 'push.js', 'scripts/vetores-calc.mjs', 'scripts/simulador-ios.mjs', 'tests/vetores/**', '.github/workflows/app-ios.yml'])
+for(const caminho of ['app-ios/**', 'calc.js', 'dados.js', 'push.js', 'cadastro.js', 'scripts/vetores-calc.mjs', 'scripts/simulador-ios.mjs', 'tests/vetores/**', '.github/workflows/app-ios.yml'])
   assert.ok(appIos.includes(`- '${caminho}'`), `app-ios.yml não dispara quando ${caminho} muda`);
 assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda em todo push');
 assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');

@@ -387,15 +387,18 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
 });
 
-test('ícone junto de texto cresce com a letra: o dos Label e a seta da dica de entrar', () => {
+test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar e o olho da senha', () => {
   // A auditoria de tipo dinâmico do Xcode só olha texto: um ícone de tamanho fixo passa por ela e vira um
-  // ponto ao lado da letra grande (D7 da conferência da Tarefa 10).
+  // ponto ao lado da letra grande (D7 da conferência da Tarefa 10; a legenda do gráfico e o olho, na revisão da 11).
   for(const f of arquivosSwift('app-ios/Custta'))
-    for(const m of ler(f).matchAll(/icon: \{\s*Image\([^\n]*?\.frame\(width: ([^,]+), height: ([^)]+)\)/g))
+    for(const m of ler(f).matchAll(/icon: \{[^\n]*?\.frame\(width: ([^,]+), height: ([^)]+)\)/g))
       assert.doesNotMatch(`${m[1]} ${m[2]}`, /^\d|\s\d/, `${f}: ícone de Label em tamanho fixo (use @ScaledMetric)`);
   const dica = ler('app-ios/Custta/Telas/EntradaView.swift').match(/Text\("Role para entrar"\)\s*\n\s*Image\([^\n]*/);
   assert.ok(dica, 'a dica "Role para entrar" com a seta logo depois');
   assert.doesNotMatch(dica[0], /\.frame\(width: \d/, 'a seta da dica tem 1em no mockup: cresce com a letra (@ScaledMetric)');
+  const olho = ler('app-ios/Custta/Identidade/Componentes.swift').match(/"Icones\/olho"\)\s*\n\s*\.resizable\(\)[^\n]*/);
+  assert.ok(olho, 'o olho do campo de senha');
+  assert.doesNotMatch(olho[0], /\.frame\(width: \d/, 'o olho da senha cresce com a letra do campo (@ScaledMetric)');
 });
 
 test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do Google e no indicador da barra', () => {

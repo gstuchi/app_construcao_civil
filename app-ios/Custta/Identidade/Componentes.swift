@@ -27,6 +27,8 @@ struct CampoDeEntrada: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @State private var mostrar = false
+    /// O olho da senha cresce com a letra do campo, e o alvo de toque junto (44 pt no tamanho padrão).
+    @ScaledMetric(relativeTo: .body) private var olho: CGFloat = 20
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -71,9 +73,9 @@ struct CampoDeEntrada: View {
                 if senha {
                     Button { mostrar.toggle() } label: {
                         Image(decorative: mostrar ? "Icones/olhoFechado" : "Icones/olho")
-                            .resizable().frame(width: 20, height: 20)
+                            .resizable().frame(width: olho, height: olho)
                             .foregroundStyle(paleta.cor(vidro.secundario))
-                            .frame(width: 44, height: 44)
+                            .frame(width: olho + 24, height: olho + 24)
                     }
                     .accessibilityLabel(mostrar ? "Esconder senha" : "Mostrar senha")
                 }
@@ -84,8 +86,8 @@ struct CampoDeEntrada: View {
             .frame(minHeight: 48)
             .background(paleta.cor(.campo), in: .rect(cornerRadius: 11))
             .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(paleta.cor(invalido ? .alerta : .campoBorda), lineWidth: 1))
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("caixa-\(identificador)")
+            // A caixa não é contêiner de acessibilidade: como contêiner, ela devolvia ao VoiceOver o exemplo
+            // desenhado, mesmo escondido, e ele seria lido duas vezes (no exemplo e no prompt do campo).
         }
     }
 }

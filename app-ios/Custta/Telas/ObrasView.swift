@@ -177,6 +177,8 @@ struct PainelComparativo: View {
     let linhas: [LinhaComparativo]
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
+    /// O quadradinho da legenda cresce com a letra dela.
+    @ScaledMetric(relativeTo: .footnote) private var quadrado: CGFloat = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -204,8 +206,8 @@ struct PainelComparativo: View {
                 .accessibilityValue("\(moedaCurta(linha.bruto)) gasto, \(moedaCurta(linha.corrigido)) corrigido")
             }
             HStack(spacing: 18) {
-                Label { Text("Gasto") } icon: { RoundedRectangle(cornerRadius: 3).fill(paleta.cor(.marca)).frame(width: 10, height: 10) }
-                Label { Text("Corrigido") } icon: { RoundedRectangle(cornerRadius: 3).fill(paleta.cor(.marca).opacity(0.34)).frame(width: 10, height: 10) }
+                Label { Text("Gasto") } icon: { RoundedRectangle(cornerRadius: quadrado * 0.3).fill(paleta.cor(.marca)).frame(width: quadrado, height: quadrado) }
+                Label { Text("Corrigido") } icon: { RoundedRectangle(cornerRadius: quadrado * 0.3).fill(paleta.cor(.marca).opacity(0.34)).frame(width: quadrado, height: quadrado) }
             }
             .font(.footnote)
             .foregroundStyle(paleta.cor(vidro.secundario))

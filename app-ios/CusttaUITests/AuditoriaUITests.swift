@@ -91,21 +91,24 @@ final class AuditoriaUITests: XCTestCase {
 
     /// O exemplo de cada campo vazio cabe inteiro na caixa no maior tamanho, quebrando linha como no mockup
     /// ("nada corta"; D6 da conferência da Tarefa 10). A auditoria de texto cortado não vê o exemplo (o prompt)
-    /// de um campo: o exemplo é medido aqui na letra do corpo e na largura do campo.
+    /// de um campo: o exemplo é medido aqui na letra do corpo e na largura do campo. A caixa não é elemento de
+    /// acessibilidade (como contêiner, ela devolvia ao VoiceOver o exemplo desenhado): é medida no print.
     @MainActor func testExemploDosCamposCabeNoMaiorTamanho() throws {
         let corpo = UIFont.preferredFont(forTextStyle: .body,
                                          compatibleWith: UITraitCollection(preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge))
         func conferir(_ app: XCUIApplication, _ ids: [String]) throws {
             for id in ids {
                 let campo = app.textFields[id].exists ? app.textFields[id] : app.secureTextFields[id]
-                let caixa = app.otherElements["caixa-\(id)"]
-                XCTAssertTrue(caixa.waitForExistence(timeout: 5), "caixa do campo \(id)")
+                XCTAssertTrue(campo.waitForExistence(timeout: 5), "campo \(id)")
                 let exemplo = try XCTUnwrap(campo.placeholderValue, "exemplo do campo \(id)")
+                XCTAssertFalse(app.staticTexts[exemplo].exists, "\(id): o exemplo desenhado fica fora do VoiceOver (quem lê é o prompt do campo)")
                 let altura = (exemplo as NSString).boundingRect(with: CGSize(width: campo.frame.width, height: .greatestFiniteMagnitude),
                                                                 options: [.usesLineFragmentOrigin, .usesFontLeading],
                                                                 attributes: [.font: corpo], context: nil).height
-                XCTAssertGreaterThanOrEqual(caixa.frame.height, altura.rounded(.down),
-                                            "\(id): \"\(exemplo)\" pede \(Int(altura)) pt e a caixa tem \(Int(caixa.frame.height))")
+                trazerAoMeio(app, campo, altura: altura)
+                let caixa = alturaDaCaixa(app, campo)
+                XCTAssertGreaterThanOrEqual(caixa, altura.rounded(.down),
+                                            "\(id): \"\(exemplo)\" pede \(Int(altura)) pt e a caixa tem \(Int(caixa))")
             }
         }
         let app = abrirApp(argumentos: maiorLetra + parado)
@@ -116,6 +119,34 @@ final class AuditoriaUITests: XCTestCase {
         segmento.tap()
         XCTAssertTrue(app.textFields["nome"].waitForExistence(timeout: 10))
         try conferir(app, ["nome", "sobrenome", "emailCadastro", "senhaCadastro", "confirmacao"])
+    }
+
+    /// Rola a tela, arrastando por uma margem, até o campo e a altura que o exemplo pede ficarem fora do véu do
+    /// alto (a borda de rolagem) e do indicador de início.
+    @MainActor private func trazerAoMeio(_ app: XCUIApplication, _ campo: XCUIElement, altura: CGFloat) {
+        let tela = app.frame.height
+        let faixa = (borda + 20)...max(borda + 20, tela - 60 - altura)
+        for _ in 0..<6 where !faixa.contains(campo.frame.minY) {
+            let passo = max(-tela / 2, min(tela / 2, (faixa.lowerBound + faixa.upperBound) / 2 - campo.frame.minY))
+            let inicio = app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: passo > 0 ? 0.3 : 0.7))
+            inicio.press(forDuration: 0.1, thenDragTo: inicio.withOffset(CGVector(dx: 0, dy: passo)),
+                         withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+    }
+
+    /// Altura da caixa do campo no print: a cor sólida do campo numa coluna da margem esquerda da caixa (antes do
+    /// texto), do alto do campo para cima e para baixo até as bordas, mais a borda de 1 pt de cada lado.
+    @MainActor private func alturaDaCaixa(_ app: XCUIApplication, _ campo: XCUIElement) -> CGFloat {
+        let print = Retrato(app.screenshot().image.cgImage!)
+        let escala = CGFloat(print.largura) / app.frame.width
+        let x = Int((campo.frame.minX - 6) * escala), inicio = Int((campo.frame.minY + 1) * escala)
+        func cor(_ y: Int) -> [Int] { (0..<3).map { Int(print.rgba[(y * print.largura + x) * 4 + $0]) } }
+        let corDoCampo = cor(inicio)
+        func ehCampo(_ y: Int) -> Bool { zip(cor(y), corDoCampo).allSatisfy { abs($0 - $1) <= 4 } }
+        var cima = inicio, baixo = inicio
+        while cima > 0, ehCampo(cima - 1) { cima -= 1 }
+        while baixo + 1 < print.altura, ehCampo(baixo + 1) { baixo += 1 }
+        return CGFloat(baixo - cima + 1) / escala + 2
     }
 
     /// Obras (com o aviso de e-mail, antes e depois de rolar) e entrar.

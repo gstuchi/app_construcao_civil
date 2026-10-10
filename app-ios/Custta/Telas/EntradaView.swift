@@ -75,6 +75,8 @@ struct TituloDaEntrada: View {
     @Environment(\.dynamicTypeSize) private var tamanho
     /// Largura que quebra o título como no mockup ("Controle os custos / das suas obras com").
     @ScaledMetric(relativeTo: .title2) private var larguraDoTitulo = 212
+    /// A seta da dica tem 1em, como no mockup: cresce com a letra.
+    @ScaledMetric(relativeTo: .footnote) private var seta: CGFloat = 13
 
     var body: some View {
         let progresso = opcoes.reduzirMovimento ? 0 : min(1, max(0, rolagem.deslocamento / meiaTela))
@@ -92,7 +94,7 @@ struct TituloDaEntrada: View {
                 .padding(.bottom, 9)
             HStack(spacing: 4) {
                 Text("Role para entrar")
-                Image(decorative: "Icones/setaBaixo").resizable().frame(width: 13, height: 13)
+                Image(decorative: "Icones/setaBaixo").resizable().frame(width: seta, height: seta)
             }
             .font(.footnote)
             .foregroundStyle(paleta.cor(.texto))

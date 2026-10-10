@@ -35,28 +35,39 @@ struct CampoDeEntrada: View {
                 .accessibilityHidden(true)
                 .padding(.vertical, 1)          // linha de 18 pt, a do rótulo no site e no mockup (o footnote ocupa 16)
             HStack(spacing: 8) {
-                Group {
-                    if senha && !mostrar {
-                        SecureField(rotulo, text: $texto, prompt: Text(exemplo).foregroundStyle(paleta.cor(vidro.secundario)))
-                    } else {
-                        TextField(rotulo, text: $texto, prompt: Text(exemplo).foregroundStyle(paleta.cor(vidro.secundario)), axis: senha ? .horizontal : .vertical)
+                // O exemplo é desenhado aqui, e não pelo prompt do campo, para quebrar linha na letra grande como no
+                // mockup ("nada corta"): o prompt do TextField fica numa linha só e corta com reticências, e o do
+                // SecureField encolhe a letra. O prompt continua no campo, transparente, para o VoiceOver.
+                ZStack(alignment: .topLeading) {
+                    if texto.isEmpty {
+                        Text(exemplo)
+                            .foregroundStyle(paleta.cor(vidro.secundario))
+                            .accessibilityHidden(true)
+                            .onTapGesture { foco.wrappedValue = chave }     // a 2ª linha do exemplo também é o campo
+                    }
+                    Group {
+                        if senha && !mostrar {
+                            SecureField(rotulo, text: $texto, prompt: Text(exemplo).foregroundStyle(.clear))
+                        } else {
+                            TextField(rotulo, text: $texto, prompt: Text(exemplo).foregroundStyle(.clear), axis: senha ? .horizontal : .vertical)
+                        }
+                    }
+                    .textContentType(tipo)
+                    .keyboardType(teclado)
+                    .textInputAutocapitalization(maiusculas)
+                    .autocorrectionDisabled()
+                    .foregroundStyle(paleta.cor(.texto))
+                    .focused(foco, equals: chave)
+                    .accessibilityLabel(rotulo)
+                    .accessibilityIdentifier(identificador)
+                    // No campo que quebra linha (axis vertical) o Return vira "\n": sem quebra, vai ao próximo campo.
+                    .onChange(of: texto) { _, novo in
+                        guard novo.contains("\n") else { return }
+                        texto = novo.replacingOccurrences(of: "\n", with: "")
+                        foco.wrappedValue = proximo
                     }
                 }
-                .textContentType(tipo)
-                .keyboardType(teclado)
-                .textInputAutocapitalization(maiusculas)
-                .autocorrectionDisabled()
                 .font(.body)
-                .foregroundStyle(paleta.cor(.texto))
-                .focused(foco, equals: chave)
-                .accessibilityLabel(rotulo)
-                .accessibilityIdentifier(identificador)
-                // No campo que quebra linha (axis vertical) o Return vira "\n": sem quebra, vai ao próximo campo.
-                .onChange(of: texto) { _, novo in
-                    guard novo.contains("\n") else { return }
-                    texto = novo.replacingOccurrences(of: "\n", with: "")
-                    foco.wrappedValue = proximo
-                }
                 if senha {
                     Button { mostrar.toggle() } label: {
                         Image(decorative: mostrar ? "Icones/olhoFechado" : "Icones/olho")
@@ -73,6 +84,8 @@ struct CampoDeEntrada: View {
             .frame(minHeight: 48)
             .background(paleta.cor(.campo), in: .rect(cornerRadius: 11))
             .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(paleta.cor(invalido ? .alerta : .campoBorda), lineWidth: 1))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("caixa-\(identificador)")
         }
     }
 }

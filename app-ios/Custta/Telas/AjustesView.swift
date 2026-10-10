@@ -9,6 +9,8 @@ struct AjustesView: View {
     @State private var confirmarSaida = false
     @State private var mensagemVerificacao: String?
     @State private var enviando = false
+    /// O ícone do "Sair da conta" cresce com a letra do botão.
+    @ScaledMetric(relativeTo: .body) private var iconeDoSair: CGFloat = 18
 
     var body: some View {
         NavigationStack {
@@ -57,7 +59,7 @@ struct AjustesView: View {
                             Spacer().frame(height: 10)
                         }
                         Button { confirmarSaida = true } label: {
-                            Label { Text("Sair da conta") } icon: { Image(decorative: "Icones/sair").resizable().frame(width: 18, height: 18) }
+                            Label { Text("Sair da conta") } icon: { Image(decorative: "Icones/sair").resizable().frame(width: iconeDoSair, height: iconeDoSair) }
                         }
                         .buttonStyle(BotaoSecundario())
                         .accessibilityIdentifier("sair")

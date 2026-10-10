@@ -386,3 +386,28 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
     /let escuro = esquema == \.dark\n[\s\S]*?paleta\.cor\(\.fundo\)\.opacity\(vidro\.escurecimento\(papel, escuro: escuro\)\)/,
     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
 });
+
+test('ícone junto de texto cresce com a letra: o dos Label e a seta da dica de entrar', () => {
+  // A auditoria de tipo dinâmico do Xcode só olha texto: um ícone de tamanho fixo passa por ela e vira um
+  // ponto ao lado da letra grande (D7 da conferência da Tarefa 10).
+  for(const f of arquivosSwift('app-ios/Custta'))
+    for(const m of ler(f).matchAll(/icon: \{\s*Image\([^\n]*?\.frame\(width: ([^,]+), height: ([^)]+)\)/g))
+      assert.doesNotMatch(`${m[1]} ${m[2]}`, /^\d|\s\d/, `${f}: ícone de Label em tamanho fixo (use @ScaledMetric)`);
+  const dica = ler('app-ios/Custta/Telas/EntradaView.swift').match(/Text\("Role para entrar"\)\s*\n\s*Image\([^\n]*/);
+  assert.ok(dica, 'a dica "Role para entrar" com a seta logo depois');
+  assert.doesNotMatch(dica[0], /\.frame\(width: \d/, 'a seta da dica tem 1em no mockup: cresce com a letra (@ScaledMetric)');
+});
+
+test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do Google e no indicador da barra', () => {
+  // A auditoria de texto cortado do Xcode não vê dentro de um elemento que o VoiceOver lê inteiro (o cartão da
+  // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
+  // do Google (letra travada, fora da auditoria de tipo dinâmico) e o indicador de sincronização da barra.
+  const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao']);
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
+      const dono = [...t.slice(0, m.index).matchAll(/^(?:private )?struct (\w+)/gm)].at(-1)?.[1];
+      assert.ok(fixos.has(dono), `${f}: ${m[0]} em ${dono}; texto cortado se resolve deixando o texto crescer`);
+    }
+  }
+});

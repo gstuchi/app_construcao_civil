@@ -107,8 +107,12 @@ jobs:
             build
 
       # Testes com os serviços falsos (nada de rede): unidade e tela, inclusive as auditorias de
-      # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui.
+      # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui. O laudo de leitura sobre o
+      # vidro (LeituraNoVidroUITests) só relata aqui: o simulador da máquina virtual pode desenhar o vidro
+      # diferente do Mac, onde ele é portão.
       - name: Testes de unidade e de tela no simulador
+        env:
+          TEST_RUNNER_CUSTTA_LAUDO: relatorio
         run: |
           set -o pipefail
           DESTINO="$(node scripts/simulador-ios.mjs)"

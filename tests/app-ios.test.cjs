@@ -361,6 +361,11 @@ test('fonte do botão do Google: Roboto Medium travada, registrada e com a licen
   assert.match(ler('app-ios/Custta/Info.plist'), /<key>UIAppFonts<\/key>\s*<array>\s*<string>Roboto-Medium\.ttf<\/string>/);
 });
 
+test('G do botão do Google igual ao do site, byte a byte (o oficial, com as cores do Google)', () => {
+  assert.ok(readFileSync(join(RAIZ, 'app-ios/Custta/Assets.xcassets/LogoGoogle.imageset/google-g.svg'))
+    .equals(readFileSync(join(RAIZ, 'google-g.svg'))), 'copie o google-g.svg da raiz para o LogoGoogle.imageset');
+});
+
 test('ganchos dos testes e do laudo só no Debug: chave custta.* (fora tema, pele e vidro) e CUSTTA_* dentro de #if DEBUG', () => {
   for(const f of arquivosSwift('app-ios/Custta')){
     const pilha = [];

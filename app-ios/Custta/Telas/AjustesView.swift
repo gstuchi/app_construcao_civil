@@ -71,6 +71,8 @@ struct AjustesView: View {
                         .font(.footnote)
                         .foregroundStyle(paleta.cor(.texto))
                         .shadow(color: paleta.cor(.sombraDoTexto), radius: 4, y: 1)
+                        // Texto solto sobre a aurora: o halo leve do título grande, só no escuro.
+                        .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naBarra) }
                         .accessibilityIdentifier("versao")
                 }
                 .padding(.horizontal, 16)

@@ -31,11 +31,17 @@ final class LeituraNoVidroUITests: XCTestCase {
         /// "tudo" mede o conteúdo (da cápsula de abas para baixo fica de fora); "navegacao" mede só os rótulos
         /// da cápsula, com o conteúdo que passa por baixo dela intacto nos dois prints.
         let escopo: String
+        /// Aba aberta pela cápsula antes do print (Ajustes não tem gancho de abertura).
+        var aba: String? = nil
     }
 
     @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat) {
         let app = abrirApp(conta: cena.conta, argumentos: cena.argumentos + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
         XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
+        if let aba = cena.aba {
+            app.abrirAba(aba)
+            XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")
+        }
         Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
         let foto = XCUIScreen.main.screenshot()
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
@@ -153,6 +159,21 @@ final class LeituraNoVidroUITests: XCTestCase {
             Cena(nome: "obras com Aumentar contraste", conta: "senha-nao-confirmada", argumentos: contraste,
                  espera: "avisoEmail", escopo: "tudo"),
         ])
+    }
+
+    /// Ajustes: o título grande (do sistema, com o halo da barra) e a versão, texto solto sobre a aurora, nos
+    /// dois escuros, com "Aumentar contraste" e na maior letra. No Pro Max, a versão fica em 4,42:1 no escuro
+    /// esmeralda (revisão final do PR 2).
+    @MainActor func testLeituraEmAjustes() {
+        let esmeralda = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let azul = ["-custta.tema", "escuro", "-custta.pele", "azul"] + piorMomento
+        let cenas: [(String, [String])] = [("escuro, esmeralda", esmeralda), ("escuro, azul", azul),
+                                           ("com Aumentar contraste", esmeralda + ["-custta.aumentarContraste", "YES"]),
+                                           ("na maior letra", esmeralda + maiorLetra)]
+        cobrar(cenas.map { nome, argumentos in
+            Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
+                 aba: "ajustes")
+        })
     }
 }
 

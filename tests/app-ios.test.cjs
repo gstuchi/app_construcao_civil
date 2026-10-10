@@ -392,11 +392,13 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
 });
 
-test('título grande de Obras e de Ajustes com o halo no escuro', () => {
-  // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1.
-  // O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
+test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no escuro', () => {
+  // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1 e a
+  // versão, texto solto, em 4,42:1. O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
   for(const tela of ['ObrasView', 'AjustesView'])
     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
+  assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
+    /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
 });
 
 test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar, o olho da senha e o logo da conta', () => {

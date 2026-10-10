@@ -183,11 +183,11 @@ struct CamadaAurora: View, Animatable, Equatable {
 
 /// Halo do texto solto sobre a aurora, só no escuro: o tom do fundo no centro, com borda gradual. Na entrada,
 /// atrás do título, do logo e da dica; nos tamanhos de acessibilidade cresce junto com o título e o miolo fica
-/// mais largo. No título grande da barra (Obras e Ajustes), mais leve (`haloDoTituloDaBarra`).
+/// mais largo. No título grande da barra (Obras e Ajustes) e na versão em Ajustes, mais leve.
 struct HaloDoTitulo: View {
     /// Opacidade no centro: o menor passo que passa de 4,5:1 no Pro Max (decisão do Giovani em 10/10). Na entrada,
     /// 50% (com 45%, a dica "Role para entrar" ficava em 4,06:1 no pior momento da aurora); na barra, 5% (sem
-    /// halo, o título "Obras", branco do sistema, ficava em 4,41:1).
+    /// halo, o título "Obras", branco do sistema, ficava em 4,41:1, e a versão em Ajustes, em 4,42:1).
     nonisolated static let naEntrada = 0.50
     nonisolated static let naBarra = 0.05
     let grande: Bool

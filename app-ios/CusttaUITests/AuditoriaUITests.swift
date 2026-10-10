@@ -33,18 +33,30 @@ final class AuditoriaUITests: XCTestCase {
         let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         try app.performAccessibilityAudit(for: tipos) { achado in
-            guard let elemento = achado.element else { return false }
-            switch achado.auditType {
-            case .dynamicType:
-                return elemento.label == "Continuar com o Google"
-                    || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
-            case .contrast:
-                guard !elemento.identifier.hasPrefix("aba-") else { return false }   // o rótulo da própria cápsula
-                let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
-                return sobABarra || elemento.frame.maxY > fundoDaTela
-            default:
+            guard let elemento = achado.element else {
+                Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
                 return false
             }
+            let fora: Bool
+            switch achado.auditType {
+            case .dynamicType:
+                fora = elemento.label == "Continuar com o Google"
+                    || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
+            case .contrast:
+                if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
+                else {
+                    let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
+                    fora = sobABarra || elemento.frame.maxY > fundoDaTela
+                }
+            default:
+                fora = false
+            }
+            // Cada achado vai para o log: a CI não guarda o resultado dos testes, e sem esta linha uma reprovação
+            // aparece só como "Contrast failed", sem dizer qual elemento nem onde.
+            Swift.print("auditoria | \(achado.compactDescription) | \(elemento.elementType.rawValue) \"\(elemento.label)\" "
+                        + "\(elemento.identifier) \(elemento.frame) | barra até \(topoDoConteudo), conteúdo até \(fundoDaTela) | "
+                        + (fora ? "fora" : "reprova"))
+            return fora
         }
     }
 

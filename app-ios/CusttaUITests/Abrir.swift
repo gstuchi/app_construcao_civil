@@ -35,9 +35,16 @@ extension XCUIApplication {
 
     /// O iOS 27 do simulador oferece uma senha forte ao focar um campo de senha nova (.newPassword), mesmo com o
     /// app sem domínio associado: a folha "Use Strong Password?" toma o lugar do teclado e engole a digitação.
-    /// Quando ela aparece (até 2 s), é fechada; no iOS 26 da CI ela pode não aparecer.
+    /// Quando ela aparece (até 2 s), é fechada; no iOS 26 da CI ela pode não aparecer. A folha é de outro processo,
+    /// que o XCUITest não espera assentar: tocado na animação de entrada, o xmark perde o toque e a folha fica
+    /// (cada tecla troca então o caractere do campo). Por isso o toque se repete até a folha sair.
     func recusarSenhaForte() {
-        guard buttons["GenerateStrongPasswordButton"].waitForExistence(timeout: 2) else { return }
-        buttons["xmark"].tap()
+        let oferta = buttons["GenerateStrongPasswordButton"]
+        guard oferta.waitForExistence(timeout: 2) else { return }
+        for _ in 1...3 where oferta.exists {
+            buttons["xmark"].tap()
+            _ = oferta.waitForNonExistence(timeout: 1.5)
+        }
+        XCTAssertFalse(oferta.exists, "a oferta de senha forte não fechou")
     }
 }

@@ -32,6 +32,16 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sair"].exists, "continua em Ajustes")
     }
 
+    /// "Enviar confirmação de e-mail" chama o ModeloApp.enviarConfirmacao: texto dos Ajustes do site, não o do aviso.
+    @MainActor func testEnviarConfirmacaoComOTextoDosAjustesDoSite() {
+        let app = abrirApp(conta: "senha-nao-confirmada")
+        app.abrirAba("ajustes")
+        let enviar = app.buttons["Enviar confirmação de e-mail"]
+        XCTAssertTrue(enviar.waitForExistence(timeout: 5))
+        enviar.tap()
+        XCTAssertTrue(app.staticTexts["E-mail enviado. Confira também a caixa de spam."].waitForExistence(timeout: 5))
+    }
+
     @MainActor func testSairDoTopoPedeConfirmacaoECancelarFica() {
         let app = abrirApp(conta: "senha")
         let topo = app.buttons["sairTopo"]

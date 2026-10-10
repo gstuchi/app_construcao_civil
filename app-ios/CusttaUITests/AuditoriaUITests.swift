@@ -89,6 +89,18 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
     }
 
+    /// O falta pouco das contas Apple e Google, que nenhuma outra auditoria abre na maior letra.
+    @MainActor func testFaltaPoucoNoMaiorTamanho() throws {
+        for conta in ["apple-sem-perfil", "google-sem-perfil"] {
+            let app = abrirApp(conta: conta, argumentos: maiorLetra + parado)
+            XCTAssertTrue(app.elemento("textoFaltaPouco").waitForExistence(timeout: 10), conta)
+            try auditar(app, tiposDeAuditoria)
+            rolar(app)
+            try auditar(app, tiposDeAuditoria)
+            app.terminate()
+        }
+    }
+
     /// O exemplo de cada campo vazio cabe inteiro na caixa no maior tamanho, quebrando linha como no mockup
     /// ("nada corta"; D6 da conferência da Tarefa 10). A auditoria de texto cortado não vê o exemplo (o prompt)
     /// de um campo: o exemplo é medido aqui na letra do corpo e na largura do campo. A caixa não é elemento de

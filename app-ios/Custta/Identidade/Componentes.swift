@@ -82,7 +82,8 @@ struct CampoDeEntrada: View {
             }
             .padding(.leading, 13)
             .padding(.trailing, senha ? 2 : 13)
-            .padding(.vertical, senha ? 2 : 11)
+            // Senha com 52 pt, como no mockup: o alvo de 44 pt do olho e 4 pt em cima e embaixo.
+            .padding(.vertical, senha ? 4 : 11)
             .frame(minHeight: 48)
             .background(paleta.cor(.campo), in: .rect(cornerRadius: 11))
             .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(paleta.cor(invalido ? .alerta : .campoBorda), lineWidth: 1))

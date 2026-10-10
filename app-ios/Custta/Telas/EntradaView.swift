@@ -349,6 +349,9 @@ struct FormFaltaPouco: View {
     @State private var mensagem: String?
     @State private var invalido: String?
     @State private var salvando = false
+    /// O logo da Apple é letra (.body) e cresce com ela: o círculo e o G do Google crescem junto.
+    @ScaledMetric(relativeTo: .body) private var circulo: CGFloat = 32
+    @ScaledMetric(relativeTo: .body) private var logoGoogle: CGFloat = 18
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -365,9 +368,9 @@ struct FormFaltaPouco: View {
             HStack(spacing: 10) {
                 Group {
                     if usuario.contaApple { Image(systemName: "apple.logo").font(.body).foregroundStyle(paleta.cor(.texto)) }
-                    else { Image(decorative: "LogoGoogle").resizable().frame(width: 18, height: 18) }
+                    else { Image(decorative: "LogoGoogle").resizable().frame(width: logoGoogle, height: logoGoogle) }
                 }
-                .frame(width: 32, height: 32)
+                .frame(width: circulo, height: circulo)
                 .background(paleta.cor(.campo), in: .circle)
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 0) {

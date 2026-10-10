@@ -399,9 +399,10 @@ test('título grande de Obras e de Ajustes com o halo no escuro', () => {
     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
 });
 
-test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar e o olho da senha', () => {
+test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar, o olho da senha e o logo da conta', () => {
   // A auditoria de tipo dinâmico do Xcode só olha texto: um ícone de tamanho fixo passa por ela e vira um
-  // ponto ao lado da letra grande (D7 da conferência da Tarefa 10; a legenda do gráfico e o olho, na revisão da 11).
+  // ponto ao lado da letra grande (D7 da conferência da Tarefa 10; a legenda do gráfico e o olho, na revisão da 11;
+  // o logo da conta no falta pouco, na revisão dos ajustes da 11).
   for(const f of arquivosSwift('app-ios/Custta'))
     for(const m of ler(f).matchAll(/icon: \{[^\n]*?\.frame\(width: ([^,]+), height: ([^)]+)\)/g))
       assert.doesNotMatch(`${m[1]} ${m[2]}`, /^\d|\s\d/, `${f}: ícone de Label em tamanho fixo (use @ScaledMetric)`);
@@ -411,6 +412,9 @@ test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de e
   const olho = ler('app-ios/Custta/Identidade/Componentes.swift').match(/"Icones\/olho"\)\s*\n\s*\.resizable\(\)[^\n]*/);
   assert.ok(olho, 'o olho do campo de senha');
   assert.doesNotMatch(olho[0], /\.frame\(width: \d/, 'o olho da senha cresce com a letra do campo (@ScaledMetric)');
+  const conta = ler('app-ios/Custta/Telas/EntradaView.swift').match(/Image\(systemName: "apple\.logo"\)[\s\S]*?in: \.circle\)/);
+  assert.ok(conta, 'o logo da conta Apple ou Google no círculo do falta pouco');
+  assert.doesNotMatch(conta[0], /\.frame\(width: \d/, 'o logo da Apple é letra (.body): o círculo e o G do Google crescem junto (@ScaledMetric)');
 });
 
 test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do Google e no indicador da barra', () => {

@@ -66,12 +66,17 @@ final class LeituraNoVidroUITests: XCTestCase {
         let capsula = abas.reduce(CGRect.null) { $0.union($1) }
         let regiao = capsula.isNull ? [] : [capsula.insetBy(dx: -10, dy: -10)]
         // O que passa por baixo da cápsula e da barra de início é desfocado e coberto pelo véu da borda de
-        // propósito: no "tudo", da cápsula até o pé da tela fica de fora.
-        let abaixo = capsula.isNull ? [] : [CGRect(x: 0, y: capsula.minY - 10, width: largura, height: CGFloat(imagem.height) / escala)]
+        // propósito: no "tudo", da borda de baixo (os 140 pt da BordaDeRolagem, como na AuditoriaUITests) ou da
+        // cápsula, o que vier antes, até o pé da tela fica de fora.
+        let altura = CGFloat(imagem.height) / escala
+        let abaixo = capsula.isNull ? [] : [CGRect(x: 0, y: min(capsula.minY - 10, altura - 140), width: largura, height: altura)]
+        // O indicador de início, como a barra de status, é do sistema e muda entre os prints (aparece ou não, e
+        // muda de cor com o que tem por baixo): os 34 pt de baixo ficam de fora em toda cena.
+        let indicador = [CGRect(x: 0, y: altura - 34, width: largura, height: 34)]
         let palavras = try LaudoDeContraste.medir(normal: Retrato(imagem), semTexto: Retrato(semTexto.image.cgImage!),
                                                   escala: escala, topo: Self.barraDeStatus,
                                                   somenteEm: cena.escopo == "navegacao" ? regiao : nil,
-                                                  ignorar: cena.escopo == "tudo" ? abaixo : [])
+                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador)
         XCTAssertFalse(palavras.isEmpty, "\(cena.nome): nenhum texto medido")
         anexar(cena.nome, normal.image, palavras, escala)
         Swift.print(String(format: "leitura | %@ | %d palavras, %d abaixo | pior nota %.2f", cena.nome, palavras.count,
@@ -125,9 +130,13 @@ final class LeituraNoVidroUITests: XCTestCase {
                 Cena(nome: "entrar, \(tema), \(pele)", conta: "nenhuma", argumentos: combo, espera: "email", escopo: "tudo"),
                 Cena(nome: "obras, \(tema), \(pele)", conta: "senha-nao-confirmada", argumentos: combo,
                      espera: "avisoEmail", escopo: "tudo"),
-                Cena(nome: "abas sobre a lista, \(tema), \(pele)", conta: "senha-nao-confirmada",
-                     argumentos: combo + ["-custta.rolagem", "260"], espera: "avisoEmail", escopo: "navegacao"),
             ]
+            // Os rótulos da cápsula com o conteúdo passando atrás deles: a lista em várias rolagens, porque o pior
+            // ponto muda com os dados e o combo (no fim da lista, 260 pt, já não passa nada atrás dos rótulos).
+            cenas += (Array(stride(from: 0, through: 60, by: 10)) + [260]).map { rolagem in
+                Cena(nome: "abas sobre a lista em \(rolagem) pt, \(tema), \(pele)", conta: "senha-nao-confirmada",
+                     argumentos: combo + ["-custta.rolagem", "\(rolagem)"], espera: "avisoEmail", escopo: "navegacao")
+            }
         }
         cobrar(cenas)
     }

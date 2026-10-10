@@ -228,7 +228,7 @@ test('globo desenhado como o globe.js: giro, centro, raio, halo, aro, pontos e g
   const n = (texto, re) => { const m = texto.match(re); assert.ok(m, `não achei ${re}`); return m.slice(1).map(Number); };
   const paradas = (texto, re, ordem) => [...texto.matchAll(re)].flatMap(m => ordem.map(i => Number(m[i])));
   const pares = {
-    'ângulo inicial e giro (rad/s)': [[...n(js, /let angle=([\d.]+)/), n(js, /\(now-last\)\*([\d.]+)/)[0] * 1000], n(swift, /\?\? ([\d.]+) \+ ([\d.]+) \* relogio\.segundos/)],
+    'ângulo inicial e giro (rad/s)': [[...n(js, /let angle=([\d.]+)/), n(js, /\(now-last\)\*([\d.]+)/)[0] * 1000], n(swift, /let angulo = ([\d.]+) \+ ([\d.]+) \* relogio\.segundos/)],
     'centro': [n(js, /cx=W\*([\d.]+); cy=H\*([\d.]+)/), n(swift, /x: tamanho\.width \* ([\d.]+), y: tamanho\.height \* ([\d.]+)/)],
     'raio': [n(js, /R=Math\.min\(H\*([\d.]+), W\*([\d.]+)\)/), n(swift, /min\(tamanho\.height \* ([\d.]+), tamanho\.width \* ([\d.]+)\)/)],
     'halo: raios': [n(js, /createRadialGradient\(cx,cy,R\*([\d.]+),cx,cy,R\*([\d.]+)\)/), n(swift, /startRadius: r \* ([\d.]+), endRadius: r \* ([\d.]+)/)],

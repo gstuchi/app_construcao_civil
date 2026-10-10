@@ -72,8 +72,6 @@ struct GeometriaDoGlobo: Equatable {
 
 struct Globo: View {
     let relogio: RelogioDoFundo
-    /// Ângulo fixo (Debug, `-custta.anguloDoGlobo`, para o laudo de leitura); nil segue o relógio.
-    var anguloFixo: Double? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.colorScheme) private var esquema
 
@@ -84,7 +82,7 @@ struct Globo: View {
     nonisolated static func intensidade(tela: TelaDoVidro, escuro: Bool) -> Double { escuro && tela == .app ? 0.4 : 1 }
 
     var body: some View {
-        let angulo = anguloFixo ?? 1.2 + 0.04 * relogio.segundos
+        let angulo = 1.2 + 0.04 * relogio.segundos
         GeometryReader { geo in
             let g = GeometriaDoGlobo(tamanho: geo.size)
             ZStack(alignment: .topLeading) {

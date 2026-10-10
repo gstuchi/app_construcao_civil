@@ -10,6 +10,13 @@ struct CusttaApp: App {
     init() {
         // Os pontos do globo (uns 10 mil, com o teste de continente) saem da thread principal, antes do 1º quadro.
         Task.detached(priority: .userInitiated) { _ = PontosDoGlobo.todos.terra.count }
+        #if DEBUG
+        // Laudo de leitura: o título da barra é do UIKit, e o TextRenderer da RaizView não chega nele.
+        if UserDefaults.standard.string(forKey: "custta.textoApagado") == "tudo" {
+            UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor: UIColor.clear]
+            UINavigationBar.appearance().titleTextAttributes = [.foregroundColor: UIColor.clear]
+        }
+        #endif
     }
 
     var body: some Scene {

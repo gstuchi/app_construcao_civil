@@ -23,9 +23,8 @@ struct RaizView: View {
     @AppStorage("custta.aumentarContraste") private var forcarAumentarContraste = false
     /// Quadro da deriva (s) em que a aurora fica parada nos testes de contraste; negativo = não força.
     @AppStorage("custta.quadroDaAurora") private var quadroDaAurora = -1.0
-    /// Laudo de leitura (Tarefa 11): ângulo fixo do globo (negativo = não força), aurora no pior caso da
-    /// deriva e o texto apagado ("tudo" ou "navegacao").
-    @AppStorage("custta.anguloDoGlobo") private var anguloDoGlobo = -1.0
+    /// Laudo de leitura (Tarefa 11): aurora no pior caso da deriva e o texto apagado ("tudo" ou "navegacao").
+    /// O globo para pelo "Reduzir movimento".
     @AppStorage("custta.auroraPiorCaso") private var auroraPiorCaso = false
     @AppStorage("custta.textoApagado") private var textoApagado = ""
     #endif
@@ -39,9 +38,9 @@ struct RaizView: View {
                                          coberto: pausas.cobertas > 0)
         ZStack {
             FundoAurora(intensidade: Aurora.intensidade(tela: tela, pele: paleta.pele, escuro: escuro), relogio: relogio,
-                        deslocamento: quadroFixo, piorCaso: laudo.auroraPiorCaso)
+                        deslocamento: quadroFixo, piorCaso: auroraNoPiorCaso)
                 .animation(opcoes.reduzirMovimento ? nil : Aurora.transicao(paraOApp: tela == .app), value: tela)
-            Globo(relogio: relogio, anguloFixo: laudo.anguloDoGlobo)
+            Globo(relogio: relogio)
                 .opacity(Globo.intensidade(tela: tela, escuro: escuro))
                 .animation(opcoes.reduzirMovimento ? nil : Aurora.transicao(paraOApp: tela == .app), value: tela)
             conteudo
@@ -85,12 +84,12 @@ struct RaizView: View {
         #endif
     }
 
-    /// Os ganchos do laudo de leitura; no Release, nada.
-    private var laudo: (anguloDoGlobo: Double?, auroraPiorCaso: Bool) {
+    /// O gancho do laudo de leitura na aurora; no Release, nada.
+    private var auroraNoPiorCaso: Bool {
         #if DEBUG
-        return (anguloDoGlobo >= 0 ? anguloDoGlobo : nil, auroraPiorCaso)
+        return auroraPiorCaso
         #else
-        return (nil, false)
+        return false
         #endif
     }
 

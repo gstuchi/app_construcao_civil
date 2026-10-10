@@ -90,14 +90,15 @@ struct FundoTests {
         #expect(Globo.intensidade(tela: .app, escuro: false) == 1, "no claro a marca-d'água já deixa o globo a 40%")
     }
 
-    /// O pior caso do laudo de leitura é o mais claro dos quadros, pixel a pixel, e nunca mais claro que ele.
-    @MainActor @Test func piorCasoDaAuroraEOMaisClaroDosQuadros() throws {
+    /// O pior caso do laudo de leitura é o quadro extremo, pixel a pixel, e nunca além dele: o mais claro no
+    /// escuro (o texto é claro) e o mais escuro no claro (o texto é escuro).
+    @MainActor @Test(arguments: [true, false]) func piorCasoDaAuroraEOQuadroExtremo(escuro: Bool) throws {
         let paleta = Paleta(pele: .esmeralda)
         let camada = CamadaAurora(cores: [paleta.cor(.aurora1), paleta.cor(.aurora2), paleta.cor(.aurora3), paleta.cor(.aurora4)],
                                   intensidade: 0.48)
         let fundo = paleta.cor(.fundo)
         func pixels(_ vista: some View) throws -> [UInt8] {
-            let r = ImageRenderer(content: vista.frame(width: 60, height: 90).environment(\.colorScheme, .dark))
+            let r = ImageRenderer(content: vista.frame(width: 60, height: 90).environment(\.colorScheme, escuro ? .dark : .light))
             r.scale = 1
             let imagem = try #require(r.cgImage)
             var dados = [UInt8](repeating: 0, count: 60 * 90 * 4)
@@ -110,10 +111,15 @@ struct FundoTests {
             return dados
         }
         let quadros = try [0, 13].map { s in try pixels(FundoAurora.movida(camada, Deriva.em(segundos: Double(s)), 60, 90).background(fundo)) }
-        let envelope = try pixels(EnvelopeDaAurora(camada: camada, fundo: fundo, escuro: true, largura: 60, altura: 90, segundos: [0, 13]))
-        var longe = 0
-        for i in envelope.indices where i % 4 != 3 && abs(Int(envelope[i]) - Int(max(quadros[0][i], quadros[1][i]))) > 3 { longe += 1 }
-        #expect(longe == 0, "\(longe) canais fora do mais claro dos dois quadros")
+        let envelope = try pixels(EnvelopeDaAurora(camada: camada, fundo: fundo, escuro: escuro, largura: 60, altura: 90, segundos: [0, 13]))
+        var longe = 0, diferentes = 0
+        for i in envelope.indices where i % 4 != 3 {
+            let extremo = escuro ? max(quadros[0][i], quadros[1][i]) : min(quadros[0][i], quadros[1][i])
+            if abs(Int(envelope[i]) - Int(extremo)) > 3 { longe += 1 }
+            if abs(Int(quadros[0][i]) - Int(quadros[1][i])) > 3 { diferentes += 1 }
+        }
+        #expect(diferentes > 1000, "os dois quadros têm de diferir para o teste medir alguma coisa")
+        #expect(longe == 0, "\(longe) canais fora do \(escuro ? "mais claro" : "mais escuro") dos dois quadros")
     }
 
     @Test func derivaPassaPelosQuadrosDoSiteEVolta() {

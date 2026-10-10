@@ -46,7 +46,6 @@ export const CORES = {
     LinkNoVidro: ['#8FE8D5', '#075243'],            // link e aba ativa sobre o vidro
     ErroNoVidro: ['#FFA3B3', '#A3153F'],
     Contorno: ['#EAFFF68C', '#13261E73'],           // "Aumentar contraste": 1,5 pt em volta do vidro
-    LenteAba: ['#FFFFFF1C', '#142B2312'],           // fundo da aba escolhida na cápsula
     TintaConteudo: ['#061611', '#FFFFFF'],          // vidro dos cartões e painéis
     TintaCartao: ['#0A1E18', '#FAFDFB'],            // vidro do cartão de entrada
     TintaNavegacao: ['#081A14', '#F6FAF8'],         // vidro da cápsula, do sair e da sincronização
@@ -94,7 +93,6 @@ export const CORES = {
     LinkNoVidro: ['#A8C2FF', '#223F92'],
     ErroNoVidro: ['#FFA3B3', '#A3153F'],
     Contorno: ['#EEF4FB8C', '#16233C73'],
-    LenteAba: ['#FFFFFF1C', '#172B4D12'],
     TintaConteudo: ['#080C1C', '#FFFFFF'],
     TintaCartao: ['#0E1628', '#FBFCFF'],
     TintaNavegacao: ['#0A1020', '#F7F9FD'],

@@ -299,7 +299,8 @@ struct BarraDeProgresso: View {
 /// Borda de rolagem suave, a mesma em todas as telas (mockup v2, decisão do Giovani em 09/10): a borda `.soft`
 /// do iOS 26 desfoca aos poucos o que passa por baixo das barras, e o véu do tom do fundo (`VeuDaBorda`), mais
 /// forte na beirada, some até 140 pt. A aurora e o conteúdo continuam aparecendo. No alto, só com conteúdo por
-/// baixo (rolou mais de 40 pt, como no mockup); embaixo, só nas telas com a cápsula de abas.
+/// baixo (rolou mais de 40 pt, como no mockup); embaixo, só nas telas com a cápsula de abas e só onde o véu
+/// de baixo existe (letra grande e Reduzir transparência).
 struct BordaDeRolagem: ViewModifier {
     let abas: Bool
     @Environment(\.paleta) private var paleta
@@ -321,7 +322,7 @@ struct BordaDeRolagem: ViewModifier {
                         .opacity(rolou ? 1 : 0)
                         .animation(.easeOut(duration: 0.2), value: rolou)
                     Spacer(minLength: 0)
-                    if abas { faixa(veu.base, paradas: [(0, 1), (0.50, 0.85), (0.78, 0.4), (1, 0)], de: .bottom, ate: .top) }
+                    if abas, veu.base > 0 { faixa(veu.base, paradas: [(0, 1), (0.50, 0.85), (0.78, 0.4), (1, 0)], de: .bottom, ate: .top) }
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)

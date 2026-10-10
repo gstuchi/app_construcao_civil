@@ -108,12 +108,13 @@ struct VidroTokens: Equatable, Sendable {
 }
 
 /// O véu da borda de rolagem (mockup v2, decisão do Giovani em 09/10), em opacidade do tom do fundo na beirada
-/// de cima e na de baixo: 50% e 35%; nos tamanhos de acessibilidade, 70% e 60% (o texto grande que passa por
-/// baixo é mais claro); com Reduzir transparência, sem o desfoque, 88% e 80%.
+/// de cima e na de baixo: 50% e nenhum (embaixo fica só a borda do sistema: com a pílula sólida, o rótulo da
+/// aba escolhida não depende do véu; decisão do Giovani em 10/10); nos tamanhos de acessibilidade, 70% e 60%
+/// (o texto grande que passa por baixo é mais claro); com Reduzir transparência, sem o desfoque, 88% e 80%.
 enum VeuDaBorda {
     static func opacidade(grande: Bool, reduzirTransparencia: Bool) -> (topo: Double, base: Double) {
         if reduzirTransparencia { return (0.88, 0.80) }
-        return grande ? (0.70, 0.60) : (0.50, 0.35)
+        return grande ? (0.70, 0.60) : (0.50, 0)
     }
 }
 

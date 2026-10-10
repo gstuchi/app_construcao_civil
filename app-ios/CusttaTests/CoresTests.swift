@@ -75,7 +75,7 @@ struct VidroTokensTests {
     }
 
     @Test func veuDaBordaDoMockup() {
-        #expect(VeuDaBorda.opacidade(grande: false, reduzirTransparencia: false) == (0.50, 0.35))
+        #expect(VeuDaBorda.opacidade(grande: false, reduzirTransparencia: false) == (0.50, 0), "embaixo, só a borda do sistema")
         #expect(VeuDaBorda.opacidade(grande: true, reduzirTransparencia: false) == (0.70, 0.60))
         #expect(VeuDaBorda.opacidade(grande: false, reduzirTransparencia: true) == (0.88, 0.80))
         #expect(VeuDaBorda.opacidade(grande: true, reduzirTransparencia: true) == (0.88, 0.80))

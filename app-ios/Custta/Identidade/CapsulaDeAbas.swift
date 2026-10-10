@@ -1,7 +1,10 @@
 import SwiftUI
 
-/* Cápsula de abas própria (decisão do mockup aprovado): a barra de vidro do PWA com a lente que
-   desliza para a aba escolhida. O que a barra do sistema dava de graça vem à mão: VoiceOver lê o nome,
+/* Cápsula de abas própria (decisão do mockup aprovado): a barra de vidro do PWA com a pílula que
+   desliza para a aba escolhida. A pílula é sólida, na tinta da marca com o rótulo em SobreTinta, como o
+   segmentado da entrada (decisão do Giovani em 10/10): o rótulo da aba escolhida fica no contraste dos
+   dois tokens com qualquer coisa passando por baixo; na lente de vidro, a lista rolada derrubava o "Obras"
+   para 3,8:1 no escuro. O que a barra do sistema dava de graça vem à mão: VoiceOver lê o nome,
    "1 de 2" e "selecionada", alvo de 44 pt e o Visualizador de Conteúdo Grande no lugar de crescer com a
    letra. Na etapa 1, duas abas e nenhum +. */
 
@@ -19,7 +22,7 @@ struct CapsulaDeAbas: View {
     var abas: [Aba] = Aba.allCases
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
-    @Namespace private var lente
+    @Namespace private var pilula
 
     var body: some View {
         HStack(spacing: 0) {
@@ -34,10 +37,10 @@ struct CapsulaDeAbas: View {
                         Image(decorative: aba.icone).resizable().frame(width: 26, height: 24)
                         Text(aba.titulo).font(.system(size: 10, weight: .semibold))
                     }
-                    .foregroundStyle(paleta.cor(ativa ? .linkNoVidro : .texto))
+                    .foregroundStyle(paleta.cor(ativa ? .sobreTinta : .texto))
                     .frame(maxWidth: .infinity, minHeight: 54)
                     .background {
-                        if ativa { Capsule().fill(paleta.cor(.lenteAba)).matchedGeometryEffect(id: "lente", in: lente) }
+                        if ativa { Capsule().fill(paleta.cor(.tinta)).matchedGeometryEffect(id: "pilula", in: pilula) }
                     }
                     .contentShape(.capsule)
                 }

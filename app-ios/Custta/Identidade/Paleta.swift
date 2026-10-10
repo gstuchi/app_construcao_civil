@@ -39,7 +39,6 @@ enum Token: String, CaseIterable, Sendable {
     case linkNoVidro = "LinkNoVidro"
     case erroNoVidro = "ErroNoVidro"
     case contorno = "Contorno"
-    case lenteAba = "LenteAba"
     case tintaConteudo = "TintaConteudo"
     case tintaCartao = "TintaCartao"
     case tintaNavegacao = "TintaNavegacao"

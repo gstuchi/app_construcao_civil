@@ -8,6 +8,7 @@ struct AjustesView: View {
     @Environment(\.vidro) private var vidro
     @State private var confirmarSaida = false
     @State private var mensagemVerificacao: String?
+    @State private var enviando = false
 
     var body: some View {
         NavigationStack {
@@ -40,11 +41,18 @@ struct AjustesView: View {
                                 .foregroundStyle(paleta.cor(vidro.secundario))
                                 .padding(.bottom, 10)
                             Button("Enviar confirmação de e-mail") {
-                                Task { mensagemVerificacao = await modelo.reenviarVerificacao() }
+                                Task {
+                                    enviando = true
+                                    mensagemVerificacao = await modelo.enviarConfirmacao()
+                                    enviando = false
+                                }
                             }
                             .buttonStyle(BotaoSecundario(pequeno: true))
+                            .disabled(enviando)                 // como o b.disabled do site: um envio por vez
                             if let mensagemVerificacao {
-                                Mensagem(tipo: .ok, texto: mensagemVerificacao).padding(.top, 10)
+                                // ✓ só quando foi (ou já estava confirmado); erro e falta de rede em âmbar, como no aviso.
+                                let ok = mensagemVerificacao == ModeloApp.confirmacaoEnviada || mensagemVerificacao == ModeloApp.emailJaConfirmado
+                                Mensagem(tipo: ok ? .ok : .atencao, texto: mensagemVerificacao).padding(.top, 10)
                             }
                             Spacer().frame(height: 10)
                         }

@@ -171,6 +171,16 @@ struct ModeloAppTests {
         #expect(m.usuario?.precisaConfirmarEmail == false)
     }
 
+    /// Ajustes › "Enviar confirmação de e-mail" com os textos dos Ajustes do site, e não os do aviso de e-mail.
+    @Test func enviarConfirmacaoComOsTextosDosAjustesDoSite() async {
+        let m = montar(conta: "senha-nao-confirmada")
+        #expect(await m.modelo.enviarConfirmacao() == "E-mail enviado. Confira também a caixa de spam.")
+        m.conta.erroAoEnviarConfirmacao = ErroConta(codigo: "offline")
+        #expect(await m.modelo.enviarConfirmacao() == "Conecte à internet para enviar.")
+        m.conta.erroAoEnviarConfirmacao = ErroConta(codigo: "auth/too-many-requests")
+        #expect(await m.modelo.enviarConfirmacao() == "Não foi possível enviar agora. Aguarde e tente novamente.")
+    }
+
     @Test func sairEEntrarDeNovoVoltaAosDados() async {
         let m = montar(conta: "senha").modelo
         await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }

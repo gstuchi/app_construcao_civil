@@ -360,3 +360,29 @@ test('fonte do botão do Google: Roboto Medium travada, registrada e com a licen
   assert.match(ler('app-ios/Custta/Fontes/OFL-Roboto.txt'), /SIL Open Font License, Version 1\.1/);
   assert.match(ler('app-ios/Custta/Info.plist'), /<key>UIAppFonts<\/key>\s*<array>\s*<string>Roboto-Medium\.ttf<\/string>/);
 });
+
+test('ganchos dos testes e do laudo só no Debug: chave custta.* (fora tema, pele e vidro) e CUSTTA_* dentro de #if DEBUG', () => {
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const pilha = [];
+    ler(f).split('\n').forEach((linha, i) => {
+      const d = linha.trim();
+      if(/^#if\b/.test(d)) pilha.push({ debug: /^#if\s+DEBUG\b/.test(d), ehDebug: /^#if\s+DEBUG\b/.test(d) });
+      else if(/^#else\b/.test(d)){ const topo = pilha.at(-1); if(topo?.ehDebug) topo.debug = false; }
+      else if(/^#endif\b/.test(d)) pilha.pop();
+      else if(/"(custta\.(?!(tema|pele|vidro)")|CUSTTA_)/.test(linha))
+        assert.ok(pilha.some(x => x.debug), `${f}:${i + 1}: gancho fora do #if DEBUG: ${d}`);
+    });
+  }
+});
+
+test('mensagem e aviso anunciados a cada texto novo, não só ao aparecer', () => {
+  for(const f of arquivosSwift('app-ios/Custta'))
+    assert.doesNotMatch(ler(f), /\.onAppear\s*\{\s*AccessibilityNotification\.Announcement/,
+      `${f}: anuncie no .onChange(of:initial:); o 2º erro seguido não reaparece e o VoiceOver não o lê`);
+});
+
+test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () => {
+  assert.match(ler('app-ios/Custta/Identidade/Vidro.swift'),
+    /let escuro = esquema == \.dark\n[\s\S]*?paleta\.cor\(\.fundo\)\.opacity\(vidro\.escurecimento\(papel, escuro: escuro\)\)/,
+    'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
+});

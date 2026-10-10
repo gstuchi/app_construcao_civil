@@ -22,14 +22,15 @@ struct CampoDeEntrada: View {
     /// Foco compartilhado pela tela, pela chave do campo (a mesma da validação: "email", "senha"…).
     var foco: FocusState<String?>.Binding
     let chave: String
+    /// Campo que recebe o foco no Return (nil fecha o teclado).
+    var proximo: String? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @State private var mostrar = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            (Text(rotulo).foregroundStyle(paleta.cor(vidro.secundario))
-             + Text(opcional ? " (opcional)" : "").foregroundStyle(paleta.cor(.textoTerciario)))
+            Text("\(Text(rotulo).foregroundStyle(paleta.cor(vidro.secundario)))\(Text(opcional ? " (opcional)" : "").foregroundStyle(paleta.cor(.textoTerciario)))")
                 .font(.footnote.weight(.medium))
                 .accessibilityHidden(true)
                 .padding(.vertical, 1)          // linha de 18 pt, a do rótulo no site e no mockup (o footnote ocupa 16)
@@ -50,6 +51,12 @@ struct CampoDeEntrada: View {
                 .focused(foco, equals: chave)
                 .accessibilityLabel(rotulo)
                 .accessibilityIdentifier(identificador)
+                // No campo que quebra linha (axis vertical) o Return vira "\n": sem quebra, vai ao próximo campo.
+                .onChange(of: texto) { _, novo in
+                    guard novo.contains("\n") else { return }
+                    texto = novo.replacingOccurrences(of: "\n", with: "")
+                    foco.wrappedValue = proximo
+                }
                 if senha {
                     Button { mostrar.toggle() } label: {
                         Image(decorative: mostrar ? "Icones/olhoFechado" : "Icones/olho")
@@ -176,7 +183,8 @@ struct Mensagem: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityLabel(texto)
         .accessibilityIdentifier(identificador ?? "")
-        .onAppear { AccessibilityNotification.Announcement(texto).post() }
+        // A cada texto novo, não só ao aparecer: o 2º erro seguido também é lido (o role="alert" do site).
+        .onChange(of: texto, initial: true) { _, novo in AccessibilityNotification.Announcement(novo).post() }
     }
 
     private var icone: String {

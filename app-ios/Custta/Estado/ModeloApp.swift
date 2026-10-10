@@ -17,6 +17,7 @@ final class ModeloApp {
     static let sessaoExpirada = "Sua sessão expirou por segurança. Entre de novo pra continuar."
     static let linkEnviado = "Enviamos um link de redefinição pro seu e-mail."
     static let linkReenviado = "Link reenviado. Confira também a caixa de spam."
+    static let confirmacaoEnviada = "E-mail enviado. Confira também a caixa de spam."
     static let emailJaConfirmado = "E-mail já confirmado."
 
     private(set) var fase: Fase = .carregando
@@ -171,6 +172,16 @@ final class ModeloApp {
             default: return "Não foi possível reenviar agora. Tente novamente."
             }
         } catch { return "Não foi possível reenviar agora. Tente novamente." }
+    }
+
+    /// Texto de Ajustes depois de "Enviar confirmação de e-mail": os dos Ajustes do site (#ajVerificar), que não
+    /// são os do aviso de e-mail.
+    func enviarConfirmacao() async -> String {
+        do {
+            return try await conta.reenviarVerificacao() ? Self.confirmacaoEnviada : Self.emailJaConfirmado
+        } catch let erro as ErroConta where erro.codigo == "offline" {
+            return "Conecte à internet para enviar."
+        } catch { return "Não foi possível enviar agora. Aguarde e tente novamente." }
     }
 
     /// Texto do aviso de e-mail depois de "Já confirmei"; nil quando confirmou (o aviso some).

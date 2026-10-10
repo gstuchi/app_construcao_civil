@@ -16,6 +16,8 @@ final class ContaFalsa: ServicoConta {
     private let confirmaAoConferir: Bool
     /// O `forcar` de cada conferência de sessão pedida, em ordem (os testes conferem o que chega do Sincronizador).
     private(set) var verificacoesDeSessao: [Bool] = []
+    /// Erro do envio de confirmação de e-mail, para os testes dos textos (nil: o envio vai).
+    var erroAoEnviarConfirmacao: ErroConta?
 
     init(inicial: String) {
         perfilConcorrente = inicial == "google-perfil-concorrente"
@@ -82,7 +84,10 @@ final class ContaFalsa: ServicoConta {
         if email == "ninguem@exemplo.com" { throw ErroConta(codigo: "auth/user-not-found") }
     }
 
-    func reenviarVerificacao() async throws -> Bool { true }
+    func reenviarVerificacao() async throws -> Bool {
+        if let erroAoEnviarConfirmacao { throw erroAoEnviarConfirmacao }
+        return true
+    }
 
     func conferirVerificacao() async -> Bool {
         guard confirmaAoConferir, let u = usuario else { return false }

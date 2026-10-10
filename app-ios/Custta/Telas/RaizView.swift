@@ -128,7 +128,7 @@ struct AvisoView: View {
                 .allowsHitTesting(false)                 // fica sobre a barra: não pode engolir o toque nela
                 .accessibilityIdentifier("aviso")
                 .accessibilityAddTraits(.updatesFrequently)
-                .onAppear { AccessibilityNotification.Announcement(aviso).post() }
+                .onChange(of: aviso, initial: true) { _, novo in AccessibilityNotification.Announcement(novo).post() }
         }
     }
 }

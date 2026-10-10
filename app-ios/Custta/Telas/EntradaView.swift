@@ -198,10 +198,11 @@ struct FormEntrar: View {
             DivisorOu().padding(.top, 14).padding(.bottom, 10)
             CampoDeEntrada(rotulo: "E-mail", exemplo: "voce@email.com", texto: $email, identificador: "email",
                            invalido: invalido == "email", tipo: .username, teclado: .emailAddress, maiusculas: .never,
-                           foco: foco, chave: "email")
+                           foco: foco, chave: "email", proximo: "senha")
                 .padding(.bottom, 13)
             CampoDeEntrada(rotulo: "Senha", exemplo: "Sua senha", texto: $senha, identificador: "senha", senha: true,
                            invalido: invalido == "senha", tipo: .password, foco: foco, chave: "senha")
+                .onSubmit { Task { await entrar() } }
                 .padding(.bottom, 12)
             if let mensagem {
                 Mensagem(tipo: mensagem.tipo, texto: mensagem.texto, identificador: "mensagemEntrada").padding(.bottom, 12)
@@ -224,6 +225,7 @@ struct FormEntrar: View {
         }
         .onAppear {
             if let texto = modelo.mensagemEntrada { mensagem = (texto, texto == ModeloApp.sessaoExpirada ? .cadeado : .erro) }
+            modelo.mensagemEntrada = nil            // mostrada uma vez: trocar de aba e voltar não a traz de novo
         }
     }
 
@@ -278,12 +280,14 @@ struct FormCriarConta: View {
             DivisorOu().padding(.top, 14).padding(.bottom, 10)
             VStack(spacing: 13) {
                 CampoDeEntrada(rotulo: "Nome", exemplo: "Seu nome", texto: $nome, identificador: "nome",
-                               invalido: erro?.campo == "nome", tipo: .givenName, maiusculas: .words, foco: foco, chave: "nome")
+                               invalido: erro?.campo == "nome", tipo: .givenName, maiusculas: .words, foco: foco, chave: "nome",
+                               proximo: "sobrenome")
                 CampoDeEntrada(rotulo: "Sobrenome", opcional: true, exemplo: "Seu sobrenome", texto: $sobrenome, identificador: "sobrenome",
-                               invalido: erro?.campo == "sobrenome", tipo: .familyName, maiusculas: .words, foco: foco, chave: "sobrenome")
+                               invalido: erro?.campo == "sobrenome", tipo: .familyName, maiusculas: .words, foco: foco, chave: "sobrenome",
+                               proximo: "email")
                 CampoDeEntrada(rotulo: "E-mail", exemplo: "voce@email.com", texto: $email, identificador: "emailCadastro",
                                invalido: erro?.campo == "email", tipo: .emailAddress, teclado: .emailAddress, maiusculas: .never,
-                               foco: foco, chave: "email")
+                               foco: foco, chave: "email", proximo: "senha")
                 VStack(alignment: .leading, spacing: 8) {
                     CampoDeEntrada(rotulo: "Senha", exemplo: "Crie uma senha", texto: $senha, identificador: "senhaCadastro", senha: true,
                                    invalido: erro?.campo == "senha", tipo: .newPassword, foco: foco, chave: "senha")
@@ -378,7 +382,8 @@ struct FormFaltaPouco: View {
             VStack(spacing: 13) {
                 if !usuario.contaApple {
                     CampoDeEntrada(rotulo: "Nome", exemplo: "Seu nome", texto: $nome, identificador: "nome",
-                                   invalido: invalido == "nome", tipo: .givenName, maiusculas: .words, foco: foco, chave: "nome")
+                                   invalido: invalido == "nome", tipo: .givenName, maiusculas: .words, foco: foco, chave: "nome",
+                                   proximo: "sobrenome")
                     CampoDeEntrada(rotulo: "Sobrenome", opcional: true, exemplo: "Seu sobrenome", texto: $sobrenome, identificador: "sobrenome",
                                    invalido: invalido == "sobrenome", tipo: .familyName, maiusculas: .words, foco: foco, chave: "sobrenome")
                 }

@@ -352,3 +352,11 @@ test('logo escrito na ordem e nos tempos do site: letra, máscara, pena, traço,
   const arred = x => Math.round(x * 1e6) / 1e6;
   for(const [nome, [site, app]] of Object.entries(pares)) assert.deepEqual(app.map(arred), site.map(arred), nome);
 });
+
+test('fonte do botão do Google: Roboto Medium travada, registrada e com a licença', () => {
+  const fonte = readFileSync(join(RAIZ, 'app-ios/Custta/Fontes/Roboto-Medium.ttf'));
+  const hash = require('node:crypto').createHash('sha256').update(fonte).digest('hex');
+  assert.equal(hash, '663bedb17df44144ea2ccf4c3a3c1853547bcfed2395ad29904502ea92c74bcb', 'Roboto v3.016 (unhinted/static) do googlefonts/roboto-3-classic');
+  assert.match(ler('app-ios/Custta/Fontes/OFL-Roboto.txt'), /SIL Open Font License, Version 1\.1/);
+  assert.match(ler('app-ios/Custta/Info.plist'), /<key>UIAppFonts<\/key>\s*<array>\s*<string>Roboto-Medium\.ttf<\/string>/);
+});

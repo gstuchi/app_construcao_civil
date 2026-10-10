@@ -387,6 +387,13 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
 });
 
+test('título grande de Obras e de Ajustes com o halo no escuro', () => {
+  // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1.
+  // O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
+  for(const tela of ['ObrasView', 'AjustesView'])
+    assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
+});
+
 test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar e o olho da senha', () => {
   // A auditoria de tipo dinâmico do Xcode só olha texto: um ícone de tamanho fixo passa por ela e vira um
   // ponto ao lado da letra grande (D7 da conferência da Tarefa 10; a legenda do gráfico e o olho, na revisão da 11).

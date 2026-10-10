@@ -81,6 +81,11 @@ struct VidroTokensTests {
         #expect(VeuDaBorda.opacidade(grande: true, reduzirTransparencia: true) == (0.88, 0.80))
     }
 
+    @Test func haloNoMenorPassoQuePassaNoProMax() {
+        #expect(HaloDoTitulo.naEntrada == 0.50, "com 45%, a dica da entrada ficava em 4,06:1")
+        #expect(HaloDoTitulo.naBarra == 0.05, "sem halo, o título grande ficava em 4,41:1")
+    }
+
     @Test func textoSobreOVidroPorNivel() {
         #expect(VidroTokens(nivel: .transparente, contorno: false).secundario == .secundarioTransparente)
         #expect(VidroTokens(nivel: .fosco, contorno: false).secundario == .secundarioFosco)

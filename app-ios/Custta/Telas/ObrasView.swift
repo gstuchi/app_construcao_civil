@@ -48,6 +48,7 @@ struct ObrasView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
+                .haloDoTituloDaBarra()
             }
             .scrollIndicators(.hidden)
             #if DEBUG

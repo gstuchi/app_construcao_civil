@@ -181,15 +181,22 @@ struct CamadaAurora: View, Animatable, Equatable {
     }
 }
 
-/// Halo do título sobre a aurora clara da entrada, só no escuro: tom do fundo a 45% no centro, com borda
-/// gradual. Nos tamanhos de acessibilidade cresce junto com o título e o miolo fica mais largo.
+/// Halo do texto solto sobre a aurora, só no escuro: o tom do fundo no centro, com borda gradual. Na entrada,
+/// atrás do título, do logo e da dica; nos tamanhos de acessibilidade cresce junto com o título e o miolo fica
+/// mais largo. No título grande da barra (Obras e Ajustes), mais leve (`haloDoTituloDaBarra`).
 struct HaloDoTitulo: View {
+    /// Opacidade no centro: o menor passo que passa de 4,5:1 no Pro Max (decisão do Giovani em 10/10). Na entrada,
+    /// 50% (com 45%, a dica "Role para entrar" ficava em 4,06:1 no pior momento da aurora); na barra, 5% (sem
+    /// halo, o título "Obras", branco do sistema, ficava em 4,41:1).
+    nonisolated static let naEntrada = 0.50
+    nonisolated static let naBarra = 0.05
     let grande: Bool
+    var opacidade = HaloDoTitulo.naEntrada
     @Environment(\.paleta) private var paleta
     @Environment(\.colorScheme) private var esquema
 
     var body: some View {
-        let a = esquema == .dark ? 0.45 : 0
+        let a = esquema == .dark ? opacidade : 0
         let fundo = paleta.cor(.fundo)
         let paradas: [(Double, Double)] = grande
             ? [(0, 1), (0.66, 1), (0.76, 0.8), (0.87, 0.45), (0.95, 0.15), (1, 0)]
@@ -200,5 +207,25 @@ struct HaloDoTitulo: View {
                             : EdgeInsets(top: -64, leading: -78, bottom: -58, trailing: -78))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// O halo atrás do título grande da barra, no conteúdo que rola: o título fica logo acima do conteúdo, então o
+    /// halo sobe e sai junto quando o título recolhe.
+    func haloDoTituloDaBarra() -> some View { modifier(HaloDoTituloDaBarra()) }
+}
+
+private struct HaloDoTituloDaBarra: ViewModifier {
+    /// A linha do título grande (41 pt na letra padrão), que cresce com a letra como o título do sistema.
+    @ScaledMetric(relativeTo: .largeTitle) private var linha: CGFloat = 41
+    @ScaledMetric(relativeTo: .largeTitle) private var largura: CGFloat = 100
+
+    func body(content: Content) -> some View {
+        content.background(alignment: .topLeading) {
+            HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naBarra)
+                .frame(width: largura, height: linha)
+                .offset(x: 18, y: -(linha + 9))
+        }
     }
 }

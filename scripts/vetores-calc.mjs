@@ -1,5 +1,5 @@
 /* Vetores de teste compartilhados entre o site e o app nativo (docs/specs/2026-10-06-app-nativo-design.md,
-   "Testes e validação"). Roda as funções de verdade do calc.js, do dados.js e do push.js sobre casos
+   "Testes e validação"). Roda as funções de verdade do calc.js, do dados.js, do push.js e do cadastro.js sobre casos
    fixos e grava entrada e saída em tests/vetores/calc.json. O teste do site (tests/vetores.test.mjs)
    confere que o arquivo está em dia com o código; o núcleo Swift (app-ios/CusttaNucleo) lê o mesmo
    arquivo. Se as duas cópias das regras divergirem, um dos lados falha.
@@ -35,6 +35,7 @@ const require = createRequire(import.meta.url);
 const C = require('../calc.js');
 const D = require('../dados.js');
 const P = require('../push.js');
+const K = require('../cadastro.js');
 
 /* ---------- registro dos casos ---------- */
 const grupos = {};
@@ -432,6 +433,69 @@ for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx'
 /* uid() do app.js: milissegundos em base 36 mais 4 letras aleatórias. Só o prefixo é fixo. */
 for(const ms of [0, 35, 36, 1759750000000, 1700000000123, 4102444800000])
   caso('id.base36', String(ms), [ms], x => x.toString(36));
+
+/* ---------- cadastro.js ---------- */
+constante('cadastro.REGRAS_SENHA', K.REGRAS_SENHA);
+constante('cadastro.ORIGENS', K.ORIGENS);
+constante('cadastro.LIMITES_PERFIL', K.LIMITES_PERFIL);
+const senha = (nome, ...args) => caso('cadastro.validaSenha', nome, args, K.validaSenha);
+senha('boa', 'Casa2026x', 'joao@exemplo.com');
+senha('curta', 'Ab1', 'joao@exemplo.com');
+senha('sem letra', '12345678', 'joao@exemplo.com');
+senha('sem número', 'abcdefgh', 'joao@exemplo.com');
+senha('igual ao e-mail, sem diferença de caixa', 'joao1234@exemplo.com', '  JOAO1234@exemplo.com ');
+senha('óbvia da lista', 'Senha123', 'joao@exemplo.com');
+senha('óbvia com espaços em volta', '  custta123 ', 'joao@exemplo.com');
+senha('129 caracteres', 'a1'.repeat(64) + 'b', 'joao@exemplo.com');
+senha('128 caracteres', 'a1'.repeat(64), 'joao@exemplo.com');
+senha('letra acentuada conta como letra', 'çãoé1234', 'joao@exemplo.com');
+senha('emoji conta duas unidades no tamanho', '😀😀😀1a', 'joao@exemplo.com');
+senha('dígito árabe não é número', 'abcdefg٣', 'joao@exemplo.com');
+senha('letra de outra escrita conta como letra', '東京タワー1234', 'joao@exemplo.com');
+senha('acento sozinho não é letra', '\u0301'.repeat(4) + '1234', 'joao@exemplo.com');
+senha('130 unidades em 69 caracteres passa do limite', '😀'.repeat(61) + 'a1234567', 'joao@exemplo.com');
+senha('sigma final, como o toLowerCase', 'ΟΔΟΣ1234', 'οδος1234');
+senha('NFD e NFC são textos diferentes', 'jose\u03011234', 'jos\u00e91234');
+senha('sem e-mail', 'Casa2026x');
+senha('nula', null, null);
+const nomeK = (nome, d) => caso('cadastro.normalizaNome', nome, [d], K.normalizaNome);
+nomeK('nome e sobrenome', { nome: '  João  ', sobrenome: ' da   Silva ' });
+nomeK('sem sobrenome', { nome: 'Ana' });
+nomeK('nome vazio', { nome: '   ' });
+nomeK('nome de uma letra', { nome: 'A' });
+nomeK('nome com 61', { nome: 'x'.repeat(61) });
+nomeK('sobrenome com 81', { nome: 'Ana', sobrenome: 'y'.repeat(81) });
+nomeK('nome com 31 emojis', { nome: '😀'.repeat(31) });
+nomeK('sobrenome com 41 emojis', { nome: 'Ana', sobrenome: '😀'.repeat(41) });
+nomeK('espaços variados viram um', { nome: 'Ana\u{a0}\tMaria', sobrenome: 'Souza\nLima' });
+nomeK('nulo', null);
+const perfilK = (nome, ...args) => caso('cadastro.normalizaPerfil', nome, args, K.normalizaPerfil);
+perfilK('completo com indicação', { nome: 'Ana', sobrenome: 'Lima', origem: 'indicacao', origemDetalhe: '  Pedro  ' });
+perfilK('origem sem detalhe ignora o detalhe', { nome: 'Ana', origem: 'instagram', origemDetalhe: 'x' });
+perfilK('detalhe vazio some', { nome: 'Ana', origem: 'outro', origemDetalhe: '   ' });
+perfilK('detalhe com 81', { nome: 'Ana', origem: 'outro', origemDetalhe: 'z'.repeat(81) });
+perfilK('detalhe com 41 emojis', { nome: 'Ana', origem: 'outro', origemDetalhe: '😀'.repeat(41) });
+perfilK('sem origem', { nome: 'Ana' });
+perfilK('origem desconhecida', { nome: 'Ana', origem: 'facebook' });
+perfilK('nome inválido falha antes da origem', { nome: '', origem: 'google' });
+perfilK('conta Apple: nome opcional', { nome: '', origem: 'youtube' }, { nomeOpcional: true });
+perfilK('conta Apple com nome válido guarda o nome', { nome: 'Bia', origem: 'tiktok' }, { nomeOpcional: true });
+perfilK('nulo', null);
+for(const n of ['João da Silva Souza', '  Ana  ', '', 'Maria', 'x'.repeat(70) + ' Sobrenome', 'Maria ' + 'y'.repeat(90), '😀'.repeat(31), 'Ana \u0301Maria'])
+  caso('cadastro.nomeDoGoogle', JSON.stringify(n.length > 30 ? n.slice(0, 30) + '…' : n), [n], K.nomeDoGoogle);
+caso('cadastro.nomeDoGoogle', 'nulo', [null], K.nomeDoGoogle);
+const CODIGOS_SOCIAIS = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled', 'quota-exceeded-for-quota-metric-x',
+  '1000', 1000, 'auth/account-exists-with-different-credential', 'auth/unauthorized-domain', 'auth/operation-not-allowed',
+  'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported', 'auth/network-request-failed', 'auth/too-many-requests',
+  'auth/algo-novo', null];
+for(const provedor of ['apple.com', 'google.com', 'outro'])
+  for(const code of CODIGOS_SOCIAIS) caso('cadastro.mensagemErroSocial', `${provedor} ${JSON.stringify(code)}`, [code, provedor], K.mensagemErroSocial);
+for(const code of ['auth/popup-closed-by-user', 'auth/network-request-failed', '1000'])
+  caso('cadastro.mensagemErroGoogle', String(code), [code], K.mensagemErroGoogle);
+const CODIGOS_SENHA = ['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found', 'auth/email-already-in-use', 'auth/invalid-email',
+  'auth/weak-password', 'auth/too-many-requests', 'quota-exceeded-for-quota-metric-x', 'auth/network-request-failed', 'auth/algo-novo', null];
+for(const tela of ['login', 'cadastro', 'redefinir'])
+  for(const code of CODIGOS_SENHA) caso('cadastro.mensagemErroSenha', `${tela} ${code}`, [code, tela], K.mensagemErroSenha);
 
 /* ---------- primitivas do JavaScript que as regras usam ---------- */
 for(const x of [0, 1, -1, 0.1, 0.30000000000000004, 1e21, 1e-7, 1e-6, 123456789012345680000, 5e-324, 1.7976931348623157e308,

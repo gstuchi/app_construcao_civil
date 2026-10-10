@@ -97,7 +97,9 @@ struct TituloDaEntrada: View {
             .font(.footnote)
             .foregroundStyle(paleta.cor(.texto))
             .shadow(color: paleta.cor(.sombraDoTexto), radius: 4, y: 1)
-            .padding(.top, 5)
+            // 23 pt da caixa do logo, como no mockup aprovado: os 9 do logo mais os 14 da dica (no site as duas
+            // margens colapsam e ficam 14).
+            .padding(.top, 14)
             .opacity(max(0, 1 - 1.6 * progresso))
             .accessibilityHidden(true)
         }
@@ -344,6 +346,11 @@ struct FormFaltaPouco: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            Text("Falta pouco")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(paleta.cor(.texto))
+                .accessibilityAddTraits(.isHeader)
+                .padding(.bottom, 4)
             Text(usuario.contaApple ? "Só falta contar como você conheceu o Custta." : "Confirme seu nome e conte como conheceu o Custta.")
                 .font(.subheadline)
                 .foregroundStyle(paleta.cor(vidro.secundario))
@@ -427,6 +434,8 @@ struct ChecklistSenha: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
+    /// Ícones de 16 pt (1,25em do mockup), crescendo com a letra.
+    @ScaledMetric(relativeTo: .footnote) private var icone: CGFloat = 16
 
     var body: some View {
         let colunas = tamanho.isAccessibilitySize ? [GridItem(.flexible(), alignment: .leading)]
@@ -437,6 +446,7 @@ struct ChecklistSenha: View {
                     Text(regra.texto).foregroundStyle(paleta.cor(regra.ok ? .texto : vidro.secundario))
                 } icon: {
                     Image(systemName: regra.ok ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: icone))
                         .foregroundStyle(paleta.cor(regra.ok ? .linkNoVidro : .textoTerciario))
                 }
                 .font(.footnote)
@@ -466,6 +476,7 @@ struct CampoOrigem: View {
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(paleta.cor(vidro.secundario))
                     .accessibilityHidden(true)
+                    .padding(.vertical, 1)          // linha de 18 pt, como o rótulo do CampoDeEntrada
                 Menu {
                     Picker("Como conheceu o Custta?", selection: $origem) {
                         ForEach(origens, id: \.id) { o in Text(o.nome).tag(Optional(o.id)) }

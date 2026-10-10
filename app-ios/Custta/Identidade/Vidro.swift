@@ -101,6 +101,10 @@ struct VidroTokens: Equatable, Sendable {
 
     /// Link solto: no Transparente, a cor do texto com sublinhado da marca; nos outros, a cor do link sobre o vidro.
     var link: Token { nivel == .transparente ? .texto : .linkNoVidro }
+
+    /// O "N obras" de Obras: pílula no Transparente e, sólida, com Reduzir transparência (mockup aprovado);
+    /// texto solto no Fosco, que é também o nível do Aumentar contraste.
+    var contagemEmPilula: Bool { nivel != .fosco }
 }
 
 /// O véu da borda de rolagem (mockup v2, decisão do Giovani em 09/10), em opacidade do tom do fundo na beirada

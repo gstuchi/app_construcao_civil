@@ -53,4 +53,31 @@ final class EntradaUITests: XCTestCase {
         XCTAssertTrue(google.exists)
         XCTAssertLessThan(apple.frame.minY, google.frame.minY, "Guideline 4.8: Apple acima do Google")
     }
+
+    /// Apple, Google e Entrar com 52 pt, como no mockup aprovado e no site.
+    @MainActor func testBotoesDaEntradaCom52Pontos() {
+        let app = abrirApp()
+        XCTAssertTrue(app.buttons["entrar"].waitForExistence(timeout: 10))
+        for id in ["entrarComApple", "entrarComGoogle", "entrar"] {
+            XCTAssertEqual(app.buttons[id].frame.height, 52, accuracy: 0.5, id)
+        }
+    }
+
+    /// O caminho comum: tocar em Entrar com o teclado aberto. A cápsula fica no lugar e não salta depois.
+    /// O XCUITest só lê a tela quando o app fica ocioso, depois que o teclado fecha: os ~0,35 s em que a
+    /// cápsula nascia em cima do teclado (conferência da T10, D10) só aparecem nos quadros de um vídeo.
+    @MainActor func testEntrarComOTecladoAbertoDeixaACapsulaNoLugar() {
+        let app = abrirApp()
+        app.digitar("giovani@exemplo.com", em: "email")
+        app.digitar("Casa2026x", em: "senha", seguro: true)
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "teclado aberto")
+        app.buttons["entrar"].tap()
+        let aba = app.buttons["aba-obras"]
+        XCTAssertTrue(aba.waitForExistence(timeout: 10))
+        let primeiro = aba.frame
+        let base = app.windows.firstMatch.frame.maxY
+        XCTAssertEqual(primeiro.maxY + 4, base - 22, accuracy: 1, "a cápsula nasce 22 pt acima da borda (veio em \(primeiro))")
+        sleep(2)
+        XCTAssertEqual(aba.frame.minY, primeiro.minY, accuracy: 0.5, "a cápsula não salta depois que o teclado fecha")
+    }
 }

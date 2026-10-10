@@ -68,7 +68,8 @@ struct ObrasView: View {
     }
 }
 
-/// "3 obras": pílula de vidro no Transparente; texto no Fosco e com superfícies sólidas.
+/// "3 obras": pílula de vidro no Transparente e sólida com Reduzir transparência; texto no Fosco e com
+/// Aumentar contraste (mockup aprovado).
 struct ContagemDeObras: View {
     let quantidade: Int
     @Environment(\.paleta) private var paleta
@@ -78,7 +79,7 @@ struct ContagemDeObras: View {
         let texto = Text(quantidade == 1 ? "1 obra" : "\(quantidade) obras")
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(paleta.cor(.texto))
-        if vidro.nivel == .transparente {
+        if vidro.contagemEmPilula {
             texto.padding(.horizontal, 14).padding(.vertical, 6).superficie(.conteudo, em: .capsule)
         } else {
             texto.shadow(color: paleta.cor(.sombraDoTexto), radius: 4, y: 1).padding(.horizontal, 4)
@@ -260,7 +261,7 @@ struct AvisoDeEmail: View {
                 ocupado = false
             }
         }
-        .buttonStyle(BotaoSecundario())
+        .buttonStyle(BotaoSecundario(pequeno: true))
         .disabled(ocupado)
         .accessibilityIdentifier("reenviarLink")
     }
@@ -273,7 +274,7 @@ struct AvisoDeEmail: View {
                 ocupado = false
             }
         }
-        .buttonStyle(BotaoPrincipal())
+        .buttonStyle(BotaoPrincipal(pequeno: true))
         .disabled(ocupado)
         .accessibilityIdentifier("jaConfirmei")
     }

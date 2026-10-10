@@ -54,6 +54,6 @@ struct CapsulaDeAbas: View {
         .superficie(.navegacao, em: .capsule)
         .dynamicTypeSize(.large)
         .padding(.horizontal, 20)
-        .padding(.bottom, 8)
+        .padding(.bottom, 22)               // da borda da tela (mockup aprovado), como a barra de abas do sistema
     }
 }

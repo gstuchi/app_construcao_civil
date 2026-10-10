@@ -19,6 +19,10 @@ struct PrincipalView: View {
         }
         // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
         .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba) }
+        // A cápsula se mede da borda da tela, como a barra de abas do sistema, e não acompanha o teclado: ao
+        // entrar com ele aberto, o teclado da entrada ainda está fechando quando esta tela aparece, e a barra
+        // nascia em cima dele, no meio da tela, e saltava. As telas das abas não têm campo de texto.
+        .ignoresSafeArea(edges: .bottom)
     }
 }
 

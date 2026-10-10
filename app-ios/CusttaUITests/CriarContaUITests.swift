@@ -14,6 +14,7 @@ final class CriarContaUITests: XCTestCase {
 
     @MainActor func testChecklistDaSenhaAcompanhaADigitacao() {
         let app = abrirCriarConta()
+        app.swipeUp()               // com os botões de 52 pt do mockup, o checklist começa abaixo da dobra
         let tamanho = app.staticTexts["8 caracteres ou mais: falta"]
         XCTAssertTrue(tamanho.waitForExistence(timeout: 5))
         app.digitar("Casa2026x", em: "senhaCadastro", seguro: true)

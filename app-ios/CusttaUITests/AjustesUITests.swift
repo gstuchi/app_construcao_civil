@@ -16,6 +16,7 @@ final class AjustesUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["nomeConta"].label, "Giovani Stuchi")
         XCTAssertEqual(app.staticTexts["emailConta"].value as? String, "giovani@exemplo.com")
         XCTAssertEqual(app.staticTexts["versao"].label, "Versão 2.0 (1)")
+        XCTAssertEqual(app.buttons["sair"].frame.height, 52, accuracy: 0.5, "botão cheio do mockup")
         app.buttons["sair"].tap()
         XCTAssertTrue(app.alerts["Sair da conta?"].waitForExistence(timeout: 5), "confirmação pelo alerta do sistema")
         app.alerts.buttons["Sair"].tap()
@@ -54,5 +55,18 @@ final class AjustesUITests: XCTestCase {
         XCTAssertFalse(app.elemento("obra-o1").exists, "só a aba escolhida fica na tela (e no VoiceOver)")
         obras.tap()
         XCTAssertTrue(app.elemento("obra-o1").waitForExistence(timeout: 5))
+    }
+
+    /// A cápsula fica 22 pt acima da borda, como a barra de abas do sistema (mockup aprovado), nas duas abas.
+    /// Ela tem 4 pt de margem em volta das abas.
+    @MainActor func testCapsulaFica22PontosAcimaDaBorda() {
+        let app = abrirApp(conta: "senha")
+        let obras = app.buttons["aba-obras"]
+        XCTAssertTrue(obras.waitForExistence(timeout: 10))
+        let base = app.windows.firstMatch.frame.maxY
+        XCTAssertEqual(obras.frame.maxY + 4, base - 22, accuracy: 1)
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["aba-ajustes"].frame.maxY + 4, base - 22, accuracy: 1)
     }
 }

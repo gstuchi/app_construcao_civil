@@ -13,16 +13,18 @@ struct AjustesView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    // Painel do mockup, como o "Comparativo entre obras": título de 20 pt e 18 pt de margem em cima.
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Conta")
-                            .font(.body.weight(.semibold))
+                            .font(.title3.weight(.semibold))
                             .foregroundStyle(paleta.cor(.texto))
                             .accessibilityAddTraits(.isHeader)
-                            .padding(.bottom, 10)
+                            .padding(.bottom, 14)
                         if let nome = modelo.nome {
                             Text(nome)
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(paleta.cor(.texto))
+                                .padding(.bottom, 2)
                                 .accessibilityIdentifier("nomeConta")
                         }
                         Text(modelo.usuario?.email ?? "")
@@ -40,7 +42,7 @@ struct AjustesView: View {
                             Button("Enviar confirmação de e-mail") {
                                 Task { mensagemVerificacao = await modelo.reenviarVerificacao() }
                             }
-                            .buttonStyle(BotaoSecundario())
+                            .buttonStyle(BotaoSecundario(pequeno: true))
                             if let mensagemVerificacao {
                                 Mensagem(tipo: .ok, texto: mensagemVerificacao).padding(.top, 10)
                             }
@@ -52,7 +54,7 @@ struct AjustesView: View {
                         .buttonStyle(BotaoSecundario())
                         .accessibilityIdentifier("sair")
                     }
-                    .padding(16)
+                    .padding(EdgeInsets(top: 18, leading: 16, bottom: 16, trailing: 16))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .superficie(.conteudo, em: .rect(cornerRadius: 24))
                     Text(Self.versao)
@@ -62,6 +64,8 @@ struct AjustesView: View {
                         .accessibilityIdentifier("versao")
                 }
                 .padding(.horizontal, 16)
+                // O painel começa 18 pt abaixo de onde começa a lista de Obras, como no mockup.
+                .padding(.top, 18)
                 .padding(.bottom, 24)
             }
             .scrollIndicators(.hidden)

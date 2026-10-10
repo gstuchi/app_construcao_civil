@@ -32,6 +32,7 @@ struct CampoDeEntrada: View {
              + Text(opcional ? " (opcional)" : "").foregroundStyle(paleta.cor(.textoTerciario)))
                 .font(.footnote.weight(.medium))
                 .accessibilityHidden(true)
+                .padding(.vertical, 1)          // linha de 18 pt, a do rótulo no site e no mockup (o footnote ocupa 16)
             HStack(spacing: 8) {
                 Group {
                     if senha && !mostrar {
@@ -69,8 +70,10 @@ struct CampoDeEntrada: View {
     }
 }
 
-/// Botão principal: sempre sólido, na cor da marca (como no site).
+/// Botão principal: sempre sólido, na cor da marca (como no site), com 52 pt como no mockup e no site. O
+/// `pequeno` é o `.btn.peq` do mockup (aviso de e-mail, enviar confirmação): 48 pt, a favor do alvo de toque.
 struct BotaoPrincipal: ButtonStyle {
+    var pequeno = false
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
     @Environment(\.isEnabled) private var habilitado
@@ -80,7 +83,7 @@ struct BotaoPrincipal: ButtonStyle {
             .font(.body.weight(.semibold))
             .multilineTextAlignment(.center)
             .foregroundStyle(paleta.cor(.sobreMarca))
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: pequeno ? 48 : 52)
             .padding(.horizontal, 16)
             .background(paleta.cor(.marca), in: .capsule)
             .opacity(habilitado ? 1 : 0.6)
@@ -89,8 +92,9 @@ struct BotaoPrincipal: ButtonStyle {
     }
 }
 
-/// Botão secundário do site ("ghost"): "Reenviar link", "Sair da conta".
+/// Botão secundário do site ("ghost"): "Reenviar link", "Sair da conta". Mesmas alturas do principal.
 struct BotaoSecundario: ButtonStyle {
+    var pequeno = false
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
 
@@ -99,7 +103,7 @@ struct BotaoSecundario: ButtonStyle {
             .font(.body.weight(.semibold))
             .multilineTextAlignment(.center)
             .foregroundStyle(paleta.cor(.fantasmaTexto))
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: pequeno ? 48 : 52)
             .padding(.horizontal, 16)
             .background(paleta.cor(.fantasmaFundo), in: .capsule)
             .scaleEffect(configuration.isPressed && !opcoes.reduzirMovimento ? 0.97 : 1)
@@ -116,7 +120,7 @@ struct BotaoApple: View {
     var body: some View {
         SignInWithAppleButton(.continue, onRequest: pedir, onCompletion: concluir)
             .signInWithAppleButtonStyle(esquema == .dark ? .white : .black)
-            .frame(height: 44)
+            .frame(height: 52)
             .clipShape(.capsule)
             .accessibilityIdentifier("entrarComApple")
     }
@@ -141,7 +145,7 @@ struct BotaoGoogle: View {
                     .accessibilityHidden(true)
             }
             .foregroundStyle(paleta.cor(.googleTexto))
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: 52)
             .background(paleta.cor(.googleFundo), in: .capsule)
             .overlay(Capsule().strokeBorder(paleta.cor(.googleBorda), lineWidth: 1))
         }

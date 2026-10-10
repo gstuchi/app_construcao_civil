@@ -89,6 +89,12 @@ struct VidroTokensTests {
         #expect(VidroTokens(nivel: .fosco, contorno: false).link == .linkNoVidro)
     }
 
+    @Test func contagemDeObrasEmPilulaForaDoFosco() {
+        #expect(VidroTokens(nivel: .transparente, contorno: false).contagemEmPilula)
+        #expect(VidroTokens(nivel: .solido, contorno: false).contagemEmPilula, "Reduzir transparência: pílula sólida, como no mockup")
+        #expect(!VidroTokens(nivel: .fosco, contorno: true).contagemEmPilula, "Fosco e Aumentar contraste: texto solto")
+    }
+
     @Test func fundoSoAndaSemReduzirMovimentoESemPoucaEnergia() {
         #expect(OpcoesDoAparelho().animaFundo)
         #expect(!OpcoesDoAparelho(reduzirMovimento: true).animaFundo)

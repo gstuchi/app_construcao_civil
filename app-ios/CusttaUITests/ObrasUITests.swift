@@ -63,6 +63,10 @@ final class ObrasUITests: XCTestCase {
     @MainActor func testAvisoDeEmailNaoConfirmado() {
         let app = abrirApp(conta: "senha-nao-confirmada")
         XCTAssertTrue(app.elemento("avisoEmail").waitForExistence(timeout: 10))
+        for id in ["reenviarLink", "jaConfirmei"] {
+            // Os botões pequenos do mockup (44 pt) ficam em 48, a favor do alvo de toque (conferência da T10).
+            XCTAssertEqual(app.buttons[id].frame.height, 48, accuracy: 0.5, id)
+        }
         app.buttons["reenviarLink"].tap()
         XCTAssertTrue(app.staticTexts["Link reenviado. Confira também a caixa de spam."].waitForExistence(timeout: 5))
         app.buttons["jaConfirmei"].tap()

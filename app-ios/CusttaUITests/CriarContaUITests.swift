@@ -34,6 +34,7 @@ final class CriarContaUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["mensagemCadastro"].label, "As senhas não são iguais.")
         let confirmacao = app.secureTextFields["confirmacao"]
         confirmacao.tap()
+        app.recusarSenhaForte()
         confirmacao.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 10) + "Casa2026x")
         app.buttons["criarConta"].tap()
         XCTAssertEqual(app.staticTexts["mensagemCadastro"].label, "Conte como conheceu o Custta.")

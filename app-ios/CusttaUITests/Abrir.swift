@@ -29,6 +29,15 @@ extension XCUIApplication {
         let campo = seguro ? secureTextFields[id] : textFields[id]
         XCTAssertTrue(campo.waitForExistence(timeout: 10), "campo \(id)")
         campo.tap()
+        if seguro { recusarSenhaForte() }
         campo.typeText(texto)
+    }
+
+    /// O iOS 27 do simulador oferece uma senha forte ao focar um campo de senha nova (.newPassword), mesmo com o
+    /// app sem domínio associado: a folha "Use Strong Password?" toma o lugar do teclado e engole a digitação.
+    /// Quando ela aparece (até 2 s), é fechada; no iOS 26 da CI ela pode não aparecer.
+    func recusarSenhaForte() {
+        guard buttons["GenerateStrongPasswordButton"].waitForExistence(timeout: 2) else { return }
+        buttons["xmark"].tap()
     }
 }

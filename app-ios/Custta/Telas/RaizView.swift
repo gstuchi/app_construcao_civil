@@ -52,8 +52,10 @@ struct RaizView: View {
         .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
         .environment(\.apagaTextoDaNavegacao, textoApagado == "navegacao")
         #endif
-        // O aviso fica por cima de todas as telas; vem antes do .environment para receber a mesma paleta.
+        // O aviso e o "Finalizar saída" ficam por cima de todas as telas; vêm antes do .environment para receber
+        // a mesma paleta.
         .overlay(alignment: .top) { AvisoView() }
+        .finalizaSaida()
         .environment(\.paleta, paleta)
         .environment(\.opcoes, opcoes)
         .environment(\.vidro, VidroTokens.para(tela: tela, escolha: Aparencia.vidro(escolhaDeVidro), opcoes: opcoes))

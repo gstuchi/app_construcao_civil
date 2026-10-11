@@ -3,11 +3,12 @@ import XCTest
 /// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase.
 @MainActor
 func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
-              argumentos: [String] = []) -> XCUIApplication {
+              limpeza: String? = nil, argumentos: [String] = []) -> XCUIApplication {
     let app = XCUIApplication()
     var ambiente = ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": conta, "CUSTTA_DADOS": dados]
     if let rede { ambiente["CUSTTA_REDE"] = rede }
     if let leitura { ambiente["CUSTTA_LEITURA"] = leitura }
+    if let limpeza { ambiente["CUSTTA_LIMPEZA"] = limpeza }
     app.launchEnvironment = ambiente
     app.launchArguments += argumentos
     app.launch()

@@ -214,6 +214,48 @@ extension LeituraNoVidroUITests {
         guard !Self.soRelatorio else { return }
         XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
     }
+
+    /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o botão do alerta (no tint Texto, como o
+    /// do "Sair da conta?") aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra a própria
+    /// cápsula (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup.
+    @MainActor func testLeituraDoFinalizarSaida() {
+        var falhas: [String] = []
+        for (tema, pele) in quatroCombos {
+            let app = abrirApp(conta: "nenhuma", limpeza: "abertura", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
+            let alerta = app.alerts["Finalizar saída"], botao = alerta.buttons["Tentar limpar novamente"]
+            for estado in ["aberto", "tentando", "falhou de novo"] {
+                let nome = "finalizar saída, \(estado), \(tema), \(pele)"
+                switch estado {
+                case "tentando":
+                    botao.tap()
+                    XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 2), "\(nome): o \"Limpando…\" não apareceu")
+                    Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta (a nova tentativa leva 3 s)
+                default:
+                    XCTAssertTrue(botao.waitForExistence(timeout: 10), "\(nome): o alerta não abriu")
+                    Thread.sleep(forTimeInterval: 2)                   // o vidro do alerta assenta
+                }
+                let foto = XCUIScreen.main.screenshot()
+                let imagem = foto.image.cgImage!
+                let escala = CGFloat(imagem.width) / app.frame.width
+                let (rotulo, quadro) = estado == "tentando" ? ("Limpando…", app.elemento("limpando").frame) : ("Tentar limpar novamente", botao.frame)
+                guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
+                    XCTFail("\(nome): o rótulo \(rotulo) não foi achado")
+                    continue
+                }
+                anexar(nome, foto.image, [palavra], escala)
+                let limpo = XCTAttachment(screenshot: foto)            // sem as anotações, para comparar com o mockup
+                limpo.name = "print — \(nome)"
+                limpo.lifetime = .keepAlways
+                add(limpo)
+                Swift.print(String(format: "leitura | %@ | %@ %@ | nota %.2f (pior pixel %.2f)", nome, rotulo, palavra.corHex,
+                                   palavra.nota, palavra.minimo))
+                if palavra.nota < Self.portao { falhas.append(String(format: "%@: %@ em %.2f:1", nome, rotulo, palavra.nota)) }
+            }
+            app.terminate()
+        }
+        guard !Self.soRelatorio else { return }
+        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no Finalizar saída:\n" + falhas.joined(separator: "\n"))
+    }
 }
 
 /* O medidor com imagens sintéticas: sem abrir o app. */

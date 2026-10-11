@@ -399,6 +399,10 @@ test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no 
     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
   assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
     /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
+  // O halo sobe além da versão: por cima do painel, escurecia a base do "Sair da conta" (11/255 no Pro Max).
+  assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
+    /HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\) \}(?:\s*\/\/[^\n]*)*\s*\.zIndex\(-1\)/,
+    'AjustesView: a versão e o halo atrás do painel');
 });
 
 test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar, o olho da senha e o logo da conta', () => {

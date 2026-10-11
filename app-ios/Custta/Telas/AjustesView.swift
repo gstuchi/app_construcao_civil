@@ -73,6 +73,9 @@ struct AjustesView: View {
                         .shadow(color: paleta.cor(.sombraDoTexto), radius: 4, y: 1)
                         // Texto solto sobre a aurora: o halo leve do título grande, só no escuro.
                         .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naBarra) }
+                        // O halo sobe além do texto: atrás do painel, como o do título fica atrás de todo o conteúdo
+                        // (por cima, escurecia a base do painel do "Sair da conta").
+                        .zIndex(-1)
                         .accessibilityIdentifier("versao")
                 }
                 .padding(.horizontal, 16)

@@ -167,6 +167,45 @@ enum LaudoDeContraste {
         return palavras.sorted { ($0.caixa.minY, $0.caixa.minX) < ($1.caixa.minY, $1.caixa.minX) }
     }
 
+    /// Rótulo que o app não apaga (o botão de um alerta do sistema), medido num print só: o fundo é a própria
+    /// cápsula. `quadro` é o do botão, em pontos; por dentro da borda (6 pt), as letras são os pixels longe da
+    /// cor da cápsula (a mediana do quadro, que o texto não domina). A cor do texto sai do miolo das letras, como
+    /// em `medir`, e a nota é o percentil 1 do contraste dela contra o fundo em volta das letras (até 3 pt), fora
+    /// do serrilhado (1 pt).
+    static func medirRotulo(_ retrato: Retrato, quadro: CGRect, escala: CGFloat) -> Palavra? {
+        let w = retrato.largura, a = retrato.rgba
+        let q = quadro.insetBy(dx: 6, dy: 6)
+        let x0 = max(0, Int((q.minX * escala).rounded(.up))), y0 = max(0, Int((q.minY * escala).rounded(.up)))
+        let x1 = min(w, Int((q.maxX * escala).rounded(.down))), y1 = min(retrato.altura, Int((q.maxY * escala).rounded(.down)))
+        guard x1 > x0, y1 > y0 else { return nil }
+        let qw = x1 - x0, qh = y1 - y0
+        func pixel(_ j: Int) -> Int { (y0 + j / qw) * w + x0 + j % qw }
+        func mediana(_ canal: Int, _ indices: [Int]) -> UInt8 { indices.map { a[pixel($0) * 4 + canal] }.sorted()[indices.count / 2] }
+        let todos = Array(0..<(qw * qh))
+        let fundo = (mediana(0, todos), mediana(1, todos), mediana(2, todos))
+        func diferenca(_ j: Int) -> Int {
+            let k = pixel(j) * 4
+            return max(abs(Int(a[k]) - Int(fundo.0)), abs(Int(a[k + 1]) - Int(fundo.1)), abs(Int(a[k + 2]) - Int(fundo.2)))
+        }
+        let letra = todos.map { diferenca($0) > limiarDaLetra }
+        let membros = todos.filter { letra[$0] }
+        guard membros.count >= 20 else { return nil }
+        let fortes = Array(membros.sorted { diferenca($0) > diferenca($1) }.prefix(max(1, membros.count / 4)))
+        let cor = (r: mediana(0, fortes), g: mediana(1, fortes), b: mediana(2, fortes))
+        let lt = luminancia(cor.r, cor.g, cor.b)
+        let perto = dilatar(letra, qw, qh, rx: Int(3 * escala), ry: Int(3 * escala))
+        let serrilhado = dilatar(letra, qw, qh, rx: Int(escala), ry: Int(escala))
+        let notas = todos.filter { perto[$0] && !serrilhado[$0] }.map { j in
+            let k = pixel(j) * 4
+            return contraste(lt, luminancia(a[k], a[k + 1], a[k + 2]))
+        }.sorted()
+        guard !notas.isEmpty else { return nil }
+        let xs = membros.map { $0 % qw }, ys = membros.map { $0 / qw }
+        let caixa = CGRect(x: CGFloat(x0 + xs.min()!) / escala, y: CGFloat(y0 + ys.min()!) / escala,
+                           width: CGFloat(xs.max()! - xs.min()! + 1) / escala, height: CGFloat(ys.max()! - ys.min()! + 1) / escala)
+        return Palavra(caixa: caixa, cor: cor, nota: notas[notas.count / 100], minimo: notas[0])
+    }
+
     /// Dilatação retangular (separável, com contagem corrida): verdadeiro onde houver verdadeiro a até rx, ry.
     static func dilatar(_ m: [Bool], _ w: Int, _ h: Int, rx: Int, ry: Int) -> [Bool] {
         var horizontal = [Bool](repeating: false, count: w * h)

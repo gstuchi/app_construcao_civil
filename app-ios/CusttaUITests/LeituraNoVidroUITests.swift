@@ -177,6 +177,41 @@ final class LeituraNoVidroUITests: XCTestCase {
     }
 }
 
+extension LeituraNoVidroUITests {
+    /// O "Cancelar" do "Sair da conta?" nos quatro combos, no tint do alerta (Texto). O texto do alerta
+    /// é do sistema e o app não o apaga: o rótulo é medido contra a própria cápsula (`medirRotulo`). Exceção:
+    /// o "Sair" não é medido. É destrutivo, e o vermelho do sistema não segue o tint (2,2 a 3,0:1 no iOS 27); fica
+    /// o padrão da Apple (decisão de 11/10).
+    @MainActor func testLeituraDoAlertaDeSair() {
+        var falhas: [String] = []
+        for (tema, pele) in quatroCombos {
+            let nome = "alerta Sair da conta?, \(tema), \(pele)"
+            let app = abrirApp(conta: "senha", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
+            app.abrirAba("ajustes")
+            XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(nome): Ajustes não abriu")
+            app.buttons["sair"].tap()
+            let cancelar = app.alerts["Sair da conta?"].buttons["Cancelar"]
+            XCTAssertTrue(cancelar.waitForExistence(timeout: 5), "\(nome): o alerta não abriu")
+            Thread.sleep(forTimeInterval: 2)                           // o vidro do alerta assenta
+            let foto = XCUIScreen.main.screenshot()
+            let imagem = foto.image.cgImage!
+            let escala = CGFloat(imagem.width) / app.frame.width
+            let quadro = cancelar.frame
+            app.terminate()
+            guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
+                XCTFail("\(nome): o rótulo do Cancelar não foi achado")
+                continue
+            }
+            anexar(nome, foto.image, [palavra], escala)
+            Swift.print(String(format: "leitura | %@ | Cancelar %@ | nota %.2f (pior pixel %.2f)", nome, palavra.corHex,
+                               palavra.nota, palavra.minimo))
+            if palavra.nota < Self.portao { falhas.append(String(format: "%@: Cancelar em %.2f:1", nome, palavra.nota)) }
+        }
+        guard !Self.soRelatorio else { return }
+        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
+    }
+}
+
 /* O medidor com imagens sintéticas: sem abrir o app. */
 final class LaudoDeContrasteTests: XCTestCase {
     private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),
@@ -216,6 +251,24 @@ final class LaudoDeContrasteTests: XCTestCase {
         let palavra = try XCTUnwrap(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).first)
         XCTAssertLessThan(palavra.nota, 1.5, "um ponto claro do globo atrás da letra reprova")
         XCTAssertLessThan(palavra.minimo, 1.5)
+    }
+
+    func testRotuloSobreACapsulaDoAlerta() throws {
+        let capsula: (UInt8, UInt8, UInt8) = (0x38, 0x59, 0x57), link: (UInt8, UInt8, UInt8) = (0x8F, 0xE8, 0xD5)
+        let quadro = CGRect(x: 0, y: 0, width: 200 / 3, height: 120 / 3)      // o botão inteiro, em pontos
+        let liso = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) })
+        let palavra = try XCTUnwrap(LaudoDeContraste.medirRotulo(liso, quadro: quadro, escala: 3))
+        XCTAssertEqual(palavra.corHex, "#8FE8D5")
+        let esperado = LaudoDeContraste.contraste(LaudoDeContraste.luminancia(link.0, link.1, link.2),
+                                                  LaudoDeContraste.luminancia(capsula.0, capsula.1, capsula.2))
+        XCTAssertEqual(palavra.nota, esperado, accuracy: 0.05)
+        // Um brilho do vidro (mais claro que a cápsula, mas não a ponto de virar letra) encostado nas letras
+        // derruba a nota para 3,33; longe delas (mais de 3 pt), não.
+        let claro: (UInt8, UInt8, UInt8) = (0x58, 0x79, 0x77)
+        let perto = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 72, y: 40, width: 6, height: 24), claro)])
+        XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(perto, quadro: quadro, escala: 3)).nota, 3.33, accuracy: 0.05)
+        let longe = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 150, y: 80, width: 6, height: 6), claro)])
+        XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(longe, quadro: quadro, escala: 3)).nota, esperado, accuracy: 0.05)
     }
 
     func testFundoQueMudaLongeDasLetrasDaErro() {

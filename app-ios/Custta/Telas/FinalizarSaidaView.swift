@@ -19,7 +19,6 @@ struct FinalizarSaida: ViewModifier {
     func body(content: Content) -> some View {
         let tentando = modelo.limpeza == .tentando
         content
-            .accessibilityHidden(tentando)          // sob o escurecido, para o VoiceOver também: só a pílula fala
             .overlay {
                 if tentando {
                     ZStack {
@@ -76,6 +75,9 @@ private struct Limpando: View {
         .background(paleta.cor(.superficie), in: .capsule)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(anuncio)
+        // Modal: o VoiceOver fica nela, como no escurecido. Esconder a tela de baixo pela raiz não serve: o
+        // accessibilityHidden(false) de fora revelava a aurora, o globo e o véu, que se escondem por dentro.
+        .accessibilityAddTraits(.isModal)
         .accessibilityIdentifier("limpando")
         .onChange(of: anuncio, initial: true) { _, texto in AccessibilityNotification.Announcement(texto).post() }
     }

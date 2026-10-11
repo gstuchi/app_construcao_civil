@@ -96,12 +96,15 @@ extension NoEmulador {
         }
 
         /// Desativa a conta pela API de administrador do emulador do Auth: a próxima renovação do token volta USER_DISABLED.
-        private func desativar(_ uid: String) async throws {
+        private func desativar(_ uid: String) async throws { try await alterarConta(uid, ["disableUser": true]) }
+
+        /// Muda a conta pela API de administrador do emulador do Auth (conta desativada, link de confirmação clicado).
+        private func alterarConta(_ uid: String, _ campos: [String: Any]) async throws {
             var pedido = URLRequest(url: URL(string: "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/\(Emulador.projeto)/accounts:update")!)
             pedido.httpMethod = "POST"
             pedido.setValue("Bearer owner", forHTTPHeaderField: "Authorization")
             pedido.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            pedido.httpBody = try JSONSerialization.data(withJSONObject: ["localId": uid, "disableUser": true])
+            pedido.httpBody = try JSONSerialization.data(withJSONObject: campos.merging(["localId": uid]) { $1 })
             let (_, resposta) = try await URLSession.shared.data(for: pedido)
             #expect((resposta as? HTTPURLResponse)?.statusCode == 200)
         }
@@ -177,6 +180,64 @@ extension NoEmulador {
             try await c.sair()
             #expect(marcadaAoSair == true, "o app pode fechar logo depois do signOut: a marca já tem de estar gravada")
             #expect(!Emulador.banco.limpezaPendente)
+        }
+
+        @Test func trocaDeContaRecomecaAContarOMinuto() async throws {
+            let c = conta()
+            let primeira = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != primeira.uid { try await Task.sleep(for: .milliseconds(20)) }
+            await c.verificarSessao(forcar: false)                  // a primeira conta começa a contar o minuto
+            let outra = try await Emulador.novaConta()              // outra conta no aparelho, dentro do minuto
+            for _ in 0..<100 where c.usuario?.uid != outra.uid { try await Task.sleep(for: .milliseconds(20)) }
+            try await desativar(outra.uid)
+            await c.verificarSessao(forcar: false)                  // a volta da rede, já com a outra conta
+            #expect(Auth.auth(app: Emulador.app).currentUser == nil, "a espera de 60 s é por conta (cloud.js): a conta nova confere na hora")
+        }
+
+        /// Grava como outro aparelho: REST do emulador do Firestore com o dono, sem passar pelo cache deste.
+        private func gravarComoOutroAparelho(_ caminho: String, _ campos: [String: String]) async throws {
+            var pedido = URLRequest(url: URL(string: "http://127.0.0.1:8080/v1/projects/\(Emulador.projeto)/databases/(default)/documents/\(caminho)")!)
+            pedido.httpMethod = "PATCH"
+            pedido.setValue("Bearer owner", forHTTPHeaderField: "Authorization")
+            pedido.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            pedido.httpBody = try JSONSerialization.data(withJSONObject: ["fields": campos.mapValues { ["stringValue": $0] }])
+            let (_, resposta) = try await URLSession.shared.data(for: pedido)
+            #expect((resposta as? HTTPURLResponse)?.statusCode == 200)
+        }
+
+        @Test func perfilGravadoPorOutroAparelhoNoFaltaPoucoSegueParaALista() async throws {
+            let c = conta()
+            let sub = UUID().uuidString.lowercased()
+            let email = "\(sub.prefix(8))@example.com"
+            let tokenFalso = #"{"sub":"\#(sub)","email":"\#(email)","email_verified":true}"#
+            _ = try await Auth.auth(app: Emulador.app).signIn(with: GoogleAuthProvider.credential(withIDToken: tokenFalso, accessToken: "x"))
+            for _ in 0..<100 where c.usuario?.contaSocial != true { try await Task.sleep(for: .milliseconds(20)) }
+            let uid = try #require(c.usuario?.uid)
+            #expect(await c.perfilPendente())
+            // Este aparelho está no "Falta pouco"; o outro completa primeiro.
+            try await gravarComoOutroAparelho("perfis/\(uid)", ["email": email, "criado": "2026-10-11T12:00:00.000Z", "nome": "Outro"])
+            /* As rules recusam o segundo (criado e origem mudariam), e o ModeloApp.completarPerfil depende deste
+               código: com "permission-denied" e o perfil no servidor, segue para a lista em vez de prender no "Falta pouco". */
+            await #expect(throws: ErroConta(codigo: "permission-denied")) {
+                try await c.completarPerfil(PerfilCadastro(nome: "Gi", origem: "google"))
+            }
+            #expect(await c.perfilPendente() == false, "o perfil do outro aparelho conta")
+            #expect(await c.lerNome() == "Outro", "o segundo não sobrescreve o primeiro")
+            try await c.sair()
+        }
+
+        @Test func emailConfirmadoChegaAoUsuarioSemReabrir() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }
+            #expect(c.usuario?.precisaConfirmarEmail == true)
+            #expect(try await c.reenviarVerificacao(), "ainda não confirmado: manda o link")
+            #expect(await c.conferirVerificacao() == false, "o link ainda não foi clicado")
+            try await alterarConta(u.uid, ["emailVerified": true])     // o clique no link
+            #expect(await c.conferirVerificacao())
+            #expect(c.usuario?.emailVerificado == true, "o aviso de confirmar o e-mail some sem reabrir o app")
+            #expect(try await c.reenviarVerificacao() == false, "já confirmado: não manda de novo")
+            try Auth.auth(app: Emulador.app).signOut()
         }
     }
 }

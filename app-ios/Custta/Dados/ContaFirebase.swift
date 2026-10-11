@@ -137,9 +137,11 @@ final class ContaFirebase: ServicoConta {
     func perfilPendente() async -> Bool {
         guard let u = auth.currentUser, usuario?.contaSocial == true else { return false }
         await banco.aguardarPronto()
-        let ref = banco.firestore().collection("perfis").document(u.uid)
-        if let doc = try? await ref.getDocument(source: .cache), doc.exists { return false }
-        do { return !(try await ref.getDocument(source: .server)).exists } catch { return false }
+        if let doc = try? await banco.firestore().collection("perfis").document(u.uid).getDocument(source: .cache), doc.exists { return false }
+        /* Um `sair` durante a leitura do cache encerra a instância, e usar a encerrada derruba o app
+           (exceção do Objective-C): a leitura do servidor espera a limpeza e pede a instância de novo. */
+        await banco.aguardarPronto()
+        do { return !(try await banco.firestore().collection("perfis").document(u.uid).getDocument(source: .server)).exists } catch { return false }
     }
 
     func completarPerfil(_ perfil: PerfilCadastro) async throws {

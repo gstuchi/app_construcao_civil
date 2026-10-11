@@ -46,6 +46,21 @@ extension NoEmulador {
             try await c.sair()
         }
 
+        @Test func sairNoMeioDoPerfilPendenteNaoDerrubaOApp() async throws {
+            let c = conta()
+            let sub = UUID().uuidString.lowercased()
+            let tokenFalso = #"{"sub":"\#(sub)","email":"\#(sub.prefix(8))@example.com","email_verified":true}"#
+            _ = try await Auth.auth(app: Emulador.app).signIn(with: GoogleAuthProvider.credential(withIDToken: tokenFalso, accessToken: "x"))
+            for _ in 0..<100 where c.usuario?.contaSocial != true { try await Task.sleep(for: .milliseconds(20)) }
+            /* A fila principal é FIFO: o perfilPendente roda até a leitura do cache e para ali; o sair encerra a
+               instância antes de essa leitura voltar. Ler o servidor pela instância encerrada derruba o app
+               (VerifyNotTerminated lança exceção do Objective-C, que o Swift não pega). */
+            let pendente = Task { await c.perfilPendente() }
+            await Task.yield()
+            try await c.sair()
+            #expect(await pendente.value == false, "a leitura do servidor espera a limpeza e usa a instância nova")
+        }
+
         private func gravar(_ t: TransporteFirebase, _ uid: String, _ blob: ValorJSON) async -> String? {
             await withCheckedContinuation { c in t.gravar(uid: uid, blob: blob) { c.resume(returning: $0) } }
         }

@@ -118,6 +118,39 @@ extension NoEmulador {
             #expect(Auth.auth(app: Emulador.app).currentUser == nil, "sessão invalidada sai da conta")
         }
 
+        @Test func limpezaQueFalhaAoSairBloqueiaEntrarAteDarCerto() async throws {
+            // App e banco próprios: a falha de apagar o cache não pode encostar na instância do Emulador.banco.
+            let nome = "bloqueio-\(UUID().uuidString.prefix(8).lowercased())"
+            FirebaseApp.configure(name: nome, options: Emulador.app.options)
+            let app = try #require(FirebaseApp.app(name: nome))
+            let auth = Auth.auth(app: app)
+            auth.useEmulator(withHost: "127.0.0.1", port: 9099)
+            let falha = Bandeira()
+            falha.ligada = true
+            let banco = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: try #require(UserDefaults(suiteName: nome)),
+                                      apagar: { db in
+                                          if falha.ligada { throw ErroConta(codigo: "disco") }
+                                          try await db.clearPersistence()
+                                      })
+            let c = ContaFirebase(app: app, banco: banco, online: { true })
+            let email = "\(nome)@example.com"
+            _ = try await auth.createUser(withEmail: email, password: "Casa2026x")
+            await #expect(throws: ErroConta(codigo: "cache")) { try await c.sair() }
+            #expect(auth.currentUser == nil, "saiu da conta antes de a limpeza falhar")
+            await #expect(throws: ErroConta(codigo: "cache"), "entrar recusa com o cache velho no aparelho") {
+                try await c.entrar(email: email, senha: "Casa2026x")
+            }
+            await #expect(throws: ErroConta(codigo: "cache"), "criar conta também") {
+                try await c.criarConta(email: "outra-\(email)", senha: "Casa2026x", perfil: PerfilCadastro(nome: "Gi", origem: "indicacao"))
+            }
+            #expect(auth.currentUser == nil)
+            falha.ligada = false
+            try await c.tentarLimparDeNovo()
+            try await c.entrar(email: email, senha: "Casa2026x")
+            #expect(auth.currentUser != nil, "limpou: entrar volta a funcionar")
+            try auth.signOut()
+        }
+
         @Test func erroDeRedeNaConferenciaNaoSaiDaConta() async throws {
             // App próprio: depois do login, o Auth dele aponta para uma porta sem ninguém e renovar o token dá erro de rede.
             let nome = "rede-\(UUID().uuidString.prefix(8).lowercased())"

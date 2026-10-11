@@ -5,7 +5,10 @@ import CusttaNucleo
 /* Conta falsa para os testes (só Debug). A inicial vem de CUSTTA_CONTA:
    nenhuma | senha | senha-nao-confirmada | senha-confirma-ao-conferir (o "Já confirmei" acha o
    e-mail confirmado) | apple-sem-perfil | google-sem-perfil |
-   google-perfil-concorrente (outro aparelho grava o perfil no meio do "Falta pouco"). */
+   google-perfil-concorrente (outro aparelho grava o perfil no meio do "Falta pouco").
+   A falha da limpeza do cache vem de CUSTTA_LIMPEZA: falha (a limpeza do sair e a primeira nova
+   tentativa falham; a segunda dá certo) | abertura (abre como se a limpeza retomada na abertura
+   tivesse falhado; a primeira nova tentativa também falha e a segunda dá certo). */
 @MainActor
 final class ContaFalsa: ServicoConta {
     static let senhaCerta = "Casa2026x"
@@ -22,8 +25,16 @@ final class ContaFalsa: ServicoConta {
     private(set) var saidas = 0
     /// Demora do `sair`, para os testes pegarem a saída em andamento.
     var demoraAoSair: Duration = .zero
+    /// Quantas limpezas do cache ainda falham (a do sair e as novas tentativas).
+    var falhasDaLimpeza = 0
+    /// Demora de cada nova tentativa de limpar, para o teste de tela ver o "Limpando…".
+    var demoraAoLimpar: Duration = .zero
+    private var ouvintesDoBloqueio: [@MainActor (Bool) -> Void] = []
+    private(set) var bloqueado = false {
+        didSet { if bloqueado != oldValue { ouvintesDoBloqueio.forEach { $0(bloqueado) } } }
+    }
 
-    init(inicial: String) {
+    init(inicial: String, limpeza: String? = nil) {
         perfilConcorrente = inicial == "google-perfil-concorrente"
         confirmaAoConferir = inicial == "senha-confirma-ao-conferir"
         temPerfil = !inicial.hasSuffix("sem-perfil") && !perfilConcorrente
@@ -36,6 +47,11 @@ final class ContaFalsa: ServicoConta {
         case "google-sem-perfil", "google-perfil-concorrente":
             usuario = Usuario(uid: "google", email: "giovani@gmail.com", emailVerificado: true, provedores: ["google.com"], nomeExibicao: "Giovani Stuchi")
         default: usuario = nil
+        }
+        switch limpeza {
+        case "falha": falhasDaLimpeza = 2
+        case "abertura": bloqueado = true; falhasDaLimpeza = 1
+        default: break
         }
     }
 
@@ -55,20 +71,24 @@ final class ContaFalsa: ServicoConta {
     }
 
     func entrar(email: String, senha: String) async throws {
+        if bloqueado { throw ErroConta(codigo: "cache") }
         try await Task.sleep(for: .milliseconds(300))
         guard senha == Self.senhaCerta else { throw ErroConta(codigo: "auth/invalid-credential") }
         trocar(Self.comSenha(email: email, verificado: true))
     }
 
     func entrarComApple(_ credencial: CredencialApple) async throws {
+        if bloqueado { throw ErroConta(codigo: "cache") }
         trocar(Usuario(uid: "apple", email: "x@privaterelay.appleid.com", emailVerificado: true, provedores: ["apple.com"], nomeExibicao: "Giovani Stuchi"))
     }
 
     func entrarComGoogle() async throws {
+        if bloqueado { throw ErroConta(codigo: "cache") }
         trocar(Usuario(uid: "google", email: "giovani@gmail.com", emailVerificado: true, provedores: ["google.com"], nomeExibicao: "Giovani Stuchi"))
     }
 
     func criarConta(email: String, senha: String, perfil: PerfilCadastro) async throws {
+        if bloqueado { throw ErroConta(codigo: "cache") }
         try await Task.sleep(for: .milliseconds(300))
         if email == "ja@existe.com" { throw ErroConta(codigo: "auth/email-already-in-use") }
         temPerfil = true
@@ -105,6 +125,26 @@ final class ContaFalsa: ServicoConta {
         saidas += 1
         if demoraAoSair > .zero { try await Task.sleep(for: demoraAoSair) }
         trocar(nil)
+        if falhasDaLimpeza > 0 {
+            falhasDaLimpeza -= 1
+            bloqueado = true
+            throw ErroConta(codigo: "cache")
+        }
+    }
+
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) {
+        ouvintesDoBloqueio.append(aoMudar)
+        let atual = bloqueado
+        Task { @MainActor in aoMudar(atual) }
+    }
+
+    func tentarLimparDeNovo() async throws {
+        if demoraAoLimpar > .zero { try await Task.sleep(for: demoraAoLimpar) }
+        if falhasDaLimpeza > 0 {
+            falhasDaLimpeza -= 1
+            throw ErroConta(codigo: "cache")
+        }
+        bloqueado = false
     }
 }
 #endif

@@ -93,11 +93,18 @@ final class ContaFirebase: ServicoConta {
         try await banco.firestore().collection("perfis").document(u.uid).setData(dados)
     }
 
+    /// Com a limpeza do cache bloqueada, entrar recusa (cloud.js:412 e 451-466): o cache velho ainda está no aparelho.
+    private func exigirCacheLimpo() throws {
+        if banco.bloqueado { throw ErroConta(codigo: "cache") }
+    }
+
     func entrar(email: String, senha: String) async throws {
+        try exigirCacheLimpo()
         do { _ = try await auth.signIn(withEmail: email, password: senha) } catch { throw Self.erro(error) }
     }
 
     func entrarComApple(_ credencial: CredencialApple) async throws {
+        try exigirCacheLimpo()
         do {
             let c = OAuthProvider.appleCredential(withIDToken: credencial.idToken, rawNonce: credencial.nonce,
                                                   fullName: credencial.nomeCompleto)
@@ -116,6 +123,7 @@ final class ContaFirebase: ServicoConta {
     }
 
     func entrarComGoogle() async throws {
+        try exigirCacheLimpo()
         guard let tela = controladorNoTopo() else { throw ErroConta(codigo: "auth/erro-sem-tela") }
         do {
             let r = try await GIDSignIn.sharedInstance.signIn(withPresenting: tela)
@@ -126,6 +134,7 @@ final class ContaFirebase: ServicoConta {
     }
 
     func criarConta(email: String, senha: String, perfil: PerfilCadastro) async throws {
+        try exigirCacheLimpo()
         do {
             let r = try await auth.createUser(withEmail: email, password: senha)
             try await gravarPerfil(r.user, emailDigitado: email, perfil)
@@ -194,12 +203,19 @@ final class ContaFirebase: ServicoConta {
         }
     }
 
-    /// Na ordem do cloud.js: marca a limpeza, sai, esquece o Google e apaga o cache. Se a limpeza
-    /// falhar (ou o app fechar no meio), a marca fica e a próxima abertura termina antes de ler.
+    /// Na ordem do cloud.js: marca a limpeza, sai, esquece o Google e apaga o cache. Se o app fechar no meio, a
+    /// marca fica e a próxima abertura termina antes de ler. Se a limpeza falhar, já saiu da conta: lança "cache"
+    /// e o banco fica bloqueado até `tentarLimparDeNovo`.
     func sair() async throws {
         banco.marcarLimpeza()
         do { try auth.signOut() } catch { banco.desmarcarLimpeza(); throw Self.erro(error) }
         GIDSignIn.sharedInstance.signOut()
-        try? await banco.limparCache()
+        do { try await banco.limparCache() } catch { throw ErroConta(codigo: "cache") }
+    }
+
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) { banco.observarBloqueio(aoMudar) }
+
+    func tentarLimparDeNovo() async throws {
+        do { try await banco.tentarLimparDeNovo() } catch { throw ErroConta(codigo: "cache") }
     }
 }

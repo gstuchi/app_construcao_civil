@@ -13,7 +13,10 @@ private let registro = Logger(subsystem: "br.com.custta.app", category: "banco")
    A limpeza segue o cloud.js: a marca persistida (`chaveLimpeza`) é gravada antes do signOut e só
    sai quando o cache foi apagado. Se o app fechar no meio, a próxima abertura termina a limpeza
    antes de qualquer leitura. Durante uma limpeza, quem vai ler ou gravar espera na fila de
-   `quandoPronto`, na ordem de chegada. */
+   `quandoPronto`, na ordem de chegada. Se a limpeza falhar (no sair ou na abertura), a fila continua
+   presa e o banco fica bloqueado até `tentarLimparDeNovo` dar certo, como o `cacheBloqueado` do
+   cloud.js: soltar a fila com o cache velho apagaria, na abertura seguinte, gravações sem rede da
+   sessão nova. */
 @MainActor
 final class BancoFirebase {
     static let chaveLimpeza = "custta-limpar-cache"
@@ -21,15 +24,24 @@ final class BancoFirebase {
     private let app: FirebaseApp
     private let emulador: (host: String, porta: Int)?
     private let preferencias: UserDefaults
+    /// Apaga o cache de uma instância encerrada ou ainda sem uso (os testes injetam a falha).
+    private let apagar: @MainActor (Firestore) async throws -> Void
     private weak var configurada: Firestore?
-    /// Limpeza em andamento (a retomada na abertura ou a de um "sair").
+    /// Limpeza em andamento (a retomada na abertura ou a de um "sair"), ou bloqueada por uma falha.
     private var ocupado = false
     private var esperando: [@MainActor (Firestore) -> Void] = []
+    private var ouvintesDoBloqueio: [@MainActor (Bool) -> Void] = []
+    /// A limpeza falhou: a fila de `quandoPronto` fica presa e a marca, de pé, até `tentarLimparDeNovo` dar certo.
+    private(set) var bloqueado = false {
+        didSet { if bloqueado != oldValue { ouvintesDoBloqueio.forEach { $0(bloqueado) } } }
+    }
 
-    init(app: FirebaseApp, emulador: (host: String, porta: Int)? = nil, preferencias: UserDefaults = .standard) {
+    init(app: FirebaseApp, emulador: (host: String, porta: Int)? = nil, preferencias: UserDefaults = .standard,
+         apagar: @escaping @MainActor (Firestore) async throws -> Void = { try await $0.clearPersistence() }) {
         self.app = app
         self.emulador = emulador
         self.preferencias = preferencias
+        self.apagar = apagar
         if preferencias.bool(forKey: Self.chaveLimpeza) {
             ocupado = true
             Task { [weak self] in await self?.terminarLimpezaInterrompida() }
@@ -37,6 +49,13 @@ final class BancoFirebase {
     }
 
     var limpezaPendente: Bool { preferencias.bool(forKey: Self.chaveLimpeza) }
+
+    /// Avisa a cada mudança do bloqueio; quem se inscreve recebe o estado atual logo em seguida.
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) {
+        ouvintesDoBloqueio.append(aoMudar)
+        let atual = bloqueado
+        Task { @MainActor in aoMudar(atual) }
+    }
 
     /// Roda `uso` com o Firestore pronto: na hora, se não há limpeza; senão, logo que ela termina,
     /// na ordem de chegada (gravações saem na mesma ordem em que o Sincronizador mandou).
@@ -74,31 +93,47 @@ final class BancoFirebase {
     func marcarLimpeza() { preferencias.set(true, forKey: Self.chaveLimpeza) }
     func desmarcarLimpeza() { preferencias.removeObject(forKey: Self.chaveLimpeza) }
 
-    /// Encerra a instância e apaga o cache persistente (o IndexedDB do site); tira a marca no fim.
-    /// Falhou no meio: a marca fica e a próxima abertura termina a limpeza.
+    /// Encerra a instância e apaga o cache persistente (o IndexedDB do site); tira a marca no fim e solta a fila.
+    /// Falhou: a marca fica, a fila continua presa e o banco fica bloqueado até `tentarLimparDeNovo`.
     func limparCache() async throws {
         ocupado = true
-        defer { liberar() }
-        do {
-            let db = firestore()
-            try await db.terminate()
-            try await db.clearPersistence()
-            desmarcarLimpeza()
-        } catch {
-            registro.error("limpeza do cache falhou; a marca fica para a próxima abertura: \(String(describing: error), privacy: .public)")
+        do { try await encerrarEApagar() } catch {
+            registro.error("limpeza do cache falhou; bloqueado até tentar de novo: \(String(describing: error), privacy: .public)")
+            bloqueado = true
             throw error
         }
+        liberar()
+    }
+
+    /// "Tentar limpar novamente": a limpeza que falhou, de novo. Dando certo, solta a fila e tira o bloqueio.
+    func tentarLimparDeNovo() async throws {
+        guard bloqueado else { return }
+        do { try await encerrarEApagar() } catch {
+            registro.error("nova tentativa de limpar o cache falhou: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+        bloqueado = false
+        liberar()
+    }
+
+    private func encerrarEApagar() async throws {
+        let db = firestore()
+        try await db.terminate()
+        try await apagar(db)
+        desmarcarLimpeza()
     }
 
     private func terminarLimpezaInterrompida() async {
         registro.notice("limpeza do cache interrompida encontrada na abertura; terminando antes de ler")
-        defer { liberar() }
         do {
-            try await firestore().clearPersistence()      // instância nova, ainda sem uso
+            try await apagar(firestore())      // instância nova, ainda sem uso
             desmarcarLimpeza()
         } catch {
-            registro.error("limpeza retomada falhou; a marca fica para a próxima abertura: \(String(describing: error), privacy: .public)")
+            registro.error("limpeza retomada falhou; bloqueado até tentar de novo: \(String(describing: error), privacy: .public)")
+            bloqueado = true
+            return
         }
+        liberar()
     }
 
     private func liberar() {

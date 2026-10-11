@@ -160,6 +160,57 @@ struct ModeloAppTests {
         #expect(m.fase == .entrada)
     }
 
+    @Test func limpezaQueFalhaAoSairAbreOFinalizarSaida() async {
+        let montagem = montar(conta: "senha")
+        let m = montagem.modelo
+        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
+        montagem.conta.falhasDaLimpeza = 1
+        #expect(await m.sair() == nil, "saiu da conta: a falha da limpeza não é erro de sair")
+        await ate { m.fase == .entrada && m.limpeza != nil }
+        #expect(m.fase == .entrada && m.mensagemEntrada == nil, "saiu de propósito: nada de sessão expirada")
+        #expect(m.limpeza == .pendente(erro: false))
+        #expect(m.sincronizador.estado == .vazio, "a escuta não volta para a conta que saiu")
+        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == "Não deu certo. Tente de novo.",
+                "bloqueado, entrar recusa (a mensagem do site para o código cache)")
+        #expect(await m.entrarComGoogle() == "Limpe os dados locais antes de entrar.", "a do auth.js para o login social")
+        m.tentarLimparDeNovo()
+        #expect(m.limpeza == .tentando, "o alerta fecha na hora")
+        await ate { m.limpeza == nil }
+        #expect(m.limpeza == nil, "deu certo: sem aviso")
+        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == nil)
+    }
+
+    @Test func novaTentativaQueFalhaVoltaComOErro() async {
+        let montagem = montar(conta: "senha")
+        let m = montagem.modelo
+        await ate { m.fase.ehPrincipal }
+        montagem.conta.falhasDaLimpeza = 2
+        #expect(await m.sair() == nil)
+        await ate { m.limpeza != nil }
+        m.tentarLimparDeNovo()
+        await ate { m.limpeza == .pendente(erro: true) }
+        #expect(m.limpeza == .pendente(erro: true), "falhou de novo: o alerta volta com o erro")
+        m.tentarLimparDeNovo()
+        await ate { m.limpeza == nil }
+        #expect(m.limpeza == nil)
+    }
+
+    @Test func limpezaQueFalhouNaAberturaAbreOFinalizarSaida() async {
+        let conta = ContaFalsa(inicial: "nenhuma", limpeza: "abertura")
+        let transporte = TransporteFalsoApp(dados: nil, semRede: false)
+        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: true)
+        let m = ModeloApp(conta: conta, sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: false))
+        await ate { m.limpeza != nil }
+        #expect(m.limpeza == .pendente(erro: false), "a limpeza retomada na abertura falhou: abre pedindo para finalizar")
+        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) != nil, "e entrar recusa")
+        m.tentarLimparDeNovo()
+        await ate { m.limpeza == .pendente(erro: true) }
+        m.tentarLimparDeNovo()
+        await ate { m.limpeza == nil }
+        #expect(m.limpeza == nil)
+        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == nil)
+    }
+
     @Test(.timeLimit(.minutes(1)), arguments: aberturas)       // espera limitada (Desfecho); o limite de tempo é a última trava
     func abrirOAppNaoGravaNada(_ a: Abertura) async {
         let montagem = montar(conta: "senha", semRede: a.semRede, dados: a.comDados ? DadosDeExemplo.blob : nil)
@@ -283,4 +334,6 @@ final class ContaSemPerfilQueRecusa: ServicoConta {
     func conferirVerificacao() async -> Bool { false }
     func verificarSessao(forcar: Bool) async {}
     func sair() async throws {}
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) {}
+    func tentarLimparDeNovo() async throws {}
 }

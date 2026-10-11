@@ -18,6 +18,10 @@ final class ContaFalsa: ServicoConta {
     private(set) var verificacoesDeSessao: [Bool] = []
     /// Erro do envio de confirmação de e-mail, para os testes dos textos (nil: o envio vai).
     var erroAoEnviarConfirmacao: ErroConta?
+    /// Saídas que chegaram à conta (os testes conferem que um pedido repetido no meio da saída não sai de novo).
+    private(set) var saidas = 0
+    /// Demora do `sair`, para os testes pegarem a saída em andamento.
+    var demoraAoSair: Duration = .zero
 
     init(inicial: String) {
         perfilConcorrente = inicial == "google-perfil-concorrente"
@@ -97,6 +101,10 @@ final class ContaFalsa: ServicoConta {
 
     func verificarSessao(forcar: Bool) async { verificacoesDeSessao.append(forcar) }
 
-    func sair() async throws { trocar(nil) }
+    func sair() async throws {
+        saidas += 1
+        if demoraAoSair > .zero { try await Task.sleep(for: demoraAoSair) }
+        trocar(nil)
+    }
 }
 #endif

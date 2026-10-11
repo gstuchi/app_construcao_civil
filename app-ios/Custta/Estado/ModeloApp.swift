@@ -27,6 +27,9 @@ final class ModeloApp {
     private(set) var aviso: String?
     /// "Nome Sobrenome" de `perfis/{uid}`, para Ajustes.
     private(set) var nome: String?
+    /// Saída em andamento (o `saindo` do logout do cloud.js): um segundo pedido no meio dela é recusado, e
+    /// "Usar outra conta" fica desabilitado.
+    private(set) var saindo = false
     let sincronizador: Sincronizador
     let rede: MonitorDeRede
 
@@ -145,8 +148,12 @@ final class ModeloApp {
 
     /// "Sair da conta" e "Usar outra conta", na ordem do cloud.js: espera a fila subir (sem rede, pede
     /// para conectar), confere que a conta é a mesma, para a escuta e só então sai.
-    /// Mensagem de erro, ou nil se saiu.
+    /// Mensagem de erro, ou nil se saiu. Um pedido no meio da saída é recusado sem mensagem (como o toque
+    /// repetido no auth.js): a saída em andamento responde.
     func sair() async -> String? {
+        guard !saindo else { return nil }
+        saindo = true
+        defer { saindo = false }
         let semRede = "Conecte à internet e aguarde a sincronização antes de sair."
         guard rede.online, let uid = conta.usuario?.uid else { return semRede }
         guard await sincronizador.aguardarFila(timeoutMs: 5000) else { return semRede }

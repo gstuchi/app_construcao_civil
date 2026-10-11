@@ -143,6 +143,23 @@ struct ModeloAppTests {
         #expect(m.fase == .entrada)
     }
 
+    @Test func segundoPedidoDeSairNoMeioDaSaidaERecusado() async {
+        let montagem = montar(conta: "senha")
+        let m = montagem.modelo
+        await ate { m.fase.ehPrincipal }
+        montagem.conta.demoraAoSair = .milliseconds(300)
+        let primeiro = Desfecho { if await m.sair() != nil { throw ErroConta(codigo: "nao-saiu") } }
+        await ate { m.saindo }
+        #expect(m.saindo, "\"Usar outra conta\" fica desabilitado enquanto sai")
+        #expect(await m.sair() == nil, "o pedido repetido (toque duplo) é recusado sem mensagem, como no auth.js")
+        await ate { primeiro.terminou }
+        #expect(primeiro.terminou && primeiro.erro == nil, "a primeira saída termina")
+        #expect(montagem.conta.saidas == 1, "uma saída só: duas limpezas juntas, a primeira soltaria a fila no meio da outra")
+        #expect(!m.saindo)
+        await ate { m.fase == .entrada }
+        #expect(m.fase == .entrada)
+    }
+
     @Test(.timeLimit(.minutes(1)), arguments: aberturas)       // espera limitada (Desfecho); o limite de tempo é a última trava
     func abrirOAppNaoGravaNada(_ a: Abertura) async {
         let montagem = montar(conta: "senha", semRede: a.semRede, dados: a.comDados ? DadosDeExemplo.blob : nil)

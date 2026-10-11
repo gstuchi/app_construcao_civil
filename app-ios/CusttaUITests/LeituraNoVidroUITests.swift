@@ -21,6 +21,10 @@ final class LeituraNoVidroUITests: XCTestCase {
     private static let barraDeStatus: CGFloat = 70
     /// Na CI, só o relatório (ver o comentário do topo).
     private static let soRelatorio = ProcessInfo.processInfo.environment["CUSTTA_LAUDO"] == "relatorio"
+    /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
+    /// (`CUSTTA_VARREDURA=curta`), 0, 20, 40 e 260, para o job caber em 45 min.
+    private static let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta"
+        ? [0, 20, 40, 260] : Array(stride(from: 0, through: 60, by: 10)) + [260]
 
     private struct Cena {
         let nome: String
@@ -139,7 +143,7 @@ final class LeituraNoVidroUITests: XCTestCase {
             ]
             // Os rótulos da cápsula com o conteúdo passando atrás deles: a lista em várias rolagens, porque o pior
             // ponto muda com os dados e o combo (no fim da lista, 260 pt, já não passa nada atrás dos rótulos).
-            cenas += (Array(stride(from: 0, through: 60, by: 10)) + [260]).map { rolagem in
+            cenas += Self.rolagens.map { rolagem in
                 Cena(nome: "abas sobre a lista em \(rolagem) pt, \(tema), \(pele)", conta: "senha-nao-confirmada",
                      argumentos: combo + ["-custta.rolagem", "\(rolagem)"], espera: "avisoEmail", escopo: "navegacao")
             }

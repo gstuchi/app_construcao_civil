@@ -110,10 +110,12 @@ jobs:
       # Testes com os serviços falsos (nada de rede): unidade e tela, inclusive as auditorias de
       # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui. O laudo de leitura sobre o
       # vidro (LeituraNoVidroUITests) só relata aqui: o simulador da máquina virtual pode desenhar o vidro
-      # diferente do Mac, onde ele é portão.
+      # diferente do Mac, onde ele é portão. A lista sob a cápsula de abas é medida só em 0, 20, 40 e
+      # 260 pt (a varredura completa fica no Mac), para o job caber em 45 min.
       - name: Testes de unidade e de tela no simulador
         env:
           TEST_RUNNER_CUSTTA_LAUDO: relatorio
+          TEST_RUNNER_CUSTTA_VARREDURA: curta
         run: |
           set -o pipefail
           DESTINO="$(node scripts/simulador-ios.mjs)"

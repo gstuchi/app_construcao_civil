@@ -232,7 +232,11 @@ extension LeituraNoVidroUITests {
                 switch estado {
                 case "tentando":
                     botao.tap()
-                    XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 2), "\(nome): o \"Limpando…\" não apareceu")
+                    // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, uns 2 s após o toque.
+                    guard app.elemento("limpando").waitForExistence(timeout: 5) else {
+                        XCTFail("\(nome): o \"Limpando…\" não apareceu")
+                        continue
+                    }
                     Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta (a nova tentativa leva 3 s)
                 default:
                     XCTAssertTrue(botao.waitForExistence(timeout: 10), "\(nome): o alerta não abriu")

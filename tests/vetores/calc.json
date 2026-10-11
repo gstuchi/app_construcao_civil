@@ -14280,6 +14280,1888 @@
         "saida": "1gcmxpmo0"
       }
     ],
+    "cadastro.REGRAS_SENHA": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": [
+          {
+            "id": "tamanho",
+            "texto": "8 caracteres ou mais"
+          },
+          {
+            "id": "letra",
+            "texto": "Uma letra"
+          },
+          {
+            "id": "numero",
+            "texto": "Um número"
+          },
+          {
+            "id": "email",
+            "texto": "Diferente do e-mail"
+          },
+          {
+            "id": "comum",
+            "texto": "Não é uma senha óbvia"
+          }
+        ]
+      }
+    ],
+    "cadastro.ORIGENS": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": [
+          {
+            "id": "instagram",
+            "nome": "Instagram"
+          },
+          {
+            "id": "indicacao",
+            "nome": "Indicação de alguém",
+            "detalhe": "Quem indicou? (opcional)"
+          },
+          {
+            "id": "google",
+            "nome": "Pesquisa no Google"
+          },
+          {
+            "id": "tiktok",
+            "nome": "TikTok"
+          },
+          {
+            "id": "youtube",
+            "nome": "YouTube"
+          },
+          {
+            "id": "outro",
+            "nome": "Outro",
+            "detalhe": "Onde? (opcional)"
+          }
+        ]
+      }
+    ],
+    "cadastro.LIMITES_PERFIL": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": {
+          "nome": 60,
+          "sobrenome": 80,
+          "origemDetalhe": 80
+        }
+      }
+    ],
+    "cadastro.validaSenha": [
+      {
+        "caso": "boa",
+        "args": [
+          "Casa2026x",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "curta",
+        "args": [
+          "Ab1",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": false
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Use pelo menos 8 caracteres."
+        }
+      },
+      {
+        "caso": "sem letra",
+        "args": [
+          "12345678",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": false
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Inclua pelo menos uma letra."
+        }
+      },
+      {
+        "caso": "sem número",
+        "args": [
+          "abcdefgh",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": false
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Inclua pelo menos um número."
+        }
+      },
+      {
+        "caso": "igual ao e-mail, sem diferença de caixa",
+        "args": [
+          "joao1234@exemplo.com",
+          "  JOAO1234@exemplo.com "
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": false
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "A senha não pode ser igual ao e-mail."
+        }
+      },
+      {
+        "caso": "óbvia da lista",
+        "args": [
+          "Senha123",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": false
+            }
+          ],
+          "erro": "Essa senha é muito comum. Escolha outra."
+        }
+      },
+      {
+        "caso": "óbvia com espaços em volta",
+        "args": [
+          "  custta123 ",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": false
+            }
+          ],
+          "erro": "Essa senha é muito comum. Escolha outra."
+        }
+      },
+      {
+        "caso": "129 caracteres",
+        "args": [
+          "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1b",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Use no máximo 128 caracteres."
+        }
+      },
+      {
+        "caso": "128 caracteres",
+        "args": [
+          "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "letra acentuada conta como letra",
+        "args": [
+          "çãoé1234",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "emoji conta duas unidades no tamanho",
+        "args": [
+          "😀😀😀1a",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "dígito árabe não é número",
+        "args": [
+          "abcdefg٣",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": false
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Inclua pelo menos um número."
+        }
+      },
+      {
+        "caso": "letra de outra escrita conta como letra",
+        "args": [
+          "東京タワー1234",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "acento sozinho não é letra",
+        "args": [
+          "́́́́1234",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": false
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Inclua pelo menos uma letra."
+        }
+      },
+      {
+        "caso": "130 unidades em 69 caracteres passa do limite",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a1234567",
+          "joao@exemplo.com"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Use no máximo 128 caracteres."
+        }
+      },
+      {
+        "caso": "sigma final, como o toLowerCase",
+        "args": [
+          "ΟΔΟΣ1234",
+          "οδος1234"
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": false
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "A senha não pode ser igual ao e-mail."
+        }
+      },
+      {
+        "caso": "NFD e NFC são textos diferentes",
+        "args": [
+          "josé1234",
+          "josé1234"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "sem e-mail",
+        "args": [
+          "Casa2026x"
+        ],
+        "saida": {
+          "ok": true,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": true
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": true
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": true
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": ""
+        }
+      },
+      {
+        "caso": "nula",
+        "args": [
+          null,
+          null
+        ],
+        "saida": {
+          "ok": false,
+          "regras": [
+            {
+              "id": "tamanho",
+              "texto": "8 caracteres ou mais",
+              "ok": false
+            },
+            {
+              "id": "letra",
+              "texto": "Uma letra",
+              "ok": false
+            },
+            {
+              "id": "numero",
+              "texto": "Um número",
+              "ok": false
+            },
+            {
+              "id": "email",
+              "texto": "Diferente do e-mail",
+              "ok": true
+            },
+            {
+              "id": "comum",
+              "texto": "Não é uma senha óbvia",
+              "ok": true
+            }
+          ],
+          "erro": "Use pelo menos 8 caracteres."
+        }
+      }
+    ],
+    "cadastro.normalizaNome": [
+      {
+        "caso": "nome e sobrenome",
+        "args": [
+          {
+            "nome": "  João  ",
+            "sobrenome": " da   Silva "
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "João",
+            "sobrenome": "da Silva"
+          }
+        }
+      },
+      {
+        "caso": "sem sobrenome",
+        "args": [
+          {
+            "nome": "Ana"
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "Ana"
+          }
+        }
+      },
+      {
+        "caso": "nome vazio",
+        "args": [
+          {
+            "nome": "   "
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Digite seu nome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "nome de uma letra",
+        "args": [
+          {
+            "nome": "A"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "O nome precisa de pelo menos 2 letras.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "nome com 61",
+        "args": [
+          {
+            "nome": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Use no máximo 60 caracteres no nome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "sobrenome com 81",
+        "args": [
+          {
+            "nome": "Ana",
+            "sobrenome": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "sobrenome",
+          "erro": "Use no máximo 80 caracteres no sobrenome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "nome com 31 emojis",
+        "args": [
+          {
+            "nome": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Use no máximo 60 caracteres no nome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "sobrenome com 41 emojis",
+        "args": [
+          {
+            "nome": "Ana",
+            "sobrenome": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "sobrenome",
+          "erro": "Use no máximo 80 caracteres no sobrenome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "espaços variados viram um",
+        "args": [
+          {
+            "nome": "Ana \tMaria",
+            "sobrenome": "Souza\nLima"
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "Ana Maria",
+            "sobrenome": "Souza Lima"
+          }
+        }
+      },
+      {
+        "caso": "nulo",
+        "args": [
+          null
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Digite seu nome.",
+          "perfil": null
+        }
+      }
+    ],
+    "cadastro.normalizaPerfil": [
+      {
+        "caso": "completo com indicação",
+        "args": [
+          {
+            "nome": "Ana",
+            "sobrenome": "Lima",
+            "origem": "indicacao",
+            "origemDetalhe": "  Pedro  "
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "Ana",
+            "sobrenome": "Lima",
+            "origem": "indicacao",
+            "origemDetalhe": "Pedro"
+          }
+        }
+      },
+      {
+        "caso": "origem sem detalhe ignora o detalhe",
+        "args": [
+          {
+            "nome": "Ana",
+            "origem": "instagram",
+            "origemDetalhe": "x"
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "Ana",
+            "origem": "instagram"
+          }
+        }
+      },
+      {
+        "caso": "detalhe vazio some",
+        "args": [
+          {
+            "nome": "Ana",
+            "origem": "outro",
+            "origemDetalhe": "   "
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "Ana",
+            "origem": "outro"
+          }
+        }
+      },
+      {
+        "caso": "detalhe com 81",
+        "args": [
+          {
+            "nome": "Ana",
+            "origem": "outro",
+            "origemDetalhe": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "origemDetalhe",
+          "erro": "Use no máximo 80 caracteres.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "detalhe com 41 emojis",
+        "args": [
+          {
+            "nome": "Ana",
+            "origem": "outro",
+            "origemDetalhe": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "origemDetalhe",
+          "erro": "Use no máximo 80 caracteres.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "sem origem",
+        "args": [
+          {
+            "nome": "Ana"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "origem",
+          "erro": "Conte como conheceu o Custta.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "origem desconhecida",
+        "args": [
+          {
+            "nome": "Ana",
+            "origem": "facebook"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "origem",
+          "erro": "Conte como conheceu o Custta.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "nome inválido falha antes da origem",
+        "args": [
+          {
+            "nome": "",
+            "origem": "google"
+          }
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Digite seu nome.",
+          "perfil": null
+        }
+      },
+      {
+        "caso": "conta Apple: nome opcional",
+        "args": [
+          {
+            "nome": "",
+            "origem": "youtube"
+          },
+          {
+            "nomeOpcional": true
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "origem": "youtube"
+          }
+        }
+      },
+      {
+        "caso": "conta Apple com nome válido guarda o nome",
+        "args": [
+          {
+            "nome": "Bia",
+            "origem": "tiktok"
+          },
+          {
+            "nomeOpcional": true
+          }
+        ],
+        "saida": {
+          "ok": true,
+          "campo": "",
+          "erro": "",
+          "perfil": {
+            "nome": "Bia",
+            "origem": "tiktok"
+          }
+        }
+      },
+      {
+        "caso": "nulo",
+        "args": [
+          null
+        ],
+        "saida": {
+          "ok": false,
+          "campo": "nome",
+          "erro": "Digite seu nome.",
+          "perfil": null
+        }
+      }
+    ],
+    "cadastro.nomeDoGoogle": [
+      {
+        "caso": "\"João da Silva Souza\"",
+        "args": [
+          "João da Silva Souza"
+        ],
+        "saida": {
+          "nome": "João",
+          "sobrenome": "da Silva Souza"
+        }
+      },
+      {
+        "caso": "\"  Ana  \"",
+        "args": [
+          "  Ana  "
+        ],
+        "saida": {
+          "nome": "Ana",
+          "sobrenome": ""
+        }
+      },
+      {
+        "caso": "\"\"",
+        "args": [
+          ""
+        ],
+        "saida": {
+          "nome": "",
+          "sobrenome": ""
+        }
+      },
+      {
+        "caso": "\"Maria\"",
+        "args": [
+          "Maria"
+        ],
+        "saida": {
+          "nome": "Maria",
+          "sobrenome": ""
+        }
+      },
+      {
+        "caso": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"",
+        "args": [
+          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx Sobrenome"
+        ],
+        "saida": {
+          "nome": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "sobrenome": "Sobrenome"
+        }
+      },
+      {
+        "caso": "\"Maria yyyyyyyyyyyyyyyyyyyyyyyy…\"",
+        "args": [
+          "Maria yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+        ],
+        "saida": {
+          "nome": "Maria",
+          "sobrenome": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+        }
+      },
+      {
+        "caso": "\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀…\"",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        ],
+        "saida": {
+          "nome": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+          "sobrenome": ""
+        }
+      },
+      {
+        "caso": "\"Ana ́Maria\"",
+        "args": [
+          "Ana ́Maria"
+        ],
+        "saida": {
+          "nome": "Ana",
+          "sobrenome": "́Maria"
+        }
+      },
+      {
+        "caso": "nulo",
+        "args": [
+          null
+        ],
+        "saida": {
+          "nome": "",
+          "sobrenome": ""
+        }
+      }
+    ],
+    "cadastro.mensagemErroSocial": [
+      {
+        "caso": "apple.com \"auth/popup-closed-by-user\"",
+        "args": [
+          "auth/popup-closed-by-user",
+          "apple.com"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "apple.com \"auth/cancelled-popup-request\"",
+        "args": [
+          "auth/cancelled-popup-request",
+          "apple.com"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "apple.com \"auth/user-cancelled\"",
+        "args": [
+          "auth/user-cancelled",
+          "apple.com"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "apple.com \"quota-exceeded-for-quota-metric-x\"",
+        "args": [
+          "quota-exceeded-for-quota-metric-x",
+          "apple.com"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "apple.com \"1000\"",
+        "args": [
+          "1000",
+          "apple.com"
+        ],
+        "saida": "Confira se o iPhone está conectado a um ID Apple (em Ajustes) ou entre com e-mail e senha."
+      },
+      {
+        "caso": "apple.com 1000",
+        "args": [
+          1000,
+          "apple.com"
+        ],
+        "saida": "Confira se o iPhone está conectado a um ID Apple (em Ajustes) ou entre com e-mail e senha."
+      },
+      {
+        "caso": "apple.com \"auth/account-exists-with-different-credential\"",
+        "args": [
+          "auth/account-exists-with-different-credential",
+          "apple.com"
+        ],
+        "saida": "Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez."
+      },
+      {
+        "caso": "apple.com \"auth/unauthorized-domain\"",
+        "args": [
+          "auth/unauthorized-domain",
+          "apple.com"
+        ],
+        "saida": "Login com a Apple indisponível neste endereço. Use custta.com.br."
+      },
+      {
+        "caso": "apple.com \"auth/operation-not-allowed\"",
+        "args": [
+          "auth/operation-not-allowed",
+          "apple.com"
+        ],
+        "saida": "Login com a Apple ainda não está disponível. Use e-mail e senha."
+      },
+      {
+        "caso": "apple.com \"auth/operation-not-supported-in-this-environment\"",
+        "args": [
+          "auth/operation-not-supported-in-this-environment",
+          "apple.com"
+        ],
+        "saida": "Seu navegador bloqueou o login com a Apple. Use e-mail e senha."
+      },
+      {
+        "caso": "apple.com \"auth/web-storage-unsupported\"",
+        "args": [
+          "auth/web-storage-unsupported",
+          "apple.com"
+        ],
+        "saida": "Seu navegador bloqueou o login com a Apple. Use e-mail e senha."
+      },
+      {
+        "caso": "apple.com \"auth/network-request-failed\"",
+        "args": [
+          "auth/network-request-failed",
+          "apple.com"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "apple.com \"auth/too-many-requests\"",
+        "args": [
+          "auth/too-many-requests",
+          "apple.com"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "apple.com \"auth/algo-novo\"",
+        "args": [
+          "auth/algo-novo",
+          "apple.com"
+        ],
+        "saida": "Não deu certo entrar com a Apple. Tente de novo."
+      },
+      {
+        "caso": "apple.com null",
+        "args": [
+          null,
+          "apple.com"
+        ],
+        "saida": "Não deu certo entrar com a Apple. Tente de novo."
+      },
+      {
+        "caso": "google.com \"auth/popup-closed-by-user\"",
+        "args": [
+          "auth/popup-closed-by-user",
+          "google.com"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "google.com \"auth/cancelled-popup-request\"",
+        "args": [
+          "auth/cancelled-popup-request",
+          "google.com"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "google.com \"auth/user-cancelled\"",
+        "args": [
+          "auth/user-cancelled",
+          "google.com"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "google.com \"quota-exceeded-for-quota-metric-x\"",
+        "args": [
+          "quota-exceeded-for-quota-metric-x",
+          "google.com"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "google.com \"1000\"",
+        "args": [
+          "1000",
+          "google.com"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "google.com 1000",
+        "args": [
+          1000,
+          "google.com"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "google.com \"auth/account-exists-with-different-credential\"",
+        "args": [
+          "auth/account-exists-with-different-credential",
+          "google.com"
+        ],
+        "saida": "Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez."
+      },
+      {
+        "caso": "google.com \"auth/unauthorized-domain\"",
+        "args": [
+          "auth/unauthorized-domain",
+          "google.com"
+        ],
+        "saida": "Login com Google indisponível neste endereço. Use custta.com.br."
+      },
+      {
+        "caso": "google.com \"auth/operation-not-allowed\"",
+        "args": [
+          "auth/operation-not-allowed",
+          "google.com"
+        ],
+        "saida": "Login com Google ainda não está disponível. Use e-mail e senha."
+      },
+      {
+        "caso": "google.com \"auth/operation-not-supported-in-this-environment\"",
+        "args": [
+          "auth/operation-not-supported-in-this-environment",
+          "google.com"
+        ],
+        "saida": "Seu navegador bloqueou o login com Google. Use e-mail e senha."
+      },
+      {
+        "caso": "google.com \"auth/web-storage-unsupported\"",
+        "args": [
+          "auth/web-storage-unsupported",
+          "google.com"
+        ],
+        "saida": "Seu navegador bloqueou o login com Google. Use e-mail e senha."
+      },
+      {
+        "caso": "google.com \"auth/network-request-failed\"",
+        "args": [
+          "auth/network-request-failed",
+          "google.com"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "google.com \"auth/too-many-requests\"",
+        "args": [
+          "auth/too-many-requests",
+          "google.com"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "google.com \"auth/algo-novo\"",
+        "args": [
+          "auth/algo-novo",
+          "google.com"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "google.com null",
+        "args": [
+          null,
+          "google.com"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "outro \"auth/popup-closed-by-user\"",
+        "args": [
+          "auth/popup-closed-by-user",
+          "outro"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "outro \"auth/cancelled-popup-request\"",
+        "args": [
+          "auth/cancelled-popup-request",
+          "outro"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "outro \"auth/user-cancelled\"",
+        "args": [
+          "auth/user-cancelled",
+          "outro"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "outro \"quota-exceeded-for-quota-metric-x\"",
+        "args": [
+          "quota-exceeded-for-quota-metric-x",
+          "outro"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "outro \"1000\"",
+        "args": [
+          "1000",
+          "outro"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "outro 1000",
+        "args": [
+          1000,
+          "outro"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "outro \"auth/account-exists-with-different-credential\"",
+        "args": [
+          "auth/account-exists-with-different-credential",
+          "outro"
+        ],
+        "saida": "Este e-mail já tem conta no Custta. Entre do jeito que você usou da primeira vez."
+      },
+      {
+        "caso": "outro \"auth/unauthorized-domain\"",
+        "args": [
+          "auth/unauthorized-domain",
+          "outro"
+        ],
+        "saida": "Login com Google indisponível neste endereço. Use custta.com.br."
+      },
+      {
+        "caso": "outro \"auth/operation-not-allowed\"",
+        "args": [
+          "auth/operation-not-allowed",
+          "outro"
+        ],
+        "saida": "Login com Google ainda não está disponível. Use e-mail e senha."
+      },
+      {
+        "caso": "outro \"auth/operation-not-supported-in-this-environment\"",
+        "args": [
+          "auth/operation-not-supported-in-this-environment",
+          "outro"
+        ],
+        "saida": "Seu navegador bloqueou o login com Google. Use e-mail e senha."
+      },
+      {
+        "caso": "outro \"auth/web-storage-unsupported\"",
+        "args": [
+          "auth/web-storage-unsupported",
+          "outro"
+        ],
+        "saida": "Seu navegador bloqueou o login com Google. Use e-mail e senha."
+      },
+      {
+        "caso": "outro \"auth/network-request-failed\"",
+        "args": [
+          "auth/network-request-failed",
+          "outro"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "outro \"auth/too-many-requests\"",
+        "args": [
+          "auth/too-many-requests",
+          "outro"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "outro \"auth/algo-novo\"",
+        "args": [
+          "auth/algo-novo",
+          "outro"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      },
+      {
+        "caso": "outro null",
+        "args": [
+          null,
+          "outro"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      }
+    ],
+    "cadastro.mensagemErroGoogle": [
+      {
+        "caso": "auth/popup-closed-by-user",
+        "args": [
+          "auth/popup-closed-by-user"
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "auth/network-request-failed",
+        "args": [
+          "auth/network-request-failed"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "1000",
+        "args": [
+          "1000"
+        ],
+        "saida": "Não deu certo entrar com o Google. Tente de novo."
+      }
+    ],
+    "cadastro.mensagemErroSenha": [
+      {
+        "caso": "login auth/invalid-credential",
+        "args": [
+          "auth/invalid-credential",
+          "login"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "login auth/wrong-password",
+        "args": [
+          "auth/wrong-password",
+          "login"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "login auth/user-not-found",
+        "args": [
+          "auth/user-not-found",
+          "login"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "login auth/email-already-in-use",
+        "args": [
+          "auth/email-already-in-use",
+          "login"
+        ],
+        "saida": "Este e-mail já tem conta. Use \"Entrar\"."
+      },
+      {
+        "caso": "login auth/invalid-email",
+        "args": [
+          "auth/invalid-email",
+          "login"
+        ],
+        "saida": "E-mail inválido."
+      },
+      {
+        "caso": "login auth/weak-password",
+        "args": [
+          "auth/weak-password",
+          "login"
+        ],
+        "saida": "Senha fraca: use 8 caracteres ou mais, com letra e número."
+      },
+      {
+        "caso": "login auth/too-many-requests",
+        "args": [
+          "auth/too-many-requests",
+          "login"
+        ],
+        "saida": "Muitas tentativas. Espere alguns minutos ou redefina a senha em \"Esqueci minha senha\"."
+      },
+      {
+        "caso": "login quota-exceeded-for-quota-metric-x",
+        "args": [
+          "quota-exceeded-for-quota-metric-x",
+          "login"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "login auth/network-request-failed",
+        "args": [
+          "auth/network-request-failed",
+          "login"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "login auth/algo-novo",
+        "args": [
+          "auth/algo-novo",
+          "login"
+        ],
+        "saida": "Não deu certo. Tente de novo."
+      },
+      {
+        "caso": "login null",
+        "args": [
+          null,
+          "login"
+        ],
+        "saida": "Não deu certo. Tente de novo."
+      },
+      {
+        "caso": "cadastro auth/invalid-credential",
+        "args": [
+          "auth/invalid-credential",
+          "cadastro"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "cadastro auth/wrong-password",
+        "args": [
+          "auth/wrong-password",
+          "cadastro"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "cadastro auth/user-not-found",
+        "args": [
+          "auth/user-not-found",
+          "cadastro"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "cadastro auth/email-already-in-use",
+        "args": [
+          "auth/email-already-in-use",
+          "cadastro"
+        ],
+        "saida": "Este e-mail já tem conta. Use \"Entrar\"."
+      },
+      {
+        "caso": "cadastro auth/invalid-email",
+        "args": [
+          "auth/invalid-email",
+          "cadastro"
+        ],
+        "saida": "E-mail inválido."
+      },
+      {
+        "caso": "cadastro auth/weak-password",
+        "args": [
+          "auth/weak-password",
+          "cadastro"
+        ],
+        "saida": "Senha fraca: use 8 caracteres ou mais, com letra e número."
+      },
+      {
+        "caso": "cadastro auth/too-many-requests",
+        "args": [
+          "auth/too-many-requests",
+          "cadastro"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "cadastro quota-exceeded-for-quota-metric-x",
+        "args": [
+          "quota-exceeded-for-quota-metric-x",
+          "cadastro"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "cadastro auth/network-request-failed",
+        "args": [
+          "auth/network-request-failed",
+          "cadastro"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "cadastro auth/algo-novo",
+        "args": [
+          "auth/algo-novo",
+          "cadastro"
+        ],
+        "saida": "Não deu certo. Tente de novo."
+      },
+      {
+        "caso": "cadastro null",
+        "args": [
+          null,
+          "cadastro"
+        ],
+        "saida": "Não deu certo. Tente de novo."
+      },
+      {
+        "caso": "redefinir auth/invalid-credential",
+        "args": [
+          "auth/invalid-credential",
+          "redefinir"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "redefinir auth/wrong-password",
+        "args": [
+          "auth/wrong-password",
+          "redefinir"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "redefinir auth/user-not-found",
+        "args": [
+          "auth/user-not-found",
+          "redefinir"
+        ],
+        "saida": "E-mail ou senha incorretos."
+      },
+      {
+        "caso": "redefinir auth/email-already-in-use",
+        "args": [
+          "auth/email-already-in-use",
+          "redefinir"
+        ],
+        "saida": "Este e-mail já tem conta. Use \"Entrar\"."
+      },
+      {
+        "caso": "redefinir auth/invalid-email",
+        "args": [
+          "auth/invalid-email",
+          "redefinir"
+        ],
+        "saida": "E-mail inválido."
+      },
+      {
+        "caso": "redefinir auth/weak-password",
+        "args": [
+          "auth/weak-password",
+          "redefinir"
+        ],
+        "saida": "Senha fraca: use 8 caracteres ou mais, com letra e número."
+      },
+      {
+        "caso": "redefinir auth/too-many-requests",
+        "args": [
+          "auth/too-many-requests",
+          "redefinir"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "redefinir quota-exceeded-for-quota-metric-x",
+        "args": [
+          "quota-exceeded-for-quota-metric-x",
+          "redefinir"
+        ],
+        "saida": "Muitas tentativas. Espere um pouco."
+      },
+      {
+        "caso": "redefinir auth/network-request-failed",
+        "args": [
+          "auth/network-request-failed",
+          "redefinir"
+        ],
+        "saida": "Sem internet. Conecte pra entrar."
+      },
+      {
+        "caso": "redefinir auth/algo-novo",
+        "args": [
+          "auth/algo-novo",
+          "redefinir"
+        ],
+        "saida": "Não deu certo. Tente de novo."
+      },
+      {
+        "caso": "redefinir null",
+        "args": [
+          null,
+          "redefinir"
+        ],
+        "saida": "Não deu certo. Tente de novo."
+      }
+    ],
     "js.numeroParaTexto": [
       {
         "caso": "0",

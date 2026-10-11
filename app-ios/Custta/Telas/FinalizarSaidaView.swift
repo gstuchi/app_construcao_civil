@@ -2,33 +2,52 @@ import SwiftUI
 
 /* "Finalizar saída" (mockup aprovado finalizar-saida.html; o diálogo do ui-confirm.js:149 do site): a limpeza
    do cache local falhou, no sair ou na abertura, e entrar fica bloqueado até ela dar certo. Alerta do sistema
-   com um botão só, sem Cancelar (o do site não fecha). O sistema fecha o alerta ao tocar: enquanto limpa, a
-   tela fica sob o mesmo escurecido do alerta, sem aceitar toque, e só depois de meio segundo aparece a pílula
-   "Limpando…" no lugar dele, para não piscar. Falhou de novo, o alerta volta com o erro; deu certo, o
-   escurecido sai sem aviso. */
+   com um botão só, sem Cancelar (o do site não fecha). O sistema fecha o alerta ao tocar: enquanto limpa, só
+   depois de meio segundo aparece a pílula "Limpando…" no lugar dele, para não piscar. Falhou de novo, o alerta
+   volta com o erro; deu certo, o escurecido sai sem aviso.
+
+   O escurecido do app fica de pé durante toda a limpeza pendente (conferência do Verniz, 11/10): sob o alerta ele
+   se soma ao do sistema e, no escuro, apaga o que brilha atrás do vidro do alerta (o botão branco da Apple, na
+   letra maior); no claro, sob o alerta ele é transparente, porque o texto do botão é escuro. Sem o alerta, sozinho,
+   fica no total dos dois. Assim a tela não clareia quando o alerta fecha nem aceita toque até a limpeza terminar. */
 struct FinalizarSaida: ViewModifier {
     static let titulo = "Finalizar saída"
     static let texto = "Suas obras continuam salvas na sua conta. Falta limpar os dados do Custta que ficaram neste iPhone antes de entrar de novo."
     static let erro = "Ainda não foi possível limpar. Suas obras continuam salvas na sua conta. Tente de novo ou feche o Custta e abra outra vez."
 
+    private enum Nivel: Equatable { case nenhum, sobOAlerta, total }
+
     @Environment(ModeloApp.self) private var modelo
     @Environment(\.paleta) private var paleta
-    @Environment(\.opcoes) private var opcoes
+    @State private var nivel = Nivel.nenhum
+    @State private var alertaFechando = false
+    @State private var vigia = VigiaDoAlerta()
     @State private var pilula = false
 
     func body(content: Content) -> some View {
         let tentando = modelo.limpeza == .tentando
         content
             .overlay {
-                if tentando {
+                if nivel != .nenhum {
                     ZStack {
-                        paleta.cor(.escurecido)
+                        paleta.cor(nivel == .total ? .escurecido : .escurecidoSobOAlerta)
                             .ignoresSafeArea()
                             .contentShape(.rect)
-                        if pilula { Limpando() }
+                        if pilula && tentando { Limpando() }
                     }
-                    .transition(opcoes.reduzirMovimento ? .identity : .opacity.animation(.easeOut(duration: 0.2)))
+                    .transition(.opacity)
                 }
+            }
+            .onChange(of: alvo, initial: true) { antes, depois in
+                withAnimation(Self.curva(de: antes, para: depois)) { nivel = depois }
+            }
+            // O SwiftUI só roda a ação do botão no fim do fechamento do alerta: o escurecido sobe para o total quando
+            // o fechamento começa, junto com o sumiço do escurecido do sistema.
+            .onChange(of: pendente, initial: true) { _, aberto in
+                alertaFechando = false
+                if aberto {
+                    vigia.vigiar { alertaFechando = true }
+                } else { vigia.parar() }
             }
             .task(id: tentando) {
                 pilula = false
@@ -53,6 +72,24 @@ struct FinalizarSaida: ViewModifier {
     private var pendente: Bool {
         if case .pendente = modelo.limpeza { return true }
         return false
+    }
+
+    private var alvo: Nivel {
+        switch modelo.limpeza {
+        case nil: .nenhum
+        case .pendente: alertaFechando ? .total : .sobOAlerta
+        case .tentando: .total
+        }
+    }
+
+    /// Acompanha o escurecido do sistema, que entra em uns 0,19 s quando o alerta abre e sai em 0,13 s quando ele fecha
+    /// (vídeo no iOS 27). Esmaecer não é movimento: com `opcoes.reduzirMovimento` o esmaecimento fica, como o do sistema.
+    private static func curva(de antes: Nivel, para depois: Nivel) -> Animation {
+        switch (antes, depois) {
+        case (_, .sobOAlerta): .easeOut(duration: 0.19)
+        case (.sobOAlerta, .total): .easeOut(duration: 0.13)
+        default: .easeOut(duration: 0.2)
+        }
     }
 }
 

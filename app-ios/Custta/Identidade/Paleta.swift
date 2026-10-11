@@ -48,7 +48,9 @@ enum Token: String, CaseIterable, Sendable {
     case aurora4 = "Aurora4"
     case realceLogo = "RealceLogo"
     case sombraDoTexto = "SombraDoTexto"
-    /// O escurecido do alerta do sistema: o "Limpando…" do "Finalizar saída" fica sob o mesmo, sem piscar.
+    /// "Finalizar saída": o escurecido do app sob o alerta, somado ao do sistema (no claro, nenhum), e o total dos dois
+    /// sem o alerta.
+    case escurecidoSobOAlerta = "EscurecidoSobOAlerta"
     case escurecido = "Escurecido"
     case googleFundo = "GoogleFundo"
     case googleBorda = "GoogleBorda"

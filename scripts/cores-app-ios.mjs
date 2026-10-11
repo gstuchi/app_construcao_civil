@@ -55,7 +55,10 @@ export const CORES = {
     Aurora4: ['#78EBC3', '#96F0D2'],
     RealceLogo: ['#B8F5D2', '#0B7A68'],             // início do degradê do "tt." no escuro
     SombraDoTexto: ['#00000059', '#00000000'],      // --sombra-txt: texto solto sobre a aurora (só no escuro)
-    Escurecido: ['#0000006B', '#00000038'],         // o escurecido do alerta do sistema (42% e 22%), sob o "Limpando…"
+    // "Finalizar saída": sob o alerta, somado ao escurecido do sistema (no iOS 27, 48% e 20%), e sem o alerta, o total
+    // dos dois. No claro, nada sob o alerta: o texto do botão é escuro e escurecer atrás do vidro só tira contraste.
+    EscurecidoSobOAlerta: ['#0000006B', '#00000000'],
+    Escurecido: ['#000000B2', '#00000033'],
     GoogleFundo: ['#131314', '#FFFFFF'],            // regras do botão do Google, iguais nas duas peles
     GoogleBorda: ['#8E918F', '#747775'],
     GoogleTexto: ['#E3E3E3', '#1F1F1F'],
@@ -103,7 +106,8 @@ export const CORES = {
     Aurora4: ['#78D2FF', '#96D2FF'],
     RealceLogo: ['#D4E0FF', '#3560CF'],
     SombraDoTexto: ['#00000059', '#00000000'],
-    Escurecido: ['#0000006B', '#00000038'],
+    EscurecidoSobOAlerta: ['#0000006B', '#00000000'],
+    Escurecido: ['#000000B2', '#00000033'],
     GoogleFundo: ['#131314', '#FFFFFF'],
     GoogleBorda: ['#8E918F', '#747775'],
     GoogleTexto: ['#E3E3E3', '#1F1F1F'],

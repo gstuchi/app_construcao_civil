@@ -215,13 +215,20 @@ extension LeituraNoVidroUITests {
     /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o botão do alerta (no tint Texto, como o
     /// do "Sair da conta?") aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra a própria
     /// cápsula (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup.
-    @MainActor func testLeituraDoFinalizarSaida() {
+    @MainActor func testLeituraDoFinalizarSaida() { cobrarFinalizarSaida(maiorLetra: false) }
+
+    /// Na maior letra o alerta rola, e o botão fica no fim, sobre o que estiver atrás do vidro do alerta (na entrada,
+    /// o botão branco da Apple, que o escurecido sob o alerta apaga; conferência do Verniz, 11/10).
+    @MainActor func testLeituraDoFinalizarSaidaNaMaiorLetra() { cobrarFinalizarSaida(maiorLetra: true) }
+
+    @MainActor private func cobrarFinalizarSaida(maiorLetra letraGrande: Bool) {
         var falhas: [String] = []
         for (tema, pele) in quatroCombos {
-            let app = abrirApp(conta: "nenhuma", limpeza: "abertura", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
+            let app = abrirApp(conta: "nenhuma", limpeza: "abertura",
+                               argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento + (letraGrande ? maiorLetra : []))
             let alerta = app.alerts["Finalizar saída"], botao = alerta.buttons["Tentar limpar novamente"]
             for estado in ["aberto", "tentando", "falhou de novo"] {
-                let nome = "finalizar saída, \(estado), \(tema), \(pele)"
+                let nome = "finalizar saída\(letraGrande ? " na maior letra" : ""), \(estado), \(tema), \(pele)"
                 switch estado {
                 case "tentando":
                     botao.tap()
@@ -229,6 +236,7 @@ extension LeituraNoVidroUITests {
                     Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta (a nova tentativa leva 3 s)
                 default:
                     XCTAssertTrue(botao.waitForExistence(timeout: 10), "\(nome): o alerta não abriu")
+                    if letraGrande { alerta.swipeUp() }                // o alerta rola até o botão, no fim
                     Thread.sleep(forTimeInterval: 2)                   // o vidro do alerta assenta
                 }
                 let foto = XCUIScreen.main.screenshot()

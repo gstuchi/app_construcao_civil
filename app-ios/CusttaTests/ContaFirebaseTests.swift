@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 @testable import Custta
@@ -92,6 +93,55 @@ extension NoEmulador {
             let u = try await Emulador.novaConta()
             try await conta().redefinirSenha(email: u.email!)
             try Auth.auth(app: Emulador.app).signOut()
+        }
+
+        /// Desativa a conta pela API de administrador do emulador do Auth: a próxima renovação do token volta USER_DISABLED.
+        private func desativar(_ uid: String) async throws {
+            var pedido = URLRequest(url: URL(string: "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/\(Emulador.projeto)/accounts:update")!)
+            pedido.httpMethod = "POST"
+            pedido.setValue("Bearer owner", forHTTPHeaderField: "Authorization")
+            pedido.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            pedido.httpBody = try JSONSerialization.data(withJSONObject: ["localId": uid, "disableUser": true])
+            let (_, resposta) = try await URLSession.shared.data(for: pedido)
+            #expect((resposta as? HTTPURLResponse)?.statusCode == 200)
+        }
+
+        @Test func sessaoInvalidadaSaiNaConferenciaForcadaMesmoDentroDoMinuto() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }
+            await c.verificarSessao(forcar: false)                  // começa a contar o minuto
+            try await desativar(u.uid)
+            await c.verificarSessao(forcar: false)                  // a volta da rede, dentro do minuto: não confere
+            #expect(Auth.auth(app: Emulador.app).currentUser?.uid == u.uid, "a não forçada sai no máximo uma vez por minuto")
+            await c.verificarSessao(forcar: true)                   // a escrita voltou unauthenticated: confere na hora
+            #expect(Auth.auth(app: Emulador.app).currentUser == nil, "sessão invalidada sai da conta")
+        }
+
+        @Test func erroDeRedeNaConferenciaNaoSaiDaConta() async throws {
+            // App próprio: depois do login, o Auth dele aponta para uma porta sem ninguém e renovar o token dá erro de rede.
+            let nome = "rede-\(UUID().uuidString.prefix(8).lowercased())"
+            FirebaseApp.configure(name: nome, options: Emulador.app.options)
+            let app = try #require(FirebaseApp.app(name: nome))
+            let auth = Auth.auth(app: app)
+            auth.useEmulator(withHost: "127.0.0.1", port: 9099)
+            _ = try await auth.createUser(withEmail: "\(nome)@example.com", password: "Casa2026x")
+            auth.useEmulator(withHost: "127.0.0.1", port: 9)
+            let c = ContaFirebase(app: app, banco: Emulador.banco, online: { true })
+            await c.verificarSessao(forcar: true)
+            #expect(auth.currentUser != nil, "falta de rede nunca tira da conta")
+            try auth.signOut()
+        }
+
+        @Test func sairMarcaALimpezaAntesDeSairDaConta() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }
+            var marcadaAoSair: Bool?
+            c.observar { if $0 == nil, marcadaAoSair == nil { marcadaAoSair = Emulador.banco.limpezaPendente } }
+            try await c.sair()
+            #expect(marcadaAoSair == true, "o app pode fechar logo depois do signOut: a marca já tem de estar gravada")
+            #expect(!Emulador.banco.limpezaPendente)
         }
     }
 }

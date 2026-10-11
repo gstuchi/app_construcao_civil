@@ -46,10 +46,22 @@ enum Composicao {
             FirebaseApp.configure()
             return FirebaseApp.app()!
         }
+        FirebaseApp.configure(options: opcoesDosEmuladores())
+        return FirebaseApp.app()!
+    }
+
+    /// Chave falsa dos emuladores. O emulador do Auth aceita qualquer chave e a produção recusa esta: um pedido que
+    /// escape dos emuladores (um useEmulator esquecido) falha em vez de criar conta na produção. Tem o formato das
+    /// chaves do Google (39 caracteres, "A" na frente, só base64url), senão o FirebaseInstallations derruba o
+    /// configure quando o FCM entrar.
+    static let chaveDosEmuladores = "AIzaSyEmuladoresDoCusttaSemProducao0000"
+
+    /// As opções do GoogleService-Info.plist com o projeto e a chave dos emuladores (o app e os testes contra eles).
+    static func opcoesDosEmuladores() -> FirebaseOptions {
         let caminho = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist")!
         let opcoes = FirebaseOptions(contentsOfFile: caminho)!
         opcoes.projectID = projetoDosEmuladores
-        FirebaseApp.configure(options: opcoes)
-        return FirebaseApp.app()!
+        opcoes.apiKey = chaveDosEmuladores
+        return opcoes
     }
 }

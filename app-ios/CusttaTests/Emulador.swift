@@ -21,10 +21,7 @@ enum Emulador {
     static let projeto = Composicao.projetoDosEmuladores
     static let app: FirebaseApp = {
         if let app = FirebaseApp.app(name: "emulador") { return app }
-        let caminho = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist")!
-        let opcoes = FirebaseOptions(contentsOfFile: caminho)!
-        opcoes.projectID = projeto
-        FirebaseApp.configure(name: "emulador", options: opcoes)
+        FirebaseApp.configure(name: "emulador", options: Composicao.opcoesDosEmuladores())
         let app = FirebaseApp.app(name: "emulador")!
         Auth.auth(app: app).useEmulator(withHost: "127.0.0.1", port: 9099)
         return app

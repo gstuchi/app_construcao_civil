@@ -25,6 +25,32 @@ struct BancoFirebaseTests {
         #expect(!banco.limpezaPendente, "a abertura terminou a limpeza e tirou a marca")
     }
 
+    @Test func limpezaRetomadaApagaOCacheDeVerdade() async throws {
+        // O app fechou no meio de um "sair": gravação só no cache (sem rede), instância encerrada e a marca de pé.
+        let nome = "retomada-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let app = try #require(FirebaseApp.app(name: nome))
+        let preferencias = try #require(UserDefaults(suiteName: nome))
+        let antes = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: preferencias)
+        let db = antes.firestore()
+        try await db.disableNetwork()
+        let ref = db.collection("dados").document(nome)
+        gravarSoNoCache(ref)
+        #expect(try await ref.getDocument(source: .cache).exists, "a gravação está no cache")
+        antes.marcarLimpeza()
+        try await db.terminate()
+        // A abertura seguinte: o banco novo termina a limpeza antes de qualquer leitura.
+        let depois = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: preferencias)
+        await depois.aguardarPronto()
+        #expect(!depois.limpezaPendente)
+        await #expect(throws: (any Error).self, "o cache foi apagado: a leitura só do cache não acha a gravação") {
+            try await depois.firestore().collection("dados").document(nome).getDocument(source: .cache)
+        }
+    }
+
+    /// Sem rede, a confirmação do servidor nunca vem: fora do contexto assíncrono, o setData sem espera.
+    private func gravarSoNoCache(_ ref: DocumentReference) { ref.setData(["obras": []]) }
+
     /// Banco num app próprio, sem rede (a limpeza só mexe no disco); com `falha` ligada, apagar o cache falha.
     private func bancoQueFalha(marcado: Bool, _ falha: Bandeira) throws -> BancoFirebase {
         let nome = "falha-\(UUID().uuidString.prefix(8).lowercased())"

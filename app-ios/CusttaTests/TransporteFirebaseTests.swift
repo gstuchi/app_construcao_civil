@@ -18,10 +18,11 @@ extension NoEmulador {
             let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
             #expect(codigo == nil)
 
-            var recebido: Instantaneo?
-            let escuta = transporte.escutar(uid: u.uid, aoReceber: { if !$0.doCache { recebido = $0 } }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
+            var recebido: Instantaneo?, viuCache = false
+            let escuta = transporte.escutar(uid: u.uid, aoReceber: { if $0.doCache { viuCache = true } else { recebido = $0 } }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
             for _ in 0..<100 where recebido == nil { try await Task.sleep(for: .milliseconds(50)) }
             escuta.cancelar()
+            #expect(viuCache, "a escuta abre pelo cache, com o documento já confirmado: o doCache chega ao Sincronizador")
             let dados = try #require(recebido?.dados)
             #expect(canonico(dados) == canonico(blob), "volta igual, sem _atualizado e com o campo que só o site conhece")
 
@@ -29,6 +30,21 @@ extension NoEmulador {
             #expect(bruto?["_atualizado"] is Timestamp, "_atualizado é a hora do servidor")
             let gasto = ((bruto?["obras"] as? [[String: Any]])?.first?["gastos"] as? [[String: Any]])?.first
             #expect((gasto?["valor"] as? NSNumber).map { CFNumberIsFloatType($0) } == false, "1500 vai como inteiro, como o JavaScript grava")
+        }
+
+        @Test func ecoDaGravacaoChegaComGravacaoPendente() async throws {
+            let u = try await Emulador.novaConta()
+            let transporte = TransporteFirebase(banco: Emulador.banco)
+            var vistos: [Instantaneo] = []
+            let escuta = transporte.escutar(uid: u.uid, aoReceber: { vistos.append($0) }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
+            for _ in 0..<100 where !vistos.contains(where: { !$0.doCache }) { try await Task.sleep(for: .milliseconds(50)) }
+            let blob = ValorJSON.objeto(["obras": .lista([]), "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])])])
+            let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
+            #expect(codigo == nil)
+            for _ in 0..<100 where vistos.last?.gravacaoPendente != false { try await Task.sleep(for: .milliseconds(50)) }
+            escuta.cancelar()
+            #expect(vistos.contains { $0.gravacaoPendente && $0.dados != nil }, "o eco da gravação local chega com gravação pendente (o eco do app.js depende disso)")
+            #expect(vistos.last.map { !$0.gravacaoPendente && !$0.doCache } == true, "a confirmação do servidor chega sem pendência")
         }
 
         @Test func rulesRecusamChaveNovaNoBlob() async throws {

@@ -133,7 +133,9 @@ extension NoEmulador {
             try auth.signOut()
         }
 
-        @Test func sairMarcaALimpezaAntesDeSairDaConta() async throws {
+        /// A marca já está gravada quando chega o aviso de que a conta saiu. Não prova a ordem entre a marca e o
+        /// signOut: o Auth avisa pela fila principal, depois das duas linhas, que só importa se o app fechar entre elas.
+        @Test func marcaDaLimpezaJaGravadaQuandoChegaOAvisoDeSaida() async throws {
             let c = conta()
             let u = try await Emulador.novaConta()
             for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }

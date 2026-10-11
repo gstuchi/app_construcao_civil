@@ -8,8 +8,9 @@ import UIKit
    pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra. Cada cena deixa no
    resultado o print anotado (verde passa, vermelho não) e a tabela, para o Lupa e o Giovani verem sem
    abrir o simulador. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro
-   (decisão do Giovani em 09/10). Na CI (`CUSTTA_LAUDO=relatorio`) o laudo só relata: o simulador do
-   iOS 26 da CI pode desenhar o vidro diferente do Mac. */
+   (decisão do Giovani em 09/10). Na CI (iOS 26) o laudo também é portão: o simulador de lá desenha o
+   vidro diferente do Mac, mas igual de uma rodada para outra (as 47 cenas deram as mesmas notas em quatro
+   rodadas do PR 3, todas acima de 4,5). */
 final class LeituraNoVidroUITests: XCTestCase {
     /// Fundo parado no pior momento: Reduzir movimento (globo em 1,2 e logo pronto) e a aurora no pior ponto
     /// da deriva inteira, que também cobre o quadro em que ela para com Reduzir movimento.
@@ -19,8 +20,6 @@ final class LeituraNoVidroUITests: XCTestCase {
     private static let portao = 4.5
     /// A barra de status fica de fora: a hora muda entre os dois prints.
     private static let barraDeStatus: CGFloat = 70
-    /// Na CI, só o relatório (ver o comentário do topo).
-    private static let soRelatorio = ProcessInfo.processInfo.environment["CUSTTA_LAUDO"] == "relatorio"
     /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
     /// (`CUSTTA_VARREDURA=curta`), 0, 20, 40 e 260, para o job caber em 45 min.
     private static let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta"
@@ -62,7 +61,6 @@ final class LeituraNoVidroUITests: XCTestCase {
                 XCTFail("\(cena.nome): \(error)")
                 continue
             }
-            guard !Self.soRelatorio else { continue }
             XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 sobre o vidro:\n" + falhas.joined(separator: "\n"))
         }
     }
@@ -211,7 +209,6 @@ extension LeituraNoVidroUITests {
                                palavra.nota, palavra.minimo))
             if palavra.nota < Self.portao { falhas.append(String(format: "%@: Cancelar em %.2f:1", nome, palavra.nota)) }
         }
-        guard !Self.soRelatorio else { return }
         XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
     }
 
@@ -253,7 +250,6 @@ extension LeituraNoVidroUITests {
             }
             app.terminate()
         }
-        guard !Self.soRelatorio else { return }
         XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no Finalizar saída:\n" + falhas.joined(separator: "\n"))
     }
 }

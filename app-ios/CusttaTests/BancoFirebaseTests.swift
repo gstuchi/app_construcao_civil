@@ -48,6 +48,22 @@ struct BancoFirebaseTests {
         }
     }
 
+    @Test func leituraEmVooQuandoOSairEncerraAInstanciaResponde() async throws {
+        // O servidor não responde antes do sair e, depois do terminate, o SDK nunca mais responde (visto na T13).
+        let nome = "corte-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080),
+                                  preferencias: try #require(UserDefaults(suiteName: nome)), leitor: { _, _, _ in })
+        let leitura = Desfecho { _ = try await banco.ler("perfis/\(nome)", fonte: .server) }
+        await ate { banco.leiturasPendentes == 1 }
+        banco.marcarLimpeza()
+        try await banco.limparCache()
+        await ate { leitura.terminou }
+        #expect(leitura.terminou, "a leitura cortada pelo sair responde, em vez de deixar a tarefa pendurada")
+        #expect((leitura.erro as? ErroConta)?.codigo == "cancelled")
+        #expect(banco.leiturasPendentes == 0)
+    }
+
     /// Sem rede, a confirmação do servidor nunca vem: fora do contexto assíncrono, o setData sem espera.
     private func gravarSoNoCache(_ ref: DocumentReference) { ref.setData(["obras": []]) }
 

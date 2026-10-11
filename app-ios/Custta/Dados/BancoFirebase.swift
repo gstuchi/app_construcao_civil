@@ -6,6 +6,13 @@ import FirebaseFirestore
 /// Diagnóstico no registro do sistema (Console do Mac, sysdiagnose): a marca de limpeza que sobra fica anotada.
 private let registro = Logger(subsystem: "br.com.custta.app", category: "banco")
 
+/// O que a conta lê de um documento (`perfis/{uid}`): se existe e os campos de texto. Sendable, para atravessar a
+/// espera da leitura.
+struct Documento: Sendable, Equatable {
+    let existe: Bool
+    let textos: [String: String]
+}
+
 /* Acesso ao Firestore do app. Sair da conta encerra a instância para limpar o cache, e o SDK
    devolve uma instância nova na próxima chamada; por isso ninguém guarda a instância: todo mundo
    pede aqui, e cada instância nova recebe as configurações antes do primeiro uso.
@@ -26,6 +33,11 @@ final class BancoFirebase {
     private let preferencias: UserDefaults
     /// Apaga o cache de uma instância encerrada ou ainda sem uso (os testes injetam a falha).
     private let apagar: @MainActor (Firestore) async throws -> Void
+    /// Lê um documento no SDK (os testes injetam um servidor que nunca responde).
+    private let leitor: Leitor
+    typealias Leitor = @MainActor (DocumentReference, FirestoreSource, @escaping @MainActor (Documento?, Error?) -> Void) -> Void
+    /// Leituras pedidas que o SDK ainda não respondeu.
+    private var leiturasEmVoo: [UUID: CheckedContinuation<Documento, Error>] = [:]
     private weak var configurada: Firestore?
     /// Limpeza em andamento (a retomada na abertura ou a de um "sair"), ou bloqueada por uma falha.
     private var ocupado = false
@@ -37,11 +49,13 @@ final class BancoFirebase {
     }
 
     init(app: FirebaseApp, emulador: (host: String, porta: Int)? = nil, preferencias: UserDefaults = .standard,
-         apagar: @escaping @MainActor (Firestore) async throws -> Void = { try await $0.clearPersistence() }) {
+         apagar: @escaping @MainActor (Firestore) async throws -> Void = { try await $0.clearPersistence() },
+         leitor: @escaping Leitor = BancoFirebase.lerNoSDK) {
         self.app = app
         self.emulador = emulador
         self.preferencias = preferencias
         self.apagar = apagar
+        self.leitor = leitor
         if preferencias.bool(forKey: Self.chaveLimpeza) {
             ocupado = true
             Task { [weak self] in await self?.terminarLimpezaInterrompida() }
@@ -89,6 +103,30 @@ final class BancoFirebase {
         return db
     }
 
+    static let lerNoSDK: Leitor = { ref, fonte, fim in
+        ref.getDocument(source: fonte) { doc, erro in
+            MainActor.assumeIsolated {
+                fim(doc.map { Documento(existe: $0.exists, textos: ($0.data() ?? [:]).compactMapValues { $0 as? String }) }, erro)
+            }
+        }
+    }
+
+    /// Lê `caminho` depois de uma limpeza em andamento, na instância do momento. Se um `sair` encerrar a instância
+    /// com a leitura em voo, ela responde "cancelled".
+    func ler(_ caminho: String, fonte: FirestoreSource = .default) async throws -> Documento {
+        await aguardarPronto()
+        let id = UUID()
+        return try await withCheckedThrowingContinuation { (c: CheckedContinuation<Documento, Error>) in
+            leiturasEmVoo[id] = c
+            leitor(firestore().document(caminho), fonte) { [weak self] documento, erro in
+                guard let c = self?.leiturasEmVoo.removeValue(forKey: id) else { return }
+                if let documento { c.resume(returning: documento) } else { c.resume(throwing: erro ?? ErroConta(codigo: "unknown")) }
+            }
+        }
+    }
+
+    var leiturasPendentes: Int { leiturasEmVoo.count }
+
     /// Antes do signOut: se o app fechar daqui até o fim da limpeza, a próxima abertura termina.
     func marcarLimpeza() { preferencias.set(true, forKey: Self.chaveLimpeza) }
     func desmarcarLimpeza() { preferencias.removeObject(forKey: Self.chaveLimpeza) }
@@ -117,6 +155,10 @@ final class BancoFirebase {
     }
 
     private func encerrarEApagar() async throws {
+        // O terminate corta as leituras em voo e o SDK nunca as responde (uma tarefa da conta ficaria pendurada).
+        let cortadas = leiturasEmVoo
+        leiturasEmVoo = [:]
+        cortadas.values.forEach { $0.resume(throwing: ErroConta(codigo: "cancelled")) }
         let db = firestore()
         try await db.terminate()
         try await apagar(db)

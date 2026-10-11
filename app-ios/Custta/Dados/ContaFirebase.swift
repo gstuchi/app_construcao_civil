@@ -145,12 +145,10 @@ final class ContaFirebase: ServicoConta {
 
     func perfilPendente() async -> Bool {
         guard let u = auth.currentUser, usuario?.contaSocial == true else { return false }
-        await banco.aguardarPronto()
-        if let doc = try? await banco.firestore().collection("perfis").document(u.uid).getDocument(source: .cache), doc.exists { return false }
-        /* Um `sair` durante a leitura do cache encerra a instância, e usar a encerrada derruba o app
-           (exceção do Objective-C): a leitura do servidor espera a limpeza e pede a instância de novo. */
-        await banco.aguardarPronto()
-        do { return !(try await banco.firestore().collection("perfis").document(u.uid).getDocument(source: .server)).exists } catch { return false }
+        if let doc = try? await banco.ler("perfis/\(u.uid)", fonte: .cache), doc.existe { return false }
+        /* Um `sair` entre as duas leituras encerra a instância, e usar a encerrada derruba o app (exceção do
+           Objective-C): o banco.ler espera a limpeza e pede a instância de novo; cortada em voo, responde "cancelled". */
+        do { return !(try await banco.ler("perfis/\(u.uid)", fonte: .server)).existe } catch { return false }
     }
 
     func completarPerfil(_ perfil: PerfilCadastro) async throws {
@@ -159,10 +157,8 @@ final class ContaFirebase: ServicoConta {
     }
 
     func lerNome() async -> String? {
-        guard let u = auth.currentUser else { return nil }
-        await banco.aguardarPronto()
-        guard let dados = try? await banco.firestore().collection("perfis").document(u.uid).getDocument().data() else { return nil }
-        let nome = [dados["nome"] as? String, dados["sobrenome"] as? String].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+        guard let u = auth.currentUser, let dados = try? await banco.ler("perfis/\(u.uid)").textos else { return nil }
+        let nome = [dados["nome"], dados["sobrenome"]].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
         return nome.isEmpty ? nil : nome
     }
 

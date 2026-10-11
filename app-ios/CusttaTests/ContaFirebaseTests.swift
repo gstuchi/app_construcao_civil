@@ -154,6 +154,25 @@ extension NoEmulador {
             try auth.signOut()
         }
 
+        @Test func sairNoMeioDaLeituraDoNomeNaoPenduraATarefa() async throws {
+            // App e banco próprios: o servidor não responde a leitura, como depois do terminate de um sair (T13).
+            let nome = "corte-\(UUID().uuidString.prefix(8).lowercased())"
+            FirebaseApp.configure(name: nome, options: Emulador.app.options)
+            let app = try #require(FirebaseApp.app(name: nome))
+            let auth = Auth.auth(app: app)
+            auth.useEmulator(withHost: "127.0.0.1", port: 9099)
+            let banco = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: try #require(UserDefaults(suiteName: nome)),
+                                      leitor: { _, _, _ in })
+            let c = ContaFirebase(app: app, banco: banco, online: { true })
+            _ = try await auth.createUser(withEmail: "\(nome)@example.com", password: "Casa2026x")
+            let leitura = Desfecho { _ = await c.lerNome() }
+            await ate { banco.leiturasPendentes == 1 }
+            #expect(banco.leiturasPendentes == 1, "a leitura do nome passa pelo banco, que responde a ela no sair")
+            try await c.sair()
+            await ate { leitura.terminou }
+            #expect(leitura.terminou, "a leitura do nome cortada pelo sair termina, em vez de deixar a tarefa pendurada")
+        }
+
         @Test func erroDeRedeNaConferenciaNaoSaiDaConta() async throws {
             // App próprio: depois do login, o Auth dele aponta para uma porta sem ninguém e renovar o token dá erro de rede.
             let nome = "rede-\(UUID().uuidString.prefix(8).lowercased())"

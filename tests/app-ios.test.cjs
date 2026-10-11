@@ -432,3 +432,9 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
     }
   }
 });
+
+test('script dos testes do app contra os emuladores', () => {
+  const s = JSON.parse(ler('package.json')).scripts;
+  assert.match(s['test:app-ios:emuladores'] || '', /firebase emulators:exec --config firebase\.test\.json --project demo-custta-phase2 --only firestore,auth/);
+  assert.match(s['test:app-ios:emuladores'], /scripts\/simulador-ios\.mjs --testar CusttaTests --emuladores/);
+});

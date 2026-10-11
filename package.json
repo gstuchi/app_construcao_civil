@@ -12,6 +12,7 @@
     "vendor:firebase": "node scripts/vendor-firebase.mjs",
     "test:browser": "firebase emulators:exec --config firebase.test.json --project demo-custta-phase2 --only firestore,auth \"node tests/browser/rodar.cjs\"",
     "test:nucleo": "swift test --package-path app-ios/CusttaNucleo",
+    "test:app-ios:emuladores": "firebase emulators:exec --config firebase.test.json --project demo-custta-phase2 --only firestore,auth \"node scripts/simulador-ios.mjs --testar CusttaTests --emuladores\"",
     "vendor:sentry": "node scripts/vendor-sentry.mjs",
     "build:www": "node scripts/build-www.mjs",
     "cap:sync": "npm run build:www && cap sync ios",

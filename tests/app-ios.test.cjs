@@ -438,3 +438,19 @@ test('script dos testes do app contra os emuladores', () => {
   assert.match(s['test:app-ios:emuladores'] || '', /firebase emulators:exec --config firebase\.test\.json --project demo-custta-phase2 --only firestore,auth/);
   assert.match(s['test:app-ios:emuladores'], /scripts\/simulador-ios\.mjs --testar CusttaTests --emuladores/);
 });
+
+test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que falha não segura a rodada no diagnose', async () => {
+  const { escolherSimulador, argumentosDoTeste } = await import(join(RAIZ, 'scripts/simulador-ios.mjs'));
+  const lista = {
+    'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [{ udid: 'A', name: 'iPhone 17', isAvailable: true }],
+    'com.apple.CoreSimulator.SimRuntime.iOS-27-0': [{ udid: 'B', name: 'iPad Pro', isAvailable: true }, { udid: 'C', name: 'iPhone 18 Pro', isAvailable: true }],
+  };
+  assert.equal(escolherSimulador(lista), 'C', 'sem a variável, o de sempre: o primeiro iPhone do iOS mais novo');
+  assert.equal(escolherSimulador(lista, 'A'), 'A', 'cada agente no seu simulador');
+  assert.throws(() => escolherSimulador(lista, 'X'), /CUSTTA_SIMULADOR=X/, 'id que não existe para, em vez de cair no simulador de outro');
+  const args = argumentosDoTeste(['CusttaTests'], 'platform=iOS Simulator,id=C');
+  const i = args.indexOf('-collect-test-diagnostics');
+  assert.deepEqual(args.slice(i, i + 2), ['-collect-test-diagnostics', 'never'], 'sem o simctl diagnose, que segura a rodada até 10 min');
+  assert.deepEqual(args.slice(args.indexOf('-destination'), args.indexOf('-destination') + 2), ['-destination', 'platform=iOS Simulator,id=C']);
+  assert.ok(args.includes('-only-testing:CusttaTests'));
+});

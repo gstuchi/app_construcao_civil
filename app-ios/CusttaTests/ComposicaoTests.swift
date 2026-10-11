@@ -10,6 +10,7 @@ struct ComposicaoTests {
     @Test func falsosSoComAVariavel() {
         let modelo = Composicao.montar(ambiente: ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": "senha"])
         #expect(modelo.conta is ContaFalsa)
+        #expect(FirebaseApp.app() == nil, "nem os falsos nem o app que hospeda os testes ligam o Firebase")
         #expect(Composicao.projetoDosEmuladores == "demo-custta-phase2", "o mesmo projeto do firebase.test.json")
     }
 

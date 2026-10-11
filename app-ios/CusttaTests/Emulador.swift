@@ -18,7 +18,7 @@ struct NoEmulador {}
 @MainActor
 enum Emulador {
     /// Projeto dos emuladores, o mesmo do firebase.test.json e dos testes do site.
-    static let projeto = "demo-custta-phase2"
+    static let projeto = Composicao.projetoDosEmuladores
     static let app: FirebaseApp = {
         if let app = FirebaseApp.app(name: "emulador") { return app }
         let caminho = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist")!

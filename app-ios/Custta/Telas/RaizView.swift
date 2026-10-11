@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleSignIn
 
 /// Escolhe a tela pela fase da conta, desenha o fundo (aurora e globo, no mesmo relógio) e aplica a
 /// aparência deste aparelho, a dose de vidro da tela e as opções do iPhone.
@@ -59,6 +60,7 @@ struct RaizView: View {
         .environment(\.pausasDoFundo, pausas)
         .tint(paleta.cor(.marca))
         .preferredColorScheme(Aparencia.esquema(tema))
+        .onOpenURL { url in GIDSignIn.sharedInstance.handle(url) }
         .onChange(of: fundoAnda, initial: true) { _, anda in relogio.rodando = anda }
         .acompanhaEnergia(poucaEnergia: $poucaEnergia, calor: $calor)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in teclado = true }

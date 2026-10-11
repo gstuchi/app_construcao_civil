@@ -28,7 +28,7 @@ struct CusttaApp: App {
                         if nova == .active { Task { await modelo.voltouParaFrente() } }
                     }
             } else {
-                // Sem serviço (Release antes da camada Firebase, ou hospedando os testes de unidade).
+                // Sem serviço: o app só hospeda os testes de unidade.
                 AberturaView()
             }
         }

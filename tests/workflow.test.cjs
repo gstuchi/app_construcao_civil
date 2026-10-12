@@ -12,9 +12,9 @@ assert.deepStrictEqual(['a.yml', 'b.yaml', 'c.yml.bak', 'd.txt', 'yaml'].filter(
   'o leitor de workflows tem de ver .yml e .yaml, e só eles');
 
 /* Em run:, ${{ }} vira texto do script antes de o shell rodar: título de PR, nome
-   de branch ou mensagem de commit ali viram comando. Só passam números do run e
-   segredos; o resto entra por env: e o shell lê como variável. */
-const PERMITIDAS_EM_RUN = /^(github\.run_number|github\.run_attempt|secrets\.[A-Z0-9_]+)$/;
+   de branch ou mensagem de commit ali viram comando, e um segredo ali sai pelo texto do script. Só passam os
+   números do run; segredos e o resto entram por env: e o shell lê como variável. */
+const PERMITIDAS_EM_RUN = /^(github\.run_number|github\.run_attempt)$/;
 function expressoesEmRun(texto){
   const linhas = texto.split(/\r?\n/);
   const blocos = [];

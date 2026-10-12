@@ -212,9 +212,12 @@ extension LeituraNoVidroUITests {
         XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
     }
 
-    /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o botão do alerta (no tint Texto, como o
-    /// do "Sair da conta?") aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra a própria
-    /// cápsula (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup.
+    /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o título e o botão do alerta (no tint Texto,
+    /// como o do "Sair da conta?"), aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra o fundo
+    /// em volta (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup. Exceção
+    /// nomeada (decisão do Giovani, 12/10): a mensagem do alerta não é medida. Ela sai na cor secundária do sistema
+    /// (2,7 a 3,7:1 no iOS 27), que o próprio iOS escurece com Aumentar contraste; fica o padrão da Apple, como no
+    /// "Sair" destrutivo.
     @MainActor func testLeituraDoFinalizarSaida() { cobrarFinalizarSaida(maiorLetra: false) }
 
     /// Na maior letra o alerta rola, e o botão fica no fim, sobre o que estiver atrás do vidro do alerta (na entrada,
@@ -223,14 +226,33 @@ extension LeituraNoVidroUITests {
 
     @MainActor private func cobrarFinalizarSaida(maiorLetra letraGrande: Bool) {
         var falhas: [String] = []
+        /// Mede um rótulo no print da tela, anexa o print anotado (e, com `limpo`, o sem anotação) e cobra o portão.
+        func medir(_ nome: String, _ rotulo: String, _ quadro: CGRect, _ app: XCUIApplication, limpo: Bool) {
+            let foto = XCUIScreen.main.screenshot()
+            let imagem = foto.image.cgImage!
+            let escala = CGFloat(imagem.width) / app.frame.width
+            guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
+                XCTFail("\(nome): o rótulo \(rotulo) não foi achado")
+                return
+            }
+            anexar(rotulo == FinalizarSaidaUITests.titulo ? "\(nome) (título)" : nome, foto.image, [palavra], escala)
+            if limpo {
+                let semAnotacao = XCTAttachment(screenshot: foto)      // para comparar com o mockup
+                semAnotacao.name = "print — \(nome)\(rotulo == FinalizarSaidaUITests.titulo ? " (título)" : "")"
+                semAnotacao.lifetime = .keepAlways
+                add(semAnotacao)
+            }
+            Swift.print(String(format: "leitura | %@ | %@ %@ | nota %.2f (pior pixel %.2f)", nome, rotulo, palavra.corHex,
+                               palavra.nota, palavra.minimo))
+            if palavra.nota < Self.portao { falhas.append(String(format: "%@: %@ em %.2f:1", nome, rotulo, palavra.nota)) }
+        }
         for (tema, pele) in quatroCombos {
             let app = abrirApp(conta: "nenhuma", limpeza: "abertura",
                                argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento + (letraGrande ? maiorLetra : []))
-            let alerta = app.alerts["Finalizar saída"], botao = alerta.buttons["Tentar limpar novamente"]
+            let alerta = app.alerts[FinalizarSaidaUITests.titulo], botao = alerta.buttons[FinalizarSaidaUITests.botao]
             for estado in ["aberto", "tentando", "falhou de novo"] {
                 let nome = "finalizar saída\(letraGrande ? " na maior letra" : ""), \(estado), \(tema), \(pele)"
-                switch estado {
-                case "tentando":
+                if estado == "tentando" {
                     botao.tap()
                     // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, o teste só a acha
                     // uns 4 s após o toque (a nova tentativa falsa leva 8 s, para ela continuar à vista).
@@ -239,27 +261,20 @@ extension LeituraNoVidroUITests {
                         continue
                     }
                     Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta
-                default:
-                    XCTAssertTrue(botao.waitForExistence(timeout: 15), "\(nome): o alerta não abriu")
-                    if letraGrande { alerta.swipeUp() }                // o alerta rola até o botão, no fim
-                    Thread.sleep(forTimeInterval: 2)                   // o vidro do alerta assenta
-                }
-                let foto = XCUIScreen.main.screenshot()
-                let imagem = foto.image.cgImage!
-                let escala = CGFloat(imagem.width) / app.frame.width
-                let (rotulo, quadro) = estado == "tentando" ? ("Limpando…", app.elemento("limpando").frame) : ("Tentar limpar novamente", botao.frame)
-                guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
-                    XCTFail("\(nome): o rótulo \(rotulo) não foi achado")
+                    medir(nome, "Limpando…", app.elemento("limpando").frame, app, limpo: true)
                     continue
                 }
-                anexar(nome, foto.image, [palavra], escala)
-                let limpo = XCTAttachment(screenshot: foto)            // sem as anotações, para comparar com o mockup
-                limpo.name = "print — \(nome)"
-                limpo.lifetime = .keepAlways
-                add(limpo)
-                Swift.print(String(format: "leitura | %@ | %@ %@ | nota %.2f (pior pixel %.2f)", nome, rotulo, palavra.corHex,
-                                   palavra.nota, palavra.minimo))
-                if palavra.nota < Self.portao { falhas.append(String(format: "%@: %@ em %.2f:1", nome, rotulo, palavra.nota)) }
+                XCTAssertTrue(botao.waitForExistence(timeout: 15), "\(nome): o alerta não abriu")
+                Thread.sleep(forTimeInterval: 2)                       // o vidro do alerta assenta
+                // O título antes de rolar: na maior letra ele sai de vista quando o alerta rola até o botão. O medidor
+                // entra 6 pt na moldura (a borda da cápsula); no texto solto, a moldura medida é a do próprio texto.
+                medir(nome, FinalizarSaidaUITests.titulo, alerta.staticTexts[FinalizarSaidaUITests.titulo].frame.insetBy(dx: -6, dy: -6),
+                      app, limpo: letraGrande)
+                if letraGrande {
+                    alerta.swipeUp()                                   // o alerta rola até o botão, no fim
+                    Thread.sleep(forTimeInterval: 2)
+                }
+                medir(nome, FinalizarSaidaUITests.botao, botao.frame, app, limpo: true)
             }
             app.terminate()
         }

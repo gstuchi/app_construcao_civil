@@ -146,6 +146,8 @@ extension NoEmulador {
             await #expect(throws: ErroConta(codigo: "cache"), "criar conta também") {
                 try await c.criarConta(email: "outra-\(email)", senha: "Casa2026x", perfil: PerfilCadastro(nome: "Gi", origem: "indicacao"))
             }
+            let apple = CredencialApple(idToken: #"{"sub":"\#(nome)","email":"apple-\#(email)","email_verified":true}"#, nonce: "n", nomeCompleto: nil)
+            await #expect(throws: ErroConta(codigo: "cache"), "entrar com a Apple também") { try await c.entrarComApple(apple) }
             #expect(auth.currentUser == nil)
             falha.ligada = false
             try await c.tentarLimparDeNovo()

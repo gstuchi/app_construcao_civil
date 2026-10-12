@@ -446,6 +446,17 @@ test('scripts dos testes locais do app: emuladores e conferência cruzada', () =
   assert.match(s['test:app-ios:cruzado'], /tests\/app-ios\/cruzado\.mjs/);
 });
 
+test('conferência cruzada: o texto do orçamento na lista é o do site', () => {
+  const site = ler('app.js'), cruzado = ler('tests/app-ios/cruzado.mjs');
+  for(const [noSite, noCruzado] of [
+    ['${orc.pct}% · passou ${moneyCurto(-orc.sobra)}', '${orc.pct}% · passou ${C.moneyCurto(-orc.sobra)}'],
+    ['${orc.pct}% do orçamento', '${orc.pct}% do orçamento'],
+  ]){
+    assert.ok(site.includes(noSite), `app.js mudou o texto da lista: ${noSite}`);
+    assert.ok(cruzado.includes(noCruzado), `cruzado.mjs ficou para trás de app.js: ${noCruzado}`);
+  }
+});
+
 test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que falha não segura a rodada no diagnose', async () => {
   const { escolherSimulador, argumentosDoTeste } = await import(join(RAIZ, 'scripts/simulador-ios.mjs'));
   const lista = {

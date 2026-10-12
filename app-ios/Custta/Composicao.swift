@@ -10,6 +10,10 @@ import CusttaNucleo
 enum Composicao {
     /// Projeto dos emuladores, o mesmo do firebase.test.json e dos testes do site.
     static let projetoDosEmuladores = "demo-custta-phase2"
+    /// Nome do FirebaseApp do modo emuladores. Cada app guarda a sessão numa vaga só dele no keychain: no app padrão,
+    /// uma conta dos emuladores ficaria na vaga da produção (a chave falsa não separa). Diferente do "emulador" dos
+    /// testes de unidade, para a sessão do app aberto por um teste de tela não se misturar com a deles.
+    static let nomeDoAppDosEmuladores = "emuladores"
 
     static func montar(ambiente: [String: String] = ProcessInfo.processInfo.environment) -> ModeloApp {
         #if DEBUG
@@ -39,15 +43,17 @@ enum Composicao {
         #endif
     }
 
-    /// Firebase de produção pelo GoogleService-Info.plist; nos emuladores, o mesmo arquivo com o projeto de teste.
+    /// Firebase de produção pelo GoogleService-Info.plist, no app padrão; nos emuladores, o mesmo arquivo com o projeto
+    /// e a chave de teste, num app com nome próprio. Reabrir devolve o mesmo app (configurar de novo derruba).
     static func configurarFirebase(emuladores: Bool) -> FirebaseApp {
-        if let app = FirebaseApp.app() { return app }
         guard emuladores else {
+            if let app = FirebaseApp.app() { return app }
             FirebaseApp.configure()
             return FirebaseApp.app()!
         }
-        FirebaseApp.configure(options: opcoesDosEmuladores())
-        return FirebaseApp.app()!
+        if let app = FirebaseApp.app(name: nomeDoAppDosEmuladores) { return app }
+        FirebaseApp.configure(name: nomeDoAppDosEmuladores, options: opcoesDosEmuladores())
+        return FirebaseApp.app(name: nomeDoAppDosEmuladores)!
     }
 
     /// Chave falsa dos emuladores. O emulador do Auth aceita qualquer chave e a produção recusa esta: um pedido que

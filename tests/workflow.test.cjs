@@ -12,9 +12,9 @@ assert.deepStrictEqual(['a.yml', 'b.yaml', 'c.yml.bak', 'd.txt', 'yaml'].filter(
   'o leitor de workflows tem de ver .yml e .yaml, e só eles');
 
 /* Em run:, ${{ }} vira texto do script antes de o shell rodar: título de PR, nome
-   de branch ou mensagem de commit ali viram comando. Só passam números do run e
-   segredos; o resto entra por env: e o shell lê como variável. */
-const PERMITIDAS_EM_RUN = /^(github\.run_number|github\.run_attempt|secrets\.[A-Z0-9_]+)$/;
+   de branch ou mensagem de commit ali viram comando, e um segredo ali sai pelo texto do script. Só passam os
+   números do run; segredos e o resto entram por env: e o shell lê como variável. */
+const PERMITIDAS_EM_RUN = /^(github\.run_number|github\.run_attempt)$/;
 function expressoesEmRun(texto){
   const linhas = texto.split(/\r?\n/);
   const blocos = [];
@@ -232,5 +232,26 @@ assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).lengt
 assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
 assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
 assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 2, 'build e testes com os pacotes travados');
+const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
+const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
+assert.match(appIosTf, /runs-on:\s*macos-26/);
+assert.match(appIosTf, /^on:\n\s+workflow_dispatch:\s*\n(?!\s{2}\S)/m, 'o envio do app nativo é só no botão');
+assert.match(appIosTf, /cancel-in-progress:\s*false/, 'cancelar no meio pode matar um upload');
+assert.match(appIosTfSemComentario, /-project app-ios\/Custta\.xcodeproj/);
+assert.match(appIosTfSemComentario, /-onlyUsePackageVersionsFromResolvedFile/);
+assert.match(appIosTf, /CURRENT_PROJECT_VERSION="\$\{\{ github\.run_number \}\}\.\$\{\{ github\.run_attempt \}\}"/);
+assert.match(appIosTf, /-exportOptionsPlist app-ios\/ExportOptions\.plist/);
+assert.match(appIosTf, /if:\s*always\(\)[\s\S]*delete-keychain/, 'keychain temporária precisa sumir mesmo com falha');
+for(const s of ['ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_P8', 'APPLE_TEAM_ID', 'DIST_CERT_P12', 'DIST_CERT_SENHA', 'PERFIL_APP_STORE'])
+  assert.match(appIosTf, new RegExp(`secrets\\.${s}\\b`), `envio do app nativo não lê o secret ${s}`);
+assert.ok(!/-----BEGIN/.test(appIosTf), 'chave literal no workflow — repositório é público');
+assert.equal(readFileSync(join(__dirname, '..', 'app-ios', 'ExportOptions.plist'), 'utf8'),
+  readFileSync(join(__dirname, '..', 'ios', 'App', 'ExportOptions.plist'), 'utf8'), 'o envio do app nativo usa as mesmas opções do de hoje');
+assert.match(appIosTf, /DEVELOPER_DIR:\s*\/Applications\/Xcode_26\.6\.app\/Contents\/Developer/, 'o envio usa o mesmo Xcode fixo da CI');
+assert.match(appIosTf, /AppleWWDRCAG3\.cer/, 'sem o intermediário WWDR G3 a identidade não é válida para assinar');
+assert.match(appIosTf, /TeamIdentifier/, 'perfil precisa ter o TeamIdentifier conferido');
+assert.match(appIosTf, /!=\s*"Custta App Store"/, 'perfil precisa ter o Name conferido contra "Custta App Store"');
+assert.match(appIosTf, /TEAM"\s*!=\s*"\$APPLE_TEAM_ID"/, 'perfil precisa comparar o time do perfil com APPLE_TEAM_ID');
+assert.match(appIosTf, /ExpirationDate[\s\S]*-lt 30/, 'sem o aviso de perfil vencendo em menos de 30 dias');
 
 console.log('ok - Actions com SHA imutável e permissão mínima; build iOS sem assinatura e sob demanda; envio ao TestFlight assinado e sob demanda');

@@ -22,8 +22,16 @@ final class FinalizarSaidaUITests: XCTestCase {
         XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 10))
         XCTAssertTrue(app.elemento("limpando").waitForNonExistence(timeout: 15), "deu certo: o escurecido sai")
         XCTAssertFalse(alerta.exists, "sem aviso")
+        // A pílula sai da árvore assim que a limpeza dá certo, mas o escurecido, que não é elemento de acessibilidade
+        // e segura o toque, ainda esmaece por 0,2 s, e o XCUITest não espera essa transição: o toque dado nela se perde.
+        // Toca até o teclado abrir; um escurecido preso reprova.
         let email = app.textFields["email"]
-        email.tap()
+        let teclado = app.keyboards.firstMatch
+        for _ in 1...5 where !teclado.exists {
+            email.tap()
+            _ = teclado.waitForExistence(timeout: 1)
+        }
+        XCTAssertTrue(teclado.exists, "a entrada fica livre: o toque chega ao campo")
         email.typeText("x")
         XCTAssertTrue((email.value as? String)?.hasSuffix("x") == true, "a entrada fica livre: o toque chega ao campo")
     }

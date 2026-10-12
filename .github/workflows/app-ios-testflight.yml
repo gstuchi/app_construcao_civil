@@ -1,0 +1,168 @@
+name: app-ios-testflight
+# Arquiva, assina e envia o app nativo (app-ios/) ao TestFlight como versão 2.0, no mesmo cadastro
+# do App Store Connect (br.com.custta.app), com os mesmos secrets e a mesma assinatura manual do
+# ios-testflight.yml, que continua enviando o app Capacitor até a remoção.
+#
+# Só no botão: cada execução é um build de verdade na Apple. Antes de apertar, no Mac:
+# npm run test:app-ios:emuladores e npm run test:app-ios:cruzado (a CI não roda os emuladores).
+#
+# Build number: run_number.run_attempt deste workflow. A Apple exige número único dentro da mesma
+# versão (2.0); o run_attempt muda num "Re-run" que falhou no upload.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Mesmo Xcode do workflow app-ios: o padrão do runner muda sem aviso.
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+# Um envio por vez: cancelar no meio pode deixar upload pela metade.
+concurrency:
+  group: app-ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  enviar:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      - name: Os secrets de assinatura existem
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+          DIST_CERT_SENHA: ${{ secrets.DIST_CERT_SENHA }}
+          PERFIL_APP_STORE: ${{ secrets.PERFIL_APP_STORE }}
+        run: |
+          falta=0
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID DIST_CERT_P12 DIST_CERT_SENHA PERFIL_APP_STORE; do
+            [ -z "${!v}" ] && { echo "::error::secret $v ausente"; falta=1; }
+          done
+          exit $falta
+
+      # Keychain só deste job, criada e destruída na mesma execução (passo "Limpar").
+      - name: Keychain temporária
+        env:
+          DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+          DIST_CERT_SENHA: ${{ secrets.DIST_CERT_SENHA }}
+        run: |
+          umask 077
+          set -o pipefail
+          KEYCHAIN="$RUNNER_TEMP/assinatura.keychain-db"
+          SENHA="$(openssl rand -base64 32)"
+          security create-keychain -p "$SENHA" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$SENHA" "$KEYCHAIN"
+          echo "$DIST_CERT_P12" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_CERT_SENHA" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$SENHA" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/dist.p12"
+          # Sem o intermediário WWDR G3 a identidade importa mas fica inválida para assinar.
+          curl -fsSL -o "$RUNNER_TEMP/AppleWWDRCAG3.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
+          security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN" || true
+          IDENTIDADES="$(security find-identity -v -p codesigning "$KEYCHAIN")"
+          echo "$IDENTIDADES"
+          if ! grep -q 'Apple Distribution' <<< "$IDENTIDADES"; then
+            echo "::error::nenhuma identidade Apple Distribution válida na keychain"
+            exit 1
+          fi
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      # Mesmo perfil do app de hoje: o App ID é o mesmo (br.com.custta.app, push e Sign in with Apple).
+      - name: Perfil de provisionamento
+        env:
+          PERFIL_APP_STORE: ${{ secrets.PERFIL_APP_STORE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          umask 077
+          set -o pipefail
+          PERFIL="$RUNNER_TEMP/perfil.mobileprovision"
+          echo "$PERFIL_APP_STORE" | base64 --decode > "$PERFIL"
+          security cms -D -i "$PERFIL" > "$RUNNER_TEMP/perfil.plist"
+          UUID="$(plutil -extract UUID raw -o - "$RUNNER_TEMP/perfil.plist")"
+          NOME="$(plutil -extract Name raw -o - "$RUNNER_TEMP/perfil.plist")"
+          TEAM="$(plutil -extract TeamIdentifier.0 raw -o - "$RUNNER_TEMP/perfil.plist")"
+          EXPIRA="$(plutil -extract ExpirationDate raw -o - "$RUNNER_TEMP/perfil.plist")"
+          if [ "$NOME" != "Custta App Store" ] || [ "$TEAM" != "$APPLE_TEAM_ID" ]; then
+            echo "::error::perfil errado — Name=\"$NOME\" TeamIdentifier=\"$TEAM\""
+            exit 1
+          fi
+          # Aviso, não erro: o perfil ainda assina agora, mas perto do vencimento um envio pode
+          # começar a falhar sem que ninguém tenha visto a tempo de renovar (como no ios-testflight.yml).
+          AGORA="$(date -u +%s)"
+          VENCE="$(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$EXPIRA" +%s)"
+          DIAS=$(( (VENCE - AGORA) / 86400 ))
+          if [ "$DIAS" -lt 30 ]; then
+            echo "::warning::perfil \"Custta App Store\" vence em $DIAS dias ($EXPIRA) — renovar"
+          fi
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          cp "$PERFIL" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          cp "$PERFIL" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$UUID.mobileprovision"
+          echo "PERFIL_UUID=$UUID" >> "$GITHUB_ENV"
+
+      - name: Chave da API do App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_ENV"
+
+      # Sem override de assinatura na linha de comando: valeria para os pacotes de recurso do
+      # Firebase, que não podem ter assinatura de distribuição. A Release do project.pbxproj já
+      # aponta o perfil e a identidade.
+      - name: Arquivar (Release, assinado)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/CusttaNativo.xcarchive" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}.${{ github.run_attempt }}" \
+            archive
+
+      - name: Enviar ao TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/CusttaNativo.xcarchive" \
+            -exportOptionsPlist app-ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Resumo
+        run: |
+          echo "App nativo 2.0, build \`${{ github.run_number }}.${{ github.run_attempt }}\`, enviado ao TestFlight (branch \`${GITHUB_REF_NAME}\`, commit \`${GITHUB_SHA::7}\`)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Limpar
+        if: always()
+        run: |
+          security delete-keychain "${KEYCHAIN:-$RUNNER_TEMP/assinatura.keychain-db}" || true
+          rm -rf "$RUNNER_TEMP/asc" "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/perfil.mobileprovision" "$RUNNER_TEMP/perfil.plist"
+          if [ -n "${PERFIL_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$PERFIL_UUID.mobileprovision"
+            rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$PERFIL_UUID.mobileprovision"
+          fi

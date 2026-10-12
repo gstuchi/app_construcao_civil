@@ -27,4 +27,15 @@ struct ComposicaoTests {
         #expect(chave.count == 39 && chave.hasPrefix("A"))
         #expect(chave.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") })
     }
+
+    /// Nos emuladores, um FirebaseApp com nome próprio: a sessão dele fica numa vaga do keychain só dela, e o app
+    /// padrão, só para a produção. Sem rede: configurar não fala com ninguém (nada de Auth nem Firestore aqui).
+    @Test func emuladoresNumAppProprio() {
+        let app = Composicao.configurarFirebase(emuladores: true)
+        #expect(app.name == Composicao.nomeDoAppDosEmuladores)
+        #expect(app.name != Emulador.nome, "nem o app dos testes de unidade contra os emuladores")
+        #expect(app.options.projectID == Composicao.projetoDosEmuladores && app.options.apiKey == Composicao.chaveDosEmuladores)
+        #expect(Composicao.configurarFirebase(emuladores: true) === app, "reabrir devolve o mesmo app (configurar de novo derruba)")
+        #expect(FirebaseApp.app() == nil, "o app padrão fica só para a produção")
+    }
 }

@@ -19,10 +19,12 @@ struct NoEmulador {}
 enum Emulador {
     /// Projeto dos emuladores, o mesmo do firebase.test.json e dos testes do site.
     static let projeto = Composicao.projetoDosEmuladores
+    /// Diferente do `Composicao.nomeDoAppDosEmuladores`, o do app aberto contra os emuladores.
+    static let nome = "emulador"
     static let app: FirebaseApp = {
-        if let app = FirebaseApp.app(name: "emulador") { return app }
-        FirebaseApp.configure(name: "emulador", options: Composicao.opcoesDosEmuladores())
-        let app = FirebaseApp.app(name: "emulador")!
+        if let app = FirebaseApp.app(name: nome) { return app }
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let app = FirebaseApp.app(name: nome)!
         Auth.auth(app: app).useEmulator(withHost: "127.0.0.1", port: 9099)
         return app
     }()

@@ -23,7 +23,9 @@
 
 **Ajustes finais de 09/10.** O Giovani aprovou tudo ("tudo aprovado, pode mandar a tropa trabalhar"): a borda de rolagem suave do mockup `final-v2.html` no lugar da faixa escura, em todas as telas; a correção da leitura no escuro pela recomendação do Planejador, com o laudo como juiz (uma camada do tom do fundo sob o vidro do conteúdo e, segundo degrau da escada, o globo mais fundo dentro do app); e o ícone do sair na cor do texto. No caminho, o laudo achou um defeito no próprio pior caso da aurora, que deixava o fundo até três vezes mais claro do que qualquer quadro da deriva, corrigido. As 15 cenas do laudo passam de 4,5:1 (seção "Resultado do portão de desenho").
 
-**PR 2 fechado (10/10).** As Tarefas 3 a 11 entraram no #61 (código final no `412e6cd`) com o que a conferência visual do Verniz, as revisões do Lupa e as decisões do Giovani mudaram no caminho, e este plano mostra o código como entrou: cada arquivo do PR 2 está, inteiro, na tarefa que o cria, copiado do commit (por isso um teste pode usar um nome de uma tarefa seguinte, como o `CoresTests` da Tarefa 3 com o halo da Tarefa 4; a ordem dos passos e as falhas esperadas ficam como história). As decisões do Giovani em 10/10, "o que mais mantém o padrão da Apple": a aba escolhida da cápsula é uma pílula sólida (Tinta e SobreTinta, como o segmentado da entrada) e a borda de rolagem de baixo fica só com o efeito `.soft` do sistema, sem véu; o halo atrás do texto no escuro sobe para 50% na entrada e ganha 5% atrás do título grande de Obras e de Ajustes. Onde o brief divergia do mockup, valeu o mockup: botões de 52 pt (o pequeno, 48) e campos de senha de 52 pt (os de texto seguem com 48), a dica "Role para entrar" a 23 pt da caixa do logo e o "N obras" em pílula sólida com Reduzir transparência. O laudo de leitura virou uma varredura de 43 cenas, com portão nos dois tamanhos de iPhone, e passa em todas. O PR 3 (Tarefas 12 a 14) parte desse estado: o código dele não muda, e as âncoras que ele usa nos arquivos do PR 2 foram conferidas contra o `412e6cd`.
+**PR 2 fechado (10/10).** As Tarefas 3 a 11 entraram no #61 (código final no `2820d1f`) com o que a conferência visual do Verniz, as revisões do Lupa e as decisões do Giovani mudaram no caminho, e este plano mostra o código como entrou: cada arquivo do PR 2 está, inteiro, na tarefa que o cria, copiado do commit (por isso um teste pode usar um nome de uma tarefa seguinte, como o `CoresTests` da Tarefa 3 com o halo da Tarefa 4; a ordem dos passos e as falhas esperadas ficam como história). As decisões do Giovani em 10/10, "o que mais mantém o padrão da Apple": a aba escolhida da cápsula é uma pílula sólida (Tinta e SobreTinta, como o segmentado da entrada) e a borda de rolagem de baixo fica só com o efeito `.soft` do sistema, sem véu; o halo atrás do texto no escuro sobe para 50% na entrada e ganha 5% atrás do título grande de Obras e de Ajustes e da versão em Ajustes. Onde o brief divergia do mockup, valeu o mockup: botões de 52 pt (o pequeno, 48) e campos de senha de 52 pt (os de texto seguem com 48), a dica "Role para entrar" a 23 pt da caixa do logo e o "N obras" em pílula sólida com Reduzir transparência. O laudo de leitura virou uma varredura de 47 cenas, com portão nos dois tamanhos de iPhone, e passa em todas. O PR 3 (Tarefas 12 a 14) partiu desse estado.
+
+**PR 3 fechado (11/10).** As Tarefas 12 a 14 entraram no #65 (código final no `e8bbefa`, na `main` desde 12/10 pelo merge `4d67e0f`) com as correções das revisões do Lupa e o inventário do PR 3, e este plano mostra o código como entrou, do mesmo jeito que no PR 2: cada arquivo que o PR 3 cria está, inteiro, na tarefa que o cria (ou no inventário, se nasceu nele), e o que o PR 3 muda nos arquivos do PR 2 está em diffs na seção "Inventário do PR 3", depois da Tarefa 14. O que mudou no caminho: o `perfilPendente` pede o Firestore de novo depois de esperar a limpeza (uma referência guardada entre dois `await` derrubava o app num sair no meio), e as leituras da conta passam pelo `banco.ler`, que responde "cancelled" às que o sair corta; o modo emuladores só existe em Debug, por uma função (`usaEmuladores`) e não por uma constante, que dava dois avisos no Release, e usa uma chave falsa, para um pedido que escape dos emuladores ser recusado pela produção em vez de criar conta lá; o sair recusa um segundo pedido no meio da saída. Por decisão do Giovani, a falha da limpeza do cache local é tratada como no site: a entrada fica bloqueada e o alerta "Finalizar saída", do mockup aprovado `finalizar-saida.html`, pede para limpar de novo. Os botões dos alertas ficaram na cor do texto, e o laudo nomeia duas exceções, as duas pelo padrão da Apple: o "Sair" destrutivo, no vermelho do sistema, e a mensagem secundária do alerta. O laudo de leitura virou portão também na CI, com a varredura curta. A Tarefa 15 parte desse estado.
 
 **Goal:** Primeiro build 2.0 do app nativo no TestFlight: o Giovani entra na conta (e-mail e senha, Apple ou Google), vê as obras com os totais iguais aos do site, vê chegar ao iPhone uma mudança feita no site e abre o app em modo avião com tudo lá. No caminho, o PR 2 já mostra no simulador todas as telas da etapa 1 com a cara do mockup aprovado, com dados de exemplo.
 
@@ -35,7 +37,7 @@
 
 **Spec:** `docs/specs/2026-10-06-app-nativo-design.md` (Decisões; Desenho 1 a 8; Etapas, linha 1; Testes e validação 2, 4, 5, 6 e 7). Depende da Parte A (`docs/plans/2026-10-06-app-nativo-etapa1a-nucleo.md`) já na `main`. Inventário do site, com arquivo e linha: `docs/plans/2026-10-06-app-nativo-inventario.md` (seções 5 e 6). Mockup aprovado: `~/Documents/custta-mockups/nativo/etapa1/final.html`, com os prints em `prints-com-refracao/final-*.png`, e o `final-v2.html` para a borda de rolagem (09/10).
 
-**Validação deste plano (08/10/2026, replanejamento; refeita na madrugada de 09/10, depois do conselho, e de novo em 09/10, com os ajustes finais):** o código das Tarefas 3 a 11 (PR 2) foi escrito e rodado num protótipo sobre a `origin/main` de 08/10 (`3acb6d6`), no Xcode 27 do Mac, e refeito no que o portão e o conselho de 08/10 mudaram (seta fora da lista, constante do botão do Google, relógio e pausas do fundo, globo e aurora, rolagem da entrada, laudo de leitura, auditorias e pares sólidos) e no que os ajustes finais de 09/10 mudaram (borda de rolagem, escurecimento sob o vidro, globo mais fundo no app, ícone do sair, pior caso da aurora corrigido, laudo sem pendências, auditorias fora da faixa da borda); o texto deste plano, aplicado numa cópia limpa da `origin/main` por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa), reproduz o protótipo byte a byte (176 arquivos). No protótipo: núcleo com 123 testes em 22 suítes (nem o conselho nem os ajustes mexeram no núcleo); `npm run test:unit` com 353; `tests/app-ios.test.cjs` com 19; `CusttaTests` com 39 testes em 7 suítes; `CusttaUITests` com 31 (19 de fluxo, 7 auditorias, os 3 do medidor do laudo com imagens sintéticas e os 2 do laudo, com as 15 cenas acima de 4,5:1); nas provas de regressão, com o texto claro sobre a marca, a auditoria dos quatro combos reprova (2 achados) e a conta dos pares sólidos também (2,53:1); com o secundário do Transparente claro no tom do site, o laudo reprova obras no claro esmeralda (3 palavras, de 3,95 a 4,46:1); sem o escurecimento do Transparente, o laudo reprova obras no escuro (5 palavras a partir de 2,50:1 no esmeralda e 3 a partir de 2,94:1 no azul); e sem a composição de cada quadro no pior caso da aurora, o teste do envelope reprova (12.737 canais fora do mais claro dos dois quadros); o build Release compila (na cópia limpa, com o plano aplicado). PR 3 (Tarefas 12 a 14, o código Firebase validado no plano anterior, recomposto), na cópia limpa: o build Release compila sobre o PR 2 novo; `xcodebuild test` com os falsos (46 testes de unidade e 26 de tela) e `npm run test:app-ios:emuladores` (os mesmos 46, nenhum pulado) passaram em 08/10, antes do conselho, e não foram refeitos (nem o conselho nem os ajustes de 09/10 mexeram no código do PR 3; a Tarefa 14 acrescenta ao `RaizView` por âncoras que não mudaram). PR 4 (Tarefas 15 a 17), na cópia limpa, refeito com os ajustes de 09/10 (o checklist e a seção do CLAUDE.md novos): as guardas, `node tests/workflow.test.cjs` e `tests/docs.test.mjs` (28) e `npm run test:unit` (354) verdes; `npm run test:app-ios:cruzado` passou em 08/10, antes do conselho (`ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada`), e não foi refeito (nem o conselho nem os ajustes mudaram o valor de acessibilidade da linha de obra ou o código do cruzado). O envio ao TestFlight (Tarefa 17, Step 6) não foi rodado. O Mac só tem o Swift 6.4: nenhum recurso só do 6.4 ou do SDK do iOS 27 foi usado (alvo iOS 26; o `TextRenderer` e o `ScrollPosition` do laudo são do iOS 18, e o `scrollEdgeEffectStyle`, o `scrollEdgeEffectHidden` e o `safeAreaBar` da borda, do iOS 26), e o job `app` da CI, no Xcode 26.6, confere no primeiro push do PR 2. **Depois do PR 2 (10/10):** no `412e6cd`, no Mac, o núcleo passou com 124 testes em 22 suítes, o `CusttaTests` com 51 em 9 suítes, o `CusttaUITests` com 38 (24 de fluxo, 9 auditorias, os 3 do medidor do laudo e os 2 do laudo, com as 43 cenas acima de 4,5:1 no iPhone 18 Pro e no 18 Pro Max; a pior, 4,56:1, é a etiqueta "Vendida" nos claros) e o `npm run test:unit` com 364, sem aviso do compilador; o `calc.json` tem 62 grupos e 680 casos. O código das Tarefas 3 a 11 foi copiado desse commit (`git show 412e6cd:<caminho>`), e o texto delas, aplicado numa cópia limpa da `origin/main` (`aa4cce1`) por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa e os geradores), reproduz o `412e6cd` byte a byte nos 175 arquivos do PR 2. O código do PR 3 não foi refeito sobre ele: o PR 2 só acrescentou nos arquivos que o PR 3 usa (`ModeloApp.enviarConfirmacao`, a `ContaFalsa` com o registro das conferências de sessão), e as âncoras das Tarefas 14 e 15 continuam no lugar.
+**Validação deste plano (08/10/2026, replanejamento; refeita na madrugada de 09/10, depois do conselho, e de novo em 09/10, com os ajustes finais):** o código das Tarefas 3 a 11 (PR 2) foi escrito e rodado num protótipo sobre a `origin/main` de 08/10 (`3acb6d6`), no Xcode 27 do Mac, e refeito no que o portão e o conselho de 08/10 mudaram (seta fora da lista, constante do botão do Google, relógio e pausas do fundo, globo e aurora, rolagem da entrada, laudo de leitura, auditorias e pares sólidos) e no que os ajustes finais de 09/10 mudaram (borda de rolagem, escurecimento sob o vidro, globo mais fundo no app, ícone do sair, pior caso da aurora corrigido, laudo sem pendências, auditorias fora da faixa da borda); o texto deste plano, aplicado numa cópia limpa da `origin/main` por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa), reproduz o protótipo byte a byte (176 arquivos). No protótipo: núcleo com 123 testes em 22 suítes (nem o conselho nem os ajustes mexeram no núcleo); `npm run test:unit` com 353; `tests/app-ios.test.cjs` com 19; `CusttaTests` com 39 testes em 7 suítes; `CusttaUITests` com 31 (19 de fluxo, 7 auditorias, os 3 do medidor do laudo com imagens sintéticas e os 2 do laudo, com as 15 cenas acima de 4,5:1); nas provas de regressão, com o texto claro sobre a marca, a auditoria dos quatro combos reprova (2 achados) e a conta dos pares sólidos também (2,53:1); com o secundário do Transparente claro no tom do site, o laudo reprova obras no claro esmeralda (3 palavras, de 3,95 a 4,46:1); sem o escurecimento do Transparente, o laudo reprova obras no escuro (5 palavras a partir de 2,50:1 no esmeralda e 3 a partir de 2,94:1 no azul); e sem a composição de cada quadro no pior caso da aurora, o teste do envelope reprova (12.737 canais fora do mais claro dos dois quadros); o build Release compila (na cópia limpa, com o plano aplicado). PR 3 (Tarefas 12 a 14, o código Firebase validado no plano anterior, recomposto), na cópia limpa: o build Release compila sobre o PR 2 novo; `xcodebuild test` com os falsos (46 testes de unidade e 26 de tela) e `npm run test:app-ios:emuladores` (os mesmos 46, nenhum pulado) passaram em 08/10, antes do conselho, e não foram refeitos (nem o conselho nem os ajustes de 09/10 mexeram no código do PR 3; a Tarefa 14 acrescenta ao `RaizView` por âncoras que não mudaram). PR 4 (Tarefas 15 a 17), na cópia limpa, refeito com os ajustes de 09/10 (o checklist e a seção do CLAUDE.md novos): as guardas, `node tests/workflow.test.cjs` e `tests/docs.test.mjs` (28) e `npm run test:unit` (354) verdes; `npm run test:app-ios:cruzado` passou em 08/10, antes do conselho (`ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada`), e não foi refeito (nem o conselho nem os ajustes mudaram o valor de acessibilidade da linha de obra ou o código do cruzado). O envio ao TestFlight (Tarefa 17, Step 6) não foi rodado. O Mac só tem o Swift 6.4: nenhum recurso só do 6.4 ou do SDK do iOS 27 foi usado (alvo iOS 26; o `TextRenderer` e o `ScrollPosition` do laudo são do iOS 18, e o `scrollEdgeEffectStyle`, o `scrollEdgeEffectHidden` e o `safeAreaBar` da borda, do iOS 26), e o job `app` da CI, no Xcode 26.6, confere no primeiro push do PR 2. **Depois do PR 2 (10/10):** no `2820d1f`, o último commit do #61, no Mac, o núcleo passou com 124 testes em 22 suítes, o `CusttaTests` com 51 em 9 suítes, o `CusttaUITests` com 39 (24 de fluxo, 9 auditorias, os 3 do medidor do laudo e os 3 do laudo, com as 47 cenas acima de 4,5:1 no iPhone 18 Pro e no 18 Pro Max; a pior, 4,56:1, é a etiqueta "Vendida" nos claros) e o `npm run test:unit` com 364, sem aviso do compilador; o `calc.json` tem 62 grupos e 680 casos. O código das Tarefas 3 a 11 foi copiado desse commit (`git show 2820d1f:<caminho>`), e o texto delas, aplicado numa cópia limpa da `origin/main` de antes do PR 2 (`aa4cce1`) por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa e os geradores), reproduz o `2820d1f` byte a byte nos 175 arquivos do PR 2. **Depois do PR 3 (11/10):** no Mac, o `CusttaTests` passou com 85 testes no `e8bbefa` (68 sem os emuladores, com 17 pulados; com eles, os 85, nenhum pulado), o `CusttaUITests` com 45 no `e648f0e` (26 de fluxo, 9 auditorias, os 4 do medidor do laudo e os 6 do laudo: as 47 cenas, o "Sair da conta?" e o "Finalizar saída", todos acima de 4,5:1 nos dois tamanhos; a pior continua em 4,56:1), com o teste de tela e o laudo do "Finalizar saída" refeitos no `e8bbefa`, o núcleo com os mesmos 124 e o `npm run test:unit` com 366, sem aviso do compilador no Debug nem no Release. Na CI (Xcode 26.6, simulador do iOS 26), tudo verde no `e8bbefa`: o `nucleo` em 59s, o `verificar` do site em 5m48s e o `app` em 42m23s, com os 85 testes de unidade (os 17 dos emuladores pulados), os 45 de tela e o laudo como portão (75 medidas, com a varredura curta; a pior, 4,56:1). O código das Tarefas 12 a 14 e do inventário foi copiado do `e8bbefa` (`git show` e `git diff`), e o texto, aplicado numa cópia limpa da `origin/main` de antes do PR 3 (`d23d7a1`) por um script que segue cada passo (arquivos inteiros, trechos no fim, instruções em prosa, os diffs com `git apply` e o gerador de cores), reproduz o `e8bbefa` byte a byte nos 37 arquivos do PR 3. A Tarefa 15 não foi refeita sobre ele: as âncoras que ela usa nos arquivos dos PRs 2 e 3 foram conferidas contra o `e8bbefa`.
 
 ## Global Constraints
 
@@ -53,7 +55,7 @@
 - Todo `xcodebuild` e `swift` da CI roda com o `DEVELOPER_DIR` do Xcode 26.6 (decisão "Xcode da CI" da Parte A). Nada só do Swift 6.4: o Mac compila com o 6.4 e a CI com o 6.3.3.
 - Os workflows do Capacitor (`ios-build.yml`, `ios-testflight.yml`) não mudam.
 - Mockups em `~/Documents/custta-mockups/`, nunca no repositório.
-- Testes contra os emuladores: projeto `demo-custta-phase2`, portas 8080 (Firestore) e 9099 (Auth), como o `firebase.test.json`. Rodam com a assinatura de simulador do Xcode (sem `CODE_SIGNING_ALLOWED=NO`): sem ela o app não tem entitlements e o Firebase Auth falha no keychain (erro −34018).
+- Testes contra os emuladores: projeto `demo-custta-phase2`, portas 8080 (Firestore) e 9099 (Auth), como o `firebase.test.json`, e a chave falsa dos emuladores (`Composicao.chaveDosEmuladores`, desde o PR 3). Rodam com a assinatura de simulador do Xcode (sem `CODE_SIGNING_ALLOWED=NO`): sem ela o app não tem entitlements e o Firebase Auth falha no keychain (erro −34018). Nenhum teste monta a composição com rede: um `useEmulator` esquecido mandaria o pedido à produção.
 - Identificadores, comentários, textos de tela e commits em português. Textos de tela iguais aos do site, salvo onde o mockup aprovado decidiu outra coisa (seção "Resultado do portão de desenho").
 - Commits: um por mudança lógica, `tipo: descrição` em minúsculas com acento, corpo em prosa quando não é trivial, autor Giovani Stuchi, **sem linha de coautoria**. Branch + PR, nunca direto na `main`. Um worktree por entrega em `.claude/worktrees/<nome>`, criado da `origin/main`: cada linha da tabela "Como entregar" é uma tarefa do Orquestrador, com branch, worktree e PR próprios.
 - Escapes de caractere nos trechos de código usam a forma `\u{a0}` (vale em JavaScript e Swift). Copie exatamente.
@@ -66,14 +68,19 @@
 | Ordem dos PRs | **Telas primeiro** (decisão do Giovani, 08/10): PR 2 com a identidade, as regras do núcleo, o modelo e as telas sobre os serviços falsos; PR 3 com o Firebase; PR 4 com a conferência cruzada e o TestFlight. | Depois de dois dias, o app mostrava só "Custta" num fundo branco. Na ordem antiga, o visual só aparecia no PR 4. |
 | Ordem dentro do PR 2 | A identidade vem antes: tokens (3), aurora e globo (4) e título escrito à mão (5). Depois o núcleo (6 a 8), o modelo (9), as telas (10) e a acessibilidade (11). | Depois da Tarefa 5 o app já abre com a aurora, o globo e o logo se escrevendo: o Orquestrador manda o print ao Giovani (ponto de controle) enquanto o núcleo, que é código já validado, entra. |
 | Modelo antes do Firebase | O `Sincronizador` (núcleo puro) entra no PR 2, antes do `ModeloApp`; não há protocolo nem falso novo para ele. Só o que fala com o SDK (`BancoFirebase`, `TransporteFirebase`, `ContaFirebase`, a composição de produção) vai para o PR 3. | O `TransporteFalsoApp` já é o falso do `Sincronizador`, e as telas mostram os estados dele (salvando, sem conexão, não salvou, não sincronizou, erro de leitura, nunca grava antes de ver os dados). Um protocolo só para adiar o `Sincronizador` duplicaria essa máquina de estados e seria jogado fora. |
-| Release no PR 2 | `Composicao.montar()` devolve o modelo com os serviços falsos em Debug e nil em Release até o PR 3; com nil o app mostra a abertura (aurora, globo e logo). | O Release não leva os falsos (só Debug) e ainda não tem serviço de verdade; o build Release continua compilando na CI. |
+| Release no PR 2 | `Composicao.montar()` devolve o modelo com os serviços falsos em Debug e nil em Release até o PR 3; com nil o app mostra a abertura (aurora, globo e logo). Desde o PR 3 (Tarefa 14), o `montar` devolve sempre um modelo, e só o app que hospeda os testes de unidade fica sem serviço (mostra a abertura). | O Release não leva os falsos (só Debug) e ainda não tem serviço de verdade; o build Release continua compilando na CI. |
 | Como o projeto Xcode nasce | `project.pbxproj` escrito à mão, formato do Xcode 16+ (`objectVersion = 77`) com pastas sincronizadas; sem XcodeGen nem Tuist. | Ferramenta geradora seria mais uma dependência fora da política de pacotes revisados. Com pastas sincronizadas, arquivo novo numa pasta entra no alvo sem tocar no `project.pbxproj`. A guarda de `objectVersion` impede que um Xcode mais novo suba o formato e quebre a CI (Xcode 26). |
 | Par de versões dos SDKs | firebase-ios-sdk **12.19.2** e GoogleSignIn-iOS **8.0.0**, `exactVersion`. | É o par que já resolve no `Package.resolved` do app Capacitor (app-check 11.3.2, gtm-session-fetcher 3.5.0); o Firebase 13 não fecha com o GoogleSignIn 8 (`docs/sdks-fase4.md`). FirebaseMessaging entra na etapa 5, do mesmo pacote, sem mudar os pins. |
 | Client do Google | O client **iOS** do `GoogleService-Info.plist` (`GIDClientID` no `Info.plist`), não o client web que o plugin do Capacitor usava. | É o caminho padrão do SDK nativo do Google com o Firebase iOS; o uid é o mesmo do site e do app de hoje. |
 | Login com a Apple | `SignInWithAppleButton(.continue)` do SwiftUI com nonce (32 bytes aleatórios; a Apple recebe o SHA-256) e `OAuthProvider.appleCredential(withIDToken:rawNonce:fullName:)`. O nome do primeiro login vai para o `displayName`. | Botão e fluxo do sistema (o mockup pede o botão oficial, "Continuar com a Apple", em cápsula). Gravar o nome repete o `gravaNome` do `cloud.js`: o "Falta pouco" não pede o nome de novo (a revisão da Apple reprova). |
 | Botão do Google | Botão próprio pelas regras do Google: cores fixas (claro `#FFFFFF`/`#747775`/`#1F1F1F`, escuro `#131314`/`#8E918F`/`#E3E3E3`), G oficial do Google (o `google-g.svg` do site, com as cores oficiais desde o #63; a cópia no `LogoGoogle.imageset` é igual byte a byte, e a guarda confere) e Roboto Medium 14/20 embutida só nele (googlefonts/roboto-3-classic v3.016, OFL, SHA-256 conferido pela guarda). Texto "Continuar com o Google", confirmado pelo Giovani em 08/10, numa constante (`BotaoGoogle.texto`) para trocar se o Google pedir outro. | Decisão do mockup. O `GIDSignInButton` do SDK traria outro produto do pacote e outro texto ("Fazer login com o Google"). |
 | Estado e sincronização | `Sincronizador` no núcleo, `@MainActor @Observable`, com `TransporteDados` e `Relogio` injetados; `TransporteFirebase` só converte tipos e códigos. Retornos do Firestore na fila principal (`dispatchQueue = .main`). | A regra da fila, do backoff, da guarda de tamanho, do eco e de só gravar depois de ver os dados fica testável sem simulador (29 testes com falsos). |
-| Sair da conta | Na ordem do `cloud.js`: espera a fila (5 s no máximo; sem rede pede para conectar e não sai), confere que a conta é a mesma, para a escuta, grava a marca de limpeza, faz `signOut` e `GIDSignIn.signOut()`, encerra o Firestore e apaga o cache e só então tira a marca. Confirmação pelo **alerta do sistema** ("Sair da conta?", Cancelar e Sair), no sair do topo de Obras e de Ajustes e no botão de Ajustes; sem rede, um segundo alerta explica. | Igual ao `logout` do `cloud.js` (`cloud.js:263-292` e `572-592`). O alerta foi decidido pelo Giovani no mockup (o diálogo de vidro do site ficou descartado). |
+| Sair da conta | Na ordem do `cloud.js`: espera a fila (5 s no máximo; sem rede pede para conectar e não sai), confere que a conta é a mesma, para a escuta, grava a marca de limpeza, faz `signOut` e `GIDSignIn.signOut()`, encerra o Firestore e apaga o cache e só então tira a marca. Confirmação pelo **alerta do sistema** ("Sair da conta?", Cancelar e Sair), no sair do topo de Obras e de Ajustes e no botão de Ajustes; sem rede, um segundo alerta explica. Um segundo pedido no meio da saída é recusado sem mensagem, e "Usar outra conta" fica desligado enquanto sai (a trava `ModeloApp.saindo`, desde o PR 3). | Igual ao `logout` do `cloud.js` (`cloud.js:263-292` e `572-592`; a trava é o `saindo` do `logout`). O alerta foi decidido pelo Giovani no mockup (o diálogo de vidro do site ficou descartado). Sem a trava, um toque duplo em "Usar outra conta" punha duas limpezas juntas, e a primeira a terminar soltava a fila com a segunda ainda apagando o cache (revisão da Tarefa 12). |
+| Falha da limpeza do cache local | Igual ao site (decisão do Giovani em 11/10): se apagar o cache falha, no sair ou na abertura que termina uma limpeza interrompida, o `BancoFirebase` mantém a marca e a fila presas e fica bloqueado (`bloqueado`, `observarBloqueio`) até `tentarLimparDeNovo` dar certo. Bloqueado, entrar, Apple, Google e criar conta recusam com o código "cache" (nos dois sociais, com "Limpe os dados locais antes de entrar.", a mensagem do `auth.js`). O `ModeloApp.sair` trata o "cache" à parte: a conta já saiu, a escuta não volta para o uid que saiu e o "Finalizar saída" abre pelo bloqueio. | É o `cacheBloqueado` do `cloud.js` (`cloud.js:270-299`, `412` e `451-466`). Antes, o banco soltava a fila com a marca de pé, e a abertura seguinte apagaria o cache antes de subirem as gravações sem rede da sessão nova: perda calada, rara no iPhone (sobra erro de disco), mas sem aviso (revisão da Tarefa 12). |
+| "Finalizar saída" | Alerta do sistema do mockup aprovado (`finalizar-saida.html`, 11/10): "Finalizar saída", o texto do mockup e um botão só, "Tentar limpar novamente", sem Cancelar. Ao tocar, o alerta fecha e a pílula "Limpando…" aparece no lugar dele depois de meio segundo; se falhar de novo, o alerta volta com o texto do erro; se der certo, a entrada fica livre, sem aviso. Abre também na abertura do app, se a limpeza retomada falhar. Um escurecido próprio fica de pé durante toda a limpeza pendente (`EscurecidoSobOAlerta`: 42% no escuro e nada no claro, somado ao do sistema; `Escurecido`: 70% e 20%, sozinho), e sobe para o total no quadro em que o alerta começa a fechar (`VigiaDoAlerta`: o `isBeingDismissed` do `UIAlertController` no topo, conferido a cada quadro por um `CADisplayLink`, só UIKit público). A pílula é vidro sobre a superfície sólida e, na maior letra num iPhone de 375 pt, fica só com o texto (`ViewThatFits`). | O diálogo do site (`ui-confirm.js:149`) não fecha sem limpar, e o alerta do sistema é o padrão da Apple. O SwiftUI só roda a ação do botão no fim do fechamento, uns 0,4 s depois do toque: sem o escurecido do app, a tela clareava nesse meio (+140% por até 0,8 s); com ele, sobra um pico de 14 a 16% por uns 25 ms, no escuro (vídeo no iOS 27). Só de vidro, sobre o botão branco da Apple, o "Limpando…" chegava a 1,5:1. |
+| Botões dos alertas | Na cor do texto (`.tint(paleta.cor(.texto))`, num fundo vazio para o tint valer só no alerta), no "Sair da conta?" e no "Finalizar saída". Duas exceções nomeadas no laudo, pelo padrão da Apple: o "Sair" destrutivo fica no vermelho do sistema, que não segue o tint (2,2 a 3,0:1), e a mensagem do alerta, na cor secundária do sistema, que o próprio iOS escurece com Aumentar contraste (2,7 a 3,7:1; decisão do Giovani em 11/10). | Na cor da marca, o "Cancelar" ficava entre 2,52 e 2,87:1 nos quatro combos (achado do Croqui), e no `LinkNoVidro` do mockup, em 4,46:1 no escuro azul (o botão do "Finalizar saída", em 4,45:1 no Pro Max); na cor do texto, de 7,16 a 8,22:1 no iOS 27 e de 9,05 a 11,45:1 no iOS 26 da CI. |
+| Modo emuladores | Só em Debug, por uma função (`usaEmuladores(_:)`, que no Release devolve `false`), no app padrão do Firebase, com o projeto `demo-custta-phase2` e uma chave falsa no formato das chaves do Google (`Composicao.chaveDosEmuladores`: 39 caracteres, "A" na frente, só base64url). Os testes de unidade usam um app nomeado ("emulador") com as mesmas opções (`Composicao.opcoesDosEmuladores()`), e o app que hospeda os testes nunca liga o Firebase (`FirebaseApp.app() == nil`). | Com uma constante `false`, o Release acusava os ramos dos emuladores como código que nunca roda (2 avisos; opção (b) da Tarefa 14). O projeto `demo-` já fechava o Firestore; a chave falsa fecha o Auth: o emulador aceita qualquer chave e a produção recusa esta, então um `useEmulator` esquecido falha em vez de criar conta lá. Fora do formato, o FirebaseInstallations derruba o `configure` quando o FCM entrar. O app padrão ainda divide com a produção a vaga do usuário no keychain (Tarefa 15). |
+| Leitura cortada pelo sair | As leituras da conta (`perfilPendente`, `lerNome`) passam pelo `BancoFirebase.ler`, que espera a limpeza, pede a instância na hora e guarda a leitura em voo; ao encerrar a instância, o sair responde "cancelled" a todas. | Usar uma instância encerrada lança uma exceção do Objective-C que o Swift não pega, e o app cai (revisão da Tarefa 12); e o `terminate` corta as leituras em voo sem nunca responder, o que deixava a tarefa da conta pendurada (achado da Tarefa 13). |
 | Espera da fila ao sair (diferença A, aceita) | O `aguardarFila` do `Sincronizador` espera a gravação pendente e o SDK (5 s no máximo), mas não espera a leitura reaberta com erro persistente. O site espera as duas: o `tentarDeNovo` reabre as leituras com erro dentro da espera do sair (`cloud.js:583` e `615-628`). Decisão do Orquestrador no PR #61, revisada pelo Lupa. | Com a leitura presa num erro persistente, o site recusa sair; o app sai. Travar o logout é pior, e nenhum dado fica em risco: a leitura não grava nada, e a gravação pendente continua sendo esperada. |
 | Três diferenças menores do `Sincronizador` (aceitas) | (1) O aviso de dados perto do limite só sai depois das guardas: o `salvar` avisa quando a conta está aberta e os dados já foram vistos; o site avisa no `save` antes de o `saveDados` recusar (`app.js:33-40`). (2) "Não consegui ler seus dados da nuvem agora" sai uma vez por falha de leitura; o site passa pelo `avisoRaro`, no máximo um aviso raro a cada 30 s (`app.js:1987-1992` e `2030-2035`). (3) Na troca de conta o estado zera na hora (`parar`: `estado = .vazio`); o site zera a fila na hora (`cloud.js:309-318`) e troca os dados da tela quando chega o primeiro snapshot da conta nova (`app.js:1962-1974`). Decisão do Orquestrador no PR #61, revisada pelo Lupa. | Nenhuma muda o que é gravado: as duas primeiras são só aviso, e a terceira esconde mais cedo os dados de uma conta que já saiu. |
 | Conferir a sessão (`forcar`) | O `Sincronizador` pede a conferência com `aoPedirVerificacaoDeSessao(forcar:)`: `true` quando a escrita volta `unauthenticated` e `false` quando a rede volta (`cloud.js:240` e `260`). Quem confere, o `ContaFirebase.verificarSessao` (Tarefa 13), pula a não forçada se a última foi há menos de 60 s (`cloud.js:176`). Decisão do Orquestrador no PR #61. | A Identity Toolkit tem cota por IP (60 pedidos por minuto), e cada conferência pede um token novo: sem a trava, cada volta da rede gastaria um. Forçar no `unauthenticated` faz uma sessão que de fato caiu ser vista na hora. A renovação só desloga com erro de sessão inválida, nunca por falta de rede. |
@@ -82,22 +89,22 @@
 | Lista sem obras | "Nenhuma obra ainda." e "Nesta versão de teste, crie as obras pelo site. Elas aparecem aqui sozinhas." | Texto provisório confirmado pelo Giovani no mockup (o do site manda tocar no "+", que não existe na etapa 1). |
 | Lista de obras | Cartão de vidro por obra (ícone da fase, nome, etiqueta da fase, meses, barra e texto do orçamento, total gasto), "N obras" em pílula de vidro e o **"Comparativo entre obras"** (gasto × corrigido pela taxa, com duas ou mais obras com gasto, como o `drawComp` do `app.js`). Sem a seta ">" do mockup até a etapa 2 (decisão do Giovani em 08/10): a obra ainda não abre. | O mockup aprovado traz o comparativo na etapa 1. A regra mora no núcleo (`comparativoEntreObras`, Tarefa 7). |
 | Esqueci a senha | Dentro do cartão de entrar, com o e-mail digitado nele, como no site: sem e-mail válido, "Digite seu e-mail no campo acima primeiro."; e-mail sem conta mostra "E-mail ou senha incorretos." | O mockup aprovado mostra o fluxo do site; a folha do esqueleto antigo (com `emailRedefinir`, `enviarLink` e `mensagemRedefinir`) saiu. Não revelar se o e-mail existe é decisão de produto e do console do Firebase, não desta etapa. |
-| Cores | 45 tokens × 2 peles × claro/escuro (46 até 10/10, quando a pílula sólida da cápsula tirou o `LenteAba`), gerados por `scripts/cores-app-ios.mjs` a partir do `styles.css` e do mockup aprovado (texto sobre o vidro por nível, contorno do "Aumentar contraste", tintas do vidro, aurora, globo, botão do Google). | Tokens com nome estável no código; mudança de cor é na tabela do script, nunca no catálogo nem na tela. A guarda confere que a aurora tem as cores do `styles.css`. |
+| Cores | 47 tokens × 2 peles × claro/escuro (46 até 10/10, quando a pílula sólida da cápsula tirou o `LenteAba`; o PR 3 somou os dois escurecidos do "Finalizar saída"), gerados por `scripts/cores-app-ios.mjs` a partir do `styles.css` e do mockup aprovado (texto sobre o vidro por nível, contorno do "Aumentar contraste", tintas do vidro, aurora, globo, botão do Google). | Tokens com nome estável no código; mudança de cor é na tabela do script, nunca no catálogo nem na tela. A guarda confere que a aurora tem as cores do `styles.css`. |
 | Vidro | `VidroTokens.para(tela:escolha:opcoes:)`: entrada sempre Fosco (`Glass.regular`); app Transparente (`Glass.clear`, padrão) ou Fosco (escolha de Ajustes › Aparência, etapa 5, chave `custta.vidro`); "Aumentar contraste" → Fosco com contorno de 1,5 pt; "Reduzir transparência" → superfícies sólidas. Tintas do mockup por papel (cartão de entrada, segmentado, conteúdo, navegação). No escuro, uma camada do tom do fundo sob o vidro de tudo que não é navegação: 45% no Transparente e 20% no Fosco (decisão do Giovani em 09/10, laudo como juiz). | Dose escolhida pelo Giovani em 06/10. Aro, sombra e refração vêm do `glassEffect` do sistema. O vidro do mockup (CSS) escurecia o fundo (brilho de 0,84 e 0,56); o do iOS clareia e quase não desfoca, e o texto não fechava 4,5:1 no escuro. |
 | Borda de rolagem | Suave em todas as telas, num componente só (`.bordaDeRolagem(abas:)`): a borda `.soft` do iOS 26 desfoca o que passa por baixo das barras e um véu do tom do fundo some até 140 pt, de 50% no alto e nenhum embaixo no tamanho padrão (70% e 60% nos tamanhos de acessibilidade; 88% e 80%, sem o desfoque, com "Reduzir transparência"). No alto só depois de rolar 40 pt; embaixo só nas telas com a cápsula e só onde há véu. Decisão do Giovani em 09/10 (mockup `final-v2.html`); o véu de baixo do tamanho padrão saiu em 10/10 (de 35% para nenhum), junto com a pílula sólida da cápsula. | A faixa escura do mockup v1 escondia a aurora e o conteúdo atrás do título pequeno e da cápsula. A borda do sistema já desfoca; o véu fecha o contraste do título e do relógio (no laudo de 09/10, também o dos rótulos da cápsula sobre a lista: de 2,76 e 3,32:1 para 4,62 e 5,67:1). Com a pílula sólida, o rótulo da aba escolhida não depende mais do véu, e embaixo fica só a borda do sistema, como nos apps da Apple. Na letra grande o véu de 60% continua: sem ele, o "Ajustes" (de vidro) cairia de 8,67 para 5,10:1 no pior caso, medido no Pro Max. |
 | Aurora | Camada desenhada uma vez (`Canvas`, a um terço do tamanho e ampliada) com os quatro brilhos e o degradê do `#aurora` do site, que só se move na deriva de 26 s (ida e volta); some para baixo pelo `fundo` posto por cima (o mesmo pixel da máscara do site, sem um passe fora da tela a cada quadro); intensidade por tela (a de hoje na entrada, a funda no app, a do site no claro) e transição de 0,9 s ao entrar e 0,6 s ao sair. Conselho de 08/10. | Fiel ao CSS do site e barata: o quadro custa uma transformação, não um redesenho. O mockup sugeria `MeshGradient`; o `Canvas` reproduz as elipses e o degradê do site sem aproximar. |
 | Globo | Os mesmos continentes e a mesma grade do `globe.js` (2,2°), pontos agrupados em dez faixas de profundidade (um desenho por faixa, não por ponto); halo e aro desenhados uma vez e, a cada quadro, só os pontos, no retângulo do disco e a 1,75 pixel por ponto (a densidade do `globe.js` e do globo do mockup), ampliados. Conselho de 08/10. No escuro, dentro do app, a 40% (`Globo.intensidade`), junto com a aurora funda; na entrada, inteiro (decisão do Giovani em 09/10, segundo degrau da escada da leitura). | Mesmo desenho do site, com cerca de 86% menos área redesenhada por quadro (estimativa); a guarda confere que os continentes são os do `globe.js`. |
 | Relógio e pausas do fundo | Um relógio só para a aurora e o globo (`CADisplayLink` com 30 quadros pedidos ao ProMotion), com o passo limitado a 1/15 s; tudo para com Reduzir movimento, Pouca Energia, calor (estado térmico sério ou crítico), app fora de ativo, rolagem, teclado aberto e alerta por cima; parado, a aurora fica no quadro 0 (onde o mockup mediu o contraste) e o globo no ângulo 1,2. Os avisos de energia e calor passam para a fila principal. Conselho de 08/10. | Cada quadro do fundo refaz o vidro da tela inteira: aurora e globo mudam juntos e só quando precisam, sem pular na volta do segundo plano. |
-| Leitura sobre o vidro | Auditoria do Xcode com superfícies sólidas (quatro combos e maior letra, com os rótulos da cápsula), pares de texto sobre sólido conferidos em Node e o laudo de leitura por pixel sobre o vidro de verdade, com portão de 4,5:1 no pior momento da deriva, nos dois tamanhos de iPhone (18 Pro e 18 Pro Max). Desde a revisão da Tarefa 11, a cena dos rótulos da cápsula é uma varredura (a lista rolada de 0 a 60 pt, de 10 em 10, e em 260 pt, nos quatro combos), o título grande do UIKit entra na medida por um gancho de Debug, o indicador de início (34 pt) fica de fora, como a barra de status, e o corte de baixo é o da auditoria (os 140 pt da borda): 43 cenas, todas acima de 4,5:1 desde 10/10. Na CI o laudo só relata. Conselho de 08/10. | A auditoria do Xcode não lê vidro; o print lê. A primeira medida mostrou o que só o aparelho mostraria, e a correção foi medida por ele (seção "Resultado do portão de desenho"). A cena das abas só no fim da lista (260 pt) não via nada passando atrás dos rótulos, e o Pro Max reprovava o que o 18 Pro não via: a dica e o título grande no escuro esmeralda (revisão da Tarefa 11). |
+| Leitura sobre o vidro | Auditoria do Xcode com superfícies sólidas (quatro combos e maior letra, com os rótulos da cápsula), pares de texto sobre sólido conferidos em Node e o laudo de leitura por pixel sobre o vidro de verdade, com portão de 4,5:1 no pior momento da deriva, nos dois tamanhos de iPhone (18 Pro e 18 Pro Max). Desde a revisão da Tarefa 11, a cena dos rótulos da cápsula é uma varredura (a lista rolada de 0 a 60 pt, de 10 em 10, e em 260 pt, nos quatro combos), o título grande do UIKit entra na medida por um gancho de Debug, o indicador de início (34 pt) fica de fora, como a barra de status, e o corte de baixo é o da auditoria (os 140 pt da borda): 43 cenas, todas acima de 4,5:1 desde 10/10, e mais 4 em Ajustes na revisão final do PR 2 (47). O PR 3 mede também o texto que o sistema desenha e o app não apaga, os botões dos alertas e o "Limpando…", contra o fundo em volta das letras (`medirRotulo`), com duas exceções nomeadas (seção "Botões dos alertas"). Na CI o laudo só relatava no PR 2; desde o PR 3 é portão lá também, com a varredura da cápsula em 0, 20, 40 e 260 pt (a completa fica no Mac). Conselho de 08/10. | A auditoria do Xcode não lê vidro; o print lê. A primeira medida mostrou o que só o aparelho mostraria, e a correção foi medida por ele (seção "Resultado do portão de desenho"). A cena das abas só no fim da lista (260 pt) não via nada passando atrás dos rótulos, e o Pro Max reprovava o que o 18 Pro não via: a dica e o título grande no escuro esmeralda (revisão da Tarefa 11). Na CI, o simulador da máquina virtual desenha o vidro diferente do Mac, mas igual de uma rodada para outra: as 47 cenas deram as mesmas notas em quatro rodadas do PR 3. |
 | Título escrito à mão | Os caminhos do `.logo-escrito` do `index.html` (guarda compara), lidos por um leitor de SVG próprio, com os tempos do `styles.css` e a vibração leve do carimbo do ponto (como o app de hoje); pronto com Reduzir movimento ou Pouca Energia. | Uma fonte só para o logo: o site muda, a guarda avisa. |
 | Cartão de entrada | **Reto** (sem a inclinação 3D do site); ao rolar, o título sobe 80 pt e esmaece e a dica some, como no `auth.js`. | O vidro do iOS não acompanha a inclinação: no simulador do iOS 27, com `rotation3DEffect` a lâmina de vidro ignora a escala de 85% e fica maior que o conteúdo, e com uma projeção própria ela nem inclina. Confirmado pelo Giovani em 08/10. |
 | Ícone do sair do topo | Na cor do texto nos dois temas; no claro era a da marca (decisão do Giovani em 09/10). | Na cor da marca, no claro, o ícone caía para 2,5 a 3,0:1 quando o "Já confirmei", também da cor da marca, passava por baixo do vidro dele (medida do Croqui). |
 | Alturas dos botões e dos campos | Botões da Apple e do Google e os cheios (Entrar, Criar conta, Começar a usar, Sair da conta) com 52 pt; os pequenos (Reenviar link, Já confirmei, Enviar confirmação de e-mail; `BotaoPrincipal(pequeno:)` e `BotaoSecundario(pequeno:)`) com 48; campo de senha com 52 (o olho com alvo de 44 pt e 4 pt em cima e embaixo) e campo de texto com 48. | O mockup e o site têm 52; o brief tinha 44 e 48, e o mockup manda sobre o brief (conferência da Tarefa 10 e inventário final do PR 2). Os pequenos ficam em 48, a favor do alvo de toque. |
-| Halo atrás do texto solto | No escuro, o tom do fundo atrás do texto solto sobre a aurora: 50% na entrada, atrás do título, do logo e da dica (era 45%), e 5% atrás do título grande de Obras e de Ajustes, no conteúdo que rola, que sobe junto quando o título recolhe (`HaloDoTitulo.naEntrada` e `.naBarra`, `.haloDoTituloDaBarra()`). No claro, nenhum. Decisão do Giovani em 10/10: o menor passo que passa de 4,5:1 nos dois tamanhos, sem clarear o texto e sem cor solta. | No Pro Max, no escuro esmeralda e com Aumentar contraste, a dica ficava em 4,06:1 e o título grande "Obras", do sistema e sem halo, em 4,41:1. Com 50%, a dica vai a 4,63 (com 55% iria a 5,31, e com 60% a 6,11, que já pesa no print); com 5%, o título vai a 4,76 (4,89 na maior letra). Com 45%, como na entrada, o título passava de 9:1 e virava uma mancha escura no canto. |
+| Halo atrás do texto solto | No escuro, o tom do fundo atrás do texto solto sobre a aurora: 50% na entrada, atrás do título, do logo e da dica (era 45%), e 5% atrás do título grande de Obras e de Ajustes, no conteúdo que rola, que sobe junto quando o título recolhe (`HaloDoTitulo.naEntrada` e `.naBarra`, `.haloDoTituloDaBarra()`), e atrás da versão em Ajustes, por trás do painel da conta (`.zIndex(-1)`). No claro, nenhum. Decisão do Giovani em 10/10: o menor passo que passa de 4,5:1 nos dois tamanhos, sem clarear o texto e sem cor solta. | No Pro Max, no escuro esmeralda e com Aumentar contraste, a dica ficava em 4,06:1 e o título grande "Obras", do sistema e sem halo, em 4,41:1. Com 50%, a dica vai a 4,63 (com 55% iria a 5,31, e com 60% a 6,11, que já pesa no print); com 5%, o título vai a 4,76 (4,89 na maior letra). Com 45%, como na entrada, o título passava de 9:1 e virava uma mancha escura no canto. A versão "Versão 2.0 (1)" ficava em 4,42:1 no Pro Max; com o halo, em 4,78 (revisão final do PR 2) e, com ele atrás do painel, em 4,70 (PR 3): por cima, o halo escurecia a base do "Sair da conta" em até 12/255. |
 | Dica "Role para entrar" | A 23 pt da caixa do logo, como no mockup: 9 pt do logo e 14 da dica. | No site as duas margens colapsam e ficam 14 pt; no mockup não colapsam (a dica é `inline-flex`). Vale o mockup (conferência da Tarefa 10). |
 | "N obras" | Pílula de vidro no Transparente e pílula sólida com "Reduzir transparência"; texto solto no Fosco e com "Aumentar contraste" (`VidroTokens.contagemEmPilula`). | Como no mockup aprovado; o brief deixava o texto solto com "Reduzir transparência" (conferência da Tarefa 10). |
 | Ícones | Os traços do `icons.js` do site viram image sets vetoriais em molde (`scripts/icones-app-ios.mjs`, só os usados); os ícones de mensagem (✓, !, cadeado) são SF Symbols. | Decisão do mockup ("os ícones do PWA viram símbolos próprios"). |
-| Serviços falsos | `ContaFalsa`, `TransporteFalsoApp` e `DadosDeExemplo` dentro do app, só em Debug, ligados por `CUSTTA_SERVICOS=falsos` (e, no PR 2, também sem variável nenhuma). Dados: `vitrine` (padrão, as três obras do mockup com as datas contadas de hoje, para comparar lado a lado), `exemplo` (os dos testes) e `vazio`. | Os testes de tela abrem o app de verdade; o falso precisa estar no binário. O Release (TestFlight) não leva nada disso. |
+| Serviços falsos | `ContaFalsa`, `TransporteFalsoApp` e `DadosDeExemplo` dentro do app, só em Debug, ligados por `CUSTTA_SERVICOS=falsos` (e, no PR 2, também sem variável nenhuma). Dados: `vitrine` (padrão, as três obras do mockup com as datas contadas de hoje, para comparar lado a lado), `exemplo` (os dos testes) e `vazio`. Desde o PR 3, `CUSTTA_LIMPEZA` provoca a falha da limpeza do cache: `falha` (no sair e na primeira nova tentativa) ou `abertura` (o app abre bloqueado), com cada nova tentativa levando 8 s. | Os testes de tela abrem o app de verdade; o falso precisa estar no binário. O Release (TestFlight) não leva nada disso. |
 | Opções do iPhone nos testes | Em Debug, `-custta.reduzirMovimento`, `-custta.reduzirTransparencia`, `-custta.aumentarContraste` e `-custta.quadroDaAurora` ligam as opções e congelam a aurora num quadro; para o laudo de leitura, `-custta.auroraPiorCaso` (a aurora no pior ponto da deriva inteira), `-custta.rolagem` (a lista parada numa rolagem dada) e `-custta.textoApagado` (`tudo` ou `navegacao`; com `tudo`, o título da barra, que é do UIKit, também fica transparente). O globo para no ângulo 1,2 pelo Reduzir movimento (o `-custta.anguloDoGlobo` saiu na revisão da Tarefa 11, sem uso). | O XCUITest não muda os ajustes de acessibilidade do sistema, e o laudo precisa de dois prints do mesmo quadro. |
 | Build number do TestFlight | `run_number.run_attempt` do workflow novo, na versão 2.0. | A Apple exige número único dentro da mesma versão; 2.0 é uma versão nova no mesmo cadastro. |
 | Lista de obras só leitura | Entra na etapa 1 por decisão do Orquestrador; no spec ela abre a etapa 2. | É o que torna a sincronização testável no aparelho. |
@@ -129,11 +136,11 @@
 | Testes | Onde | Por quê |
 | --- | --- | --- |
 | Núcleo (`swift test`, 124 testes) | CI, job `nucleo`, e `npm run test:nucleo` | Rápido, sem simulador, pega divergência com o site a cada PR que mexe nas regras. |
-| Unidade do app com falsos e sem rede (`CoresTests`, `VidroTokensTests`, `SuperficieTests`, `MovimentoTests`, `FundoTests`, `LogoTests`, `ModeloAppTests`, `DadosDeExemploTests`, `ComponentesTests`, `FumacaTests`: 51 no fim do PR 2; no PR 3, `ConversaoDoDocumentoTests`, `BancoFirebaseTests`, `ErrosDoSDKTests`) | CI, job `app` | Sem rede e sem keychain; roda com `CODE_SIGNING_ALLOWED=NO`. |
-| Tela com falsos e auditorias de acessibilidade (`CusttaUITests`: 24 de fluxo e 9 auditorias no fim do PR 2) | CI, job `app` | Determinístico (sem rede) e é onde os requisitos da seção 8 viram teste. |
-| Laudo de leitura sobre o vidro (`LeituraNoVidroUITests`: 43 cenas, mais os 3 testes do medidor) | Mac: portão, no iPhone 18 Pro e no 18 Pro Max. CI, job `app`: só relata (`TEST_RUNNER_CUSTTA_LAUDO=relatorio`) | O simulador do iOS 26 da máquina virtual pode desenhar o vidro diferente do Mac; o Orquestrador tira a variável depois de rodadas coerentes. Na CI cada cena leva uns 29 s, e as 43 levaram o job `app` a 47 min no `67caa4a`: o limite do job subiu de 45 para 60 min. Se continuar acima de 45 min, a varredura da CI cai para 0, 20, 40 e 260 pt, e a completa fica no Mac. No Mac, para não dobrar o tempo: `build-for-testing` uma vez e, ao mesmo tempo, `test-without-building` no 18 Pro (tudo) e no Pro Max (só o laudo), com `-collect-test-diagnostics never`. |
-| Guardas em Node (`tests/app-ios.test.cjs`: tokens e cores de base, ícones, aurora, globo e logo iguais aos do site, fonte e G do Google travados, Reduzir movimento, ganchos só em Debug, halo nos títulos grandes, ícone e texto que crescem com a letra) | CI, `npm run test:unit` | Sem Xcode. |
-| Integração contra os emuladores (`TransporteFirebaseTests`, `ContaFirebaseTests`) | Mac: `npm run test:app-ios:emuladores` | Precisa de Java, dos emuladores e da assinatura de simulador (keychain do Auth). |
+| Unidade do app com falsos e sem rede (`CoresTests`, `VidroTokensTests`, `SuperficieTests`, `MovimentoTests`, `FundoTests`, `LogoTests`, `ModeloAppTests`, `DadosDeExemploTests`, `ComponentesTests`, `FumacaTests`: 51 no fim do PR 2; o PR 3 somou `ConversaoDoDocumentoTests`, `BancoFirebaseTests`, `ErrosDoSDKTests`, `ComposicaoTests` e testes no `ModeloAppTests` e no `ComponentesTests`: 68 dos 85 rodam sem os emuladores) | CI, job `app` | Sem rede e sem keychain; roda com `CODE_SIGNING_ALLOWED=NO`. |
+| Tela com falsos e auditorias de acessibilidade (`CusttaUITests`: 24 de fluxo e 9 auditorias no fim do PR 2; 26 de fluxo no fim do PR 3, com o `FinalizarSaidaUITests`) | CI, job `app` | Determinístico (sem rede) e é onde os requisitos da seção 8 viram teste. |
+| Laudo de leitura sobre o vidro (`LeituraNoVidroUITests`: as 47 cenas da varredura, o "Cancelar" do "Sair da conta?" nos quatro combos e 40 medidas do "Finalizar saída", com título, botão e "Limpando…" nos três estados, nos quatro combos, no tamanho padrão e na maior letra; mais os 4 testes do medidor) | Mac: portão, no iPhone 18 Pro e no 18 Pro Max, com a varredura completa. CI, job `app`: portão desde o PR 3, com a varredura curta (`TEST_RUNNER_CUSTTA_VARREDURA: curta`: a lista sob a cápsula em 0, 20, 40 e 260 pt, 31 das 47 cenas) | O simulador do iOS 26 da máquina virtual desenha o vidro diferente do Mac, mas igual de uma rodada para outra: em quatro rodadas do PR 3, as 47 cenas deram as mesmas notas (pior 4,56:1), e o `TEST_RUNNER_CUSTTA_LAUDO=relatorio` saiu. Cada cena leva uns 29 s na CI: com a varredura completa, o job `app` passava de 51 min; com a curta, fica entre 40 e 49 min (limite de 60). Quando o job reprova, o resultado dos testes, com os prints anotados, fica 7 dias no artefato `testes-app-ios`. No Mac, para não dobrar o tempo: `build-for-testing` uma vez e, ao mesmo tempo, `test-without-building` no 18 Pro (tudo) e no Pro Max (só o laudo), com `-collect-test-diagnostics never`. |
+| Guardas em Node (`tests/app-ios.test.cjs`: tokens e cores de base, ícones, aurora, globo e logo iguais aos do site, fonte e G do Google travados, Reduzir movimento, ganchos só em Debug, halo nos títulos grandes e na versão, ícone e texto que crescem com a letra, o script dos testes contra os emuladores e o simulador por variável e sem diagnose) | CI, `npm run test:unit` | Sem Xcode. |
+| Integração contra os emuladores (`TransporteFirebaseTests`, `ContaFirebaseTests`: os 17 testes que pulam sem eles) | Mac: `npm run test:app-ios:emuladores` (os 85 do `CusttaTests`, nenhum pulado), com `CUSTTA_SIMULADOR=<udid>`, um simulador por agente | Precisa de Java, dos emuladores e da assinatura de simulador (keychain do Auth). O script roda com `-collect-test-diagnostics never`: um teste que falha não segura a rodada até 10 min no `simctl diagnose`. |
 | Conferência cruzada site ↔ app (`tests/app-ios/cruzado.mjs`) | Mac: `npm run test:app-ios:cruzado` | Mesmo motivo, mais o auxiliar HTTP que o teste de tela chama para "mudar no site". Portão obrigatório antes de cada build do TestFlight (Tarefa 17). |
 | Conferência visual com o mockup | Mac, simulador (Verniz, nas Tarefas 4, 5 e 10) | Lado a lado com os prints `final-*.png`, nos quatro combos e na maior letra. |
 
@@ -195,7 +202,15 @@ A revisão da Tarefa 11 corrigiu o laudo (a cena da cápsula virou uma varredura
 1. **Cápsula de abas: pílula escolhida sólida e, embaixo, só a borda do sistema.** Com a lista rolada atrás da lente de vidro, os rótulos da cápsula caíam a 3,82–4,10:1 no escuro azul (e o "Obras" a 4,22:1 no escuro esmeralda, no experimento do Verniz). Ele viu a pílula sólida com véu de baixo de 35%, 20% ou nenhum, e a lente de vidro com véu de 50%, e escolheu a pílula sólida, na Tinta com o rótulo e o ícone em SobreTinta (os tokens do segmentado da entrada), sem véu embaixo no tamanho padrão. O "Obras" fica em 7,32, 5,25, 4,58 e 5,64:1 nos quatro combos, com qualquer rolagem. Na letra grande o véu de baixo segue em 60% e, com "Reduzir transparência", em 80%.
 2. **Halo mais forte no escuro, no menor passo que passa.** No Pro Max, no escuro esmeralda e com "Aumentar contraste", a dica "Role para entrar" ficava em 4,06:1 e o título grande "Obras" em 4,41:1. Sem clarear o texto e sem cor solta, o halo da entrada foi de 45% para 50% (a dica vai a 4,63:1), e o título grande, que é do sistema e não tinha halo, ganhou um de 5% (4,76:1; 4,89 na maior letra), também em Ajustes. O halo do título grande é elemento novo: pede o ok visual do Giovani (placas em `~/Desktop/custta-decisoes/final-pr2/`).
 
-Resultado: o laudo passa nas 43 cenas, no 18 Pro e no 18 Pro Max; a pior é a etiqueta sólida "Vendida" nos claros, com 4,56:1. O Croqui espelha as decisões no `final-v4.html` (com o `final-v3.html` intacto).
+Resultado: o laudo passa nas 43 cenas, no 18 Pro e no 18 Pro Max; a pior é a etiqueta sólida "Vendida" nos claros, com 4,56:1. O Croqui espelha as decisões no `final-v4.html` (com o `final-v3.html` intacto). Na revisão final do PR 2, o laudo passou a abrir Ajustes (4 cenas a mais, 47), e a versão, texto solto sobre a aurora, ganhou o mesmo halo de 5% do título grande.
+
+### O que o Giovani decidiu em 11/10
+
+No PR 3, com o Firebase ligado, a partir das revisões do Lupa, do mockup do Croqui e da conferência do Verniz:
+
+1. **Falha da limpeza do cache local igual ao site.** A recomendação do Orquestrador era a paridade com o `cacheBloqueado` do `cloud.js`: a entrada fica bloqueada até a limpeza dar certo (seção "Decisões").
+2. **"Finalizar saída" pelo mockup `finalizar-saida.html`, na variante recomendada.** Alerta do sistema com um botão só, sem Cancelar, o "Limpando…" depois de meio segundo, o erro reabrindo o alerta e os textos do mockup. No código, dois ajustes sobre o mockup, que não pedem decisão: o botão na cor do texto, e não no `LinkNoVidro` (4,45:1 no Pro Max, no escuro azul), e a pílula de vidro sobre a superfície sólida.
+3. **A mensagem do alerta fica na cor do sistema, como exceção nomeada no laudo** ("padrão da Apple"). A cor secundária que o iOS usa nos alertas fica entre 2,7 e 3,7:1 sobre o vidro do alerta, e o próprio iOS a escurece com Aumentar contraste. A outra exceção, o "Sair" destrutivo no vermelho do sistema, foi decidida pelo Orquestrador pela mesma regra; o Giovani foi avisado e pode reverter.
 
 ## Referências que faltam
 
@@ -204,7 +219,7 @@ As seis do plano anterior, com o que o mockup resolveu:
 1. **Liquid Glass nativo para calibrar a dose:** decidido no mockup (dose por tela) e, no escuro, pelo laudo de 09/10 (escurecimento sob o vidro). Falta só a calibração fina do vidro claro no aparelho, com o print do app Tempo (pendência do Giovani que não trava; item do checklist da Tarefa 17).
 2. **Fundo animado que não pesa:** decidido pelo conselho de 08/10 (seção "Decisões"): aurora desenhada uma vez e só movida, globo em faixas de profundidade redesenhando só o disco a 1,75 pixel por ponto, os dois num relógio só a 30 quadros pedidos ao ProMotion, sem pular na volta; tudo para com Reduzir movimento, Pouca Energia, calor, app fora de ativo, rolagem, teclado e alerta por cima. A medida no iPhone fica no checklist do aparelho (Tarefa 17): rolar liso, dez minutos sem esquentar, faixas na aurora funda.
 3. **Identidade no maior tamanho de letra:** decidido no mockup (tela 11: tudo empilha e rola; logo, aurora, globo, cápsula e botões sociais não crescem).
-4. **Legibilidade sobre vidro e aurora:** decidido no mockup (halo de 45%, que subiu para 50% em 10/10, cores de texto por nível, medidas no pior ponto); no código, a auditoria do Xcode confere as cores com superfícies sólidas e o laudo de leitura mede o vidro de verdade no pior momento da deriva (Tarefa 11). O laudo mostrou que, no escuro, o vidro do iOS não repete o escurecimento do vidro do mockup; a correção de 09/10 (acima) fecha as 15 cenas daquela medida, e as decisões de 10/10, as 43 da varredura nos dois tamanhos; falta só a calibração no aparelho (checklist da Tarefa 17).
+4. **Legibilidade sobre vidro e aurora:** decidido no mockup (halo de 45%, que subiu para 50% em 10/10, cores de texto por nível, medidas no pior ponto); no código, a auditoria do Xcode confere as cores com superfícies sólidas e o laudo de leitura mede o vidro de verdade no pior momento da deriva (Tarefa 11). O laudo mostrou que, no escuro, o vidro do iOS não repete o escurecimento do vidro do mockup; a correção de 09/10 (acima) fecha as 15 cenas daquela medida, e as decisões de 10/10, as 47 da varredura nos dois tamanhos; falta só a calibração no aparelho (checklist da Tarefa 17).
 5. **Comportamento do sistema que o PWA imita:** decidido no mockup (os 20 itens).
 6. **Título escrito à mão:** decidido: os mesmos traços e tempos do site; com Reduzir movimento aparece pronto.
 
@@ -212,10 +227,11 @@ As seis do plano anterior, com o que o mockup resolveu:
 ## Review Focus
 
 1. **Primeiro uso sem internet** (app recém-instalado ou cache vazio, em modo avião): esperado é a tela de entrar ou a lista esperando a conexão ("Sem conexão"), e nunca gravar: nem um documento vazio, nem uma edição por cima das obras do servidor. Testes: `salvarSoDepoisDeVerOsDados` nos três cenários (Tarefa 8) e `abrirOAppNaoGravaNada` nos mesmos três (Tarefa 9).
-2. **Falta de rede ao conferir a sessão:** nunca desloga. Teste: `sessaoQueEncerraAConta` (Tarefa 7) e `ContaFirebase.verificarSessao`, que só sai por código de sessão inválida (Tarefa 13).
-3. **Conta Google ou Apple cujo perfil outro aparelho gravou no meio do "Falta pouco":** as rules recusam o segundo perfil e o app tem de seguir para a lista. Teste: `perfilGravadoPorOutroAparelhoSegueParaOApp` (Tarefa 9).
+2. **Falta de rede ao conferir a sessão:** nunca desloga. Teste: `sessaoQueEncerraAConta` (Tarefa 7) e `ContaFirebase.verificarSessao`, que só sai por código de sessão inválida, com `erroDeRedeNaConferenciaNaoSaiDaConta` e `sessaoInvalidadaSaiNaConferenciaForcadaMesmoDentroDoMinuto` contra os emuladores (Tarefa 13).
+3. **Conta Google ou Apple cujo perfil outro aparelho gravou no meio do "Falta pouco":** as rules recusam o segundo perfil e o app tem de seguir para a lista. Teste: `perfilGravadoPorOutroAparelhoSegueParaOApp` (Tarefa 9) e, contra os emuladores e com as rules de verdade, `perfilGravadoPorOutroAparelhoNoFaltaPoucoSegueParaALista` (Tarefa 13).
 4. **Mudança do site chegando enquanto há gravação local pendente:** o eco não pode desfazer a edição local. Teste: `ecoComGravacaoLocalPendenteEIgnorado` (Tarefa 8) e a conferência cruzada (Tarefa 15).
 5. **Maior tamanho de letra com nome de obra longo e valor alto** ("Residencial Jardim das Acácias, Bloco B, Casa 12", R$ 123,5 mi), sobre o vidro: nada corta e a cápsula de abas não cresce. Teste: `testObrasNoMaiorTamanho` (Tarefa 11), que audita a lista com a obra o4 dos dados de exemplo antes e depois de rolar.
+6. **Limpeza do cache local que falha** (no sair ou na abertura que termina uma limpeza interrompida): entrar fica bloqueado e o "Finalizar saída" pede para limpar de novo; a entrada só volta com o cache velho apagado, e nenhuma gravação sem rede da sessão seguinte se perde. Testes: `limpezaQueFalhaAoSairPrendeAFilaAteDarCerto` e `limpezaRetomadaQueFalhaNaAberturaBloqueia` (Tarefa 12), `limpezaQueFalhaAoSairBloqueiaEntrarAteDarCerto` (Tarefa 13), `limpezaQueFalhaAoSairAbreOFinalizarSaida`, `novaTentativaQueFalhaVoltaComOErro` e `limpezaQueFalhouNaAberturaAbreOFinalizarSaida` (`ModeloAppTests`) e o `FinalizarSaidaUITests` (inventário do PR 3).
 
 ## Riscos
 
@@ -223,33 +239,40 @@ As seis do plano anterior, com o que o mockup resolveu:
 
 - **Vidro do iOS e animação 3D:** o `glassEffect` não acompanha escala nem projeção (motivo do cartão reto, decidido pelo Giovani em 08/10). Qualquer efeito novo sobre uma superfície de vidro precisa ser visto no simulador antes de entrar no plano.
 - **Desempenho da aurora e do globo na rolagem e bateria:** a aurora é uma camada pronta que só se move; o globo redesenha só o disco, a 1,75 pixel por ponto; os dois andam num relógio só, a 30 quadros pedidos ao ProMotion, e param na rolagem, com o teclado, com um alerta, fora de ativo, no Modo de Pouca Energia e com o aparelho quente (conselho de 08/10). Cada quadro do fundo ainda refaz o vidro da tela inteira, e esse custo só o aparelho mede (checklist da Tarefa 17: rolar liso no iPhone do Giovani e, antes da loja, no iPhone 16 Pro do pai; dez minutos sem esquentar). Se pesar, os planos B do conselho são a deriva da aurora em Core Animation e o `GlassEffectContainer`.
-- **Leitura sobre o vidro e a aurora:** o laudo de leitura (Tarefa 11) mede o vidro de verdade no simulador, no pior momento da deriva. A primeira medida reprovou o escuro, e a correção de 09/10 (escurecimento sob o vidro e globo mais fundo no app; seção "Resultado do portão de desenho") fecha as 15 cenas daquela medida. A revisão da Tarefa 11 levou o laudo a 43 cenas (a varredura da cápsula e os dois tamanhos de iPhone), e as decisões de 10/10 (pílula sólida na cápsula e halo mais forte no escuro) as fecham. As de menor folga são sólidas e não dependem do vidro: a pílula escolhida da cápsula e a do segmentado no escuro azul (4,58:1) e a etiqueta "Vendida" nos claros (4,56:1). Sobre o vidro, a dica e o título grande do Pro Max no escuro esmeralda (4,63 e 4,76:1) dependem do halo. Se um texto sobre o vidro cair numa versão nova do iOS, o próximo degrau é o halo ou a tinta maior na navegação, sempre por token. Riscos que sobram: o vidro do simulador pode não ser o do aparelho (calibração simulador × aparelho no checklist da Tarefa 17) e o da CI (iOS 26, máquina virtual) pode desenhar diferente do Mac (na CI o laudo só relata). Nenhum build vai ao TestFlight com o laudo reprovando no Mac.
+- **Leitura sobre o vidro e a aurora:** o laudo de leitura (Tarefa 11) mede o vidro de verdade no simulador, no pior momento da deriva. A primeira medida reprovou o escuro, e a correção de 09/10 (escurecimento sob o vidro e globo mais fundo no app; seção "Resultado do portão de desenho") fecha as 15 cenas daquela medida. A revisão da Tarefa 11 levou o laudo a 43 cenas (a varredura da cápsula e os dois tamanhos de iPhone), e as decisões de 10/10 (pílula sólida na cápsula e halo mais forte no escuro) as fecham; a revisão final do PR 2 somou Ajustes (47). As de menor folga são sólidas e não dependem do vidro: a pílula escolhida da cápsula e a do segmentado no escuro azul (4,58:1) e a etiqueta "Vendida" nos claros (4,56:1). Sobre o vidro, a dica e o título grande do Pro Max no escuro esmeralda (4,63 e 4,76:1) dependem do halo. Se um texto sobre o vidro cair numa versão nova do iOS, o próximo degrau é o halo ou a tinta maior na navegação, sempre por token. Riscos que sobram: o vidro do simulador pode não ser o do aparelho (calibração simulador × aparelho no checklist da Tarefa 17) e o da CI (iOS 26, máquina virtual) desenha diferente do Mac (desde o PR 3 o laudo é portão também lá, com a varredura curta: se uma imagem nova do iOS na CI derrubar uma nota, o PR para, e o artefato `testes-app-ios` traz os prints anotados). Nenhum build vai ao TestFlight com o laudo reprovando no Mac.
 - **Vidro claro (Transparente) sobre conteúdo:** a cápsula de abas e a barra mostram o que passa por baixo, separado delas pela borda de rolagem suave (no alto, a `.soft` do sistema e o véu do fundo; embaixo, desde 10/10, só a `.soft` no tamanho padrão). A calibração final depende do print do app Tempo, pendência do Giovani que não trava (checklist da Tarefa 17).
 - **Letra grande:** a cápsula de abas, o logo e os botões sociais não crescem (decisão do mockup); a auditoria de tipo dinâmico os deixa de fora pelo identificador, e o Visualizador de Conteúdo Grande cobre a leitura.
 
-**O que a etapa 1 tem de provar no aparelho** (checklist da Tarefa 17): rolar a lista com aurora e globo sem engasgar; dez minutos de uso sem esquentar; com Reduzir movimento, aurora e globo parados e o logo pronto; com Reduzir transparência, superfícies sólidas e legíveis; com Aumentar contraste, Fosco com contorno; no maior tamanho de letra, nada cortado sobre o vidro; o vidro claro calibrado com o print do Tempo; o título pequeno, o relógio e as abas legíveis com a lista passando por baixo da borda de rolagem; o print da tela de entrar no aparelho batendo com o do simulador (calibração do laudo); os cinco textos de menor margem do laudo legíveis no sol.
+**Firebase e "Finalizar saída" (PR 3).**
 
-**Outros riscos abertos:** o primeiro envio assinado ao TestFlight depende dos secrets e do perfil "Custta App Store" de hoje (mesmo App ID); o login de verdade com Apple e Google só se prova no aparelho; o escurecimento sob o vidro e o véu da borda foram medidos no simulador e podem pedir ajuste no aparelho (checklist da Tarefa 17); o halo de 5% atrás do título grande (10/10) é elemento novo e pede o ok visual do Giovani; o simulador do iOS 27 do Mac muda de comportamento entre rodadas: ao focar um campo de senha nova (`.newPassword`) ele pode oferecer uma senha forte, numa folha de outro processo ("Use Strong Password?") que engole a digitação, e o `digitar()` dos testes de tela a fecha (`recusarSenhaForte()`, que repete o toque até a folha sair; na CI, no iOS 26, ela não apareceu); o job `verificar` do site tem falhas intermitentes que não vêm do diff (seção "Como entregar"). O PR 2 fechou com o ponto de controle depois da Tarefa 5 e em rascunho desde o primeiro commit; o PR 3 segue a mesma regra, para o erro aparecer cedo na CI com o Xcode 26.6.
+- **Keychain dividido entre os emuladores e a produção:** o modo emuladores usa o app padrão do Firebase, como a produção, e os dois dividem a vaga do usuário no keychain (serviço `firebase_auth_<googleAppID>`, conta `__FIRAPP_DEFAULT_firebase_user`). Um usuário que um teste deixar no simulador sobe no próximo Debug sem variável (a produção recusa o token, e o SDK sai), e o caminho inverso apaga uma sessão real do simulador. A chave falsa não separa os dois. Decidir antes da conferência cruzada (Tarefa 15, com a recomendação).
+- **Escurecido do "Finalizar saída" medido só no iOS 27:** o escurecido do sistema (48% no escuro e 20% no claro) e o fechamento do alerta foram medidos no simulador do iOS 27, e no iOS 26 o degrau pode voltar. A leitura no iOS 26 a CI já cobra (pior 6,03:1); o degrau, que é só visual, entra no checklist do aparelho (Tarefa 17). Se aparecer, a saída é um `UIAlertController` próprio, com `transitionCoordinator.animate(alongsideTransition:)` no `viewWillDisappear`: tira o vigia por quadro e a latência de 2 a 3 quadros, mas troca o `.alert` do SwiftUI.
+- **O vigia do alerta** (`VigiaDoAlerta`) depende de o SwiftUI apresentar o `.alert` como um `UIAlertController` no topo da janela. Se isso mudar numa versão do iOS, volta o degrau de uns 0,13 s, e nada trava: o toque leva a limpeza a "tentando", e o vigia para. Enquanto o alerta está aberto, ele percorre a hierarquia uma vez por quadro: custo de energia só nesse caso raro.
+- **Auditoria do Xcode na CI:** às vezes ela não termina a tempo ("Audit failed to complete in time", o −56 do `testContrasteNaMaiorLetra`), por tempo da máquina virtual, e não por achado. Rode de novo só o job e trate como falha qualquer achado de verdade.
+
+**O que a etapa 1 tem de provar no aparelho** (checklist da Tarefa 17): rolar a lista com aurora e globo sem engasgar; dez minutos de uso sem esquentar; com Reduzir movimento, aurora e globo parados e o logo pronto; com Reduzir transparência, superfícies sólidas e legíveis; com Aumentar contraste, Fosco com contorno; no maior tamanho de letra, nada cortado sobre o vidro; o vidro claro calibrado com o print do Tempo; o título pequeno, o relógio e as abas legíveis com a lista passando por baixo da borda de rolagem; o print da tela de entrar no aparelho batendo com o do simulador (calibração do laudo); os cinco textos de menor margem do laudo legíveis no sol; o "Finalizar saída" sem clarão nem degrau num iPhone com iOS 26.
+
+**Outros riscos abertos:** o primeiro envio assinado ao TestFlight depende dos secrets e do perfil "Custta App Store" de hoje (mesmo App ID); o login de verdade com Apple e Google só se prova no aparelho; o escurecimento sob o vidro e o véu da borda foram medidos no simulador e podem pedir ajuste no aparelho (checklist da Tarefa 17); o halo de 5% atrás do título grande (10/10) é elemento novo e pede o ok visual do Giovani; o simulador do iOS 27 do Mac muda de comportamento entre rodadas: ao focar um campo de senha nova (`.newPassword`) ele pode oferecer uma senha forte, numa folha de outro processo ("Use Strong Password?") que engole a digitação, e o `digitar()` dos testes de tela a fecha (`recusarSenhaForte()`, que repete o toque até a folha sair; na CI, no iOS 26, ela não apareceu); o job `verificar` do site tem falhas intermitentes que não vêm do diff (seção "Como entregar"). O PR 2 fechou com o ponto de controle depois da Tarefa 5; ele e o PR 3 ficaram em rascunho desde o primeiro commit, e o PR 4 segue a mesma regra, para o erro aparecer cedo na CI com o Xcode 26.6.
 
 ## Como entregar
 
 | PR | Branch e worktree | Tarefas | Estimativa (dias de trabalho do time) |
 | --- | --- | --- | --- |
 | 1 | `feat/app-nativo-projeto` | 1 e 2 | feito (#59, `3acb6d6`, 08/10) |
-| 2 | `feat/app-nativo-telas` em `.claude/worktrees/app-nativo-telas` | 3 a 11 | código fechado em 10/10 (#61, `412e6cd`; de 09 a 10/10); o merge é do Giovani |
-| 3 | `feat/app-nativo-firebase` em `.claude/worktrees/app-nativo-firebase` | 12, 13 e 14 | 2 a 3 |
+| 2 | `feat/app-nativo-telas` em `.claude/worktrees/app-nativo-telas` | 3 a 11 | feito (#61, `319f757`, 10/10) |
+| 3 | `feat/app-nativo-firebase` em `.claude/worktrees/app-nativo-firebase` | 12, 13 e 14, e o inventário | feito (#65, `4d67e0f`, 12/10) |
 | 4 | `feat/app-nativo-testflight` em `.claude/worktrees/app-nativo-testflight` | 15, 16 e 17 | 1,5 a 2 |
 
 A estimativa conta implementação, revisão do Lupa (e a conferência visual do Verniz nas Tarefas 4, 5 e 10), correções e a primeira passada na CI, com o código já escrito e validado neste plano; o conselho de 08/10 somou ao PR 2 o relógio e as pausas do fundo e o laudo de leitura (cerca de 1 dia a mais); os ajustes de 09/10 (borda de rolagem, escurecimento sob o vidro, globo mais fundo e ícone do sair) já vêm escritos e medidos e cabem na mesma conta. As Tarefas 6, 7 e 8 são o código do núcleo já validado no plano anterior (a 7 ganhou o comparativo). Fica fora da conta do time o tempo do Giovani: responder às pendências do portão, aprovar os PRs, rodar o checklist do iPhone (cerca de 1 hora) e o vaivém das correções que ele pedir.
 
-O próximo é o PR 3, depois do merge do #61:
+O próximo é o PR 4 (o #65 entrou na `main` em 12/10):
 
 ```bash
 # na raiz do repositório principal; de dentro de um worktree, a linha abaixo sobe até ela
 cd "$(git rev-parse --path-format=absolute --git-common-dir)/.."
 git fetch origin
-git worktree add .claude/worktrees/app-nativo-firebase -b feat/app-nativo-firebase origin/main
-cd .claude/worktrees/app-nativo-firebase && npm ci
+git worktree add .claude/worktrees/app-nativo-testflight -b feat/app-nativo-testflight origin/main
+cd .claude/worktrees/app-nativo-testflight && npm ci
 ```
 
 Ordem: cada PR começa depois que o anterior entrou na `main` (o worktree nasce da `origin/main` atualizada).
@@ -258,11 +281,11 @@ Ordem: cada PR começa depois que o anterior entrou na `main` (o worktree nasce 
 
 **Na entrega de cada PR:** descrição em prosa (contexto, o que muda, decisão técnica), o link da prévia da Vercel conferido e o "como testar". Nenhum PR desta parte muda o que vai para a Vercel (`app-ios/` está no `.vercelignore`): a prévia confirma que o site continua igual, e o "como testar" diz qual comando prova o que mudou (`npm run test:nucleo`, o `xcodebuild test` do simulador, `npm run test:app-ios:emuladores` ou `npm run test:app-ios:cruzado`) e, no PR 2, como abrir o app no simulador com os falsos (`node scripts/simulador-ios.mjs`, `xcodebuild build`, `xcrun simctl install` e `launch`; sem variável, a conta começa deslogada e qualquer e-mail entra com a senha `Casa2026x`; `SIMCTL_CHILD_CUSTTA_CONTA=senha` abre direto nas obras). Do PR 3 em diante, o Debug sem variável fala com o Firebase de produção; os falsos pedem `SIMCTL_CHILD_CUSTTA_SERVICOS=falsos`.
 
-**Falhas do site que não vêm do diff:** o job `verificar` (testes do site no browser) cai às vezes em `tests/browser/apple.cjs:292` e `tests/browser/google.cjs:324` (violação de CSP por um ping do script do Google: `gen_204` e `cleardot.gif`) e em `tests/browser/google.cjs:190` (o `#cSenha` invisível no passo 8). Num PR que não mexe na CSP nem no login, rode de novo só o job (`gh run rerun <id> --failed`) e cite a falha no relatório. O `tests/browser/fase2.cjs:131` foi corrigido no #62: se cair de novo, não é flake conhecido, investigue.
+**Falhas da CI que não vêm do diff:** o job `verificar` (testes do site no browser) cai às vezes em `tests/browser/apple.cjs:292` e `tests/browser/google.cjs:324` (violação de CSP por um ping do script do Google: `gen_204` e `cleardot.gif`) e em `tests/browser/google.cjs:190` (o `#cSenha` invisível no passo 8). Num PR que não mexe na CSP nem no login, rode de novo só o job (`gh run rerun <id> --failed`) e cite a falha no relatório. O `tests/browser/fase2.cjs:131` foi corrigido no #62: se cair de novo, não é flake conhecido, investigue. No job `app`, a auditoria do Xcode às vezes não termina a tempo ("Audit failed to complete in time", o −56 do `testContrasteNaMaiorLetra`), por tempo da máquina virtual: rode de novo só o job; um achado de verdade continua sendo falha.
 
 **PR aberto cedo:** o Orquestrador abre cada PR desta parte como rascunho logo depois do primeiro commit, para a CI do app rodar com o Xcode da CI desde a primeira tarefa.
 
-Todos os comandos rodam na raiz do worktree. `DESTINO` nos comandos de teste é a saída de `node scripts/simulador-ios.mjs` (Tarefa 2).
+Todos os comandos rodam na raiz do worktree. `DESTINO` nos comandos de teste é a saída de `node scripts/simulador-ios.mjs` (Tarefa 2). Desde o PR 3, `CUSTTA_SIMULADOR=<udid>` escolhe o simulador, um por agente, para duas rodadas não disputarem o mesmo; sem ela, vale o primeiro iPhone do iOS mais novo instalado.
 
 ## Mapa de arquivos
 
@@ -277,11 +300,11 @@ Todos os comandos rodam na raiz do worktree. `DESTINO` nos comandos de teste é 
 | `app-ios/Custta/Identidade/Componentes.swift`, `CapsulaDeAbas.swift` | campo, botões (principal, secundário, Apple, Google), mensagem, link, etiqueta, barra, borda de rolagem; cápsula de abas |
 | `app-ios/Custta/Fontes/Roboto-Medium.ttf`, `OFL-Roboto.txt` | fonte do botão do Google e a licença |
 | `app-ios/Custta/Conta/ServicoConta.swift` | protocolo da conta, `Usuario`, `CredencialApple`, `ErroConta` |
-| `app-ios/Custta/Dados/Sistema.swift` | relógio, rede e janela do sistema |
-| `app-ios/Custta/Dados/BancoFirebase.swift`, `TransporteFirebase.swift`, `ContaFirebase.swift` | Firestore, transporte do estado, conta no Firebase Auth (PR 3) |
-| `app-ios/Custta/Estado/ModeloApp.swift` | fase da tela, conta, sincronização e avisos |
+| `app-ios/Custta/Dados/Sistema.swift` | relógio, rede e janela do sistema; o vigia do alerta do sistema (PR 3) |
+| `app-ios/Custta/Dados/BancoFirebase.swift`, `TransporteFirebase.swift`, `ContaFirebase.swift` | Firestore (com a limpeza do cache e o bloqueio), transporte do estado, conta no Firebase Auth (PR 3) |
+| `app-ios/Custta/Estado/ModeloApp.swift` | fase da tela, conta, sincronização, avisos e o "Finalizar saída" |
 | `app-ios/Custta/Falsos/*.swift` | conta, transporte e dados falsos (só Debug) |
-| `app-ios/Custta/Telas/*.swift` | raiz, entrada (entrar, criar conta, falta pouco), principal (abas e barra), obras, Ajustes |
+| `app-ios/Custta/Telas/*.swift` | raiz, entrada (entrar, criar conta, falta pouco), principal (abas e barra), obras, Ajustes, "Finalizar saída" (PR 3) |
 | `app-ios/Custta/Assets.xcassets` (`Esmeralda/`, `Azul/`, `Icones/`, `LogoGoogle`), `Info.plist`, `Custta.entitlements`, `GoogleService-Info.plist`, `PrivacyInfo.xcprivacy` | catálogo gerado, configuração |
 | `app-ios/CusttaNucleo/Sources/CusttaNucleo/Cadastro.swift`, `Telas.swift`, `ErrosFirebase.swift`, `Sincronizador.swift` | regras do cadastro, das telas (com o comparativo), códigos de erro e sincronização |
 | `app-ios/CusttaTests/*.swift`, `app-ios/CusttaUITests/*.swift` | testes de unidade, de integração (emuladores) e de tela |
@@ -3132,11 +3155,11 @@ struct CamadaAurora: View, Animatable, Equatable {
 
 /// Halo do texto solto sobre a aurora, só no escuro: o tom do fundo no centro, com borda gradual. Na entrada,
 /// atrás do título, do logo e da dica; nos tamanhos de acessibilidade cresce junto com o título e o miolo fica
-/// mais largo. No título grande da barra (Obras e Ajustes), mais leve (`haloDoTituloDaBarra`).
+/// mais largo. No título grande da barra (Obras e Ajustes) e na versão em Ajustes, mais leve.
 struct HaloDoTitulo: View {
     /// Opacidade no centro: o menor passo que passa de 4,5:1 no Pro Max (decisão do Giovani em 10/10). Na entrada,
     /// 50% (com 45%, a dica "Role para entrar" ficava em 4,06:1 no pior momento da aurora); na barra, 5% (sem
-    /// halo, o título "Obras", branco do sistema, ficava em 4,41:1).
+    /// halo, o título "Obras", branco do sistema, ficava em 4,41:1, e a versão em Ajustes, em 4,42:1).
     nonisolated static let naEntrada = 0.50
     nonisolated static let naBarra = 0.05
     let grande: Bool
@@ -6720,7 +6743,7 @@ git commit -m "feat: modelo das telas do app nativo com os serviços falsos" -m 
 
 As telas seguem o mockup aprovado tela a tela (seção "Resultado do portão de desenho"): **entrar** com o título escrito à mão e o halo sobre a aurora de hoje, a dica "Role para entrar", o segmentado de vidro fora do cartão e o cartão Fosco com Apple acima do Google, "ou", campos sólidos, mensagens com ícone (erro, ✓, cadeado), "Esqueci minha senha" com o e-mail do cartão e "Política de Privacidade"; **criar conta** no mesmo cartão, com o checklist da senha em duas colunas (uma na letra grande) e "Como conheceu o Custta?" no menu do sistema; **falta pouco** no mesmo cartão, com "Você entrou com a Apple." ou "Você entrou com o Google" e o e-mail; **obras** no vidro Transparente sobre a aurora funda, com o título grande do sistema, sincronização e sair na barra, aviso de e-mail, "N obras", um cartão por obra (sem a seta ">" do mockup até a etapa 2, porque a obra ainda não abre; o valor de acessibilidade é o mesmo) e o comparativo; **Ajustes** só com a Conta e a versão. A aurora assenta ao entrar e clareia ao sair. A cápsula de abas é própria e só a aba escolhida fica montada (ver "Decisões"). Os fluxos e os textos são os do esqueleto validado no plano anterior, com três mudanças que o mockup trouxe: o esqueci a senha dentro do cartão, a saída pelo alerta do sistema e a lista vazia com o texto provisório. A raiz liga o relógio do fundo às pausas que o conselho de 08/10 pediu (app fora de ativo, teclado aberto, o alerta "Sair da conta?", Pouca Energia e calor, com os avisos do sistema passando pela fila principal), e a tela de entrar guarda a rolagem num objeto que só o título lê, para a rolagem não refazer a tela inteira a cada quadro. Três decisões de 09/10 (seção "Resultado do portão de desenho"): a borda de rolagem suave do `final-v2.html` em todas as telas, num componente só (`.bordaDeRolagem(abas:)` em `Componentes.swift`: a borda `.soft` do sistema e o véu do tom do fundo de `VeuDaBorda`, que some em 140 pt, no alto só depois de rolar 40 pt e embaixo só com a cápsula e só onde há véu); o globo a 40% dentro do app no escuro, que a raiz aplica na mesma transição da aurora; e o ícone do sair do topo na cor do texto nos dois temas.
 
-**O que o PR 2 mudou nesta tarefa** (o código abaixo já é o do `412e6cd`). Da conferência visual do Verniz contra o `final-v3.html`, onde o brief divergia o mockup mandou: o título "Falta pouco" no topo do cartão; a cápsula 22 pt acima da borda da tela, como a barra de abas do sistema, e a `PrincipalView` ignorando a área segura de baixo (ao entrar com o teclado aberto, a cápsula nascia em cima dele e saltava); botões de 52 pt, com os pequenos em 48; a dica "Role para entrar" a 23 pt da caixa do logo; o "N obras" em pílula sólida com "Reduzir transparência"; o painel da Conta em Ajustes como o do comparativo (título de 20 pt). Da revisão do Lupa: o VoiceOver anuncia cada mensagem nova, e não só a primeira (`.onChange(of:initial:)`, como o `role="alert"` do site); o Return passa ao próximo campo; o "Sessão expirada" aparece uma vez; e Ajustes › "Enviar confirmação de e-mail" usa o `ModeloApp.enviarConfirmacao`, com os textos dos Ajustes do site (`app.js:1529-1530`), e fica desligado enquanto envia. Da revisão da Tarefa 11: o exemplo de cada campo é desenhado à parte, para quebrar linha na letra grande sem cortar, e fica fora do VoiceOver (quem lê é o prompt do campo; a caixa não é contêiner de acessibilidade); a seta da dica, o olho da senha, os ícones do checklist, o quadradinho da legenda do comparativo e o ícone do sair crescem com a letra (`@ScaledMetric`); e sai o gancho do ângulo do globo. Das decisões do Giovani em 10/10: a pílula sólida da cápsula (Tinta e SobreTinta), sem o véu de baixo, e o halo de 5% atrás do título grande de Obras e de Ajustes. Do inventário final: o campo de senha com 52 pt (o olho com alvo de 44 pt), o círculo e o G do falta pouco crescendo com a letra e o G oficial no `LogoGoogle.imageset`. Os testes de tela fecham a oferta de senha forte do simulador do iOS 27 (`recusarSenhaForte()`, chamada pelo `digitar(_:em:seguro:)` e no campo de confirmação do `CriarContaUITests`; seção "Riscos").
+**O que o PR 2 mudou nesta tarefa** (o código abaixo já é o do `2820d1f`). Da conferência visual do Verniz contra o `final-v3.html`, onde o brief divergia o mockup mandou: o título "Falta pouco" no topo do cartão; a cápsula 22 pt acima da borda da tela, como a barra de abas do sistema, e a `PrincipalView` ignorando a área segura de baixo (ao entrar com o teclado aberto, a cápsula nascia em cima dele e saltava); botões de 52 pt, com os pequenos em 48; a dica "Role para entrar" a 23 pt da caixa do logo; o "N obras" em pílula sólida com "Reduzir transparência"; o painel da Conta em Ajustes como o do comparativo (título de 20 pt). Da revisão do Lupa: o VoiceOver anuncia cada mensagem nova, e não só a primeira (`.onChange(of:initial:)`, como o `role="alert"` do site); o Return passa ao próximo campo; o "Sessão expirada" aparece uma vez; e Ajustes › "Enviar confirmação de e-mail" usa o `ModeloApp.enviarConfirmacao`, com os textos dos Ajustes do site (`app.js:1529-1530`), e fica desligado enquanto envia. Da revisão da Tarefa 11: o exemplo de cada campo é desenhado à parte, para quebrar linha na letra grande sem cortar, e fica fora do VoiceOver (quem lê é o prompt do campo; a caixa não é contêiner de acessibilidade); a seta da dica, o olho da senha, os ícones do checklist, o quadradinho da legenda do comparativo e o ícone do sair crescem com a letra (`@ScaledMetric`); e sai o gancho do ângulo do globo. Das decisões do Giovani em 10/10: a pílula sólida da cápsula (Tinta e SobreTinta), sem o véu de baixo, e o halo de 5% atrás do título grande de Obras e de Ajustes e, na revisão final, também atrás da versão em Ajustes (sem ele, 4,42:1 no Pro Max). Do inventário final: o campo de senha com 52 pt (o olho com alvo de 44 pt), o círculo e o G do falta pouco crescendo com a letra e o G oficial no `LogoGoogle.imageset`. Os testes de tela fecham a oferta de senha forte do simulador do iOS 27 (`recusarSenhaForte()`, chamada pelo `digitar(_:em:seguro:)` e no campo de confirmação do `CriarContaUITests`; seção "Riscos").
 
 - [ ] **Step 1: Escrever os testes de tela que falham**
 
@@ -7214,11 +7237,13 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
 });
 
-test('título grande de Obras e de Ajustes com o halo no escuro', () => {
-  // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1.
-  // O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
+test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no escuro', () => {
+  // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1 e a
+  // versão, texto solto, em 4,42:1. O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
   for(const tela of ['ObrasView', 'AjustesView'])
     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
+  assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
+    /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
 });
 
 test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar, o olho da senha e o logo da conta', () => {
@@ -8975,6 +9000,8 @@ struct AjustesView: View {
                         .font(.footnote)
                         .foregroundStyle(paleta.cor(.texto))
                         .shadow(color: paleta.cor(.sombraDoTexto), radius: 4, y: 1)
+                        // Texto solto sobre a aurora: o halo leve do título grande, só no escuro.
+                        .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naBarra) }
                         .accessibilityIdentifier("versao")
                 }
                 .padding(.horizontal, 16)
@@ -9033,15 +9060,15 @@ git commit -m "feat: telas da etapa 1 do app nativo com a cara do mockup" -m "En
 - Consumes: `abrirApp(conta:dados:rede:leitura:argumentos:)`, `XCUIApplication.elemento(_:)` e `abrirAba(_:)` (Tarefa 10); identificadores `email`, `senha`, `irParaCriarConta`, `nome`, `sobrenome`, `emailCadastro`, `senhaCadastro`, `confirmacao`, `textoFaltaPouco`, `avisoEmail`, `sair`, `aba-obras`, `aba-ajustes`, `entrarComGoogle`; argumentos `-custta.tema`, `-custta.pele`, `-custta.reduzirMovimento`, `-custta.reduzirTransparencia`, `-custta.aumentarContraste`, `-custta.quadroDaAurora`, `-custta.auroraPiorCaso` e `-custta.textoApagado` lidos pela `RaizView` (Tarefa 10; o apagador da navegação mora na `Superficie`, Tarefa 3; com `tudo`, o `CusttaApp` deixa transparente o título da barra, do UIKit) e `-custta.rolagem` lido pela `ObrasView` (Tarefa 10); contas falsas `apple-sem-perfil` e `google-sem-perfil` e obra o4 dos `DadosDeExemplo` (Tarefa 9).
 - Produces: `struct Retrato { init(_ imagem: CGImage); init(largura:altura:rgba:) }`; `enum LaudoDeContraste { struct Palavra { caixa, cor, nota, minimo, corHex }; struct CenaNaoDeterministica: Error; static func medir(normal:semTexto:escala:topo:somenteEm:ignorar:) throws -> [Palavra]; static func luminancia(_:_:_:) -> Double; static func contraste(_:_:) -> Double; static func dilatar(_:_:_:rx:ry:) -> [Bool] }`; os requisitos da seção 8 do spec como teste para as próximas etapas.
 
-Duas frentes, decididas pelo conselho de 08/10 (seção "Decisões"). **As auditorias do Xcode** continuam no que fazem bem: maior tamanho de letra em entrar, criar conta, falta pouco (contas Apple e Google), obras e Ajustes, mais o exemplo de cada campo vazio inteiro na caixa (medido no print, porque a auditoria não vê o exemplo de um campo); contraste nos quatro combos com o fundo parado (Reduzir movimento: aurora no quadro inicial, globo parado, logo pronto) e com a aurora congelada nos extremos da deriva para o título e a dica; a cápsula de abas e o botão do Google fora da auditoria de tipo dinâmico (não crescem por decisão do mockup e têm o Visualizador de Conteúdo Grande). O contraste delas é medido com superfícies sólidas, porque a auditoria do Xcode não lê fundo de vidro: no simulador do iOS 27 ela reprova sobre o vidro até texto escuro sobre a pílula sólida do segmentado. Duas brechas do protótipo anterior fecharam: os rótulos da própria cápsula de abas entram na auditoria de contraste (antes o filtro do conteúdo que passa por baixo dela os tirava) e o contraste também é auditado na maior letra. O conteúdo que passa por baixo da barra, da cápsula ou da borda de rolagem (140 pt no alto, depois de rolar, e embaixo, com a cápsula; véu de 88% e 80% com "Reduzir transparência") fica fora da conta do contraste: ele é auditado quando está à vista. Sai a antiga falha esperada sobre o vidro: sem bloco e sem ser estrita, ela engolia até "a tela não abriu".
+Duas frentes, decididas pelo conselho de 08/10 (seção "Decisões"). **As auditorias do Xcode** continuam no que fazem bem: maior tamanho de letra em entrar, criar conta, falta pouco (contas Apple e Google), obras e Ajustes, mais o exemplo de cada campo vazio inteiro na caixa (medido no print, porque a auditoria não vê o exemplo de um campo); contraste nos quatro combos com o fundo parado (Reduzir movimento: aurora no quadro inicial, globo parado, logo pronto) e com a aurora congelada nos extremos da deriva para o título e a dica; a cápsula de abas e o botão do Google fora da auditoria de tipo dinâmico (não crescem por decisão do mockup e têm o Visualizador de Conteúdo Grande). O contraste delas é medido com superfícies sólidas, porque a auditoria do Xcode não lê fundo de vidro: no simulador do iOS 27 ela reprova sobre o vidro até texto escuro sobre a pílula sólida do segmentado. Duas brechas do protótipo anterior fecharam: os rótulos da própria cápsula de abas entram na auditoria de contraste (antes o filtro do conteúdo que passa por baixo dela os tirava) e o contraste também é auditado na maior letra. O conteúdo que passa por baixo da barra, da cápsula ou da borda de rolagem (140 pt no alto, depois de rolar, e embaixo, com a cápsula; véu de 88% e 80% com "Reduzir transparência") fica fora da conta do contraste: ele é auditado quando está à vista. Sai a antiga falha esperada sobre o vidro: sem bloco e sem ser estrita, ela engolia até "a tela não abriu". Cada achado vai para o log, com o elemento, a moldura e se ficou fora da conta ou reprova (revisão final do PR 2: a CI não guardava o resultado dos testes, e uma reprovação aparecia só como "Contrast failed").
 
-**O laudo de leitura** mede o vidro de verdade no simulador. Cada cena sai em dois prints do mesmo quadro: um normal e um com o texto apagado (um `TextRenderer` vazio, só em Debug, que não mexe no layout; o escopo `navegacao` apaga só os rótulos da cápsula, para medi-los sobre o conteúdo refratado por baixo). O fundo fica parado no pior caso: Reduzir movimento, globo no ângulo 1,2 e a aurora no pior momento da deriva inteira (os 27 quadros de 0 a 26 s, cada um composto com o fundo, combinados pelo mais claro no escuro e pelo mais escuro no claro). As letras são os pixels que mudam de um print para o outro; o contraste (WCAG) sai pixel a pixel, com a cor de fato desenhada no miolo das letras contra o fundo sob elas e a 2 px em volta; a nota de cada palavra é o percentil 1 e o pior pixel vai junto. Portão: 4,5:1 em qualquer tamanho de letra. Longe das letras os dois prints têm de ser iguais; se não forem, a cena dá erro em vez de medir. Cada cena deixa no resultado o print anotado (verde passa, vermelho não) e a tabela. Cenas (43): entrar (Fosco), obras (Transparente, com o aviso de e-mail) e os rótulos da cápsula com a lista rolada em 0, 10, 20, 30, 40, 50, 60 e 260 pt (o pior ponto muda com os dados e o combo; no fim da lista, em 260 pt, já não passa nada atrás dos rótulos), nos quatro combos; obras na maior letra; entrar e obras com Aumentar contraste. O título grande da barra, que é do UIKit, entra na conta: com `-custta.textoApagado tudo`, um gancho de Debug no `CusttaApp` o deixa transparente no print sem texto. No escopo `tudo`, da borda de baixo (os 140 pt da `BordaDeRolagem`, como na auditoria) ou da cápsula, o que vier antes, até o pé da tela fica de fora: o que passa por baixo é desfocado pela borda de propósito. O indicador de início, como a barra de status, é do sistema e muda entre os prints: os 34 pt de baixo ficam de fora em toda cena.
+**O laudo de leitura** mede o vidro de verdade no simulador. Cada cena sai em dois prints do mesmo quadro: um normal e um com o texto apagado (um `TextRenderer` vazio, só em Debug, que não mexe no layout; o escopo `navegacao` apaga só os rótulos da cápsula, para medi-los sobre o conteúdo refratado por baixo). O fundo fica parado no pior caso: Reduzir movimento, globo no ângulo 1,2 e a aurora no pior momento da deriva inteira (os 27 quadros de 0 a 26 s, cada um composto com o fundo, combinados pelo mais claro no escuro e pelo mais escuro no claro). As letras são os pixels que mudam de um print para o outro; o contraste (WCAG) sai pixel a pixel, com a cor de fato desenhada no miolo das letras contra o fundo sob elas e a 2 px em volta; a nota de cada palavra é o percentil 1 e o pior pixel vai junto. Portão: 4,5:1 em qualquer tamanho de letra. Longe das letras os dois prints têm de ser iguais; se não forem, a cena dá erro em vez de medir. Cada cena deixa no resultado o print anotado (verde passa, vermelho não) e a tabela. Cenas (47): entrar (Fosco), obras (Transparente, com o aviso de e-mail) e os rótulos da cápsula com a lista rolada em 0, 10, 20, 30, 40, 50, 60 e 260 pt (o pior ponto muda com os dados e o combo; no fim da lista, em 260 pt, já não passa nada atrás dos rótulos), nos quatro combos; obras na maior letra; entrar e obras com Aumentar contraste; e Ajustes, aberto pela cápsula, com o título grande e a versão, texto solto sobre a aurora, nos dois escuros, com Aumentar contraste e na maior letra. O título grande da barra, que é do UIKit, entra na conta: com `-custta.textoApagado tudo`, um gancho de Debug no `CusttaApp` o deixa transparente no print sem texto. No escopo `tudo`, da borda de baixo (os 140 pt da `BordaDeRolagem`, como na auditoria) ou da cápsula, o que vier antes, até o pé da tela fica de fora: o que passa por baixo é desfocado pela borda de propósito. O indicador de início, como a barra de status, é do sistema e muda entre os prints: os 34 pt de baixo ficam de fora em toda cena.
 
 **Medida (09/10, simulador do iOS 27, com as decisões de 09/10):** as 15 cenas passam de 4,5:1. A pior palavra de cada uma, nos combos escuro esmeralda, claro esmeralda, escuro azul e claro azul: entrar 4,88, 5,25, 4,58 (a pílula sólida do segmentado) e 5,13:1; obras 4,77, 4,56, 5,38 e 4,56:1 (no claro, a etiqueta sólida "Vendida"); os rótulos da cápsula sobre a lista 5,67, 7,90, 4,62 e 8,32:1; obras na maior letra, 5,15:1; com Aumentar contraste, entrar 4,88 e obras 4,76:1. A primeira medida (08/10) reprovava 9 das 15 cenas, de 1,33 a 4,37:1, com o pior caso da aurora errado (até três vezes mais claro que qualquer quadro da deriva) e sem a borda de rolagem, o escurecimento sob o vidro e o globo mais fundo (seção "Resultado do portão de desenho").
 
-**Medida (10/10, simulador do iOS 27, no `412e6cd`):** as 43 cenas passam de 4,5:1 no iPhone 18 Pro e no 18 Pro Max; a pior é a etiqueta sólida "Vendida" nos claros (4,56:1). Os rótulos da cápsula, com a pílula sólida, ficam em 7,32, 5,25, 4,58 e 5,64:1 em qualquer rolagem; no Pro Max, no escuro esmeralda, a dica "Role para entrar" fica em 4,63:1 e o título grande "Obras" em 4,76:1, com o halo de 10/10. Com a varredura e o Pro Max, e antes das decisões de 10/10, o laudo reprovava os rótulos da cápsula no escuro azul (3,82 a 4,10:1, nos dois tamanhos) e, no Pro Max, a dica (4,06:1) e o título grande (4,41:1) no escuro esmeralda (seção "Resultado do portão de desenho").
+**Medida (10/10, simulador do iOS 27, no `412e6cd`):** as 43 cenas passam de 4,5:1 no iPhone 18 Pro e no 18 Pro Max; a pior é a etiqueta sólida "Vendida" nos claros (4,56:1). Os rótulos da cápsula, com a pílula sólida, ficam em 7,32, 5,25, 4,58 e 5,64:1 em qualquer rolagem; no Pro Max, no escuro esmeralda, a dica "Role para entrar" fica em 4,63:1 e o título grande "Obras" em 4,76:1, com o halo de 10/10. Com a varredura e o Pro Max, e antes das decisões de 10/10, o laudo reprovava os rótulos da cápsula no escuro azul (3,82 a 4,10:1, nos dois tamanhos) e, no Pro Max, a dica (4,06:1) e o título grande (4,41:1) no escuro esmeralda (seção "Resultado do portão de desenho"). Na revisão final do PR 2 (`2820d1f`), o laudo passou a abrir Ajustes, que nenhuma cena via: a versão ficava em 4,42:1 no Pro Max, no escuro esmeralda, e com o halo de 5% do título grande foi a 4,78:1; as 47 cenas passam nos dois tamanhos, e a pior continua em 4,56:1.
 
-Todas as cenas são portão no Mac, nos dois tamanhos (18 Pro e 18 Pro Max). Na CI (`TEST_RUNNER_CUSTTA_LAUDO=relatorio` no `app-ios.yml`) o laudo só relata, porque o simulador do iOS 26 da máquina virtual pode desenhar o vidro diferente do Mac; o Orquestrador tira a variável depois de rodadas coerentes com o Mac (as 15 cenas de antes da varredura passaram duas vezes na CI; com a varredura, a conferência recomeça). Cada cena leva uns 29 s na CI, e as 43 levam o job `app` a uns 47 min: o limite dele vai de 45 para 60 min. Se continuar acima de 45 min, a varredura da CI cai para 0, 20, 40 e 260 pt, e a completa fica no Mac. Nenhum build vai ao TestFlight com o laudo reprovando no Mac (Tarefa 17).
+Todas as cenas são portão no Mac, nos dois tamanhos (18 Pro e 18 Pro Max). Na CI (`TEST_RUNNER_CUSTTA_LAUDO=relatorio` no `app-ios.yml`) o laudo só relata, porque o simulador do iOS 26 da máquina virtual pode desenhar o vidro diferente do Mac; o Orquestrador tira a variável depois de rodadas coerentes com o Mac (as 15 cenas de antes da varredura passaram duas vezes na CI; com a varredura, a conferência recomeça). Cada cena leva uns 29 s na CI, e as 43 levam o job `app` a uns 47 min: o limite dele vai de 45 para 60 min. Se continuar acima de 45 min, a varredura da CI cai para 0, 20, 40 e 260 pt, e a completa fica no Mac. Nenhum build vai ao TestFlight com o laudo reprovando no Mac (Tarefa 17). As duas coisas aconteceram no inventário do PR 3: o job passou de 51 min, e a varredura da CI caiu para 0, 20, 40 e 260 pt; depois de quatro rodadas coerentes, a variável saiu, e o laudo virou portão também na CI.
 
 - [ ] **Step 1: Escrever as auditorias e o laudo**
 
@@ -9083,18 +9110,30 @@ final class AuditoriaUITests: XCTestCase {
         let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         try app.performAccessibilityAudit(for: tipos) { achado in
-            guard let elemento = achado.element else { return false }
-            switch achado.auditType {
-            case .dynamicType:
-                return elemento.label == "Continuar com o Google"
-                    || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
-            case .contrast:
-                guard !elemento.identifier.hasPrefix("aba-") else { return false }   // o rótulo da própria cápsula
-                let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
-                return sobABarra || elemento.frame.maxY > fundoDaTela
-            default:
+            guard let elemento = achado.element else {
+                Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
                 return false
             }
+            let fora: Bool
+            switch achado.auditType {
+            case .dynamicType:
+                fora = elemento.label == "Continuar com o Google"
+                    || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
+            case .contrast:
+                if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
+                else {
+                    let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
+                    fora = sobABarra || elemento.frame.maxY > fundoDaTela
+                }
+            default:
+                fora = false
+            }
+            // Cada achado vai para o log: a CI não guarda o resultado dos testes, e sem esta linha uma reprovação
+            // aparece só como "Contrast failed", sem dizer qual elemento nem onde.
+            Swift.print("auditoria | \(achado.compactDescription) | \(elemento.elementType.rawValue) \"\(elemento.label)\" "
+                        + "\(elemento.identifier) \(elemento.frame) | barra até \(topoDoConteudo), conteúdo até \(fundoDaTela) | "
+                        + (fora ? "fora" : "reprova"))
+            return fora
         }
     }
 
@@ -9489,11 +9528,17 @@ final class LeituraNoVidroUITests: XCTestCase {
         /// "tudo" mede o conteúdo (da cápsula de abas para baixo fica de fora); "navegacao" mede só os rótulos
         /// da cápsula, com o conteúdo que passa por baixo dela intacto nos dois prints.
         let escopo: String
+        /// Aba aberta pela cápsula antes do print (Ajustes não tem gancho de abertura).
+        var aba: String? = nil
     }
 
     @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat) {
         let app = abrirApp(conta: cena.conta, argumentos: cena.argumentos + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
         XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
+        if let aba = cena.aba {
+            app.abrirAba(aba)
+            XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")
+        }
         Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
         let foto = XCUIScreen.main.screenshot()
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
@@ -9612,6 +9657,21 @@ final class LeituraNoVidroUITests: XCTestCase {
                  espera: "avisoEmail", escopo: "tudo"),
         ])
     }
+
+    /// Ajustes: o título grande (do sistema, com o halo da barra) e a versão, texto solto sobre a aurora, nos
+    /// dois escuros, com "Aumentar contraste" e na maior letra. No Pro Max, a versão fica em 4,42:1 no escuro
+    /// esmeralda (revisão final do PR 2).
+    @MainActor func testLeituraEmAjustes() {
+        let esmeralda = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let azul = ["-custta.tema", "escuro", "-custta.pele", "azul"] + piorMomento
+        let cenas: [(String, [String])] = [("escuro, esmeralda", esmeralda), ("escuro, azul", azul),
+                                           ("com Aumentar contraste", esmeralda + ["-custta.aumentarContraste", "YES"]),
+                                           ("na maior letra", esmeralda + maiorLetra)]
+        cobrar(cenas.map { nome, argumentos in
+            Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
+                 aba: "ajustes")
+        })
+    }
 }
 
 /* O medidor com imagens sintéticas: sem abrir o app. */
@@ -9704,7 +9764,7 @@ Expected: FAIL em "obras, escuro, esmeralda" e "obras, escuro, azul": sem a cama
 - [ ] **Step 3: Rodar e ver passar**
 
 Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests/AuditoriaUITests -only-testing:CusttaUITests/LaudoDeContrasteTests -only-testing:CusttaUITests/LeituraNoVidroUITests`
-Expected: `** TEST SUCCEEDED **`: as 9 auditorias (entrar, criar conta, falta pouco das contas Apple e Google, obras com a obra o4, de nome longo e R$ 123,5 mi, e Ajustes no maior tamanho de letra; o exemplo de cada campo vazio inteiro na caixa; o contraste nos quatro combos e na maior letra; o título com a aurora nos extremos da deriva), os 3 testes do medidor com imagens sintéticas e os 2 do laudo, com as 43 cenas acima de 4,5:1 e os prints anotados no resultado. Repita o laudo num iPhone Pro Max (o mesmo comando com `-destination "platform=iOS Simulator,id=<Pro Max>"` e só `-only-testing:CusttaUITests/LeituraNoVidroUITests`): o portão vale nos dois tamanhos. Para não dobrar o tempo, `build-for-testing` uma vez e `test-without-building` nos dois simuladores ao mesmo tempo (seção "O que roda na CI e o que roda só no Mac").
+Expected: `** TEST SUCCEEDED **`: as 9 auditorias (entrar, criar conta, falta pouco das contas Apple e Google, obras com a obra o4, de nome longo e R$ 123,5 mi, e Ajustes no maior tamanho de letra; o exemplo de cada campo vazio inteiro na caixa; o contraste nos quatro combos e na maior letra; o título com a aurora nos extremos da deriva), os 3 testes do medidor com imagens sintéticas e os 3 do laudo, com as 47 cenas acima de 4,5:1 e os prints anotados no resultado. Repita o laudo num iPhone Pro Max (o mesmo comando com `-destination "platform=iOS Simulator,id=<Pro Max>"` e só `-only-testing:CusttaUITests/LeituraNoVidroUITests`): o portão vale nos dois tamanhos. Para não dobrar o tempo, `build-for-testing` uma vez e `test-without-building` nos dois simuladores ao mesmo tempo (seção "O que roda na CI e o que roda só no Mac").
 
 Se uma auditoria estrita achar algo: contraste se resolve no valor do token (`scripts/cores-app-ios.mjs`), nunca com cor solta; texto cortado se resolve deixando o texto crescer (sem `lineLimit` fixo) ou mudando a disposição na letra grande, como a `CartaoDeObra` faz. Se uma cena do laudo reprovar, o print anotado mostra a palavra; a correção segue a escada da seção "Resultado do portão de desenho" e não engrossa a tinta do vidro sem o Giovani.
 
@@ -9727,10 +9787,12 @@ git commit -m "test: acessibilidade do app nativo e laudo de leitura sobre o vid
 - Modify: `package.json` (script `test:app-ios:emuladores`), `tests/app-ios.test.cjs` (teste no fim)
 
 **Interfaces:**
-- Consumes: `TransporteDados`, `Cancelavel`, `Relogio`, `Instantaneo`, `ValorJSON.paraFoundation`, `ValorJSON(foundation:)`, `codigoDeErroFirestore`, `agoraEmMilissegundos` (núcleo); `RelogioDoSistema` e, nos testes, `Bandeira` (Tarefa 9); `scripts/simulador-ios.mjs` (Tarefa 2).
-- Produces: `@MainActor final class BancoFirebase { static let chaveLimpeza; init(app: FirebaseApp, emulador: (host: String, porta: Int)?, preferencias: UserDefaults = .standard); func quandoPronto(_ uso: @escaping @MainActor (Firestore) -> Void); func aguardarPronto() async; func firestore() -> Firestore; var limpezaPendente: Bool; func marcarLimpeza(); func desmarcarLimpeza(); func limparCache() async throws }`; `@MainActor final class TransporteFirebase: TransporteDados { init(banco:); nonisolated static func valor(_: [String: Any]) -> ValorJSON?; nonisolated static func codigo(_: Error) -> String }` (documento com tipo fora do JSON chega como `aoFalhar("formato-desconhecido")`); Nos testes: `let comEmuladores: Bool`, `struct NoEmulador` (suíte-mãe em série das suítes que dividem o `Emulador.banco`), `enum Emulador { static let projeto: String; static let app: FirebaseApp; static let banco: BancoFirebase; static func novaConta() async throws -> User }`.
+- Consumes: `TransporteDados`, `Cancelavel`, `Relogio`, `Instantaneo`, `ValorJSON.paraFoundation`, `ValorJSON(foundation:)`, `codigoDeErroFirestore`, `agoraEmMilissegundos` (núcleo); `RelogioDoSistema`, `ErroConta` e, nos testes, `Bandeira`, `Desfecho` e `ate` (Tarefa 9); `scripts/simulador-ios.mjs` (Tarefa 2); nos testes, `Composicao.projetoDosEmuladores` e `Composicao.opcoesDosEmuladores()` (Tarefa 14).
+- Produces: `struct Documento: Sendable, Equatable { let existe: Bool; let textos: [String: String] }`; `@MainActor final class BancoFirebase { static let chaveLimpeza; typealias Leitor; static let lerNoSDK: Leitor; init(app: FirebaseApp, emulador: (host: String, porta: Int)? = nil, preferencias: UserDefaults = .standard, apagar: @escaping @MainActor (Firestore) async throws -> Void = { try await $0.clearPersistence() }, leitor: @escaping Leitor = BancoFirebase.lerNoSDK); private(set) var bloqueado: Bool; func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void); func quandoPronto(_ uso: @escaping @MainActor (Firestore) -> Void); func aguardarPronto() async; func firestore() -> Firestore; func ler(_ caminho: String, fonte: FirestoreSource = .default) async throws -> Documento; var leiturasPendentes: Int; var limpezaPendente: Bool; func marcarLimpeza(); func desmarcarLimpeza(); func limparCache() async throws; func tentarLimparDeNovo() async throws }`; `@MainActor final class TransporteFirebase: TransporteDados { init(banco:); nonisolated static func valor(_: [String: Any]) -> ValorJSON?; nonisolated static func codigo(_: Error) -> String }` (documento com tipo fora do JSON chega como `aoFalhar("formato-desconhecido")`); Nos testes: `let comEmuladores: Bool`, `struct NoEmulador` (suíte-mãe em série das suítes que dividem o `Emulador.banco`), `enum Emulador { static let projeto: String; static let app: FirebaseApp; static let banco: BancoFirebase; static func novaConta() async throws -> User }` (o `app` é um FirebaseApp nomeado, "emulador", com as opções dos emuladores).
 
 É a antiga Tarefa 6 sem o `Sistema.swift` (relógio, rede e janela), que entrou na Tarefa 9 junto com o `Bandeira` dos testes (`Auxiliares.swift`).
+
+**O que o PR 3 mudou nesta tarefa** (o código abaixo já é o do `e8bbefa`). O commit da tarefa (`55c824c`) é o brief, byte a byte. Depois, no inventário (seção "Inventário do PR 3", depois da Tarefa 14): a limpeza que falha deixa a fila presa e o banco bloqueado até `tentarLimparDeNovo` dar certo, como o `cacheBloqueado` do site (decisão do Giovani em 11/10), com a falha injetável nos testes (`apagar:`); as leituras da conta passam pelo `ler`, que pede a instância depois de esperar a limpeza e responde "cancelled" às que o sair corta, porque o `terminate` nunca as responde (o leitor também é injetável, `leitor:`); e o `Emulador` e os apps dos testes passam a usar o projeto e a chave falsa dos emuladores do `Composicao` (Tarefa 14). Os testes cobrem o que a revisão desta tarefa achou sem prova: o `doCache` e a gravação pendente do eco (`viuCache` e `ecoDaGravacaoChegaComGravacaoPendente`) e a limpeza retomada que apaga o cache de verdade, sem rede; e, com as mudanças, a fila presa e o bloqueio, no sair e na abertura, e a leitura em voo cortada.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -9757,13 +9819,10 @@ struct NoEmulador {}
 @MainActor
 enum Emulador {
     /// Projeto dos emuladores, o mesmo do firebase.test.json e dos testes do site.
-    static let projeto = "demo-custta-phase2"
+    static let projeto = Composicao.projetoDosEmuladores
     static let app: FirebaseApp = {
         if let app = FirebaseApp.app(name: "emulador") { return app }
-        let caminho = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist")!
-        let opcoes = FirebaseOptions(contentsOfFile: caminho)!
-        opcoes.projectID = projeto
-        FirebaseApp.configure(name: "emulador", options: opcoes)
+        FirebaseApp.configure(name: "emulador", options: Composicao.opcoesDosEmuladores())
         let app = FirebaseApp.app(name: "emulador")!
         Auth.auth(app: app).useEmulator(withHost: "127.0.0.1", port: 9099)
         return app
@@ -9800,10 +9859,11 @@ extension NoEmulador {
             let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
             #expect(codigo == nil)
 
-            var recebido: Instantaneo?
-            let escuta = transporte.escutar(uid: u.uid, aoReceber: { if !$0.doCache { recebido = $0 } }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
+            var recebido: Instantaneo?, viuCache = false
+            let escuta = transporte.escutar(uid: u.uid, aoReceber: { if $0.doCache { viuCache = true } else { recebido = $0 } }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
             for _ in 0..<100 where recebido == nil { try await Task.sleep(for: .milliseconds(50)) }
             escuta.cancelar()
+            #expect(viuCache, "a escuta abre pelo cache, com o documento já confirmado: o doCache chega ao Sincronizador")
             let dados = try #require(recebido?.dados)
             #expect(canonico(dados) == canonico(blob), "volta igual, sem _atualizado e com o campo que só o site conhece")
 
@@ -9811,6 +9871,21 @@ extension NoEmulador {
             #expect(bruto?["_atualizado"] is Timestamp, "_atualizado é a hora do servidor")
             let gasto = ((bruto?["obras"] as? [[String: Any]])?.first?["gastos"] as? [[String: Any]])?.first
             #expect((gasto?["valor"] as? NSNumber).map { CFNumberIsFloatType($0) } == false, "1500 vai como inteiro, como o JavaScript grava")
+        }
+
+        @Test func ecoDaGravacaoChegaComGravacaoPendente() async throws {
+            let u = try await Emulador.novaConta()
+            let transporte = TransporteFirebase(banco: Emulador.banco)
+            var vistos: [Instantaneo] = []
+            let escuta = transporte.escutar(uid: u.uid, aoReceber: { vistos.append($0) }, aoFalhar: { Issue.record("leitura falhou: \($0)") })
+            for _ in 0..<100 where !vistos.contains(where: { !$0.doCache }) { try await Task.sleep(for: .milliseconds(50)) }
+            let blob = ValorJSON.objeto(["obras": .lista([]), "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])])])
+            let codigo: String? = await withCheckedContinuation { c in transporte.gravar(uid: u.uid, blob: blob) { c.resume(returning: $0) } }
+            #expect(codigo == nil)
+            for _ in 0..<100 where vistos.last?.gravacaoPendente != false { try await Task.sleep(for: .milliseconds(50)) }
+            escuta.cancelar()
+            #expect(vistos.contains { $0.gravacaoPendente && $0.dados != nil }, "o eco da gravação local chega com gravação pendente (o eco do app.js depende disso)")
+            #expect(vistos.last.map { !$0.gravacaoPendente && !$0.doCache } == true, "a confirmação do servidor chega sem pendência")
         }
 
         @Test func rulesRecusamChaveNovaNoBlob() async throws {
@@ -9846,16 +9921,14 @@ import FirebaseFirestore
 @testable import Custta
 
 /* A limpeza do cache interrompida (o app fechou no meio de um "sair") termina na abertura seguinte,
-   antes de qualquer leitura. Sem rede e sem emulador: apagar o cache é local (roda na CI). */
+   antes de qualquer leitura; se a limpeza falha, a fila fica presa até a nova tentativa dar certo.
+   Sem rede e sem emulador: apagar o cache é local (roda na CI). */
 
 @MainActor
 struct BancoFirebaseTests {
     @Test func limpezaInterrompidaTerminaAntesDaPrimeiraLeitura() async throws {
         let nome = "limpeza-\(UUID().uuidString.prefix(8).lowercased())"
-        let caminho = try #require(Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"))
-        let opcoes = try #require(FirebaseOptions(contentsOfFile: caminho))
-        opcoes.projectID = Emulador.projeto
-        FirebaseApp.configure(name: nome, options: opcoes)
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
         let preferencias = try #require(UserDefaults(suiteName: nome))
         preferencias.set(true, forKey: BancoFirebase.chaveLimpeza)
         let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080), preferencias: preferencias)
@@ -9866,6 +9939,96 @@ struct BancoFirebaseTests {
         await banco.aguardarPronto()
         #expect(usou.ligada)
         #expect(!banco.limpezaPendente, "a abertura terminou a limpeza e tirou a marca")
+    }
+
+    @Test func limpezaRetomadaApagaOCacheDeVerdade() async throws {
+        // O app fechou no meio de um "sair": gravação só no cache (sem rede), instância encerrada e a marca de pé.
+        let nome = "retomada-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let app = try #require(FirebaseApp.app(name: nome))
+        let preferencias = try #require(UserDefaults(suiteName: nome))
+        let antes = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: preferencias)
+        let db = antes.firestore()
+        try await db.disableNetwork()
+        let ref = db.collection("dados").document(nome)
+        gravarSoNoCache(ref)
+        #expect(try await ref.getDocument(source: .cache).exists, "a gravação está no cache")
+        antes.marcarLimpeza()
+        try await db.terminate()
+        // A abertura seguinte: o banco novo termina a limpeza antes de qualquer leitura.
+        let depois = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: preferencias)
+        await depois.aguardarPronto()
+        #expect(!depois.limpezaPendente)
+        await #expect(throws: (any Error).self, "o cache foi apagado: a leitura só do cache não acha a gravação") {
+            try await depois.firestore().collection("dados").document(nome).getDocument(source: .cache)
+        }
+    }
+
+    @Test func leituraEmVooQuandoOSairEncerraAInstanciaResponde() async throws {
+        // O servidor não responde antes do sair e, depois do terminate, o SDK nunca mais responde (visto na T13).
+        let nome = "corte-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080),
+                                  preferencias: try #require(UserDefaults(suiteName: nome)), leitor: { _, _, _ in })
+        let leitura = Desfecho { _ = try await banco.ler("perfis/\(nome)", fonte: .server) }
+        await ate { banco.leiturasPendentes == 1 }
+        banco.marcarLimpeza()
+        try await banco.limparCache()
+        await ate { leitura.terminou }
+        #expect(leitura.terminou, "a leitura cortada pelo sair responde, em vez de deixar a tarefa pendurada")
+        #expect((leitura.erro as? ErroConta)?.codigo == "cancelled")
+        #expect(banco.leiturasPendentes == 0)
+    }
+
+    /// Sem rede, a confirmação do servidor nunca vem: fora do contexto assíncrono, o setData sem espera.
+    private func gravarSoNoCache(_ ref: DocumentReference) { ref.setData(["obras": []]) }
+
+    /// Banco num app próprio, sem rede (a limpeza só mexe no disco); com `falha` ligada, apagar o cache falha.
+    private func bancoQueFalha(marcado: Bool, _ falha: Bandeira) throws -> BancoFirebase {
+        let nome = "falha-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let preferencias = try #require(UserDefaults(suiteName: nome))
+        if marcado { preferencias.set(true, forKey: BancoFirebase.chaveLimpeza) }
+        return BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080), preferencias: preferencias,
+                             apagar: { db in
+                                 if falha.ligada { throw ErroConta(codigo: "disco") }
+                                 try await db.clearPersistence()
+                             })
+    }
+
+    @Test func limpezaQueFalhaAoSairPrendeAFilaAteDarCerto() async throws {
+        let falha = Bandeira()
+        falha.ligada = true
+        let banco = try bancoQueFalha(marcado: false, falha)
+        banco.marcarLimpeza()
+        await #expect(throws: ErroConta(codigo: "disco")) { try await banco.limparCache() }
+        #expect(banco.bloqueado && banco.limpezaPendente, "a marca fica e o banco bloqueia, como o cacheBloqueado do cloud.js")
+        let usou = Bandeira()
+        banco.quandoPronto { _ in usou.ligada = true }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!usou.ligada, "ninguém lê nem grava com o cache velho no aparelho")
+        await #expect(throws: ErroConta(codigo: "disco")) { try await banco.tentarLimparDeNovo() }
+        #expect(banco.bloqueado && !usou.ligada, "falhou de novo: continua preso")
+        falha.ligada = false
+        try await banco.tentarLimparDeNovo()
+        #expect(usou.ligada && !banco.bloqueado && !banco.limpezaPendente, "deu certo: solta a fila e tira o bloqueio e a marca")
+    }
+
+    @Test func limpezaRetomadaQueFalhaNaAberturaBloqueia() async throws {
+        let falha = Bandeira()
+        falha.ligada = true
+        let banco = try bancoQueFalha(marcado: true, falha)
+        let viuBloqueio = Bandeira(), viuFim = Bandeira()
+        banco.observarBloqueio { if $0 { viuBloqueio.ligada = true } else if viuBloqueio.ligada { viuFim.ligada = true } }
+        let usou = Bandeira()
+        banco.quandoPronto { _ in usou.ligada = true }
+        await ate { banco.bloqueado }
+        #expect(banco.bloqueado && banco.limpezaPendente && !usou.ligada, "a abertura não terminou a limpeza: ninguém lê")
+        falha.ligada = false
+        try await banco.tentarLimparDeNovo()
+        #expect(usou.ligada && !banco.bloqueado && !banco.limpezaPendente)
+        await ate { viuFim.ligada }
+        #expect(viuBloqueio.ligada && viuFim.ligada, "quem observa fica sabendo do bloqueio e do fim dele")
     }
 }
 ```
@@ -9904,6 +10067,13 @@ import FirebaseFirestore
 /// Diagnóstico no registro do sistema (Console do Mac, sysdiagnose): a marca de limpeza que sobra fica anotada.
 private let registro = Logger(subsystem: "br.com.custta.app", category: "banco")
 
+/// O que a conta lê de um documento (`perfis/{uid}`): se existe e os campos de texto. Sendable, para atravessar a
+/// espera da leitura.
+struct Documento: Sendable, Equatable {
+    let existe: Bool
+    let textos: [String: String]
+}
+
 /* Acesso ao Firestore do app. Sair da conta encerra a instância para limpar o cache, e o SDK
    devolve uma instância nova na próxima chamada; por isso ninguém guarda a instância: todo mundo
    pede aqui, e cada instância nova recebe as configurações antes do primeiro uso.
@@ -9911,7 +10081,10 @@ private let registro = Logger(subsystem: "br.com.custta.app", category: "banco")
    A limpeza segue o cloud.js: a marca persistida (`chaveLimpeza`) é gravada antes do signOut e só
    sai quando o cache foi apagado. Se o app fechar no meio, a próxima abertura termina a limpeza
    antes de qualquer leitura. Durante uma limpeza, quem vai ler ou gravar espera na fila de
-   `quandoPronto`, na ordem de chegada. */
+   `quandoPronto`, na ordem de chegada. Se a limpeza falhar (no sair ou na abertura), a fila continua
+   presa e o banco fica bloqueado até `tentarLimparDeNovo` dar certo, como o `cacheBloqueado` do
+   cloud.js: soltar a fila com o cache velho apagaria, na abertura seguinte, gravações sem rede da
+   sessão nova. */
 @MainActor
 final class BancoFirebase {
     static let chaveLimpeza = "custta-limpar-cache"
@@ -9919,15 +10092,31 @@ final class BancoFirebase {
     private let app: FirebaseApp
     private let emulador: (host: String, porta: Int)?
     private let preferencias: UserDefaults
+    /// Apaga o cache de uma instância encerrada ou ainda sem uso (os testes injetam a falha).
+    private let apagar: @MainActor (Firestore) async throws -> Void
+    /// Lê um documento no SDK (os testes injetam um servidor que nunca responde).
+    private let leitor: Leitor
+    typealias Leitor = @MainActor (DocumentReference, FirestoreSource, @escaping @MainActor (Documento?, Error?) -> Void) -> Void
+    /// Leituras pedidas que o SDK ainda não respondeu.
+    private var leiturasEmVoo: [UUID: CheckedContinuation<Documento, Error>] = [:]
     private weak var configurada: Firestore?
-    /// Limpeza em andamento (a retomada na abertura ou a de um "sair").
+    /// Limpeza em andamento (a retomada na abertura ou a de um "sair"), ou bloqueada por uma falha.
     private var ocupado = false
     private var esperando: [@MainActor (Firestore) -> Void] = []
+    private var ouvintesDoBloqueio: [@MainActor (Bool) -> Void] = []
+    /// A limpeza falhou: a fila de `quandoPronto` fica presa e a marca, de pé, até `tentarLimparDeNovo` dar certo.
+    private(set) var bloqueado = false {
+        didSet { if bloqueado != oldValue { ouvintesDoBloqueio.forEach { $0(bloqueado) } } }
+    }
 
-    init(app: FirebaseApp, emulador: (host: String, porta: Int)? = nil, preferencias: UserDefaults = .standard) {
+    init(app: FirebaseApp, emulador: (host: String, porta: Int)? = nil, preferencias: UserDefaults = .standard,
+         apagar: @escaping @MainActor (Firestore) async throws -> Void = { try await $0.clearPersistence() },
+         leitor: @escaping Leitor = BancoFirebase.lerNoSDK) {
         self.app = app
         self.emulador = emulador
         self.preferencias = preferencias
+        self.apagar = apagar
+        self.leitor = leitor
         if preferencias.bool(forKey: Self.chaveLimpeza) {
             ocupado = true
             Task { [weak self] in await self?.terminarLimpezaInterrompida() }
@@ -9935,6 +10124,13 @@ final class BancoFirebase {
     }
 
     var limpezaPendente: Bool { preferencias.bool(forKey: Self.chaveLimpeza) }
+
+    /// Avisa a cada mudança do bloqueio; quem se inscreve recebe o estado atual logo em seguida.
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) {
+        ouvintesDoBloqueio.append(aoMudar)
+        let atual = bloqueado
+        Task { @MainActor in aoMudar(atual) }
+    }
 
     /// Roda `uso` com o Firestore pronto: na hora, se não há limpeza; senão, logo que ela termina,
     /// na ordem de chegada (gravações saem na mesma ordem em que o Sincronizador mandou).
@@ -9968,35 +10164,79 @@ final class BancoFirebase {
         return db
     }
 
+    static let lerNoSDK: Leitor = { ref, fonte, fim in
+        ref.getDocument(source: fonte) { doc, erro in
+            MainActor.assumeIsolated {
+                fim(doc.map { Documento(existe: $0.exists, textos: ($0.data() ?? [:]).compactMapValues { $0 as? String }) }, erro)
+            }
+        }
+    }
+
+    /// Lê `caminho` depois de uma limpeza em andamento, na instância do momento. Se um `sair` encerrar a instância
+    /// com a leitura em voo, ela responde "cancelled".
+    func ler(_ caminho: String, fonte: FirestoreSource = .default) async throws -> Documento {
+        await aguardarPronto()
+        let id = UUID()
+        return try await withCheckedThrowingContinuation { (c: CheckedContinuation<Documento, Error>) in
+            leiturasEmVoo[id] = c
+            leitor(firestore().document(caminho), fonte) { [weak self] documento, erro in
+                guard let c = self?.leiturasEmVoo.removeValue(forKey: id) else { return }
+                if let documento { c.resume(returning: documento) } else { c.resume(throwing: erro ?? ErroConta(codigo: "unknown")) }
+            }
+        }
+    }
+
+    var leiturasPendentes: Int { leiturasEmVoo.count }
+
     /// Antes do signOut: se o app fechar daqui até o fim da limpeza, a próxima abertura termina.
     func marcarLimpeza() { preferencias.set(true, forKey: Self.chaveLimpeza) }
     func desmarcarLimpeza() { preferencias.removeObject(forKey: Self.chaveLimpeza) }
 
-    /// Encerra a instância e apaga o cache persistente (o IndexedDB do site); tira a marca no fim.
-    /// Falhou no meio: a marca fica e a próxima abertura termina a limpeza.
+    /// Encerra a instância e apaga o cache persistente (o IndexedDB do site); tira a marca no fim e solta a fila.
+    /// Falhou: a marca fica, a fila continua presa e o banco fica bloqueado até `tentarLimparDeNovo`.
     func limparCache() async throws {
         ocupado = true
-        defer { liberar() }
-        do {
-            let db = firestore()
-            try await db.terminate()
-            try await db.clearPersistence()
-            desmarcarLimpeza()
-        } catch {
-            registro.error("limpeza do cache falhou; a marca fica para a próxima abertura: \(String(describing: error), privacy: .public)")
+        do { try await encerrarEApagar() } catch {
+            registro.error("limpeza do cache falhou; bloqueado até tentar de novo: \(String(describing: error), privacy: .public)")
+            bloqueado = true
             throw error
         }
+        liberar()
+    }
+
+    /// "Tentar limpar novamente": a limpeza que falhou, de novo. Dando certo, solta a fila e tira o bloqueio.
+    func tentarLimparDeNovo() async throws {
+        guard bloqueado else { return }
+        do { try await encerrarEApagar() } catch {
+            registro.error("nova tentativa de limpar o cache falhou: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+        bloqueado = false
+        liberar()
+    }
+
+    private func encerrarEApagar() async throws {
+        // O terminate corta as leituras em voo e o SDK nunca as responde (uma tarefa da conta ficaria pendurada).
+        let cortadas = leiturasEmVoo
+        leiturasEmVoo = [:]
+        cortadas.values.forEach { $0.resume(throwing: ErroConta(codigo: "cancelled")) }
+        let db = firestore()
+        try await db.terminate()
+        try await apagar(db)
+        desmarcarLimpeza()
     }
 
     private func terminarLimpezaInterrompida() async {
         registro.notice("limpeza do cache interrompida encontrada na abertura; terminando antes de ler")
-        defer { liberar() }
         do {
-            try await firestore().clearPersistence()      // instância nova, ainda sem uso
+            try await apagar(firestore())      // instância nova, ainda sem uso
             desmarcarLimpeza()
         } catch {
-            registro.error("limpeza retomada falhou; a marca fica para a próxima abertura: \(String(describing: error), privacy: .public)")
+            registro.error("limpeza retomada falhou; bloqueado até tentar de novo: \(String(describing: error), privacy: .public)")
+            bloqueado = true
+            return
         }
+        liberar()
     }
 
     private func liberar() {
@@ -10098,7 +10338,7 @@ final class TransporteFirebase: TransporteDados {
 - [ ] **Step 4: Rodar e ver passar**
 
 Run: `npm run test:app-ios:emuladores && node --test tests/app-ios.test.cjs`
-Expected: os 2 testes de `TransporteFirebaseTests` verdes (o log do Firestore mostra o `Permission denied` esperado do segundo), mais `ConversaoDoDocumentoTests` e `BancoFirebaseTests`, e as guardas verdes. Sem os emuladores (`xcodebuild test` comum, como na CI) os de `TransporteFirebaseTests` aparecem como pulados e os outros dois rodam.
+Expected: os 3 testes de `TransporteFirebaseTests` verdes (o log do Firestore mostra o `Permission denied` esperado do `rulesRecusamChaveNovaNoBlob`), mais `ConversaoDoDocumentoTests` e os 5 de `BancoFirebaseTests` (no commit da tarefa eram 2 e 1), e as guardas verdes. Sem os emuladores (`xcodebuild test` comum, como na CI) os de `TransporteFirebaseTests` aparecem como pulados e os outros rodam. Com outro agente usando o simulador padrão, `CUSTTA_SIMULADOR=<udid> npm run test:app-ios:emuladores` (inventário do PR 3).
 
 - [ ] **Step 5: Commit**
 
@@ -10116,10 +10356,12 @@ git commit -m "feat: camada do Firestore do app nativo" -m "Transporte fino do S
 - Test: `app-ios/CusttaTests/ContaFirebaseTests.swift`, `app-ios/CusttaTests/ErrosDoSDKTests.swift`
 
 **Interfaces:**
-- Consumes: `BancoFirebase` (`aguardarPronto`, `firestore`, `marcarLimpeza`, `desmarcarLimpeza`, `limparCache`, `limpezaPendente`), `TransporteFirebase`, `Emulador`, `NoEmulador` (Tarefa 12); `ServicoConta`, `Usuario`, `CredencialApple`, `ErroConta`, `controladorNoTopo` (Tarefa 9); do núcleo `PerfilCadastro`, `ValorJSON`, `codigoDeErroDeConta`, `codigoDeErroFirestore`, `dominioAuth`, `dominioFirestore`, `dominioApple`, `dominioGoogle`, `sessaoInvalida`, `mensagemErroSenha`; dos SDKs `Auth`, `User`, `OAuthProvider`, `GoogleAuthProvider`, `AuthErrorCode`, `FirestoreErrorCode`, `GIDSignIn`, `GIDSignInError` e `ASAuthorizationError`.
-- Produces: `@MainActor final class ContaFirebase: ServicoConta { init(app:banco:online:); nonisolated static func erro(_:) -> ErroConta }`.
+- Consumes: `BancoFirebase` (`aguardarPronto`, `firestore`, `ler`, `leiturasPendentes`, `bloqueado`, `observarBloqueio`, `marcarLimpeza`, `desmarcarLimpeza`, `limparCache`, `tentarLimparDeNovo`, `limpezaPendente`), `Documento`, `TransporteFirebase`, `Emulador`, `NoEmulador` (Tarefa 12); `ServicoConta` (com o `observarBloqueio` e o `tentarLimparDeNovo` do inventário do PR 3), `Usuario`, `CredencialApple`, `ErroConta`, `controladorNoTopo` e, nos testes, `Bandeira`, `Desfecho` e `ate` (Tarefa 9); do núcleo `PerfilCadastro`, `ValorJSON`, `codigoDeErroDeConta`, `codigoDeErroFirestore`, `dominioAuth`, `dominioFirestore`, `dominioApple`, `dominioGoogle`, `sessaoInvalida`, `mensagemErroSenha`; dos SDKs `Auth`, `User`, `OAuthProvider`, `GoogleAuthProvider`, `AuthErrorCode`, `FirestoreErrorCode`, `GIDSignIn`, `GIDSignInError` e `ASAuthorizationError`.
+- Produces: `@MainActor final class ContaFirebase: ServicoConta { init(app:banco:online:); nonisolated static func erro(_:) -> ErroConta }`; com a limpeza do cache bloqueada, `entrar`, `entrarComApple`, `entrarComGoogle` e `criarConta` lançam `ErroConta(codigo: "cache")`, e o `sair` também, quando só a limpeza falha (a conta já saiu).
 
 É a antiga Tarefa 7 sem o que já entrou na Tarefa 9 (o protocolo `ServicoConta`, o `Usuario`, a `CredencialApple`, o `ErroConta`, a conta e o transporte falsos): a implementação de verdade do protocolo que as telas já usam. O código é o validado no plano anterior. A trava de 60 s da conferência da sessão mora aqui, no `verificarSessao`, como no `cloud.js:176`: o `Sincronizador` pede a conferência com `forcar` (`true` quando a escrita volta `unauthenticated`, `false` quando a rede volta; seção "Decisões"), e a não forçada sai no máximo uma vez por minuto.
+
+**O que o PR 3 mudou nesta tarefa** (o código abaixo já é o do `e8bbefa`). O commit da tarefa (`73b0971`) é o brief, byte a byte, e logo depois vieram duas correções. O `perfilPendente` guardava a referência do documento entre a leitura do cache e a do servidor: se um sair encerrasse a instância nesse meio, a leitura do servidor caía no cliente encerrado, o SDK lançava uma exceção do Objective-C (`FIRIllegalStateException`) e o app caía (`ed8deeb`, com o teste `sairNoMeioDoPerfilPendenteNaoDerrubaOApp`, que provoca a corrida sem depender de tempo: a fila principal é FIFO). Os testes do brief deixavam passar três mutações (a conferência saindo da conta em qualquer erro, o sair sem a marca da limpeza antes do `signOut` e a espera de um minuto valendo também para a forçada), e três testes novos pegam uma cada (`910d358`: `erroDeRedeNaConferenciaNaoSaiDaConta`, `sessaoInvalidadaSaiNaConferenciaForcadaMesmoDentroDoMinuto` e `marcaDaLimpezaJaGravadaQuandoChegaOAvisoDeSaida`, renomeado no inventário porque prova a marca, não a ordem). No inventário: as leituras do perfil e do nome passam pelo `banco.ler` (uma leitura que o sair corta responde, em vez de pendurar a tarefa; teste `sairNoMeioDaLeituraDoNomeNaoPenduraATarefa`); entrar, Apple, Google e criar conta recusam com "cache" quando a limpeza está bloqueada, e o sair lança "cache" quando só a limpeza falha (teste `limpezaQueFalhaAoSairBloqueiaEntrarAteDarCerto`, que cobre também a Apple, com um token falso que o emulador aceita; o Google não dá para testar sem tela); e três testes da revisão desta tarefa (`trocaDeContaRecomecaAContarOMinuto`, `perfilGravadoPorOutroAparelhoNoFaltaPoucoSegueParaALista` e `emailConfirmadoChegaAoUsuarioSemReabrir`), que gravam como outro aparelho pela REST do emulador do Firestore e mudam a conta pela API de administrador do emulador do Auth.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -10128,6 +10370,7 @@ git commit -m "feat: camada do Firestore do app nativo" -m "Transporte fino do S
 ```swift
 import Foundation
 import Testing
+import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 @testable import Custta
@@ -10174,6 +10417,21 @@ extension NoEmulador {
             try await c.sair()
         }
 
+        @Test func sairNoMeioDoPerfilPendenteNaoDerrubaOApp() async throws {
+            let c = conta()
+            let sub = UUID().uuidString.lowercased()
+            let tokenFalso = #"{"sub":"\#(sub)","email":"\#(sub.prefix(8))@example.com","email_verified":true}"#
+            _ = try await Auth.auth(app: Emulador.app).signIn(with: GoogleAuthProvider.credential(withIDToken: tokenFalso, accessToken: "x"))
+            for _ in 0..<100 where c.usuario?.contaSocial != true { try await Task.sleep(for: .milliseconds(20)) }
+            /* A fila principal é FIFO: o perfilPendente roda até a leitura do cache e para ali; o sair encerra a
+               instância antes de essa leitura voltar. Ler o servidor pela instância encerrada derruba o app
+               (VerifyNotTerminated lança exceção do Objective-C, que o Swift não pega). */
+            let pendente = Task { await c.perfilPendente() }
+            await Task.yield()
+            try await c.sair()
+            #expect(await pendente.value == false, "a leitura do servidor espera a limpeza e usa a instância nova")
+        }
+
         private func gravar(_ t: TransporteFirebase, _ uid: String, _ blob: ValorJSON) async -> String? {
             await withCheckedContinuation { c in t.gravar(uid: uid, blob: blob) { c.resume(returning: $0) } }
         }
@@ -10204,6 +10462,172 @@ extension NoEmulador {
         @Test func esqueciASenhaAceitaNoEmulador() async throws {
             let u = try await Emulador.novaConta()
             try await conta().redefinirSenha(email: u.email!)
+            try Auth.auth(app: Emulador.app).signOut()
+        }
+
+        /// Desativa a conta pela API de administrador do emulador do Auth: a próxima renovação do token volta USER_DISABLED.
+        private func desativar(_ uid: String) async throws { try await alterarConta(uid, ["disableUser": true]) }
+
+        /// Muda a conta pela API de administrador do emulador do Auth (conta desativada, link de confirmação clicado).
+        private func alterarConta(_ uid: String, _ campos: [String: Any]) async throws {
+            var pedido = URLRequest(url: URL(string: "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/\(Emulador.projeto)/accounts:update")!)
+            pedido.httpMethod = "POST"
+            pedido.setValue("Bearer owner", forHTTPHeaderField: "Authorization")
+            pedido.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            pedido.httpBody = try JSONSerialization.data(withJSONObject: campos.merging(["localId": uid]) { $1 })
+            let (_, resposta) = try await URLSession.shared.data(for: pedido)
+            #expect((resposta as? HTTPURLResponse)?.statusCode == 200)
+        }
+
+        @Test func sessaoInvalidadaSaiNaConferenciaForcadaMesmoDentroDoMinuto() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }
+            await c.verificarSessao(forcar: false)                  // começa a contar o minuto
+            try await desativar(u.uid)
+            await c.verificarSessao(forcar: false)                  // a volta da rede, dentro do minuto: não confere
+            #expect(Auth.auth(app: Emulador.app).currentUser?.uid == u.uid, "a não forçada sai no máximo uma vez por minuto")
+            await c.verificarSessao(forcar: true)                   // a escrita voltou unauthenticated: confere na hora
+            #expect(Auth.auth(app: Emulador.app).currentUser == nil, "sessão invalidada sai da conta")
+        }
+
+        @Test func limpezaQueFalhaAoSairBloqueiaEntrarAteDarCerto() async throws {
+            // App e banco próprios: a falha de apagar o cache não pode encostar na instância do Emulador.banco.
+            let nome = "bloqueio-\(UUID().uuidString.prefix(8).lowercased())"
+            FirebaseApp.configure(name: nome, options: Emulador.app.options)
+            let app = try #require(FirebaseApp.app(name: nome))
+            let auth = Auth.auth(app: app)
+            auth.useEmulator(withHost: "127.0.0.1", port: 9099)
+            let falha = Bandeira()
+            falha.ligada = true
+            let banco = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: try #require(UserDefaults(suiteName: nome)),
+                                      apagar: { db in
+                                          if falha.ligada { throw ErroConta(codigo: "disco") }
+                                          try await db.clearPersistence()
+                                      })
+            let c = ContaFirebase(app: app, banco: banco, online: { true })
+            let email = "\(nome)@example.com"
+            _ = try await auth.createUser(withEmail: email, password: "Casa2026x")
+            await #expect(throws: ErroConta(codigo: "cache")) { try await c.sair() }
+            #expect(auth.currentUser == nil, "saiu da conta antes de a limpeza falhar")
+            await #expect(throws: ErroConta(codigo: "cache"), "entrar recusa com o cache velho no aparelho") {
+                try await c.entrar(email: email, senha: "Casa2026x")
+            }
+            await #expect(throws: ErroConta(codigo: "cache"), "criar conta também") {
+                try await c.criarConta(email: "outra-\(email)", senha: "Casa2026x", perfil: PerfilCadastro(nome: "Gi", origem: "indicacao"))
+            }
+            let apple = CredencialApple(idToken: #"{"sub":"\#(nome)","email":"apple-\#(email)","email_verified":true}"#, nonce: "n", nomeCompleto: nil)
+            await #expect(throws: ErroConta(codigo: "cache"), "entrar com a Apple também") { try await c.entrarComApple(apple) }
+            #expect(auth.currentUser == nil)
+            falha.ligada = false
+            try await c.tentarLimparDeNovo()
+            try await c.entrar(email: email, senha: "Casa2026x")
+            #expect(auth.currentUser != nil, "limpou: entrar volta a funcionar")
+            try auth.signOut()
+        }
+
+        @Test func sairNoMeioDaLeituraDoNomeNaoPenduraATarefa() async throws {
+            // App e banco próprios: o servidor não responde a leitura, como depois do terminate de um sair (T13).
+            let nome = "corte-\(UUID().uuidString.prefix(8).lowercased())"
+            FirebaseApp.configure(name: nome, options: Emulador.app.options)
+            let app = try #require(FirebaseApp.app(name: nome))
+            let auth = Auth.auth(app: app)
+            auth.useEmulator(withHost: "127.0.0.1", port: 9099)
+            let banco = BancoFirebase(app: app, emulador: ("127.0.0.1", 8080), preferencias: try #require(UserDefaults(suiteName: nome)),
+                                      leitor: { _, _, _ in })
+            let c = ContaFirebase(app: app, banco: banco, online: { true })
+            _ = try await auth.createUser(withEmail: "\(nome)@example.com", password: "Casa2026x")
+            let leitura = Desfecho { _ = await c.lerNome() }
+            await ate { banco.leiturasPendentes == 1 }
+            #expect(banco.leiturasPendentes == 1, "a leitura do nome passa pelo banco, que responde a ela no sair")
+            try await c.sair()
+            await ate { leitura.terminou }
+            #expect(leitura.terminou, "a leitura do nome cortada pelo sair termina, em vez de deixar a tarefa pendurada")
+        }
+
+        @Test func erroDeRedeNaConferenciaNaoSaiDaConta() async throws {
+            // App próprio: depois do login, o Auth dele aponta para uma porta sem ninguém e renovar o token dá erro de rede.
+            let nome = "rede-\(UUID().uuidString.prefix(8).lowercased())"
+            FirebaseApp.configure(name: nome, options: Emulador.app.options)
+            let app = try #require(FirebaseApp.app(name: nome))
+            let auth = Auth.auth(app: app)
+            auth.useEmulator(withHost: "127.0.0.1", port: 9099)
+            _ = try await auth.createUser(withEmail: "\(nome)@example.com", password: "Casa2026x")
+            auth.useEmulator(withHost: "127.0.0.1", port: 9)
+            let c = ContaFirebase(app: app, banco: Emulador.banco, online: { true })
+            await c.verificarSessao(forcar: true)
+            #expect(auth.currentUser != nil, "falta de rede nunca tira da conta")
+            try auth.signOut()
+        }
+
+        /// A marca já está gravada quando chega o aviso de que a conta saiu. Não prova a ordem entre a marca e o
+        /// signOut: o Auth avisa pela fila principal, depois das duas linhas, que só importa se o app fechar entre elas.
+        @Test func marcaDaLimpezaJaGravadaQuandoChegaOAvisoDeSaida() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }
+            var marcadaAoSair: Bool?
+            c.observar { if $0 == nil, marcadaAoSair == nil { marcadaAoSair = Emulador.banco.limpezaPendente } }
+            try await c.sair()
+            #expect(marcadaAoSair == true, "o app pode fechar logo depois do signOut: a marca já tem de estar gravada")
+            #expect(!Emulador.banco.limpezaPendente)
+        }
+
+        @Test func trocaDeContaRecomecaAContarOMinuto() async throws {
+            let c = conta()
+            let primeira = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != primeira.uid { try await Task.sleep(for: .milliseconds(20)) }
+            await c.verificarSessao(forcar: false)                  // a primeira conta começa a contar o minuto
+            let outra = try await Emulador.novaConta()              // outra conta no aparelho, dentro do minuto
+            for _ in 0..<100 where c.usuario?.uid != outra.uid { try await Task.sleep(for: .milliseconds(20)) }
+            try await desativar(outra.uid)
+            await c.verificarSessao(forcar: false)                  // a volta da rede, já com a outra conta
+            #expect(Auth.auth(app: Emulador.app).currentUser == nil, "a espera de 60 s é por conta (cloud.js): a conta nova confere na hora")
+        }
+
+        /// Grava como outro aparelho: REST do emulador do Firestore com o dono, sem passar pelo cache deste.
+        private func gravarComoOutroAparelho(_ caminho: String, _ campos: [String: String]) async throws {
+            var pedido = URLRequest(url: URL(string: "http://127.0.0.1:8080/v1/projects/\(Emulador.projeto)/databases/(default)/documents/\(caminho)")!)
+            pedido.httpMethod = "PATCH"
+            pedido.setValue("Bearer owner", forHTTPHeaderField: "Authorization")
+            pedido.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            pedido.httpBody = try JSONSerialization.data(withJSONObject: ["fields": campos.mapValues { ["stringValue": $0] }])
+            let (_, resposta) = try await URLSession.shared.data(for: pedido)
+            #expect((resposta as? HTTPURLResponse)?.statusCode == 200)
+        }
+
+        @Test func perfilGravadoPorOutroAparelhoNoFaltaPoucoSegueParaALista() async throws {
+            let c = conta()
+            let sub = UUID().uuidString.lowercased()
+            let email = "\(sub.prefix(8))@example.com"
+            let tokenFalso = #"{"sub":"\#(sub)","email":"\#(email)","email_verified":true}"#
+            _ = try await Auth.auth(app: Emulador.app).signIn(with: GoogleAuthProvider.credential(withIDToken: tokenFalso, accessToken: "x"))
+            for _ in 0..<100 where c.usuario?.contaSocial != true { try await Task.sleep(for: .milliseconds(20)) }
+            let uid = try #require(c.usuario?.uid)
+            #expect(await c.perfilPendente())
+            // Este aparelho está no "Falta pouco"; o outro completa primeiro.
+            try await gravarComoOutroAparelho("perfis/\(uid)", ["email": email, "criado": "2026-10-11T12:00:00.000Z", "nome": "Outro"])
+            /* As rules recusam o segundo (criado e origem mudariam), e o ModeloApp.completarPerfil depende deste
+               código: com "permission-denied" e o perfil no servidor, segue para a lista em vez de prender no "Falta pouco". */
+            await #expect(throws: ErroConta(codigo: "permission-denied")) {
+                try await c.completarPerfil(PerfilCadastro(nome: "Gi", origem: "google"))
+            }
+            #expect(await c.perfilPendente() == false, "o perfil do outro aparelho conta")
+            #expect(await c.lerNome() == "Outro", "o segundo não sobrescreve o primeiro")
+            try await c.sair()
+        }
+
+        @Test func emailConfirmadoChegaAoUsuarioSemReabrir() async throws {
+            let c = conta()
+            let u = try await Emulador.novaConta()
+            for _ in 0..<100 where c.usuario?.uid != u.uid { try await Task.sleep(for: .milliseconds(20)) }
+            #expect(c.usuario?.precisaConfirmarEmail == true)
+            #expect(try await c.reenviarVerificacao(), "ainda não confirmado: manda o link")
+            #expect(await c.conferirVerificacao() == false, "o link ainda não foi clicado")
+            try await alterarConta(u.uid, ["emailVerified": true])     // o clique no link
+            #expect(await c.conferirVerificacao())
+            #expect(c.usuario?.emailVerificado == true, "o aviso de confirmar o e-mail some sem reabrir o app")
+            #expect(try await c.reenviarVerificacao() == false, "já confirmado: não manda de novo")
             try Auth.auth(app: Emulador.app).signOut()
         }
     }
@@ -10371,11 +10795,18 @@ final class ContaFirebase: ServicoConta {
         try await banco.firestore().collection("perfis").document(u.uid).setData(dados)
     }
 
+    /// Com a limpeza do cache bloqueada, entrar recusa (cloud.js:412 e 451-466): o cache velho ainda está no aparelho.
+    private func exigirCacheLimpo() throws {
+        if banco.bloqueado { throw ErroConta(codigo: "cache") }
+    }
+
     func entrar(email: String, senha: String) async throws {
+        try exigirCacheLimpo()
         do { _ = try await auth.signIn(withEmail: email, password: senha) } catch { throw Self.erro(error) }
     }
 
     func entrarComApple(_ credencial: CredencialApple) async throws {
+        try exigirCacheLimpo()
         do {
             let c = OAuthProvider.appleCredential(withIDToken: credencial.idToken, rawNonce: credencial.nonce,
                                                   fullName: credencial.nomeCompleto)
@@ -10394,6 +10825,7 @@ final class ContaFirebase: ServicoConta {
     }
 
     func entrarComGoogle() async throws {
+        try exigirCacheLimpo()
         guard let tela = controladorNoTopo() else { throw ErroConta(codigo: "auth/erro-sem-tela") }
         do {
             let r = try await GIDSignIn.sharedInstance.signIn(withPresenting: tela)
@@ -10404,6 +10836,7 @@ final class ContaFirebase: ServicoConta {
     }
 
     func criarConta(email: String, senha: String, perfil: PerfilCadastro) async throws {
+        try exigirCacheLimpo()
         do {
             let r = try await auth.createUser(withEmail: email, password: senha)
             try await gravarPerfil(r.user, emailDigitado: email, perfil)
@@ -10414,10 +10847,10 @@ final class ContaFirebase: ServicoConta {
 
     func perfilPendente() async -> Bool {
         guard let u = auth.currentUser, usuario?.contaSocial == true else { return false }
-        await banco.aguardarPronto()
-        let ref = banco.firestore().collection("perfis").document(u.uid)
-        if let doc = try? await ref.getDocument(source: .cache), doc.exists { return false }
-        do { return !(try await ref.getDocument(source: .server)).exists } catch { return false }
+        if let doc = try? await banco.ler("perfis/\(u.uid)", fonte: .cache), doc.existe { return false }
+        /* Um `sair` entre as duas leituras encerra a instância, e usar a encerrada derruba o app (exceção do
+           Objective-C): o banco.ler espera a limpeza e pede a instância de novo; cortada em voo, responde "cancelled". */
+        do { return !(try await banco.ler("perfis/\(u.uid)", fonte: .server)).existe } catch { return false }
     }
 
     func completarPerfil(_ perfil: PerfilCadastro) async throws {
@@ -10426,10 +10859,8 @@ final class ContaFirebase: ServicoConta {
     }
 
     func lerNome() async -> String? {
-        guard let u = auth.currentUser else { return nil }
-        await banco.aguardarPronto()
-        guard let dados = try? await banco.firestore().collection("perfis").document(u.uid).getDocument().data() else { return nil }
-        let nome = [dados["nome"] as? String, dados["sobrenome"] as? String].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+        guard let u = auth.currentUser, let dados = try? await banco.ler("perfis/\(u.uid)").textos else { return nil }
+        let nome = [dados["nome"], dados["sobrenome"]].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
         return nome.isEmpty ? nil : nome
     }
 
@@ -10470,13 +10901,20 @@ final class ContaFirebase: ServicoConta {
         }
     }
 
-    /// Na ordem do cloud.js: marca a limpeza, sai, esquece o Google e apaga o cache. Se a limpeza
-    /// falhar (ou o app fechar no meio), a marca fica e a próxima abertura termina antes de ler.
+    /// Na ordem do cloud.js: marca a limpeza, sai, esquece o Google e apaga o cache. Se o app fechar no meio, a
+    /// marca fica e a próxima abertura termina antes de ler. Se a limpeza falhar, já saiu da conta: lança "cache"
+    /// e o banco fica bloqueado até `tentarLimparDeNovo`.
     func sair() async throws {
         banco.marcarLimpeza()
         do { try auth.signOut() } catch { banco.desmarcarLimpeza(); throw Self.erro(error) }
         GIDSignIn.sharedInstance.signOut()
-        try? await banco.limparCache()
+        do { try await banco.limparCache() } catch { throw ErroConta(codigo: "cache") }
+    }
+
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) { banco.observarBloqueio(aoMudar) }
+
+    func tentarLimparDeNovo() async throws {
+        do { try await banco.tentarLimparDeNovo() } catch { throw ErroConta(codigo: "cache") }
     }
 }
 ```
@@ -10484,7 +10922,7 @@ final class ContaFirebase: ServicoConta {
 - [ ] **Step 4: Rodar e ver passar**
 
 Run: `npm run test:app-ios:emuladores`
-Expected: `TransporteFirebaseTests` (2) e `ContaFirebaseTests` (5, inclusive sair, entrar com outra conta e gravar e ler do servidor pelo mesmo `BancoFirebase`) verdes, e `ErrosDoSDKTests` (4), que também roda sem emulador. Rode também `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaTests`: compila e os de emulador aparecem pulados.
+Expected: `TransporteFirebaseTests` (3) e `ContaFirebaseTests` (14; no commit da tarefa eram 5, inclusive sair, entrar com outra conta e gravar e ler do servidor pelo mesmo `BancoFirebase`) verdes, e `ErrosDoSDKTests` (4), que também roda sem emulador. Rode também `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaTests`: compila e os de emulador aparecem pulados.
 
 - [ ] **Step 5: Commit**
 
@@ -10500,22 +10938,26 @@ git commit -m "feat: conta do app nativo no Firebase Auth" -m "E-mail e senha, A
 **Files:**
 - Modify: `app-ios/Custta/Composicao.swift` (produção e emuladores; os falsos continuam em Debug com `CUSTTA_SERVICOS=falsos`)
 - Modify: `app-ios/Custta/Telas/RaizView.swift` (o retorno do login do Google)
-- Modify: `app-ios/CusttaTests/Emulador.swift` (o projeto dos emuladores passa a vir do `Composicao`)
+- Modify: `app-ios/CusttaTests/Emulador.swift` (o projeto e as opções dos emuladores passam a vir do `Composicao`; o arquivo da Tarefa 12 já está como entrou)
 - Modify: `app-ios/Custta/CusttaApp.swift` (comentário: sem serviço só hospedando os testes)
 - Test: `app-ios/CusttaTests/ComposicaoTests.swift`
 
 **Interfaces:**
-- Consumes: `BancoFirebase`, `TransporteFirebase`, `Emulador` (Tarefa 12); `ContaFirebase` (Tarefa 13); `ModeloApp`, `Composicao.montarFalso(_:)`, `RelogioDoSistema`, `MonitorDeRede` (Tarefa 9); `Sincronizador` (Tarefa 8).
-- Produces: `@MainActor enum Composicao { static let projetoDosEmuladores: String; static func montar(ambiente:) -> ModeloApp; static func configurarFirebase(emuladores:) -> FirebaseApp; static func montarFalso(_:) -> ModeloApp /* Debug */ }`; em Debug, `CUSTTA_EMULADORES=1` e `CUSTTA_SAIR_AO_ABRIR=1` (Tarefa 15).
+- Consumes: `BancoFirebase`, `TransporteFirebase`, `Emulador` (Tarefa 12); `ContaFirebase` (Tarefa 13); `ModeloApp`, `Composicao.montarFalso(_:)`, `ContaFalsa`, `RelogioDoSistema`, `MonitorDeRede` (Tarefa 9); `Sincronizador` (Tarefa 8).
+- Produces: `@MainActor enum Composicao { static let projetoDosEmuladores: String; static let chaveDosEmuladores: String; static func montar(ambiente:) -> ModeloApp; static func configurarFirebase(emuladores:) -> FirebaseApp; static func opcoesDosEmuladores() -> FirebaseOptions; static func montarFalso(_:) -> ModeloApp /* Debug */ }`; em Debug, `CUSTTA_EMULADORES=1` (lido por `usaEmuladores(_:)`, privado, que no Release devolve `false`) e `CUSTTA_SAIR_AO_ABRIR=1` (Tarefa 15).
 
 Fecha o que a antiga Tarefa 8 tinha com o Firebase: a composição monta o Firebase de produção pelo `GoogleService-Info.plist` e, só em Debug, os emuladores locais ou os serviços falsos. Muda o que o Debug abre sem variável nenhuma: até aqui eram os falsos; daqui em diante é o Firebase de verdade, e os falsos pedem `CUSTTA_SERVICOS=falsos` (os testes de tela já passam a variável). O `montar` deixa de devolver opcional e o Release ganha serviço: a abertura sem modelo fica só para quando o app hospeda os testes de unidade.
+
+**O que o PR 3 mudou nesta tarefa** (o código abaixo já é o do `e8bbefa`). No commit da tarefa (`9ead465`), a escolha dos emuladores virou uma função (`usaEmuladores`), e não uma constante: com a constante `false`, o Release acusava os ramos dos emuladores como código que nunca roda (2 avisos "will never be executed"); o corpo do commit diz isso numa frase. No inventário: o modo emuladores ganhou a chave falsa (`chaveDosEmuladores`, no app e nos testes pelo `opcoesDosEmuladores()`), porque nenhum teste sem rede prova que o Auth chama o `useEmulator`, e sem a chave um esquecimento criaria contas na produção, que o emulador do Firestore aceitaria sem conferir a assinatura (`d537ab2`; o teste `emuladoresComProjetoEChaveDeTeste` confere o formato); e o `ComposicaoTests` passou a conferir que nem os falsos nem o app que hospeda os testes ligam o Firebase (`FirebaseApp.app() == nil`, `ac78510`), o que pega um `FirebaseApp.configure()` adiantado, como o de um AppDelegate quando o push chegar. Nenhum teste monta a composição com rede. O `RaizView` ganhou também o "Finalizar saída" (`.finalizaSaida()`, inventário do PR 3).
 
 - [ ] **Step 1: Escrever o teste que falha**
 
 `app-ios/CusttaTests/ComposicaoTests.swift`:
 
 ```swift
+import Foundation
 import Testing
+import FirebaseCore
 @testable import Custta
 
 /* A composição: com CUSTTA_SERVICOS=falsos (os testes de tela) nada encosta no Firebase. Sem a variável,
@@ -10525,7 +10967,22 @@ struct ComposicaoTests {
     @Test func falsosSoComAVariavel() {
         let modelo = Composicao.montar(ambiente: ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": "senha"])
         #expect(modelo.conta is ContaFalsa)
+        #expect(FirebaseApp.app() == nil, "nem os falsos nem o app que hospeda os testes ligam o Firebase")
         #expect(Composicao.projetoDosEmuladores == "demo-custta-phase2", "o mesmo projeto do firebase.test.json")
+    }
+
+    /// Nos emuladores, a chave é falsa: um pedido que escape deles (um useEmulator esquecido) é recusado pela
+    /// produção em vez de criar conta lá. No formato das chaves do Google (39 caracteres, "A" na frente, só
+    /// base64url), senão o FirebaseInstallations derruba o configure quando o FCM entrar.
+    @Test func emuladoresComProjetoEChaveDeTeste() throws {
+        let opcoes = Composicao.opcoesDosEmuladores()
+        #expect(opcoes.projectID == Composicao.projetoDosEmuladores)
+        let plist = try #require(Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"))
+        let producao = try #require(FirebaseOptions(contentsOfFile: plist))
+        #expect(opcoes.apiKey != producao.apiKey, "nunca a chave da produção nos emuladores")
+        let chave = try #require(opcoes.apiKey)
+        #expect(chave.count == 39 && chave.hasPrefix("A"))
+        #expect(chave.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") })
     }
 }
 ```
@@ -10556,10 +11013,8 @@ enum Composicao {
     static func montar(ambiente: [String: String] = ProcessInfo.processInfo.environment) -> ModeloApp {
         #if DEBUG
         if ambiente["CUSTTA_SERVICOS"] == "falsos" { return montarFalso(ambiente) }
-        let emuladores = ambiente["CUSTTA_EMULADORES"] == "1"
-        #else
-        let emuladores = false
         #endif
+        let emuladores = usaEmuladores(ambiente)
         let app = configurarFirebase(emuladores: emuladores)
         let banco = BancoFirebase(app: app, emulador: emuladores ? ("127.0.0.1", 8080) : nil)
         if emuladores { Auth.auth(app: app).useEmulator(withHost: "127.0.0.1", port: 9099) }
@@ -10573,6 +11028,16 @@ enum Composicao {
         return ModeloApp(conta: conta, sincronizador: sincronizador, rede: rede)
     }
 
+    /// CUSTTA_EMULADORES=1, só em Debug: o Release (TestFlight) nunca fala com os emuladores. É função, e não
+    /// constante, para o Release não acusar o ramo dos emuladores como código que nunca roda.
+    private static func usaEmuladores(_ ambiente: [String: String]) -> Bool {
+        #if DEBUG
+        ambiente["CUSTTA_EMULADORES"] == "1"
+        #else
+        false
+        #endif
+    }
+
     /// Firebase de produção pelo GoogleService-Info.plist; nos emuladores, o mesmo arquivo com o projeto de teste.
     static func configurarFirebase(emuladores: Bool) -> FirebaseApp {
         if let app = FirebaseApp.app() { return app }
@@ -10580,11 +11045,23 @@ enum Composicao {
             FirebaseApp.configure()
             return FirebaseApp.app()!
         }
+        FirebaseApp.configure(options: opcoesDosEmuladores())
+        return FirebaseApp.app()!
+    }
+
+    /// Chave falsa dos emuladores. O emulador do Auth aceita qualquer chave e a produção recusa esta: um pedido que
+    /// escape dos emuladores (um useEmulator esquecido) falha em vez de criar conta na produção. Tem o formato das
+    /// chaves do Google (39 caracteres, "A" na frente, só base64url), senão o FirebaseInstallations derruba o
+    /// configure quando o FCM entrar.
+    static let chaveDosEmuladores = "AIzaSyEmuladoresDoCusttaSemProducao0000"
+
+    /// As opções do GoogleService-Info.plist com o projeto e a chave dos emuladores (o app e os testes contra eles).
+    static func opcoesDosEmuladores() -> FirebaseOptions {
         let caminho = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist")!
         let opcoes = FirebaseOptions(contentsOfFile: caminho)!
         opcoes.projectID = projetoDosEmuladores
-        FirebaseApp.configure(options: opcoes)
-        return FirebaseApp.app()!
+        opcoes.apiKey = chaveDosEmuladores
+        return opcoes
     }
 }
 ```
@@ -10595,7 +11072,7 @@ Em `app-ios/Custta/Telas/RaizView.swift`, o login do Google volta ao app pelo es
         .onOpenURL { url in GIDSignIn.sharedInstance.handle(url) }
 ```
 
-Em `app-ios/CusttaTests/Emulador.swift`, troque a linha `static let projeto = "demo-custta-phase2"` por `static let projeto = Composicao.projetoDosEmuladores` (um lugar só para o projeto dos emuladores).
+No `app-ios/CusttaTests/Emulador.swift`, o brief trocava a linha `static let projeto = "demo-custta-phase2"` por `static let projeto = Composicao.projetoDosEmuladores` (um lugar só para o projeto dos emuladores). O arquivo da Tarefa 12 já está como entrou: o projeto e as opções do app nomeado vêm do `Composicao`.
 
 Em `app-ios/Custta/CusttaApp.swift`, o `if let modelo` continua igual (o `Composicao.montar()` agora devolve sempre um modelo, e o `nil` fica só para quando o app hospeda os testes de unidade): troque o comentário `// Sem serviço (Release antes da camada Firebase, ou hospedando os testes de unidade).` por `// Sem serviço: o app só hospeda os testes de unidade.`
 
@@ -10605,9 +11082,9 @@ Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destinat
 Expected: `** TEST SUCCEEDED **`: `ComposicaoTests`, os de unidade das Tarefas 3 a 13 e os de tela (com os falsos) verdes; os de emulador pulados.
 
 Run: `npm run test:app-ios:emuladores`
-Expected: os mesmos, mais `TransporteFirebaseTests` (2) e `ContaFirebaseTests` (5), todos verdes.
+Expected: os mesmos, mais `TransporteFirebaseTests` (3) e `ContaFirebaseTests` (14), todos verdes.
 
-Conferência manual: abra o app no simulador sem variável nenhuma e confira que a tela de entrar fala com o Firebase de produção (senha errada numa conta real responde "E-mail ou senha incorretos.").
+Conferência manual: abra o app no simulador sem variável nenhuma e confira que a tela de entrar fala com o Firebase de produção (senha errada numa conta real responde "E-mail ou senha incorretos."). No PR 3 ela não foi feita, porque ninguém abriu o Debug contra a produção. O Lupa abriu o Release com as cinco variáveis de gancho e viu a tela de entrar do Firebase, sem os falsos; o `nm` e o `strings` do Release não acham os falsos nem as variáveis. O login de verdade fica para o checklist do aparelho (Tarefa 17).
 
 - [ ] **Step 5: Commit**
 
@@ -10615,6 +11092,1248 @@ Conferência manual: abra o app no simulador sem variável nenhuma e confira que
 git add app-ios/Custta/Composicao.swift app-ios/Custta/Telas/RaizView.swift app-ios/Custta/CusttaApp.swift app-ios/CusttaTests/Emulador.swift app-ios/CusttaTests/ComposicaoTests.swift
 git commit -m "feat: app nativo ligado ao Firebase" -m "A composição monta o Firebase de produção pelo GoogleService-Info.plist e, só em Debug, os emuladores locais (CUSTTA_EMULADORES=1) ou os serviços falsos dos testes de tela (CUSTTA_SERVICOS=falsos); o Release deixa de abrir só a abertura. O login do Google volta ao app pelo esquema de URL, e o projeto dos emuladores fica num lugar só."
 ```
+
+---
+
+### Inventário do PR 3
+
+O inventário juntou o que as revisões das Tarefas 12 a 14 deixaram, as decisões do Giovani de 11/10 e o que sobrou do PR 2, e entrou no #65 depois da Tarefa 14, um commit por mudança: 20 commits, mais 4 da revisão do inventário (29 no PR inteiro, com os 5 das tarefas). O que ele mudou nos arquivos que as Tarefas 12 a 14 criam já está no código delas. Aqui ficam os dois arquivos que o inventário cria, inteiros, e o que o PR 3 muda nos arquivos do PR 2, num diff por arquivo: do `d23d7a1` (a `main` de antes do PR 3) ao `e8bbefa`, com o `RaizView.swift` contado a partir da Tarefa 14 e o `tests/app-ios.test.cjs` a partir da Tarefa 12. Os diffs aplicam com `git apply`, na ordem em que aparecem.
+
+**O que entrou, e por quê:**
+
+1. **Falha da limpeza do cache igual ao site** (decisão do Giovani em 11/10, a partir da revisão da Tarefa 12; `c3825f9` e `e250a04`). O `BancoFirebase` (Tarefa 12) não solta mais a fila quando apagar o cache falha: fica bloqueado, com a marca de pé, até `tentarLimparDeNovo` dar certo, e avisa quem observa o bloqueio. A `ContaFirebase` (Tarefa 13) recusa entrar, Apple, Google e criar conta com "cache" enquanto isso, e o `sair` lança "cache" quando só a limpeza falha. O protocolo `ServicoConta` ganha `observarBloqueio` e `tentarLimparDeNovo`, e a `ContaFalsa` os imita, com a falha pedida por `CUSTTA_LIMPEZA` (`falha` ou `abertura`; cada nova tentativa leva 8 s, para o "Limpando…" ficar à vista no simulador da CI). O `ModeloApp` guarda o estado do alerta (`limpeza`: `.pendente(erro:)` ou `.tentando`), que o bloqueio abre e fecha, e tem o `tentarLimparDeNovo()` da tela. No `sair`, o "cache" não cai no caminho de "não saiu", que religaria a escuta do uid que saiu (nota da revisão da Tarefa 13).
+2. **"Finalizar saída"** (mockup `finalizar-saida.html`, aprovado pelo Giovani em 11/10; `ab606b7`, `ea5fe95`, `7c53d8c`, `19db50c`, `16c1025`, `e648f0e`, `2673fe4` e `e8bbefa`). A tela é um modificador na raiz (`.finalizaSaida()`), por cima de qualquer tela, com o alerta do sistema e a pílula "Limpando…" (seção "Decisões"). A conferência do Verniz achou três defeitos na primeira versão: um clarão de até 0,8 s no toque (o SwiftUI só roda a ação do botão depois de fechar o alerta), o escurecido do sistema (48% e 20%) diferente do mockup e o botão abaixo de 4,5:1 na maior letra, no escuro. Os três fecharam com o escurecido próprio, que fica de pé a limpeza toda e sobe no quadro em que o alerta começa a fechar (`VigiaDoAlerta`, no `Sistema.swift`). A primeira versão também escondia a tela de baixo do VoiceOver pela raiz, e o `accessibilityHidden(false)` de fora revelava a aurora, o globo e o véu: a pílula passou a ser modal (`isModal`). No simulador da CI, o teste só acha a pílula uns 4 s depois do toque: as esperas cresceram, e um quadro nulo deixou de derrubar o medidor. Da revisão do inventário: o teste de tela prova pelo toque que a entrada fica livre (o `isHittable` não vê o escurecido, que não é elemento de acessibilidade), e a pílula fica só com o texto quando não cabe numa linha (a maior letra num iPhone de 375 pt).
+3. **Sair com trava** (revisão da Tarefa 12; `e36faae`). `ModeloApp.saindo`, como o `saindo` do `logout` do site: um segundo pedido no meio da saída volta sem mensagem, e "Usar outra conta" fica desligado enquanto sai. A `ContaFalsa` conta as saídas e demora o quanto o teste pedir.
+4. **Leitura cortada pelo sair** (achado do Forja na Tarefa 13; `4543ac7`). O `BancoFirebase.ler` e a resposta "cancelled" às leituras em voo, nas Tarefas 12 e 13 (seção "Decisões").
+5. **Testes que faltavam** (revisões das Tarefas 12 e 13). Os metadados do eco e a limpeza retomada sem rede (`cf577be`, Tarefa 12); a troca de conta, o perfil de outro aparelho e o e-mail confirmado (`baadd78`, Tarefa 13); o nome do teste da marca da limpeza (`bac4282`); a Apple recusando com o bloqueio (`e250a04`).
+6. **Modo emuladores à prova da produção** (achado do Forja e revisão da Tarefa 14; `d537ab2` e `ac78510`). A chave falsa e o hospedeiro sem Firebase, na Tarefa 14.
+7. **Botões dos alertas na cor do texto** (achado do Croqui no mockup; `ebc40b5`). O "Sair da conta?" passa ao tint Texto, num fundo vazio para valer só no alerta; o "Sair" destrutivo segue no vermelho do sistema (seção "Decisões").
+8. **Halo da versão atrás do painel** (revisão final do PR 2; `01b4c73`). `.zIndex(-1)` no texto da versão de Ajustes, com a guarda em Node.
+9. **Laudo** (`ebc40b5`, `ab606b7`, `7c53d8c`, `19db50c`, `16c1025` e `e648f0e`; na CI, `10d9fb7`, `6e86635` e `e458422`). O medidor ganha o `medirRotulo`, para o texto que o sistema desenha e o app não apaga (o título e os botões dos alertas e o "Limpando…"): mede num print só, contra o fundo a até 3 pt das letras e fora do serrilhado, com um teste de imagem sintética; elemento sumido, quadro nulo ou menos de 20 pixels de letra viram falha, em vez de passar calados. Cenas novas: o "Cancelar" do "Sair da conta?" nos quatro combos, e o "Finalizar saída" (título e botão, aberto e depois de falhar, e o "Limpando…") nos quatro combos, no tamanho padrão e na maior letra, com os prints dos três estados no resultado, para comparar com o mockup. Na CI, a varredura curta, o laudo como portão (o `TEST_RUNNER_CUSTTA_LAUDO=relatorio` saiu depois de quatro rodadas coerentes) e o resultado dos testes guardado como artefato quando o job reprova (`actions/upload-artifact` v7.0.1, fixado por SHA, como a guarda dos workflows pede).
+10. **Rotina dos testes locais** (`2b4fbfd` e `78d0740`). `CUSTTA_SIMULADOR=<udid>` escolhe o simulador (um id que não existe para, em vez de cair no simulador de outro agente), e o `xcodebuild test` do script roda com `-collect-test-diagnostics never`, porque um teste que falha, ou um aviso de execução, segurava a rodada até 10 min no `simctl diagnose`. O aviso de `FocusState` do `ComponentesTests`, que disparava o diagnose, saiu do teste: a altura do campo é medida num `UIHostingController` em escala 1, e não no `ImageRenderer`, que não instala o `FocusState`.
+
+**Resultado** (Mac, simulador do iOS 27): unidade com 85 testes (68 sem os emuladores), tela com 45, o laudo com os 6 testes verdes no iPhone 18 Pro e no 18 Pro Max (a pior nota segue em 4,56:1), 85 de 85 contra os emuladores, `npm run test:unit` com 366 e nenhum aviso do compilador no Debug e no Release. As três mutações da revisão do inventário (o escurecido que não sai depois de limpar, a Apple sem a recusa e a limpeza que não responde às leituras em voo) são pegas pela suíte. Na CI (iOS 26), o `e8bbefa` passou inteiro, com o laudo como portão: as 40 medidas do "Finalizar saída" ficam de 6,03:1 para cima, e o "Cancelar", de 9,05:1 para cima.
+
+**Conta, modelo e falsos** (itens 1 e 3):
+
+`app-ios/Custta/Conta/ServicoConta.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/Custta/Conta/ServicoConta.swift b/app-ios/Custta/Conta/ServicoConta.swift
+--- a/app-ios/Custta/Conta/ServicoConta.swift
++++ b/app-ios/Custta/Conta/ServicoConta.swift
+@@ -54,6 +54,12 @@ protocol ServicoConta: AnyObject {
+     func conferirVerificacao() async -> Bool
+     /// Renova o token; sai da conta só se a sessão foi invalidada (nunca por falta de rede).
+     func verificarSessao(forcar: Bool) async
+-    /// Sai da conta e limpa o cache local do banco. Quem chama já esperou a fila e parou a escuta.
++    /// Sai da conta e limpa o cache local do banco. Quem chama já esperou a fila e parou a escuta. Se só a
++    /// limpeza falhar, lança "cache": já saiu, e o banco fica bloqueado até `tentarLimparDeNovo`.
+     func sair() async throws
++    /// Avisa quando a limpeza do cache local falha (true) e quando ela enfim dá certo (false); quem se inscreve
++    /// recebe o estado atual. Bloqueado, entrar e criar conta recusam com "cache" (o `cacheBloqueado` do cloud.js).
++    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void)
++    /// "Tentar limpar novamente" do "Finalizar saída": lança "cache" se falhar de novo.
++    func tentarLimparDeNovo() async throws
+ }
+```
+
+`app-ios/Custta/Estado/ModeloApp.swift` (o que o PR 3 muda: o "Finalizar saída" e a trava do sair):
+
+```diff
+diff --git a/app-ios/Custta/Estado/ModeloApp.swift b/app-ios/Custta/Estado/ModeloApp.swift
+--- a/app-ios/Custta/Estado/ModeloApp.swift
++++ b/app-ios/Custta/Estado/ModeloApp.swift
+@@ -13,6 +13,13 @@ final class ModeloApp {
+         case principal(Usuario)
+     }
+
++    /// "Finalizar saída" (o diálogo do ui-confirm.js:149): a limpeza do cache local falhou e entrar fica
++    /// bloqueado até ela dar certo. `erro` quando a nova tentativa também falhou.
++    enum Limpeza: Equatable {
++        case pendente(erro: Bool)
++        case tentando
++    }
++
+     /// Textos que a tela de entrar mostra com ícone próprio (cadeado e ✓), os mesmos do site.
+     static let sessaoExpirada = "Sua sessão expirou por segurança. Entre de novo pra continuar."
+     static let linkEnviado = "Enviamos um link de redefinição pro seu e-mail."
+@@ -27,6 +34,11 @@ final class ModeloApp {
+     private(set) var aviso: String?
+     /// "Nome Sobrenome" de `perfis/{uid}`, para Ajustes.
+     private(set) var nome: String?
++    /// Saída em andamento (o `saindo` do logout do cloud.js): um segundo pedido no meio dela é recusado, e
++    /// "Usar outra conta" fica desabilitado.
++    private(set) var saindo = false
++    /// O "Finalizar saída", ou nil quando não há limpeza do cache pendente.
++    private(set) var limpeza: Limpeza?
+     let sincronizador: Sincronizador
+     let rede: MonitorDeRede
+
+@@ -49,6 +61,7 @@ final class ModeloApp {
+         conta.observar { [weak self] usuario in
+             Task { await self?.usuarioMudou(usuario) }
+         }
++        conta.observarBloqueio { [weak self] bloqueado in self?.bloqueioMudou(bloqueado) }
+     }
+
+     /// A conta da tela atual. Vem da `fase`, que é observável: a tela que lê `usuario` é avisada quando
+@@ -100,15 +113,21 @@ final class ModeloApp {
+
+     func entrarComApple(_ credencial: CredencialApple) async -> String? {
+         do { try await conta.entrarComApple(credencial); return nil }
+-        catch { return mensagemOuNil(mensagemErroSocial(codigo: (error as? ErroConta)?.codigo, provedor: "apple.com")) }
++        catch { return mensagemSocial(error, provedor: "apple.com") }
+     }
+
+     func entrarComGoogle() async -> String? {
+         do { try await conta.entrarComGoogle(); return nil }
+-        catch { return mensagemOuNil(mensagemErroSocial(codigo: (error as? ErroConta)?.codigo, provedor: "google.com")) }
++        catch { return mensagemSocial(error, provedor: "google.com") }
+     }
+
+-    private func mensagemOuNil(_ s: String) -> String? { s.isEmpty ? nil : s }
++    /// A do núcleo, ou nil quando a pessoa desistiu; com a limpeza do cache bloqueada, a do auth.js.
++    private func mensagemSocial(_ erro: Error, provedor: String) -> String? {
++        let codigo = (erro as? ErroConta)?.codigo
++        if codigo == "cache" { return "Limpe os dados locais antes de entrar." }
++        let s = mensagemErroSocial(codigo: codigo, provedor: provedor)
++        return s.isEmpty ? nil : s
++    }
+
+     func criarConta(email: String, senha: String, perfil: PerfilCadastro) async -> String? {
+         do { try await conta.criarConta(email: aparadoJS(email), senha: senha, perfil: perfil); return nil }
+@@ -145,8 +164,13 @@ final class ModeloApp {
+
+     /// "Sair da conta" e "Usar outra conta", na ordem do cloud.js: espera a fila subir (sem rede, pede
+     /// para conectar), confere que a conta é a mesma, para a escuta e só então sai.
+-    /// Mensagem de erro, ou nil se saiu.
++    /// Mensagem de erro, ou nil se saiu. Um pedido no meio da saída é recusado sem mensagem (como o toque
++    /// repetido no auth.js): a saída em andamento responde. Se só a limpeza do cache falhar, saiu: o
++    /// "Finalizar saída" abre pelo bloqueio, e a escuta não volta para a conta que saiu.
+     func sair() async -> String? {
++        guard !saindo else { return nil }
++        saindo = true
++        defer { saindo = false }
+         let semRede = "Conecte à internet e aguarde a sincronização antes de sair."
+         guard rede.online, let uid = conta.usuario?.uid else { return semRede }
+         guard await sincronizador.aguardarFila(timeoutMs: 5000) else { return semRede }
+@@ -154,6 +178,7 @@ final class ModeloApp {
+         saindoDeProposito = true
+         sincronizador.parar()
+         do { try await conta.sair(); return nil }
++        catch let erro as ErroConta where erro.codigo == "cache" { return nil }
+         catch {
+             saindoDeProposito = false
+             sincronizador.iniciar(uid: uid)          // não saiu: volta a escutar a conta
+@@ -197,6 +222,22 @@ final class ModeloApp {
+         if conta.usuario?.precisaConfirmarEmail == true { _ = await conta.conferirVerificacao() }
+     }
+
++    /* ---------- finalizar saída ---------- */
++
++    private func bloqueioMudou(_ bloqueado: Bool) {
++        if !bloqueado { limpeza = nil } else if limpeza == nil { limpeza = .pendente(erro: false) }
++    }
++
++    /// "Tentar limpar novamente": o alerta fecha na hora (o estado muda antes de esperar) e volta com o erro se
++    /// falhar de novo; dando certo, a entrada fica livre, sem aviso.
++    func tentarLimparDeNovo() {
++        guard case .pendente = limpeza else { return }
++        limpeza = .tentando
++        Task {
++            do { try await conta.tentarLimparDeNovo(); limpeza = nil } catch { limpeza = .pendente(erro: true) }
++        }
++    }
++
+     /* ---------- sincronização e avisos ---------- */
+
+     func tentarDeNovo() {
+```
+
+`app-ios/Custta/Falsos/ContaFalsa.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/Custta/Falsos/ContaFalsa.swift b/app-ios/Custta/Falsos/ContaFalsa.swift
+--- a/app-ios/Custta/Falsos/ContaFalsa.swift
++++ b/app-ios/Custta/Falsos/ContaFalsa.swift
+@@ -5,7 +5,10 @@ import CusttaNucleo
+ /* Conta falsa para os testes (só Debug). A inicial vem de CUSTTA_CONTA:
+    nenhuma | senha | senha-nao-confirmada | senha-confirma-ao-conferir (o "Já confirmei" acha o
+    e-mail confirmado) | apple-sem-perfil | google-sem-perfil |
+-   google-perfil-concorrente (outro aparelho grava o perfil no meio do "Falta pouco"). */
++   google-perfil-concorrente (outro aparelho grava o perfil no meio do "Falta pouco").
++   A falha da limpeza do cache vem de CUSTTA_LIMPEZA: falha (a limpeza do sair e a primeira nova
++   tentativa falham; a segunda dá certo) | abertura (abre como se a limpeza retomada na abertura
++   tivesse falhado; a primeira nova tentativa também falha e a segunda dá certo). */
+ @MainActor
+ final class ContaFalsa: ServicoConta {
+     static let senhaCerta = "Casa2026x"
+@@ -18,8 +21,20 @@ final class ContaFalsa: ServicoConta {
+     private(set) var verificacoesDeSessao: [Bool] = []
+     /// Erro do envio de confirmação de e-mail, para os testes dos textos (nil: o envio vai).
+     var erroAoEnviarConfirmacao: ErroConta?
++    /// Saídas que chegaram à conta (os testes conferem que um pedido repetido no meio da saída não sai de novo).
++    private(set) var saidas = 0
++    /// Demora do `sair`, para os testes pegarem a saída em andamento.
++    var demoraAoSair: Duration = .zero
++    /// Quantas limpezas do cache ainda falham (a do sair e as novas tentativas).
++    var falhasDaLimpeza = 0
++    /// Demora de cada nova tentativa de limpar, para o teste de tela ver o "Limpando…".
++    var demoraAoLimpar: Duration = .zero
++    private var ouvintesDoBloqueio: [@MainActor (Bool) -> Void] = []
++    private(set) var bloqueado = false {
++        didSet { if bloqueado != oldValue { ouvintesDoBloqueio.forEach { $0(bloqueado) } } }
++    }
+
+-    init(inicial: String) {
++    init(inicial: String, limpeza: String? = nil) {
+         perfilConcorrente = inicial == "google-perfil-concorrente"
+         confirmaAoConferir = inicial == "senha-confirma-ao-conferir"
+         temPerfil = !inicial.hasSuffix("sem-perfil") && !perfilConcorrente
+@@ -33,6 +48,11 @@ final class ContaFalsa: ServicoConta {
+             usuario = Usuario(uid: "google", email: "giovani@gmail.com", emailVerificado: true, provedores: ["google.com"], nomeExibicao: "Giovani Stuchi")
+         default: usuario = nil
+         }
++        switch limpeza {
++        case "falha": falhasDaLimpeza = 2
++        case "abertura": bloqueado = true; falhasDaLimpeza = 1
++        default: break
++        }
+     }
+
+     static func comSenha(email: String, verificado: Bool) -> Usuario {
+@@ -51,20 +71,24 @@ final class ContaFalsa: ServicoConta {
+     }
+
+     func entrar(email: String, senha: String) async throws {
++        if bloqueado { throw ErroConta(codigo: "cache") }
+         try await Task.sleep(for: .milliseconds(300))
+         guard senha == Self.senhaCerta else { throw ErroConta(codigo: "auth/invalid-credential") }
+         trocar(Self.comSenha(email: email, verificado: true))
+     }
+
+     func entrarComApple(_ credencial: CredencialApple) async throws {
++        if bloqueado { throw ErroConta(codigo: "cache") }
+         trocar(Usuario(uid: "apple", email: "x@privaterelay.appleid.com", emailVerificado: true, provedores: ["apple.com"], nomeExibicao: "Giovani Stuchi"))
+     }
+
+     func entrarComGoogle() async throws {
++        if bloqueado { throw ErroConta(codigo: "cache") }
+         trocar(Usuario(uid: "google", email: "giovani@gmail.com", emailVerificado: true, provedores: ["google.com"], nomeExibicao: "Giovani Stuchi"))
+     }
+
+     func criarConta(email: String, senha: String, perfil: PerfilCadastro) async throws {
++        if bloqueado { throw ErroConta(codigo: "cache") }
+         try await Task.sleep(for: .milliseconds(300))
+         if email == "ja@existe.com" { throw ErroConta(codigo: "auth/email-already-in-use") }
+         temPerfil = true
+@@ -97,6 +121,30 @@ final class ContaFalsa: ServicoConta {
+
+     func verificarSessao(forcar: Bool) async { verificacoesDeSessao.append(forcar) }
+
+-    func sair() async throws { trocar(nil) }
++    func sair() async throws {
++        saidas += 1
++        if demoraAoSair > .zero { try await Task.sleep(for: demoraAoSair) }
++        trocar(nil)
++        if falhasDaLimpeza > 0 {
++            falhasDaLimpeza -= 1
++            bloqueado = true
++            throw ErroConta(codigo: "cache")
++        }
++    }
++
++    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) {
++        ouvintesDoBloqueio.append(aoMudar)
++        let atual = bloqueado
++        Task { @MainActor in aoMudar(atual) }
++    }
++
++    func tentarLimparDeNovo() async throws {
++        if demoraAoLimpar > .zero { try await Task.sleep(for: demoraAoLimpar) }
++        if falhasDaLimpeza > 0 {
++            falhasDaLimpeza -= 1
++            throw ErroConta(codigo: "cache")
++        }
++        bloqueado = false
++    }
+ }
+ #endif
+```
+
+`app-ios/Custta/Falsos/MontarFalso.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/Custta/Falsos/MontarFalso.swift b/app-ios/Custta/Falsos/MontarFalso.swift
+--- a/app-ios/Custta/Falsos/MontarFalso.swift
++++ b/app-ios/Custta/Falsos/MontarFalso.swift
+@@ -8,11 +8,15 @@ import CusttaNucleo
+                   google-sem-perfil, google-perfil-concorrente)
+    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio
+    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
+-   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) */
++   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê)
++   CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
++                  e a 1ª nova tentativa também falha); cada nova tentativa leva 8 s, para o "Limpando…" ficar à
++                  vista mesmo no simulador da CI, onde o teste só o encontra uns 4 s depois do toque */
+ extension Composicao {
+     static func montarFalso(_ ambiente: [String: String]) -> ModeloApp {
+         let semRede = ambiente["CUSTTA_REDE"] == "offline"
+-        let conta = ContaFalsa(inicial: ambiente["CUSTTA_CONTA"] ?? "nenhuma")
++        let conta = ContaFalsa(inicial: ambiente["CUSTTA_CONTA"] ?? "nenhuma", limpeza: ambiente["CUSTTA_LIMPEZA"])
++        if ambiente["CUSTTA_LIMPEZA"] != nil { conta.demoraAoLimpar = .seconds(8) }
+         let falha: String? = switch ambiente["CUSTTA_LEITURA"] {
+         case "erro": "permission-denied"
+         case "formato": "formato-desconhecido"
+```
+
+`app-ios/Custta/Telas/EntradaView.swift` (o que o PR 3 muda: "Usar outra conta" desligado enquanto sai):
+
+```diff
+diff --git a/app-ios/Custta/Telas/EntradaView.swift b/app-ios/Custta/Telas/EntradaView.swift
+--- a/app-ios/Custta/Telas/EntradaView.swift
++++ b/app-ios/Custta/Telas/EntradaView.swift
+@@ -409,6 +409,7 @@ struct FormFaltaPouco: View {
+                 Task { mensagem = await modelo.sair() == nil ? nil : "Não foi possível trocar de conta agora. Tente de novo." }
+             }
+             .buttonStyle(LinkSublinhado())
++            .disabled(modelo.saindo)
+             .padding(.top, 6)
+             .accessibilityIdentifier("usarOutraConta")
+             LinkDaPolitica()
+```
+
+`app-ios/CusttaTests/ModeloAppTests.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/CusttaTests/ModeloAppTests.swift b/app-ios/CusttaTests/ModeloAppTests.swift
+--- a/app-ios/CusttaTests/ModeloAppTests.swift
++++ b/app-ios/CusttaTests/ModeloAppTests.swift
+@@ -143,6 +143,74 @@ struct ModeloAppTests {
+         #expect(m.fase == .entrada)
+     }
+
++    @Test func segundoPedidoDeSairNoMeioDaSaidaERecusado() async {
++        let montagem = montar(conta: "senha")
++        let m = montagem.modelo
++        await ate { m.fase.ehPrincipal }
++        montagem.conta.demoraAoSair = .milliseconds(300)
++        let primeiro = Desfecho { if await m.sair() != nil { throw ErroConta(codigo: "nao-saiu") } }
++        await ate { m.saindo }
++        #expect(m.saindo, "\"Usar outra conta\" fica desabilitado enquanto sai")
++        #expect(await m.sair() == nil, "o pedido repetido (toque duplo) é recusado sem mensagem, como no auth.js")
++        await ate { primeiro.terminou }
++        #expect(primeiro.terminou && primeiro.erro == nil, "a primeira saída termina")
++        #expect(montagem.conta.saidas == 1, "uma saída só: duas limpezas juntas, a primeira soltaria a fila no meio da outra")
++        #expect(!m.saindo)
++        await ate { m.fase == .entrada }
++        #expect(m.fase == .entrada)
++    }
++
++    @Test func limpezaQueFalhaAoSairAbreOFinalizarSaida() async {
++        let montagem = montar(conta: "senha")
++        let m = montagem.modelo
++        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
++        montagem.conta.falhasDaLimpeza = 1
++        #expect(await m.sair() == nil, "saiu da conta: a falha da limpeza não é erro de sair")
++        await ate { m.fase == .entrada && m.limpeza != nil }
++        #expect(m.fase == .entrada && m.mensagemEntrada == nil, "saiu de propósito: nada de sessão expirada")
++        #expect(m.limpeza == .pendente(erro: false))
++        #expect(m.sincronizador.estado == .vazio, "a escuta não volta para a conta que saiu")
++        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == "Não deu certo. Tente de novo.",
++                "bloqueado, entrar recusa (a mensagem do site para o código cache)")
++        #expect(await m.entrarComGoogle() == "Limpe os dados locais antes de entrar.", "a do auth.js para o login social")
++        m.tentarLimparDeNovo()
++        #expect(m.limpeza == .tentando, "o alerta fecha na hora")
++        await ate { m.limpeza == nil }
++        #expect(m.limpeza == nil, "deu certo: sem aviso")
++        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == nil)
++    }
++
++    @Test func novaTentativaQueFalhaVoltaComOErro() async {
++        let montagem = montar(conta: "senha")
++        let m = montagem.modelo
++        await ate { m.fase.ehPrincipal }
++        montagem.conta.falhasDaLimpeza = 2
++        #expect(await m.sair() == nil)
++        await ate { m.limpeza != nil }
++        m.tentarLimparDeNovo()
++        await ate { m.limpeza == .pendente(erro: true) }
++        #expect(m.limpeza == .pendente(erro: true), "falhou de novo: o alerta volta com o erro")
++        m.tentarLimparDeNovo()
++        await ate { m.limpeza == nil }
++        #expect(m.limpeza == nil)
++    }
++
++    @Test func limpezaQueFalhouNaAberturaAbreOFinalizarSaida() async {
++        let conta = ContaFalsa(inicial: "nenhuma", limpeza: "abertura")
++        let transporte = TransporteFalsoApp(dados: nil, semRede: false)
++        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: true)
++        let m = ModeloApp(conta: conta, sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: false))
++        await ate { m.limpeza != nil }
++        #expect(m.limpeza == .pendente(erro: false), "a limpeza retomada na abertura falhou: abre pedindo para finalizar")
++        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) != nil, "e entrar recusa")
++        m.tentarLimparDeNovo()
++        await ate { m.limpeza == .pendente(erro: true) }
++        m.tentarLimparDeNovo()
++        await ate { m.limpeza == nil }
++        #expect(m.limpeza == nil)
++        #expect(await m.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta) == nil)
++    }
++
+     @Test(.timeLimit(.minutes(1)), arguments: aberturas)       // espera limitada (Desfecho); o limite de tempo é a última trava
+     func abrirOAppNaoGravaNada(_ a: Abertura) async {
+         let montagem = montar(conta: "senha", semRede: a.semRede, dados: a.comDados ? DadosDeExemplo.blob : nil)
+@@ -266,4 +334,6 @@ final class ContaSemPerfilQueRecusa: ServicoConta {
+     func conferirVerificacao() async -> Bool { false }
+     func verificarSessao(forcar: Bool) async {}
+     func sair() async throws {}
++    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void) {}
++    func tentarLimparDeNovo() async throws {}
+ }
+```
+
+**A tela do "Finalizar saída"** (item 2):
+
+`scripts/cores-app-ios.mjs` (o que o PR 3 muda):
+
+```diff
+diff --git a/scripts/cores-app-ios.mjs b/scripts/cores-app-ios.mjs
+--- a/scripts/cores-app-ios.mjs
++++ b/scripts/cores-app-ios.mjs
+@@ -55,6 +55,10 @@ export const CORES = {
+     Aurora4: ['#78EBC3', '#96F0D2'],
+     RealceLogo: ['#B8F5D2', '#0B7A68'],             // início do degradê do "tt." no escuro
+     SombraDoTexto: ['#00000059', '#00000000'],      // --sombra-txt: texto solto sobre a aurora (só no escuro)
++    // "Finalizar saída": sob o alerta, somado ao escurecido do sistema (no iOS 27, 48% e 20%), e sem o alerta, o total
++    // dos dois. No claro, nada sob o alerta: o texto do botão é escuro e escurecer atrás do vidro só tira contraste.
++    EscurecidoSobOAlerta: ['#0000006B', '#00000000'],
++    Escurecido: ['#000000B2', '#00000033'],
+     GoogleFundo: ['#131314', '#FFFFFF'],            // regras do botão do Google, iguais nas duas peles
+     GoogleBorda: ['#8E918F', '#747775'],
+     GoogleTexto: ['#E3E3E3', '#1F1F1F'],
+@@ -102,6 +106,8 @@ export const CORES = {
+     Aurora4: ['#78D2FF', '#96D2FF'],
+     RealceLogo: ['#D4E0FF', '#3560CF'],
+     SombraDoTexto: ['#00000059', '#00000000'],
++    EscurecidoSobOAlerta: ['#0000006B', '#00000000'],
++    Escurecido: ['#000000B2', '#00000033'],
+     GoogleFundo: ['#131314', '#FFFFFF'],
+     GoogleBorda: ['#8E918F', '#747775'],
+     GoogleTexto: ['#E3E3E3', '#1F1F1F'],
+```
+
+Rode `node scripts/cores-app-ios.mjs`: ele grava os quatro colorsets novos (`Escurecido` e `EscurecidoSobOAlerta`, nas duas peles).
+
+`app-ios/Custta/Identidade/Paleta.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/Custta/Identidade/Paleta.swift b/app-ios/Custta/Identidade/Paleta.swift
+--- a/app-ios/Custta/Identidade/Paleta.swift
++++ b/app-ios/Custta/Identidade/Paleta.swift
+@@ -48,6 +48,10 @@ enum Token: String, CaseIterable, Sendable {
+     case aurora4 = "Aurora4"
+     case realceLogo = "RealceLogo"
+     case sombraDoTexto = "SombraDoTexto"
++    /// "Finalizar saída": o escurecido do app sob o alerta, somado ao do sistema (no claro, nenhum), e o total dos dois
++    /// sem o alerta.
++    case escurecidoSobOAlerta = "EscurecidoSobOAlerta"
++    case escurecido = "Escurecido"
+     case googleFundo = "GoogleFundo"
+     case googleBorda = "GoogleBorda"
+     case googleTexto = "GoogleTexto"
+```
+
+`app-ios/Custta/Dados/Sistema.swift` (o que o PR 3 muda: o vigia do alerta do sistema):
+
+```diff
+diff --git a/app-ios/Custta/Dados/Sistema.swift b/app-ios/Custta/Dados/Sistema.swift
+--- a/app-ios/Custta/Dados/Sistema.swift
++++ b/app-ios/Custta/Dados/Sistema.swift
+@@ -47,6 +47,40 @@ final class MonitorDeRede {
+     }
+ }
+
++/// O alerta do sistema por cima começou a fechar (o toque num botão dele). O SwiftUI só roda a ação do botão
++/// quando o fechamento termina, e o escurecido do sistema some antes, nos uns 0,13 s do fechamento.
++@MainActor func alertaDoSistemaFechando() -> Bool {
++    (controladorNoTopo() as? UIAlertController)?.isBeingDismissed == true
++}
++
++/// Confere a cada quadro da tela se o alerta do sistema começou a fechar e avisa uma vez: o escurecido do app
++/// tem de subir no mesmo quadro em que o do sistema começa a sumir.
++@MainActor
++final class VigiaDoAlerta: NSObject {
++    private var relogio: CADisplayLink?
++    private var aoFechar: (@MainActor () -> Void)?
++
++    func vigiar(aoFechar: @escaping @MainActor () -> Void) {
++        parar()
++        self.aoFechar = aoFechar
++        let relogio = CADisplayLink(target: self, selector: #selector(quadro))
++        relogio.add(to: .main, forMode: .common)
++        self.relogio = relogio
++    }
++
++    func parar() {
++        relogio?.invalidate()
++        relogio = nil
++        aoFechar = nil
++    }
++
++    @objc private func quadro() {
++        guard alertaDoSistemaFechando(), let aviso = aoFechar else { return }
++        parar()
++        aviso()
++    }
++}
++
+ /// A janela do app, para quem precisa apresentar tela do sistema (login do Google).
+ @MainActor
+ func controladorNoTopo() -> UIViewController? {
+```
+
+`app-ios/Custta/Telas/FinalizarSaidaView.swift`:
+
+```swift
+import SwiftUI
+
+/* "Finalizar saída" (mockup aprovado finalizar-saida.html; o diálogo do ui-confirm.js:149 do site): a limpeza
+   do cache local falhou, no sair ou na abertura, e entrar fica bloqueado até ela dar certo. Alerta do sistema
+   com um botão só, sem Cancelar (o do site não fecha). O sistema fecha o alerta ao tocar: enquanto limpa, só
+   depois de meio segundo aparece a pílula "Limpando…" no lugar dele, para não piscar. Falhou de novo, o alerta
+   volta com o erro; deu certo, o escurecido sai sem aviso.
+
+   O escurecido do app fica de pé durante toda a limpeza pendente (conferência do Verniz, 11/10): sob o alerta ele
+   se soma ao do sistema e, no escuro, apaga o que brilha atrás do vidro do alerta (o botão branco da Apple, na
+   letra maior); no claro, sob o alerta ele é transparente, porque o texto do botão é escuro. Sem o alerta, sozinho,
+   fica no total dos dois. Assim a tela não clareia quando o alerta fecha nem aceita toque até a limpeza terminar. */
+struct FinalizarSaida: ViewModifier {
+    static let titulo = "Finalizar saída"
+    static let texto = "Suas obras continuam salvas na sua conta. Falta limpar os dados do Custta que ficaram neste iPhone antes de entrar de novo."
+    static let erro = "Ainda não foi possível limpar. Suas obras continuam salvas na sua conta. Tente de novo ou feche o Custta e abra outra vez."
+
+    private enum Nivel: Equatable { case nenhum, sobOAlerta, total }
+
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+    @State private var nivel = Nivel.nenhum
+    @State private var alertaFechando = false
+    @State private var vigia = VigiaDoAlerta()
+    @State private var pilula = false
+
+    func body(content: Content) -> some View {
+        let tentando = modelo.limpeza == .tentando
+        content
+            .overlay {
+                if nivel != .nenhum {
+                    ZStack {
+                        paleta.cor(nivel == .total ? .escurecido : .escurecidoSobOAlerta)
+                            .ignoresSafeArea()
+                            .contentShape(.rect)
+                        if pilula && tentando { Limpando() }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .onChange(of: alvo, initial: true) { antes, depois in
+                withAnimation(Self.curva(de: antes, para: depois)) { nivel = depois }
+            }
+            // O SwiftUI só roda a ação do botão no fim do fechamento do alerta: o escurecido sobe para o total quando
+            // o fechamento começa, junto com o sumiço do escurecido do sistema.
+            .onChange(of: pendente, initial: true) { _, aberto in
+                alertaFechando = false
+                if aberto {
+                    vigia.vigiar { alertaFechando = true }
+                } else { vigia.parar() }
+            }
+            .task(id: tentando) {
+                pilula = false
+                guard tentando else { return }
+                try? await Task.sleep(for: .milliseconds(500))
+                if !Task.isCancelled { pilula = true }
+            }
+            // O alerta num fundo vazio, para o tint valer só nele: o botão na cor do texto, como o do "Sair da conta?"
+            // (o LinkNoVidro do mockup fica em 4,45:1 na cápsula do alerta no Pro Max, no escuro azul).
+            .background {
+                Color.clear
+                    .alert(Self.titulo, isPresented: Binding(get: { pendente }, set: { _ in })) {
+                        Button("Tentar limpar novamente") { modelo.tentarLimparDeNovo() }
+                    } message: {
+                        Text(modelo.limpeza == .pendente(erro: true) ? Self.erro : Self.texto)
+                    }
+                    .tint(paleta.cor(.texto))
+            }
+            .pausaOFundo(enquanto: modelo.limpeza != nil)
+    }
+
+    private var pendente: Bool {
+        if case .pendente = modelo.limpeza { return true }
+        return false
+    }
+
+    private var alvo: Nivel {
+        switch modelo.limpeza {
+        case nil: .nenhum
+        case .pendente: alertaFechando ? .total : .sobOAlerta
+        case .tentando: .total
+        }
+    }
+
+    /// Acompanha o escurecido do sistema, que entra em uns 0,19 s quando o alerta abre e sai em 0,13 s quando ele fecha
+    /// (vídeo no iOS 27). Esmaecer não é movimento: com `opcoes.reduzirMovimento` o esmaecimento fica, como o do sistema.
+    private static func curva(de antes: Nivel, para depois: Nivel) -> Animation {
+        switch (antes, depois) {
+        case (_, .sobOAlerta): .easeOut(duration: 0.19)
+        case (.sobOAlerta, .total): .easeOut(duration: 0.13)
+        default: .easeOut(duration: 0.2)
+        }
+    }
+}
+
+/// A pílula do "tentando", onde estava o alerta: vidro sobre a superfície sólida, porque no centro da tela de entrar
+/// ela cai sobre o botão branco da Apple, e o vidro sozinho clareava ali (o "Limpando…" ficava em 1,5:1).
+struct Limpando: View {
+    @Environment(\.paleta) private var paleta
+    private let anuncio = "Limpando"
+
+    var body: some View {
+        // Na maior letra, num iPhone de 375 pt, a linha não cabe e as reticências caíam sozinhas na linha de baixo:
+        // aí fica só o texto, que já diz que está limpando.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                ProgressView().tint(paleta.cor(.texto))
+                rotulo
+            }
+            rotulo
+        }
+        .padding(.horizontal, 20)
+        .frame(minHeight: 48)
+        .glassEffect(.regular, in: .capsule)
+        .background(paleta.cor(.superficie), in: .capsule)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(anuncio)
+        // Modal: o VoiceOver fica nela, como no escurecido. Esconder a tela de baixo pela raiz não serve: o
+        // accessibilityHidden(false) de fora revelava a aurora, o globo e o véu, que se escondem por dentro.
+        .accessibilityAddTraits(.isModal)
+        .accessibilityIdentifier("limpando")
+        .onChange(of: anuncio, initial: true) { _, texto in AccessibilityNotification.Announcement(texto).post() }
+    }
+
+    private var rotulo: some View {
+        Text("Limpando…")
+            .font(.body.weight(.semibold))
+            .foregroundStyle(paleta.cor(.texto))
+    }
+}
+
+extension View {
+    /// O alerta "Finalizar saída" e o "Limpando…", por cima de qualquer tela.
+    func finalizaSaida() -> some View { modifier(FinalizarSaida()) }
+}
+```
+
+`app-ios/Custta/Telas/RaizView.swift` (o que o PR 3 muda depois da Tarefa 14):
+
+```diff
+diff --git a/app-ios/Custta/Telas/RaizView.swift b/app-ios/Custta/Telas/RaizView.swift
+--- a/app-ios/Custta/Telas/RaizView.swift
++++ b/app-ios/Custta/Telas/RaizView.swift
+@@ -52,8 +52,10 @@ struct RaizView: View {
+         .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
+         .environment(\.apagaTextoDaNavegacao, textoApagado == "navegacao")
+         #endif
+-        // O aviso fica por cima de todas as telas; vem antes do .environment para receber a mesma paleta.
++        // O aviso e o "Finalizar saída" ficam por cima de todas as telas; vêm antes do .environment para receber
++        // a mesma paleta.
+         .overlay(alignment: .top) { AvisoView() }
++        .finalizaSaida()
+         .environment(\.paleta, paleta)
+         .environment(\.opcoes, opcoes)
+         .environment(\.vidro, VidroTokens.para(tela: tela, escolha: Aparencia.vidro(escolhaDeVidro), opcoes: opcoes))
+```
+
+**Alertas e Ajustes** (itens 7 e 8):
+
+`app-ios/Custta/Telas/PrincipalView.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/Custta/Telas/PrincipalView.swift b/app-ios/Custta/Telas/PrincipalView.swift
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -98,17 +98,25 @@ private struct ConfirmacaoDeSaida: ViewModifier {
+     @Binding var confirmar: Bool
+     @Environment(ModeloApp.self) private var modelo
+     @State private var erro: String?
++    @Environment(\.paleta) private var paleta
+
+     func body(content: Content) -> some View {
+         content
+-            .alert("Sair da conta?", isPresented: $confirmar) {
+-                Button("Cancelar", role: .cancel) {}
+-                Button("Sair", role: .destructive) {
+-                    Task { erro = await modelo.sair() }
+-                }
+-            }
+-            .alert(erro ?? "", isPresented: Binding(get: { erro != nil }, set: { if !$0 { erro = nil } })) {
+-                Button("OK", role: .cancel) {}
++            // Os alertas ficam num fundo vazio para o tint valer só neles: os botões na cor do texto, como no mockup
++            // v3 (na cápsula do alerta, a Marca fica em 2,5:1 e o LinkNoVidro, em 4,46:1 no escuro azul). O "Sair"
++            // destrutivo fica no vermelho do sistema, que não segue o tint: o padrão da Apple (decisão de 11/10).
++            .background {
++                Color.clear
++                    .alert("Sair da conta?", isPresented: $confirmar) {
++                        Button("Cancelar", role: .cancel) {}
++                        Button("Sair", role: .destructive) {
++                            Task { erro = await modelo.sair() }
++                        }
++                    }
++                    .alert(erro ?? "", isPresented: Binding(get: { erro != nil }, set: { if !$0 { erro = nil } })) {
++                        Button("OK", role: .cancel) {}
++                    }
++                    .tint(paleta.cor(.texto))
+             }
+             .pausaOFundo(enquanto: confirmar || erro != nil)
+     }
+```
+
+`app-ios/Custta/Telas/AjustesView.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/Custta/Telas/AjustesView.swift b/app-ios/Custta/Telas/AjustesView.swift
+--- a/app-ios/Custta/Telas/AjustesView.swift
++++ b/app-ios/Custta/Telas/AjustesView.swift
+@@ -73,6 +73,9 @@ struct AjustesView: View {
+                         .shadow(color: paleta.cor(.sombraDoTexto), radius: 4, y: 1)
+                         // Texto solto sobre a aurora: o halo leve do título grande, só no escuro.
+                         .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naBarra) }
++                        // O halo sobe além do texto: atrás do painel, como o do título fica atrás de todo o conteúdo
++                        // (por cima, escurecia a base do painel do "Sair da conta").
++                        .zIndex(-1)
+                         .accessibilityIdentifier("versao")
+                 }
+                 .padding(.horizontal, 16)
+```
+
+**Testes de tela e laudo** (itens 2 e 9):
+
+`app-ios/CusttaUITests/Abrir.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/CusttaUITests/Abrir.swift b/app-ios/CusttaUITests/Abrir.swift
+--- a/app-ios/CusttaUITests/Abrir.swift
++++ b/app-ios/CusttaUITests/Abrir.swift
+@@ -3,11 +3,12 @@ import XCTest
+ /// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase.
+ @MainActor
+ func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
+-              argumentos: [String] = []) -> XCUIApplication {
++              limpeza: String? = nil, argumentos: [String] = []) -> XCUIApplication {
+     let app = XCUIApplication()
+     var ambiente = ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": conta, "CUSTTA_DADOS": dados]
+     if let rede { ambiente["CUSTTA_REDE"] = rede }
+     if let leitura { ambiente["CUSTTA_LEITURA"] = leitura }
++    if let limpeza { ambiente["CUSTTA_LIMPEZA"] = limpeza }
+     app.launchEnvironment = ambiente
+     app.launchArguments += argumentos
+     app.launch()
+```
+
+`app-ios/CusttaUITests/FinalizarSaidaUITests.swift`:
+
+```swift
+import XCTest
+
+/* "Finalizar saída" com os falsos (CUSTTA_LIMPEZA): a limpeza do cache falha ao sair, ou a abertura já
+   encontra a limpeza que falhou; a primeira nova tentativa falha de novo e a segunda dá certo. Cada nova
+   tentativa leva 8 s, então o "Limpando…" (depois de 0,5 s) dá para ver, até no simulador da CI. */
+final class FinalizarSaidaUITests: XCTestCase {
+    static let titulo = "Finalizar saída"
+    static let texto = "Suas obras continuam salvas na sua conta. Falta limpar os dados do Custta que ficaram neste iPhone antes de entrar de novo."
+    static let erro = "Ainda não foi possível limpar. Suas obras continuam salvas na sua conta. Tente de novo ou feche o Custta e abra outra vez."
+    static let botao = "Tentar limpar novamente"
+
+    /// Aberto, tentando, falhou de novo e deu certo, a partir do alerta já aberto.
+    @MainActor private func finalizar(_ app: XCUIApplication) {
+        let alerta = app.alerts[Self.titulo]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 10), "o alerta abre sobre a entrada")
+        XCTAssertTrue(alerta.staticTexts[Self.texto].exists)
+        XCTAssertEqual(alerta.buttons.count, 1, "um botão só, sem Cancelar: o alerta não fecha sem limpar")
+        alerta.buttons[Self.botao].tap()
+        XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 10), "tentando: \"Limpando…\" no lugar do alerta")
+        XCTAssertTrue(alerta.staticTexts[Self.erro].waitForExistence(timeout: 15), "falhou de novo: o alerta volta com o erro")
+        alerta.buttons[Self.botao].tap()
+        XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("limpando").waitForNonExistence(timeout: 15), "deu certo: o escurecido sai")
+        XCTAssertFalse(alerta.exists, "sem aviso")
+        let email = app.textFields["email"]
+        email.tap()
+        email.typeText("x")
+        XCTAssertTrue((email.value as? String)?.hasSuffix("x") == true, "a entrada fica livre: o toque chega ao campo")
+    }
+
+    @MainActor func testLimpezaQueFalhaAoSairPedeParaFinalizar() {
+        let app = abrirApp(conta: "senha", limpeza: "falha")
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 10))
+        app.buttons["sair"].tap()
+        XCTAssertTrue(app.alerts["Sair da conta?"].waitForExistence(timeout: 5))
+        app.alerts["Sair da conta?"].buttons["Sair"].tap()
+        finalizar(app)
+    }
+
+    @MainActor func testLimpezaQueFalhouNaAberturaPedeParaFinalizar() {
+        finalizar(abrirApp(conta: "nenhuma", limpeza: "abertura"))
+    }
+}
+```
+
+`app-ios/CusttaUITests/LaudoDeContraste.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/CusttaUITests/LaudoDeContraste.swift b/app-ios/CusttaUITests/LaudoDeContraste.swift
+--- a/app-ios/CusttaUITests/LaudoDeContraste.swift
++++ b/app-ios/CusttaUITests/LaudoDeContraste.swift
+@@ -167,6 +167,47 @@ enum LaudoDeContraste {
+         return palavras.sorted { ($0.caixa.minY, $0.caixa.minX) < ($1.caixa.minY, $1.caixa.minX) }
+     }
+
++    /// Rótulo que o app não apaga (o botão de um alerta do sistema), medido num print só: o fundo é a própria
++    /// cápsula. `quadro` é o do botão, em pontos; por dentro da borda (6 pt), as letras são os pixels longe da
++    /// cor da cápsula (a mediana do quadro, que o texto não domina). A cor do texto sai do miolo das letras, como
++    /// em `medir`, e a nota é o percentil 1 do contraste dela contra o fundo em volta das letras (até 3 pt), fora
++    /// do serrilhado (1 pt).
++    static func medirRotulo(_ retrato: Retrato, quadro: CGRect, escala: CGFloat) -> Palavra? {
++        // Elemento que sumiu entre a busca e a leitura do quadro volta com quadro nulo (infinito): sem medida, sem queda.
++        guard !quadro.isNull, !quadro.isInfinite, quadro.minX.isFinite, quadro.minY.isFinite else { return nil }
++        let w = retrato.largura, a = retrato.rgba
++        let q = quadro.insetBy(dx: 6, dy: 6)
++        let x0 = max(0, Int((q.minX * escala).rounded(.up))), y0 = max(0, Int((q.minY * escala).rounded(.up)))
++        let x1 = min(w, Int((q.maxX * escala).rounded(.down))), y1 = min(retrato.altura, Int((q.maxY * escala).rounded(.down)))
++        guard x1 > x0, y1 > y0 else { return nil }
++        let qw = x1 - x0, qh = y1 - y0
++        func pixel(_ j: Int) -> Int { (y0 + j / qw) * w + x0 + j % qw }
++        func mediana(_ canal: Int, _ indices: [Int]) -> UInt8 { indices.map { a[pixel($0) * 4 + canal] }.sorted()[indices.count / 2] }
++        let todos = Array(0..<(qw * qh))
++        let fundo = (mediana(0, todos), mediana(1, todos), mediana(2, todos))
++        func diferenca(_ j: Int) -> Int {
++            let k = pixel(j) * 4
++            return max(abs(Int(a[k]) - Int(fundo.0)), abs(Int(a[k + 1]) - Int(fundo.1)), abs(Int(a[k + 2]) - Int(fundo.2)))
++        }
++        let letra = todos.map { diferenca($0) > limiarDaLetra }
++        let membros = todos.filter { letra[$0] }
++        guard membros.count >= 20 else { return nil }
++        let fortes = Array(membros.sorted { diferenca($0) > diferenca($1) }.prefix(max(1, membros.count / 4)))
++        let cor = (r: mediana(0, fortes), g: mediana(1, fortes), b: mediana(2, fortes))
++        let lt = luminancia(cor.r, cor.g, cor.b)
++        let perto = dilatar(letra, qw, qh, rx: Int(3 * escala), ry: Int(3 * escala))
++        let serrilhado = dilatar(letra, qw, qh, rx: Int(escala), ry: Int(escala))
++        let notas = todos.filter { perto[$0] && !serrilhado[$0] }.map { j in
++            let k = pixel(j) * 4
++            return contraste(lt, luminancia(a[k], a[k + 1], a[k + 2]))
++        }.sorted()
++        guard !notas.isEmpty else { return nil }
++        let xs = membros.map { $0 % qw }, ys = membros.map { $0 / qw }
++        let caixa = CGRect(x: CGFloat(x0 + xs.min()!) / escala, y: CGFloat(y0 + ys.min()!) / escala,
++                           width: CGFloat(xs.max()! - xs.min()! + 1) / escala, height: CGFloat(ys.max()! - ys.min()! + 1) / escala)
++        return Palavra(caixa: caixa, cor: cor, nota: notas[notas.count / 100], minimo: notas[0])
++    }
++
+     /// Dilatação retangular (separável, com contagem corrida): verdadeiro onde houver verdadeiro a até rx, ry.
+     static func dilatar(_ m: [Bool], _ w: Int, _ h: Int, rx: Int, ry: Int) -> [Bool] {
+         var horizontal = [Bool](repeating: false, count: w * h)
+```
+
+`app-ios/CusttaUITests/LeituraNoVidroUITests.swift` (o que o PR 3 muda):
+
+```diff
+diff --git a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -8,8 +8,9 @@ import UIKit
+    pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra. Cada cena deixa no
+    resultado o print anotado (verde passa, vermelho não) e a tabela, para o Lupa e o Giovani verem sem
+    abrir o simulador. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro
+-   (decisão do Giovani em 09/10). Na CI (`CUSTTA_LAUDO=relatorio`) o laudo só relata: o simulador do
+-   iOS 26 da CI pode desenhar o vidro diferente do Mac. */
++   (decisão do Giovani em 09/10). Na CI (iOS 26) o laudo também é portão: o simulador de lá desenha o
++   vidro diferente do Mac, mas igual de uma rodada para outra (as 47 cenas deram as mesmas notas em quatro
++   rodadas do PR 3, todas acima de 4,5). */
+ final class LeituraNoVidroUITests: XCTestCase {
+     /// Fundo parado no pior momento: Reduzir movimento (globo em 1,2 e logo pronto) e a aurora no pior ponto
+     /// da deriva inteira, que também cobre o quadro em que ela para com Reduzir movimento.
+@@ -19,8 +20,10 @@ final class LeituraNoVidroUITests: XCTestCase {
+     private static let portao = 4.5
+     /// A barra de status fica de fora: a hora muda entre os dois prints.
+     private static let barraDeStatus: CGFloat = 70
+-    /// Na CI, só o relatório (ver o comentário do topo).
+-    private static let soRelatorio = ProcessInfo.processInfo.environment["CUSTTA_LAUDO"] == "relatorio"
++    /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
++    /// (`CUSTTA_VARREDURA=curta`), 0, 20, 40 e 260, para o job caber em 45 min.
++    private static let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta"
++        ? [0, 20, 40, 260] : Array(stride(from: 0, through: 60, by: 10)) + [260]
+
+     private struct Cena {
+         let nome: String
+@@ -58,7 +61,6 @@ final class LeituraNoVidroUITests: XCTestCase {
+                 XCTFail("\(cena.nome): \(error)")
+                 continue
+             }
+-            guard !Self.soRelatorio else { continue }
+             XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 sobre o vidro:\n" + falhas.joined(separator: "\n"))
+         }
+     }
+@@ -139,7 +141,7 @@ final class LeituraNoVidroUITests: XCTestCase {
+             ]
+             // Os rótulos da cápsula com o conteúdo passando atrás deles: a lista em várias rolagens, porque o pior
+             // ponto muda com os dados e o combo (no fim da lista, 260 pt, já não passa nada atrás dos rótulos).
+-            cenas += (Array(stride(from: 0, through: 60, by: 10)) + [260]).map { rolagem in
++            cenas += Self.rolagens.map { rolagem in
+                 Cena(nome: "abas sobre a lista em \(rolagem) pt, \(tema), \(pele)", conta: "senha-nao-confirmada",
+                      argumentos: combo + ["-custta.rolagem", "\(rolagem)"], espera: "avisoEmail", escopo: "navegacao")
+             }
+@@ -177,6 +179,109 @@ final class LeituraNoVidroUITests: XCTestCase {
+     }
+ }
+
++extension LeituraNoVidroUITests {
++    /// O "Cancelar" do "Sair da conta?" nos quatro combos, no tint do alerta (Texto). O texto do alerta
++    /// é do sistema e o app não o apaga: o rótulo é medido contra a própria cápsula (`medirRotulo`). Exceção:
++    /// o "Sair" não é medido. É destrutivo, e o vermelho do sistema não segue o tint (2,2 a 3,0:1 no iOS 27); fica
++    /// o padrão da Apple (decisão de 11/10).
++    @MainActor func testLeituraDoAlertaDeSair() {
++        var falhas: [String] = []
++        for (tema, pele) in quatroCombos {
++            let nome = "alerta Sair da conta?, \(tema), \(pele)"
++            let app = abrirApp(conta: "senha", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
++            app.abrirAba("ajustes")
++            XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(nome): Ajustes não abriu")
++            app.buttons["sair"].tap()
++            let cancelar = app.alerts["Sair da conta?"].buttons["Cancelar"]
++            XCTAssertTrue(cancelar.waitForExistence(timeout: 5), "\(nome): o alerta não abriu")
++            Thread.sleep(forTimeInterval: 2)                           // o vidro do alerta assenta
++            let foto = XCUIScreen.main.screenshot()
++            let imagem = foto.image.cgImage!
++            let escala = CGFloat(imagem.width) / app.frame.width
++            let quadro = cancelar.frame
++            app.terminate()
++            guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
++                XCTFail("\(nome): o rótulo do Cancelar não foi achado")
++                continue
++            }
++            anexar(nome, foto.image, [palavra], escala)
++            Swift.print(String(format: "leitura | %@ | Cancelar %@ | nota %.2f (pior pixel %.2f)", nome, palavra.corHex,
++                               palavra.nota, palavra.minimo))
++            if palavra.nota < Self.portao { falhas.append(String(format: "%@: Cancelar em %.2f:1", nome, palavra.nota)) }
++        }
++        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
++    }
++
++    /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o título e o botão do alerta (no tint Texto,
++    /// como o do "Sair da conta?"), aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra o fundo
++    /// em volta (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup. Exceção
++    /// nomeada (decisão do Giovani, 12/10): a mensagem do alerta não é medida. Ela sai na cor secundária do sistema
++    /// (2,7 a 3,7:1 no iOS 27), que o próprio iOS escurece com Aumentar contraste; fica o padrão da Apple, como no
++    /// "Sair" destrutivo.
++    @MainActor func testLeituraDoFinalizarSaida() { cobrarFinalizarSaida(maiorLetra: false) }
++
++    /// Na maior letra o alerta rola, e o botão fica no fim, sobre o que estiver atrás do vidro do alerta (na entrada,
++    /// o botão branco da Apple, que o escurecido sob o alerta apaga; conferência do Verniz, 11/10).
++    @MainActor func testLeituraDoFinalizarSaidaNaMaiorLetra() { cobrarFinalizarSaida(maiorLetra: true) }
++
++    @MainActor private func cobrarFinalizarSaida(maiorLetra letraGrande: Bool) {
++        var falhas: [String] = []
++        /// Mede um rótulo no print da tela, anexa o print anotado (e, com `limpo`, o sem anotação) e cobra o portão.
++        func medir(_ nome: String, _ rotulo: String, _ quadro: CGRect, _ app: XCUIApplication, limpo: Bool) {
++            let foto = XCUIScreen.main.screenshot()
++            let imagem = foto.image.cgImage!
++            let escala = CGFloat(imagem.width) / app.frame.width
++            guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
++                XCTFail("\(nome): o rótulo \(rotulo) não foi achado")
++                return
++            }
++            anexar(rotulo == FinalizarSaidaUITests.titulo ? "\(nome) (título)" : nome, foto.image, [palavra], escala)
++            if limpo {
++                let semAnotacao = XCTAttachment(screenshot: foto)      // para comparar com o mockup
++                semAnotacao.name = "print — \(nome)\(rotulo == FinalizarSaidaUITests.titulo ? " (título)" : "")"
++                semAnotacao.lifetime = .keepAlways
++                add(semAnotacao)
++            }
++            Swift.print(String(format: "leitura | %@ | %@ %@ | nota %.2f (pior pixel %.2f)", nome, rotulo, palavra.corHex,
++                               palavra.nota, palavra.minimo))
++            if palavra.nota < Self.portao { falhas.append(String(format: "%@: %@ em %.2f:1", nome, rotulo, palavra.nota)) }
++        }
++        for (tema, pele) in quatroCombos {
++            let app = abrirApp(conta: "nenhuma", limpeza: "abertura",
++                               argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento + (letraGrande ? maiorLetra : []))
++            let alerta = app.alerts[FinalizarSaidaUITests.titulo], botao = alerta.buttons[FinalizarSaidaUITests.botao]
++            for estado in ["aberto", "tentando", "falhou de novo"] {
++                let nome = "finalizar saída\(letraGrande ? " na maior letra" : ""), \(estado), \(tema), \(pele)"
++                if estado == "tentando" {
++                    botao.tap()
++                    // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, o teste só a acha
++                    // uns 4 s após o toque (a nova tentativa falsa leva 8 s, para ela continuar à vista).
++                    guard app.elemento("limpando").waitForExistence(timeout: 10) else {
++                        XCTFail("\(nome): o \"Limpando…\" não apareceu")
++                        continue
++                    }
++                    Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta
++                    medir(nome, "Limpando…", app.elemento("limpando").frame, app, limpo: true)
++                    continue
++                }
++                XCTAssertTrue(botao.waitForExistence(timeout: 15), "\(nome): o alerta não abriu")
++                Thread.sleep(forTimeInterval: 2)                       // o vidro do alerta assenta
++                // O título antes de rolar: na maior letra ele sai de vista quando o alerta rola até o botão. O medidor
++                // entra 6 pt na moldura (a borda da cápsula); no texto solto, a moldura medida é a do próprio texto.
++                medir(nome, FinalizarSaidaUITests.titulo, alerta.staticTexts[FinalizarSaidaUITests.titulo].frame.insetBy(dx: -6, dy: -6),
++                      app, limpo: letraGrande)
++                if letraGrande {
++                    alerta.swipeUp()                                   // o alerta rola até o botão, no fim
++                    Thread.sleep(forTimeInterval: 2)
++                }
++                medir(nome, FinalizarSaidaUITests.botao, botao.frame, app, limpo: true)
++            }
++            app.terminate()
++        }
++        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no Finalizar saída:\n" + falhas.joined(separator: "\n"))
++    }
++}
++
+ /* O medidor com imagens sintéticas: sem abrir o app. */
+ final class LaudoDeContrasteTests: XCTestCase {
+     private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),
+@@ -218,6 +323,25 @@ final class LaudoDeContrasteTests: XCTestCase {
+         XCTAssertLessThan(palavra.minimo, 1.5)
+     }
+
++    func testRotuloSobreACapsulaDoAlerta() throws {
++        let capsula: (UInt8, UInt8, UInt8) = (0x38, 0x59, 0x57), link: (UInt8, UInt8, UInt8) = (0x8F, 0xE8, 0xD5)
++        let quadro = CGRect(x: 0, y: 0, width: 200 / 3, height: 120 / 3)      // o botão inteiro, em pontos
++        let liso = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) })
++        let palavra = try XCTUnwrap(LaudoDeContraste.medirRotulo(liso, quadro: quadro, escala: 3))
++        XCTAssertEqual(palavra.corHex, "#8FE8D5")
++        let esperado = LaudoDeContraste.contraste(LaudoDeContraste.luminancia(link.0, link.1, link.2),
++                                                  LaudoDeContraste.luminancia(capsula.0, capsula.1, capsula.2))
++        XCTAssertEqual(palavra.nota, esperado, accuracy: 0.05)
++        // Um brilho do vidro (mais claro que a cápsula, mas não a ponto de virar letra) encostado nas letras
++        // derruba a nota para 3,33; longe delas (mais de 3 pt), não.
++        let claro: (UInt8, UInt8, UInt8) = (0x58, 0x79, 0x77)
++        let perto = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 72, y: 40, width: 6, height: 24), claro)])
++        XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(perto, quadro: quadro, escala: 3)).nota, 3.33, accuracy: 0.05)
++        let longe = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 150, y: 80, width: 6, height: 6), claro)])
++        XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(longe, quadro: quadro, escala: 3)).nota, esperado, accuracy: 0.05)
++        XCTAssertNil(LaudoDeContraste.medirRotulo(liso, quadro: .null, escala: 3), "elemento que sumiu (quadro nulo): sem medida, sem queda")
++    }
++
+     func testFundoQueMudaLongeDasLetrasDaErro() {
+         let outro: (UInt8, UInt8, UInt8) = (0x26, 0x3E, 0x36)            // o vidro desenhado um pouco diferente
+         let normal = retrato(200, 120, fundo: fundo, pintar: letras.map { ($0, branco) })
+```
+
+`app-ios/CusttaTests/ComponentesTests.swift` (o que o PR 3 muda: a altura do campo sem o aviso de `FocusState` e a pílula numa linha só):
+
+```diff
+diff --git a/app-ios/CusttaTests/ComponentesTests.swift b/app-ios/CusttaTests/ComponentesTests.swift
+--- a/app-ios/CusttaTests/ComponentesTests.swift
++++ b/app-ios/CusttaTests/ComponentesTests.swift
+@@ -3,8 +3,10 @@ import SwiftUI
+ @testable import Custta
+
+ /* Medidas das peças das telas que o mockup aprovado fixa e o print não tira sozinho: a caixa do campo não é
+-   elemento de acessibilidade, então a altura sai do layout, pelo ImageRenderer (o tamanho é o do layout; o
+-   pixel do vidro é que varia entre rodadas). */
++   elemento de acessibilidade, então a altura sai do layout, num UIHostingController. O ImageRenderer não serve:
++   ele não instala o @FocusState do campo, e o SwiftUI acusa "Accessing FocusState's value outside of the body
++   of a View" (aviso de execução que dispara o simctl diagnose da rodada). A escala 1 mede em pontos inteiros,
++   a grade do mockup: na tela de 3x a linha do rótulo arredonda para 17,67 pt. */
+ @MainActor
+ struct ComponentesTests {
+     private struct Campo: View {
+@@ -19,14 +21,26 @@ struct ComponentesTests {
+         }
+     }
+
+-    private func altura(senha: Bool) throws -> CGFloat {
+-        try #require(ImageRenderer(content: Campo(senha: senha)).uiImage).size.height
++    private func altura(senha: Bool) -> CGFloat {
++        UIHostingController(rootView: Campo(senha: senha).environment(\.displayScale, 1))
++            .sizeThatFits(in: CGSize(width: 320, height: CGFloat.infinity)).height
+     }
+
+     /// Rótulo de 18 pt e 6 de espaço em cima da caixa: 48 pt no campo de texto e 52 no de senha, em que o olho
+     /// tem alvo de 44 pt (no mockup, 11 pt de margem e o olho de 44 pt com 8 pt para dentro de cada lado).
+-    @Test func campoDeSenhaCom52PontosComoOMockup() throws {
+-        #expect(try altura(senha: false) == 18 + 6 + 48)
+-        #expect(try altura(senha: true) == 18 + 6 + 52)
++    @Test func campoDeSenhaCom52PontosComoOMockup() {
++        #expect(altura(senha: false) == CGFloat(18 + 6 + 48))
++        #expect(altura(senha: true) == CGFloat(18 + 6 + 52))
++    }
++
++    private func alturaDaPilula(largura: CGFloat) -> CGFloat {
++        UIHostingController(rootView: Limpando().dynamicTypeSize(.accessibility5).environment(\.displayScale, 3))
++            .sizeThatFits(in: CGSize(width: largura, height: CGFloat.infinity)).height
++    }
++
++    /// A pílula "Limpando…" na maior letra num iPhone de 375 pt (SE, 12 e 13 mini) fica numa linha só, da altura que
++    /// tem numa largura folgada, em vez de as reticências caírem sozinhas na linha de baixo (escala 3, a do 13 mini).
++    @Test func pilulaDoLimpandoNumaLinhaNaMaiorLetraEm375Pontos() {
++        #expect(alturaDaPilula(largura: 375) == alturaDaPilula(largura: 1000))
+     }
+ }
+```
+
+**Rotina de teste e CI** (itens 9 e 10):
+
+`scripts/simulador-ios.mjs` (o que o PR 3 muda):
+
+```diff
+diff --git a/scripts/simulador-ios.mjs b/scripts/simulador-ios.mjs
+--- a/scripts/simulador-ios.mjs
++++ b/scripts/simulador-ios.mjs
+@@ -6,7 +6,10 @@
+        roda `xcodebuild test -only-testing:<alvo>` (ex.: CusttaTests). Com --emuladores, passa
+        CUSTTA_EMULADORES=1 aos testes (os que dependem dos emuladores do Firebase deixam de
+        pular). Assina para o simulador, como o Xcode faz: sem assinatura o app não tem
+-       entitlements e o Firebase Auth falha no keychain (erro -34018). */
++       entitlements e o Firebase Auth falha no keychain (erro -34018).
++
++   CUSTTA_SIMULADOR=<udid> escolhe o simulador (um por pessoa ou agente, para duas rodadas não
++   disputarem o mesmo); sem ela, o primeiro iPhone do iOS mais novo instalado. */
+ import { execFileSync, spawn } from 'node:child_process';
+ import { realpathSync } from 'node:fs';
+ import path from 'node:path';
+@@ -14,27 +17,43 @@ import { fileURLToPath } from 'node:url';
+
+ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+-/** "platform=iOS Simulator,id=…" do primeiro iPhone do iOS mais novo instalado. */
++/** "platform=iOS Simulator,id=…" do simulador dos testes (CUSTTA_SIMULADOR ou o de sempre). */
+ export function destinoDoSimulador(){
+   const lista = JSON.parse(execFileSync('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], { encoding: 'utf8' })).devices;
++  return `platform=iOS Simulator,id=${escolherSimulador(lista, process.env.CUSTTA_SIMULADOR)}`;
++}
++
++/** Udid do simulador, na lista do `simctl list devices -j`: o `udid` pedido, se existir; sem ele, o
++    primeiro iPhone do iOS mais novo. Um id que não existe para, em vez de cair no simulador de outro. */
++export function escolherSimulador(lista, udid){
++  if(udid){
++    if(Object.values(lista).flat().some(d => d.udid === udid && d.isAvailable !== false)) return udid;
++    throw new Error(`CUSTTA_SIMULADOR=${udid}: nenhum simulador disponível com esse id (xcrun simctl list devices)`);
++  }
+   const versao = runtime => (/iOS-(\d+)-(\d+)/.exec(runtime) || []).slice(1).map(Number);
+   const runtimes = Object.keys(lista).filter(r => /SimRuntime\.iOS-/.test(r))
+     .sort((a, b) => { const [x1, y1] = versao(a), [x2, y2] = versao(b); return x2 - x1 || y2 - y1; });
+   for(const runtime of runtimes){
+     const iphone = lista[runtime].find(d => d.isAvailable !== false && d.name.startsWith('iPhone'));
+-    if(iphone) return `platform=iOS Simulator,id=${iphone.udid}`;
++    if(iphone) return iphone.udid;
+   }
+   throw new Error('nenhum iPhone no simulador: instale um runtime de iOS no Xcode (Settings > Components)');
+ }
+
++/** Argumentos do `xcodebuild test` só dos alvos pedidos. Sem os diagnósticos de teste que falha: o
++    `simctl diagnose` que eles disparam segura a rodada até 10 min. */
++export function argumentosDoTeste(alvos, destino){
++  return ['test', '-project', 'app-ios/Custta.xcodeproj', '-scheme', 'Custta', '-destination', destino,
++    '-skipMacroValidation', '-skipPackagePluginValidation', '-onlyUsePackageVersionsFromResolvedFile',
++    '-collect-test-diagnostics', 'never', ...alvos.map(a => `-only-testing:${a}`)];
++}
++
+ /** xcodebuild test só dos alvos pedidos. `env` chega ao processo do teste (prefixo TEST_RUNNER_).
+     Assíncrono de propósito: quem chama pode atender pedidos do teste enquanto ele roda. */
+ export function testarNoSimulador(alvos, env = {}){
+   const ambiente = { ...process.env };
+   for(const [k, v] of Object.entries(env)) ambiente[`TEST_RUNNER_${k}`] = v;
+-  const args = ['test', '-project', 'app-ios/Custta.xcodeproj', '-scheme', 'Custta', '-destination', destinoDoSimulador(),
+-    '-skipMacroValidation', '-skipPackagePluginValidation', '-onlyUsePackageVersionsFromResolvedFile',
+-    ...alvos.map(a => `-only-testing:${a}`)];
++  const args = argumentosDoTeste(alvos, destinoDoSimulador());
+   return new Promise((resolve, reject) => spawn('xcodebuild', args, { cwd: RAIZ, stdio: 'inherit', env: ambiente })
+     .on('error', reject)
+     .on('exit', c => c === 0 ? resolve() : reject(new Error(`xcodebuild test falhou (${alvos.join(', ')})`))));
+```
+
+`tests/app-ios.test.cjs` (o que o PR 3 muda depois da Tarefa 12):
+
+```diff
+diff --git a/tests/app-ios.test.cjs b/tests/app-ios.test.cjs
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -399,6 +399,10 @@ test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no
+     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
+   assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
+     /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
++  // O halo sobe além da versão: por cima do painel, escurecia a base do "Sair da conta" (11/255 no Pro Max).
++  assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
++    /HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\) \}(?:\s*\/\/[^\n]*)*\s*\.zIndex\(-1\)/,
++    'AjustesView: a versão e o halo atrás do painel');
+ });
+
+ test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar, o olho da senha e o logo da conta', () => {
+@@ -438,3 +442,19 @@ test('script dos testes do app contra os emuladores', () => {
+   assert.match(s['test:app-ios:emuladores'] || '', /firebase emulators:exec --config firebase\.test\.json --project demo-custta-phase2 --only firestore,auth/);
+   assert.match(s['test:app-ios:emuladores'], /scripts\/simulador-ios\.mjs --testar CusttaTests --emuladores/);
+ });
++
++test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que falha não segura a rodada no diagnose', async () => {
++  const { escolherSimulador, argumentosDoTeste } = await import(join(RAIZ, 'scripts/simulador-ios.mjs'));
++  const lista = {
++    'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [{ udid: 'A', name: 'iPhone 17', isAvailable: true }],
++    'com.apple.CoreSimulator.SimRuntime.iOS-27-0': [{ udid: 'B', name: 'iPad Pro', isAvailable: true }, { udid: 'C', name: 'iPhone 18 Pro', isAvailable: true }],
++  };
++  assert.equal(escolherSimulador(lista), 'C', 'sem a variável, o de sempre: o primeiro iPhone do iOS mais novo');
++  assert.equal(escolherSimulador(lista, 'A'), 'A', 'cada agente no seu simulador');
++  assert.throws(() => escolherSimulador(lista, 'X'), /CUSTTA_SIMULADOR=X/, 'id que não existe para, em vez de cair no simulador de outro');
++  const args = argumentosDoTeste(['CusttaTests'], 'platform=iOS Simulator,id=C');
++  const i = args.indexOf('-collect-test-diagnostics');
++  assert.deepEqual(args.slice(i, i + 2), ['-collect-test-diagnostics', 'never'], 'sem o simctl diagnose, que segura a rodada até 10 min');
++  assert.deepEqual(args.slice(args.indexOf('-destination'), args.indexOf('-destination') + 2), ['-destination', 'platform=iOS Simulator,id=C']);
++  assert.ok(args.includes('-only-testing:CusttaTests'));
++});
+```
+
+`.github/workflows/app-ios.yml` (o que o PR 3 muda):
+
+```diff
+diff --git a/.github/workflows/app-ios.yml b/.github/workflows/app-ios.yml
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -109,11 +109,12 @@ jobs:
+
+       # Testes com os serviços falsos (nada de rede): unidade e tela, inclusive as auditorias de
+       # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui. O laudo de leitura sobre o
+-      # vidro (LeituraNoVidroUITests) só relata aqui: o simulador da máquina virtual pode desenhar o vidro
+-      # diferente do Mac, onde ele é portão.
++      # vidro (LeituraNoVidroUITests) é portão aqui também: o simulador da máquina virtual desenha o
++      # vidro diferente do Mac, mas igual de uma rodada para outra. A lista sob a cápsula de abas é
++      # medida só em 0, 20, 40 e 260 pt (a varredura completa fica no Mac), para o job caber em 45 min.
+       - name: Testes de unidade e de tela no simulador
+         env:
+-          TEST_RUNNER_CUSTTA_LAUDO: relatorio
++          TEST_RUNNER_CUSTTA_VARREDURA: curta
+         run: |
+           set -o pipefail
+           DESTINO="$(node scripts/simulador-ios.mjs)"
+@@ -126,4 +127,14 @@ jobs:
+             -skipMacroValidation \
+             -skipPackagePluginValidation \
+             -onlyUsePackageVersionsFromResolvedFile \
++            -resultBundlePath "$RUNNER_TEMP/testes.xcresult" \
+             CODE_SIGNING_ALLOWED=NO
++
++      # Laudo ou tela reprovados: os prints anotados ficam 7 dias no artefato (o log só traz as notas).
++      - name: Resultado dos testes quando reprovam
++        if: failure()
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
++        with:
++          name: testes-app-ios
++          path: ${{ runner.temp }}/testes.xcresult
++          retention-days: 7
+```
+
+**Para conferir:** `npm run test:unit`; o `xcodebuild test` da Tarefa 14 (Step 4), agora com `-collect-test-diagnostics never`, nos dois tamanhos de iPhone para o laudo (seção "O que roda na CI e o que roda só no Mac"); `CUSTTA_SIMULADOR=<udid> npm run test:app-ios:emuladores`; e o build Release do zero, sem aviso, com o `nm` e o `strings` sem os falsos, as variáveis de gancho e a chave falsa.
 
 ---
 
@@ -10626,10 +12345,17 @@ git commit -m "feat: app nativo ligado ao Firebase" -m "A composição monta o F
 - Modify: `package.json` (script `test:app-ios:cruzado`), `tests/app-ios.test.cjs` (o teste de scripts da Tarefa 12 passa a cobrir os dois)
 
 **Interfaces:**
-- Consumes: `testarNoSimulador(alvos, env)` (Tarefa 2); `Sincronizador` (Tarefa 8); `RelogioDoSistema` (Tarefa 9); `TransporteFirebase`, `Emulador` (Tarefa 12); `Composicao` com `CUSTTA_EMULADORES` e `CUSTTA_SAIR_AO_ABRIR` (Tarefa 14); `Gasto` e `ValorJSON` (Parte A); identificadores `email`, `senha`, `entrar`, `obra-<id>` e o valor de acessibilidade da linha de obra ("total gasto R$ …" e a linha do orçamento) (Tarefa 10); no site, `C.money`, `C.moneyCurto`, `C.totalBruto`, `C.orcamentoObra`, `C.parcelamentoCartao`, `C.canon` (`calc.js`), `D.normaliza` (`dados.js`) e o SDK JavaScript `firebase` 12.18.0.
+- Consumes: `testarNoSimulador(alvos, env)` (Tarefa 2; desde o inventário do PR 3, no simulador de `CUSTTA_SIMULADOR` e com `-collect-test-diagnostics never`); `Sincronizador` (Tarefa 8); `RelogioDoSistema` (Tarefa 9); `TransporteFirebase` e `Emulador` (Tarefa 12; o `Emulador.app` é o app nomeado "emulador", com o projeto e a chave falsa dos emuladores); `Composicao` com `CUSTTA_EMULADORES` e `CUSTTA_SAIR_AO_ABRIR` e a chave falsa no modo emuladores (Tarefa 14); `Gasto` e `ValorJSON` (Parte A); identificadores `email`, `senha`, `entrar`, `obra-<id>` e o valor de acessibilidade da linha de obra ("total gasto R$ …" e a linha do orçamento) (Tarefa 10); no site, `C.money`, `C.moneyCurto`, `C.totalBruto`, `C.orcamentoObra`, `C.parcelamentoCartao`, `C.canon` (`calc.js`), `D.normaliza` (`dados.js`) e o SDK JavaScript `firebase` 12.18.0.
 - Produces: `npm run test:app-ios:cruzado` (portão local antes de cada build do TestFlight, Tarefa 17).
 
 O teste 5 da seção "Testes e validação" do spec: na mesma conta, contra os emuladores, o site grava e o app mostra os totais e os orçamentos que o `calc.js` calculou (obra com orçamento total, obra vendida com orçamento por tópico estourado e obra com compra parcelada no cartão com juros, cujo total é diferente do valor da compra); o site muda e o app vê sozinho; o app lança um gasto e o site soma esse gasto, sem perder nada que só o site conhece. O roteiro falha se qualquer um dos dois testes for pulado: exige o pedido de mudança que só o teste de tela faz e que o `_atualizado` avance depois do teste do app. O documento final é comparado sem normalizar, para a forma que o app gravou aparecer.
+
+**Antes de começar (o que o PR 3 deixou para esta tarefa):**
+
+- **Decisão: a vaga do keychain no modo emuladores.** Hoje o modo emuladores usa o app padrão do Firebase, como a produção, e os dois dividem a vaga do usuário no keychain (serviço `firebase_auth_<googleAppID>`, conta `__FIRAPP_DEFAULT_firebase_user`; a chave falsa não separa). O `CruzadoUITests` entra numa conta dos emuladores no simulador: se ela ficar lá, o próximo Debug sem variável manda o token dos emuladores à produção (que recusa, e o SDK sai), e o caminho inverso apaga uma sessão real do simulador. Recomendação do Prumo, a decidir pelo Orquestrador antes desta tarefa: no modo emuladores, um FirebaseApp nomeado, com um nome só dele (por exemplo `"emuladores"`, numa constante do `Composicao`), diferente do `"emulador"` dos testes de unidade, para a sessão do app aberto pelo teste de tela não se misturar com a dos testes. O `configurarFirebase(emuladores: true)` configura e devolve esse app (`FirebaseApp.configure(name:options:)` com o `opcoesDosEmuladores()`), e o app padrão fica só para a produção; o `FirebaseApp.app()` continua nil nos testes, como o `ComposicaoTests` cobra. A conta, o banco e o `useEmulator` já recebem o app pela composição, então nada mais muda. Se aprovada, entra como primeiro passo desta tarefa, com teste antes: no `ComposicaoTests`, o app dos emuladores tem o nome próprio e o `FirebaseApp.app()` segue nil. Não foi rodada.
+- **O `CruzadoUITests` é o segundo ponto que abre o app** (o primeiro é o `abrirApp`, sempre com os falsos), e o único que o abre contra os emuladores. Com a chave falsa, um `useEmulator` esquecido falha aqui em vez de criar conta na produção: esta tarefa é também o teste que faltava ao `useEmulator` do Auth (revisão da Tarefa 14).
+- **Simulador e portas:** rode com `CUSTTA_SIMULADOR=<udid>` (um simulador por agente) e só com as portas dos emuladores livres (8080, 9099, 4400, 4500 e 9150), além da 8124 do roteiro.
+- **Âncoras conferidas no `e8bbefa`:** o teste `'script dos testes do app contra os emuladores'` existe uma vez no `tests/app-ios.test.cjs` (o inventário pôs depois dele o teste do simulador, que fica); `let total = totalBruto(obra)` no `CartaoDeObra` (`ObrasView.swift`); `dados["_atualizado"] = FieldValue.serverTimestamp()` no `TransporteFirebase.swift`; o `Sincronizador(transporte:relogio:)` com o `online` padrão; e o `CUSTTA_SAIR_AO_ABRIR` no `Composicao`, que só faz `signOut` (sem a limpeza do cache).
 
 - [ ] **Step 1: Escrever as metades do app e a guarda**
 
@@ -11143,7 +12869,7 @@ git commit -m "ci: envio do app nativo ao TestFlight como 2.0" -m "Workflow só 
 No bloco de "Comandos", logo depois da linha do `npm run test:nucleo`:
 
 ```bash
-npm run test:app-ios:emuladores  # testes do app nativo contra os emuladores do Firebase (Mac, Java)
+npm run test:app-ios:emuladores  # testes do app nativo contra os emuladores do Firebase (Mac, Java; CUSTTA_SIMULADOR=<udid> escolhe o simulador)
 npm run test:app-ios:cruzado     # conferência cruzada site ↔ app nativo nos emuladores (Mac, Java)
 node scripts/cores-app-ios.mjs   # grava no catálogo do app nativo as cores da tabela de tokens
 node scripts/icones-app-ios.mjs  # grava no catálogo do app nativo os ícones do icons.js que as telas usam
@@ -11154,7 +12880,7 @@ Depois da seção "### App iOS (Capacitor)", a seção nova:
 ```markdown
 ### App nativo (app-ios/)
 
-App em SwiftUI que vai substituir o Capacitor (spec `docs/specs/2026-10-06-app-nativo-design.md`, planos `docs/plans/2026-10-06-app-nativo-*`, mockup aprovado da etapa 1 em `~/Documents/custta-mockups/nativo/etapa1/final.html`, com a borda de rolagem do `final-v2.html` e as decisões de 10/10 no `final-v4.html`). O `app-ios/Custta.xcodeproj` é escrito à mão no formato do Xcode 16 (pastas sincronizadas): arquivo novo dentro de `Custta/`, `CusttaTests/` ou `CusttaUITests/` entra no alvo sozinho; não deixe o Xcode subir o `objectVersion` (77), porque a CI usa o Xcode 26 (`tests/app-ios.test.cjs` barra). As regras moram no pacote `app-ios/CusttaNucleo`, puro e conferido contra os vetores do site; o app tem a identidade em `Custta/Identidade/` (tokens de cor e de vidro, aurora, globo, título escrito à mão, superfícies de vidro e cápsula de abas, escritos uma vez e reusados), as telas, o `ModeloApp` e a camada fina do Firebase em `Custta/Dados/`. A cara é a do PWA: cores só por tokens (`scripts/cores-app-ios.mjs`; rode o script depois de mudar), ícones do `icons.js` (`scripts/icones-app-ios.mjs`), logo e globo iguais aos do site (as guardas comparam), toda superfície por `.superficie(_:em:)` com a dose de vidro da tela (`VidroTokens`), nunca vidro dentro de vidro, a mesma borda de rolagem em toda tela que rola (`.bordaDeRolagem(abas:)`), e animação própria só olhando o Reduzir movimento. O vidro do iOS não acompanha escala nem transformação 3D, e a auditoria de contraste do Xcode não lê vidro: as cores são auditadas com superfícies sólidas (e os pares de texto sobre sólido, em Node, pelo `PARES_SOLIDOS`), e a leitura sobre o vidro de verdade é medida pelo laudo de leitura (`LeituraNoVidroUITests`: dois prints do mesmo quadro, com e sem o texto, e 4,5:1 no pior ponto de cada palavra; portão no Mac, só relatório na CI). No escuro, uma camada do tom do fundo sob o vidro do conteúdo (`VidroTokens.escurecimento`) e o globo mais fundo dentro do app fecham a leitura; mexer na dose de vidro, na aurora, no globo ou na borda pede o laudo de novo. Nenhum build vai ao TestFlight com o laudo reprovando no Mac. Pacotes Swift: só firebase-ios-sdk e GoogleSignIn-iOS, em versão exata, com o `Package.resolved` versionado (para atualizar, botão "resolver de novo" do workflow `app-ios`); a Roboto Medium do botão do Google é a única fonte embutida, travada por SHA-256. Em Debug o app aceita `CUSTTA_SERVICOS=falsos` (telas e testes de tela; dados `vitrine` por padrão, as obras do mockup, e `exemplo` nos testes) e `CUSTTA_EMULADORES=1` (emuladores); o Release não tem nenhum dos dois. A CI (`app-ios.yml`) roda o núcleo, o build Release sem assinatura e os testes no simulador com os serviços falsos; os testes contra os emuladores e a conferência cruzada rodam no Mac e são obrigatórios antes de cada envio. O app nunca grava antes de ver os dados da conta (`Sincronizador`, erro `nao-carregado`). Sair segue o `cloud.js`: para a escuta, grava a marca `custta-limpar-cache` (`UserDefaults`), sai e apaga o cache; a abertura seguinte termina uma limpeza interrompida. Os identificadores de acessibilidade são contrato com os testes, inclusive a conferência cruzada. O Xcode da CI é fixo (`DEVELOPER_DIR` do 26.6). O `PrivacyInfo.xcprivacy` acompanha a política de privacidade do site: dado novo coletado entra nos dois. Envio: workflow `app-ios-testflight`, no botão, versão 2.0 no mesmo cadastro (`br.com.custta.app`). Pendências de aparelho: `docs/plans/2026-10-06-app-nativo-etapa1-checklist-aparelho.md`.
+App em SwiftUI que vai substituir o Capacitor (spec `docs/specs/2026-10-06-app-nativo-design.md`, planos `docs/plans/2026-10-06-app-nativo-*`, mockup aprovado da etapa 1 em `~/Documents/custta-mockups/nativo/etapa1/final.html`, com a borda de rolagem do `final-v2.html` e as decisões de 10/10 no `final-v4.html`). O `app-ios/Custta.xcodeproj` é escrito à mão no formato do Xcode 16 (pastas sincronizadas): arquivo novo dentro de `Custta/`, `CusttaTests/` ou `CusttaUITests/` entra no alvo sozinho; não deixe o Xcode subir o `objectVersion` (77), porque a CI usa o Xcode 26 (`tests/app-ios.test.cjs` barra). As regras moram no pacote `app-ios/CusttaNucleo`, puro e conferido contra os vetores do site; o app tem a identidade em `Custta/Identidade/` (tokens de cor e de vidro, aurora, globo, título escrito à mão, superfícies de vidro e cápsula de abas, escritos uma vez e reusados), as telas, o `ModeloApp` e a camada fina do Firebase em `Custta/Dados/`. A cara é a do PWA: cores só por tokens (`scripts/cores-app-ios.mjs`; rode o script depois de mudar), ícones do `icons.js` (`scripts/icones-app-ios.mjs`), logo e globo iguais aos do site (as guardas comparam), toda superfície por `.superficie(_:em:)` com a dose de vidro da tela (`VidroTokens`), nunca vidro dentro de vidro, a mesma borda de rolagem em toda tela que rola (`.bordaDeRolagem(abas:)`), e animação própria só olhando o Reduzir movimento. O vidro do iOS não acompanha escala nem transformação 3D, e a auditoria de contraste do Xcode não lê vidro: as cores são auditadas com superfícies sólidas (e os pares de texto sobre sólido, em Node, pelo `PARES_SOLIDOS`), e a leitura sobre o vidro de verdade é medida pelo laudo de leitura (`LeituraNoVidroUITests`: dois prints do mesmo quadro, com e sem o texto, e 4,5:1 no pior ponto de cada palavra; portão no Mac e na CI, que mede a lista sob a cápsula em menos rolagens; o texto que o sistema desenha, como os botões dos alertas, é medido contra o fundo em volta das letras, e as exceções têm nome no teste). No escuro, uma camada do tom do fundo sob o vidro do conteúdo (`VidroTokens.escurecimento`) e o globo mais fundo dentro do app fecham a leitura; mexer na dose de vidro, na aurora, no globo ou na borda pede o laudo de novo. Nenhum build vai ao TestFlight com o laudo reprovando no Mac. Pacotes Swift: só firebase-ios-sdk e GoogleSignIn-iOS, em versão exata, com o `Package.resolved` versionado (para atualizar, botão "resolver de novo" do workflow `app-ios`); a Roboto Medium do botão do Google é a única fonte embutida, travada por SHA-256. Em Debug o app aceita `CUSTTA_SERVICOS=falsos` (telas e testes de tela; dados `vitrine` por padrão, as obras do mockup, e `exemplo` nos testes) e `CUSTTA_EMULADORES=1` (emuladores, com uma chave falsa, para um pedido que escape deles ser recusado pela produção); o Release não tem nenhum dos dois. Nenhum teste monta a composição com rede, e cada agente roda os testes no seu simulador (`CUSTTA_SIMULADOR=<udid>`). A CI (`app-ios.yml`) roda o núcleo, o build Release sem assinatura e os testes no simulador com os serviços falsos; os testes contra os emuladores e a conferência cruzada rodam no Mac e são obrigatórios antes de cada envio. O app nunca grava antes de ver os dados da conta (`Sincronizador`, erro `nao-carregado`). Sair segue o `cloud.js`: para a escuta, grava a marca `custta-limpar-cache` (`UserDefaults`), sai e apaga o cache; a abertura seguinte termina uma limpeza interrompida. Se apagar o cache falhar, a entrada fica bloqueada e o alerta "Finalizar saída" pede para limpar de novo, como o `cacheBloqueado` do site. Os identificadores de acessibilidade são contrato com os testes, inclusive a conferência cruzada. O Xcode da CI é fixo (`DEVELOPER_DIR` do 26.6). O `PrivacyInfo.xcprivacy` acompanha a política de privacidade do site: dado novo coletado entra nos dois. Envio: workflow `app-ios-testflight`, no botão, versão 2.0 no mesmo cadastro (`br.com.custta.app`). Pendências de aparelho: `docs/plans/2026-10-06-app-nativo-etapa1-checklist-aparelho.md`.
 ```
 
 - [ ] **Step 2: Escrever o checklist do aparelho**
@@ -11208,6 +12934,15 @@ O Giovani roda no iPhone, pelo TestFlight, com o build 2.0 da etapa 1. Cada item
 - [ ] Ajustes > Sair da conta > Sair, ainda em modo avião: aparece "Conecte à internet e aguarde a sincronização antes de sair." e o app continua aberto.
 - [ ] Desligue o modo avião: "Sem conexão" some sozinho.
 
+## Finalizar saída (num iPhone com iOS 26, pelo Xcode)
+
+O alerta "Finalizar saída" só aparece quando apagar os dados locais falha, o que no iPhone quase nunca acontece; o time o provoca com os serviços falsos, num build de Debug instalado pelo Xcode. Ele foi medido só no simulador do iOS 27.
+
+- [ ] No Xcode, Product > Scheme > Edit Scheme > Run > Arguments > Environment Variables: `CUSTTA_SERVICOS=falsos`, `CUSTTA_CONTA=senha` e `CUSTTA_LIMPEZA=falha`. Rode no iPhone com iOS 26.
+- [ ] Ajustes > Sair da conta > Sair: aparece o alerta "Finalizar saída", com um botão só, "Tentar limpar novamente".
+- [ ] Toque no botão: quando o alerta fecha, a tela não clareia nem dá um degrau, e o "Limpando…" aparece no lugar dele. A primeira nova tentativa falha de propósito: o alerta volta com o texto do erro.
+- [ ] Toque de novo: o escurecido sai sem aviso e a tela de entrar responde ao toque. Se a tela clarear ou der um degrau, anote para o Orquestrador: a saída é um alerta próprio, do UIKit (seção "Riscos" do plano da etapa 1B).
+
 ## Leitura confortável
 
 - [ ] Ajustes do iPhone > Acessibilidade > Tela e Tamanho do Texto > Texto Maior, no máximo: nas telas de entrar, criar conta, obras e Ajustes nada fica cortado nem sobreposto.
@@ -11221,7 +12956,8 @@ O app abre no escuro esmeralda, o padrão (claro e azul chegam com a Aparência,
 - [ ] Ao abrir, a aurora e o globo aparecem, o "custta." se escreve e o ponto carimba com uma vibração leve.
 - [ ] Entrar, criar conta, falta pouco, obras e Ajustes batem com o mockup (cartão de vidro, campos, botões da Apple e do Google, lista em cartões, comparativo, cápsula de abas).
 - [ ] Cápsula de abas: a aba escolhida é uma pílula cheia na cor da marca, com o nome legível com qualquer coisa passando por baixo; ao entrar com o teclado aberto, a cápsula aparece no lugar, sem pular.
-- [ ] No escuro, o título grande de Obras e de Ajustes tem um halo leve atrás: lê-se bem sobre a aurora e não aparece mancha escura no canto.
+- [ ] No escuro, o título grande de Obras e de Ajustes tem um halo leve atrás: lê-se bem sobre a aurora e não aparece mancha escura no canto. A versão, no pé de Ajustes, também se lê bem.
+- [ ] Ajustes > Sair da conta: no alerta "Sair da conta?", o "Cancelar" vem na cor do texto e o "Sair" em vermelho, os dois legíveis.
 - [ ] Ao entrar, a aurora escurece devagar (menos de um segundo); ao sair da conta, clareia de volta.
 - [ ] Rolar a lista de obras rápido, para cima e para baixo: nada engasga, e a aurora e o globo param enquanto a lista rola.
 - [ ] Borda de rolagem: com a lista rolada, os cartões passam desfocados e esmaecidos por baixo do título pequeno e do sair, e desfocados por baixo da cápsula de abas, sem faixa escura, e a aurora continua aparecendo; o título, o relógio e os nomes das abas se leem bem. Na tela de entrar, o mesmo no alto ao rolar.
@@ -11257,8 +12993,8 @@ Depois do merge do PR 4, num worktree limpo da `origin/main`:
 Run: `npm test && npm run test:nucleo && npm run test:app-ios:emuladores && npm run test:app-ios:cruzado`
 Expected: tudo verde, terminando em `ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada`.
 
-Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests/LeituraNoVidroUITests`
-Expected: `** TEST SUCCEEDED **`: as 43 cenas do laudo de leitura passam de 4,5:1 no Mac. Repita num iPhone Pro Max (`-destination "platform=iOS Simulator,id=<Pro Max>"`): o portão vale nos dois tamanhos. Sem isso, o envio não sai.
+Run: `xcodebuild test -project app-ios/Custta.xcodeproj -scheme Custta -destination "$(node scripts/simulador-ios.mjs)" -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile -collect-test-diagnostics never CODE_SIGNING_ALLOWED=NO -only-testing:CusttaUITests/LeituraNoVidroUITests`
+Expected: `** TEST SUCCEEDED **`: os 6 testes do laudo de leitura passam no Mac, com a varredura completa (as 47 cenas, o "Cancelar" do "Sair da conta?" e as 40 medidas do "Finalizar saída", todas acima de 4,5:1). Repita num iPhone Pro Max (`-destination "platform=iOS Simulator,id=<Pro Max>"`): o portão vale nos dois tamanhos. A CI já cobra o laudo com a varredura curta; a completa é esta. Sem isso, o envio não sai.
 
 - [ ] **Step 6: Enviar ao TestFlight (só com o OK do Giovani)**
 

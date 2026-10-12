@@ -173,6 +173,8 @@ enum LaudoDeContraste {
     /// em `medir`, e a nota é o percentil 1 do contraste dela contra o fundo em volta das letras (até 3 pt), fora
     /// do serrilhado (1 pt).
     static func medirRotulo(_ retrato: Retrato, quadro: CGRect, escala: CGFloat) -> Palavra? {
+        // Elemento que sumiu entre a busca e a leitura do quadro volta com quadro nulo (infinito): sem medida, sem queda.
+        guard !quadro.isNull, !quadro.isInfinite, quadro.minX.isFinite, quadro.minY.isFinite else { return nil }
         let w = retrato.largura, a = retrato.rgba
         let q = quadro.insetBy(dx: 6, dy: 6)
         let x0 = max(0, Int((q.minX * escala).rounded(.up))), y0 = max(0, Int((q.minY * escala).rounded(.up)))

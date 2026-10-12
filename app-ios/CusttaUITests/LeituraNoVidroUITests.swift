@@ -232,14 +232,15 @@ extension LeituraNoVidroUITests {
                 switch estado {
                 case "tentando":
                     botao.tap()
-                    // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, uns 2 s após o toque.
-                    guard app.elemento("limpando").waitForExistence(timeout: 5) else {
+                    // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, o teste só a acha
+                    // uns 4 s após o toque (a nova tentativa falsa leva 8 s, para ela continuar à vista).
+                    guard app.elemento("limpando").waitForExistence(timeout: 10) else {
                         XCTFail("\(nome): o \"Limpando…\" não apareceu")
                         continue
                     }
-                    Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta (a nova tentativa leva 3 s)
+                    Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta
                 default:
-                    XCTAssertTrue(botao.waitForExistence(timeout: 10), "\(nome): o alerta não abriu")
+                    XCTAssertTrue(botao.waitForExistence(timeout: 15), "\(nome): o alerta não abriu")
                     if letraGrande { alerta.swipeUp() }                // o alerta rola até o botão, no fim
                     Thread.sleep(forTimeInterval: 2)                   // o vidro do alerta assenta
                 }
@@ -323,6 +324,7 @@ final class LaudoDeContrasteTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(perto, quadro: quadro, escala: 3)).nota, 3.33, accuracy: 0.05)
         let longe = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 150, y: 80, width: 6, height: 6), claro)])
         XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(longe, quadro: quadro, escala: 3)).nota, esperado, accuracy: 0.05)
+        XCTAssertNil(LaudoDeContraste.medirRotulo(liso, quadro: .null, escala: 3), "elemento que sumiu (quadro nulo): sem medida, sem queda")
     }
 
     func testFundoQueMudaLongeDasLetrasDaErro() {

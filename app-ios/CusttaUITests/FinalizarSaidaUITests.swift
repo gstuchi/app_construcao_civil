@@ -2,7 +2,7 @@ import XCTest
 
 /* "Finalizar saída" com os falsos (CUSTTA_LIMPEZA): a limpeza do cache falha ao sair, ou a abertura já
    encontra a limpeza que falhou; a primeira nova tentativa falha de novo e a segunda dá certo. Cada nova
-   tentativa leva 3 s, então o "Limpando…" (depois de 0,5 s) dá para ver. */
+   tentativa leva 8 s, então o "Limpando…" (depois de 0,5 s) dá para ver, até no simulador da CI. */
 final class FinalizarSaidaUITests: XCTestCase {
     static let titulo = "Finalizar saída"
     static let texto = "Suas obras continuam salvas na sua conta. Falta limpar os dados do Custta que ficaram neste iPhone antes de entrar de novo."
@@ -16,11 +16,11 @@ final class FinalizarSaidaUITests: XCTestCase {
         XCTAssertTrue(alerta.staticTexts[Self.texto].exists)
         XCTAssertEqual(alerta.buttons.count, 1, "um botão só, sem Cancelar: o alerta não fecha sem limpar")
         alerta.buttons[Self.botao].tap()
-        XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 5), "tentando: \"Limpando…\" no lugar do alerta")
-        XCTAssertTrue(alerta.staticTexts[Self.erro].waitForExistence(timeout: 10), "falhou de novo: o alerta volta com o erro")
+        XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 10), "tentando: \"Limpando…\" no lugar do alerta")
+        XCTAssertTrue(alerta.staticTexts[Self.erro].waitForExistence(timeout: 15), "falhou de novo: o alerta volta com o erro")
         alerta.buttons[Self.botao].tap()
-        XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 5))
-        XCTAssertTrue(app.elemento("limpando").waitForNonExistence(timeout: 10), "deu certo: o escurecido sai")
+        XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("limpando").waitForNonExistence(timeout: 15), "deu certo: o escurecido sai")
         XCTAssertFalse(alerta.exists, "sem aviso")
         XCTAssertTrue(app.textFields["email"].isHittable, "a entrada fica livre")
     }

@@ -22,7 +22,10 @@ final class FinalizarSaidaUITests: XCTestCase {
         XCTAssertTrue(app.elemento("limpando").waitForExistence(timeout: 10))
         XCTAssertTrue(app.elemento("limpando").waitForNonExistence(timeout: 15), "deu certo: o escurecido sai")
         XCTAssertFalse(alerta.exists, "sem aviso")
-        XCTAssertTrue(app.textFields["email"].isHittable, "a entrada fica livre")
+        let email = app.textFields["email"]
+        email.tap()
+        email.typeText("x")
+        XCTAssertTrue((email.value as? String)?.hasSuffix("x") == true, "a entrada fica livre: o toque chega ao campo")
     }
 
     @MainActor func testLimpezaQueFalhaAoSairPedeParaFinalizar() {

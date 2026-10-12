@@ -32,4 +32,15 @@ struct ComponentesTests {
         #expect(altura(senha: false) == CGFloat(18 + 6 + 48))
         #expect(altura(senha: true) == CGFloat(18 + 6 + 52))
     }
+
+    private func alturaDaPilula(largura: CGFloat) -> CGFloat {
+        UIHostingController(rootView: Limpando().dynamicTypeSize(.accessibility5).environment(\.displayScale, 3))
+            .sizeThatFits(in: CGSize(width: largura, height: CGFloat.infinity)).height
+    }
+
+    /// A pílula "Limpando…" na maior letra num iPhone de 375 pt (SE, 12 e 13 mini) fica numa linha só, da altura que
+    /// tem numa largura folgada, em vez de as reticências caírem sozinhas na linha de baixo (escala 3, a do 13 mini).
+    @Test func pilulaDoLimpandoNumaLinhaNaMaiorLetraEm375Pontos() {
+        #expect(alturaDaPilula(largura: 375) == alturaDaPilula(largura: 1000))
+    }
 }

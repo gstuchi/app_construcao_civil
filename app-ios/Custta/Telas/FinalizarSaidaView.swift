@@ -95,16 +95,19 @@ struct FinalizarSaida: ViewModifier {
 
 /// A pílula do "tentando", onde estava o alerta: vidro sobre a superfície sólida, porque no centro da tela de entrar
 /// ela cai sobre o botão branco da Apple, e o vidro sozinho clareava ali (o "Limpando…" ficava em 1,5:1).
-private struct Limpando: View {
+struct Limpando: View {
     @Environment(\.paleta) private var paleta
     private let anuncio = "Limpando"
 
     var body: some View {
-        HStack(spacing: 10) {
-            ProgressView().tint(paleta.cor(.texto))
-            Text("Limpando…")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(paleta.cor(.texto))
+        // Na maior letra, num iPhone de 375 pt, a linha não cabe e as reticências caíam sozinhas na linha de baixo:
+        // aí fica só o texto, que já diz que está limpando.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                ProgressView().tint(paleta.cor(.texto))
+                rotulo
+            }
+            rotulo
         }
         .padding(.horizontal, 20)
         .frame(minHeight: 48)
@@ -117,6 +120,12 @@ private struct Limpando: View {
         .accessibilityAddTraits(.isModal)
         .accessibilityIdentifier("limpando")
         .onChange(of: anuncio, initial: true) { _, texto in AccessibilityNotification.Announcement(texto).post() }
+    }
+
+    private var rotulo: some View {
+        Text("Limpando…")
+            .font(.body.weight(.semibold))
+            .foregroundStyle(paleta.cor(.texto))
     }
 }
 

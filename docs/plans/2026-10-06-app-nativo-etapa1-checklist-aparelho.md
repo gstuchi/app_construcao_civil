@@ -12,7 +12,7 @@ O Giovani roda no iPhone, pelo TestFlight, com o build 2.0 da etapa 1. Cada item
 - [ ] Entrar com e-mail e senha: a lista de obras aparece.
 - [ ] Ajustes > Sair da conta > Sair: volta para a tela de entrar.
 - [ ] Continuar com a Apple: a folha da Apple abre, entra e mostra as obras da mesma conta de antes.
-- [ ] Sair e Continuar com Google: a tela do Google abre, entra e mostra as obras da mesma conta de antes.
+- [ ] Sair e Continuar com o Google: a tela do Google abre, entra e mostra as obras da mesma conta de antes.
 - [ ] Senha errada: aparece "E-mail ou senha incorretos.".
 
 ## Conta que já existe no site

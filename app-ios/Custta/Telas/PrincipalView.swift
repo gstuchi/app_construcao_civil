@@ -98,17 +98,25 @@ private struct ConfirmacaoDeSaida: ViewModifier {
     @Binding var confirmar: Bool
     @Environment(ModeloApp.self) private var modelo
     @State private var erro: String?
+    @Environment(\.paleta) private var paleta
 
     func body(content: Content) -> some View {
         content
-            .alert("Sair da conta?", isPresented: $confirmar) {
-                Button("Cancelar", role: .cancel) {}
-                Button("Sair", role: .destructive) {
-                    Task { erro = await modelo.sair() }
-                }
-            }
-            .alert(erro ?? "", isPresented: Binding(get: { erro != nil }, set: { if !$0 { erro = nil } })) {
-                Button("OK", role: .cancel) {}
+            // Os alertas ficam num fundo vazio para o tint valer só neles: os botões na cor do texto, como no mockup
+            // v3 (na cápsula do alerta, a Marca fica em 2,5:1 e o LinkNoVidro, em 4,46:1 no escuro azul). O "Sair"
+            // destrutivo fica no vermelho do sistema, que não segue o tint: o padrão da Apple (decisão de 11/10).
+            .background {
+                Color.clear
+                    .alert("Sair da conta?", isPresented: $confirmar) {
+                        Button("Cancelar", role: .cancel) {}
+                        Button("Sair", role: .destructive) {
+                            Task { erro = await modelo.sair() }
+                        }
+                    }
+                    .alert(erro ?? "", isPresented: Binding(get: { erro != nil }, set: { if !$0 { erro = nil } })) {
+                        Button("OK", role: .cancel) {}
+                    }
+                    .tint(paleta.cor(.texto))
             }
             .pausaOFundo(enquanto: confirmar || erro != nil)
     }

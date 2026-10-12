@@ -8,11 +8,15 @@ import CusttaNucleo
                   google-sem-perfil, google-perfil-concorrente)
    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
-   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) */
+   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê)
+   CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
+                  e a 1ª nova tentativa também falha); cada nova tentativa leva 8 s, para o "Limpando…" ficar à
+                  vista mesmo no simulador da CI, onde o teste só o encontra uns 4 s depois do toque */
 extension Composicao {
     static func montarFalso(_ ambiente: [String: String]) -> ModeloApp {
         let semRede = ambiente["CUSTTA_REDE"] == "offline"
-        let conta = ContaFalsa(inicial: ambiente["CUSTTA_CONTA"] ?? "nenhuma")
+        let conta = ContaFalsa(inicial: ambiente["CUSTTA_CONTA"] ?? "nenhuma", limpeza: ambiente["CUSTTA_LIMPEZA"])
+        if ambiente["CUSTTA_LIMPEZA"] != nil { conta.demoraAoLimpar = .seconds(8) }
         let falha: String? = switch ambiente["CUSTTA_LEITURA"] {
         case "erro": "permission-denied"
         case "formato": "formato-desconhecido"

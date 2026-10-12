@@ -109,11 +109,12 @@ jobs:
 
       # Testes com os serviços falsos (nada de rede): unidade e tela, inclusive as auditorias de
       # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui. O laudo de leitura sobre o
-      # vidro (LeituraNoVidroUITests) só relata aqui: o simulador da máquina virtual pode desenhar o vidro
-      # diferente do Mac, onde ele é portão.
+      # vidro (LeituraNoVidroUITests) é portão aqui também: o simulador da máquina virtual desenha o
+      # vidro diferente do Mac, mas igual de uma rodada para outra. A lista sob a cápsula de abas é
+      # medida só em 0, 20, 40 e 260 pt (a varredura completa fica no Mac), para o job caber em 45 min.
       - name: Testes de unidade e de tela no simulador
         env:
-          TEST_RUNNER_CUSTTA_LAUDO: relatorio
+          TEST_RUNNER_CUSTTA_VARREDURA: curta
         run: |
           set -o pipefail
           DESTINO="$(node scripts/simulador-ios.mjs)"
@@ -126,4 +127,14 @@ jobs:
             -skipMacroValidation \
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/testes.xcresult" \
             CODE_SIGNING_ALLOWED=NO
+
+      # Laudo ou tela reprovados: os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+      - name: Resultado dos testes quando reprovam
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testes-app-ios
+          path: ${{ runner.temp }}/testes.xcresult
+          retention-days: 7

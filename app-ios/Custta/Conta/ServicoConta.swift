@@ -54,6 +54,12 @@ protocol ServicoConta: AnyObject {
     func conferirVerificacao() async -> Bool
     /// Renova o token; sai da conta só se a sessão foi invalidada (nunca por falta de rede).
     func verificarSessao(forcar: Bool) async
-    /// Sai da conta e limpa o cache local do banco. Quem chama já esperou a fila e parou a escuta.
+    /// Sai da conta e limpa o cache local do banco. Quem chama já esperou a fila e parou a escuta. Se só a
+    /// limpeza falhar, lança "cache": já saiu, e o banco fica bloqueado até `tentarLimparDeNovo`.
     func sair() async throws
+    /// Avisa quando a limpeza do cache local falha (true) e quando ela enfim dá certo (false); quem se inscreve
+    /// recebe o estado atual. Bloqueado, entrar e criar conta recusam com "cache" (o `cacheBloqueado` do cloud.js).
+    func observarBloqueio(_ aoMudar: @escaping @MainActor (Bool) -> Void)
+    /// "Tentar limpar novamente" do "Finalizar saída": lança "cache" se falhar de novo.
+    func tentarLimparDeNovo() async throws
 }

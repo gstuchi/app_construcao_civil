@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleSignIn
 
 /// Escolhe a tela pela fase da conta, desenha o fundo (aurora e globo, no mesmo relógio) e aplica a
 /// aparência deste aparelho, a dose de vidro da tela e as opções do iPhone.
@@ -51,14 +52,17 @@ struct RaizView: View {
         .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
         .environment(\.apagaTextoDaNavegacao, textoApagado == "navegacao")
         #endif
-        // O aviso fica por cima de todas as telas; vem antes do .environment para receber a mesma paleta.
+        // O aviso e o "Finalizar saída" ficam por cima de todas as telas; vêm antes do .environment para receber
+        // a mesma paleta.
         .overlay(alignment: .top) { AvisoView() }
+        .finalizaSaida()
         .environment(\.paleta, paleta)
         .environment(\.opcoes, opcoes)
         .environment(\.vidro, VidroTokens.para(tela: tela, escolha: Aparencia.vidro(escolhaDeVidro), opcoes: opcoes))
         .environment(\.pausasDoFundo, pausas)
         .tint(paleta.cor(.marca))
         .preferredColorScheme(Aparencia.esquema(tema))
+        .onOpenURL { url in GIDSignIn.sharedInstance.handle(url) }
         .onChange(of: fundoAnda, initial: true) { _, anda in relogio.rodando = anda }
         .acompanhaEnergia(poucaEnergia: $poucaEnergia, calor: $calor)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in teclado = true }

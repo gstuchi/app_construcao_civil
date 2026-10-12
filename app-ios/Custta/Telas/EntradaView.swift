@@ -409,6 +409,7 @@ struct FormFaltaPouco: View {
                 Task { mensagem = await modelo.sair() == nil ? nil : "Não foi possível trocar de conta agora. Tente de novo." }
             }
             .buttonStyle(LinkSublinhado())
+            .disabled(modelo.saindo)
             .padding(.top, 6)
             .accessibilityIdentifier("usarOutraConta")
             LinkDaPolitica()

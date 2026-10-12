@@ -13,6 +13,13 @@ final class ModeloApp {
         case principal(Usuario)
     }
 
+    /// "Finalizar saída" (o diálogo do ui-confirm.js:149): a limpeza do cache local falhou e entrar fica
+    /// bloqueado até ela dar certo. `erro` quando a nova tentativa também falhou.
+    enum Limpeza: Equatable {
+        case pendente(erro: Bool)
+        case tentando
+    }
+
     /// Textos que a tela de entrar mostra com ícone próprio (cadeado e ✓), os mesmos do site.
     static let sessaoExpirada = "Sua sessão expirou por segurança. Entre de novo pra continuar."
     static let linkEnviado = "Enviamos um link de redefinição pro seu e-mail."
@@ -27,6 +34,11 @@ final class ModeloApp {
     private(set) var aviso: String?
     /// "Nome Sobrenome" de `perfis/{uid}`, para Ajustes.
     private(set) var nome: String?
+    /// Saída em andamento (o `saindo` do logout do cloud.js): um segundo pedido no meio dela é recusado, e
+    /// "Usar outra conta" fica desabilitado.
+    private(set) var saindo = false
+    /// O "Finalizar saída", ou nil quando não há limpeza do cache pendente.
+    private(set) var limpeza: Limpeza?
     let sincronizador: Sincronizador
     let rede: MonitorDeRede
 
@@ -49,6 +61,7 @@ final class ModeloApp {
         conta.observar { [weak self] usuario in
             Task { await self?.usuarioMudou(usuario) }
         }
+        conta.observarBloqueio { [weak self] bloqueado in self?.bloqueioMudou(bloqueado) }
     }
 
     /// A conta da tela atual. Vem da `fase`, que é observável: a tela que lê `usuario` é avisada quando
@@ -100,15 +113,21 @@ final class ModeloApp {
 
     func entrarComApple(_ credencial: CredencialApple) async -> String? {
         do { try await conta.entrarComApple(credencial); return nil }
-        catch { return mensagemOuNil(mensagemErroSocial(codigo: (error as? ErroConta)?.codigo, provedor: "apple.com")) }
+        catch { return mensagemSocial(error, provedor: "apple.com") }
     }
 
     func entrarComGoogle() async -> String? {
         do { try await conta.entrarComGoogle(); return nil }
-        catch { return mensagemOuNil(mensagemErroSocial(codigo: (error as? ErroConta)?.codigo, provedor: "google.com")) }
+        catch { return mensagemSocial(error, provedor: "google.com") }
     }
 
-    private func mensagemOuNil(_ s: String) -> String? { s.isEmpty ? nil : s }
+    /// A do núcleo, ou nil quando a pessoa desistiu; com a limpeza do cache bloqueada, a do auth.js.
+    private func mensagemSocial(_ erro: Error, provedor: String) -> String? {
+        let codigo = (erro as? ErroConta)?.codigo
+        if codigo == "cache" { return "Limpe os dados locais antes de entrar." }
+        let s = mensagemErroSocial(codigo: codigo, provedor: provedor)
+        return s.isEmpty ? nil : s
+    }
 
     func criarConta(email: String, senha: String, perfil: PerfilCadastro) async -> String? {
         do { try await conta.criarConta(email: aparadoJS(email), senha: senha, perfil: perfil); return nil }
@@ -145,8 +164,13 @@ final class ModeloApp {
 
     /// "Sair da conta" e "Usar outra conta", na ordem do cloud.js: espera a fila subir (sem rede, pede
     /// para conectar), confere que a conta é a mesma, para a escuta e só então sai.
-    /// Mensagem de erro, ou nil se saiu.
+    /// Mensagem de erro, ou nil se saiu. Um pedido no meio da saída é recusado sem mensagem (como o toque
+    /// repetido no auth.js): a saída em andamento responde. Se só a limpeza do cache falhar, saiu: o
+    /// "Finalizar saída" abre pelo bloqueio, e a escuta não volta para a conta que saiu.
     func sair() async -> String? {
+        guard !saindo else { return nil }
+        saindo = true
+        defer { saindo = false }
         let semRede = "Conecte à internet e aguarde a sincronização antes de sair."
         guard rede.online, let uid = conta.usuario?.uid else { return semRede }
         guard await sincronizador.aguardarFila(timeoutMs: 5000) else { return semRede }
@@ -154,6 +178,7 @@ final class ModeloApp {
         saindoDeProposito = true
         sincronizador.parar()
         do { try await conta.sair(); return nil }
+        catch let erro as ErroConta where erro.codigo == "cache" { return nil }
         catch {
             saindoDeProposito = false
             sincronizador.iniciar(uid: uid)          // não saiu: volta a escutar a conta
@@ -195,6 +220,22 @@ final class ModeloApp {
     func voltouParaFrente() async {
         await conta.verificarSessao(forcar: false)
         if conta.usuario?.precisaConfirmarEmail == true { _ = await conta.conferirVerificacao() }
+    }
+
+    /* ---------- finalizar saída ---------- */
+
+    private func bloqueioMudou(_ bloqueado: Bool) {
+        if !bloqueado { limpeza = nil } else if limpeza == nil { limpeza = .pendente(erro: false) }
+    }
+
+    /// "Tentar limpar novamente": o alerta fecha na hora (o estado muda antes de esperar) e volta com o erro se
+    /// falhar de novo; dando certo, a entrada fica livre, sem aviso.
+    func tentarLimparDeNovo() {
+        guard case .pendente = limpeza else { return }
+        limpeza = .tentando
+        Task {
+            do { try await conta.tentarLimparDeNovo(); limpeza = nil } catch { limpeza = .pendente(erro: true) }
+        }
     }
 
     /* ---------- sincronização e avisos ---------- */

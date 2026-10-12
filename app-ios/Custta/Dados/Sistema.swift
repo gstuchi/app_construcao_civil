@@ -47,6 +47,40 @@ final class MonitorDeRede {
     }
 }
 
+/// O alerta do sistema por cima começou a fechar (o toque num botão dele). O SwiftUI só roda a ação do botão
+/// quando o fechamento termina, e o escurecido do sistema some antes, nos uns 0,13 s do fechamento.
+@MainActor func alertaDoSistemaFechando() -> Bool {
+    (controladorNoTopo() as? UIAlertController)?.isBeingDismissed == true
+}
+
+/// Confere a cada quadro da tela se o alerta do sistema começou a fechar e avisa uma vez: o escurecido do app
+/// tem de subir no mesmo quadro em que o do sistema começa a sumir.
+@MainActor
+final class VigiaDoAlerta: NSObject {
+    private var relogio: CADisplayLink?
+    private var aoFechar: (@MainActor () -> Void)?
+
+    func vigiar(aoFechar: @escaping @MainActor () -> Void) {
+        parar()
+        self.aoFechar = aoFechar
+        let relogio = CADisplayLink(target: self, selector: #selector(quadro))
+        relogio.add(to: .main, forMode: .common)
+        self.relogio = relogio
+    }
+
+    func parar() {
+        relogio?.invalidate()
+        relogio = nil
+        aoFechar = nil
+    }
+
+    @objc private func quadro() {
+        guard alertaDoSistemaFechando(), let aviso = aoFechar else { return }
+        parar()
+        aviso()
+    }
+}
+
 /// A janela do app, para quem precisa apresentar tela do sistema (login do Google).
 @MainActor
 func controladorNoTopo() -> UIViewController? {

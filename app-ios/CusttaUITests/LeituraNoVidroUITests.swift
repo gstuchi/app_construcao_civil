@@ -8,8 +8,9 @@ import UIKit
    pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra. Cada cena deixa no
    resultado o print anotado (verde passa, vermelho não) e a tabela, para o Lupa e o Giovani verem sem
    abrir o simulador. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro
-   (decisão do Giovani em 09/10). Na CI (`CUSTTA_LAUDO=relatorio`) o laudo só relata: o simulador do
-   iOS 26 da CI pode desenhar o vidro diferente do Mac. */
+   (decisão do Giovani em 09/10). Na CI (iOS 26) o laudo também é portão: o simulador de lá desenha o
+   vidro diferente do Mac, mas igual de uma rodada para outra (as 47 cenas deram as mesmas notas em quatro
+   rodadas do PR 3, todas acima de 4,5). */
 final class LeituraNoVidroUITests: XCTestCase {
     /// Fundo parado no pior momento: Reduzir movimento (globo em 1,2 e logo pronto) e a aurora no pior ponto
     /// da deriva inteira, que também cobre o quadro em que ela para com Reduzir movimento.
@@ -19,8 +20,10 @@ final class LeituraNoVidroUITests: XCTestCase {
     private static let portao = 4.5
     /// A barra de status fica de fora: a hora muda entre os dois prints.
     private static let barraDeStatus: CGFloat = 70
-    /// Na CI, só o relatório (ver o comentário do topo).
-    private static let soRelatorio = ProcessInfo.processInfo.environment["CUSTTA_LAUDO"] == "relatorio"
+    /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
+    /// (`CUSTTA_VARREDURA=curta`), 0, 20, 40 e 260, para o job caber em 45 min.
+    private static let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta"
+        ? [0, 20, 40, 260] : Array(stride(from: 0, through: 60, by: 10)) + [260]
 
     private struct Cena {
         let nome: String
@@ -58,7 +61,6 @@ final class LeituraNoVidroUITests: XCTestCase {
                 XCTFail("\(cena.nome): \(error)")
                 continue
             }
-            guard !Self.soRelatorio else { continue }
             XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 sobre o vidro:\n" + falhas.joined(separator: "\n"))
         }
     }
@@ -139,7 +141,7 @@ final class LeituraNoVidroUITests: XCTestCase {
             ]
             // Os rótulos da cápsula com o conteúdo passando atrás deles: a lista em várias rolagens, porque o pior
             // ponto muda com os dados e o combo (no fim da lista, 260 pt, já não passa nada atrás dos rótulos).
-            cenas += (Array(stride(from: 0, through: 60, by: 10)) + [260]).map { rolagem in
+            cenas += Self.rolagens.map { rolagem in
                 Cena(nome: "abas sobre a lista em \(rolagem) pt, \(tema), \(pele)", conta: "senha-nao-confirmada",
                      argumentos: combo + ["-custta.rolagem", "\(rolagem)"], espera: "avisoEmail", escopo: "navegacao")
             }
@@ -174,6 +176,109 @@ final class LeituraNoVidroUITests: XCTestCase {
             Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
                  aba: "ajustes")
         })
+    }
+}
+
+extension LeituraNoVidroUITests {
+    /// O "Cancelar" do "Sair da conta?" nos quatro combos, no tint do alerta (Texto). O texto do alerta
+    /// é do sistema e o app não o apaga: o rótulo é medido contra a própria cápsula (`medirRotulo`). Exceção:
+    /// o "Sair" não é medido. É destrutivo, e o vermelho do sistema não segue o tint (2,2 a 3,0:1 no iOS 27); fica
+    /// o padrão da Apple (decisão de 11/10).
+    @MainActor func testLeituraDoAlertaDeSair() {
+        var falhas: [String] = []
+        for (tema, pele) in quatroCombos {
+            let nome = "alerta Sair da conta?, \(tema), \(pele)"
+            let app = abrirApp(conta: "senha", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
+            app.abrirAba("ajustes")
+            XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(nome): Ajustes não abriu")
+            app.buttons["sair"].tap()
+            let cancelar = app.alerts["Sair da conta?"].buttons["Cancelar"]
+            XCTAssertTrue(cancelar.waitForExistence(timeout: 5), "\(nome): o alerta não abriu")
+            Thread.sleep(forTimeInterval: 2)                           // o vidro do alerta assenta
+            let foto = XCUIScreen.main.screenshot()
+            let imagem = foto.image.cgImage!
+            let escala = CGFloat(imagem.width) / app.frame.width
+            let quadro = cancelar.frame
+            app.terminate()
+            guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
+                XCTFail("\(nome): o rótulo do Cancelar não foi achado")
+                continue
+            }
+            anexar(nome, foto.image, [palavra], escala)
+            Swift.print(String(format: "leitura | %@ | Cancelar %@ | nota %.2f (pior pixel %.2f)", nome, palavra.corHex,
+                               palavra.nota, palavra.minimo))
+            if palavra.nota < Self.portao { falhas.append(String(format: "%@: Cancelar em %.2f:1", nome, palavra.nota)) }
+        }
+        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
+    }
+
+    /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o título e o botão do alerta (no tint Texto,
+    /// como o do "Sair da conta?"), aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra o fundo
+    /// em volta (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup. Exceção
+    /// nomeada (decisão do Giovani, 12/10): a mensagem do alerta não é medida. Ela sai na cor secundária do sistema
+    /// (2,7 a 3,7:1 no iOS 27), que o próprio iOS escurece com Aumentar contraste; fica o padrão da Apple, como no
+    /// "Sair" destrutivo.
+    @MainActor func testLeituraDoFinalizarSaida() { cobrarFinalizarSaida(maiorLetra: false) }
+
+    /// Na maior letra o alerta rola, e o botão fica no fim, sobre o que estiver atrás do vidro do alerta (na entrada,
+    /// o botão branco da Apple, que o escurecido sob o alerta apaga; conferência do Verniz, 11/10).
+    @MainActor func testLeituraDoFinalizarSaidaNaMaiorLetra() { cobrarFinalizarSaida(maiorLetra: true) }
+
+    @MainActor private func cobrarFinalizarSaida(maiorLetra letraGrande: Bool) {
+        var falhas: [String] = []
+        /// Mede um rótulo no print da tela, anexa o print anotado (e, com `limpo`, o sem anotação) e cobra o portão.
+        func medir(_ nome: String, _ rotulo: String, _ quadro: CGRect, _ app: XCUIApplication, limpo: Bool) {
+            let foto = XCUIScreen.main.screenshot()
+            let imagem = foto.image.cgImage!
+            let escala = CGFloat(imagem.width) / app.frame.width
+            guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
+                XCTFail("\(nome): o rótulo \(rotulo) não foi achado")
+                return
+            }
+            anexar(rotulo == FinalizarSaidaUITests.titulo ? "\(nome) (título)" : nome, foto.image, [palavra], escala)
+            if limpo {
+                let semAnotacao = XCTAttachment(screenshot: foto)      // para comparar com o mockup
+                semAnotacao.name = "print — \(nome)\(rotulo == FinalizarSaidaUITests.titulo ? " (título)" : "")"
+                semAnotacao.lifetime = .keepAlways
+                add(semAnotacao)
+            }
+            Swift.print(String(format: "leitura | %@ | %@ %@ | nota %.2f (pior pixel %.2f)", nome, rotulo, palavra.corHex,
+                               palavra.nota, palavra.minimo))
+            if palavra.nota < Self.portao { falhas.append(String(format: "%@: %@ em %.2f:1", nome, rotulo, palavra.nota)) }
+        }
+        for (tema, pele) in quatroCombos {
+            let app = abrirApp(conta: "nenhuma", limpeza: "abertura",
+                               argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento + (letraGrande ? maiorLetra : []))
+            let alerta = app.alerts[FinalizarSaidaUITests.titulo], botao = alerta.buttons[FinalizarSaidaUITests.botao]
+            for estado in ["aberto", "tentando", "falhou de novo"] {
+                let nome = "finalizar saída\(letraGrande ? " na maior letra" : ""), \(estado), \(tema), \(pele)"
+                if estado == "tentando" {
+                    botao.tap()
+                    // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, o teste só a acha
+                    // uns 4 s após o toque (a nova tentativa falsa leva 8 s, para ela continuar à vista).
+                    guard app.elemento("limpando").waitForExistence(timeout: 10) else {
+                        XCTFail("\(nome): o \"Limpando…\" não apareceu")
+                        continue
+                    }
+                    Thread.sleep(forTimeInterval: 0.8)                 // a pílula assenta
+                    medir(nome, "Limpando…", app.elemento("limpando").frame, app, limpo: true)
+                    continue
+                }
+                XCTAssertTrue(botao.waitForExistence(timeout: 15), "\(nome): o alerta não abriu")
+                Thread.sleep(forTimeInterval: 2)                       // o vidro do alerta assenta
+                // O título antes de rolar: na maior letra ele sai de vista quando o alerta rola até o botão. O medidor
+                // entra 6 pt na moldura (a borda da cápsula); no texto solto, a moldura medida é a do próprio texto.
+                medir(nome, FinalizarSaidaUITests.titulo, alerta.staticTexts[FinalizarSaidaUITests.titulo].frame.insetBy(dx: -6, dy: -6),
+                      app, limpo: letraGrande)
+                if letraGrande {
+                    alerta.swipeUp()                                   // o alerta rola até o botão, no fim
+                    Thread.sleep(forTimeInterval: 2)
+                }
+                medir(nome, FinalizarSaidaUITests.botao, botao.frame, app, limpo: true)
+            }
+            app.terminate()
+        }
+        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no Finalizar saída:\n" + falhas.joined(separator: "\n"))
     }
 }
 
@@ -216,6 +321,25 @@ final class LaudoDeContrasteTests: XCTestCase {
         let palavra = try XCTUnwrap(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).first)
         XCTAssertLessThan(palavra.nota, 1.5, "um ponto claro do globo atrás da letra reprova")
         XCTAssertLessThan(palavra.minimo, 1.5)
+    }
+
+    func testRotuloSobreACapsulaDoAlerta() throws {
+        let capsula: (UInt8, UInt8, UInt8) = (0x38, 0x59, 0x57), link: (UInt8, UInt8, UInt8) = (0x8F, 0xE8, 0xD5)
+        let quadro = CGRect(x: 0, y: 0, width: 200 / 3, height: 120 / 3)      // o botão inteiro, em pontos
+        let liso = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) })
+        let palavra = try XCTUnwrap(LaudoDeContraste.medirRotulo(liso, quadro: quadro, escala: 3))
+        XCTAssertEqual(palavra.corHex, "#8FE8D5")
+        let esperado = LaudoDeContraste.contraste(LaudoDeContraste.luminancia(link.0, link.1, link.2),
+                                                  LaudoDeContraste.luminancia(capsula.0, capsula.1, capsula.2))
+        XCTAssertEqual(palavra.nota, esperado, accuracy: 0.05)
+        // Um brilho do vidro (mais claro que a cápsula, mas não a ponto de virar letra) encostado nas letras
+        // derruba a nota para 3,33; longe delas (mais de 3 pt), não.
+        let claro: (UInt8, UInt8, UInt8) = (0x58, 0x79, 0x77)
+        let perto = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 72, y: 40, width: 6, height: 24), claro)])
+        XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(perto, quadro: quadro, escala: 3)).nota, 3.33, accuracy: 0.05)
+        let longe = retrato(200, 120, fundo: capsula, pintar: letras.map { ($0, link) } + [(CGRect(x: 150, y: 80, width: 6, height: 6), claro)])
+        XCTAssertEqual(try XCTUnwrap(LaudoDeContraste.medirRotulo(longe, quadro: quadro, escala: 3)).nota, esperado, accuracy: 0.05)
+        XCTAssertNil(LaudoDeContraste.medirRotulo(liso, quadro: .null, escala: 3), "elemento que sumiu (quadro nulo): sem medida, sem queda")
     }
 
     func testFundoQueMudaLongeDasLetrasDaErro() {

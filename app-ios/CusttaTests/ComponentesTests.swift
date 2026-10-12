@@ -3,8 +3,10 @@ import SwiftUI
 @testable import Custta
 
 /* Medidas das peças das telas que o mockup aprovado fixa e o print não tira sozinho: a caixa do campo não é
-   elemento de acessibilidade, então a altura sai do layout, pelo ImageRenderer (o tamanho é o do layout; o
-   pixel do vidro é que varia entre rodadas). */
+   elemento de acessibilidade, então a altura sai do layout, num UIHostingController. O ImageRenderer não serve:
+   ele não instala o @FocusState do campo, e o SwiftUI acusa "Accessing FocusState's value outside of the body
+   of a View" (aviso de execução que dispara o simctl diagnose da rodada). A escala 1 mede em pontos inteiros,
+   a grade do mockup: na tela de 3x a linha do rótulo arredonda para 17,67 pt. */
 @MainActor
 struct ComponentesTests {
     private struct Campo: View {
@@ -19,14 +21,26 @@ struct ComponentesTests {
         }
     }
 
-    private func altura(senha: Bool) throws -> CGFloat {
-        try #require(ImageRenderer(content: Campo(senha: senha)).uiImage).size.height
+    private func altura(senha: Bool) -> CGFloat {
+        UIHostingController(rootView: Campo(senha: senha).environment(\.displayScale, 1))
+            .sizeThatFits(in: CGSize(width: 320, height: CGFloat.infinity)).height
     }
 
     /// Rótulo de 18 pt e 6 de espaço em cima da caixa: 48 pt no campo de texto e 52 no de senha, em que o olho
     /// tem alvo de 44 pt (no mockup, 11 pt de margem e o olho de 44 pt com 8 pt para dentro de cada lado).
-    @Test func campoDeSenhaCom52PontosComoOMockup() throws {
-        #expect(try altura(senha: false) == 18 + 6 + 48)
-        #expect(try altura(senha: true) == 18 + 6 + 52)
+    @Test func campoDeSenhaCom52PontosComoOMockup() {
+        #expect(altura(senha: false) == CGFloat(18 + 6 + 48))
+        #expect(altura(senha: true) == CGFloat(18 + 6 + 52))
+    }
+
+    private func alturaDaPilula(largura: CGFloat) -> CGFloat {
+        UIHostingController(rootView: Limpando().dynamicTypeSize(.accessibility5).environment(\.displayScale, 3))
+            .sizeThatFits(in: CGSize(width: largura, height: CGFloat.infinity)).height
+    }
+
+    /// A pílula "Limpando…" na maior letra num iPhone de 375 pt (SE, 12 e 13 mini) fica numa linha só, da altura que
+    /// tem numa largura folgada, em vez de as reticências caírem sozinhas na linha de baixo (escala 3, a do 13 mini).
+    @Test func pilulaDoLimpandoNumaLinhaNaMaiorLetraEm375Pontos() {
+        #expect(alturaDaPilula(largura: 375) == alturaDaPilula(largura: 1000))
     }
 }

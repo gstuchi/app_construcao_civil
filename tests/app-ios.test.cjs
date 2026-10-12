@@ -399,6 +399,10 @@ test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no 
     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
   assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
     /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
+  // O halo sobe além da versão: por cima do painel, escurecia a base do "Sair da conta" (11/255 no Pro Max).
+  assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
+    /HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\) \}(?:\s*\/\/[^\n]*)*\s*\.zIndex\(-1\)/,
+    'AjustesView: a versão e o halo atrás do painel');
 });
 
 test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de entrar, o olho da senha e o logo da conta', () => {
@@ -431,4 +435,26 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
       assert.ok(fixos.has(dono), `${f}: ${m[0]} em ${dono}; texto cortado se resolve deixando o texto crescer`);
     }
   }
+});
+
+test('script dos testes do app contra os emuladores', () => {
+  const s = JSON.parse(ler('package.json')).scripts;
+  assert.match(s['test:app-ios:emuladores'] || '', /firebase emulators:exec --config firebase\.test\.json --project demo-custta-phase2 --only firestore,auth/);
+  assert.match(s['test:app-ios:emuladores'], /scripts\/simulador-ios\.mjs --testar CusttaTests --emuladores/);
+});
+
+test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que falha não segura a rodada no diagnose', async () => {
+  const { escolherSimulador, argumentosDoTeste } = await import(join(RAIZ, 'scripts/simulador-ios.mjs'));
+  const lista = {
+    'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [{ udid: 'A', name: 'iPhone 17', isAvailable: true }],
+    'com.apple.CoreSimulator.SimRuntime.iOS-27-0': [{ udid: 'B', name: 'iPad Pro', isAvailable: true }, { udid: 'C', name: 'iPhone 18 Pro', isAvailable: true }],
+  };
+  assert.equal(escolherSimulador(lista), 'C', 'sem a variável, o de sempre: o primeiro iPhone do iOS mais novo');
+  assert.equal(escolherSimulador(lista, 'A'), 'A', 'cada agente no seu simulador');
+  assert.throws(() => escolherSimulador(lista, 'X'), /CUSTTA_SIMULADOR=X/, 'id que não existe para, em vez de cair no simulador de outro');
+  const args = argumentosDoTeste(['CusttaTests'], 'platform=iOS Simulator,id=C');
+  const i = args.indexOf('-collect-test-diagnostics');
+  assert.deepEqual(args.slice(i, i + 2), ['-collect-test-diagnostics', 'never'], 'sem o simctl diagnose, que segura a rodada até 10 min');
+  assert.deepEqual(args.slice(args.indexOf('-destination'), args.indexOf('-destination') + 2), ['-destination', 'platform=iOS Simulator,id=C']);
+  assert.ok(args.includes('-only-testing:CusttaTests'));
 });

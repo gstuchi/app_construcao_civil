@@ -14,8 +14,12 @@ const require = createRequire(import.meta.url);
 const { ICONES } = require('../icons.js');
 const PASTA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../app-ios/Custta/Assets.xcassets/Icones');
 
-/** Ícones que as telas usam: abas, fases da obra, sair, olho da senha e a seta da dica. */
-export const USADOS = ['predio', 'engrenagem', 'sair', 'guindaste', 'casa', 'check', 'olho', 'olhoFechado', 'setaBaixo'];
+/** Ícones que as telas usam: abas, fases da obra, sair, olho da senha e a seta da dica; na etapa 2, os dos 21 tópicos
+    (TOPICOS do calc.js) e o "etiqueta" dos tópicos próprios, o calendário do "A vencer", o cartão do pagamento, o lápis
+    de editar, o acordo da venda, o voltar das fases e as notas da obra sem gastos. */
+export const USADOS = ['predio', 'engrenagem', 'sair', 'guindaste', 'casa', 'check', 'olho', 'olhoFechado', 'setaBaixo',
+  'mapa', 'documento', 'tijolos', 'pa', 'vergalhao', 'raio', 'gota', 'porta', 'ladrilho', 'rolo', 'piscina', 'arvore', 'capacete',
+  'caixa', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas'];
 
 const info = { author: 'xcode', version: 1 };
 

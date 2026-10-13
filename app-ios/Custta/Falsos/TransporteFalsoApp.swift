@@ -4,31 +4,53 @@ import CusttaNucleo
 
 /// Transporte falso dos testes (só Debug): entrega um blob fixo e confirma gravações depois de
 /// 300 ms (nunca, sem rede). `falhaDeLeitura` faz a escuta falhar com esse código antes do primeiro
-/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido).
+/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido). `apagarRemoto`
+/// simula outro aparelho apagando um gasto: um segundo snapshot, sem ele, depois de alguns segundos
+/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>).
 @MainActor
 final class TransporteFalsoApp: TransporteDados {
     private final class Nada: Cancelavel { func cancelar() {} }
     private let dados: ValorJSON?
     private let semRede: Bool
     private let falhaDeLeitura: String?
+    private let apagarRemoto: (obra: String, gasto: String, depois: Double)?
     /// Quantas gravações chegaram (os testes conferem que abrir o app não grava nada).
     private(set) var gravacoes = 0
 
-    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil) {
+    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil,
+         apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil) {
         self.dados = dados
         self.semRede = semRede
         self.falhaDeLeitura = falhaDeLeitura
+        self.apagarRemoto = apagarRemoto
     }
 
     func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
                  aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
-        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura
+        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
             if let falha { aoFalhar(falha); return }
             aoReceber(Instantaneo(dados: dados, doCache: semRede, gravacaoPendente: false))
+            guard let remoto else { return }
+            try? await Task.sleep(for: .seconds(remoto.depois))
+            aoReceber(Instantaneo(dados: Self.sem(remoto.gasto, naObra: remoto.obra, em: dados), doCache: semRede, gravacaoPendente: false))
         }
         return Nada()
+    }
+
+    /// O blob sem um gasto, como outro aparelho o gravaria.
+    private static func sem(_ gastoId: String, naObra obraId: String, em dados: ValorJSON?) -> ValorJSON? {
+        guard case .objeto(var raiz)? = dados, case .lista(let obras)? = raiz["obras"] else { return dados }
+        raiz["obras"] = .lista(obras.map { o in
+            guard case .objeto(var obra) = o, obra["id"] == .texto(obraId), case .lista(let gastos)? = obra["gastos"] else { return o }
+            obra["gastos"] = .lista(gastos.filter { g in
+                if case .objeto(let campos) = g { return campos["id"] != .texto(gastoId) }
+                return true
+            })
+            return .objeto(obra)
+        })
+        return .objeto(raiz)
     }
 
     func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void) {
@@ -74,7 +96,8 @@ enum DadosDeExemplo {
 
     /// As três obras do mockup aprovado (Casa Alphaville, Sobrado Granja Viana e Casa Tamboré 4), com as
     /// datas contadas a partir de hoje: a lista mostra sempre os números do mockup (14 meses, R$ 842 mil,
-    /// R$ 928 mil corrigido, 70% do orçamento…), para comparar o simulador com ele lado a lado.
+    /// R$ 927 mil corrigido, 70% do orçamento…), para comparar o simulador com ele lado a lado. A Casa
+    /// Alphaville tem os 46 lançamentos da tela da obra do mockup da etapa 2 (VitrineDaObra.swift).
     static func vitrine(hoje: Date = .now) -> ValorJSON {
         let calendario = Calendar(identifier: .gregorian)
         func data(_ mesesAtras: Int) -> ValorJSON {
@@ -94,9 +117,9 @@ enum DadosDeExemplo {
         }
         return .objeto([
             "obras": .lista([
-                obra("v1", "Casa Alphaville", "construcao", inicio: 14,
-                     gastos: [(14, 92_000), (13, 150_000), (11, 230_000), (8, 190_000), (5, 180_000)],
-                     extra: ["orcamento": .objeto(["modo": .texto("total"), "total": .numero(1_200_000)])]),
+                obra("v1", "Casa Alphaville", "construcao", inicio: 14, gastos: [],
+                     extra: ["orcamento": .objeto(["modo": .texto("total"), "total": .numero(1_200_000)]),
+                             "valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300), "gastos": gastosDaVitrine(hoje: hoje)]),
                 obra("v2", "Sobrado Granja Viana", "pronta", inicio: 23,
                      gastos: [(23, 250_000), (21, 330_000), (18, 310_000), (15, 280_000), (12, 210_000)]),
                 obra("v3", "Casa Tamboré 4", "vendida", inicio: 20,

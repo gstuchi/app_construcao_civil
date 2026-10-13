@@ -29,7 +29,8 @@ enum Composicao {
         #endif
         let rede = MonitorDeRede()
         let conta = ContaFirebase(app: app, banco: banco, online: { rede.online })
-        let sincronizador = Sincronizador(transporte: TransporteFirebase(banco: banco), relogio: RelogioDoSistema(), online: rede.online)
+        let sincronizador = Sincronizador(transporte: TransporteFirebase(banco: banco), relogio: RelogioDoSistema(), online: rede.online,
+                                          marca: MarcaNasPreferencias())
         return ModeloApp(conta: conta, sincronizador: sincronizador, rede: rede)
     }
 

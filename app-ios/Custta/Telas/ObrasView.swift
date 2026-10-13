@@ -1,10 +1,16 @@
 import SwiftUI
 import CusttaNucleo
 
-/* Obras, só leitura na etapa 1: aviso de e-mail não confirmado, "N obras", um cartão de vidro por obra
-   (fase, meses, orçamento e total gasto, na ordem e com os totais do site) e o comparativo entre obras.
-   Antes de carregar: carregando, ou o erro de leitura explicando que nada foi alterado. */
+/// Para onde se vai dentro de Obras (o caminho do NavigationStack, que mora no PrincipalView).
+enum RotaDeObras: Hashable, Sendable {
+    case obra(String)
+}
+
+/* Obras: aviso de e-mail não confirmado, "N obras", um cartão de vidro por obra (fase, meses, orçamento e total
+   gasto, na ordem e com os totais do site), que abre a obra, e o comparativo entre obras. Antes de carregar:
+   carregando, ou o erro de leitura explicando que nada foi alterado. */
 struct ObrasView: View {
+    @Binding var caminho: [RotaDeObras]
     @Environment(ModeloApp.self) private var modelo
     @State private var confirmarSaida = false
     #if DEBUG
@@ -17,7 +23,7 @@ struct ObrasView: View {
         let sinc = modelo.sincronizador
         let obras = obrasOrdenadas(sinc.estado.obras)
         let hoje = dataLocalISO(.now, fuso: .current)
-        NavigationStack {
+        NavigationStack(path: $caminho) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     if let usuario = modelo.usuario, usuario.precisaConfirmarEmail {
@@ -41,7 +47,10 @@ struct ObrasView: View {
                                        identificador: "obrasVazio") { EmptyView() }
                     } else {
                         ContagemDeObras(quantidade: obras.count)
-                        ForEach(obras, id: \.id) { obra in CartaoDeObra(obra: obra, hoje: hoje) }
+                        ForEach(obras, id: \.id) { obra in
+                            NavigationLink(value: RotaDeObras.obra(obra.id)) { CartaoDeObra(obra: obra, hoje: hoje) }
+                                .buttonStyle(.plain)
+                        }
                         let comparativo = comparativoEntreObras(obras, taxa: sinc.estado.config.taxaMensal, hoje: hoje)
                         if !comparativo.isEmpty { PainelComparativo(linhas: comparativo).padding(.top, 2) }
                     }
@@ -65,6 +74,11 @@ struct ObrasView: View {
             .navigationTitle("Obras")
             .toolbar { BarraDoApp(confirmarSaida: $confirmarSaida) }
             .confirmaSaida($confirmarSaida)
+            .navigationDestination(for: RotaDeObras.self) { rota in
+                switch rota {
+                case .obra(let id): ObraView(id: id, caminho: $caminho)
+                }
+            }
         }
     }
 }
@@ -88,11 +102,9 @@ struct ContagemDeObras: View {
     }
 }
 
-/// Uma obra: ícone da fase, nome, etiqueta, meses, orçamento e total gasto. O valor de acessibilidade
-/// ("Em construção · 14 meses, total gasto R$ …, 70% do orçamento") é contrato com a conferência cruzada.
-/// Sem a seta ">" do mockup até a etapa 2 (decisão do Giovani em 08/10): tocar na obra ainda não abre
-/// nada. A seta volta com a tela da obra, no fim da linha e, na letra grande, ao lado do nome
-/// (`chevron.right` na cor secundária do vidro), e a margem da direita volta a 14 pt.
+/// Uma obra: ícone da fase, nome, etiqueta, meses, orçamento, total gasto e a seta ">" de quem abre (no fim da
+/// linha e, na letra grande, ao lado do nome). O valor de acessibilidade ("Em construção · 14 meses, total gasto
+/// R$ …, 70% do orçamento") é contrato com a conferência cruzada.
 struct CartaoDeObra: View {
     let obra: Obra
     let hoje: String
@@ -108,7 +120,7 @@ struct CartaoDeObra: View {
         Group {
             if tamanho.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 6) {
-                    nome
+                    HStack(alignment: .firstTextBaseline) { nome; Spacer(minLength: 8); seta }
                     EtiquetaDeFase(fase: obra.fase)
                     tempo(meses)
                     if let orcamento { linhaDoOrcamento(orcamento) }
@@ -134,10 +146,12 @@ struct CartaoDeObra: View {
                         .font(.body.weight(.semibold))
                         .monospacedDigit()
                         .foregroundStyle(paleta.cor(.texto))
+                    seta
                 }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.leading, 16)
+        .padding(.trailing, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .superficie(.conteudo, em: .rect(cornerRadius: 22))
@@ -149,6 +163,14 @@ struct CartaoDeObra: View {
 
     private var nome: some View {
         Text(obra.nome).font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+    }
+
+    private var seta: some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(paleta.cor(vidro.secundario))
+            .accessibilityHidden(true)
+            .foraDoLaudo()
     }
 
     private func tempo(_ meses: String) -> some View {
@@ -288,13 +310,15 @@ struct CartaoDeEstado<Acao: View>: View {
     let titulo: String
     let texto: String?
     let identificador: String
+    /// O ícone do alto: o guindaste nas Obras; as notas na obra sem gastos (mockup da etapa 2).
+    var icone = "Icones/guindaste"
     @ViewBuilder let acao: () -> Acao
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(decorative: "Icones/guindaste")
+            Image(decorative: icone)
                 .resizable().frame(width: 36, height: 36)
                 .foregroundStyle(paleta.cor(.texto))
                 .accessibilityHidden(true)

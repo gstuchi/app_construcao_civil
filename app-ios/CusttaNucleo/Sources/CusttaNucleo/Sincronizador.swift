@@ -15,9 +15,11 @@ import Observation
      normalização e só trocam o estado se o conteúdo mudou.
 
    Como o site, nunca grava antes de ver os dados: até chegar um snapshot do servidor, ou do
-   cache com o documento, `salvar` recusa com "nao-carregado". Uma regra a mais que o site: volta
-   a recusar se chegar um documento que não deu para ler inteiro ("formato-desconhecido"). Sem
-   isso, uma edição regravaria o documento inteiro por cima do que o app não viu. */
+   cache com o documento, `salvar` recusa com "nao-carregado". Duas regras a mais que o site:
+   volta a recusar se chegar um documento que não deu para ler inteiro ("formato-desconhecido"),
+   porque uma edição regravaria o documento inteiro por cima do que o app não viu; e o cache sem
+   documento vale quando a marca diz que o servidor já respondeu a esta conta neste aparelho
+   (a conta vazia que fechou o app sem gravar e abriu sem rede). A marca some junto com o cache. */
 
 public enum OrigemErro: String, Sendable {
     case escrita, leitura
@@ -57,6 +59,14 @@ public struct Instantaneo: Sendable {
     func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void)
     /// Conclui quando tudo o que o SDK guardou subiu (inclusive gravações de antes desta sessão).
     func aguardarGravacoesPendentes(concluir: @escaping @MainActor (String?) -> Void)
+}
+
+/// Marca, por conta, de que o servidor já respondeu neste aparelho que a conta não tem documento (com documento, o cache
+/// dele basta). Mora fora do cache do banco e é apagada junto com ele: com a marca, o cache sem documento quer dizer
+/// conta vazia, e não aparelho novo.
+@MainActor public protocol MarcaDoServidor: AnyObject {
+    func respondeu(uid: String) -> Bool
+    func marcar(uid: String)
 }
 
 @MainActor public protocol Relogio: AnyObject {
@@ -130,6 +140,7 @@ public final class Sincronizador {
 
     @ObservationIgnored private let transporte: TransporteDados
     @ObservationIgnored private let relogio: Relogio
+    @ObservationIgnored private let marca: MarcaDoServidor?
     @ObservationIgnored private var uid: String?
     @ObservationIgnored private var online: Bool
     @ObservationIgnored private var pendente: ValorJSON?
@@ -146,9 +157,10 @@ public final class Sincronizador {
     @ObservationIgnored private var pendenciaCache = false
     @ObservationIgnored private var ultimoAvisoRaro: Int64?
 
-    public init(transporte: TransporteDados, relogio: Relogio, online: Bool = true) {
+    public init(transporte: TransporteDados, relogio: Relogio, online: Bool = true, marca: MarcaDoServidor? = nil) {
         self.transporte = transporte
         self.relogio = relogio
+        self.marca = marca
         self.online = online
         self.estadoSinc = online ? .ocioso : .offline
     }
@@ -185,6 +197,15 @@ public final class Sincronizador {
     /// versão (ou uma mais nova); lança ErroSinc no erro terminal, se a conta saiu ("cancelled") ou
     /// se ainda não deu para ver os dados desta conta ("nao-carregado").
     public func salvar(_ novo: Estado) async throws {
+        try await aplicar(novo).confirmada()
+    }
+
+    /// O começo do `salvar`, sem esperar: troca o estado na hora e entrega o documento para gravar. Quem chama
+    /// dentro de um `withAnimation` anima a mudança na mesma transação (o apagar e o lançar das telas). Lança na hora
+    /// o que o `salvar` lançaria antes de gravar ("cancelled", "nao-carregado"); a resposta do servidor chega pela
+    /// `Gravacao`.
+    @discardableResult
+    public func aplicar(_ novo: Estado) throws -> Gravacao {
         guard uid != nil else {
             avisar(.naoSalvou(codigo: "cancelled", terminal: true))
             throw ErroSinc(codigo: "cancelled")
@@ -195,17 +216,15 @@ public final class Sincronizador {
         let tamanho = tamanhoBlob(blob)
         if tamanho >= avisoBlob && tamanho <= limiteBlob && !avisouTamanho { avisouTamanho = true; avisar(.pertoDoLimite) }
         if tamanho < avisoBlob { avisouTamanho = false }
-        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
-            esperas.append { codigo in
-                if let codigo { c.resume(throwing: ErroSinc(codigo: codigo)) } else { c.resume() }
-            }
-            pendente = blob
-            sujo = true
-            if estadoSinc.ehErro { tentativa = 0 }
-            repeticao?.cancelar(); repeticao = nil
-            publicar(online ? .salvando : .offline)
-            enviar()
-        }
+        let gravacao = Gravacao()
+        esperas.append { codigo in gravacao.concluir(codigo) }
+        pendente = blob
+        sujo = true
+        if estadoSinc.ehErro { tentativa = 0 }
+        repeticao?.cancelar(); repeticao = nil
+        publicar(online ? .salvando : .offline)
+        enviar()
+        return gravacao
     }
 
     /// Toque no indicador de erro: reabre a leitura que falhou e reenvia o que está pendente.
@@ -332,7 +351,9 @@ public final class Sincronizador {
         guard !sujo else { return }          // edição desta sessão ainda não confirmada vence o eco
         let novo = normaliza(i.dados)
         if !mesmoConteudo(novo, estado.arvore) { estado = Estado(normalizado: novo) }
-        if !i.doCache || i.dados != nil { dadosCarregados = true }
+        if !i.doCache, i.dados == nil, let uid { marca?.marcar(uid: uid) }
+        let contaVaziaJaVista = uid.map { marca?.respondeu(uid: $0) ?? false } ?? false
+        if !i.doCache || i.dados != nil || contaVaziaJaVista { dadosCarregados = true }
     }
 
     /* ---------- estado e avisos ---------- */
@@ -349,6 +370,36 @@ public final class Sincronizador {
             ultimoAvisoRaro = agora
         }
         aoAvisar?(aviso)
+    }
+}
+
+/// A resposta do servidor a uma gravação já aplicada: chega quando ele confirma esta versão (ou uma mais nova) e falha no
+/// erro terminal ou se a conta saiu ("cancelled"). Quem não espera não perde nada: o estado já foi trocado e a fila segue.
+@MainActor public final class Gravacao {
+    /// nil enquanto espera; depois, o código do erro (nil dentro) ou a confirmação.
+    private var resultado: String??
+    private var esperando: [CheckedContinuation<Void, Error>] = []
+
+    init() {}
+
+    /// O servidor confirmou.
+    public var confirmou: Bool { resultado == .some(nil) }
+
+    func concluir(_ codigo: String?) {
+        guard resultado == nil else { return }
+        resultado = .some(codigo)
+        let todos = esperando
+        esperando = []
+        for c in todos { if let codigo { c.resume(throwing: ErroSinc(codigo: codigo)) } else { c.resume() } }
+    }
+
+    /// Espera a resposta do servidor.
+    public func confirmada() async throws {
+        if let r = resultado {
+            if let codigo = r { throw ErroSinc(codigo: codigo) }
+            return
+        }
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in esperando.append(c) }
     }
 }
 

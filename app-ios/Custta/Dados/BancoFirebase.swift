@@ -162,20 +162,27 @@ final class BancoFirebase {
         let db = firestore()
         try await db.terminate()
         try await apagar(db)
-        desmarcarLimpeza()
+        cacheApagado()
     }
 
     private func terminarLimpezaInterrompida() async {
         registro.notice("limpeza do cache interrompida encontrada na abertura; terminando antes de ler")
         do {
             try await apagar(firestore())      // instância nova, ainda sem uso
-            desmarcarLimpeza()
+            cacheApagado()
         } catch {
             registro.error("limpeza retomada falhou; bloqueado até tentar de novo: \(String(describing: error), privacy: .public)")
             bloqueado = true
             return
         }
         liberar()
+    }
+
+    /// O cache foi apagado: some a marca "o servidor já respondeu" de todas as contas (o aparelho deixou de ter o que ela
+    /// garantia) e só depois a da limpeza; se o app fechar no meio, a abertura seguinte limpa de novo e apaga as duas.
+    private func cacheApagado() {
+        preferencias.removeObject(forKey: MarcaNasPreferencias.chave)
+        desmarcarLimpeza()
     }
 
     private func liberar() {

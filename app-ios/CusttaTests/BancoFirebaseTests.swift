@@ -25,6 +25,22 @@ struct BancoFirebaseTests {
         #expect(!banco.limpezaPendente, "a abertura terminou a limpeza e tirou a marca")
     }
 
+    @Test func apagarOCacheLevaJuntoAMarcaDoServidor() async throws {
+        // A marca diz que o cache sem documento é conta vazia; sem o cache, ela mentiria.
+        let nome = "marca-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let preferencias = try #require(UserDefaults(suiteName: nome))
+        let marca = MarcaNasPreferencias(preferencias: preferencias)
+        marca.marcar(uid: "u1")
+        marca.marcar(uid: "u2")
+        #expect(marca.respondeu(uid: "u1") && marca.respondeu(uid: "u2") && !marca.respondeu(uid: "u3"))
+        let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080), preferencias: preferencias)
+        banco.marcarLimpeza()
+        try await banco.limparCache()
+        #expect(!marca.respondeu(uid: "u1") && !marca.respondeu(uid: "u2"), "sem o cache, nenhuma conta fica marcada")
+        #expect(!banco.limpezaPendente)
+    }
+
     @Test func limpezaRetomadaApagaOCacheDeVerdade() async throws {
         // O app fechou no meio de um "sair": gravação só no cache (sem rede), instância encerrada e a marca de pé.
         let nome = "retomada-\(UUID().uuidString.prefix(8).lowercased())"

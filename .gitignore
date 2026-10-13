@@ -17,6 +17,8 @@ notificacoes/node_modules/
 *.pem
 *.key
 vapid-keys.txt
+# Cópia das obras exportada pelo site (Ajustes → Seus dados → Exportar dados completos): dados pessoais, para a conta de teste
+custta-*.json
 
 # Assinatura de app iOS
 *.p8

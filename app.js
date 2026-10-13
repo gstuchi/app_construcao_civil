@@ -80,42 +80,6 @@ const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 // String() antes do replace: campo numérico do blob (areaM2, valor) também passa por aqui
 function escapeHtml(s){ return (s==null||s===false ? '' : String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const normalizaDescricao = s => OBRA_CALC.semAcento(String(s || '')).trim().replace(/\s+/g, ' ');
-function distanciaEdicao(a,b){
-  if(a===b) return 0;
-  if(!a.length) return b.length;
-  if(!b.length) return a.length;
-  let ant=Array.from({length:b.length+1},(_,i)=>i);
-  for(let i=1;i<=a.length;i++){
-    const atual=[i];
-    for(let j=1;j<=b.length;j++) atual[j]=Math.min(atual[j-1]+1,ant[j]+1,ant[j-1]+(a[i-1]===b[j-1]?0:1));
-    ant=atual;
-  }
-  return ant[b.length];
-}
-function sugestoesDescricao(obraId, topicoId, termo, ignorarId){
-  const busca=normalizaDescricao(termo);
-  if(!busca) return [];
-  const unicas=new Map();
-  db.obras.forEach(o=>o.gastos.forEach(g=>{
-    if(o.id===obraId && g.id===ignorarId) return;
-    const texto=String(g.descricao||'').trim(), chave=normalizaDescricao(texto);
-    if(!chave) return;
-    const item=unicas.get(chave)||{texto,chave,vezes:0,mesmaObra:false,mesmoTopico:false,ultima:''};
-    item.vezes++;
-    if(o.id===obraId) item.mesmaObra=true;
-    if(g.topico===topicoId) item.mesmoTopico=true;
-    if((g.data||'')>=item.ultima){ item.ultima=g.data||''; item.texto=texto; }
-    unicas.set(chave,item);
-  }));
-  return [...unicas.values()].filter(x=>x.chave.includes(busca)
-      || (busca.length>=4 && Math.abs(x.chave.length-busca.length)<=2 && distanciaEdicao(x.chave,busca)<=2))
-    .sort((a,b)=>{
-      const sa=(a.mesmoTopico?100:0)+(a.mesmaObra?40:0)+(a.chave.startsWith(busca)?25:0)+Math.min(a.vezes,10);
-      const sb=(b.mesmoTopico?100:0)+(b.mesmaObra?40:0)+(b.chave.startsWith(busca)?25:0)+Math.min(b.vezes,10);
-      return sb-sa || b.ultima.localeCompare(a.ultima) || a.texto.localeCompare(b.texto,'pt-BR');
-    }).slice(0,5);
-}
 function emptyBlock(icon,msg){ return `<div class="empty"><div class="big">${icon}</div><p>${msg}</p></div>`; }
 // KPIs de milhao estouram a largura do card (overflow:hidden corta o numero).
 // Reduz a fonte do numero so o quanto precisar pra caber; grande quando cabe.
@@ -795,8 +759,9 @@ function gastoRow(o, g, opts){
         <button class="layout-19 btn ghost" id="dCancel">Cancelar</button>
       </div>`);
     $('#dCancel').onclick = fechar;
-    $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); fechar(); };
-    $('#dTodas').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(); renderAll(); fechar(); };
+    // relê a obra no toque: um snapshot com a folha aberta troca os objetos do db, e a exclusão iria para uma cópia velha
+    $('#dUma').onclick = ()=>{ const atual = obraById(o.id); if(atual){ atual.gastos = atual.gastos.filter(x=>x.id!==g.id); save(); renderAll(); } fechar(); };
+    $('#dTodas').onclick = ()=>{ const atual = obraById(o.id); if(atual){ atual.gastos = atual.gastos.filter(x=>x.grupoId!==g.grupoId); save(); renderAll(); } fechar(); };
   };
   li.appendChild(del);
   return li;
@@ -821,13 +786,10 @@ function formVenda(o){
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
-    if(valor<=0){ $('#fVal').focus(); return; }
     const data = $('#fData').value;
-    if(!OBRA_CALC.dataIgualOuDepois(data, o.dataInicio) || !OBRA_CALC.dataIgualOuDepois(todayISO(), data)){
-      toast('Data da venda precisa ficar entre o início da obra e hoje');
-      $('#fData').focus();
-      return;
-    }
+    const erro = OBRA_DADOS.conferirVenda(valor, data, o.dataInicio, todayISO());
+    if(erro?.erro==='valor'){ $('#fVal').focus(); return; }
+    if(erro?.erro==='data'){ toast(erro.mensagem); $('#fData').focus(); return; }
     const oo = obraById(o.id); if(!oo) return;
     oo.venda = { valor, data };
     oo.fase = 'vendida';
@@ -843,23 +805,19 @@ function formEditarObra(o){
     <div class="field"><label>Valor estimado de venda (opcional)</label>
       <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="field"><label>Área construída em m² (opcional)</label>
-      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(o.areaM2||'')}" autocomplete="off"></div>
+      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(String(o.areaM2||'').replace('.',','))}" autocomplete="off"></div>
     <div class="sheet-actions">
       <button class="layout-42 btn ghost" id="cDel">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
   maskMoney('#fEst');
   $('#cSave').onclick = ()=>{
-    const nome = $('#fNome').value.trim();
-    if(!nome){ $('#fNome').focus(); return; }
-    if(!textoValido(nome, 'nome', $('#fNome'))) return;
-    const oo = obraById(o.id); if(!oo) return;
-    oo.nome = nome;
-    oo.dataInicio = $('#fData').value || oo.dataInicio;
-    const est = parseNum($('#fEst').value);
-    oo.valorEstimadoVenda = est>0 ? est : null;
-    const area = parseNum($('#fArea').value);
-    oo.areaM2 = area>0 ? area : null;
+    const campos = { nome:$('#fNome').value.trim(), dataInicio:$('#fData').value,
+      valorEstimadoVenda:parseNum($('#fEst').value), areaM2:parseNum($('#fArea').value) };
+    const erro = OBRA_DADOS.conferirObra(campos, false);
+    if(erro){ if(erro.mensagem) toast(erro.mensagem, "erro"); $('#fNome').focus(); return; }
+    const i = db.obras.findIndex(x=>x.id===o.id); if(i<0) return;
+    db.obras[i] = OBRA_DADOS.obraEditada(db.obras[i], campos);
     save(); closeSheet(); renderAll();
   };
   $('#cDel').onclick = async()=>{
@@ -955,7 +913,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const pintarSugestoes = ()=>{
     const lista=$('#descSugestoes'), campo=$('#fDesc');
     const obraIdAtual=oFix ? oFix.id : ($('#fObra')?.value||'');
-    const sugestoes=sugestoesDescricao(obraIdAtual,top,campo.value,isEdit?gasto.id:null);
+    const sugestoes=OBRA_CALC.sugestoesDescricao(db.obras,obraIdAtual,top,campo.value,isEdit?gasto.id:null);
     lista.innerHTML='';
     sugestoes.forEach(s=>{
       const b=el('button','desc-sugestao'); b.type='button'; b.setAttribute('role','option');
@@ -994,11 +952,8 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
 
   let pagto = isEdit ? (gasto.pagamento || 'pix') : 'pix';
   const datasPagamento={pix:$('#fData').value,cartao:OBRA_CALC.addMesesClampado($('#fData').value,1)};
-  const lerTaxaCartao=()=>{
-    const texto=($('#fJuros')?.value||'').trim();
-    return /^(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(texto) ? Number(texto.replace(',','.')) : NaN;
-  };
-  const calcularCartao=()=>OBRA_CALC.parcelamentoCartao(parseNum($('#fVal').value),Number($('#fParc')?.value),lerTaxaCartao(),$('#fData').value);
+  const calcularCartao=()=>OBRA_CALC.parcelamentoCartao(parseNum($('#fVal').value),Number($('#fParc')?.value),
+    OBRA_CALC.lerTaxaCartao($('#fJuros')?.value),$('#fData').value);
   const atualizarCartao=()=>{
     if(isEdit) return;
     $('#fDataLabel').textContent=pagto==='cartao'?'Primeiro vencimento':'Data';
@@ -1038,24 +993,17 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   if(isEdit) $('#fVal').focus();
   $('#cCancel').onclick = fechar;
   $('#cSave').onclick = ()=>{
-    let valor = parseNum($('#fVal').value);
-    if(!Number.isFinite(valor) || valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
-    const desc = $('#fDesc').value.trim();
-    if(!textoValido(desc, 'descricao', $('#fDesc'))) return;
+    // regras puras no dados.js e no calc.js, as mesmas que o app nativo confere pelos vetores
+    const entrada = { valor:parseNum($('#fVal').value), topico:top, descricao:$('#fDesc').value.trim(), data:$('#fData').value,
+      pagamento:pagto, parcelas:parseInt($('#fParc')?.value,10)||1, juros:OBRA_CALC.lerTaxaCartao($('#fJuros')?.value) };
+    const r = OBRA_DADOS.conferirGasto(entrada, isEdit ? gasto : null, todayISO());
+    if(r.erro==='valor'){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
+    if(r.erro==='descricao'){ toast(r.mensagem, "erro"); $('#fDesc').focus(); return; }
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
-    const data0 = $('#fData').value || (isEdit ? gasto.data : todayISO());
-    const nParc = !isParcela && pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
-    const cartao = !isEdit && pagto==='cartao' ? calcularCartao() : null;
-    if(!isEdit && pagto==='cartao' && !cartao){
-      toast('Confira valor, parcelas, data e taxa de juros');
-      $('#fJuros').focus(); return;
-    }
-    if(cartao) valor=cartao.totalCompra;
-    const assinatura=[o.id,top,normalizaDescricao(desc),Math.round(valor*100),data0,nParc,cartao?.taxaMensal].join('|');
-    const pareceDuplicado=desc && o.gastos.some(x=>x.id!==(isEdit&&gasto.id)
-      && normalizaDescricao(x.descricao)===normalizaDescricao(desc)
-      && Math.round(x.valor*100)===Math.round(valor*100) && x.data===data0);
+    if(r.erro==='cartao'){ toast(r.mensagem); $('#fJuros').focus(); return; }
+    const assinatura=[o.id,top,OBRA_CALC.normalizaDescricao(entrada.descricao),Math.round(r.valor*100),r.data,r.parcelas,r.cartao?.taxaMensal].join('|');
+    const pareceDuplicado=OBRA_CALC.gastoRepetido(o, entrada.descricao, r.valor, r.data, isEdit ? gasto.id : null);
     if(pareceDuplicado && duplicadoConfirmado!==assinatura){
       duplicadoConfirmado=assinatura;
       $('#dupWarning').textContent='Este gasto parece já lançado: mesma descrição, valor e data. Confira ou toque novamente para salvar mesmo assim.';
@@ -1064,30 +1012,10 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       return;
     }
     if(isEdit){
-      const g = o.gastos.find(x=>x.id===gasto.id); if(!g) return;
-      g.valor = valor; g.topico = top;
-      g.descricao = desc;
-      g.data = data0;
-      if(!isParcela) g.pagamento = pagto;
-      if(pagto!=='cartao') delete g.jurosCartao;
+      const i = o.gastos.findIndex(x=>x.id===gasto.id); if(i<0) return;
+      o.gastos[i] = OBRA_DADOS.gastoEditado(o.gastos[i], entrada, r);
     } else {
-      const dadosCartao = cartao ? { jurosCartao:{taxaMensal:cartao.taxaMensal,valorCompra:cartao.valorCompra,
-        nParcelas:cartao.nParcelas,totalCompra:cartao.totalCompra,jurosCompra:cartao.jurosCompra} } : {};
-      if(nParc > 1){
-        const grupoId = uid();
-        const parcelas = cartao.parcelas;
-        if(!parcelas.length){
-          toast('O valor precisa ter pelo menos um centavo por parcela');
-          $('#fParc').focus();
-          return;
-        }
-        parcelas.forEach((p,i)=>{
-          o.gastos.push({ id:uid(), valor:p.valor, topico:top, descricao:desc,
-            data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc}, ...dadosCartao });
-        });
-      } else {
-        o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto, ...dadosCartao });
-      }
+      o.gastos.push(...OBRA_DADOS.gastosLancados(entrada, r, uid));
     }
     salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso')
       .then(()=>OBRA_NATIVO.vibrar(), ()=>{}); // vibra só com o servidor confirmando
@@ -1840,6 +1768,9 @@ function formOrcamento(obraId){
 
 function formNovaObra(){
   if(!dadosCarregados){ avisaNaoCarregado(); return; }
+  // todas as entradas passam por aqui (+, "+ Nova obra" e o + sem obra aberta): a 301ª obra as rules recusam
+  const limite = OBRA_DADOS.avisoLimiteDeObras(db.obras.length);
+  if(limite){ OBRA_CONFIRM.avisar(`${limite.titulo}. ${limite.texto}`); return; }
   openSheet(`
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>
@@ -1864,26 +1795,18 @@ function formNovaObra(){
   });
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
-    const nome = $('#fNome').value.trim();
-    if(!nome){ $('#fNome').focus(); return; }
-    if(!textoValido(nome, 'nome', $('#fNome'))) return;
-    const est = parseNum($('#fEst').value);
-    const area = parseNum($('#fArea').value);
-    if(!(area>0)){
+    const campos = { nome:$('#fNome').value.trim(), dataInicio:$('#fData').value, valorEstimadoVenda:parseNum($('#fEst').value),
+      areaM2:parseNum($('#fArea').value), orcamento:parseNum($('#fOrc').value) };
+    const erro = OBRA_DADOS.conferirObra(campos, true);
+    if(erro?.erro==='nome'){ if(erro.mensagem) toast(erro.mensagem, "erro"); $('#fNome').focus(); return; }
+    if(erro?.erro==='area'){
+      $('#fAreaErro').textContent = erro.mensagem;
       $('#fAreaErro').classList.remove('hidden');
       $('#fArea').setAttribute('aria-invalid','true');
       $('#fArea').focus();
       return;
     }
-    const o = {
-      id: uid(), nome, fase: 'construcao',
-      dataInicio: $('#fData').value || todayISO(),
-      valorEstimadoVenda: est > 0 ? est : null,
-      areaM2: area,
-      gastos: [],
-    };
-    const orcTotal = parseNum($('#fOrc').value);
-    if(orcTotal > 0) o.orcamento = { modo:'total', total:orcTotal };
+    const o = OBRA_DADOS.obraNova(campos, uid(), todayISO());
     db.obras.push(o); save(); closeSheet(); renderAll(); openObra(o.id);
   };
 }

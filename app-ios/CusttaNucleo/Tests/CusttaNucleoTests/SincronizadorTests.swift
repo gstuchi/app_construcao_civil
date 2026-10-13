@@ -27,6 +27,32 @@ struct SincronizadorEscritaTests {
         #expect(!s.temPendencia)
     }
 
+    @Test func aplicarTrocaOEstadoNaHoraEAConfirmacaoChegaDepois() async throws {
+        let s = montar(), t = transporte
+        let g = try s.aplicar(Estado.de(blobCom(["Nova"])))
+        #expect(s.estado.obras.map(\.nome) == ["Nova"], "o estado troca antes de qualquer espera: a tela anima na mesma transação")
+        #expect(t.gravacoes.count == 1 && !g.confirmou)
+        t.gravacoes[0].concluir(nil)
+        try await g.confirmada()
+        #expect(g.confirmou)
+    }
+
+    @Test func aplicarRecusaNaHoraAntesDeVerOsDados() {
+        let t = TransporteFalso()
+        let s = Sincronizador(transporte: t, relogio: RelogioFalso())
+        s.iniciar(uid: "u1")
+        #expect(throws: ErroSinc(codigo: "nao-carregado")) { try s.aplicar(Estado.de(blobCom(["Nova"]))) }
+        #expect(t.gravacoes.isEmpty && s.estado == .vazio)
+    }
+
+    @Test func aplicarComErroTerminalFalhaNaConfirmacao() async {
+        let s = montar(), t = transporte
+        let g = try! s.aplicar(Estado.de(blobCom(["Nova"])))
+        t.gravacoes[0].concluir("permission-denied")
+        await #expect(throws: ErroSinc(codigo: "permission-denied")) { try await g.confirmada() }
+        #expect(!g.confirmou)
+    }
+
     @Test func semRedeMostraSemConexaoEEnviaMesmoAssim() async throws {
         let s = montar(online: false)
         let tarefa = Task { try await s.salvar(Estado.de(blobCom(["Casa"]))) }
@@ -353,6 +379,8 @@ struct CenarioDeAbertura: Sendable, CustomTestStringConvertible {
     let nome: String
     let doCache: Bool
     let comDocumento: Bool
+    /// A marca "o servidor já respondeu" desta conta, de uma abertura anterior neste aparelho.
+    var servidorJaRespondeu = false
     let podeGravar: Bool
     var testDescription: String { nome }
 }
@@ -361,6 +389,8 @@ private let cenariosDeAbertura = [
     CenarioDeAbertura(nome: "sem rede e sem dados no aparelho", doCache: true, comDocumento: false, podeGravar: false),
     CenarioDeAbertura(nome: "com rede e conta ainda sem documento", doCache: false, comDocumento: false, podeGravar: true),
     CenarioDeAbertura(nome: "sem rede e com o blob no cache", doCache: true, comDocumento: true, podeGravar: true),
+    CenarioDeAbertura(nome: "sem rede, conta vazia que o servidor já respondeu", doCache: true, comDocumento: false,
+                      servidorJaRespondeu: true, podeGravar: true),
 ]
 
 /* Sem a guarda, `salvar` ficaria esperando uma confirmação que o transporte falso nunca dá. As esperas
@@ -372,7 +402,9 @@ struct SincronizadorCarregamentoTests {
     @Test(arguments: cenariosDeAbertura)
     func salvarSoDepoisDeVerOsDados(_ c: CenarioDeAbertura) async {
         let transporte = TransporteFalso()
-        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), online: !c.doCache)
+        let marca = MarcaFalsa()
+        if c.servidorJaRespondeu { marca.marcar(uid: "u1") }
+        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), online: !c.doCache, marca: marca)
         s.iniciar(uid: "u1")
         transporte.chega(c.comDocumento ? blobCom(["Casa"]) : nil, doCache: c.doCache)
         #expect(s.dadosCarregados == c.podeGravar)
@@ -390,6 +422,29 @@ struct SincronizadorCarregamentoTests {
             #expect(transporte.gravacoes.isEmpty, "nada sobe por cima do documento que só o servidor tem")
             #expect(s.estado == .vazio, "a edição recusada não troca o estado")
         }
+    }
+
+    @Test func soOServidorMarcaQueRespondeu() {
+        let transporte = TransporteFalso()
+        let marca = MarcaFalsa()
+        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), marca: marca)
+        s.iniciar(uid: "u1")
+        transporte.chega(blobCom(["Casa"]), doCache: true)
+        #expect(marca.contas.isEmpty, "o cache não prova nada sobre o servidor")
+        transporte.chega(blobCom(["Casa"]))
+        #expect(marca.contas.isEmpty, "com documento, o cache dele basta: a marca não faz falta")
+        transporte.chega(nil)
+        #expect(marca.contas == ["u1"], "o servidor respondeu que a conta não tem documento")
+    }
+
+    @Test func marcaDeOutraContaNaoVale() {
+        let transporte = TransporteFalso()
+        let marca = MarcaFalsa()
+        marca.marcar(uid: "outra")
+        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), online: false, marca: marca)
+        s.iniciar(uid: "u1")
+        transporte.chega(nil, doCache: true)
+        #expect(!s.dadosCarregados, "a marca é por conta: o aparelho viu a outra, não esta")
     }
 
     @Test func erroDeLeituraAntesDeCarregarNaoDeixaGravar() async {

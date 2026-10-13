@@ -59,8 +59,14 @@ const {chromium}=require('playwright');
     await page.locator('#fParc').selectOption('3');
     await page.locator('#cSave').click();
     assert.deepEqual(await page.evaluate(()=>obraById('o').gastos.slice(-3).map(g=>g.valor)),[33.33,33.33,33.34]);
+    // Apagar só esta parcela com a folha aberta enquanto um snapshot troca o db: a exclusão vai para a obra de agora.
+    const ultima=await page.evaluate(()=>obraById('o').gastos.at(-1).id);
+    await page.locator('#oGastos li',{hasText:'(3/3)'}).locator('.li-del').click();
+    await page.evaluate(()=>{ db=normaliza(JSON.parse(JSON.stringify(db))); });
+    await page.locator('#dUma').click();
+    assert.equal(await page.evaluate(id=>obraById('o').gastos.some(g=>g.id===id),ultima),false,'a parcela apagada voltou');
     await page.waitForTimeout(200);
     assert.deepEqual(await page.evaluate(()=>errosCartao),[]);
-    console.log('ok - juros mensais, parcelas, edição sem reaplicar juros e Pix sem taxa');
+    console.log('ok - juros mensais, parcelas, edição sem reaplicar juros, Pix sem taxa e parcela apagada com snapshot no meio');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,0 +1,49 @@
+import Foundation
+
+/* As mudanças que as telas que gravam fazem no estado, como o site faz no `db` antes do `save()`: cada uma parte do
+   estado do momento (não de uma cópia guardada quando a folha abriu) e devolve o estado novo (o app grava pelo
+   Sincronizador) ou nil quando a obra ou o gasto sumiram (apagados em outro aparelho com a folha aberta; o site, nesse
+   caso, também não grava nada). Campos que o app não conhece ficam. */
+public extension Estado {
+    func indiceDaObra(_ id: String) -> Int? { obras.firstIndex { $0.id == id } }
+
+    /// Os gastos novos no fim da obra, como o `push` do site.
+    func lancandoGastos(_ novos: [Gasto], naObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId) else { return nil }
+        var e = self
+        e.obras[i].gastos.append(contentsOf: novos)
+        return e
+    }
+
+    /// O gasto editado, montado a partir do que está no estado agora, como o site faz com o `o.gastos[i]` do momento do
+    /// "Salvar": o que outro aparelho mudou no gasto com a folha aberta fica, menos o que a pessoa respondeu.
+    func editandoGasto(_ gastoId: String, _ entrada: EntradaDoGasto, _ conferido: GastoConferido, naObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), let j = obras[i].gastos.firstIndex(where: { $0.id == gastoId }) else { return nil }
+        var e = self
+        e.obras[i].gastos[j] = gastoEditado(obras[i].gastos[j], entrada, conferido)
+        return e
+    }
+
+    /// Sem o gasto: o "Apagar" de um gasto, ou de uma parcela só.
+    func apagandoGasto(_ gastoId: String, daObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), obras[i].gastos.contains(where: { $0.id == gastoId }) else { return nil }
+        var e = self
+        e.obras[i].gastos.removeAll { $0.id == gastoId }
+        return e
+    }
+
+    /// Sem nenhuma parcela da compra: o "Apagar a compra toda" (as que restam com o mesmo `grupoId`).
+    func apagandoCompra(_ grupoId: String, daObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), obras[i].gastos.contains(where: { $0.grupoId == grupoId }) else { return nil }
+        var e = self
+        e.obras[i].gastos.removeAll { $0.grupoId == grupoId }
+        return e
+    }
+}
+
+/// As parcelas que restam da compra do gasto (o N do "Apagar a compra toda (N parcelas)", contado como o site: as irmãs
+/// que ainda existem, não o `parcela.de`).
+public func parcelasDaCompra(_ gasto: Gasto, naObra obra: Obra) -> Int {
+    guard let grupo = gasto.grupoId else { return 1 }
+    return obra.gastos.filter { $0.grupoId == grupo }.count
+}

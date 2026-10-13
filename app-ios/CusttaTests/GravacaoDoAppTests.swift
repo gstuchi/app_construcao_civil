@@ -27,13 +27,6 @@ struct GravacaoDoAppTests {
         #expect(transporte.gravacoes == 1)
     }
 
-    @Test func buildDoTestFlightSoGravaEmContaDeTeste() {
-        #expect(!ContaDeTeste.podeGravar(email: "giovani@exemplo.com", release: true), "a conta de sempre não grava no build de teste")
-        #expect(ContaDeTeste.podeGravar(email: "Giovani+Custta-Teste@gmail.com", release: true))
-        #expect(ContaDeTeste.podeGravar(email: "giovani@exemplo.com", release: false), "em Debug grava sempre")
-        #expect(!ContaDeTeste.podeGravar(email: nil, release: true))
-    }
-
     @Test func obraQueSumiuNaoGravaNada() async {
         let (m, transporte, _) = montar()
         await ate { m.sincronizador.dadosCarregados }

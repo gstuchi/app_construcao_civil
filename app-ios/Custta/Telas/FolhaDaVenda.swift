@@ -66,7 +66,6 @@ private struct PassoDaDataDaVenda: View {
     @Environment(\.paleta) private var paleta
     @State private var erro: String?
     @State private var naoCarregado = false
-    @State private var contaReal = false
 
     var body: some View {
         let obra = modelo.sincronizador.estado.obras.first { $0.id == obraId }
@@ -109,8 +108,7 @@ private struct PassoDaDataDaVenda: View {
                 }
                 .tint(paleta.cor(.texto))
         }
-        .alert(ContaDeTeste.titulo, isPresented: $contaReal) { Button("OK", role: .cancel) {} } message: { Text(ContaDeTeste.mensagem) }
-        .pausaOFundo(enquanto: naoCarregado || contaReal)
+        .pausaOFundo(enquanto: naoCarregado)
     }
 
     private func confirmar(inicio: String, hoje: String) {
@@ -124,7 +122,6 @@ private struct PassoDaDataDaVenda: View {
         switch modelo.gravar({ $0.registrandoVenda(obraId, valor: valor, data: rascunho.data) }) {
         case .gravou, .sumiu, .semConta: folhas.fechar()
         case .naoCarregado: naoCarregado = true
-        case .contaReal: contaReal = true
         }
     }
 }

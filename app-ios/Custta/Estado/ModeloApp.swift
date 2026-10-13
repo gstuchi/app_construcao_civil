@@ -267,8 +267,6 @@ final class ModeloApp {
         case naoCarregado
         /// A conta saiu no meio.
         case semConta
-        /// Build do TestFlight numa conta que não é de teste (até a conferência do PR 3): nada foi gravado.
-        case contaReal
     }
 
     /// Muda o estado na hora, pela regra do núcleo, e entrega o documento inteiro para gravar (o `save()` do site). A tela
@@ -278,7 +276,6 @@ final class ModeloApp {
         #if DEBUG
         if UserDefaults.standard.string(forKey: "custta.recusarGravacao") == "nao-carregado" { return .naoCarregado }
         #endif
-        guard ContaDeTeste.podeGravar(email: usuario?.email) else { return .contaReal }
         guard let novo = mudanca(sincronizador.estado) else { return .sumiu }
         do {
             try sincronizador.aplicar(novo)

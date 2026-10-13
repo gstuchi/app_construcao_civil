@@ -139,7 +139,6 @@ private struct FormularioDaObra: View {
     @State private var erroDoNome: String?
     @State private var erroDaArea: String?
     @State private var naoCarregado = false
-    @State private var contaReal = false
     @State private var limite = false
     @State private var apagando = false
     /// O foco no nome vale só ao abrir: a raiz da pilha reaparece ao voltar do teclado de valor.
@@ -276,8 +275,7 @@ private struct FormularioDaObra: View {
             guard let id = rascunho.obraId else { return }
             folhas.fechar { folhas.navegar(.apagar(id)) }
         })
-        .alert(ContaDeTeste.titulo, isPresented: $contaReal) { Button("OK", role: .cancel) {} } message: { Text(ContaDeTeste.mensagem) }
-        .pausaOFundo(enquanto: naoCarregado || limite || contaReal)
+        .pausaOFundo(enquanto: naoCarregado || limite)
     }
 
     private func salvar() {
@@ -293,7 +291,6 @@ private struct FormularioDaObra: View {
         switch modelo.gravar({ $0.editandoObra(id, campos) }) {
         case .gravou, .sumiu, .semConta: folhas.fechar()
         case .naoCarregado: naoCarregado = true
-        case .contaReal: contaReal = true
         }
     }
 
@@ -304,7 +301,6 @@ private struct FormularioDaObra: View {
         switch modelo.gravar({ $0.criandoObra(obraNova(campos, id: id, hoje: dataLocalISO(.now, fuso: .current))) }) {
         case .gravou: folhas.fechar { folhas.navegar(.entrar(id)) }
         case .naoCarregado: naoCarregado = true
-        case .contaReal: contaReal = true
         case .sumiu: limite = true
         case .semConta: folhas.fechar()
         }

@@ -56,3 +56,30 @@ O app grava de verdade a partir desta etapa, e cada gravação regrava o documen
 - [ ] iPhone 13 mini ou SE, se tiver: com o teclado aberto na descrição, as sugestões e o "Salvar" cabem.
 - [ ] Modo avião: lance um gasto; a pílula mostra "Sem conexão"; ao voltar a internet, o gasto chega ao site.
 - [ ] Na conta de sempre (sem `custta-teste` no e-mail), tente lançar: aparece "Este build ainda não grava na sua conta" e nada muda no site.
+
+## PR 3: a obra, as fases e os estados
+
+- [ ] Na lista de obras, o + aparece ao lado da cápsula: "Nova obra" abre a folha com o nome, "Começou em", a área, o valor estimado e o orçamento, nessa ordem; o teclado sobe junto com a folha, já no nome.
+- [ ] Salve sem área: "Informe área construída maior que zero." em vermelho embaixo do campo; sem nome, a folha volta ao nome, sem mensagem.
+- [ ] Toque em "Valor estimado de venda": o teclado de valor abre ("Opcional" na linha; zero apaga o valor). O mesmo no orçamento.
+- [ ] Crie uma obra com área 3,125: a folha desce e a obra abre na tela dela; no site, a área é 3,125 m² (não 3.125).
+- [ ] Toque no lápis da barra: "Editar obra" vem preenchida (a área com vírgula) e com "Apagar obra" no fim; mude o nome e salve: muda no site também.
+- [ ] Feche a edição depois de mudar algo: "Você mudou esta obra." ("Descartar alterações" / "Continuar editando"); sem mudar nada, fecha direto.
+- [ ] "Apagar obra": a pergunta traz o nome e "Os N lançamentos dela serão perdidos. Não dá para desfazer."; "Apagar" volta à lista, a linha sai com animação e a obra some do site.
+- [ ] Numa obra em construção, "Marcar como pronta" (pílula sólida) troca a etiqueta para "Pronta · à venda" na hora, com uma vibração leve e sem perguntar; "Voltar pra construção" (pílula de vidro) desfaz. No site, a fase muda.
+- [ ] Numa obra pronta, "Registrar venda": o teclado de valor, depois "Data da venda" (hoje; o calendário vai do início da obra até hoje) e "Confirmar venda". A obra vira "Vendida em dd/mm/aa" e o indicador mostra a venda com o lucro (ou o prejuízo).
+- [ ] Na vendida, "Desfazer venda" pergunta "Desfazer a venda?" / "A obra volta pra “Pronta”."; confirmar volta para pronta no app e no site.
+- [ ] Numa obra vendida, o + abre a folha do gasto com a linha "Obra" (vem marcada a primeira obra aberta da lista) e a nota de que a vendida não recebe gasto; troque a obra e salve: o gasto aparece na obra escolhida, que toma o lugar da vendida por trás da folha.
+- [ ] Toque num gasto de uma obra vendida: a edição continua possível, sem a linha "Obra".
+- [ ] Conta sem obras (apague todas as obras da conta de teste, ou use outra conta de teste): "Nenhuma obra ainda." / "Toque no + para criar a primeira obra."; o + cria.
+- [ ] Modo avião logo depois de instalar (antes de o app ver os dados): o + avisa "Carregando suas obras…" em vez de abrir. O limite de 300 obras não precisa de teste no aparelho (o teste de tela cobre).
+- [ ] Modo avião com os dados já vistos: marque uma obra como pronta; a pílula mostra "Sem conexão"; ao voltar a internet, o site mostra a fase nova.
+- [ ] "Não salvou" (só se acontecer): o alerta "Não salvou na nuvem" aparece uma vez, com "Tentar de novo"; depois fica só a pílula, e tocar nela tenta de novo.
+- [ ] Texto Maior no máximo: as pílulas das ações crescem e o texto quebra; as folhas da obra e da venda não cortam nada à esquerda; a pílula da data para de crescer num ponto.
+- [ ] VoiceOver: as ações da fase são botões com o nome inteiro; a linha "Obra" lê o nome da obra escolhida; "Apagar obra" pergunta antes.
+- [ ] Nos quatro combos (claro e escuro, esmeralda e azul), o lucro e o prejuízo da obra vendida sobre o vidro: verde mais claro e rosa no escuro, verde mais escuro e vinho no claro (tokens novos, medidos a 4,5:1). Diga se o tom serve.
+- [ ] Na conta de sempre, tente criar uma obra ou mudar a fase: "Este build ainda não grava na sua conta" e nada muda no site.
+
+## Depois do OK do PR 3: a conta real
+
+- [ ] Com os itens acima marcados, o Orquestrador abre o PR da conta real (a guarda da conta de teste sai) e manda o build. Instale, entre na conta de sempre, lance um gasto de teste e apague-o; confira no site que ele entrou e saiu.

@@ -39,6 +39,9 @@ final class ModeloApp {
     private(set) var saindo = false
     /// O "Finalizar saída", ou nil quando não há limpeza do cache pendente.
     private(set) var limpeza: Limpeza?
+    /// O alerta do "Não salvou" quando a gravação não passa sozinha (o erro terminal), uma vez por erro: depois dele, só a
+    /// pílula da barra (no site, um toast a cada erro).
+    private(set) var alertaDeGravacao: AlertaDeGravacao?
     let sincronizador: Sincronizador
     let rede: MonitorDeRede
 
@@ -48,12 +51,15 @@ final class ModeloApp {
     @ObservationIgnored private var saindoDeProposito = false
     @ObservationIgnored private var checagem = 0
     @ObservationIgnored private var tarefaDoAviso: Task<Void, Never>?
+    /// As confirmações do servidor quando o último alerta de "Não salvou" apareceu: um erro novo sem confirmação no meio é
+    /// o mesmo erro, e não alerta de novo.
+    @ObservationIgnored private var alertouNaConfirmacao: Int?
 
     init(conta: ServicoConta, sincronizador: Sincronizador, rede: MonitorDeRede) {
         self.conta = conta
         self.sincronizador = sincronizador
         self.rede = rede
-        sincronizador.aoAvisar = { [weak self] aviso in self?.avisar(aviso.mensagem) }
+        sincronizador.aoAvisar = { [weak self] aviso in self?.receber(aviso) }
         sincronizador.aoPedirVerificacaoDeSessao = { [weak self] forcar in
             Task { await self?.conta.verificarSessao(forcar: forcar) }
         }
@@ -85,6 +91,7 @@ final class ModeloApp {
             uidAtivo = nil
             sincronizador.parar()
             nome = nil
+            esquecerAlertaDeGravacao()
             if expirou { mensagemEntrada = Self.sessaoExpirada }
             fase = .entrada
             return
@@ -93,6 +100,7 @@ final class ModeloApp {
         mensagemEntrada = nil
         if uidAtivo != u.uid {
             uidAtivo = u.uid
+            esquecerAlertaDeGravacao()
             sincronizador.iniciar(uid: u.uid)
         }
         if u.contaSocial, await conta.perfilPendente() {
@@ -289,6 +297,23 @@ final class ModeloApp {
         sincronizador.tentarDeNovo()
     }
 
+    /// Os avisos do Sincronizador: o erro terminal de gravação vira o alerta, uma vez por erro; os outros, o aviso do topo.
+    private func receber(_ aviso: AvisoSinc) {
+        guard case .naoSalvou(let codigo, true) = aviso else { avisar(aviso.mensagem); return }
+        guard alertouNaConfirmacao != sincronizador.confirmadas else { return }
+        alertouNaConfirmacao = sincronizador.confirmadas
+        let a = alertaDeNaoSalvou(codigo: codigo)
+        alertaDeGravacao = AlertaDeGravacao(titulo: a.titulo, mensagem: a.mensagem)
+    }
+
+    /// O alerta do "Não salvou" fechou (OK ou "Tentar de novo").
+    func fecharAlertaDeGravacao() { alertaDeGravacao = nil }
+
+    private func esquecerAlertaDeGravacao() {
+        alertouNaConfirmacao = nil
+        alertaDeGravacao = nil
+    }
+
     func avisar(_ texto: String) {
         aviso = texto
         tarefaDoAviso?.cancel()
@@ -298,4 +323,10 @@ final class ModeloApp {
             self?.aviso = nil
         }
     }
+}
+
+/// O alerta do "Não salvou", com o texto do site partido em título e mensagem.
+struct AlertaDeGravacao: Equatable {
+    let titulo: String
+    let mensagem: String
 }

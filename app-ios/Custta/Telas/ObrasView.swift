@@ -8,10 +8,12 @@ enum RotaDeObras: Hashable, Sendable {
 
 /* Obras: aviso de e-mail não confirmado, "N obras", um cartão de vidro por obra (fase, meses, orçamento e total
    gasto, na ordem e com os totais do site), que abre a obra, e o comparativo entre obras. Antes de carregar:
-   carregando, ou o erro de leitura explicando que nada foi alterado. */
+   carregando, ou o erro de leitura explicando que nada foi alterado. Sem obras, o convite para o + (que cria a obra).
+   A obra apagada sai da lista com a animação do apagar gasto. */
 struct ObrasView: View {
     @Binding var caminho: [RotaDeObras]
     @Environment(ModeloApp.self) private var modelo
+    @Environment(\.opcoes) private var opcoes
     @State private var confirmarSaida = false
     #if DEBUG
     /// Laudo de leitura (Tarefa 11): a lista parada numa rolagem dada, em pt, para dois prints iguais.
@@ -38,18 +40,19 @@ struct ObrasView: View {
                                 .accessibilityIdentifier("tentarLerDeNovo")
                         }
                     } else if !sinc.dadosCarregados {
-                        CartaoDeEstado(titulo: "Carregando suas obras…", texto: nil, identificador: "obrasCarregando") {
-                            ProgressView()
-                        }
+                        CartaoDeEstado(titulo: "Carregando suas obras…", texto: nil, icone: nil, carregando: true,
+                                       identificador: "obrasCarregando") { EmptyView() }
                     } else if obras.isEmpty {
-                        CartaoDeEstado(titulo: "Nenhuma obra ainda.",
-                                       texto: "Nesta versão de teste, crie as obras pelo site. Elas aparecem aqui sozinhas.",
-                                       identificador: "obrasVazio") { EmptyView() }
+                        CartaoDeEstado(titulo: listaDeObrasVazia.titulo, texto: listaDeObrasVazia.texto, identificador: "obrasVazio") {
+                            EmptyView()
+                        }
                     } else {
                         ContagemDeObras(quantidade: obras.count)
                         ForEach(obras, id: \.id) { obra in
                             NavigationLink(value: RotaDeObras.obra(obra.id)) { CartaoDeObra(obra: obra, hoje: hoje) }
                                 .buttonStyle(.plain)
+                                .transition(opcoes.reduzirMovimento ? .opacity
+                                            : .asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
                         }
                         let comparativo = comparativoEntreObras(obras, taxa: sinc.estado.config.taxaMensal, hoje: hoje)
                         if !comparativo.isEmpty { PainelComparativo(linhas: comparativo).padding(.top, 2) }
@@ -305,25 +308,34 @@ struct AvisoDeEmail: View {
     }
 }
 
-/// Cartão de estado da lista (vazia, carregando, erro de leitura): ícone, título, texto e ação.
+/// Cartão de estado (lista vazia, carregando, erro de leitura, obra sem gastos), o "Estado vazio" do mockup da etapa 2:
+/// ícone de 52 num quadrado de raio 16 (ou, carregando, só o indicador), título em .body semibold, texto em .subheadline
+/// secundário e a ação.
 struct CartaoDeEstado<Acao: View>: View {
     let titulo: String
     let texto: String?
+    var icone: String? = "Icones/guindaste"
+    var carregando = false
     let identificador: String
-    /// O ícone do alto: o guindaste nas Obras; as notas na obra sem gastos (mockup da etapa 2).
-    var icone = "Icones/guindaste"
     @ViewBuilder let acao: () -> Acao
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(decorative: icone)
-                .resizable().frame(width: 36, height: 36)
-                .foregroundStyle(paleta.cor(.texto))
-                .accessibilityHidden(true)
+            if carregando {
+                ProgressView().padding(.bottom, 4)
+            } else if let icone {
+                Image(decorative: icone)
+                    .resizable().frame(width: 26, height: 26)
+                    .foregroundStyle(paleta.cor(.marca))
+                    .frame(width: 52, height: 52)
+                    .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 16, style: .continuous))
+                    .accessibilityHidden(true)
+                    .padding(.bottom, 6)
+            }
             Text(titulo)
-                .font(.body.weight(.semibold))
+                .font(carregando ? .body : .body.weight(.semibold))
                 .foregroundStyle(paleta.cor(.texto))
                 .accessibilityIdentifier(identificador)
             if let texto {
@@ -332,7 +344,7 @@ struct CartaoDeEstado<Acao: View>: View {
             acao().padding(.top, 4)
         }
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 22)
         .padding(.vertical, 28)
         .frame(maxWidth: .infinity)
         .superficie(.conteudo, em: .rect(cornerRadius: 22))

@@ -4,7 +4,9 @@ import CusttaNucleo
 
 /// Transporte falso dos testes (só Debug): entrega um blob fixo e confirma gravações depois de
 /// 300 ms (nunca, sem rede). `falhaDeLeitura` faz a escuta falhar com esse código antes do primeiro
-/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido). `apagarRemoto`
+/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido); `semLeitura`, a escuta
+/// nunca responde (CUSTTA_LEITURA=nunca: "Carregando suas obras…" para sempre). `recusa` responde toda gravação com
+/// esse código (CUSTTA_GRAVACAO=recusa: permission-denied, o "Não salvou" que não passa sozinho). `apagarRemoto`
 /// simula outro aparelho apagando um gasto: um segundo snapshot, sem ele, depois de alguns segundos
 /// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>).
 @MainActor
@@ -13,21 +15,26 @@ final class TransporteFalsoApp: TransporteDados {
     private let dados: ValorJSON?
     private let semRede: Bool
     private let falhaDeLeitura: String?
+    private let semLeitura: Bool
+    private let recusa: String?
     private let apagarRemoto: (obra: String, gasto: String, depois: Double)?
     /// Quantas gravações chegaram (os testes conferem que abrir o app não grava nada).
     private(set) var gravacoes = 0
 
-    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil,
+    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil, semLeitura: Bool = false, recusa: String? = nil,
          apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil) {
         self.dados = dados
         self.semRede = semRede
         self.falhaDeLeitura = falhaDeLeitura
+        self.semLeitura = semLeitura
+        self.recusa = recusa
         self.apagarRemoto = apagarRemoto
     }
 
     func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
                  aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
         let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto
+        guard !semLeitura else { return Nada() }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
             if let falha { aoFalhar(falha); return }
@@ -56,9 +63,10 @@ final class TransporteFalsoApp: TransporteDados {
     func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void) {
         gravacoes += 1
         guard !semRede else { return }
+        let recusa = self.recusa
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
-            concluir(nil)
+            concluir(recusa)
         }
     }
 

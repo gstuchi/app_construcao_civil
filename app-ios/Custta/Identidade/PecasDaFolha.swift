@@ -62,6 +62,62 @@ struct LinhaDaFolhaComRotulo<Valor: View>: View {
     }
 }
 
+/// Um campo de texto com o rótulo em cima, dentro de um grupo ("Nome da obra", "Área construída em m²"), como a
+/// descrição do gasto: rótulo em 13 semibold secundário (no erro, na cor do erro) e o campo embaixo.
+struct CampoComRotuloEmCima<Campo: View>: View {
+    let rotulo: String
+    var erro = false
+    @ViewBuilder let campo: () -> Campo
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(rotulo)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(paleta.cor(erro ? .erroNoVidro : .secundarioSolido))
+                .accessibilityHidden(true)
+            campo()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+    }
+}
+
+/// Uma linha de dinheiro que abre o teclado de valor ("Valor estimado de venda", "Orçamento total", "Valor da venda"):
+/// "R$" e o valor, ou "Opcional" vazia, e a seta.
+struct LinhaDeDinheiro: View {
+    let rotulo: String
+    let centavos: Int
+    var opcional = true
+    var altura: CGFloat = 52
+    var identificador: String
+    let abrir: () -> Void
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        Button(action: abrir) {
+            LinhaDaFolhaComRotulo(rotulo: rotulo, altura: altura) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if centavos == 0 && opcional {
+                        Text("Opcional").foregroundStyle(paleta.cor(.secundarioSolido))
+                    } else {
+                        Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioSolido))
+                        ValorEmDinheiro(texto: fmtCentavos(centavos), fonte: altura > 52 ? .title2.weight(.bold) : .body.weight(.semibold))
+                    }
+                    SetaDaLinha()
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(rotulo)
+        .accessibilityValue(centavos == 0 && opcional ? "Opcional" : moeda(centavosParaReais(centavos)))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(identificador)
+    }
+}
+
 /// A seta ">" das linhas que abrem outro passo.
 struct SetaDaLinha: View {
     @Environment(\.paleta) private var paleta

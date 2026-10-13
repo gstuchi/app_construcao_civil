@@ -96,10 +96,14 @@ public struct Obra: Equatable, Sendable {
     public var campos: [String: ValorJSON]
     public var gastos: [Gasto]
     public var afazeres: [Afazer]
+    /// A árvore trazia `afazeres`. A obra nova do site não traz (a leitura normalizada acrescenta): sem afazer, ela volta
+    /// ao documento sem a chave, como o site grava.
+    var afazeresNaArvore: Bool
 
     public init(arvore: [String: ValorJSON]) {
         var c = arvore
         gastos = (c.removeValue(forKey: "gastos")?.comoLista ?? []).compactMap { $0.comoObjeto.map(Gasto.init(campos:)) }
+        afazeresNaArvore = c["afazeres"] != nil
         afazeres = (c.removeValue(forKey: "afazeres")?.comoLista ?? []).compactMap { $0.comoObjeto.map(Afazer.init(campos:)) }
         campos = c
     }
@@ -108,7 +112,7 @@ public struct Obra: Equatable, Sendable {
     public var arvore: [String: ValorJSON] {
         var c = campos
         c["gastos"] = .lista(gastos.map { .objeto($0.campos) })
-        c["afazeres"] = .lista(afazeres.map { .objeto($0.campos) })
+        if afazeresNaArvore || !afazeres.isEmpty { c["afazeres"] = .lista(afazeres.map { .objeto($0.campos) }) }
         return c
     }
 

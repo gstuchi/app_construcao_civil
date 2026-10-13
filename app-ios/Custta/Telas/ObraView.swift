@@ -1,16 +1,17 @@
 import SwiftUI
 import CusttaNucleo
 
-/* A tela da obra (mockup aprovado da etapa 2, parte 1): o nome no título grande, a pílula da fase e do tempo, os
-   indicadores na opção A, a pílula "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado no alto. Entra
-   pelo push do NavigationStack de Obras e volta pelo círculo e pela borda (sistema). A obra que some (apagada em outro
-   aparelho) fecha a tela, como o site volta ao Início. */
+/* A tela da obra (mockup aprovado da etapa 2, partes 1 e 3): o nome no título grande, a pílula da fase e do tempo, os
+   indicadores na opção A, as ações da fase, a pílula "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado
+   no alto; o lápis na barra abre "Editar obra". Entra pelo push do NavigationStack de Obras e volta pelo círculo e pela
+   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. */
 struct ObraView: View {
     let id: String
     @Binding var caminho: [RotaDeObras]
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
     @Environment(\.opcoes) private var opcoes
+    @Environment(\.paleta) private var paleta
     @State private var aVencerAberto = false
     /// A linha arrastada que mostra "Apagar" (uma por vez).
     @State private var linhaAberta: String?
@@ -19,6 +20,10 @@ struct ObraView: View {
     @State private var perguntando = false
     @State private var naoCarregado = false
     @State private var contaReal = false
+    /// "Desfazer venda" tocado: a pergunta do site.
+    @State private var desfazendo = false
+    /// Muda a cada ação da fase feita aqui: a vibração leve do mockup (a de outro aparelho não vibra).
+    @State private var mudouAFase = 0
     /// Os gastos que acabaram de ser salvos (acesos por 2 s) e se levam a etiqueta "novo".
     @State private var acesos: Set<String> = []
     @State private var novos = false
@@ -65,12 +70,14 @@ struct ObraView: View {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje))
+                    AcoesDaFaseView(fase: obra.fase) { agir($0, obra: obra) }
+                        .padding(.top, 2)
                         .padding(.bottom, 14)
                     PilulaDeLancamentos(quantidade: obra.gastos.count)
                         .accessibilityFocused($foco, equals: .lancamentos)
                     if obra.gastos.isEmpty {
-                        CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.",
-                                       identificador: "obraSemGastos", icone: "Icones/notas") { EmptyView() }
+                        CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
+                                       identificador: "obraSemGastos") { EmptyView() }
                     } else {
                         if let aVencer = lista.aVencer {
                             CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos, lista: acoes)
@@ -95,12 +102,22 @@ struct ObraView: View {
         .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
         .onDisappear { linhaAberta = nil }
         .sensoryFeedback(.success, trigger: folhas.destaque)
+        .sensoryFeedback(.impact(weight: .light), trigger: mudouAFase)
         .modifier(PerguntaDeApagar(apresentada: $perguntando, obraId: obra.id, gasto: alvoDoApagar) { pedido in
             apagar(pedido, obra: obra, lista: lista)
         })
         .onChange(of: perguntando) { _, agora in if !agora { fecharLinha() } }
         .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) { Button("OK", role: .cancel) {} }
         .alert(ContaDeTeste.titulo, isPresented: $contaReal) { Button("OK", role: .cancel) {} } message: { Text(ContaDeTeste.mensagem) }
+        .background {
+            Color.clear
+                .alert(textoDeDesfazerVenda.titulo, isPresented: $desfazendo) {
+                    Button("Cancelar", role: .cancel) {}
+                    Button(textoDeDesfazerVenda.botao, role: .destructive) { mudar(obra) { $0.desfazendoVenda(obra.id) } }
+                } message: { Text(textoDeDesfazerVenda.mensagem) }
+                .tint(paleta.cor(.texto))
+        }
+        .pausaOFundo(enquanto: desfazendo)
         // O título pequeno entra na barra quando o grande sai de baixo dela (como o título grande do sistema).
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 44 } action: { _, saiu in
             withAnimation(.easeOut(duration: 0.2)) { barra.tituloVisivel = saiu }
@@ -123,11 +140,30 @@ struct ObraView: View {
             ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: obra.nome) }
             ToolbarItem(placement: .topBarTrailing) { IndicadorDeSincronizacao() }
                 .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarTrailing) { BotaoDeEditarObra { folhas.aberta = .editarObra(obraId: obra.id) } }
+                .sharedBackgroundVisibility(.hidden)
         }
     }
 }
 
 extension ObraView {
+    /// Uma ação da fase: mudar entre construção e pronta na hora, sem pergunta (o mudarFase do site), com a etiqueta e as
+    /// ações trocando na mola; a venda abre a folha; desfazer pergunta.
+    private func agir(_ acao: AcaoDaFase, obra: Obra) {
+        switch acao {
+        case .marcarPronta: mudar(obra) { $0.mudandoFase(obra.id, para: .pronta) }
+        case .voltarConstrucao: mudar(obra) { $0.mudandoFase(obra.id, para: .construcao) }
+        case .registrarVenda: folhas.aberta = .venda(obraId: obra.id)
+        case .desfazerVenda: desfazendo = true
+        }
+    }
+
+    private func mudar(_ obra: Obra, _ mudanca: (Estado) -> Estado?) {
+        let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.35, bounce: 0)) { modelo.gravar(mudanca) }
+        if resultado == .naoCarregado { naoCarregado = true }
+        if resultado == .gravou { mudouAFase += 1 }
+    }
+
     private func fecharLinha() {
         guard linhaAberta != nil else { return }
         if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }

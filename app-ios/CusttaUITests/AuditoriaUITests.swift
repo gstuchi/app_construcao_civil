@@ -35,6 +35,7 @@ final class AuditoriaUITests: XCTestCase {
         let barra = app.navigationBars.firstMatch
         let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
+        let barras = app.navigationBars.allElementsBoundByIndex.map(\.frame)
         try app.performAccessibilityAudit(for: tipos) { achado in
             guard let elemento = achado.element else {
                 Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
@@ -43,16 +44,21 @@ final class AuditoriaUITests: XCTestCase {
             let fora: Bool
             switch achado.auditType {
             case .dynamicType:
-                // O título pequeno da barra da obra para perto de 22 pt, como o do sistema (mockup da etapa 2), com o
-                // Visualizador de Conteúdo Grande.
-                // Na folha (mockup da etapa 2): o título para perto de 22 pt, as teclas e o "Apagar" do arrastar param no
-                // AX2, e o visor do valor (64 pt) já é maior que o texto na maior letra e encolhe para caber.
+                // Os títulos das barras param perto de 22 pt, como os do sistema (mockup da etapa 2), com o Visualizador de
+                // Conteúdo Grande: o pequeno da obra e o das folhas (título e o nome da obra embaixo), na barra da folha.
+                // Na folha do gasto, as teclas e o "Apagar" do arrastar param no AX2, e o visor do valor (64 pt) já é
+                // maior que o texto na maior letra e encolhe para caber.
+                let centro = CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)
                 fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
                     || elemento.identifier.hasPrefix("tituloDaFolha") || elemento.identifier.hasPrefix("visorDoValor")
                     || elemento.identifier.hasPrefix("tecla-") || elemento.identifier.hasPrefix("apagar-")
-                    || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
+                    || barras.contains { $0.contains(centro) } || abas.contains { $0.contains(centro) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
+                // O travessão da venda sem estimativa: um traço de 3 pt que a auditoria não consegue medir (como o "·"
+                // solto da linha de gasto); está na cor do texto, na mesma superfície dos valores que passam, e o laudo
+                // de leitura mede o pixel dele.
+                else if elemento.label == "—" { fora = true }
                 else {
                     let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
                     fora = sobABarra || elemento.frame.maxY > fundoDaTela
@@ -252,6 +258,61 @@ final class AuditoriaUITests: XCTestCase {
             rolar(app)
             try auditar(app, [.contrast])
             app.terminate()
+        }
+    }
+
+    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta (com as duas ações da fase, a sólida e a de vidro) em
+    /// rolagens fixas, a lista vazia, as folhas da obra (nova e editar) e a da venda. Na obra, rolagem fixa e não o arrasto:
+    /// logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam (triagem em
+    /// 0, 400 e 800 pt, na v1 e na v2).
+    @MainActor func testParte3NoMaiorTamanho() throws {
+        var app: XCUIApplication
+        for rolagem in [0, 800, 1600] {
+            app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2",
+                           argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
+            XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)
+            try auditar(app, tiposDeAuditoria)
+            app.terminate()
+        }
+        app = abrirApp(conta: "senha", dados: "vazio", argumentos: maiorLetra + parado)
+        XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 10))
+        try auditar(app, tiposDeAuditoria)
+        app.terminate()
+        for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("editarObra:v1", "apagarObra", "obra:v1"),
+                                       ("venda:v2", "confirmarVenda", "obra:v2")] {
+            app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
+                           argumentos: maiorLetra + parado + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
+            XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)
+            try auditar(app, tiposDeAuditoria)
+            app.swipeUp()
+            Thread.sleep(forTimeInterval: 1.5)
+            try auditar(app, tiposDeAuditoria)
+            app.terminate()
+        }
+    }
+
+    /// As mesmas telas nos quatro combos, com superfícies sólidas.
+    @MainActor func testContrasteDaParte3NosQuatroCombos() throws {
+        for (tema, pele) in quatroCombos {
+            let combo = ["-custta.tema", tema, "-custta.pele", pele] + solido + parado
+            var app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", argumentos: combo + ["-custta.rolagem", "250"])
+            XCTAssertTrue(app.buttons["acao-voltarConstrucao"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1)
+            try auditar(app, [.contrast])
+            app.terminate()
+            app = abrirApp(conta: "senha", dados: "vazio", argumentos: combo)
+            XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 10))
+            try auditar(app, [.contrast])
+            app.terminate()
+            for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("venda:v2", "confirmarVenda", "obra:v2")] {
+                app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
+                               argumentos: combo + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
+                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)
+                Thread.sleep(forTimeInterval: 1)
+                try auditar(app, [.contrast])
+                app.terminate()
+            }
         }
     }
 

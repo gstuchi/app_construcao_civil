@@ -131,6 +131,9 @@ public final class Sincronizador {
     /// Cache sem documento (app recém-instalado, sem rede) não conta: o servidor pode ter obras.
     /// Volta a falso se chegar um documento que o app não conseguiu ler inteiro.
     public private(set) var dadosCarregados = false
+    /// Quantas vezes o servidor confirmou a versão mais nova (a fila ficou em dia). Quem avisa do erro que não passa
+    /// sozinho avisa uma vez por erro: um erro depois de uma confirmação nova é outro erro.
+    @ObservationIgnored public private(set) var confirmadas = 0
 
     @ObservationIgnored public var aoAvisar: ((AvisoSinc) -> Void)?
     /// Pede para conferir a sessão, como o `verificarSessao` do cloud.js: o erro "unauthenticated" ao
@@ -285,6 +288,7 @@ public final class Sincronizador {
         tentativa = 0
         if pendente != nil { enviar(); return }
         sujo = false
+        confirmadas += 1
         publicar(.ocioso)
         terminarEsperas(nil)
     }

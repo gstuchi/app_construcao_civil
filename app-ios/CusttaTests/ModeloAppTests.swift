@@ -281,13 +281,39 @@ struct ModeloAppTests {
         #expect(m.sincronizador.estado.obras.count == 4, "a escuta volta para a conta que entrou")
     }
 
-    @Test func avisoDoSincronizadorApareceNaTela() async {
+    /// O erro que não passa sozinho (aqui, o limite de dados) vira o alerta com o texto do site, e não o aviso do topo.
+    @Test func erroQueNaoPassaSozinhoViraOAlerta() async {
         let m = montar(conta: "senha").modelo
         await ate { m.sincronizador.dadosCarregados }
         let grande = Estado.de(.objeto(["obras": .lista([]), "config": .objeto(["taxaMensal": .numero(1)]),
                                         "notas": .texto(String(repeating: "a", count: 900_000))]))
         _ = try? await m.sincronizador.salvar(grande)
-        #expect(m.aviso == "Não salvou: limite de dados atingido. Reduza os dados e tente novamente.")
+        #expect(m.alertaDeGravacao == AlertaDeGravacao(titulo: "Não salvou: limite de dados atingido", mensagem: "Reduza os dados e tente novamente."))
+        #expect(m.aviso == nil)
+    }
+
+    /// Um alerta por erro (etapa 2, parte 3): tentar de novo e falhar de novo fica só na pílula; depois de uma gravação
+    /// confirmada, o erro seguinte é outro e alerta de novo.
+    @Test func naoSalvouAlertaUmaVezPorErro() async {
+        let transporte = TransporteNaMao()
+        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema())
+        let m = ModeloApp(conta: ContaFalsa(inicial: "senha"), sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: false))
+        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
+        _ = try? m.sincronizador.aplicar(Estado.de(.objeto(["obras": .lista([])])))
+        transporte.responder("permission-denied")
+        #expect(m.alertaDeGravacao?.titulo == "Não salvou na nuvem")
+        #expect(m.alertaDeGravacao?.mensagem == "Confira sua conexão e conta; toque no aviso para tentar novamente.")
+        m.fecharAlertaDeGravacao()
+        m.tentarDeNovo()
+        transporte.responder("permission-denied")
+        #expect(m.alertaDeGravacao == nil, "o mesmo erro: só a pílula")
+        #expect(m.aviso == "Tentando de novo…")
+        m.tentarDeNovo()
+        transporte.responder(nil)
+        #expect(m.sincronizador.estadoSinc == .ocioso)
+        _ = try? m.sincronizador.aplicar(Estado.de(.objeto(["obras": .lista([])])))
+        transporte.responder("permission-denied")
+        #expect(m.alertaDeGravacao != nil, "depois de salvar, o erro seguinte é outro")
     }
 
     /// Como o cloud.js: a rede que volta confere a sessão sem forçar; a gravação recusada com
@@ -306,6 +332,29 @@ struct ModeloAppTests {
         await ate { d.terminou && conta.verificacoesDeSessao.count == 2 }
         #expect(d.erro as? ErroSinc == ErroSinc(codigo: "unauthenticated"))
         #expect(conta.verificacoesDeSessao == [false, true], "gravação recusada pela sessão força a conferência, como o cloud.js")
+    }
+}
+
+/// Transporte em que o teste responde cada gravação na hora que quiser (`responder`), com o documento já visto.
+@MainActor
+final class TransporteNaMao: TransporteDados {
+    private final class Nada: Cancelavel { func cancelar() {} }
+    private var esperando: [(String?) -> Void] = []
+
+    func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
+                 aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
+        Task { @MainActor in aoReceber(Instantaneo(dados: nil, doCache: false, gravacaoPendente: false)) }
+        return Nada()
+    }
+
+    func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void) { esperando.append(concluir) }
+
+    func aguardarGravacoesPendentes(concluir: @escaping @MainActor (String?) -> Void) { concluir(nil) }
+
+    /// Responde a gravação mais antiga que ainda espera.
+    func responder(_ codigo: String?) {
+        guard !esperando.isEmpty else { return }
+        esperando.removeFirst()(codigo)
     }
 }
 

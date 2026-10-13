@@ -79,4 +79,28 @@ extension DadosDeExemplo {
         })
     }
 }
+
+extension DadosDeExemplo {
+    /// A vitrine com a Casa Tamboré 4 vendida com prejuízo (R$ 800 mil por R$ 976 mil gastos): a nota do prejuízo no laudo.
+    static func vitrineComPrejuizo() -> ValorJSON {
+        guard case .objeto(var raiz) = vitrine(), case .lista(var obras) = raiz["obras"], case .objeto(var tambore) = obras[2],
+              case .objeto(var venda) = tambore["venda"] else { return vitrine() }
+        venda["valor"] = .numero(800_000)
+        tambore["venda"] = .objeto(venda)
+        obras[2] = .objeto(tambore)
+        raiz["obras"] = .lista(obras)
+        return .objeto(raiz)
+    }
+
+    /// O teto das rules: 300 obras ("Obra 1" a "Obra 300"), para o aviso de "Nova obra".
+    static func noTeto() -> ValorJSON {
+        .objeto([
+            "obras": .lista((1...limiteDeObras).map { i in
+                .objeto(["id": .texto("t\(i)"), "nome": .texto("Obra \(i)"), "dataInicio": .texto("2026-01-01"), "fase": .texto("construcao"),
+                         "gastos": .lista([])])
+            }),
+            "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])]),
+        ])
+    }
+}
 #endif

@@ -1,5 +1,5 @@
-/* Formulários da obra com dados sintéticos, sem serviços externos: a obra nova com o orçamento total e a venda fora
-   do intervalo. */
+/* Formulários da obra com dados sintéticos, sem serviços externos: a obra nova com o orçamento total, a área com casas
+   decimais na edição e a venda fora do intervalo. */
 const assert=require('node:assert/strict');
 const {chromium}=require('playwright');
 (async()=>{
@@ -26,6 +26,11 @@ const {chromium}=require('playwright');
     await page.locator('#cSave').click();
     const nova=await page.evaluate(()=>db.obras.at(-1));
     assert.equal(nova.nome,'Casa nova');assert.equal(nova.areaM2,3.125);assert.deepEqual(nova.orcamento,{modo:'total',total:100000});
+    // editar sem mexer na área com três casas não a multiplica por mil (o parseNum lia "3.125" como 3125)
+    await page.evaluate(id=>formEditarObra(obraById(id)),nova.id);
+    assert.equal(await page.locator('#fArea').inputValue(),'3,125');
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(id=>obraById(id).areaM2,nova.id),3.125);
     // venda antes do início não grava
     await page.evaluate(id=>formVenda(obraById(id)),nova.id);
     await page.locator('#fVal').fill('500.000,00');
@@ -58,6 +63,6 @@ const {chromium}=require('playwright');
     assert.equal(await page.evaluate(id=>obraById(id).fase,nova.id),'construcao');
     await page.waitForTimeout(200);
     assert.deepEqual(await page.evaluate(()=>errosObras),[]);
-    console.log('ok - obra nova com orçamento e venda fora do intervalo');
+    console.log('ok - obra nova com orçamento, área com três casas na edição e venda fora do intervalo');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

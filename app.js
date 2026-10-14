@@ -805,7 +805,7 @@ function formEditarObra(o){
     <div class="field"><label>Valor estimado de venda (opcional)</label>
       <div class="money"><b>R$</b><input id="fEst" inputmode="decimal" placeholder="0,00" value="${o.valorEstimadoVenda?OBRA_CALC.numParaCampo(o.valorEstimadoVenda):''}" autocomplete="off"></div></div>
     <div class="field"><label>Área construída em m² (opcional)</label>
-      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(o.areaM2||'')}" autocomplete="off"></div>
+      <input id="fArea" inputmode="decimal" placeholder="Ex: 320" value="${escapeHtml(String(o.areaM2||'').replace('.',','))}" autocomplete="off"></div>
     <div class="sheet-actions">
       <button class="layout-42 btn ghost" id="cDel">Apagar obra</button>
       <button class="btn primary" id="cSave">Salvar</button>

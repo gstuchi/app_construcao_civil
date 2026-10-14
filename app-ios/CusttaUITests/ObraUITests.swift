@@ -42,6 +42,13 @@ final class ObraUITests: XCTestCase {
         XCTAssertTrue(aPagar.contains("R$\u{a0}13.250,00") && aPagar.contains("3 vencimentos"), aPagar)
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.450.000,00"))
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Em construção"))
+        let fase = app.elemento("faseDaObra").label, lancamentos = app.elemento("lancamentos").label
+        XCTAssertTrue(fase.contains("14 meses"), fase)
+        XCTAssertTrue(lancamentos.contains("46"), lancamentos)
+        let tituloPequeno = app.elemento("tituloPequenoDaBarra")
+        XCTAssertFalse(tituloPequeno.exists, "no alto, o nome fica só no título grande")
+        app.swipeUp()
+        XCTAssertTrue(tituloPequeno.waitForExistence(timeout: 5), "rolada a tela, o nome passa para a barra")
     }
 
     func testAVencerFechadoAbreEFecha() {
@@ -61,12 +68,17 @@ final class ObraUITests: XCTestCase {
     }
 
     func testLinhaDoGastoComORotuloDoMockup() {
-        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        // Sem rede, com a pílula "Sem conexão" na barra: rolada a tela, o nome da obra não entra ao lado dela.
+        let app = abrirApp(conta: "senha", dados: "vitrine", rede: "offline", abrir: "obra:v1")
         let cimento = app.elemento("gasto-g027")
         app.rolarAte(cimento)
         XCTAssertTrue(cimento.waitForExistence(timeout: 5))
         XCTAssertTrue(cimento.label.hasPrefix("Cimento CP-II, 120 sacos. Materiais básicos, Pix, "), cimento.label)
         XCTAssertEqual(cimento.value as? String, "R$\u{a0}4.980,00")
+        app.swipeUp()
+        XCTAssertTrue(app.elemento("indicadorSincronizacao").exists)
+        XCTAssertFalse(app.elemento("tituloPequenoDaBarra").waitForExistence(timeout: 2),
+                       "com a pílula de sincronização, o nome não entra na barra")
     }
 
     func testObraSemGastos() {

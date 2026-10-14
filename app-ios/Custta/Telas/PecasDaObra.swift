@@ -185,7 +185,8 @@ struct PilulaDeLancamentos: View {
     }
 }
 
-/// O cabeçalho de um mês dentro do cartão: o nome e o total; sem espaço, o total quebra para baixo.
+/// O cabeçalho de um mês dentro do cartão: o nome e o total; sem espaço, o total quebra para baixo, numa linha só (na
+/// letra máxima, num iPhone de 375 pt, um total de seis dígitos em texto puro partia em "R$" e "222.728,35").
 struct CabecalhoDoMes: View {
     let mes: MesDeGastos
     @Environment(\.paleta) private var paleta
@@ -205,7 +206,9 @@ struct CabecalhoDoMes: View {
     }
 
     private var titulo: some View { Text(mes.titulo) }
-    private var total: some View { Text(moeda(mes.total)).monospacedDigit() }
+    private var total: some View {
+        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: vidro.secundario)
+    }
 }
 
 /// A linha do "A vencer", fechado ou aberto: ícone de calendário, título, total, chevron e o resumo.

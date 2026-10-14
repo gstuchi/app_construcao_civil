@@ -277,17 +277,19 @@ struct EtiquetaDeFase: View {
 }
 
 /// Dinheiro numa linha só, encolhendo até a metade para caber (mockup da etapa 2, letra máxima): um valor quebrado em
-/// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto.
+/// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto ou na que o
+/// lugar pede (o total do mês vai no secundário do cabeçalho).
 struct ValorEmDinheiro: View {
     let texto: String
     let fonte: Font
+    var cor: Token = .texto
     @Environment(\.paleta) private var paleta
 
     var body: some View {
         Text(texto)
             .font(fonte)
             .monospacedDigit()
-            .foregroundStyle(paleta.cor(.texto))
+            .foregroundStyle(paleta.cor(cor))
             .lineLimit(1)
             .minimumScaleFactor(0.5)
     }

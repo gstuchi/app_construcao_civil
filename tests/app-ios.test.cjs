@@ -440,6 +440,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
       assert.ok(fixos.has(dono), `${f}: ${m[0]} em ${dono}; texto cortado se resolve deixando o texto crescer`);
     }
   }
+  // Dinheiro por extenso sozinho num Text quebra na letra grande ("R$" numa linha, o número na outra): vai pelo
+  // ValorEmDinheiro, que encolhe.
+  for(const f of arquivosSwift('app-ios/Custta/Telas'))
+    assert.doesNotMatch(ler(f), /Text\(moeda\(/, `${f}: dinheiro por extenso num Text; use o ValorEmDinheiro`);
 });
 
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {

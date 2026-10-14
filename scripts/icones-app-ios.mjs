@@ -19,7 +19,7 @@ const PASTA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../app
     de editar, o acordo da venda, o voltar das fases e as notas da obra sem gastos. */
 export const USADOS = ['predio', 'engrenagem', 'sair', 'guindaste', 'casa', 'check', 'olho', 'olhoFechado', 'setaBaixo',
   'mapa', 'documento', 'tijolos', 'pa', 'vergalhao', 'raio', 'gota', 'porta', 'ladrilho', 'rolo', 'piscina', 'arvore', 'capacete',
-  'caixa', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas'];
+  'caixa', 'mais', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas'];
 
 const info = { author: 'xcode', version: 1 };
 

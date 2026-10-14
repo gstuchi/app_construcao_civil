@@ -211,6 +211,9 @@ test('ícones em dia com o icons.js do site', async () => {
     for(const chave of ['viewBox', 'fill', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'traco'])
       assert.equal(app[chave], site[chave], `${nome}: ${chave} diferente do ICON() do site`);
   }
+  // Todo tópico do site tem o seu ícone no catálogo: o que faltasse cairia no "etiqueta" do iconeDoCatalogo.
+  const { TOPICOS } = require(join(RAIZ, 'calc.js'));
+  for(const t of TOPICOS) assert.ok(USADOS.includes(t.ic), `${t.nm}: ícone ${t.ic} fora do USADOS`);
 });
 
 test('globo com os mesmos continentes do globe.js', () => {

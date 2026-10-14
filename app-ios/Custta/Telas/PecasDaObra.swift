@@ -45,7 +45,8 @@ struct PilulaDaFase: View {
     }
 }
 
-/// Uma etiqueta pequena colorida ao lado do rótulo de um indicador ("46 lançamentos", "3 vencimentos", "estimativa").
+/// Uma etiqueta pequena colorida ao lado do rótulo de um indicador ("46 lançamentos", "3 vencimentos", "estimativa"), nas
+/// medidas do mockup: footnote semibold, recuo de 10 nos lados e 3 em cima e embaixo.
 struct EtiquetaDoIndicador: View {
     enum Cor { case marca, alerta, positivo, neutro }
     let texto: String
@@ -60,10 +61,10 @@ struct EtiquetaDoIndicador: View {
         case .neutro: (.textoSecundario, .campo)
         }
         Text(texto)
-            .font(.subheadline.weight(.semibold))
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(paleta.cor(frente))
             .fixedSize(horizontal: false, vertical: true)    // na letra grande, quebra em vez de cortar
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 3)
             .background(paleta.cor(fundo), in: .capsule)
     }
@@ -165,18 +166,18 @@ struct IndicadoresDaObraView: View {
     }
 }
 
-/// "Lançamentos 46": a pílula de vidro antes da lista.
+/// "Lançamentos 46": a pílula de vidro antes da lista, nas medidas do mockup (subheadline, o número em peso médio).
 struct PilulaDeLancamentos: View {
     let quantidade: Int
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
     var body: some View {
-        HStack(spacing: 6) {
-            Text("Lançamentos").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
-            Text("\(quantidade)").font(.body).foregroundStyle(paleta.cor(vidro.secundario))
+        HStack(spacing: 4) {                             // um espaço de texto, como no mockup
+            Text("Lançamentos").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+            Text("\(quantidade)").font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.vertical, 6)
         .superficie(.conteudo, em: .capsule)
         .accessibilityElement(children: .combine)

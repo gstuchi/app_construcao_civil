@@ -61,6 +61,9 @@ public func centavosParaReais(_ centavos: Int) -> Double { Double(centavos) / 10
 /// teto; zero ou negativo vira 0.
 public func reaisParaCentavos(_ reais: Double) -> Int {
     guard reais.isFinite, reais > 0 else { return 0 }
+    // De 1e21 para cima o toFixed do site devolve notação científica ("1e+21") ou "Infinity", que o parseFloat lê
+    // inteiros: dá o teto. O parseFloatJS daqui só lê dígitos e ponto, e em "1e+21" leria 1.
+    if reais * 100 >= 1e21 { return tetoDoTeclado }
     let arredondado = arredondarJS(parseFloatJS(toFixedJS(reais * 100, 4)) ?? 0)
     return Int(min(Double(tetoDoTeclado), arredondado))
 }

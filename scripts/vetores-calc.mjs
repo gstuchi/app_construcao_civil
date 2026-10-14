@@ -583,7 +583,7 @@ for(const [c, t] of [[0, '1'], [1, '2'], [12, '3'], [0, '0'], [0, '00'], [5, '00
   caso('teclado.aplicarTecla', `${c} ${t}`, [c, t], T.aplicarTecla);
 for(const c of [0, 5, 100, 123456, 100000000, 9999999999]) caso('teclado.fmtCentavos', String(c), [c], T.fmtCentavos);
 for(const c of [0, 1, 12345, 9999999999]) caso('teclado.centavosParaReais', String(c), [c], T.centavosParaReais);
-for(const r of [0, 8.7, 0.1 + 0.2, 1380, -5, 99999999.99, 1e12, 0.005, 1.005])
+for(const r of [0, 8.7, 0.1 + 0.2, 1380, -5, 99999999.99, 1e12, 0.005, 1.005, 1e19, Number.MAX_VALUE]) // de 1e19 o toFixed vira "1e+21"
   caso('teclado.reaisParaCentavos', String(r), [r], T.reaisParaCentavos);
 
 /* ---------- cadastro.js ---------- */

@@ -155,7 +155,8 @@ struct IndicadoresDaObraView: View {
                     if let etiqueta { EtiquetaDoIndicador(texto: etiqueta.0, cor: etiqueta.1) }
                 }
             }
-            ValorEmDinheiro(texto: valor, fonte: .title2.weight(.bold))
+            // O "—" de valor nenhum (venda sem estimativa) vai no secundário, como no mockup.
+            ValorEmDinheiro(texto: valor, fonte: .title2.weight(.bold), cor: valor == "—" ? vidro.secundario : .texto)
             Text(nota).font(.subheadline).foregroundStyle(paleta.cor(corDaNota ?? vidro.secundario))
                 .fixedSize(horizontal: false, vertical: true)
         }

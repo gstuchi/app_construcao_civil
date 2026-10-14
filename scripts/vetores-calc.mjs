@@ -538,7 +538,7 @@ conferir('cartão com juros ilegíveis', { ...ENTRADA, pagamento: 'cartao', parc
 conferir('cartão com juros acima de 100', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, juros: 101 }, null);
 conferir('cartão com mais parcelas que centavos', { ...ENTRADA, valor: 0.02, pagamento: 'cartao', parcelas: 3 }, null);
 conferir('cartão com data inválida', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, data: '2026-02-30' }, null);
-conferir('cartão com data vazia vence a partir de hoje', { ...ENTRADA, pagamento: 'cartao', parcelas: 2, data: '' }, null);
+conferir('cartão com data vazia é recusado, como na prévia', { ...ENTRADA, pagamento: 'cartao', parcelas: 2, data: '' }, null);
 conferir('edição: data vazia fica a do gasto', { ...ENTRADA, data: '' }, EM_PIX);
 conferir('edição no cartão não parcela de novo', { ...ENTRADA, pagamento: 'cartao', parcelas: 5, juros: 99 }, EM_PIX);
 conferir('edição de parcela', { ...ENTRADA, valor: 1100, pagamento: 'cartao' }, PARCELA);

@@ -80,7 +80,8 @@
     if(entrada.descricao.length>LIMITES.descricao) return {erro:'descricao', mensagem:`Use até ${LIMITES.descricao} caracteres.`};
     const data=entrada.data || (editado ? editado.data : hoje);
     const parcelas=!(editado && editado.grupoId) && entrada.pagamento==='cartao' ? entrada.parcelas||1 : 1;
-    const cartao=!editado && entrada.pagamento==='cartao' ? calc().parcelamentoCartao(valor, entrada.parcelas, entrada.juros, data) : null;
+    /* o cartão lê a data crua, como a prévia do formulário (atualizarCartao): a data vazia não vira hoje, é recusada */
+    const cartao=!editado && entrada.pagamento==='cartao' ? calc().parcelamentoCartao(valor, entrada.parcelas, entrada.juros, entrada.data) : null;
     if(!editado && entrada.pagamento==='cartao' && !cartao) return {erro:'cartao', mensagem:'Confira valor, parcelas, data e taxa de juros'};
     return {valor:cartao ? cartao.totalCompra : valor, data, parcelas, cartao};
   }

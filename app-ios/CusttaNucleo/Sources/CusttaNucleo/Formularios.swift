@@ -51,7 +51,8 @@ public func conferirGasto(_ entrada: EntradaDoGasto, editado: Gasto?, hoje: Stri
     let parcelas = !parcelaDeCompra && cartao && entrada.parcelas != 0 ? entrada.parcelas : 1   // o `parcelas || 1` do site
     var parcelamento: Parcelamento?
     if editado == nil && cartao {
-        guard let p = parcelamentoCartao(valor, entrada.parcelas, entrada.juros, data) else {
+        // A data crua, como a prévia do site (atualizarCartao): no cartão, a data vazia não vira hoje, é recusada.
+        guard let p = parcelamentoCartao(valor, entrada.parcelas, entrada.juros, entrada.data) else {
             return .failure(ErroDeFormulario(campo: "cartao", mensagem: "Confira valor, parcelas, data e taxa de juros"))
         }
         parcelamento = p

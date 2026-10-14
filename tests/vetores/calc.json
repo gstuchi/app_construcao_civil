@@ -18867,7 +18867,7 @@
         }
       },
       {
-        "caso": "cartão com data vazia vence a partir de hoje",
+        "caso": "cartão com data vazia é recusado, como na prévia",
         "args": [
           {
             "valor": 1380,
@@ -18882,26 +18882,8 @@
           "2026-10-06"
         ],
         "saida": {
-          "valor": 1380,
-          "data": "2026-10-06",
-          "parcelas": 2,
-          "cartao": {
-            "valorCompra": 1380,
-            "taxaMensal": 0,
-            "nParcelas": 2,
-            "totalCompra": 1380,
-            "jurosCompra": 0,
-            "parcelas": [
-              {
-                "valor": 690,
-                "data": "2026-10-06"
-              },
-              {
-                "valor": 690,
-                "data": "2026-11-06"
-              }
-            ]
-          }
+          "erro": "cartao",
+          "mensagem": "Confira valor, parcelas, data e taxa de juros"
         }
       },
       {

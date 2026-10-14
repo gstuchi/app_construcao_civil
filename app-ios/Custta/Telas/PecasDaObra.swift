@@ -7,7 +7,8 @@ import CusttaNucleo
    na mesma vertical. Nenhum token novo; nunca vidro dentro de vidro (o que fica dentro de um cartão é sólido). */
 
 /// O nome da obra no título grande, em quantas linhas precisar (o título grande do sistema corta nome longo), com o
-/// halo atrás do bloco inteiro no escuro, como o título grande de Obras.
+/// halo atrás do bloco inteiro no escuro, como o título grande de Obras. Nas alturas do mockup: 6 pt acima do início da
+/// rolagem e a pílula da fase 8 pt abaixo (2 a menos que o espaço da pilha).
 struct TituloDaObra: View {
     let nome: String
     @Environment(\.paleta) private var paleta
@@ -20,10 +21,12 @@ struct TituloDaObra: View {
             .accessibilityIdentifier("tituloDaObra")    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
             .frame(maxWidth: .infinity, alignment: .leading)
             .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra) }
+            .padding(EdgeInsets(top: -6, leading: 0, bottom: -2, trailing: 0))
     }
 }
 
-/// Fase e tempo numa pílula de vidro: um cartão baixo de raio 24 com a etiqueta da fase e "começou em… · N meses".
+/// Fase e tempo numa pílula de vidro: um cartão baixo de raio 24 com a etiqueta da fase e "começou em… · N meses", a 16 pt
+/// do total gasto, como no mockup (6 além do espaço da pilha).
 struct PilulaDaFase: View {
     let obra: Obra
     let hoje: String
@@ -42,6 +45,7 @@ struct PilulaDaFase: View {
         .superficie(.conteudo, em: .rect(cornerRadius: 24))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("faseDaObra")
+        .padding(.bottom, 6)
     }
 }
 

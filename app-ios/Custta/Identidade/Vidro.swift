@@ -69,15 +69,18 @@ struct VidroTokens: Equatable, Sendable {
         }
     }
 
-    /// Escurecimento sob o vidro: só no escuro e fora da navegação, 45% no Transparente e 20% no Fosco (decisão
-    /// do Giovani em 09/10, com o laudo de leitura como juiz). O vidro do iOS clareia o fundo e quase não o
-    /// desfoca, e o texto dos cartões não fechava 4,5:1 sobre a aurora e os pontos do globo; o vidro do mockup
-    /// escurecia o fundo (brilho de 0,84 no Transparente e 0,56 no Fosco). A navegação tem o véu da borda.
+    /// Escurecimento sob o vidro, só no escuro: 50% no Transparente e 20% no Fosco, em todo papel (decisão do Giovani
+    /// em 09/10, com o laudo de leitura como juiz; o Transparente subiu de 45% na etapa 2, quando o laudo da obra mediu
+    /// o cabeçalho do mês em 4,44:1). O vidro do iOS clareia o fundo e quase não o desfoca, e o texto dos cartões não
+    /// fechava 4,5:1 sobre a aurora e os pontos do globo; o vidro do mockup escurecia o fundo (brilho de 0,84 no
+    /// Transparente e 0,56 no Fosco). A navegação tinha só o véu da borda até o + entrar na lista de obras (etapa 2):
+    /// a cápsula encolhe e o rótulo "Ajustes" passa sobre o texto branco do comparativo, a 2,75:1 sem escurecimento e
+    /// a 4,29:1 com 30%.
     func escurecimento(_ papel: PapelDoVidro, escuro: Bool) -> Double {
-        guard escuro, papel != .navegacao else { return 0 }
+        guard escuro else { return 0 }
         switch nivel {
-        case .transparente: return 0.45
-        case .fosco: return 0.2
+        case .transparente: return 0.50
+        case .fosco: return 0.20
         case .solido: return 0
         }
     }
@@ -90,8 +93,11 @@ struct VidroTokens: Equatable, Sendable {
         }
     }
 
-    /// Texto secundário sobre a superfície (o --muted do site não fecha 4,5:1 sobre o vidro).
+    /// Texto secundário sobre a superfície (o --muted do site não fecha 4,5:1 sobre o vidro). Com Aumentar contraste, o do
+    /// Transparente, mais forte que o do Fosco: sobre o mesmo fundo, o do Fosco dava 24% menos contraste, e ligar a opção
+    /// baixava a leitura (conselho de 13/10).
     var secundario: Token {
+        if contorno && nivel != .solido { return .secundarioTransparente }
         switch nivel {
         case .transparente: return .secundarioTransparente
         case .fosco: return .secundarioFosco

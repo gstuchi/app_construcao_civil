@@ -261,7 +261,7 @@ struct EtiquetaDeFase: View {
 
     var body: some View {
         let (texto, fundo): (Token, Token) = switch fase {
-        case .construcao: (.alerta, .alertaFundo)
+        case .construcao: (.alertaEtiqueta, .alertaFundo)
         case .pronta: (.informacao, .informacaoFundo)
         case .vendida: (.positivo, .positivoFundo)
         }

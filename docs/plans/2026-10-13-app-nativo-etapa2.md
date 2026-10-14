@@ -12,7 +12,7 @@
 
 **Spec:** [`docs/specs/2026-10-13-app-nativo-etapa2-design.md`](../specs/2026-10-13-app-nativo-etapa2-design.md), com as correções da seção "O que muda em relação ao spec". Inventário do site, com arquivo e linha do `origin/main` (`7c700a5`): [`2026-10-13-app-nativo-etapa2-inventario.md`](2026-10-13-app-nativo-etapa2-inventario.md). Mockup aprovado: `~/Documents/custta-mockups/nativo/etapa2/` (abrir no Chrome; o `LEIA-ME.md` resume as três partes).
 
-**Como este plano foi escrito.** O código das tarefas 1 a 26 saiu de um protótipo completo dos PRs 0, 1 e 2; o das tarefas 27 a 37, de um protótipo do PR 3 feito em paralelo por um subagente sobre o fim do PR 2 e mesclado depois; o da tarefa 38, do protótipo sem a guarda da conta de teste. Os três estão na branch `proto/etapa2` (`aea9811`, `9a31a39`, `a7e3957`; não é para entrar na `main`). Cada protótipo foi fatiado num commit por tarefa, num clone local, e cada fatia foi conferida sozinha: testes do site (`npm run test:unit` e as suítes de browser que ela muda), guardas em Node, núcleo (`swift test`) e compilação do app com os testes. No fim de cada PR rodaram os testes de tela, o laudo de leitura e as auditorias no 18 Pro e no Pro Max e, nos PRs 2 e 3, a conferência cruzada contra os emuladores. O estado final das fatias de cada PR é idêntico, byte a byte, ao do protótipo. Os diffs aplicam um sobre o outro, na ordem das tarefas, a partir do `origin/main` `7c700a5`; arquivos gerados (`tests/vetores/calc.json`, cores e ícones do catálogo) nunca aparecem no plano: a tarefa diz o comando que os gera.
+**Como este plano foi escrito.** O código das tarefas 1 a 26 saiu de um protótipo completo dos PRs 0, 1 e 2; o das tarefas 27 a 37, de um protótipo do PR 3 feito em paralelo por um subagente sobre o fim do PR 2 e mesclado depois; o da tarefa 38, do protótipo sem a guarda da conta de teste. Os três estão na branch `proto/etapa2` (`aea9811`, `9a31a39`, `a7e3957`; não é para entrar na `main`), com dois commits por cima que valem para todos: `212402b`, o âmbar das etiquetas e a dose da navegação que o laudo do PR 3 mesclado pediu (Tarefas 10 e 15), e `85ff349`, o texto sem o `+` entre `Text`, depreciado no iOS 26 (Tarefas 15 e 22). Cada protótipo foi fatiado num commit por tarefa, num clone local, e cada fatia foi conferida sozinha: testes do site (`npm run test:unit` e as suítes de browser que ela muda), guardas em Node, núcleo (`swift test`) e compilação do app com os testes. No fim de cada PR rodaram os testes de tela, o laudo de leitura e as auditorias no 18 Pro e no Pro Max e, nos PRs 2 e 3, a conferência cruzada contra os emuladores. O estado final das fatias de cada PR é idêntico, byte a byte, ao do protótipo daquele PR mais esses dois commits. Os dois vieram depois das fatias e foram provados no protótipo inteiro, em 14/10: guardas (33), unidade do app (102), testes da tela da obra (7), compilação sem aviso e a varredura da cápsula sobre a lista no 18 Pro (40 cenas); os trechos que eles mudam no plano aplicam limpos sobre o `7c700a5` e dão os mesmos arquivos do protótipo. Os diffs aplicam um sobre o outro, na ordem das tarefas, a partir do `origin/main` `7c700a5`; arquivos gerados (`tests/vetores/calc.json`, cores e ícones do catálogo) nunca aparecem no plano: a tarefa diz o comando que os gera.
 
 ## Global Constraints
 
@@ -55,7 +55,7 @@ Duas decisões que o protótipo levantou mudam a cara do app e a ordem do trabal
 | C: a dose de vidro na tela da obra | Transparente 50% (era 45%), Fosco 20% como hoje, cabeçalho do mês secundário como no mockup, e com Aumentar contraste o secundário passa a ser o `SecundarioTransparente` em toda dose menos a sólida (Tarefa 10). Medido depois na varredura da lista em seis alturas, nas duas peles, sem e com Aumentar contraste: 18 Pro, pior 4,87 (padrão) e 5,22 (AC); Pro Max, 4,93 e 4,63 | Fosco 30% nos cartões (com a troca do secundário, não precisa, e mudaria a entrada aprovada); cabeçalho do mês na cor do texto (B'); véu local atrás do cabeçalho; dose só da obra | O Aumentar contraste baixava o contraste: o `SecundarioFosco` é 24% mais fraco que o `SecundarioTransparente` sobre o mesmo fundo (achado da lente de acessibilidade, conferido pelas outras duas). Clarear o texto fica fora da escada de 09/10 e contra o "sem clarear o texto" de 10/10, e só conserta a palavra medida: a linha de baixo, o texto mais lido, ficava em 4,90. O 4,56 do topo claro é a etiqueta sólida "estimativa", não vidro. "A só quando uma segunda tela reprovar" abriria exceção por tela. As três lentes terminaram em A mais a troca (C: 1 > 3 > 2) |
 | D: a ordem dos PRs | Um PR só do site (0b e 0a em commits separados, uma subida do `CACHE`); o PR 1 começa quando o do site entra em revisão; depois 2 → 3 → 4, com o PR 2 começando pelo núcleo e a gravação (sem tela) até o OK do PR 1 no aparelho; o job do laudo é a primeira tarefa do PR 1; a conta de teste é pedida ao Giovani no dia 0 | 0b → 0a → 1 → 2 → 3 em série; PR 1 primeiro e os do site na espera do aparelho; um segundo implementador | Dois PRs do site são duas rodadas do workflow do app (~50 min cada), duas subidas do `CACHE` (1,28 MB por PWA instalado) e duas prévias; os defeitos corrigidos são raros (o `parseNum` só erra com três casas; a parcela não se perde, volta), então não há urgência nem razão para esperar; com o PR 1 primeiro, o PR 2 esperaria o OK do aparelho (o checklist do build 1.2 ainda está aberto); os emuladores têm portas fixas e o Mac já tem quatro simuladores (contra o segundo implementador). Duas lentes em (iv) (D: 2 > 3 > 1); a terceira manteve o PR 1 primeiro, mas adotou o PR único do site |
 
-Dois achados do laudo do PR 3 mesclado entraram na mesma tarefa, pelo mesmo degrau da escada (escurecimento primeiro, no menor passo que passa): com o + na lista de obras a cápsula de abas encolhe e "Ajustes" passava sobre o texto branco do comparativo a 2,75:1 (a etapa 1 passava a 4,58 com a cápsula inteira), então a navegação ganha 30% de escurecimento no escuro; e a etiqueta âmbar ("nada em 30 dias", "Em construção") ficava em 4,42:1 na faixa do véu do topo no Pro Max, então o texto dela ganha o token `AlertaEtiqueta` no claro, porque o `Alerta` é o `--warn` do site e a guarda os mantém iguais.
+Dois achados do laudo do PR 3 mesclado entraram na mesma tarefa, pela mesma escada (escurecimento antes de mexer no texto): com o + na lista de obras a cápsula de abas encolhe e "Ajustes" passava sobre o texto branco do comparativo a 2,75:1 (a etapa 1 passava a 4,58 com a cápsula inteira), então a navegação passa a ter, no escuro, a mesma dose do conteúdo (30%, o primeiro degrau, ainda deixava 4,29:1 no 18 Pro; com a mesma dose, "Ajustes" ficou em 5,91:1 no pior ponto da varredura da cápsula sobre a lista, medida em 14/10 no 18 Pro, e uma dose só para todo vidro é um número a menos para calibrar a cada tela nova; a nota mais baixa da varredura, 4,58:1, é "Obras" na pílula sólida da aba escolhida no azul, a mesma da etapa 1); e a etiqueta âmbar ("nada em 30 dias", "Em construção") ficava em 4,42:1 na faixa do véu do topo no Pro Max, então o texto dela ganha o token `AlertaEtiqueta` no claro, porque o `Alerta` é o `--warn` do site e a guarda os mantém iguais.
 
 ### Decididas por recomendação
 
@@ -178,7 +178,7 @@ Entradas e situações que o spec não cita e que mais podem pegar quem usa o ap
 - **Tempo da CI.** As 32 cenas da folha somam ~15 min ao job `laudo` (que nasce no PR 1 com as da etapa 1 e as da obra); o job `app` ganha ~5 min com o `GastoUITests`. Se algum passar de ~65 min, divide de novo.
 - **Teclado do sistema na folha.** A descrição sobe acima do teclado quando ele aparece; em telas pequenas e na letra grande sobra pouco espaço. Mitigação: conferência no simulador de 375 pt (13 mini) e item no checklist do aparelho.
 - **iOS 26 × 27.** O vidro, os alertas e o `Button(role: .close)` mudam de desenho entre as versões. Mitigação: CI no 26, Mac no 27, laudo nos dois.
-- **O + muda a cápsula.** Na lista de obras a cápsula encolhe para o + caber, e os rótulos passam sobre outro trecho do conteúdo: o laudo da etapa 1 reprovou a 2,75:1 no protótipo mesclado. Mitigação: 30% de escurecimento sob a navegação (Tarefa 10) e a varredura da cápsula sobre a lista continua no laudo.
+- **O + muda a cápsula.** Na lista de obras a cápsula encolhe para o + caber, e os rótulos passam sobre outro trecho do conteúdo: o laudo da etapa 1 reprovou a 2,75:1 no protótipo mesclado. Mitigação: a navegação com a mesma dose do conteúdo (Tarefa 10; "Ajustes" a 5,91:1 no pior ponto da varredura do 18 Pro, contra 4,29:1 com 30%) e a varredura da cápsula sobre a lista continua no laudo.
 - **A conta de teste e a conta de sempre.** Até o PR 4 o build recusa gravar fora da conta de teste; se o Giovani entrar na conta de sempre, vê os dados e nada muda. Mitigação: o alerta diz isso, e o checklist pede o teste.
 
 ## Como entregar
@@ -2465,7 +2465,7 @@ git commit -m "ci: laudo de leitura e auditorias num job próprio" -m "O job do 
 
 ### Task 10: A dose do vidro e o âmbar das etiquetas pelo laudo de leitura
 
-O protótipo da tela da obra, medido pelo laudo com as doses de 09/10 (45% no Transparente, 20% no Fosco), reprovou duas vezes: o cabeçalho do mês em 4,44:1 na lista escura e, com Aumentar contraste, a linha de baixo do gasto em 4,21:1, porque o `SecundarioFosco` é 24% mais fraco que o `SecundarioTransparente` sobre o mesmo fundo. Decisão do conselho de 13/10 (segunda rodada): o Transparente sobe para 50% (o mesmo degrau da escada de 09/10 e o mesmo passo de 10/10), o Fosco fica em 20%, o cabeçalho do mês continua secundário como no mockup, e com Aumentar contraste o secundário passa a ser o `SecundarioTransparente` em toda dose menos a sólida. Dois achados do laudo do PR 3 entram aqui porque são tokens de todo o app: 30% de escurecimento sob a cápsula de abas e o + no escuro (com o + na lista de obras a cápsula encolhe e "Ajustes" passava sobre o texto branco do comparativo a 2,75:1, com o véu da borda sozinho) e o token `AlertaEtiqueta` para o texto âmbar das etiquetas no claro (o `Alerta` é o `--warn` do site e ficava em 4,42:1 na faixa do véu do topo). As medidas estão em "Conselho de 13/10 (segunda rodada)".
+O protótipo da tela da obra, medido pelo laudo com as doses de 09/10 (45% no Transparente, 20% no Fosco), reprovou duas vezes: o cabeçalho do mês em 4,44:1 na lista escura e, com Aumentar contraste, a linha de baixo do gasto em 4,21:1, porque o `SecundarioFosco` é 24% mais fraco que o `SecundarioTransparente` sobre o mesmo fundo. Decisão do conselho de 13/10 (segunda rodada): o Transparente sobe para 50% (o mesmo degrau da escada de 09/10 e o mesmo passo de 10/10), o Fosco fica em 20%, o cabeçalho do mês continua secundário como no mockup, e com Aumentar contraste o secundário passa a ser o `SecundarioTransparente` em toda dose menos a sólida. Dois achados do laudo do PR 3 entram aqui porque são tokens de todo o app: a cápsula de abas e o + com a mesma dose do conteúdo no escuro (com o + na lista de obras a cápsula encolhe e "Ajustes" passava sobre o texto branco do comparativo a 2,75:1 com o véu da borda sozinho; 30% ainda deixava 4,29:1 no 18 Pro; com a mesma dose, 5,91:1) e o token `AlertaEtiqueta` para o texto âmbar das etiquetas no claro (o `Alerta` é o `--warn` do site e ficava em 4,42:1 na faixa do véu do topo). As medidas estão em "Conselho de 13/10 (segunda rodada)".
 
 **Files:**
 - Modify: `app-ios/Custta/Identidade/Componentes.swift`
@@ -2477,7 +2477,7 @@ O protótipo da tela da obra, medido pelo laudo com as doses de 09/10 (45% no Tr
 
 **Interfaces:**
 - Consumes: `VidroTokens`, `Paleta` e as etiquetas da fase (etapa 1).
-- Produces: `VidroTokens.escurecimento(_:escuro:)` com 50% no Transparente, 20% no Fosco e 30% na navegação; `VidroTokens.secundario` olhando o Aumentar contraste; o token `AlertaEtiqueta` (`Paleta.alertaEtiqueta`) no texto das etiquetas âmbar.
+- Produces: `VidroTokens.escurecimento(_:escuro:)` com 50% no Transparente e 20% no Fosco em todo papel, a navegação inclusive; `VidroTokens.secundario` olhando o Aumentar contraste; o token `AlertaEtiqueta` (`Paleta.alertaEtiqueta`) no texto das etiquetas âmbar.
 
 - [ ] **Step 1: Escrever os testes**
 
@@ -2486,22 +2486,22 @@ Em `app-ios/CusttaTests/CoresTests.swift`:
 ```diff
 --- a/app-ios/CusttaTests/CoresTests.swift
 +++ b/app-ios/CusttaTests/CoresTests.swift
-@@ -66,11 +66,12 @@ struct VidroTokensTests {
+@@ -65,12 +65,11 @@ struct VidroTokensTests {
+ 
      @Test func escurecimentoSobOVidroSoNoEscuro() {
          let transparente = VidroTokens(nivel: .transparente, contorno: false), fosco = VidroTokens(nivel: .fosco, contorno: true)
-         for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado] {
+-        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado] {
 -            #expect(transparente.escurecimento(papel, escuro: true) == 0.45)
++        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado, .navegacao] {
 +            #expect(transparente.escurecimento(papel, escuro: true) == 0.5)
              #expect(fosco.escurecimento(papel, escuro: true) == 0.2)
              #expect(transparente.escurecimento(papel, escuro: false) == 0 && fosco.escurecimento(papel, escuro: false) == 0)
          }
 -        #expect(transparente.escurecimento(.navegacao, escuro: true) == 0, "a navegação tem o véu da borda")
-+        #expect(transparente.escurecimento(.navegacao, escuro: true) == 0.3 && fosco.escurecimento(.navegacao, escuro: true) == 0.3,
-+                "sob a cápsula com o + na lista, 30% (o véu da borda sozinho deixava o rótulo em 2,75:1)")
          #expect(VidroTokens(nivel: .solido, contorno: false).escurecimento(.conteudo, escuro: true) == 0)
      }
  
-@@ -90,6 +91,8 @@ struct VidroTokensTests {
+@@ -90,6 +89,8 @@ struct VidroTokensTests {
          #expect(VidroTokens(nivel: .transparente, contorno: false).secundario == .secundarioTransparente)
          #expect(VidroTokens(nivel: .fosco, contorno: false).secundario == .secundarioFosco)
          #expect(VidroTokens(nivel: .solido, contorno: false).secundario == .secundarioSolido)
@@ -2516,7 +2516,7 @@ Em `app-ios/CusttaTests/CoresTests.swift`:
 - [ ] **Step 2: Ver falhar**
 
 Run: `xcodebuild build-for-testing "${XB[@]}"` e `xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/VidroTokensTests`
-Expected: FAIL: `escurecimentoSobOVidroSoNoEscuro` (0,45 em vez de 0,5; 0 em vez de 0,3 na navegação) e `secundario` com contorno devolvendo `.secundarioFosco`.
+Expected: FAIL: `escurecimentoSobOVidroSoNoEscuro` (0,45 em vez de 0,5, e 0 na navegação) e `secundario` com contorno devolvendo `.secundarioFosco`.
 
 - [ ] **Step 3: Implementar**
 
@@ -2557,7 +2557,7 @@ Em `app-ios/Custta/Identidade/Vidro.swift`:
 ```diff
 --- a/app-ios/Custta/Identidade/Vidro.swift
 +++ b/app-ios/Custta/Identidade/Vidro.swift
-@@ -69,16 +69,20 @@ struct VidroTokens: Equatable, Sendable {
+@@ -69,15 +69,18 @@ struct VidroTokens: Equatable, Sendable {
          }
      }
  
@@ -2565,29 +2565,25 @@ Em `app-ios/Custta/Identidade/Vidro.swift`:
 -    /// do Giovani em 09/10, com o laudo de leitura como juiz). O vidro do iOS clareia o fundo e quase não o
 -    /// desfoca, e o texto dos cartões não fechava 4,5:1 sobre a aurora e os pontos do globo; o vidro do mockup
 -    /// escurecia o fundo (brilho de 0,84 no Transparente e 0,56 no Fosco). A navegação tem o véu da borda.
-+    /// Escurecimento sob o vidro: só no escuro e fora da navegação, 50% no Transparente e 20% no Fosco (decisão do
-+    /// Giovani em 09/10, com o laudo de leitura como juiz; o Transparente subiu de 45% na etapa 2, quando o laudo da
-+    /// obra mediu o cabeçalho do mês em 4,44:1). O vidro do iOS clareia o fundo e quase não o desfoca, e o texto dos
-+    /// cartões não fechava 4,5:1 sobre a aurora e os pontos do globo; o vidro do mockup escurecia o fundo (brilho de
-+    /// 0,84 no Transparente e 0,56 no Fosco). Sob a cápsula de abas e o +, 30%: com o + na lista de obras (etapa 2,
-+    /// parte 3) a cápsula encolhe e o rótulo "Ajustes" passa sobre o texto branco do comparativo, a 2,75:1 só com o véu
-+    /// da borda.
++    /// Escurecimento sob o vidro, só no escuro: 50% no Transparente e 20% no Fosco, em todo papel (decisão do Giovani
++    /// em 09/10, com o laudo de leitura como juiz; o Transparente subiu de 45% na etapa 2, quando o laudo da obra mediu
++    /// o cabeçalho do mês em 4,44:1). O vidro do iOS clareia o fundo e quase não o desfoca, e o texto dos cartões não
++    /// fechava 4,5:1 sobre a aurora e os pontos do globo; o vidro do mockup escurecia o fundo (brilho de 0,84 no
++    /// Transparente e 0,56 no Fosco). A navegação tinha só o véu da borda até o + entrar na lista de obras (etapa 2):
++    /// a cápsula encolhe e o rótulo "Ajustes" passa sobre o texto branco do comparativo, a 2,75:1 sem escurecimento e
++    /// a 4,29:1 com 30%.
      func escurecimento(_ papel: PapelDoVidro, escuro: Bool) -> Double {
 -        guard escuro, papel != .navegacao else { return 0 }
--        switch nivel {
++        guard escuro else { return 0 }
+         switch nivel {
 -        case .transparente: return 0.45
 -        case .fosco: return 0.2
--        case .solido: return 0
-+        guard escuro else { return 0 }
-+        switch (nivel, papel) {
-+        case (.solido, _): return 0
-+        case (_, .navegacao): return 0.30
-+        case (.transparente, _): return 0.50
-+        case (.fosco, _): return 0.20
++        case .transparente: return 0.50
++        case .fosco: return 0.20
+         case .solido: return 0
          }
      }
- 
-@@ -90,8 +94,11 @@ struct VidroTokens: Equatable, Sendable {
+@@ -90,8 +93,11 @@ struct VidroTokens: Equatable, Sendable {
          }
      }
  
@@ -2661,7 +2657,7 @@ git add app-ios/Custta/Assets.xcassets \
   app-ios/Custta/Identidade/Vidro.swift \
   app-ios/CusttaTests/CoresTests.swift \
   scripts/cores-app-ios.mjs
-git commit -m "fix: a dose do vidro e o âmbar das etiquetas pelo laudo de leitura" -m "O laudo da tela da obra mediu o cabeçalho do mês em 4,44:1 e, com Aumentar contraste, a linha de baixo do gasto em 4,21:1. O escurecimento sob o vidro sobe para 50% no escuro, o secundário com Aumentar contraste passa a ser o mais forte (ligar a opção baixava a leitura), a cápsula de abas ganha 30% (com o + na lista o rótulo passava sobre texto branco) e o âmbar das etiquetas ganha um token próprio no claro, porque o Alerta é o do site."
+git commit -m "fix: a dose do vidro e o âmbar das etiquetas pelo laudo de leitura" -m "O laudo da tela da obra mediu o cabeçalho do mês em 4,44:1 e, com Aumentar contraste, a linha de baixo do gasto em 4,21:1. O escurecimento sob o vidro sobe para 50% no escuro, o secundário com Aumentar contraste passa a ser o mais forte (ligar a opção baixava a leitura), a navegação passa a ter a mesma dose (com o + na lista o rótulo passava sobre texto branco, e 30% não bastava) e o âmbar das etiquetas ganha um token próprio no claro, porque o Alerta é o do site."
 ```
 
 ### Task 11: Marca por conta de que o servidor já respondeu

@@ -16,12 +16,15 @@ const {chromium}=require('playwright');
     });
     const page=await ctx.newPage();
     await page.goto('http://localhost:8123');
-    // 300 obras: "Nova obra" avisa e não abre a folha (a 301ª as rules recusam, e toda gravação seguinte falharia)
+    // 300 obras, 100 delas vendidas (as rules contam todas): "Nova obra" avisa e não abre a folha (a 301ª as rules
+    // recusam, e toda gravação seguinte falharia)
     await page.evaluate(()=>{
       dadosCarregados=true;
-      db=normaliza({obras:Array.from({length:300},(_,i)=>({id:`o${i}`,nome:`Obra ${i}`,dataInicio:'2026-01-01',gastos:[]}))});
+      const vendida={fase:'vendida',venda:{valor:500000,data:'2026-06-01'}};
+      db=normaliza({obras:Array.from({length:300},(_,i)=>({id:`o${i}`,nome:`Obra ${i}`,dataInicio:'2026-01-01',gastos:[],...(i<100?vendida:{})}))});
       renderAll();formNovaObra();
     });
+    assert.equal(await page.evaluate(()=>db.obras.filter(o=>o.fase==='vendida').length),100);
     await page.locator('dialog.confirma-dialog').waitFor();
     assert.equal(await page.locator('dialog.confirma-dialog .confirma-msg').textContent(),'Limite de 300 obras. Apague uma obra antiga para criar outra.');
     assert.equal(await page.locator('#fNome').count(),0,'a folha de nova obra não abre');

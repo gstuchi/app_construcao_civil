@@ -4,7 +4,7 @@
 
 **Controle de custos e lucro por obra, na ponta do lápis.**
 
-PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro renderia no banco no mesmo período (valor corrigido) e o lucro real na venda — bruto e acima do banco.
+App IOS sendo desenvolvido com uso de Swift UI
 
 ![Status](https://img.shields.io/badge/status-em%20produ%C3%A7%C3%A3o-2ecc71)
 ![PWA](https://img.shields.io/badge/PWA-offline--first-3ad17e)

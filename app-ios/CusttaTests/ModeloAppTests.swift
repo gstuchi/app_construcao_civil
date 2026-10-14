@@ -9,6 +9,8 @@ struct Abertura: Sendable, CustomTestStringConvertible {
     let nome: String
     let semRede: Bool
     let comDados: Bool
+    /// O servidor já respondeu a esta conta numa abertura anterior (a marca do Sincronizador).
+    var servidorJaRespondeu = false
     let carrega: Bool
     var testDescription: String { nome }
 }
@@ -17,6 +19,7 @@ let aberturas = [
     Abertura(nome: "sem rede e sem dados no aparelho", semRede: true, comDados: false, carrega: false),
     Abertura(nome: "com rede e conta ainda sem documento", semRede: false, comDados: false, carrega: true),
     Abertura(nome: "sem rede e com o blob no cache", semRede: true, comDados: true, carrega: true),
+    Abertura(nome: "sem rede, conta vazia que o servidor já respondeu", semRede: true, comDados: false, servidorJaRespondeu: true, carrega: true),
 ]
 
 /* O modelo das telas com a conta e o transporte falsos: quem decide a tela, a mensagem de sessão
@@ -29,10 +32,13 @@ struct ModeloAppTests {
         let transporte: TransporteFalsoApp
     }
 
-    func montar(conta inicial: String = "nenhuma", semRede: Bool = false, dados: ValorJSON? = DadosDeExemplo.blob) -> Montagem {
+    func montar(conta inicial: String = "nenhuma", semRede: Bool = false, dados: ValorJSON? = DadosDeExemplo.blob,
+                servidorJaRespondeu: Bool = false) -> Montagem {
         let conta = ContaFalsa(inicial: inicial)
         let transporte = TransporteFalsoApp(dados: dados, semRede: semRede)
-        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede)
+        let marca = MarcaEmMemoria()
+        marca.marcarTodas = servidorJaRespondeu
+        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede, marca: marca)
         let modelo = ModeloApp(conta: conta, sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: semRede))
         return Montagem(modelo: modelo, conta: conta, transporte: transporte)
     }
@@ -213,7 +219,8 @@ struct ModeloAppTests {
 
     @Test(.timeLimit(.minutes(1)), arguments: aberturas)       // espera limitada (Desfecho); o limite de tempo é a última trava
     func abrirOAppNaoGravaNada(_ a: Abertura) async {
-        let montagem = montar(conta: "senha", semRede: a.semRede, dados: a.comDados ? DadosDeExemplo.blob : nil)
+        let montagem = montar(conta: "senha", semRede: a.semRede, dados: a.comDados ? DadosDeExemplo.blob : nil,
+                              servidorJaRespondeu: a.servidorJaRespondeu)
         let m = montagem.modelo
         await ate { m.fase.ehPrincipal }
         try? await Task.sleep(for: .milliseconds(400))

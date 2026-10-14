@@ -315,6 +315,29 @@ sug('ignora o gasto em edição', SUG, 's1', 'revest', 'cimento cola', 'a3');
 sug('o gasto em edição só conta na obra dele', SUG, 's2', 'revest', 'cimento cola', 'a3');
 sug('acento no termo', SUG, 's2', 'eletrica', 'ácido', null);
 sug('nada parecido', SUG, 's1', 'matbasicos', 'xyzw', null);
+/* O que os casos de cima não separam: a data mais recente primeiro, o desempate pt-BR contra a ordem
+   UTF-16, o corte em 5, o teto de 10 usos, a mesma obra contra o começo igual, o termo no meio da
+   descrição e o erro de digitação de 3 letras. */
+const SUG2 = D.normaliza({ obras: [
+  { id: 'p1', nome: 'Casa', dataInicio: '2026-01-01', gastos: [
+    { id: 't1', valor: 10, topico: 'outros', descricao: 'Tijolo maciço', data: '2026-03-01' },
+    { id: 't2', valor: 10, topico: 'outros', descricao: 'tijolo baiano', data: '2026-03-01' },
+    { id: 't3', valor: 10, topico: 'outros', descricao: 'Tijolo à vista', data: '2026-03-01' },
+    { id: 't4', valor: 10, topico: 'outros', descricao: 'Tijolo cerâmico', data: '2026-03-01' },
+    { id: 't5', valor: 10, topico: 'outros', descricao: 'Tijolo furado', data: '2026-04-01' },
+    { id: 't6', valor: 10, topico: 'outros', descricao: 'Tijolo laminado', data: '2026-02-01' },
+    ...Array.from({ length: 11 }, (_, i) => ({ id: `h${i}`, valor: 10, topico: 'outros', descricao: 'Cal hidratada', data: '2026-01-01' })),
+    ...Array.from({ length: 10 }, (_, i) => ({ id: `v${i}`, valor: 10, topico: 'outros', descricao: 'Cal virgem', data: '2026-01-02' })),
+    { id: 'm1', valor: 10, topico: 'outros', descricao: 'Reboco com massa pronta', data: '2026-01-01' },
+    { id: 'g1', valor: 10, topico: 'outros', descricao: 'Gás', data: '2026-01-01' },
+  ] },
+  { id: 'p2', nome: 'Sobrado', dataInicio: '2026-01-01', gastos:
+    Array.from({ length: 10 }, (_, i) => ({ id: `c${i}`, valor: 10, topico: 'outros', descricao: 'Massa corrida', data: '2026-01-01' })) },
+], config: {} }).obras;
+sug('mesmo peso: a data mais recente, depois pt-BR (não UTF-16), corta em 5', SUG2, 'p1', 'outros', 'tijolo', null);
+sug('teto de 10 usos: empata e a data decide', SUG2, 'p1', 'outros', 'cal', null);
+sug('a mesma obra pesa mais que o começo igual com 10 usos', SUG2, 'p1', 'eletrica', 'massa', null);
+sug('erro de digitação de 3 letras não vale', SUG2, 'p1', 'outros', 'gaz', null);
 const rep = calc('gastoRepetido');
 const OBRA_REP = { id: 'r', gastos: [
   { id: 'x1', valor: 4980, descricao: 'Cimento CP-II', data: '2026-10-10' },
@@ -327,6 +350,10 @@ rep('data diferente', OBRA_REP, 'Cimento CP-II', 4980, '2026-10-11', null);
 rep('o próprio gasto em edição não conta', OBRA_REP, 'Cimento CP-II', 4980, '2026-10-10', 'x1');
 rep('centavos arredondados', OBRA_REP, 'Prego', 0.3, '2026-10-10', null);
 rep('acento e caixa não contam', OBRA_REP, 'CIMENTO CP-ÍI', 4980, '2026-10-10', null);
+rep('fração de centavo arredonda, não trunca', { id: 'r2', gastos: [{ id: 'y1', valor: 10, descricao: 'Bloco', data: '2026-10-10' }] }, 'Bloco', 9.996, '2026-10-10', null);
+const OBRA_SEM_DESC = { id: 'r3', gastos: [{ id: 'z1', valor: 4980, descricao: '', data: '2026-10-10' }] };
+rep('sem descrição nunca, nem igual a outro sem descrição', OBRA_SEM_DESC, '', 4980, '2026-10-10', null);
+rep('só espaços contam como descrição', OBRA_SEM_DESC, '   ', 4980, '2026-10-10', null);
 for(const t of ['0', '2,5', '2.5', ' 3 ', '10', '.5', ',5', '5.', '5,', '1,2,3', '-1', '+1', 'abc', '', '1e2', '100', '100,01', '\u{663}'])
   caso('calc.lerTaxaCartao', JSON.stringify(t), [t], x => { const n = C.lerTaxaCartao(x); return Number.isFinite(n) ? n : null; });
 caso('calc.lerTaxaCartao', 'nulo', [null], x => { const n = C.lerTaxaCartao(x); return Number.isFinite(n) ? n : null; });

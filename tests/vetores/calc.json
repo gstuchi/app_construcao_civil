@@ -11494,6 +11494,1473 @@
           null
         ],
         "saida": []
+      },
+      {
+        "caso": "mesmo peso: a data mais recente, depois pt-BR (não UTF-16), corta em 5",
+        "args": [
+          [
+            {
+              "id": "p1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "t1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo maciço",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "tijolo baiano",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo à vista",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo cerâmico",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo furado",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo laminado",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "m1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Reboco com massa pronta",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "g1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Gás",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "p2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "c0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "p1",
+          "outros",
+          "tijolo",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Tijolo furado",
+            "chave": "tijolo furado",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-04-01"
+          },
+          {
+            "texto": "Tijolo à vista",
+            "chave": "tijolo a vista",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-03-01"
+          },
+          {
+            "texto": "tijolo baiano",
+            "chave": "tijolo baiano",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-03-01"
+          },
+          {
+            "texto": "Tijolo cerâmico",
+            "chave": "tijolo ceramico",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-03-01"
+          },
+          {
+            "texto": "Tijolo maciço",
+            "chave": "tijolo macico",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-03-01"
+          }
+        ]
+      },
+      {
+        "caso": "teto de 10 usos: empata e a data decide",
+        "args": [
+          [
+            {
+              "id": "p1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "t1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo maciço",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "tijolo baiano",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo à vista",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo cerâmico",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo furado",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo laminado",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "m1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Reboco com massa pronta",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "g1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Gás",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "p2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "c0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "p1",
+          "outros",
+          "cal",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Cal virgem",
+            "chave": "cal virgem",
+            "vezes": 10,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-01-02"
+          },
+          {
+            "texto": "Cal hidratada",
+            "chave": "cal hidratada",
+            "vezes": 11,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-01-01"
+          }
+        ]
+      },
+      {
+        "caso": "a mesma obra pesa mais que o começo igual com 10 usos",
+        "args": [
+          [
+            {
+              "id": "p1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "t1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo maciço",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "tijolo baiano",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo à vista",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo cerâmico",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo furado",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo laminado",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "m1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Reboco com massa pronta",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "g1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Gás",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "p2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "c0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "p1",
+          "eletrica",
+          "massa",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Reboco com massa pronta",
+            "chave": "reboco com massa pronta",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": false,
+            "ultima": "2026-01-01"
+          },
+          {
+            "texto": "Massa corrida",
+            "chave": "massa corrida",
+            "vezes": 10,
+            "mesmaObra": false,
+            "mesmoTopico": false,
+            "ultima": "2026-01-01"
+          }
+        ]
+      },
+      {
+        "caso": "erro de digitação de 3 letras não vale",
+        "args": [
+          [
+            {
+              "id": "p1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "t1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo maciço",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "tijolo baiano",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo à vista",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo cerâmico",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo furado",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "t6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Tijolo laminado",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "h10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal hidratada",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "v9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Cal virgem",
+                  "data": "2026-01-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "m1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Reboco com massa pronta",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "g1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Gás",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "p2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "c0",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c1",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c2",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c3",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c4",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c5",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c6",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c7",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c8",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "c9",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "Massa corrida",
+                  "data": "2026-01-01",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "p1",
+          "outros",
+          "gaz",
+          null
+        ],
+        "saida": []
       }
     ],
     "calc.gastoRepetido": [
@@ -11680,6 +13147,69 @@
             ]
           },
           "CIMENTO CP-ÍI",
+          4980,
+          "2026-10-10",
+          null
+        ],
+        "saida": true
+      },
+      {
+        "caso": "fração de centavo arredonda, não trunca",
+        "args": [
+          {
+            "id": "r2",
+            "gastos": [
+              {
+                "id": "y1",
+                "valor": 10,
+                "descricao": "Bloco",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "Bloco",
+          9.996,
+          "2026-10-10",
+          null
+        ],
+        "saida": true
+      },
+      {
+        "caso": "sem descrição nunca, nem igual a outro sem descrição",
+        "args": [
+          {
+            "id": "r3",
+            "gastos": [
+              {
+                "id": "z1",
+                "valor": 4980,
+                "descricao": "",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "",
+          4980,
+          "2026-10-10",
+          null
+        ],
+        "saida": false
+      },
+      {
+        "caso": "só espaços contam como descrição",
+        "args": [
+          {
+            "id": "r3",
+            "gastos": [
+              {
+                "id": "z1",
+                "valor": 4980,
+                "descricao": "",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "   ",
           4980,
           "2026-10-10",
           null

@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
       sessionStorage.setItem('splashVista','1');window.errosCartao=[];
       addEventListener('error',e=>errosCartao.push(e.message));
       addEventListener('securitypolicyviolation',e=>errosCartao.push(e.violatedDirective));
-      window.CLOUD={user:()=>({uid:'teste'}),onAuth:cb=>cb({uid:'teste'}),watchDados:()=>()=>{},saveDados:()=>Promise.resolve(),estado:()=> 'ocioso'};
+      window.CLOUD={user:()=>({uid:'teste'}),onAuth:cb=>cb({uid:'teste'}),watchDados:()=>()=>{},saveDados:d=>{window.salvoCartao=JSON.parse(JSON.stringify(d));return Promise.resolve();},estado:()=> 'ocioso'};
     });
     const page=await ctx.newPage();
     await page.goto('http://localhost:8123');
@@ -69,8 +69,17 @@ const {chromium}=require('playwright');
     await page.evaluate(()=>{ db=normaliza(JSON.parse(JSON.stringify(db))); });
     await page.locator('#dUma').click();
     assert.equal(await page.evaluate(id=>obraById('o').gastos.some(g=>g.id===id),ultima),false,'a parcela apagada voltou');
+    const restam=()=>page.evaluate(()=>[obraById('o'),salvoCartao.obras.find(o=>o.id==='o')].map(o=>o.gastos.map(g=>g.parcela?g.parcela.n+'/'+g.parcela.de:g.pagamento).sort().join(' ')));
+    assert.deepEqual(await restam(),Array(2).fill('1/2 1/3 2/2 2/3 pix'),'só esta parcela sai, e a exclusão vai para a nuvem');
+    assert.equal(await page.locator('#oGastos li',{hasText:'/3)'}).count(),2);
+    // A compra toda, com outro snapshot no meio.
+    await page.locator('#oGastos li',{hasText:'(1/3)'}).locator('.li-del').click();
+    await page.evaluate(()=>{ db=normaliza(JSON.parse(JSON.stringify(db))); });
+    await page.locator('#dTodas').click();
+    assert.deepEqual(await restam(),Array(2).fill('1/2 2/2 pix'),'a compra apagada voltou');
+    assert.equal(await page.locator('#oGastos li',{hasText:'/3)'}).count(),0);
     await page.waitForTimeout(200);
     assert.deepEqual(await page.evaluate(()=>errosCartao),[]);
-    console.log('ok - juros mensais, parcelas, edição sem reaplicar juros, Pix sem taxa e parcela apagada com snapshot no meio');
+    console.log('ok - juros mensais, parcelas, edição sem reaplicar juros, Pix sem taxa e parcela e compra apagadas com snapshot no meio');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

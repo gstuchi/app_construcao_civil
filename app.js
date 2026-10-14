@@ -786,13 +786,10 @@ function formVenda(o){
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
     const valor = parseNum($('#fVal').value);
-    if(valor<=0){ $('#fVal').focus(); return; }
     const data = $('#fData').value;
-    if(!OBRA_CALC.dataIgualOuDepois(data, o.dataInicio) || !OBRA_CALC.dataIgualOuDepois(todayISO(), data)){
-      toast('Data da venda precisa ficar entre o início da obra e hoje');
-      $('#fData').focus();
-      return;
-    }
+    const erro = OBRA_DADOS.conferirVenda(valor, data, o.dataInicio, todayISO());
+    if(erro?.erro==='valor'){ $('#fVal').focus(); return; }
+    if(erro?.erro==='data'){ toast(erro.mensagem); $('#fData').focus(); return; }
     const oo = obraById(o.id); if(!oo) return;
     oo.venda = { valor, data };
     oo.fase = 'vendida';
@@ -815,16 +812,12 @@ function formEditarObra(o){
     </div>`);
   maskMoney('#fEst');
   $('#cSave').onclick = ()=>{
-    const nome = $('#fNome').value.trim();
-    if(!nome){ $('#fNome').focus(); return; }
-    if(!textoValido(nome, 'nome', $('#fNome'))) return;
-    const oo = obraById(o.id); if(!oo) return;
-    oo.nome = nome;
-    oo.dataInicio = $('#fData').value || oo.dataInicio;
-    const est = parseNum($('#fEst').value);
-    oo.valorEstimadoVenda = est>0 ? est : null;
-    const area = parseNum($('#fArea').value);
-    oo.areaM2 = area>0 ? area : null;
+    const campos = { nome:$('#fNome').value.trim(), dataInicio:$('#fData').value,
+      valorEstimadoVenda:parseNum($('#fEst').value), areaM2:parseNum($('#fArea').value) };
+    const erro = OBRA_DADOS.conferirObra(campos, false);
+    if(erro){ if(erro.mensagem) toast(erro.mensagem, "erro"); $('#fNome').focus(); return; }
+    const i = db.obras.findIndex(x=>x.id===o.id); if(i<0) return;
+    db.obras[i] = OBRA_DADOS.obraEditada(db.obras[i], campos);
     save(); closeSheet(); renderAll();
   };
   $('#cDel').onclick = async()=>{
@@ -1799,26 +1792,18 @@ function formNovaObra(){
   });
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = ()=>{
-    const nome = $('#fNome').value.trim();
-    if(!nome){ $('#fNome').focus(); return; }
-    if(!textoValido(nome, 'nome', $('#fNome'))) return;
-    const est = parseNum($('#fEst').value);
-    const area = parseNum($('#fArea').value);
-    if(!(area>0)){
+    const campos = { nome:$('#fNome').value.trim(), dataInicio:$('#fData').value, valorEstimadoVenda:parseNum($('#fEst').value),
+      areaM2:parseNum($('#fArea').value), orcamento:parseNum($('#fOrc').value) };
+    const erro = OBRA_DADOS.conferirObra(campos, true);
+    if(erro?.erro==='nome'){ if(erro.mensagem) toast(erro.mensagem, "erro"); $('#fNome').focus(); return; }
+    if(erro?.erro==='area'){
+      $('#fAreaErro').textContent = erro.mensagem;
       $('#fAreaErro').classList.remove('hidden');
       $('#fArea').setAttribute('aria-invalid','true');
       $('#fArea').focus();
       return;
     }
-    const o = {
-      id: uid(), nome, fase: 'construcao',
-      dataInicio: $('#fData').value || todayISO(),
-      valorEstimadoVenda: est > 0 ? est : null,
-      areaM2: area,
-      gastos: [],
-    };
-    const orcTotal = parseNum($('#fOrc').value);
-    if(orcTotal > 0) o.orcamento = { modo:'total', total:orcTotal };
+    const o = OBRA_DADOS.obraNova(campos, uid(), todayISO());
     db.obras.push(o); save(); closeSheet(); renderAll(); openObra(o.id);
   };
 }

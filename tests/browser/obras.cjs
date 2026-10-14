@@ -1,0 +1,37 @@
+/* Formulários da obra com dados sintéticos, sem serviços externos: a obra nova com o orçamento total e a venda fora
+   do intervalo. */
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+(async()=>{
+  const browser=await chromium.launch();
+  try{
+    const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:393,height:852}});
+    await ctx.route('**/cloud.js',r=>r.fulfill({contentType:'text/javascript',body:''}));
+    await ctx.route('https://**/*',r=>r.abort());
+    await ctx.addInitScript(()=>{
+      sessionStorage.setItem('splashVista','1');window.errosObras=[];
+      addEventListener('error',e=>errosObras.push(e.message));
+      addEventListener('securitypolicyviolation',e=>errosObras.push(e.violatedDirective));
+      window.CLOUD={user:()=>({uid:'teste'}),onAuth:cb=>cb({uid:'teste'}),watchDados:()=>()=>{},saveDados:()=>Promise.resolve(),estado:()=> 'ocioso'};
+    });
+    const page=await ctx.newPage();
+    await page.goto('http://localhost:8123');
+    // a obra nova entra com o orçamento total
+    await page.evaluate(()=>{ dadosCarregados=true; db=normaliza({obras:[]}); renderAll(); formNovaObra(); });
+    await page.locator('#fNome').fill('Casa nova');
+    await page.locator('#fArea').fill('3,125');
+    await page.locator('#fOrc').fill('100.000,00');
+    await page.locator('#cSave').click();
+    const nova=await page.evaluate(()=>db.obras.at(-1));
+    assert.equal(nova.nome,'Casa nova');assert.equal(nova.areaM2,3.125);assert.deepEqual(nova.orcamento,{modo:'total',total:100000});
+    // venda antes do início não grava
+    await page.evaluate(id=>formVenda(obraById(id)),nova.id);
+    await page.locator('#fVal').fill('500.000,00');
+    await page.locator('#fData').fill('2020-01-01');
+    await page.locator('#cSave').click();
+    assert.equal(await page.evaluate(id=>obraById(id).fase,nova.id),'construcao');
+    await page.waitForTimeout(200);
+    assert.deepEqual(await page.evaluate(()=>errosObras),[]);
+    console.log('ok - obra nova com orçamento e venda fora do intervalo');
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

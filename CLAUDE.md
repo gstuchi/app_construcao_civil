@@ -51,6 +51,7 @@ Scripts clássicos com globais, carregados na ordem em que aparecem no `index.ht
 | Arquivo | Global exposto | Papel |
 | --- | --- | --- |
 | [calc.js](calc.js) | `OBRA_CALC` + `module.exports` | regras de negócio puras, zero DOM — é o que os testes de unidade cobrem |
+| [dados.js](dados.js) | `OBRA_DADOS` + `module.exports` | normalização do blob na leitura e o que os formulários gravam (gasto, obra, venda, teto de obras), puro e nos vetores |
 | [cloud.js](cloud.js) | `window.CLOUD`, evento `cloud-pronto` | único ponto de contato com o Firebase |
 | [auth.js](auth.js) | — | overlay de login (`#auth` + `body.locked`) |
 | [nativo.js](nativo.js) | `OBRA_NATIVO` + `module.exports` | único ponto que toca `window.Capacitor`; no browser tudo é neutro |

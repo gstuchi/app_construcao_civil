@@ -107,7 +107,38 @@
     if(entrada.pagamento!=='cartao') delete g.jurosCartao;
     return g;
   }
-  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado};
+  /* ---- o que os formulários da obra gravam (app.js formNovaObra, formEditarObra e formVenda) ---- */
+  /* "Criar obra" e "Salvar" da obra, na ordem do formulário. campos: {nome (aparado), dataInicio, valorEstimadoVenda,
+     areaM2, orcamento}, com os valores lidos pelo parseNum (0 quando vazios). Erro: {erro:'nome'} (vazio: a tela volta
+     ao nome), {erro:'nome', mensagem} ou, só na obra nova, {erro:'area', mensagem}; certo: null. */
+  function conferirObra(campos, nova){
+    if(!campos.nome) return {erro:'nome'};
+    if(campos.nome.length>LIMITES.nome) return {erro:'nome', mensagem:`Use até ${LIMITES.nome} caracteres.`};
+    if(nova && !(campos.areaM2>0)) return {erro:'area', mensagem:'Informe área construída maior que zero.'};
+    return null;
+  }
+  /* A obra nova: em construção e sem gastos; valor estimado e orçamento total só quando maiores que zero. */
+  function obraNova(campos, id, hoje){
+    const o={id, nome:campos.nome, fase:'construcao', dataInicio:campos.dataInicio||hoje,
+      valorEstimadoVenda:campos.valorEstimadoVenda>0?campos.valorEstimadoVenda:null, areaM2:campos.areaM2, gastos:[]};
+    if(campos.orcamento>0) o.orcamento={modo:'total', total:campos.orcamento};
+    return o;
+  }
+  /* A obra editada: nome, início (vazio fica o antigo), valor estimado e área (zero ou vazio viram null). O resto fica. */
+  function obraEditada(obra, campos){
+    return {...obra, nome:campos.nome, dataInicio:campos.dataInicio||obra.dataInicio,
+      valorEstimadoVenda:campos.valorEstimadoVenda>0?campos.valorEstimadoVenda:null, areaM2:campos.areaM2>0?campos.areaM2:null};
+  }
+  /* "Confirmar venda": valor maior que zero e data entre o início da obra e hoje. Erro: {erro:'valor'} (a tela volta ao
+     valor) ou {erro:'data', mensagem}; certo: null. */
+  function conferirVenda(valor, data, dataInicio, hoje){
+    if(valor<=0) return {erro:'valor'};
+    const C=calc();
+    if(!C.dataIgualOuDepois(data, dataInicio) || !C.dataIgualOuDepois(hoje, data))
+      return {erro:'data', mensagem:'Data da venda precisa ficar entre o início da obra e hoje'};
+    return null;
+  }
+  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,conferirObra,obraNova,obraEditada,conferirVenda};
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.OBRA_DADOS=api;
 })(typeof window !== 'undefined' ? window : globalThis);

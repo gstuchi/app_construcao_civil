@@ -569,6 +569,39 @@ editado('parcela: o pagamento não muda nem com Pix na entrada', PARCELA, { ...E
 editado('parcela: muda só ela e o pagamento fica', PARCELA, { ...ENTRADA, valor: 1100, pagamento: 'cartao', data: '2026-09-30' });
 editado('data vazia fica a do gasto', EM_PIX, { ...ENTRADA, data: '' });
 
+/* O que os formulários da obra gravam: nova, editada e a venda. */
+const CAMPOS_OBRA = { nome: 'Casa Alphaville', dataInicio: '2025-08-12', valorEstimadoVenda: 1450000, areaM2: 300, orcamento: 0 };
+const conferirObra = (nome, campos, nova) => caso('dados.conferirObra', nome, [campos, nova], D.conferirObra);
+conferirObra('nova completa', CAMPOS_OBRA, true);
+conferirObra('nome vazio', { ...CAMPOS_OBRA, nome: '' }, true);
+conferirObra('nome com 120', { ...CAMPOS_OBRA, nome: 'x'.repeat(120) }, true);
+conferirObra('nome com 121', { ...CAMPOS_OBRA, nome: 'x'.repeat(121) }, true);
+conferirObra('nome em UTF-16', { ...CAMPOS_OBRA, nome: '🏠'.repeat(60) + 'x' }, true);
+conferirObra('nova sem área', { ...CAMPOS_OBRA, areaM2: 0 }, true);
+conferirObra('nova com área negativa', { ...CAMPOS_OBRA, areaM2: -3 }, true);
+conferirObra('edição sem área vale', { ...CAMPOS_OBRA, areaM2: 0 }, false);
+conferirObra('nome vence a área', { ...CAMPOS_OBRA, nome: '', areaM2: 0 }, true);
+const novaObra = (nome, campos) => caso('dados.obraNova', nome, [campos, 'novaid', HOJE], D.obraNova);
+novaObra('completa com orçamento', { ...CAMPOS_OBRA, orcamento: 1200000 });
+novaObra('sem estimativa nem orçamento', { ...CAMPOS_OBRA, valorEstimadoVenda: 0 });
+novaObra('estimativa negativa vira null', { ...CAMPOS_OBRA, valorEstimadoVenda: -1 });
+novaObra('início vazio vira hoje', { ...CAMPOS_OBRA, dataInicio: '' });
+const editada = (nome, obra, campos) => caso('dados.obraEditada', nome, [obra, campos], D.obraEditada);
+editada('nome, início, estimativa e área', O1, { ...CAMPOS_OBRA, areaM2: 3.125 });
+editada('início vazio fica o antigo', O1, { ...CAMPOS_OBRA, dataInicio: '' });
+editada('estimativa e área zeradas viram null', O1, { ...CAMPOS_OBRA, valorEstimadoVenda: 0, areaM2: 0 });
+editada('vendida: venda, gastos, orçamento e o resto ficam', { ...O2, campoSoDoSite: { a: 1 } }, CAMPOS_OBRA);
+const venda = (nome, valor, data, inicio = '2025-08-12') => caso('dados.conferirVenda', nome, [valor, data, inicio, HOJE], D.conferirVenda);
+venda('certa', 1500000, '2026-10-01');
+venda('no dia do início', 1500000, '2025-08-12');
+venda('hoje', 1500000, HOJE);
+venda('valor zero', 0, '2026-10-01');
+venda('valor negativo', -1, '2026-10-01');
+venda('antes do início', 1500000, '2025-08-11');
+venda('depois de hoje', 1500000, '2026-10-07');
+venda('data vazia', 1500000, '');
+venda('data inválida', 1500000, '2026-02-30');
+
 /* ---------- push.js e id ---------- */
 for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx', 'https://fcm.googleapis.com/fcm/send/eXyZ', 'ç😀', 'x'.repeat(300)])
   caso('push.hashEndpoint', JSON.stringify(t.length > 40 ? t.slice(0, 40) + '…' : t), [t], P.hashEndpoint);

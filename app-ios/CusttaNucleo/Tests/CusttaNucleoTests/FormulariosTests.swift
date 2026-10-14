@@ -74,3 +74,39 @@ struct FormulariosTests {
         }
     }
 }
+
+extension CamposDaObra {
+    init(caso v: ValorJSON) {
+        let o = v.comoObjeto!
+        self.init(nome: o["nome"]!.comoTexto!, dataInicio: o["dataInicio"]!.comoTexto!, valorEstimadoVenda: o["valorEstimadoVenda"]!.numero,
+                  areaM2: o["areaM2"]!.numero, orcamento: o["orcamento"]?.comoNumero ?? 0)
+    }
+}
+
+struct FormulariosDaObraTests {
+    @Test func conferirObraNaOrdemDoFormulario() {
+        for c in Vetores.casos("dados.conferirObra") {
+            let r = conferirObra(CamposDaObra(caso: c.args[0]), nova: c.args[1] == .booleano(true))
+            confere(r?.json ?? .nulo, c.saida, .exata, c.caso)
+        }
+    }
+
+    @Test func obraNovaComoOSiteGrava() {
+        for c in Vetores.casos("dados.obraNova") {
+            confere(.objeto(obraNova(CamposDaObra(caso: c.args[0]), id: c.args[1].comoTexto!, hoje: c.args[2].comoTexto!)), c.saida, .exata, c.caso)
+        }
+    }
+
+    @Test func obraEditadaComoOSiteGrava() {
+        for c in Vetores.casos("dados.obraEditada") {
+            confere(.objeto(obraEditada(c.args[0].comoObjeto!, CamposDaObra(caso: c.args[1]))), c.saida, .exata, c.caso)
+        }
+    }
+
+    @Test func vendaEntreOInicioEHoje() {
+        for c in Vetores.casos("dados.conferirVenda") {
+            let r = conferirVenda(valor: c.args[0].numero, data: c.args[1].comoTexto!, dataInicio: c.args[2].comoTexto!, hoje: c.args[3].comoTexto!)
+            confere(r?.json ?? .nulo, c.saida, .exata, c.caso)
+        }
+    }
+}

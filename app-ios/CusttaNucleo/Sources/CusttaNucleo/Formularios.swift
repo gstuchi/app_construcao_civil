@@ -99,3 +99,58 @@ public func gastoEditado(_ gasto: Gasto, _ entrada: EntradaDoGasto, _ conferido:
     if entrada.pagamento != "cartao" { g.campos["jurosCartao"] = nil }
     return g
 }
+
+/// O que a pessoa respondeu no formulário da obra: nome aparado e os valores lidos como o `parseNum` (0 quando vazios).
+public struct CamposDaObra: Equatable, Sendable {
+    public var nome: String
+    /// AAAA-MM-DD; vazia vale hoje (obra nova) ou a antiga (edição).
+    public var dataInicio: String
+    public var valorEstimadoVenda: Double
+    public var areaM2: Double
+    /// Orçamento total (só na obra nova).
+    public var orcamento: Double
+
+    public init(nome: String, dataInicio: String, valorEstimadoVenda: Double = 0, areaM2: Double = 0, orcamento: Double = 0) {
+        self.nome = nome; self.dataInicio = dataInicio; self.valorEstimadoVenda = valorEstimadoVenda
+        self.areaM2 = areaM2; self.orcamento = orcamento
+    }
+}
+
+/// `conferirObra` do dados.js: nome (vazio, sem mensagem; mais de 120 unidades UTF-16) e, só na obra nova, a área.
+public func conferirObra(_ campos: CamposDaObra, nova: Bool) -> ErroDeFormulario? {
+    if campos.nome.isEmpty { return ErroDeFormulario(campo: "nome") }
+    if campos.nome.utf16.count > Limites.nome { return ErroDeFormulario(campo: "nome", mensagem: "Use até \(Limites.nome) caracteres.") }
+    if nova && !(campos.areaM2 > 0) { return ErroDeFormulario(campo: "area", mensagem: "Informe área construída maior que zero.") }
+    return nil
+}
+
+/// `obraNova` do dados.js, na forma que o site grava: em construção e sem gastos; valor estimado e orçamento total só quando
+/// maiores que zero. Sem `venda` e sem `afazeres`, que a leitura normalizada acrescenta.
+public func obraNova(_ campos: CamposDaObra, id: String, hoje: String) -> [String: ValorJSON] {
+    var o: [String: ValorJSON] = ["id": .texto(id), "nome": .texto(campos.nome), "fase": .texto("construcao"),
+                                  "dataInicio": .texto(campos.dataInicio.isEmpty ? hoje : campos.dataInicio),
+                                  "valorEstimadoVenda": campos.valorEstimadoVenda > 0 ? .numero(campos.valorEstimadoVenda) : .nulo,
+                                  "areaM2": .numero(campos.areaM2), "gastos": .lista([])]
+    if campos.orcamento > 0 { o["orcamento"] = .objeto(["modo": .texto("total"), "total": .numero(campos.orcamento)]) }
+    return o
+}
+
+/// `obraEditada` do dados.js: nome, início (vazio fica o antigo), valor estimado e área (zero ou vazio viram null); o resto
+/// da obra, inclusive o que o app não conhece, fica.
+public func obraEditada(_ obra: [String: ValorJSON], _ campos: CamposDaObra) -> [String: ValorJSON] {
+    var o = obra
+    o["nome"] = .texto(campos.nome)
+    if !campos.dataInicio.isEmpty { o["dataInicio"] = .texto(campos.dataInicio) }
+    o["valorEstimadoVenda"] = campos.valorEstimadoVenda > 0 ? .numero(campos.valorEstimadoVenda) : .nulo
+    o["areaM2"] = campos.areaM2 > 0 ? .numero(campos.areaM2) : .nulo
+    return o
+}
+
+/// `conferirVenda` do dados.js: valor maior que zero e data entre o início da obra e hoje.
+public func conferirVenda(valor: Double, data: String, dataInicio: String, hoje: String) -> ErroDeFormulario? {
+    if valor <= 0 { return ErroDeFormulario(campo: "valor") }
+    if !dataIgualOuDepois(data, dataInicio) || !dataIgualOuDepois(hoje, data) {
+        return ErroDeFormulario(campo: "data", mensagem: "Data da venda precisa ficar entre o início da obra e hoje")
+    }
+    return nil
+}

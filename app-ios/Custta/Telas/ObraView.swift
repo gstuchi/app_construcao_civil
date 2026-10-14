@@ -53,7 +53,9 @@ struct ObraView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
+            // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
+            .padding(.bottom, 98)
         }
         .scrollIndicators(.hidden)
         // O título pequeno entra na barra quando o grande sai de baixo dela (como o título grande do sistema).

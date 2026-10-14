@@ -82,6 +82,17 @@ final class ObraUITests: XCTestCase {
         XCTAssertTrue(app.elemento("indicadorSincronizacao").exists)
         XCTAssertFalse(app.elemento("tituloPequenoDaBarra").waitForExistence(timeout: 2),
                        "com a pílula de sincronização, o nome não entra na barra")
+        // No fim da rolagem, o último gasto fica à vista, acima da cápsula de abas (mockup: o conteúdo termina 132 pt acima
+        // da borda de baixo).
+        let ultimo = app.elemento("gasto-g001")
+        var fim = -1.0                                   // a pilha cria o último gasto antes de ele entrar na tela
+        for _ in 0..<16 {
+            app.swipeUp()
+            guard ultimo.exists else { continue }
+            if ultimo.frame.maxY == fim { break }
+            fim = ultimo.frame.maxY
+        }
+        XCTAssertLessThanOrEqual(ultimo.frame.maxY, app.buttons["aba-obras"].frame.minY, "o último gasto acima da cápsula")
     }
 
     func testObraSemGastos() {

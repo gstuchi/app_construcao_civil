@@ -13,6 +13,8 @@ enum Token: String, CaseIterable, Sendable {
     case fundo = "Fundo"
     case superficie = "Superficie"
     case linha = "Linha"
+    /// A linha fina dentro dos cartões de vidro: clara no escuro (o Linha sólido sumia sobre o vidro).
+    case linhaNoVidro = "LinhaNoVidro"
     case texto = "Texto"
     case textoSecundario = "TextoSecundario"
     case textoTerciario = "TextoTerciario"

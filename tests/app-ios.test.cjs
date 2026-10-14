@@ -146,7 +146,13 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
   for(const pele of ['Esmeralda', 'Azul']){
     const bloco = tabela.slice(tabela.indexOf(`${pele}: {`), tabela.indexOf('}', tabela.indexOf(`${pele}: {`)));
     assert.deepEqual([...bloco.matchAll(/^\s+(\w+): \['/gm)].map(m => m[1]).sort(), tokens, `tokens da pele ${pele}`);
+    // A linha fina dentro dos cartões de vidro: branco 9% no escuro, como o mockup (o Linha sólido, mais escuro que o vidro,
+    // sumia a 1,0–1,5:1); no claro, o próprio Linha.
+    const linha = bloco.match(/\bLinha: \['#\w+', '(#\w+)'\]/)[1];
+    assert.match(bloco, new RegExp(`\\bLinhaNoVidro: \\['#FFFFFF17', '${linha}'\\]`), `LinhaNoVidro da pele ${pele}`);
   }
+  const pecas = ler('app-ios/Custta/Telas/PecasDaObra.swift');
+  assert.match(pecas.slice(pecas.indexOf('struct LinhaFina')), /^[^}]*paleta\.cor\(\.linhaNoVidro\)/, 'a linha fina sobre o vidro usa o LinhaNoVidro');
 });
 
 test('aurora nas mesmas cores do site, nos quatro combos', async () => {

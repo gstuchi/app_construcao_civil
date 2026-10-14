@@ -331,13 +331,13 @@ struct LinhaDeGastoView: View {
     }
 }
 
-/// A linha fina entre as linhas de um cartão (hairline), na cor do token Linha.
+/// A linha fina entre as linhas de um cartão de vidro (hairline), no token LinhaNoVidro.
 struct LinhaFina: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.displayScale) private var escala
 
     var body: some View {
-        Rectangle().fill(paleta.cor(.linha)).frame(height: 1 / escala).accessibilityHidden(true)
+        Rectangle().fill(paleta.cor(.linhaNoVidro)).frame(height: 1 / escala).accessibilityHidden(true)
     }
 }
 

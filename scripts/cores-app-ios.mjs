@@ -21,6 +21,9 @@ export const CORES = {
     Fundo: ['#04100C', '#EDF5F1'],                  // --bg
     Superficie: ['#0C241D', '#FFFFFF'],             // --surface-solid: vidro com "Reduzir transparência"
     Linha: ['#1B3D33', '#C6DCD1'],                  // --line
+    // A linha fina dentro dos cartões de vidro (etapa 2): no escuro, branco 9% como o mockup; o Linha sólido, mais escuro
+    // que o vidro, sumia a 1,0–1,5:1 com a aurora atrás. No claro, o próprio Linha.
+    LinhaNoVidro: ['#FFFFFF17', '#C6DCD1'],
     Texto: ['#EAFFF6', '#13261E'],                  // --text
     TextoSecundario: ['#86AA9A', '#4D685C'],        // --muted
     TextoTerciario: ['#64887A', '#5F7A6D'],         // "(opcional)" nos rótulos
@@ -79,6 +82,7 @@ export const CORES = {
     Fundo: ['#070C18', '#EEF2F9'],
     Superficie: ['#111A2E', '#FFFFFF'],
     Linha: ['#243250', '#CDD8E8'],
+    LinhaNoVidro: ['#FFFFFF17', '#CDD8E8'],
     Texto: ['#EEF4FB', '#16233C'],
     TextoSecundario: ['#A3B4CA', '#556685'],
     TextoTerciario: ['#6E82A0', '#617594'],

@@ -543,6 +543,13 @@ conferir('edição: data vazia fica a do gasto', { ...ENTRADA, data: '' }, EM_PI
 conferir('edição no cartão não parcela de novo', { ...ENTRADA, pagamento: 'cartao', parcelas: 5, juros: 99 }, EM_PIX);
 conferir('edição de parcela', { ...ENTRADA, valor: 1100, pagamento: 'cartao' }, PARCELA);
 conferir('edição com valor zero', { ...ENTRADA, valor: 0 }, EM_PIX);
+conferir('edição de parcela não parcela de novo', { ...ENTRADA, valor: 1100, pagamento: 'cartao', parcelas: 5 }, PARCELA);
+conferir('valor inválido e descrição longa: o valor primeiro', { ...ENTRADA, valor: 0, descricao: 'a'.repeat(501) }, null);
+conferir('descrição longa e cartão inválido: a descrição primeiro',
+  { ...ENTRADA, descricao: 'a'.repeat(501), pagamento: 'cartao', parcelas: 3, juros: 101 }, null);
+conferir('valor que não é número', { ...ENTRADA, valor: null }, null);
+conferir('cartão com 0 parcelas', { ...ENTRADA, pagamento: 'cartao', parcelas: 0 }, null);
+conferir('edição no cartão com 0 parcelas conta 1', { ...ENTRADA, pagamento: 'cartao', parcelas: 0 }, EM_PIX);
 const lancados = (nome, entrada, ids) => caso('dados.gastosLancados', nome, [entrada, D.conferirGasto(comNaN(entrada), null, HOJE), ids],
   (e, c, l) => { const fila = [...l]; return D.gastosLancados(e, c, () => fila.shift()); });
 lancados('pix', ENTRADA, ['n1']);
@@ -551,11 +558,13 @@ lancados('cartão 3x com juros: irmãos no mesmo grupo', { ...ENTRADA, valor: 30
   ['grupo', 'n1', 'n2', 'n3']);
 lancados('cartão 7x sem juros, resto na última', { ...ENTRADA, valor: 1000, pagamento: 'cartao', parcelas: 7, data: '2026-11-12' },
   ['grupo', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7']);
+lancados('data vazia grava hoje', { ...ENTRADA, data: '' }, ['n1']);
 const editado = (nome, gasto, entrada) => caso('dados.gastoEditado', nome, [gasto, entrada, D.conferirGasto(comNaN(entrada), gasto, HOJE)], D.gastoEditado);
 editado('pix continua pix', EM_PIX, { ...ENTRADA, valor: 99000, descricao: 'Sapatas' });
 editado('pix vira cartão', EM_PIX, { ...ENTRADA, pagamento: 'cartao' });
 editado('cartão vira pix: as condições da compra saem', NO_CARTAO, { ...ENTRADA });
 editado('cartão continua cartão: as condições ficam', NO_CARTAO, { ...ENTRADA, pagamento: 'cartao' });
+editado('parcela: o pagamento não muda nem com Pix na entrada', PARCELA, { ...ENTRADA, valor: 1100, data: '2026-09-30' });
 editado('parcela: muda só ela e o pagamento fica', PARCELA, { ...ENTRADA, valor: 1100, pagamento: 'cartao', data: '2026-09-30' });
 editado('data vazia fica a do gasto', EM_PIX, { ...ENTRADA, data: '' });
 

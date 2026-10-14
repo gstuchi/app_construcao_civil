@@ -238,6 +238,18 @@ final class ModeloApp {
         }
     }
 
+    /* ---------- gravação ---------- */
+
+    /// O alerta de quem tenta gravar antes de o app ver os dados da conta (`nao-carregado`). O que a pessoa preencheu
+    /// continua na folha (no site, a folha fechava). Documento num formato que o app não lê também não deixa gravar, e
+    /// aí "carregando" seria para sempre: vale o texto do erro de leitura.
+    var mensagemDeNaoCarregado: String {
+        if case .erro(let codigo, .leitura) = sincronizador.estadoSinc, codigo == "formato-desconhecido" {
+            return textoErroDeLeitura(codigo)
+        }
+        return textoNaoCarregado(online: rede.online)
+    }
+
     /* ---------- sincronização e avisos ---------- */
 
     func tentarDeNovo() {

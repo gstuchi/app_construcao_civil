@@ -234,6 +234,20 @@ struct ModeloAppTests {
         }
     }
 
+    @Test func mensagemDeNaoCarregadoComoOSite() async {
+        #expect(montar().modelo.mensagemDeNaoCarregado == "Carregando suas obras, tente em instantes.")
+        #expect(montar(semRede: true).modelo.mensagemDeNaoCarregado == "Conecte à internet para carregar suas obras antes de lançar.")
+    }
+
+    /// Documento num formato que o app não lê: gravar fica recusado, e "carregando" seria para sempre.
+    @Test func mensagemDeNaoCarregadoComDocumentoQueOAppNaoLe() async {
+        let s = Sincronizador(transporte: TransporteFalsoApp(dados: nil, semRede: false, falhaDeLeitura: "formato-desconhecido"),
+                              relogio: RelogioDoSistema())
+        let m = ModeloApp(conta: ContaFalsa(inicial: "senha"), sincronizador: s, rede: MonitorDeRede(forcarSemRede: false))
+        await ate { if case .erro = m.sincronizador.estadoSinc { return true }; return false }
+        #expect(m.mensagemDeNaoCarregado == textoErroDeLeitura("formato-desconhecido"))
+    }
+
     @Test func confirmarOEmailAvisaATelaQueLeOUsuario() async {
         let m = montar(conta: "senha-confirma-ao-conferir").modelo
         await ate { m.fase.ehPrincipal }

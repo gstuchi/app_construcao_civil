@@ -80,6 +80,12 @@ public func textoErroDeLeitura(_ codigo: String) -> String {
     return "Não deu para buscar suas obras agora. Confira a internet e tente de novo. Nada foi alterado: as obras continuam salvas como estavam."
 }
 
+/// O alerta de quem tenta gravar antes de o app ver os dados da conta (`nao-carregado`), com os textos do
+/// `avisaNaoCarregado` do app.js: com rede, o primeiro snapshot só está demorando; sem rede, é preciso conectar.
+public func textoNaoCarregado(online: Bool) -> String {
+    online ? "Carregando suas obras, tente em instantes." : "Conecte à internet para carregar suas obras antes de lançar."
+}
+
 /// Nonce do login com a Apple: 32 bytes aleatórios em hexadecimal (a Apple assina o SHA-256 dele).
 public enum Nonce {
     public static func gerar() -> String {

@@ -759,8 +759,9 @@ function gastoRow(o, g, opts){
         <button class="layout-19 btn ghost" id="dCancel">Cancelar</button>
       </div>`);
     $('#dCancel').onclick = fechar;
-    $('#dUma').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.id!==g.id); save(); renderAll(); fechar(); };
-    $('#dTodas').onclick = ()=>{ oo.gastos = oo.gastos.filter(x=>x.grupoId!==g.grupoId); save(); renderAll(); fechar(); };
+    // relê a obra no toque: um snapshot com a folha aberta troca os objetos do db, e a exclusão iria para uma cópia velha
+    $('#dUma').onclick = ()=>{ const atual = obraById(o.id); if(atual){ atual.gastos = atual.gastos.filter(x=>x.id!==g.id); save(); renderAll(); } fechar(); };
+    $('#dTodas').onclick = ()=>{ const atual = obraById(o.id); if(atual){ atual.gastos = atual.gastos.filter(x=>x.grupoId!==g.grupoId); save(); renderAll(); } fechar(); };
   };
   li.appendChild(del);
   return li;

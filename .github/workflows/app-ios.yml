@@ -130,7 +130,7 @@ jobs:
             -skip-testing:CusttaUITests/AuditoriaUITests \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo ou tela reprovados: os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+      # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato.
       - name: Resultado dos testes quando reprovam
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -176,6 +176,7 @@ jobs:
             -only-testing:CusttaUITests/AuditoriaUITests \
             CODE_SIGNING_ALLOWED=NO
 
+      # Laudo ou auditorias reprovados: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
       - name: Resultado do laudo quando reprova
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

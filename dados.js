@@ -66,7 +66,85 @@
       taxaMensal:taxa>0&&taxa<=20?taxa:1,
       topicosCustom:lista(config.topicosCustom,t=>texto(t.id)&&texto(t.nm)?{...t,id:texto(t.id),nm:texto(t.nm),ic:texto(t.ic)||'etiqueta'}:null)}};
   }
-  const api={normaliza,LIMITES};
+  /* ---- o que o formulário do gasto grava (app.js formGasto) ----
+     O calc.js carrega antes deste arquivo no navegador; no Node vem pelo require. */
+  const calc = () => root.OBRA_CALC || require('./calc.js');
+  /* "Salvar" do gasto, na ordem do formulário. entrada: {valor, topico, descricao, data, pagamento, parcelas,
+     juros} como a tela leu (valor em reais, descrição aparada, parcelas inteiras e juros pelo lerTaxaCartao);
+     editado: o gasto em edição ou null; hoje: AAAA-MM-DD. Erro: {erro:'valor'} (a tela volta ao valor),
+     {erro:'descricao', mensagem} ou {erro:'cartao', mensagem}. Certo: {valor, data, parcelas, cartao}, com o
+     valor que vai para o documento (no cartão, o total com juros) e a data (no cartão, o primeiro vencimento). */
+  function conferirGasto(entrada, editado, hoje){
+    const valor=entrada.valor;
+    if(!Number.isFinite(valor) || valor<=0) return {erro:'valor'};
+    if(entrada.descricao.length>LIMITES.descricao) return {erro:'descricao', mensagem:`Use até ${LIMITES.descricao} caracteres.`};
+    const data=entrada.data || (editado ? editado.data : hoje);
+    const parcelas=!(editado && editado.grupoId) && entrada.pagamento==='cartao' ? entrada.parcelas||1 : 1;
+    /* o cartão lê a data crua, como a prévia do formulário (atualizarCartao): a data vazia não vira hoje, é recusada */
+    const cartao=!editado && entrada.pagamento==='cartao' ? calc().parcelamentoCartao(valor, entrada.parcelas, entrada.juros, entrada.data) : null;
+    if(!editado && entrada.pagamento==='cartao' && !cartao) return {erro:'cartao', mensagem:'Confira valor, parcelas, data e taxa de juros'};
+    return {valor:cartao ? cartao.totalCompra : valor, data, parcelas, cartao};
+  }
+  /* Os gastos de um lançamento novo: no cartão parcelado, um por parcela, com o mesmo grupoId (o primeiro id
+     pedido) e parcela {n, de}; no cartão, as condições da compra em jurosCartao; senão, um gasto só. */
+  function gastosLancados(entrada, conferido, novoId){
+    const c=conferido.cartao;
+    const dadosCartao=c ? {jurosCartao:{taxaMensal:c.taxaMensal, valorCompra:c.valorCompra, nParcelas:c.nParcelas,
+      totalCompra:c.totalCompra, jurosCompra:c.jurosCompra}} : {};
+    if(conferido.parcelas>1){
+      const grupoId=novoId();
+      return c.parcelas.map((p,i)=>({id:novoId(), valor:p.valor, topico:entrada.topico, descricao:entrada.descricao,
+        data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:conferido.parcelas}, ...dadosCartao}));
+    }
+    return [{id:novoId(), valor:conferido.valor, topico:entrada.topico, descricao:entrada.descricao, data:conferido.data,
+      pagamento:entrada.pagamento, ...dadosCartao}];
+  }
+  /* O gasto editado: valor, tópico, descrição e data; o pagamento só fora de uma compra parcelada; fora do
+     cartão, sem jurosCartao. Os outros campos, inclusive os que o app não conhece, ficam como estavam. */
+  function gastoEditado(gasto, entrada, conferido){
+    const g={...gasto, valor:conferido.valor, topico:entrada.topico, descricao:entrada.descricao, data:conferido.data};
+    if(!gasto.grupoId) g.pagamento=entrada.pagamento;
+    if(entrada.pagamento!=='cartao') delete g.jurosCartao;
+    return g;
+  }
+  /* ---- o que os formulários da obra gravam (app.js formNovaObra, formEditarObra e formVenda) ---- */
+  /* Teto de obras por conta, o mesmo das firestore.rules (d.obras.size() <= 300). Com ele cheio, "Nova obra" avisa em
+     vez de abrir: a obra a mais faria toda gravação seguinte ser recusada até apagar uma. */
+  const LIMITE_OBRAS = 300;
+  function avisoLimiteDeObras(quantidade){
+    return quantidade>=LIMITE_OBRAS ? {titulo:`Limite de ${LIMITE_OBRAS} obras`, texto:'Apague uma obra antiga para criar outra.'} : null;
+  }
+  /* "Criar obra" e "Salvar" da obra, na ordem do formulário. campos: {nome (aparado), dataInicio, valorEstimadoVenda,
+     areaM2, orcamento}, com os valores lidos pelo parseNum (0 quando vazios). Erro: {erro:'nome'} (vazio: a tela volta
+     ao nome), {erro:'nome', mensagem} ou, só na obra nova, {erro:'area', mensagem}; certo: null. */
+  function conferirObra(campos, nova){
+    if(!campos.nome) return {erro:'nome'};
+    if(campos.nome.length>LIMITES.nome) return {erro:'nome', mensagem:`Use até ${LIMITES.nome} caracteres.`};
+    if(nova && !(campos.areaM2>0)) return {erro:'area', mensagem:'Informe área construída maior que zero.'};
+    return null;
+  }
+  /* A obra nova: em construção e sem gastos; valor estimado e orçamento total só quando maiores que zero. */
+  function obraNova(campos, id, hoje){
+    const o={id, nome:campos.nome, fase:'construcao', dataInicio:campos.dataInicio||hoje,
+      valorEstimadoVenda:campos.valorEstimadoVenda>0?campos.valorEstimadoVenda:null, areaM2:campos.areaM2, gastos:[]};
+    if(campos.orcamento>0) o.orcamento={modo:'total', total:campos.orcamento};
+    return o;
+  }
+  /* A obra editada: nome, início (vazio fica o antigo), valor estimado e área (zero ou vazio viram null). O resto fica. */
+  function obraEditada(obra, campos){
+    return {...obra, nome:campos.nome, dataInicio:campos.dataInicio||obra.dataInicio,
+      valorEstimadoVenda:campos.valorEstimadoVenda>0?campos.valorEstimadoVenda:null, areaM2:campos.areaM2>0?campos.areaM2:null};
+  }
+  /* "Confirmar venda": valor maior que zero e data entre o início da obra e hoje. Erro: {erro:'valor'} (a tela volta ao
+     valor) ou {erro:'data', mensagem}; certo: null. */
+  function conferirVenda(valor, data, dataInicio, hoje){
+    if(valor<=0) return {erro:'valor'};
+    const C=calc();
+    if(!C.dataIgualOuDepois(data, dataInicio) || !C.dataIgualOuDepois(hoje, data))
+      return {erro:'data', mensagem:'Data da venda precisa ficar entre o início da obra e hoje'};
+    return null;
+  }
+  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,LIMITE_OBRAS,avisoLimiteDeObras,conferirObra,obraNova,obraEditada,conferirVenda};
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.OBRA_DADOS=api;
 })(typeof window !== 'undefined' ? window : globalThis);

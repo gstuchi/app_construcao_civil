@@ -1,5 +1,5 @@
 /* Vetores de teste compartilhados entre o site e o app nativo (docs/specs/2026-10-06-app-nativo-design.md,
-   "Testes e validação"). Roda as funções de verdade do calc.js, do dados.js, do push.js e do cadastro.js sobre casos
+   "Testes e validação"). Roda as funções de verdade do calc.js, do dados.js, do push.js, do cadastro.js e do teclado.js sobre casos
    fixos e grava entrada e saída em tests/vetores/calc.json. O teste do site (tests/vetores.test.mjs)
    confere que o arquivo está em dia com o código; o núcleo Swift (app-ios/CusttaNucleo) lê o mesmo
    arquivo. Se as duas cópias das regras divergirem, um dos lados falha.
@@ -36,6 +36,7 @@ const C = require('../calc.js');
 const D = require('../dados.js');
 const P = require('../push.js');
 const K = require('../cadastro.js');
+const T = require('../teclado.js');
 
 /* ---------- registro dos casos ---------- */
 const grupos = {};
@@ -268,6 +269,96 @@ filtra('tópico próprio pelo nome', O4.gastos, TOPICOS_MAPA, { texto: 'automaca
 filtra('tópico apagado busca pelo id', [{ id: 'k', valor: 1, topico: 'c_sumiu', descricao: '', data: '2026-01-01' }], TOPICOS_MAPA, { texto: 'c_sum' });
 filtra('nada encontrado', O1.gastos, TOPICOS_MAPA, { texto: 'xyz' });
 
+/* ---------- descrição do gasto: sugestões e repetido ---------- */
+const normDesc = calc('normalizaDescricao');
+for(const s of ['  Cimento   CP-II ', 'ÁCIDO\tmuriático', '\u{a0}a\u{2003}b\u{a0}', '', 'Tinta\nacrílica', 'ΟΔΟΣ', '\u{180e}x'])
+  normDesc(JSON.stringify(s), s);
+normDesc('nulo', null);
+const dist = calc('distanciaEdicao');
+for(const [a, b] of [['', ''], ['abc', ''], ['', 'abc'], ['cimento', 'cinemto'], ['kitten', 'sitting'], ['😀a', 'a'], ['ação', 'acao'], ['areia', 'areia']])
+  dist(`${a}|${b}`, a, b);
+/* Descrições de duas obras: a mesma chave em textos diferentes (o mais recente dá o texto; no mesmo dia, o
+   último), empates de peso e de data (desempate pelo localeCompare pt-BR), erro de digitação e o gasto em edição. */
+const SUG = D.normaliza({ obras: [
+  { id: 's1', nome: 'Casa', dataInicio: '2026-01-01', gastos: [
+    { id: 'a1', valor: 10, topico: 'matbasicos', descricao: 'Cimento CP-II, 120 sacos', data: '2026-03-01' },
+    { id: 'a2', valor: 10, topico: 'matbasicos', descricao: 'cimento cp-ii, 120 sacos', data: '2026-04-01' },
+    { id: 'a3', valor: 10, topico: 'revest', descricao: 'Cimento cola AC-II', data: '2026-04-01' },
+    { id: 'a4', valor: 10, topico: 'revest', descricao: 'Cimento cola AC-II', data: '2026-02-01' },
+    { id: 'a5', valor: 10, topico: 'pintura', descricao: '  Tinta   acrílica ', data: '2026-05-01' },
+    { id: 'a6', valor: 10, topico: 'matbasicos', descricao: 'Areia média', data: '2026-05-02' },
+    { id: 'a7', valor: 10, topico: 'matbasicos', descricao: 'Areia fina', data: '2026-05-02' },
+    { id: 'a8', valor: 10, topico: 'matbasicos', descricao: 'areia grossa', data: '2026-05-02' },
+    { id: 'a9', valor: 10, topico: 'matbasicos', descricao: 'Areia Grossa', data: '2026-05-02' },
+    { id: 'a10', valor: 10, topico: 'outros', descricao: '', data: '2026-05-03' },
+    { id: 'a11', valor: 10, topico: 'matbasicos', descricao: 'Cimento', data: '2026-01-15' },
+  ] },
+  { id: 's2', nome: 'Sobrado', dataInicio: '2026-01-01', gastos: [
+    { id: 'b1', valor: 10, topico: 'matbasicos', descricao: 'Cimento branco', data: '2026-06-01' },
+    { id: 'b2', valor: 10, topico: 'matbasicos', descricao: 'Cimento branco', data: '2026-06-02' },
+    { id: 'b3', valor: 10, topico: 'eletrica', descricao: 'Ciment', data: '2026-06-03' },
+    { id: 'b4', valor: 10, topico: 'eletrica', descricao: 'Areia lavada', data: '2026-05-02' },
+    { id: 'b5', valor: 10, topico: 'eletrica', descricao: 'Ácido muriático', data: '2026-05-02' },
+    { id: 'b6', valor: 10, topico: 'eletrica', descricao: 'acido muriatico', data: '2026-05-01' },
+    { id: 'b7', valor: 10, topico: 'eletrica', descricao: 'Areia', data: '2026-05-02' },
+  ] },
+], config: {} }).obras;
+const sug = calc('sugestoesDescricao');
+sug('termo vazio', SUG, 's1', 'matbasicos', '', null);
+sug('só espaços', SUG, 's1', 'matbasicos', '   ', null);
+sug('mesmo tópico e mesma obra pesam', SUG, 's1', 'matbasicos', 'cimen', null);
+sug('de outra obra', SUG, 's2', 'revest', 'Cimento', null);
+sug('sem acento, caixa e espaços', SUG, 's1', 'pintura', 'TINTA  acrilica', null);
+sug('erro de digitação a 2 edições', SUG, 's1', 'matbasicos', 'cinemto', null);
+sug('erro de digitação com menos de 4 letras não vale', SUG, 's1', 'matbasicos', 'cmt', null);
+sug('empate no peso e na data, desempate pt-BR, até 5', SUG, 's1', 'matbasicos', 'areia', null);
+sug('ignora o gasto em edição', SUG, 's1', 'revest', 'cimento cola', 'a3');
+sug('o gasto em edição só conta na obra dele', SUG, 's2', 'revest', 'cimento cola', 'a3');
+sug('acento no termo', SUG, 's2', 'eletrica', 'ácido', null);
+sug('nada parecido', SUG, 's1', 'matbasicos', 'xyzw', null);
+/* O que os casos de cima não separam: a data mais recente primeiro, o desempate pt-BR contra a ordem
+   UTF-16, o corte em 5, o teto de 10 usos, a mesma obra contra o começo igual, o termo no meio da
+   descrição e o erro de digitação de 3 letras. */
+const SUG2 = D.normaliza({ obras: [
+  { id: 'p1', nome: 'Casa', dataInicio: '2026-01-01', gastos: [
+    { id: 't1', valor: 10, topico: 'outros', descricao: 'Tijolo maciço', data: '2026-03-01' },
+    { id: 't2', valor: 10, topico: 'outros', descricao: 'tijolo baiano', data: '2026-03-01' },
+    { id: 't3', valor: 10, topico: 'outros', descricao: 'Tijolo à vista', data: '2026-03-01' },
+    { id: 't4', valor: 10, topico: 'outros', descricao: 'Tijolo cerâmico', data: '2026-03-01' },
+    { id: 't5', valor: 10, topico: 'outros', descricao: 'Tijolo furado', data: '2026-04-01' },
+    { id: 't6', valor: 10, topico: 'outros', descricao: 'Tijolo laminado', data: '2026-02-01' },
+    ...Array.from({ length: 11 }, (_, i) => ({ id: `h${i}`, valor: 10, topico: 'outros', descricao: 'Cal hidratada', data: '2026-01-01' })),
+    ...Array.from({ length: 10 }, (_, i) => ({ id: `v${i}`, valor: 10, topico: 'outros', descricao: 'Cal virgem', data: '2026-01-02' })),
+    { id: 'm1', valor: 10, topico: 'outros', descricao: 'Reboco com massa pronta', data: '2026-01-01' },
+    { id: 'g1', valor: 10, topico: 'outros', descricao: 'Gás', data: '2026-01-01' },
+  ] },
+  { id: 'p2', nome: 'Sobrado', dataInicio: '2026-01-01', gastos:
+    Array.from({ length: 10 }, (_, i) => ({ id: `c${i}`, valor: 10, topico: 'outros', descricao: 'Massa corrida', data: '2026-01-01' })) },
+], config: {} }).obras;
+sug('mesmo peso: a data mais recente, depois pt-BR (não UTF-16), corta em 5', SUG2, 'p1', 'outros', 'tijolo', null);
+sug('teto de 10 usos: empata e a data decide', SUG2, 'p1', 'outros', 'cal', null);
+sug('a mesma obra pesa mais que o começo igual com 10 usos', SUG2, 'p1', 'eletrica', 'massa', null);
+sug('erro de digitação de 3 letras não vale', SUG2, 'p1', 'outros', 'gaz', null);
+const rep = calc('gastoRepetido');
+const OBRA_REP = { id: 'r', gastos: [
+  { id: 'x1', valor: 4980, descricao: 'Cimento CP-II', data: '2026-10-10' },
+  { id: 'x2', valor: 0.1 + 0.2, descricao: 'Prego', data: '2026-10-10' },
+] };
+rep('mesma descrição, valor e data', OBRA_REP, 'cimento  cp-ii', 4980, '2026-10-10', null);
+rep('sem descrição nunca', OBRA_REP, '', 4980, '2026-10-10', null);
+rep('valor diferente', OBRA_REP, 'Cimento CP-II', 4980.01, '2026-10-10', null);
+rep('data diferente', OBRA_REP, 'Cimento CP-II', 4980, '2026-10-11', null);
+rep('o próprio gasto em edição não conta', OBRA_REP, 'Cimento CP-II', 4980, '2026-10-10', 'x1');
+rep('centavos arredondados', OBRA_REP, 'Prego', 0.3, '2026-10-10', null);
+rep('acento e caixa não contam', OBRA_REP, 'CIMENTO CP-ÍI', 4980, '2026-10-10', null);
+rep('fração de centavo arredonda, não trunca', { id: 'r2', gastos: [{ id: 'y1', valor: 10, descricao: 'Bloco', data: '2026-10-10' }] }, 'Bloco', 9.996, '2026-10-10', null);
+const OBRA_SEM_DESC = { id: 'r3', gastos: [{ id: 'z1', valor: 4980, descricao: '', data: '2026-10-10' }] };
+rep('sem descrição nunca, nem igual a outro sem descrição', OBRA_SEM_DESC, '', 4980, '2026-10-10', null);
+rep('só espaços contam como descrição', OBRA_SEM_DESC, '   ', 4980, '2026-10-10', null);
+for(const t of ['0', '2,5', '2.5', ' 3 ', '10', '.5', ',5', '5.', '5,', '1,2,3', '-1', '+1', 'abc', '', '1e2', '100', '100,01', '\u{663}'])
+  caso('calc.lerTaxaCartao', JSON.stringify(t), [t], x => { const n = C.lerTaxaCartao(x); return Number.isFinite(n) ? n : null; });
+caso('calc.lerTaxaCartao', 'nulo', [null], x => { const n = C.lerTaxaCartao(x); return Number.isFinite(n) ? n : null; });
+
 /* ---------- parcelas ---------- */
 const parcelas = calc('gerarParcelas');
 parcelas('resto de centavo na última', 100, 3, '2026-01-15');
@@ -427,12 +518,115 @@ n('orçamento de modo desconhecido vira total', obraCom({ orcamento: { modo: 'xy
 n('orçamento total zero some', obraCom({ orcamento: { modo: 'total', total: 0 } }));
 n('orçamento que não é objeto some', obraCom({ orcamento: 'muito' }));
 
+/* O que o formulário do gasto grava. Os juros ilegíveis (NaN) vão como null no caso. */
+const ENTRADA = { valor: 1380, topico: 'matbasicos', descricao: 'Cimento', data: '2026-10-12', pagamento: 'pix', parcelas: 1, juros: 0 };
+const comNaN = e => ({ ...e, juros: e.juros ?? NaN });
+const conferir = (nome, entrada, editado) => caso('dados.conferirGasto', nome, [entrada, editado, HOJE], (e, ed, h) => D.conferirGasto(comNaN(e), ed, h));
+const EM_PIX = O1.gastos[0], PARCELA = O1.gastos[4];
+const NO_CARTAO = { id: 'k1', valor: 250.5, topico: 'outros', descricao: 'Fone', data: '2026-02-10', pagamento: 'cartao', notaSoDoSite: 'fica',
+  jurosCartao: { taxaMensal: 0, valorCompra: 250.5, nParcelas: 1, totalCompra: 250.5, jurosCompra: 0 } };
+conferir('pix', ENTRADA, null);
+conferir('valor zero', { ...ENTRADA, valor: 0 }, null);
+conferir('valor negativo', { ...ENTRADA, valor: -5 }, null);
+conferir('descrição com 500', { ...ENTRADA, descricao: 'a'.repeat(500) }, null);
+conferir('descrição com 501', { ...ENTRADA, descricao: 'a'.repeat(501) }, null);
+conferir('descrição conta unidades UTF-16', { ...ENTRADA, descricao: '😀'.repeat(250) + 'a' }, null);
+conferir('data vazia vira hoje', { ...ENTRADA, data: '' }, null);
+conferir('cartão 10x sem juros', { ...ENTRADA, pagamento: 'cartao', parcelas: 10, data: '2026-11-12' }, null);
+conferir('cartão 3x com juros', { ...ENTRADA, valor: 3000, pagamento: 'cartao', parcelas: 3, juros: 2.5, data: '2026-11-12' }, null);
+conferir('cartão 1x', { ...ENTRADA, pagamento: 'cartao', parcelas: 1, juros: 3, data: '2026-11-12' }, null);
+conferir('cartão com juros ilegíveis', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, juros: null }, null);
+conferir('cartão com juros acima de 100', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, juros: 101 }, null);
+conferir('cartão com mais parcelas que centavos', { ...ENTRADA, valor: 0.02, pagamento: 'cartao', parcelas: 3 }, null);
+conferir('cartão com data inválida', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, data: '2026-02-30' }, null);
+conferir('cartão com data vazia é recusado, como na prévia', { ...ENTRADA, pagamento: 'cartao', parcelas: 2, data: '' }, null);
+conferir('edição: data vazia fica a do gasto', { ...ENTRADA, data: '' }, EM_PIX);
+conferir('edição no cartão não parcela de novo', { ...ENTRADA, pagamento: 'cartao', parcelas: 5, juros: 99 }, EM_PIX);
+conferir('edição de parcela', { ...ENTRADA, valor: 1100, pagamento: 'cartao' }, PARCELA);
+conferir('edição com valor zero', { ...ENTRADA, valor: 0 }, EM_PIX);
+conferir('edição de parcela não parcela de novo', { ...ENTRADA, valor: 1100, pagamento: 'cartao', parcelas: 5 }, PARCELA);
+conferir('valor inválido e descrição longa: o valor primeiro', { ...ENTRADA, valor: 0, descricao: 'a'.repeat(501) }, null);
+conferir('descrição longa e cartão inválido: a descrição primeiro',
+  { ...ENTRADA, descricao: 'a'.repeat(501), pagamento: 'cartao', parcelas: 3, juros: 101 }, null);
+conferir('valor que não é número', { ...ENTRADA, valor: null }, null);
+conferir('cartão com 0 parcelas', { ...ENTRADA, pagamento: 'cartao', parcelas: 0 }, null);
+conferir('edição no cartão com 0 parcelas conta 1', { ...ENTRADA, pagamento: 'cartao', parcelas: 0 }, EM_PIX);
+const lancados = (nome, entrada, ids) => caso('dados.gastosLancados', nome, [entrada, D.conferirGasto(comNaN(entrada), null, HOJE), ids],
+  (e, c, l) => { const fila = [...l]; return D.gastosLancados(e, c, () => fila.shift()); });
+lancados('pix', ENTRADA, ['n1']);
+lancados('cartão 1x guarda as condições da compra', { ...ENTRADA, pagamento: 'cartao', parcelas: 1, juros: 3, data: '2026-11-12' }, ['n1']);
+lancados('cartão 3x com juros: irmãos no mesmo grupo', { ...ENTRADA, valor: 3000, pagamento: 'cartao', parcelas: 3, juros: 2.5, data: '2026-01-31' },
+  ['grupo', 'n1', 'n2', 'n3']);
+lancados('cartão 7x sem juros, resto na última', { ...ENTRADA, valor: 1000, pagamento: 'cartao', parcelas: 7, data: '2026-11-12' },
+  ['grupo', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7']);
+lancados('data vazia grava hoje', { ...ENTRADA, data: '' }, ['n1']);
+const editado = (nome, gasto, entrada) => caso('dados.gastoEditado', nome, [gasto, entrada, D.conferirGasto(comNaN(entrada), gasto, HOJE)], D.gastoEditado);
+editado('pix continua pix', EM_PIX, { ...ENTRADA, valor: 99000, descricao: 'Sapatas' });
+editado('pix vira cartão', EM_PIX, { ...ENTRADA, pagamento: 'cartao' });
+editado('cartão vira pix: as condições da compra saem', NO_CARTAO, { ...ENTRADA });
+editado('cartão continua cartão: as condições ficam', NO_CARTAO, { ...ENTRADA, pagamento: 'cartao' });
+editado('parcela: o pagamento não muda nem com Pix na entrada', PARCELA, { ...ENTRADA, valor: 1100, data: '2026-09-30' });
+editado('parcela: muda só ela e o pagamento fica', PARCELA, { ...ENTRADA, valor: 1100, pagamento: 'cartao', data: '2026-09-30' });
+editado('data vazia fica a do gasto', EM_PIX, { ...ENTRADA, data: '' });
+
+/* O que os formulários da obra gravam: nova, editada, a venda e o teto de obras das rules. */
+constante('dados.LIMITE_OBRAS', D.LIMITE_OBRAS);
+for(const n of [0, 1, 299, 300, 301]) caso('dados.avisoLimiteDeObras', String(n), [n], D.avisoLimiteDeObras);
+const CAMPOS_OBRA = { nome: 'Casa Alphaville', dataInicio: '2025-08-12', valorEstimadoVenda: 1450000, areaM2: 300, orcamento: 0 };
+const conferirObra = (nome, campos, nova) => caso('dados.conferirObra', nome, [campos, nova], D.conferirObra);
+conferirObra('nova completa', CAMPOS_OBRA, true);
+conferirObra('nome vazio', { ...CAMPOS_OBRA, nome: '' }, true);
+conferirObra('nome com 120', { ...CAMPOS_OBRA, nome: 'x'.repeat(120) }, true);
+conferirObra('nome com 121', { ...CAMPOS_OBRA, nome: 'x'.repeat(121) }, true);
+conferirObra('nome em UTF-16', { ...CAMPOS_OBRA, nome: '🏠'.repeat(60) + 'x' }, true);
+conferirObra('nova sem área', { ...CAMPOS_OBRA, areaM2: 0 }, true);
+conferirObra('nova com área negativa', { ...CAMPOS_OBRA, areaM2: -3 }, true);
+conferirObra('edição sem área vale', { ...CAMPOS_OBRA, areaM2: 0 }, false);
+conferirObra('nome vence a área', { ...CAMPOS_OBRA, nome: '', areaM2: 0 }, true);
+conferirObra('nome longo vence a área', { ...CAMPOS_OBRA, nome: 'x'.repeat(121), areaM2: 0 }, true);
+conferirObra('nova com área NaN', { ...CAMPOS_OBRA, areaM2: NaN }, true);
+const novaObra = (nome, campos) => caso('dados.obraNova', nome, [campos, 'novaid', HOJE], D.obraNova);
+novaObra('completa com orçamento', { ...CAMPOS_OBRA, orcamento: 1200000 });
+novaObra('sem estimativa nem orçamento', { ...CAMPOS_OBRA, valorEstimadoVenda: 0 });
+novaObra('estimativa negativa vira null', { ...CAMPOS_OBRA, valorEstimadoVenda: -1 });
+novaObra('área zero passa como veio e orçamento negativo fica de fora', { ...CAMPOS_OBRA, areaM2: 0, orcamento: -1 });
+novaObra('início vazio vira hoje', { ...CAMPOS_OBRA, dataInicio: '' });
+const editada = (nome, obra, campos) => caso('dados.obraEditada', nome, [obra, campos], D.obraEditada);
+editada('nome, início, estimativa e área', O1, { ...CAMPOS_OBRA, areaM2: 3.125 });
+editada('início vazio fica o antigo', O1, { ...CAMPOS_OBRA, dataInicio: '' });
+editada('estimativa e área zeradas viram null', O1, { ...CAMPOS_OBRA, valorEstimadoVenda: 0, areaM2: 0 });
+editada('estimativa e área negativas viram null', O1, { ...CAMPOS_OBRA, valorEstimadoVenda: -1, areaM2: -3 });
+editada('vendida: venda, gastos, orçamento e o resto ficam', { ...O2, campoSoDoSite: { a: 1 } }, CAMPOS_OBRA);
+const venda = (nome, valor, data, inicio = '2025-08-12') => caso('dados.conferirVenda', nome, [valor, data, inicio, HOJE], D.conferirVenda);
+venda('certa', 1500000, '2026-10-01');
+venda('no dia do início', 1500000, '2025-08-12');
+venda('hoje', 1500000, HOJE);
+venda('valor zero', 0, '2026-10-01');
+venda('valor negativo', -1, '2026-10-01');
+venda('valor zero vence a data', 0, '2025-08-11');
+venda('valor NaN: só a data confere', NaN, '2026-10-01');
+venda('antes do início', 1500000, '2025-08-11');
+venda('depois de hoje', 1500000, '2026-10-07');
+venda('data vazia', 1500000, '');
+venda('data inválida', 1500000, '2026-02-30');
+
 /* ---------- push.js e id ---------- */
 for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx', 'https://fcm.googleapis.com/fcm/send/eXyZ', 'ç😀', 'x'.repeat(300)])
   caso('push.hashEndpoint', JSON.stringify(t.length > 40 ? t.slice(0, 40) + '…' : t), [t], P.hashEndpoint);
 /* uid() do app.js: milissegundos em base 36 mais 4 letras aleatórias. Só o prefixo é fixo. */
 for(const ms of [0, 35, 36, 1759750000000, 1700000000123, 4102444800000])
   caso('id.base36', String(ms), [ms], x => x.toString(36));
+
+/* ---------- teclado.js: o teclado de valor (centavos como inteiro) ---------- */
+constante('teclado.TETO', T.TETO);
+for(const [c, t] of [[0, '1'], [1, '2'], [12, '3'], [0, '0'], [0, '00'], [5, '00'], [123, 'del'], [0, 'del'], [999999999, '9'],
+  [9999999999, '1'], [999999999, '00'], [99999999, '00'], [12, 'x'], [12, '10'], [9999999999, 'del'],
+  [1234567890, '1'], [12, '05'], [-5, '1'], [1e18, '1'], [1e17, '00']]) // perto do teto ignora sem truncar; '05' não é tecla; negativo e estouro
+  caso('teclado.aplicarTecla', `${c} ${t}`, [c, t], T.aplicarTecla);
+for(const c of [-5, 0, 5, 9, 10, 100, 123456, 100000000, 9999999999]) caso('teclado.fmtCentavos', String(c), [c], T.fmtCentavos);
+for(const c of [0, 1, 35, 12345, 9999999999]) caso('teclado.centavosParaReais', String(c), [c], T.centavosParaReais);
+for(const r of [0, 8.7, 0.1 + 0.2, 1380, -5, 99999999.99, 1e12, 0.005, 1.005, 1.004995, 1e19, Number.MAX_VALUE]) // 1,004995: 4 casas, não 2 nem 3; de 1e19 o toFixed vira "1e+21"
+  caso('teclado.reaisParaCentavos', String(r), [r], T.reaisParaCentavos);
 
 /* ---------- cadastro.js ---------- */
 constante('cadastro.REGRAS_SENHA', K.REGRAS_SENHA);
@@ -509,7 +703,9 @@ for(const s of ['  12 ', '0x10', '0X1f', '1,5', '1e3', '1E-2', '.5', '5.', '+5',
   '0x200000000000018', '0o20000000000000003', '0b1000000000000000000000000000000000000000000000000000011', '0o4000000000000000014'])
   caso('js.textoParaNumero', JSON.stringify(s), [s], v => { const x = Number(v); return Number.isFinite(x) ? x : null; });
 for(const [x, casas] of [[8.25, 1], [1.005, 2], [2.5, 0], [0.5, 0], [10.25, 1], [12.35, 1], [1.45, 1], [999.95, 1], [0.05, 1], [1.25, 1], [1234.5678, 2], [0, 2],
-  [-1.5, 0], [-0.001, 2], [1e21, 2]]) // bordas: negativo no empate, negativo que zera e o limite de 1e21
+  [-1.5, 0], [-0.001, 2], [1e21, 2], // bordas: negativo no empate, negativo que zera e o limite de 1e21
+  // 4 casas, as do teclado de valor (reaisParaCentavos): o toFixed(4) acerta o 8,7 × 100 e o 1,005 × 100
+  [8.7 * 100, 4], [1.005 * 100, 4], [0.1 * 3 * 100, 4], [9999999999, 4], [0.5, 4], [1.00005, 4], [2.00015, 4], [99999999.99 * 100, 4], [123.45675, 3]])
   caso('js.toFixed', `${x}.toFixed(${casas})`, [x, casas], (v, c) => v.toFixed(c));
 for(const x of [0.5, 1.5, 2.5, -0.5, -1.5, -2.5, 0.49999999999999994, 1e16 + 1, -0.4])
   caso('js.round', String(x), [x], v => Math.round(v) + 0); // + 0 tira o −0, que o JSON já não guarda

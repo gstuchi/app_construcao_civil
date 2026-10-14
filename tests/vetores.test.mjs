@@ -1,5 +1,5 @@
 /* Os vetores compartilhados (tests/vetores/calc.json) têm de estar em dia com o calc.js, o
-   dados.js, o push.js e o cadastro.js: o app nativo confere a cópia dele das regras contra este arquivo
+   dados.js, o push.js, o cadastro.js e o teclado.js: o app nativo confere a cópia dele das regras contra este arquivo
    (app-ios/CusttaNucleo). Falhou aqui? Rode `npm run vetores` e faça commit do arquivo junto
    com a mudança da regra; o workflow app-ios roda o lado Swift. */
 import { test } from 'node:test';
@@ -51,6 +51,11 @@ test('toda função e constante exportada do calc.js tem vetor', () => {
 
 test('toda exportação do cadastro.js tem vetor', () => {
   const faltam = Object.keys(require('../cadastro.js')).filter(k => !vetores.grupos[`cadastro.${k}`]);
+  assert.deepEqual(faltam, []);
+});
+
+test('toda exportação do teclado.js tem vetor', () => {
+  const faltam = Object.keys(require('../teclado.js')).filter(k => !vetores.grupos[`teclado.${k}`]);
   assert.deepEqual(faltam, []);
 });
 

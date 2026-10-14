@@ -80,42 +80,6 @@ const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{ const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
 // String() antes do replace: campo numérico do blob (areaM2, valor) também passa por aqui
 function escapeHtml(s){ return (s==null||s===false ? '' : String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const normalizaDescricao = s => OBRA_CALC.semAcento(String(s || '')).trim().replace(/\s+/g, ' ');
-function distanciaEdicao(a,b){
-  if(a===b) return 0;
-  if(!a.length) return b.length;
-  if(!b.length) return a.length;
-  let ant=Array.from({length:b.length+1},(_,i)=>i);
-  for(let i=1;i<=a.length;i++){
-    const atual=[i];
-    for(let j=1;j<=b.length;j++) atual[j]=Math.min(atual[j-1]+1,ant[j]+1,ant[j-1]+(a[i-1]===b[j-1]?0:1));
-    ant=atual;
-  }
-  return ant[b.length];
-}
-function sugestoesDescricao(obraId, topicoId, termo, ignorarId){
-  const busca=normalizaDescricao(termo);
-  if(!busca) return [];
-  const unicas=new Map();
-  db.obras.forEach(o=>o.gastos.forEach(g=>{
-    if(o.id===obraId && g.id===ignorarId) return;
-    const texto=String(g.descricao||'').trim(), chave=normalizaDescricao(texto);
-    if(!chave) return;
-    const item=unicas.get(chave)||{texto,chave,vezes:0,mesmaObra:false,mesmoTopico:false,ultima:''};
-    item.vezes++;
-    if(o.id===obraId) item.mesmaObra=true;
-    if(g.topico===topicoId) item.mesmoTopico=true;
-    if((g.data||'')>=item.ultima){ item.ultima=g.data||''; item.texto=texto; }
-    unicas.set(chave,item);
-  }));
-  return [...unicas.values()].filter(x=>x.chave.includes(busca)
-      || (busca.length>=4 && Math.abs(x.chave.length-busca.length)<=2 && distanciaEdicao(x.chave,busca)<=2))
-    .sort((a,b)=>{
-      const sa=(a.mesmoTopico?100:0)+(a.mesmaObra?40:0)+(a.chave.startsWith(busca)?25:0)+Math.min(a.vezes,10);
-      const sb=(b.mesmoTopico?100:0)+(b.mesmaObra?40:0)+(b.chave.startsWith(busca)?25:0)+Math.min(b.vezes,10);
-      return sb-sa || b.ultima.localeCompare(a.ultima) || a.texto.localeCompare(b.texto,'pt-BR');
-    }).slice(0,5);
-}
 function emptyBlock(icon,msg){ return `<div class="empty"><div class="big">${icon}</div><p>${msg}</p></div>`; }
 // KPIs de milhao estouram a largura do card (overflow:hidden corta o numero).
 // Reduz a fonte do numero so o quanto precisar pra caber; grande quando cabe.
@@ -955,7 +919,7 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   const pintarSugestoes = ()=>{
     const lista=$('#descSugestoes'), campo=$('#fDesc');
     const obraIdAtual=oFix ? oFix.id : ($('#fObra')?.value||'');
-    const sugestoes=sugestoesDescricao(obraIdAtual,top,campo.value,isEdit?gasto.id:null);
+    const sugestoes=OBRA_CALC.sugestoesDescricao(db.obras,obraIdAtual,top,campo.value,isEdit?gasto.id:null);
     lista.innerHTML='';
     sugestoes.forEach(s=>{
       const b=el('button','desc-sugestao'); b.type='button'; b.setAttribute('role','option');
@@ -994,11 +958,8 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
 
   let pagto = isEdit ? (gasto.pagamento || 'pix') : 'pix';
   const datasPagamento={pix:$('#fData').value,cartao:OBRA_CALC.addMesesClampado($('#fData').value,1)};
-  const lerTaxaCartao=()=>{
-    const texto=($('#fJuros')?.value||'').trim();
-    return /^(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(texto) ? Number(texto.replace(',','.')) : NaN;
-  };
-  const calcularCartao=()=>OBRA_CALC.parcelamentoCartao(parseNum($('#fVal').value),Number($('#fParc')?.value),lerTaxaCartao(),$('#fData').value);
+  const calcularCartao=()=>OBRA_CALC.parcelamentoCartao(parseNum($('#fVal').value),Number($('#fParc')?.value),
+    OBRA_CALC.lerTaxaCartao($('#fJuros')?.value),$('#fData').value);
   const atualizarCartao=()=>{
     if(isEdit) return;
     $('#fDataLabel').textContent=pagto==='cartao'?'Primeiro vencimento':'Data';
@@ -1052,10 +1013,8 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       $('#fJuros').focus(); return;
     }
     if(cartao) valor=cartao.totalCompra;
-    const assinatura=[o.id,top,normalizaDescricao(desc),Math.round(valor*100),data0,nParc,cartao?.taxaMensal].join('|');
-    const pareceDuplicado=desc && o.gastos.some(x=>x.id!==(isEdit&&gasto.id)
-      && normalizaDescricao(x.descricao)===normalizaDescricao(desc)
-      && Math.round(x.valor*100)===Math.round(valor*100) && x.data===data0);
+    const assinatura=[o.id,top,OBRA_CALC.normalizaDescricao(desc),Math.round(valor*100),data0,nParc,cartao?.taxaMensal].join('|');
+    const pareceDuplicado=OBRA_CALC.gastoRepetido(o, desc, valor, data0, isEdit ? gasto.id : null);
     if(pareceDuplicado && duplicadoConfirmado!==assinatura){
       duplicadoConfirmado=assinatura;
       $('#dupWarning').textContent='Este gasto parece já lançado: mesma descrição, valor e data. Confira ou toque novamente para salvar mesmo assim.';

@@ -9042,6 +9042,2786 @@
         "saida": []
       }
     ],
+    "calc.normalizaDescricao": [
+      {
+        "caso": "\"  Cimento   CP-II \"",
+        "args": [
+          "  Cimento   CP-II "
+        ],
+        "saida": "cimento cp-ii"
+      },
+      {
+        "caso": "\"ÁCIDO\\tmuriático\"",
+        "args": [
+          "ÁCIDO\tmuriático"
+        ],
+        "saida": "acido muriatico"
+      },
+      {
+        "caso": "\" a b \"",
+        "args": [
+          " a b "
+        ],
+        "saida": "a b"
+      },
+      {
+        "caso": "\"\"",
+        "args": [
+          ""
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "\"Tinta\\nacrílica\"",
+        "args": [
+          "Tinta\nacrílica"
+        ],
+        "saida": "tinta acrilica"
+      },
+      {
+        "caso": "\"ΟΔΟΣ\"",
+        "args": [
+          "ΟΔΟΣ"
+        ],
+        "saida": "οδος"
+      },
+      {
+        "caso": "\"᠎x\"",
+        "args": [
+          "᠎x"
+        ],
+        "saida": "᠎x"
+      },
+      {
+        "caso": "nulo",
+        "args": [
+          null
+        ],
+        "saida": ""
+      }
+    ],
+    "calc.distanciaEdicao": [
+      {
+        "caso": "|",
+        "args": [
+          "",
+          ""
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "abc|",
+        "args": [
+          "abc",
+          ""
+        ],
+        "saida": 3
+      },
+      {
+        "caso": "|abc",
+        "args": [
+          "",
+          "abc"
+        ],
+        "saida": 3
+      },
+      {
+        "caso": "cimento|cinemto",
+        "args": [
+          "cimento",
+          "cinemto"
+        ],
+        "saida": 2
+      },
+      {
+        "caso": "kitten|sitting",
+        "args": [
+          "kitten",
+          "sitting"
+        ],
+        "saida": 3
+      },
+      {
+        "caso": "😀a|a",
+        "args": [
+          "😀a",
+          "a"
+        ],
+        "saida": 2
+      },
+      {
+        "caso": "ação|acao",
+        "args": [
+          "ação",
+          "acao"
+        ],
+        "saida": 2
+      },
+      {
+        "caso": "areia|areia",
+        "args": [
+          "areia",
+          "areia"
+        ],
+        "saida": 0
+      }
+    ],
+    "calc.sugestoesDescricao": [
+      {
+        "caso": "termo vazio",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "",
+          null
+        ],
+        "saida": []
+      },
+      {
+        "caso": "só espaços",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "   ",
+          null
+        ],
+        "saida": []
+      },
+      {
+        "caso": "mesmo tópico e mesma obra pesam",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "cimen",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "cimento cp-ii, 120 sacos",
+            "chave": "cimento cp-ii, 120 sacos",
+            "vezes": 2,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-04-01"
+          },
+          {
+            "texto": "Cimento",
+            "chave": "cimento",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-01-15"
+          },
+          {
+            "texto": "Cimento branco",
+            "chave": "cimento branco",
+            "vezes": 2,
+            "mesmaObra": false,
+            "mesmoTopico": true,
+            "ultima": "2026-06-02"
+          },
+          {
+            "texto": "Cimento cola AC-II",
+            "chave": "cimento cola ac-ii",
+            "vezes": 2,
+            "mesmaObra": true,
+            "mesmoTopico": false,
+            "ultima": "2026-04-01"
+          },
+          {
+            "texto": "Ciment",
+            "chave": "ciment",
+            "vezes": 1,
+            "mesmaObra": false,
+            "mesmoTopico": false,
+            "ultima": "2026-06-03"
+          }
+        ]
+      },
+      {
+        "caso": "de outra obra",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s2",
+          "revest",
+          "Cimento",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Cimento cola AC-II",
+            "chave": "cimento cola ac-ii",
+            "vezes": 2,
+            "mesmaObra": false,
+            "mesmoTopico": true,
+            "ultima": "2026-04-01"
+          },
+          {
+            "texto": "Cimento branco",
+            "chave": "cimento branco",
+            "vezes": 2,
+            "mesmaObra": true,
+            "mesmoTopico": false,
+            "ultima": "2026-06-02"
+          },
+          {
+            "texto": "Ciment",
+            "chave": "ciment",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": false,
+            "ultima": "2026-06-03"
+          },
+          {
+            "texto": "cimento cp-ii, 120 sacos",
+            "chave": "cimento cp-ii, 120 sacos",
+            "vezes": 2,
+            "mesmaObra": false,
+            "mesmoTopico": false,
+            "ultima": "2026-04-01"
+          },
+          {
+            "texto": "Cimento",
+            "chave": "cimento",
+            "vezes": 1,
+            "mesmaObra": false,
+            "mesmoTopico": false,
+            "ultima": "2026-01-15"
+          }
+        ]
+      },
+      {
+        "caso": "sem acento, caixa e espaços",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "pintura",
+          "TINTA  acrilica",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Tinta   acrílica",
+            "chave": "tinta acrilica",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-05-01"
+          }
+        ]
+      },
+      {
+        "caso": "erro de digitação a 2 edições",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "cinemto",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Cimento",
+            "chave": "cimento",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-01-15"
+          }
+        ]
+      },
+      {
+        "caso": "erro de digitação com menos de 4 letras não vale",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "cmt",
+          null
+        ],
+        "saida": []
+      },
+      {
+        "caso": "empate no peso e na data, desempate pt-BR, até 5",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "areia",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Areia Grossa",
+            "chave": "areia grossa",
+            "vezes": 2,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-05-02"
+          },
+          {
+            "texto": "Areia fina",
+            "chave": "areia fina",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-05-02"
+          },
+          {
+            "texto": "Areia média",
+            "chave": "areia media",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-05-02"
+          },
+          {
+            "texto": "Areia",
+            "chave": "areia",
+            "vezes": 1,
+            "mesmaObra": false,
+            "mesmoTopico": false,
+            "ultima": "2026-05-02"
+          },
+          {
+            "texto": "Areia lavada",
+            "chave": "areia lavada",
+            "vezes": 1,
+            "mesmaObra": false,
+            "mesmoTopico": false,
+            "ultima": "2026-05-02"
+          }
+        ]
+      },
+      {
+        "caso": "ignora o gasto em edição",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "revest",
+          "cimento cola",
+          "a3"
+        ],
+        "saida": [
+          {
+            "texto": "Cimento cola AC-II",
+            "chave": "cimento cola ac-ii",
+            "vezes": 1,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-02-01"
+          }
+        ]
+      },
+      {
+        "caso": "o gasto em edição só conta na obra dele",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s2",
+          "revest",
+          "cimento cola",
+          "a3"
+        ],
+        "saida": [
+          {
+            "texto": "Cimento cola AC-II",
+            "chave": "cimento cola ac-ii",
+            "vezes": 2,
+            "mesmaObra": false,
+            "mesmoTopico": true,
+            "ultima": "2026-04-01"
+          }
+        ]
+      },
+      {
+        "caso": "acento no termo",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s2",
+          "eletrica",
+          "ácido",
+          null
+        ],
+        "saida": [
+          {
+            "texto": "Ácido muriático",
+            "chave": "acido muriatico",
+            "vezes": 2,
+            "mesmaObra": true,
+            "mesmoTopico": true,
+            "ultima": "2026-05-02"
+          }
+        ]
+      },
+      {
+        "caso": "nada parecido",
+        "args": [
+          [
+            {
+              "id": "s1",
+              "nome": "Casa",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "a1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento CP-II, 120 sacos",
+                  "data": "2026-03-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "cimento cp-ii, 120 sacos",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a3",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-04-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a4",
+                  "valor": 10,
+                  "topico": "revest",
+                  "descricao": "Cimento cola AC-II",
+                  "data": "2026-02-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a5",
+                  "valor": 10,
+                  "topico": "pintura",
+                  "descricao": "  Tinta   acrílica ",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a6",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia média",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a7",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia fina",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a8",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "areia grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a9",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Areia Grossa",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a10",
+                  "valor": 10,
+                  "topico": "outros",
+                  "descricao": "",
+                  "data": "2026-05-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "a11",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento",
+                  "data": "2026-01-15",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            },
+            {
+              "id": "s2",
+              "nome": "Sobrado",
+              "dataInicio": "2026-01-01",
+              "gastos": [
+                {
+                  "id": "b1",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b2",
+                  "valor": 10,
+                  "topico": "matbasicos",
+                  "descricao": "Cimento branco",
+                  "data": "2026-06-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b3",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ciment",
+                  "data": "2026-06-03",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b4",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia lavada",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b5",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Ácido muriático",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b6",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "acido muriatico",
+                  "data": "2026-05-01",
+                  "pagamento": "pix"
+                },
+                {
+                  "id": "b7",
+                  "valor": 10,
+                  "topico": "eletrica",
+                  "descricao": "Areia",
+                  "data": "2026-05-02",
+                  "pagamento": "pix"
+                }
+              ],
+              "fase": "construcao",
+              "venda": null,
+              "valorEstimadoVenda": null,
+              "areaM2": null,
+              "afazeres": []
+            }
+          ],
+          "s1",
+          "matbasicos",
+          "xyzw",
+          null
+        ],
+        "saida": []
+      }
+    ],
+    "calc.gastoRepetido": [
+      {
+        "caso": "mesma descrição, valor e data",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "cimento  cp-ii",
+          4980,
+          "2026-10-10",
+          null
+        ],
+        "saida": true
+      },
+      {
+        "caso": "sem descrição nunca",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "",
+          4980,
+          "2026-10-10",
+          null
+        ],
+        "saida": false
+      },
+      {
+        "caso": "valor diferente",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "Cimento CP-II",
+          4980.01,
+          "2026-10-10",
+          null
+        ],
+        "saida": false
+      },
+      {
+        "caso": "data diferente",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "Cimento CP-II",
+          4980,
+          "2026-10-11",
+          null
+        ],
+        "saida": false
+      },
+      {
+        "caso": "o próprio gasto em edição não conta",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "Cimento CP-II",
+          4980,
+          "2026-10-10",
+          "x1"
+        ],
+        "saida": false
+      },
+      {
+        "caso": "centavos arredondados",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "Prego",
+          0.3,
+          "2026-10-10",
+          null
+        ],
+        "saida": true
+      },
+      {
+        "caso": "acento e caixa não contam",
+        "args": [
+          {
+            "id": "r",
+            "gastos": [
+              {
+                "id": "x1",
+                "valor": 4980,
+                "descricao": "Cimento CP-II",
+                "data": "2026-10-10"
+              },
+              {
+                "id": "x2",
+                "valor": 0.30000000000000004,
+                "descricao": "Prego",
+                "data": "2026-10-10"
+              }
+            ]
+          },
+          "CIMENTO CP-ÍI",
+          4980,
+          "2026-10-10",
+          null
+        ],
+        "saida": true
+      }
+    ],
+    "calc.lerTaxaCartao": [
+      {
+        "caso": "\"0\"",
+        "args": [
+          "0"
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "\"2,5\"",
+        "args": [
+          "2,5"
+        ],
+        "saida": 2.5
+      },
+      {
+        "caso": "\"2.5\"",
+        "args": [
+          "2.5"
+        ],
+        "saida": 2.5
+      },
+      {
+        "caso": "\" 3 \"",
+        "args": [
+          " 3 "
+        ],
+        "saida": 3
+      },
+      {
+        "caso": "\"10\"",
+        "args": [
+          "10"
+        ],
+        "saida": 10
+      },
+      {
+        "caso": "\".5\"",
+        "args": [
+          ".5"
+        ],
+        "saida": 0.5
+      },
+      {
+        "caso": "\",5\"",
+        "args": [
+          ",5"
+        ],
+        "saida": 0.5
+      },
+      {
+        "caso": "\"5.\"",
+        "args": [
+          "5."
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"5,\"",
+        "args": [
+          "5,"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"1,2,3\"",
+        "args": [
+          "1,2,3"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"-1\"",
+        "args": [
+          "-1"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"+1\"",
+        "args": [
+          "+1"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"abc\"",
+        "args": [
+          "abc"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"\"",
+        "args": [
+          ""
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"1e2\"",
+        "args": [
+          "1e2"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "\"100\"",
+        "args": [
+          "100"
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "\"100,01\"",
+        "args": [
+          "100,01"
+        ],
+        "saida": 100.01
+      },
+      {
+        "caso": "\"٣\"",
+        "args": [
+          "٣"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "nulo",
+        "args": [
+          null
+        ],
+        "saida": null
+      }
+    ],
     "calc.gerarParcelas": [
       {
         "caso": "resto de centavo na última",

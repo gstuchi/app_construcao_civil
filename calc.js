@@ -237,6 +237,63 @@
     });
   }
 
+  /* ---- descrição do gasto: sugestões e repetido (formulário do gasto) ---- */
+  /* Descrição comparável: sem acento, em minúsculas, aparada e com os espaços do meio juntados. */
+  function normalizaDescricao(s){
+    return semAcento(String(s || '')).trim().replace(/\s+/g, ' ');
+  }
+  /* Distância de edição (Levenshtein), em unidades UTF-16 como o índice das strings. */
+  function distanciaEdicao(a,b){
+    if(a===b) return 0;
+    if(!a.length) return b.length;
+    if(!b.length) return a.length;
+    let ant=Array.from({length:b.length+1},(_,i)=>i);
+    for(let i=1;i<=a.length;i++){
+      const atual=[i];
+      for(let j=1;j<=b.length;j++) atual[j]=Math.min(atual[j-1]+1,ant[j]+1,ant[j-1]+(a[i-1]===b[j-1]?0:1));
+      ant=atual;
+    }
+    return ant[b.length];
+  }
+  /* Sugestões de descrição: as descrições já lançadas em todas as obras, sem repetir (o texto é o do
+     lançamento mais recente), que contêm o termo ou, com 4 letras ou mais, ficam a até 2 edições dele.
+     Pesam o mesmo tópico, a mesma obra, o começo igual e o uso; até 5. ignorarId tira o gasto em edição. */
+  function sugestoesDescricao(obras, obraId, topicoId, termo, ignorarId){
+    const busca=normalizaDescricao(termo);
+    if(!busca) return [];
+    const unicas=new Map();
+    obras.forEach(o=>o.gastos.forEach(g=>{
+      if(o.id===obraId && g.id===ignorarId) return;
+      const texto=String(g.descricao||'').trim(), chave=normalizaDescricao(texto);
+      if(!chave) return;
+      const item=unicas.get(chave)||{texto,chave,vezes:0,mesmaObra:false,mesmoTopico:false,ultima:''};
+      item.vezes++;
+      if(o.id===obraId) item.mesmaObra=true;
+      if(g.topico===topicoId) item.mesmoTopico=true;
+      if((g.data||'')>=item.ultima){ item.ultima=g.data||''; item.texto=texto; }
+      unicas.set(chave,item);
+    }));
+    return [...unicas.values()].filter(x=>x.chave.includes(busca)
+        || (busca.length>=4 && Math.abs(x.chave.length-busca.length)<=2 && distanciaEdicao(x.chave,busca)<=2))
+      .sort((a,b)=>{
+        const sa=(a.mesmoTopico?100:0)+(a.mesmaObra?40:0)+(a.chave.startsWith(busca)?25:0)+Math.min(a.vezes,10);
+        const sb=(b.mesmoTopico?100:0)+(b.mesmaObra?40:0)+(b.chave.startsWith(busca)?25:0)+Math.min(b.vezes,10);
+        return sb-sa || b.ultima.localeCompare(a.ultima) || a.texto.localeCompare(b.texto,'pt-BR');
+      }).slice(0,5);
+  }
+  /* Gasto que parece já lançado na obra: mesma descrição comparável, mesmo valor em centavos e mesma
+     data. Sem descrição nunca parece repetido; ignorarId tira o gasto em edição. */
+  function gastoRepetido(obra, descricao, valor, data, ignorarId){
+    return !!descricao && obra.gastos.some(x=>x.id!==ignorarId
+      && normalizaDescricao(x.descricao)===normalizaDescricao(descricao)
+      && Math.round(x.valor*100)===Math.round(valor*100) && x.data===data);
+  }
+  /* Taxa de juros do cartão como o formulário lê: dígitos com vírgula ou ponto decimal, sem sinal; o resto é NaN. */
+  function lerTaxaCartao(texto){
+    const t=String(texto==null?'':texto).trim();
+    return /^(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(t) ? Number(t.replace(',','.')) : NaN;
+  }
+
   /* Soma meses a uma data ISO; dia inexistente clampa no último dia do mês
      (31/01 + 1 mês = 28 ou 29/02). */
   function addMesesClampado(dataISO, meses){
@@ -405,7 +462,7 @@
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

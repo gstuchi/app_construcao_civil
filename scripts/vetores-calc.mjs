@@ -268,6 +268,69 @@ filtra('tópico próprio pelo nome', O4.gastos, TOPICOS_MAPA, { texto: 'automaca
 filtra('tópico apagado busca pelo id', [{ id: 'k', valor: 1, topico: 'c_sumiu', descricao: '', data: '2026-01-01' }], TOPICOS_MAPA, { texto: 'c_sum' });
 filtra('nada encontrado', O1.gastos, TOPICOS_MAPA, { texto: 'xyz' });
 
+/* ---------- descrição do gasto: sugestões e repetido ---------- */
+const normDesc = calc('normalizaDescricao');
+for(const s of ['  Cimento   CP-II ', 'ÁCIDO\tmuriático', '\u{a0}a\u{2003}b\u{a0}', '', 'Tinta\nacrílica', 'ΟΔΟΣ', '\u{180e}x'])
+  normDesc(JSON.stringify(s), s);
+normDesc('nulo', null);
+const dist = calc('distanciaEdicao');
+for(const [a, b] of [['', ''], ['abc', ''], ['', 'abc'], ['cimento', 'cinemto'], ['kitten', 'sitting'], ['😀a', 'a'], ['ação', 'acao'], ['areia', 'areia']])
+  dist(`${a}|${b}`, a, b);
+/* Descrições de duas obras: a mesma chave em textos diferentes (o mais recente dá o texto; no mesmo dia, o
+   último), empates de peso e de data (desempate pelo localeCompare pt-BR), erro de digitação e o gasto em edição. */
+const SUG = D.normaliza({ obras: [
+  { id: 's1', nome: 'Casa', dataInicio: '2026-01-01', gastos: [
+    { id: 'a1', valor: 10, topico: 'matbasicos', descricao: 'Cimento CP-II, 120 sacos', data: '2026-03-01' },
+    { id: 'a2', valor: 10, topico: 'matbasicos', descricao: 'cimento cp-ii, 120 sacos', data: '2026-04-01' },
+    { id: 'a3', valor: 10, topico: 'revest', descricao: 'Cimento cola AC-II', data: '2026-04-01' },
+    { id: 'a4', valor: 10, topico: 'revest', descricao: 'Cimento cola AC-II', data: '2026-02-01' },
+    { id: 'a5', valor: 10, topico: 'pintura', descricao: '  Tinta   acrílica ', data: '2026-05-01' },
+    { id: 'a6', valor: 10, topico: 'matbasicos', descricao: 'Areia média', data: '2026-05-02' },
+    { id: 'a7', valor: 10, topico: 'matbasicos', descricao: 'Areia fina', data: '2026-05-02' },
+    { id: 'a8', valor: 10, topico: 'matbasicos', descricao: 'areia grossa', data: '2026-05-02' },
+    { id: 'a9', valor: 10, topico: 'matbasicos', descricao: 'Areia Grossa', data: '2026-05-02' },
+    { id: 'a10', valor: 10, topico: 'outros', descricao: '', data: '2026-05-03' },
+    { id: 'a11', valor: 10, topico: 'matbasicos', descricao: 'Cimento', data: '2026-01-15' },
+  ] },
+  { id: 's2', nome: 'Sobrado', dataInicio: '2026-01-01', gastos: [
+    { id: 'b1', valor: 10, topico: 'matbasicos', descricao: 'Cimento branco', data: '2026-06-01' },
+    { id: 'b2', valor: 10, topico: 'matbasicos', descricao: 'Cimento branco', data: '2026-06-02' },
+    { id: 'b3', valor: 10, topico: 'eletrica', descricao: 'Ciment', data: '2026-06-03' },
+    { id: 'b4', valor: 10, topico: 'eletrica', descricao: 'Areia lavada', data: '2026-05-02' },
+    { id: 'b5', valor: 10, topico: 'eletrica', descricao: 'Ácido muriático', data: '2026-05-02' },
+    { id: 'b6', valor: 10, topico: 'eletrica', descricao: 'acido muriatico', data: '2026-05-01' },
+    { id: 'b7', valor: 10, topico: 'eletrica', descricao: 'Areia', data: '2026-05-02' },
+  ] },
+], config: {} }).obras;
+const sug = calc('sugestoesDescricao');
+sug('termo vazio', SUG, 's1', 'matbasicos', '', null);
+sug('só espaços', SUG, 's1', 'matbasicos', '   ', null);
+sug('mesmo tópico e mesma obra pesam', SUG, 's1', 'matbasicos', 'cimen', null);
+sug('de outra obra', SUG, 's2', 'revest', 'Cimento', null);
+sug('sem acento, caixa e espaços', SUG, 's1', 'pintura', 'TINTA  acrilica', null);
+sug('erro de digitação a 2 edições', SUG, 's1', 'matbasicos', 'cinemto', null);
+sug('erro de digitação com menos de 4 letras não vale', SUG, 's1', 'matbasicos', 'cmt', null);
+sug('empate no peso e na data, desempate pt-BR, até 5', SUG, 's1', 'matbasicos', 'areia', null);
+sug('ignora o gasto em edição', SUG, 's1', 'revest', 'cimento cola', 'a3');
+sug('o gasto em edição só conta na obra dele', SUG, 's2', 'revest', 'cimento cola', 'a3');
+sug('acento no termo', SUG, 's2', 'eletrica', 'ácido', null);
+sug('nada parecido', SUG, 's1', 'matbasicos', 'xyzw', null);
+const rep = calc('gastoRepetido');
+const OBRA_REP = { id: 'r', gastos: [
+  { id: 'x1', valor: 4980, descricao: 'Cimento CP-II', data: '2026-10-10' },
+  { id: 'x2', valor: 0.1 + 0.2, descricao: 'Prego', data: '2026-10-10' },
+] };
+rep('mesma descrição, valor e data', OBRA_REP, 'cimento  cp-ii', 4980, '2026-10-10', null);
+rep('sem descrição nunca', OBRA_REP, '', 4980, '2026-10-10', null);
+rep('valor diferente', OBRA_REP, 'Cimento CP-II', 4980.01, '2026-10-10', null);
+rep('data diferente', OBRA_REP, 'Cimento CP-II', 4980, '2026-10-11', null);
+rep('o próprio gasto em edição não conta', OBRA_REP, 'Cimento CP-II', 4980, '2026-10-10', 'x1');
+rep('centavos arredondados', OBRA_REP, 'Prego', 0.3, '2026-10-10', null);
+rep('acento e caixa não contam', OBRA_REP, 'CIMENTO CP-ÍI', 4980, '2026-10-10', null);
+for(const t of ['0', '2,5', '2.5', ' 3 ', '10', '.5', ',5', '5.', '5,', '1,2,3', '-1', '+1', 'abc', '', '1e2', '100', '100,01', '\u{663}'])
+  caso('calc.lerTaxaCartao', JSON.stringify(t), [t], x => { const n = C.lerTaxaCartao(x); return Number.isFinite(n) ? n : null; });
+caso('calc.lerTaxaCartao', 'nulo', [null], x => { const n = C.lerTaxaCartao(x); return Number.isFinite(n) ? n : null; });
+
 /* ---------- parcelas ---------- */
 const parcelas = calc('gerarParcelas');
 parcelas('resto de centavo na última', 100, 3, '2026-01-15');

@@ -15,6 +15,7 @@ struct BancoFirebaseTests {
         FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
         let preferencias = try #require(UserDefaults(suiteName: nome))
         preferencias.set(true, forKey: BancoFirebase.chaveLimpeza)
+        MarcaNasPreferencias(preferencias: preferencias).marcar(uid: "u1")
         let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080), preferencias: preferencias)
 
         let usou = Bandeira()
@@ -23,6 +24,7 @@ struct BancoFirebaseTests {
         await banco.aguardarPronto()
         #expect(usou.ligada)
         #expect(!banco.limpezaPendente, "a abertura terminou a limpeza e tirou a marca")
+        #expect(!MarcaNasPreferencias(preferencias: preferencias).respondeu(uid: "u1"), "a limpeza retomada também apaga a marca do servidor")
     }
 
     @Test func apagarOCacheLevaJuntoAMarcaDoServidor() async throws {

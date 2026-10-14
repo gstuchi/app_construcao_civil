@@ -380,6 +380,7 @@ struct SincronizadorCarregamentoTests {
         if c.servidorJaRespondeu { marca.marcar(uid: "u1") }
         let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), online: !c.doCache, marca: marca)
         s.iniciar(uid: "u1")
+        #expect(!s.dadosCarregados, "antes do primeiro snapshot nada vale, nem a marca")
         transporte.chega(c.comDocumento ? blobCom(["Casa"]) : nil, doCache: c.doCache)
         #expect(s.dadosCarregados == c.podeGravar)
         let d = Desfecho { try await s.salvar(Estado.de(blobCom(["Nova"]))) }
@@ -403,7 +404,7 @@ struct SincronizadorCarregamentoTests {
         let marca = MarcaFalsa()
         let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), marca: marca)
         s.iniciar(uid: "u1")
-        transporte.chega(blobCom(["Casa"]), doCache: true)
+        transporte.chega(nil, doCache: true)
         #expect(marca.contas.isEmpty, "o cache não prova nada sobre o servidor")
         transporte.chega(blobCom(["Casa"]))
         #expect(marca.contas.isEmpty, "com documento, o cache dele basta: a marca não faz falta")

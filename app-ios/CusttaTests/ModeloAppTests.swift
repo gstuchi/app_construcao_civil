@@ -248,6 +248,18 @@ struct ModeloAppTests {
         #expect(m.mensagemDeNaoCarregado == textoErroDeLeitura("formato-desconhecido"))
     }
 
+    /// Outro erro de leitura antes de carregar: a escuta encerrada só reabre pelo "Tentar de novo", então o alerta diz o
+    /// mesmo que a lista de obras, com e sem rede (conectar sozinho não carrega).
+    @Test(arguments: [false, true])
+    func mensagemDeNaoCarregadoComLeituraQueFalhou(semRede: Bool) async {
+        let s = Sincronizador(transporte: TransporteFalsoApp(dados: nil, semRede: semRede, falhaDeLeitura: "permission-denied"),
+                              relogio: RelogioDoSistema(), online: !semRede)
+        let m = ModeloApp(conta: ContaFalsa(inicial: "senha"), sincronizador: s, rede: MonitorDeRede(forcarSemRede: semRede))
+        await ate { if case .erro = m.sincronizador.estadoSinc { return true }; return false }
+        #expect(!m.sincronizador.dadosCarregados)
+        #expect(m.mensagemDeNaoCarregado == textoErroDeLeitura("permission-denied"))
+    }
+
     @Test func confirmarOEmailAvisaATelaQueLeOUsuario() async {
         let m = montar(conta: "senha-confirma-ao-conferir").modelo
         await ate { m.fase.ehPrincipal }

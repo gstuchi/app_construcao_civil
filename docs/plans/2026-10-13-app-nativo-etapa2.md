@@ -120,6 +120,7 @@ O Giovani delegou em 13/10 ("faça sempre o recomendado"). Ficaram assim:
 | spec, folha da obra | Campos na ordem do mockup (nome, início, área, estimado, orçamento), não na do site | A área obrigatória fica à vista acima do teclado |
 | spec:49, `nao-carregado` nas folhas da obra e da venda | A folha continua aberta, como no gasto | O mesmo comportamento nas três folhas |
 | mockup, "Use até 120 caracteres." como alerta | O campo limita em 120 (o `maxlength` do site); se a mensagem aparecer, é nota vermelha embaixo do campo | Como a descrição do gasto |
+| spec:143, PR 1 = "parte 1 inteira", com o lápis no cabeçalho | O lápis da barra chega na Tarefa 33 (PR 3); nos builds dos PRs 1 e 2 a nota "Toque no lápis para informar o valor" aponta para um controle que ainda não existe (o checklist do PR 1 avisa) | "Editar obra" é da parte 3; um lápis sem folha seria um botão morto |
 | mockup, botões dos alertas na cor da marca e lado a lado | Alertas do sistema, com o tint na cor do texto; o iOS 27 empilha os de "Desfazer a venda?" | São alertas do sistema; o laudo mede os botões entre 6,2 e 9,1:1 |
 
 ### O que a revisão independente mudou
@@ -131,7 +132,25 @@ Um subagente que não escreveu nada leu o plano contra o spec e os três mockups
 - Faltavam testes de tela que o spec implica: lançar sem rede, editar o valor pelo teclado, a folha que fecha quando outro aparelho apaga o gasto (gancho `CUSTTA_APAGAR_REMOTO` nos falsos) e "apagar só esta parcela": entraram no `GastoUITests`.
 - "Todos" os tópicos repetia os "Usados nesta obra": `topicosSemOsUsados`, com teste.
 - Menores: o pagamento desconhecido de um gasto do site é preservado na edição; o título do passo do valor na edição é "Valor"; `CampoDeData` com mínimo e máximo; "OK" na barra do teclado dos juros; a mensagem de `nao-carregado` para um documento que o app não lê; `LinhaDaLista` com a ação do VoiceOver.
-- No PR 3 (segunda leitura, sobre o protótipo mesclado): a seta do "A pagar" saiu até a etapa 3; o gancho `-custta.folha` da folha do gasto e o `CUSTTA_FOLHA` das folhas novas viraram um gancho só; o apagador de texto do laudo dentro da folha ficou num lugar só (`FolhaEmPassos`); o laudo da obra vendida ficou no teste da parte 3 (lucro e prejuízo), em vez de duplicado; e o laudo do estado mesclado achou os dois problemas da cápsula e da etiqueta âmbar, resolvidos na Tarefa 10.
+- No PR 3 (segunda leitura, sobre o protótipo mesclado): a seta do "A pagar" saiu até a etapa 3; o gancho `-custta.folha` da folha do gasto (em que passo) e o `CUSTTA_FOLHA` das folhas novas (qual folha) passaram a ser lidos num lugar só, o `abrirFolhaDoGancho` do `PrincipalView`; o apagador de texto do laudo dentro da folha ficou num lugar só (`FolhaEmPassos`); o laudo da obra vendida ficou no teste da parte 3 (lucro e prejuízo), em vez de duplicado; e o laudo do estado mesclado achou os dois problemas da cápsula e da etiqueta âmbar, resolvidos na Tarefa 10.
+
+**Revisão final (14/10), sobre o plano inteiro.** Outro subagente às cegas leu o plano contra o spec, o inventário e os mockups; parou no meio, por custo, com 11 achados (nenhum que bloqueie). Antes dela, a compilação do protótipo e a varredura da cápsula trocaram a dose da navegação (Tarefa 10) e tiraram o `Text + Text` (Tarefas 15 e 22). Aplicados:
+
+- A Tarefa 17 usa o `LIMITE_OBRAS` do PR 0: ela só começa depois do merge dele, com rebase antes e conflito esperado em `app-ios.yml`, `workflow.test.cjs` e `CLAUDE.md` ("Como entregar" e Tarefa 17).
+- `GastoUITests`: 7 na Tarefa 22 (faltava o "lançar sem rede" no Step 4) e 17 na Tarefa 23 (dizia 13).
+- O lápis da barra só chega na Tarefa 33: registrado em "O que muda em relação ao spec".
+- `ContaDeTeste.swift` nasce no PR 2 (Tarefa 20), não no PR 1 ("Mapa de arquivos").
+- Os círculos de vidro da folha (exceção nomeada) entraram nas pendências do Giovani, no build do PR 2.
+- A pendência 2 do Giovani diz que o e-mail da conta de teste precisa ter `custta-teste`, e o exemplo da Tarefa 17 usa um e-mail assim.
+- As Interfaces da Tarefa 30 citam o `folha:` do `abrirApp`, que a Tarefa 31 usa.
+- A frase do gancho da folha, acima, dizia "um gancho só"; são dois, lidos num lugar só.
+
+Pendências (pedem código provado no protótipo, fora do teto desta revisão):
+
+- Contagens de `CusttaTests` por PR (tabela "O que roda na CI" e Steps das Tarefas 11, 12, 20, 22, 30 e 38): o revisor contou 90 no fim do PR 1 e não achou a origem de 103 no fim do PR 3. O protótipo do PR 4 roda 102 (14/10), igual à tabela; recontar numa rodada de cada PR antes da Tarefa 11.
+- Vibração leve a cada tecla do teclado de valor (nota do mockup da parte 2): falta na Tarefa 21; `.sensoryFeedback(.impact(weight: .light), trigger: centavos)`, com teste de tela, ou registrar que não vibra.
+- Reduzir movimento em quatro animações: título da barra (Tarefa 15, repetido nas 23 e 29), `TeclaDoValor` (Tarefa 21), o fim do aceso (Tarefa 23) e `PilulaDaAcao` (Tarefa 29); `opcoes.reduzirMovimento ? nil : …`, como o resto do app.
+- `lerArgs` da Tarefa 17 exigir `custta-teste` no `--email` de `--importar`, com a mesma constante do `ContaDeTeste` (hoje o teste e o comentário de uso trazem `teste@exemplo.com`).
 
 ## O que roda na CI e o que roda só no Mac
 
@@ -191,7 +210,7 @@ Entradas e situações que o spec não cita e que mais podem pegar quem usa o ap
 | 3 (app) | `feat/app-nativo-etapa2-obras` em `.claude/worktrees/app-nativo-etapa2-obras` | 27 a 37 | TestFlight 2.0 |
 | 4 (app) | `feat/app-nativo-conta-real` em `.claude/worktrees/app-nativo-conta-real` | 38 | TestFlight 2.0, na conta real |
 
-Ordem (conselho de 13/10, segunda rodada): o PR 0 primeiro; o PR 1 começa quando o PR 0 entra em revisão (os arquivos não se cruzam; o rebase sobre a `main` depois é pequeno); o PR 2 começa pelas Tarefas 19 e 20 (núcleo e gravação, sem tela) e só segue para a tela com o OK do Giovani no build do PR 1; o PR 3 depois do OK do PR 2; o PR 4 só depois do OK do PR 3. Cada PR nasce num worktree novo a partir da `origin/main` atualizada:
+Ordem (conselho de 13/10, segunda rodada): o PR 0 primeiro; o PR 1 começa quando o PR 0 entra em revisão, mas a Tarefa 17 só depois do merge do PR 0 (ela usa o `LIMITE_OBRAS` do `dados.js`, que nasce na Tarefa 7): antes dela, rebase do worktree do PR 1 sobre a `main`, com conflito esperado em três arquivos que os dois PRs tocam (`.github/workflows/app-ios.yml` e `tests/workflow.test.cjs`, Tarefas 4 e 9; `CLAUDE.md`, Tarefas 5 e 18); o PR 2 começa pelas Tarefas 19 e 20 (núcleo e gravação, sem tela) e só segue para a tela com o OK do Giovani no build do PR 1; o PR 3 depois do OK do PR 2; o PR 4 só depois do OK do PR 3. Cada PR nasce num worktree novo a partir da `origin/main` atualizada:
 
 ```bash
 cd "$(git rev-parse --path-format=absolute --git-common-dir)/.."
@@ -216,10 +235,10 @@ cd .claude/worktrees/<nome> && npm ci
 ### O que só o Giovani faz (pendências físicas)
 
 1. Exportar o JSON das obras pelo site (Ajustes → Exportar dados), antes do primeiro build.
-2. Escolher o e-mail e a senha da conta de teste.
+2. Escolher o e-mail e a senha da conta de teste. O e-mail precisa ter `custta-teste` (um apelido do Gmail serve, como `seu.nome+custta-teste@gmail.com`): até o PR 4, o build do TestFlight só grava em conta assim.
 3. Disponibilizar a conta de serviço do Firebase na máquina (`FIREBASE_SERVICE_ACCOUNT`) e rodar o `conta-demo.mjs --importar` (ou autorizar quem rode), como no checklist.
 4. Instalar cada build pelo TestFlight, entrar com a conta de teste e marcar o checklist.
-5. Olhar os prints de antes e depois da dose do vidro (Tarefa 10: lista de obras, cápsula de abas, etiqueta âmbar) e dizer se o tom serve; no build do PR 3, o mesmo para o lucro e o prejuízo da obra vendida sobre o vidro.
+5. Olhar os prints de antes e depois da dose do vidro (Tarefa 10: lista de obras, cápsula de abas, etiqueta âmbar) e dizer se o tom serve; no build do PR 2, dizer se os círculos de voltar e × da folha podem ficar de vidro, como os do sistema (exceção nomeada do conselho; o mockup pedia sólidos); no build do PR 3, o tom do lucro e do prejuízo da obra vendida sobre o vidro.
 6. Dar o OK de cada envio ao TestFlight e, com o checklist do PR 3 marcado, o OK para o PR 4 (a conta real).
 
 ## Mapa de arquivos
@@ -245,7 +264,7 @@ cd .claude/worktrees/<nome> && npm ci
 - `Telas/ObraView.swift` e `Telas/PecasDaObra.swift` (novos): a tela da obra.
 - `Telas/FolhaEmPassos.swift`, `Telas/FolhaDoGasto.swift`, `Telas/LinhaArrastavel.swift` (novos): a folha em passos com a ponte, a folha do gasto e o arrastar para apagar.
 - `Identidade/TecladoDeValor.swift`, `Identidade/PecasDaFolha.swift` (novos): teclado de valor e peças da folha.
-- `Estado/Folhas.swift` (novo) e `Estado/ModeloApp.swift`: qual folha está aberta e o que ela pede a Obras depois (`navegar`); `gravar`, a mensagem de `nao-carregado` e o alerta de "Não salvou"; `Estado/ContaDeTeste.swift` (novo no PR 1, sai no PR 4).
+- `Estado/Folhas.swift` (novo) e `Estado/ModeloApp.swift`: qual folha está aberta e o que ela pede a Obras depois (`navegar`); `gravar`, a mensagem de `nao-carregado` e o alerta de "Não salvou"; `Estado/ContaDeTeste.swift` (novo no PR 2, sai no PR 4).
 - `Telas/FolhaDaObra.swift` e `Telas/FolhaDaVenda.swift` (novos, PR 3): nova e editar obra, com apagar; a venda em dois passos.
 - `Dados/MarcaNasPreferencias.swift` (novo), `Dados/BancoFirebase.swift`, `Composicao.swift`, `Falsos/*`: a marca do servidor e os dados da obra do mockup.
 - `Identidade/CapsulaDeAbas.swift` (o +), `Identidade/Componentes.swift`, `Identidade/Paleta.swift`, `Identidade/Vidro.swift`, `Identidade/Aurora.swift`, `Telas/ObrasView.swift`, `Telas/PrincipalView.swift`.
@@ -5035,7 +5054,7 @@ git commit -m "test: leitura sobre o vidro e auditoria da tela da obra" -m "O la
 
 ### Task 17: Conta de teste com as obras exportadas do site
 
-O `scripts/conta-demo.mjs`, que já cria e repovoa a conta de revisão da Apple com a conta de serviço, ganha `--importar <arquivo>`: lê o JSON que o site exporta (Ajustes → Exportar dados), confere o formato e os limites das rules (300 obras, 50 tópicos próprios, tamanho do documento) e grava as obras e a config dele numa conta própria (`--email`). A conta de revisão nunca recebe a cópia, e o arquivo nunca entra no repositório (`.gitignore`).
+Só depois do merge do PR 0 (usa o `LIMITE_OBRAS` da Tarefa 7): antes, rebase do worktree sobre a `main` (ver "Como entregar"). O `scripts/conta-demo.mjs`, que já cria e repovoa a conta de revisão da Apple com a conta de serviço, ganha `--importar <arquivo>`: lê o JSON que o site exporta (Ajustes → Exportar dados), confere o formato e os limites das rules (300 obras, 50 tópicos próprios, tamanho do documento) e grava as obras e a config dele numa conta própria (`--email`). A conta de revisão nunca recebe a cópia, e o arquivo nunca entra no repositório (`.gitignore`).
 
 **Files:**
 - Modify: `.gitignore`
@@ -5235,7 +5254,7 @@ Em `scripts/conta-demo.mjs`:
 
 - [ ] **Step 4: Ver passar**
 
-Run: `node --test tests/conta-demo.test.mjs` e, com o emulador do Firestore no ar, `node scripts/conta-demo.mjs --email teste@exemplo.com --importar <um JSON exportado>`.
+Run: `node --test tests/conta-demo.test.mjs` e, com o emulador do Firestore no ar, `node scripts/conta-demo.mjs --email seu.nome+custta-teste@gmail.com --importar <um JSON exportado>`.
 Expected: `ℹ fail 0`; a conta criada no emulador com as obras do arquivo.
 
 - [ ] **Step 5: Commit**
@@ -8049,7 +8068,7 @@ Em `app-ios/Custta/Telas/PrincipalView.swift`:
 - [ ] **Step 4: Ver passar**
 
 Run: o mesmo do Step 2 e `-only-testing:CusttaTests`.
-Expected: os 6 de `GastoUITests` desta tarefa verdes (lançar no Pix, descartar pelo ×, puxar com e sem valor e a contagem das pontes, voltar pela borda dentro da folha, repetido, `nao-carregado`); `CusttaTests` com 97.
+Expected: os 7 de `GastoUITests` desta tarefa verdes (lançar no Pix, lançar sem rede, descartar pelo ×, puxar com e sem valor e a contagem das pontes, voltar pela borda dentro da folha, repetido, `nao-carregado`); `CusttaTests` com 97.
 
 - [ ] **Step 5: Conferência visual (Verniz)**
 
@@ -8881,7 +8900,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
 - [ ] **Step 4: Ver passar**
 
 Run: `-only-testing:CusttaUITests/GastoUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaTests`.
-Expected: os 13 de `GastoUITests`, os 7 de `ObraUITests` (o voltar pela borda continua com o arrastar) e os 98 de `CusttaTests` verdes.
+Expected: os 17 de `GastoUITests`, os 7 de `ObraUITests` (o voltar pela borda continua com o arrastar) e os 98 de `CusttaTests` verdes.
 
 - [ ] **Step 5: Conferência visual (Verniz)**
 
@@ -10041,7 +10060,7 @@ O erro de gravação que não passa sozinho (permission-denied, limite de dados)
 
 **Interfaces:**
 - Consumes: Tarefas 11 e 28 (`alertaDeNaoSalvou`); `Sincronizador.aoAvisar`.
-- Produces: `Sincronizador.confirmadas`; `ModeloApp.alertaDeGravacao`, `fecharAlertaDeGravacao()` e `AlertaDeGravacao`; `AvisosDoPrincipal` (privado da `PrincipalView`); nos falsos, `CUSTTA_GRAVACAO=recusa`; nos testes, `abrirApp(gravacao:)` e `digitarComFoco(_:em:)`, e o `TransporteNaMao`.
+- Produces: `Sincronizador.confirmadas`; `ModeloApp.alertaDeGravacao`, `fecharAlertaDeGravacao()` e `AlertaDeGravacao`; `AvisosDoPrincipal` (privado da `PrincipalView`); nos falsos, `CUSTTA_GRAVACAO=recusa`; nos testes, `abrirApp(folha:gravacao:)` (o `folha:` põe `CUSTTA_FOLHA`, que a Tarefa 31 usa) e `digitarComFoco(_:em:)`, e o `TransporteNaMao`.
 
 - [ ] **Step 1: Escrever os testes**
 

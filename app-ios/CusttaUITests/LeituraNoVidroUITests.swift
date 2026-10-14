@@ -36,10 +36,17 @@ final class LeituraNoVidroUITests: XCTestCase {
         let escopo: String
         /// Aba aberta pela cápsula antes do print (Ajustes não tem gancho de abertura).
         var aba: String? = nil
+        /// Dados dos falsos e tela aberta pelo gancho (`obra:v1`, a obra do mockup na vitrine).
+        var dados = "exemplo"
+        var abrir: String? = nil
+        /// Tela rolada: o texto que passa por baixo da barra é borrado pela borda de rolagem e muda quando é apagado, a
+        /// mais de 5 pt das letras; os 140 pt de cima (a borda) ficam de fora, como os de baixo.
+        var rolada = false
     }
 
     @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat) {
-        let app = abrirApp(conta: cena.conta, argumentos: cena.argumentos + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
+        let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir,
+                           argumentos: cena.argumentos + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
         XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
         if let aba = cena.aba {
             app.abrirAba(aba)
@@ -81,10 +88,11 @@ final class LeituraNoVidroUITests: XCTestCase {
         // O indicador de início, como a barra de status, é do sistema e muda entre os prints (aparece ou não, e
         // muda de cor com o que tem por baixo): os 34 pt de baixo ficam de fora em toda cena.
         let indicador = [CGRect(x: 0, y: altura - 34, width: largura, height: 34)]
+        let borda = cena.rolada ? [CGRect(x: 0, y: 0, width: largura, height: 140)] : []
         let palavras = try LaudoDeContraste.medir(normal: Retrato(imagem), semTexto: Retrato(semTexto.image.cgImage!),
                                                   escala: escala, topo: Self.barraDeStatus,
                                                   somenteEm: cena.escopo == "navegacao" ? regiao : nil,
-                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador)
+                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + borda)
         XCTAssertFalse(palavras.isEmpty, "\(cena.nome): nenhum texto medido")
         anexar(cena.nome, normal.image, palavras, escala)
         Swift.print(String(format: "leitura | %@ | %d palavras, %d abaixo | pior nota %.2f", cena.nome, palavras.count,
@@ -280,6 +288,55 @@ extension LeituraNoVidroUITests {
         }
         XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no Finalizar saída:\n" + falhas.joined(separator: "\n"))
     }
+
+    /// A tela da obra (etapa 2): o topo (título, fase, indicadores) e a lista rolada (o "A vencer" e os cartões dos meses),
+    /// nos quatro combos; mais a maior letra e o Aumentar contraste, no escuro esmeralda.
+    @MainActor func testLeituraDaObra() {
+        var cenas: [Cena] = []
+        for (tema, pele) in quatroCombos {
+            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento
+            cenas += [
+                Cena(nome: "obra, topo, \(tema), \(pele)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
+                     dados: "vitrine", abrir: "obra:v1"),
+                Cena(nome: "obra, lista, \(tema), \(pele)", conta: "senha", argumentos: combo + ["-custta.rolagem", "640"],
+                     espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
+            ]
+        }
+        // A obra vendida: a venda com a nota de lucro (PositivoNoVidro) e a etiqueta "Vendida", nos quatro combos (o
+        // Positivo do site ficava em 2,76:1 no claro azul).
+        for (tema, pele) in quatroCombos {
+            cenas.append(Cena(nome: "obra vendida, \(tema), \(pele)", conta: "senha",
+                              argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento, espera: "tituloDaObra",
+                              escopo: "tudo", dados: "vitrine", abrir: "obra:v3"))
+        }
+        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        cenas += [
+            Cena(nome: "obra na maior letra", conta: "senha", argumentos: escuro + maiorLetra, espera: "tituloDaObra", escopo: "tudo",
+                 dados: "vitrine", abrir: "obra:v1"),
+            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "640"],
+                 espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
+        ]
+        cobrar(cenas)
+    }
+
+    /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste, nas duas peles: o pior
+    /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, seis rolagens; na
+    /// CI, duas.
+    @MainActor func testLeituraDaObraRolando() {
+        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [400, 900] : [200, 400, 640, 900, 1200, 1500]
+        var cenas: [Cena] = []
+        for (pele, contraste) in [("esmeralda", false), ("azul", false), ("esmeralda", true), ("azul", true)] {
+            for y in rolagens {
+                let argumentos = ["-custta.tema", "escuro", "-custta.pele", pele, "-custta.rolagem", "\(y)"] + piorMomento
+                    + (contraste ? ["-custta.aumentarContraste", "YES"] : [])
+                // Espera o título pequeno da barra: rolada, a lista já soltou o título grande da árvore.
+                cenas.append(Cena(nome: "obra rolando \(y), escuro, \(pele)\(contraste ? ", Aumentar contraste" : "")", conta: "senha",
+                                  argumentos: argumentos, espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine",
+                                  abrir: "obra:v1", rolada: true))
+            }
+        }
+        cobrar(cenas)
+    }
 }
 
 /* O medidor com imagens sintéticas: sem abrir o app. */
@@ -350,4 +407,5 @@ final class LaudoDeContrasteTests: XCTestCase {
             XCTAssertTrue(erro is LaudoDeContraste.CenaNaoDeterministica)
         }
     }
+
 }

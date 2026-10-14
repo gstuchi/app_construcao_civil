@@ -628,7 +628,7 @@ private struct LinhaDeSugestao: View {
         guard !busca.isEmpty, let r = t.range(of: busca, options: [.caseInsensitive, .diacriticInsensitive, .anchored]) else {
             return Text(t).foregroundStyle(paleta.cor(.texto))
         }
-        return Text(t[r]).foregroundStyle(paleta.cor(.linkNoVidro)) + Text(t[r.upperBound...]).foregroundStyle(paleta.cor(.texto))
+        return Text("\(Text(t[r]).foregroundStyle(paleta.cor(.linkNoVidro)))\(Text(t[r.upperBound...]).foregroundStyle(paleta.cor(.texto)))")
     }
 }
 

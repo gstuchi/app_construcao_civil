@@ -327,7 +327,7 @@ struct LinhaDeGastoView: View {
             partes.append(Text("\(Image(systemName: pagamento == "Pix" ? "bolt" : "creditcard")) \(pagamento)"))
         }
         partes.append(Text(linha.data))
-        let junto = partes.dropFirst().reduce(partes[0]) { $0 + Text(" · ") + $1 }
+        let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
         return junto.font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
     }
 

@@ -233,10 +233,18 @@ assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-co
 assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
 assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 3, 'build, testes e laudo com os pacotes travados');
 // O laudo de leitura e as auditorias moram no job laudo, em paralelo: o app pula os dois e o laudo roda só os dois.
-assert.match(appIosSemComentario, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
+// Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
+const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
+const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo');
+assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
   'o job app pula o laudo e as auditorias');
-assert.match(appIosSemComentario, /\n  laudo:\n[\s\S]*-only-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-only-testing:CusttaUITests\/AuditoriaUITests/,
+assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-only-testing:CusttaUITests\/AuditoriaUITests/,
   'o job laudo roda o laudo e as auditorias');
+assert.match(jobLaudo, /\n\s+TEST_RUNNER_CUSTTA_VARREDURA: curta\n/, 'o laudo da CI usa a varredura curta (a lista sob a cápsula só em 0, 20, 40 e 260 pt)');
+assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobLaudo), 'o app e o laudo rodam em todo PR e em paralelo: nenhum dos dois tem if nem espera outro job');
+assert.ok(!/continue-on-error/.test(jobApp + jobLaudo), 'o app e o laudo são portão: nenhum dos dois passa com falha (continue-on-error)');
+for(const job of ['nucleo', 'app', 'laudo'])
+  assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
 const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
 const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
 assert.match(appIosTf, /runs-on:\s*macos-26/);

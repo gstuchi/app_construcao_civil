@@ -20058,6 +20058,40 @@
         "saida": {
           "erro": "nome"
         }
+      },
+      {
+        "caso": "nome longo vence a área",
+        "args": [
+          {
+            "nome": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "dataInicio": "2025-08-12",
+            "valorEstimadoVenda": 1450000,
+            "areaM2": 0,
+            "orcamento": 0
+          },
+          true
+        ],
+        "saida": {
+          "erro": "nome",
+          "mensagem": "Use até 120 caracteres."
+        }
+      },
+      {
+        "caso": "nova com área NaN",
+        "args": [
+          {
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-08-12",
+            "valorEstimadoVenda": 1450000,
+            "areaM2": null,
+            "orcamento": 0
+          },
+          true
+        ],
+        "saida": {
+          "erro": "area",
+          "mensagem": "Informe área construída maior que zero."
+        }
       }
     ],
     "dados.obraNova": [
@@ -20131,6 +20165,29 @@
           "dataInicio": "2025-08-12",
           "valorEstimadoVenda": null,
           "areaM2": 300,
+          "gastos": []
+        }
+      },
+      {
+        "caso": "área zero passa como veio e orçamento negativo fica de fora",
+        "args": [
+          {
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-08-12",
+            "valorEstimadoVenda": 1450000,
+            "areaM2": 0,
+            "orcamento": -1
+          },
+          "novaid",
+          "2026-10-06"
+        ],
+        "saida": {
+          "id": "novaid",
+          "nome": "Casa Alphaville",
+          "fase": "construcao",
+          "dataInicio": "2025-08-12",
+          "valorEstimadoVenda": 1450000,
+          "areaM2": 0,
           "gastos": []
         }
       },
@@ -20934,6 +20991,264 @@
         }
       },
       {
+        "caso": "estimativa e área negativas viram null",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          {
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-08-12",
+            "valorEstimadoVenda": -1,
+            "areaM2": -3,
+            "orcamento": 0
+          }
+        ],
+        "saida": {
+          "id": "o1",
+          "nome": "Casa Alphaville",
+          "dataInicio": "2025-08-12",
+          "fase": "construcao",
+          "valorEstimadoVenda": null,
+          "areaM2": null,
+          "orcamento": {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "estrutura": 250000,
+              "c_mgf1abcd": 1000
+            }
+          },
+          "gastos": [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "afazeres": [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            }
+          ],
+          "venda": null
+        }
+      },
+      {
         "caso": "vendida: venda, gastos, orçamento e o resto ficam",
         "args": [
           {
@@ -21108,6 +21423,28 @@
         "saida": {
           "erro": "valor"
         }
+      },
+      {
+        "caso": "valor zero vence a data",
+        "args": [
+          0,
+          "2025-08-11",
+          "2025-08-12",
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "valor"
+        }
+      },
+      {
+        "caso": "valor NaN: só a data confere",
+        "args": [
+          null,
+          "2026-10-01",
+          "2025-08-12",
+          "2026-10-06"
+        ],
+        "saida": null
       },
       {
         "caso": "antes do início",

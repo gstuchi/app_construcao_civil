@@ -55,7 +55,7 @@ struct EtiquetaDoIndicador: View {
     var body: some View {
         let (frente, fundo): (Token, Token) = switch cor {
         case .marca: (.fantasmaTexto, .fantasmaFundo)
-        case .alerta: (.alerta, .alertaFundo)
+        case .alerta: (.alertaEtiqueta, .alertaFundo)
         case .positivo: (.positivo, .positivoFundo)
         case .neutro: (.textoSecundario, .campo)
         }
@@ -223,7 +223,7 @@ struct LinhaDoAVencer: View {
             if !tamanho.isAccessibilitySize {
                 Image(decorative: "Icones/calendario")
                     .resizable().frame(width: icone * 0.55, height: icone * 0.55)
-                    .foregroundStyle(paleta.cor(.alerta))
+                    .foregroundStyle(paleta.cor(.alertaEtiqueta))
                     .frame(width: icone, height: icone)
                     .background(paleta.cor(.alertaFundo), in: .rect(cornerRadius: 11))
             }

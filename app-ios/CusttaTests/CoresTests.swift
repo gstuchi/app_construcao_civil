@@ -65,12 +65,11 @@ struct VidroTokensTests {
 
     @Test func escurecimentoSobOVidroSoNoEscuro() {
         let transparente = VidroTokens(nivel: .transparente, contorno: false), fosco = VidroTokens(nivel: .fosco, contorno: true)
-        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado] {
+        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado, .navegacao] {
             #expect(transparente.escurecimento(papel, escuro: true) == 0.5)
             #expect(fosco.escurecimento(papel, escuro: true) == 0.2)
             #expect(transparente.escurecimento(papel, escuro: false) == 0 && fosco.escurecimento(papel, escuro: false) == 0)
         }
-        #expect(transparente.escurecimento(.navegacao, escuro: true) == 0, "a navegação tem o véu da borda")
         #expect(VidroTokens(nivel: .solido, contorno: false).escurecimento(.conteudo, escuro: true) == 0)
     }
 

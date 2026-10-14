@@ -22,6 +22,8 @@ enum Token: String, CaseIterable, Sendable {
     case positivoFundo = "PositivoFundo"
     case alerta = "Alerta"
     case alertaFundo = "AlertaFundo"
+    /// O texto âmbar sobre a AlertaFundo (etiquetas): no claro, mais escuro que o Alerta do site.
+    case alertaEtiqueta = "AlertaEtiqueta"
     case informacao = "Informacao"
     case informacaoFundo = "InformacaoFundo"
     case negativo = "Negativo"

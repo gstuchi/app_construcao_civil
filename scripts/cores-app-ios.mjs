@@ -30,6 +30,9 @@ export const CORES = {
     PositivoFundo: ['#0C2F1E', '#D7F2E2'],
     Alerta: ['#E0A83A', '#8A5A06'],                 // --warn; fase em construção
     AlertaFundo: ['#33260F', '#F5ECD2'],
+    // O texto âmbar das etiquetas ("Em construção", "nada em 30 dias"): o Alerta do site (--warn) sobre a AlertaFundo ficava
+    // em 4,42:1 no laudo, na faixa do véu do topo; no claro, um âmbar mais escuro só nas etiquetas.
+    AlertaEtiqueta: ['#E0A83A', '#7A5410'],
     Informacao: ['#3AA0E0', '#1C68A0'],             // fase pronta
     InformacaoFundo: ['#0E2735', '#DCEBF7'],
     Negativo: ['#FB7185', '#C22E55'],               // --red
@@ -98,6 +101,7 @@ export const CORES = {
     PositivoFundo: ['#0C2B1C', '#D7F2E2'],
     Alerta: ['#FBBF24', '#8A5A06'],
     AlertaFundo: ['#33280F', '#F8ECC9'],
+    AlertaEtiqueta: ['#FBBF24', '#7A5410'],
     Informacao: ['#60A5FA', '#2A63C4'],
     InformacaoFundo: ['#122238', '#DCE9FA'],
     Negativo: ['#FB7185', '#C22E55'],
@@ -155,7 +159,7 @@ export const CORES = {
 export const PARES_SOLIDOS = [
   ['Texto', 'Superficie'], ['SecundarioSolido', 'Superficie'], ['LinkNoVidro', 'Superficie'], ['ErroNoVidro', 'Superficie'],
   ['Texto', 'Campo'], ['SobreMarca', 'Marca'], ['SobreTinta', 'Tinta'], ['FantasmaTexto', 'FantasmaFundo'],
-  ['Alerta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
+  ['Alerta', 'AlertaFundo'], ['AlertaEtiqueta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
   ['TextoSecundario', 'Campo'], ['PositivoNoVidro', 'Superficie'], ['NegativoNoVidro', 'Superficie'],
   ['Texto', 'LinhaDaFolha'], ['SecundarioSolido', 'LinhaDaFolha'], ['LinkNoVidro', 'LinhaDaFolha'], ['ErroNoVidro', 'LinhaDaFolha'],
   ['Alerta', 'LinhaDaFolha'], ['Texto', 'Tecla'], ['Texto', 'TeclaTocada'], ['Texto', 'SegmentadoEscolhido'],

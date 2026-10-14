@@ -19,7 +19,8 @@ import Observation
    volta a recusar se chegar um documento que não deu para ler inteiro ("formato-desconhecido"),
    porque uma edição regravaria o documento inteiro por cima do que o app não viu; e o cache sem
    documento vale quando a marca diz que o servidor já respondeu a esta conta neste aparelho
-   (a conta vazia que fechou o app sem gravar e abriu sem rede). A marca some junto com o cache. */
+   (a conta vazia que fechou o app sem gravar e abriu sem rede). A marca some junto com o cache e
+   quando a conta aparece com documento. */
 
 public enum OrigemErro: String, Sendable {
     case escrita, leitura
@@ -63,10 +64,13 @@ public struct Instantaneo: Sendable {
 
 /// Marca, por conta, de que o servidor já respondeu neste aparelho que a conta não tem documento (com documento, o cache
 /// dele basta). Mora fora do cache do banco e é apagada junto com ele: com a marca, o cache sem documento quer dizer
-/// conta vazia, e não aparelho novo.
+/// conta vazia, e não aparelho novo. Sai também quando a conta aparece com documento: o backup do iPhone leva a marca
+/// e deixa o cache do Firestore de fora, e no aparelho restaurado a marca de uma conta com obras faria o cache vazio
+/// passar por conta vazia.
 @MainActor public protocol MarcaDoServidor: AnyObject {
     func respondeu(uid: String) -> Bool
     func marcar(uid: String)
+    func desmarcar(uid: String)
 }
 
 @MainActor public protocol Relogio: AnyObject {
@@ -345,6 +349,7 @@ public final class Sincronizador {
         let novo = normaliza(i.dados)
         if !mesmoConteudo(novo, estado.arvore) { estado = Estado(normalizado: novo) }
         if !i.doCache, i.dados == nil, let uid { marca?.marcar(uid: uid) }
+        if i.dados != nil, let uid { marca?.desmarcar(uid: uid) }
         let contaVaziaJaVista = uid.map { marca?.respondeu(uid: $0) ?? false } ?? false
         if !i.doCache || i.dados != nil || contaVaziaJaVista { dadosCarregados = true }
     }

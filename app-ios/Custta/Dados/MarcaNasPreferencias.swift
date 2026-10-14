@@ -19,4 +19,10 @@ final class MarcaNasPreferencias: MarcaDoServidor {
         contas.append(uid)
         preferencias.set(contas, forKey: Self.chave)
     }
+
+    func desmarcar(uid: String) {
+        let contas = preferencias.stringArray(forKey: Self.chave) ?? []
+        guard contas.contains(uid) else { return }
+        preferencias.set(contas.filter { $0 != uid }, forKey: Self.chave)
+    }
 }

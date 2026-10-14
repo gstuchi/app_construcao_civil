@@ -421,6 +421,28 @@ struct SincronizadorCarregamentoTests {
         #expect(!s.dadosCarregados, "a marca é por conta: o aparelho viu a outra, não esta")
     }
 
+    @Test func contaComDocumentoPerdeAMarca() {
+        // O backup do iPhone leva as preferências e deixa o cache do Firestore de fora. No aparelho restaurado e sem
+        // rede, a marca de uma conta que já tem obras faria o cache vazio passar por conta vazia, e a primeira
+        // gravação subiria o documento inteiro por cima das obras.
+        let transporte = TransporteFalso()
+        let marca = MarcaFalsa()
+        let s = Sincronizador(transporte: transporte, relogio: RelogioFalso(), marca: marca)
+        s.iniciar(uid: "u1")
+        transporte.chega(nil)
+        marca.marcar(uid: "u2")
+        transporte.chega(blobCom(["Casa"]))
+        #expect(marca.contas == ["u2"], "a conta ganhou documento no servidor: só a marca dela sai")
+        marca.marcar(uid: "u1")
+        transporte.chega(blobCom(["Casa"]), doCache: true)
+        #expect(marca.contas == ["u2"], "o documento no cache também prova que a conta não é vazia")
+        let restaurado = TransporteFalso()
+        let r = Sincronizador(transporte: restaurado, relogio: RelogioFalso(), online: false, marca: marca)
+        r.iniciar(uid: "u1")
+        restaurado.chega(nil, doCache: true)
+        #expect(!r.dadosCarregados, "o cache vazio do aparelho restaurado não é conta vazia")
+    }
+
     @Test func erroDeLeituraAntesDeCarregarNaoDeixaGravar() async {
         let transporte = TransporteFalso()
         let s = Sincronizador(transporte: transporte, relogio: RelogioFalso())

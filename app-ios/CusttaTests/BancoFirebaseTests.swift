@@ -41,6 +41,16 @@ struct BancoFirebaseTests {
         #expect(!banco.limpezaPendente)
     }
 
+    @Test func desmarcarTiraSoAConta() throws {
+        let preferencias = try #require(UserDefaults(suiteName: "desmarcar-\(UUID().uuidString.prefix(8).lowercased())"))
+        let marca = MarcaNasPreferencias(preferencias: preferencias)
+        marca.marcar(uid: "u1")
+        marca.marcar(uid: "u2")
+        marca.desmarcar(uid: "u1")
+        marca.desmarcar(uid: "u3")
+        #expect(!marca.respondeu(uid: "u1") && marca.respondeu(uid: "u2"), "só a conta que apareceu com documento perde a marca")
+    }
+
     @Test func limpezaRetomadaApagaOCacheDeVerdade() async throws {
         // O app fechou no meio de um "sair": gravação só no cache (sem rede), instância encerrada e a marca de pé.
         let nome = "retomada-\(UUID().uuidString.prefix(8).lowercased())"

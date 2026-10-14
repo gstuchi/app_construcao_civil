@@ -46,5 +46,6 @@ final class MarcaEmMemoria: MarcaDoServidor {
     private(set) var contas: Set<String> = []
     func respondeu(uid: String) -> Bool { marcarTodas || contas.contains(uid) }
     func marcar(uid: String) { contas.insert(uid) }
+    func desmarcar(uid: String) { contas.remove(uid) }
 }
 #endif

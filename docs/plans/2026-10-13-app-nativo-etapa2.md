@@ -4684,7 +4684,7 @@ struct LinhaDeGastoView: View {
             partes.append(Text("\(Image(systemName: pagamento == "Pix" ? "bolt" : "creditcard")) \(pagamento)"))
         }
         partes.append(Text(linha.data))
-        let junto = partes.dropFirst().reduce(partes[0]) { $0 + Text(" · ") + $1 }
+        let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
         return junto.font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
     }
 
@@ -7609,7 +7609,7 @@ private struct LinhaDeSugestao: View {
         guard !busca.isEmpty, let r = t.range(of: busca, options: [.caseInsensitive, .diacriticInsensitive, .anchored]) else {
             return Text(t).foregroundStyle(paleta.cor(.texto))
         }
-        return Text(t[r]).foregroundStyle(paleta.cor(.linkNoVidro)) + Text(t[r.upperBound...]).foregroundStyle(paleta.cor(.texto))
+        return Text("\(Text(t[r]).foregroundStyle(paleta.cor(.linkNoVidro)))\(Text(t[r.upperBound...]).foregroundStyle(paleta.cor(.texto)))")
     }
 }
 

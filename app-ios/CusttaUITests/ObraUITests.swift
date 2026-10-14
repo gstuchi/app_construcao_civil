@@ -61,6 +61,9 @@ final class ObraUITests: XCTestCase {
         aVencer.tap()
         XCTAssertTrue(app.elemento("gasto-g039").waitForExistence(timeout: 5), "aberto, mostra o próximo vencimento")
         XCTAssertEqual(aVencer.value as? String, "aberto")
+        // Aberto, as linhas ficam juntas como no cartão do mês: entre dois gastos do mesmo mês, só a linha fina.
+        let porcelanato = app.elemento("gasto-g032"), tinta = app.elemento("gasto-g045")
+        XCTAssertLessThan(abs(tinta.frame.minY - porcelanato.frame.maxY), 1, "o vão entre os gastos é o do cartão do mês")
         app.rolarAte(aVencer)
         aVencer.tap()
         XCTAssertTrue(app.elemento("gasto-g039").waitForNonExistence(timeout: 5), "fechado de novo, as parcelas somem")

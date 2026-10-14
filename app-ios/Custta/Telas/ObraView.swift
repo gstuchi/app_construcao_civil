@@ -148,7 +148,7 @@ struct CartaoDoAVencer: View {
                     CabecalhoDoMes(mes: mes)
                     linhas(mes)
                 }
-                .padding(.bottom, 6)
+                Color.clear.frame(height: 6)             // só no fim do cartão, como no do mês
             }
         }
     }

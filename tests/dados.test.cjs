@@ -50,3 +50,11 @@ test('orçamento por tópico: só ids de texto até 80 e valores positivos, no m
   const d = normaliza({ obras:[obraBase({ orcamento:{ modo:'topicos', topicos } })] });
   assert.deepEqual(normaliza(d), d);
 });
+
+test('o teto de obras é o mesmo das firestore.rules', () => {
+  const D = require('../dados.js');
+  const rules = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.match(rules, new RegExp(`d\\.obras\\.size\\(\\) <= ${D.LIMITE_OBRAS}\\b`));
+  assert.equal(D.avisoLimiteDeObras(D.LIMITE_OBRAS - 1), null);
+  assert.deepEqual(D.avisoLimiteDeObras(D.LIMITE_OBRAS), { titulo: 'Limite de 300 obras', texto: 'Apague uma obra antiga para criar outra.' });
+});

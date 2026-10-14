@@ -569,7 +569,9 @@ editado('parcela: o pagamento não muda nem com Pix na entrada', PARCELA, { ...E
 editado('parcela: muda só ela e o pagamento fica', PARCELA, { ...ENTRADA, valor: 1100, pagamento: 'cartao', data: '2026-09-30' });
 editado('data vazia fica a do gasto', EM_PIX, { ...ENTRADA, data: '' });
 
-/* O que os formulários da obra gravam: nova, editada e a venda. */
+/* O que os formulários da obra gravam: nova, editada, a venda e o teto de obras das rules. */
+constante('dados.LIMITE_OBRAS', D.LIMITE_OBRAS);
+for(const n of [0, 1, 299, 300, 301]) caso('dados.avisoLimiteDeObras', String(n), [n], D.avisoLimiteDeObras);
 const CAMPOS_OBRA = { nome: 'Casa Alphaville', dataInicio: '2025-08-12', valorEstimadoVenda: 1450000, areaM2: 300, orcamento: 0 };
 const conferirObra = (nome, campos, nova) => caso('dados.conferirObra', nome, [campos, nova], D.conferirObra);
 conferirObra('nova completa', CAMPOS_OBRA, true);

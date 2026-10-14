@@ -100,6 +100,21 @@ public func gastoEditado(_ gasto: Gasto, _ entrada: EntradaDoGasto, _ conferido:
     return g
 }
 
+/// `LIMITE_OBRAS` do dados.js: o teto de obras por conta das firestore.rules.
+public let limiteDeObras = 300
+
+/// O aviso de "Nova obra" com o teto cheio.
+public struct AvisoDeLimite: Equatable, Sendable {
+    public let titulo: String
+    public let texto: String
+}
+
+/// `avisoLimiteDeObras` do dados.js: com o teto cheio, "Nova obra" avisa em vez de abrir (a obra a mais faria toda
+/// gravação seguinte ser recusada pelas rules até apagar uma).
+public func avisoLimiteDeObras(_ quantidade: Int) -> AvisoDeLimite? {
+    quantidade >= limiteDeObras ? AvisoDeLimite(titulo: "Limite de \(limiteDeObras) obras", texto: "Apague uma obra antiga para criar outra.") : nil
+}
+
 /// O que a pessoa respondeu no formulário da obra: nome aparado e os valores lidos como o `parseNum` (0 quando vazios).
 public struct CamposDaObra: Equatable, Sendable {
     public var nome: String

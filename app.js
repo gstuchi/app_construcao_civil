@@ -1768,6 +1768,9 @@ function formOrcamento(obraId){
 
 function formNovaObra(){
   if(!dadosCarregados){ avisaNaoCarregado(); return; }
+  // todas as entradas passam por aqui (+, "+ Nova obra" e o + sem obra aberta): a 301ª obra as rules recusam
+  const limite = OBRA_DADOS.avisoLimiteDeObras(db.obras.length);
+  if(limite){ OBRA_CONFIRM.avisar(`${limite.titulo}. ${limite.texto}`); return; }
   openSheet(`
     <h3>Nova obra</h3>
     <div class="field"><label>Nome da obra</label><input id="fNome" maxlength="120" placeholder="Ex: Casa Alphaville" autocomplete="off"></div>

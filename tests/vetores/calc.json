@@ -19916,6 +19916,56 @@
         }
       }
     ],
+    "dados.LIMITE_OBRAS": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": 300
+      }
+    ],
+    "dados.avisoLimiteDeObras": [
+      {
+        "caso": "0",
+        "args": [
+          0
+        ],
+        "saida": null
+      },
+      {
+        "caso": "1",
+        "args": [
+          1
+        ],
+        "saida": null
+      },
+      {
+        "caso": "299",
+        "args": [
+          299
+        ],
+        "saida": null
+      },
+      {
+        "caso": "300",
+        "args": [
+          300
+        ],
+        "saida": {
+          "titulo": "Limite de 300 obras",
+          "texto": "Apague uma obra antiga para criar outra."
+        }
+      },
+      {
+        "caso": "301",
+        "args": [
+          301
+        ],
+        "saida": {
+          "titulo": "Limite de 300 obras",
+          "texto": "Apague uma obra antiga para criar outra."
+        }
+      }
+    ],
     "dados.conferirObra": [
       {
         "caso": "nova completa",

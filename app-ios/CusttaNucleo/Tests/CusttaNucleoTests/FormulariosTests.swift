@@ -84,6 +84,14 @@ extension CamposDaObra {
 }
 
 struct FormulariosDaObraTests {
+    @Test func tetoDeObrasDasRules() {
+        #expect(Vetores.casos("dados.LIMITE_OBRAS").first?.saida == .numero(Double(limiteDeObras)))
+        for c in Vetores.casos("dados.avisoLimiteDeObras") {
+            let r = avisoLimiteDeObras(Int(c.args[0].numero))
+            confere(r.map { .objeto(["titulo": .texto($0.titulo), "texto": .texto($0.texto)]) } ?? .nulo, c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func conferirObraNaOrdemDoFormulario() {
         for c in Vetores.casos("dados.conferirObra") {
             let r = conferirObra(CamposDaObra(caso: c.args[0]), nova: c.args[1] == .booleano(true))

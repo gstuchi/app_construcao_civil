@@ -108,6 +108,12 @@
     return g;
   }
   /* ---- o que os formulários da obra gravam (app.js formNovaObra, formEditarObra e formVenda) ---- */
+  /* Teto de obras por conta, o mesmo das firestore.rules (d.obras.size() <= 300). Com ele cheio, "Nova obra" avisa em
+     vez de abrir: a obra a mais faria toda gravação seguinte ser recusada até apagar uma. */
+  const LIMITE_OBRAS = 300;
+  function avisoLimiteDeObras(quantidade){
+    return quantidade>=LIMITE_OBRAS ? {titulo:`Limite de ${LIMITE_OBRAS} obras`, texto:'Apague uma obra antiga para criar outra.'} : null;
+  }
   /* "Criar obra" e "Salvar" da obra, na ordem do formulário. campos: {nome (aparado), dataInicio, valorEstimadoVenda,
      areaM2, orcamento}, com os valores lidos pelo parseNum (0 quando vazios). Erro: {erro:'nome'} (vazio: a tela volta
      ao nome), {erro:'nome', mensagem} ou, só na obra nova, {erro:'area', mensagem}; certo: null. */
@@ -138,7 +144,7 @@
       return {erro:'data', mensagem:'Data da venda precisa ficar entre o início da obra e hoje'};
     return null;
   }
-  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,conferirObra,obraNova,obraEditada,conferirVenda};
+  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,LIMITE_OBRAS,avisoLimiteDeObras,conferirObra,obraNova,obraEditada,conferirVenda};
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.OBRA_DADOS=api;
 })(typeof window !== 'undefined' ? window : globalThis);

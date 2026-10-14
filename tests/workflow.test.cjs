@@ -228,10 +228,15 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
 assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
 assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
 assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
-assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 2, 'build e testes sem assinatura');
+assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 3, 'build, testes e laudo sem assinatura');
 assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
 assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
-assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 2, 'build e testes com os pacotes travados');
+assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 3, 'build, testes e laudo com os pacotes travados');
+// O laudo de leitura e as auditorias moram no job laudo, em paralelo: o app pula os dois e o laudo roda só os dois.
+assert.match(appIosSemComentario, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
+  'o job app pula o laudo e as auditorias');
+assert.match(appIosSemComentario, /\n  laudo:\n[\s\S]*-only-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-only-testing:CusttaUITests\/AuditoriaUITests/,
+  'o job laudo roda o laudo e as auditorias');
 const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
 const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
 assert.match(appIosTf, /runs-on:\s*macos-26/);

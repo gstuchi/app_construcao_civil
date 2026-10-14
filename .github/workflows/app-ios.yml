@@ -4,7 +4,9 @@ name: app-ios
 #   vetores gerados do site (tests/vetores/calc.json); por isso também dispara quando calc.js,
 #   dados.js, push.js, cadastro.js ou o gerador mudam;
 # - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
-#   unidade e de tela no simulador com os serviços falsos.
+#   unidade e de tela no simulador com os serviços falsos;
+# - laudo: o laudo de leitura sobre o vidro e as auditorias de acessibilidade, num simulador próprio,
+#   em paralelo com o app (os dois juntos passavam dos 65 min com as telas da etapa 2).
 # Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
 # (npm run test:app-ios:emuladores e npm run test:app-ios:cruzado): precisam de Java, dos
 # emuladores e da assinatura de simulador para o keychain do Firebase Auth.
@@ -63,7 +65,7 @@ jobs:
 
   app:
     runs-on: macos-26
-    # O laudo de leitura leva ~29 s por cena aqui, e a varredura das abas o leva a 43 cenas: o job passa dos 40 min (53 min na pior rodada de 12/10).
+    # Sem o laudo e as auditorias (job laudo), o job fica perto de 30 min; o teto é o de 12/10, com folga para a VM lenta.
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -108,12 +110,53 @@ jobs:
             CODE_SIGN_IDENTITY= \
             build
 
-      # Testes com os serviços falsos (nada de rede): unidade e tela, inclusive as auditorias de
-      # acessibilidade. Os que dependem dos emuladores pulam sozinhos aqui. O laudo de leitura sobre o
-      # vidro (LeituraNoVidroUITests) é portão aqui também: o simulador da máquina virtual desenha o
-      # vidro diferente do Mac, mas igual de uma rodada para outra. A lista sob a cápsula de abas é
-      # medida só em 0, 20, 40 e 260 pt (a varredura completa fica no Mac), para o job caber em 45 min.
+      # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
+      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam no job laudo.
       - name: Testes de unidade e de tela no simulador
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/testes.xcresult" \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests \
+            -skip-testing:CusttaUITests/AuditoriaUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Laudo ou tela reprovados: os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+      - name: Resultado dos testes quando reprovam
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testes-app-ios
+          path: ${{ runner.temp }}/testes.xcresult
+          retention-days: 7
+
+  laudo:
+    runs-on: macos-26
+    # ~29 s por cena do laudo; com as telas da etapa 2 (obra, folhas, quatro combos e letra máxima), o laudo e as
+    # auditorias passam de 30 min sozinhos.
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # O laudo de leitura sobre o vidro (LeituraNoVidroUITests) é portão aqui também: o simulador da máquina virtual
+      # desenha o vidro diferente do Mac, mas igual de uma rodada para outra. A lista sob a cápsula de abas é medida só
+      # em 0, 20, 40 e 260 pt (a varredura completa fica no Mac).
+      - name: Laudo de leitura e auditorias de acessibilidade no simulador
         env:
           TEST_RUNNER_CUSTTA_VARREDURA: curta
         run: |
@@ -128,14 +171,15 @@ jobs:
             -skipMacroValidation \
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
-            -resultBundlePath "$RUNNER_TEMP/testes.xcresult" \
+            -resultBundlePath "$RUNNER_TEMP/laudo.xcresult" \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests \
+            -only-testing:CusttaUITests/AuditoriaUITests \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo ou tela reprovados: os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-      - name: Resultado dos testes quando reprovam
+      - name: Resultado do laudo quando reprova
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: testes-app-ios
-          path: ${{ runner.temp }}/testes.xcresult
+          name: laudo-app-ios
+          path: ${{ runner.temp }}/laudo.xcresult
           retention-days: 7

@@ -18495,6 +18495,1211 @@
         }
       }
     ],
+    "dados.conferirGasto": [
+      {
+        "caso": "pix",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2026-10-12",
+          "parcelas": 1,
+          "cartao": null
+        }
+      },
+      {
+        "caso": "valor zero",
+        "args": [
+          {
+            "valor": 0,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "valor"
+        }
+      },
+      {
+        "caso": "valor negativo",
+        "args": [
+          {
+            "valor": -5,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "valor"
+        }
+      },
+      {
+        "caso": "descrição com 500",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2026-10-12",
+          "parcelas": 1,
+          "cartao": null
+        }
+      },
+      {
+        "caso": "descrição com 501",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "descricao",
+          "mensagem": "Use até 500 caracteres."
+        }
+      },
+      {
+        "caso": "descrição conta unidades UTF-16",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "descricao",
+          "mensagem": "Use até 500 caracteres."
+        }
+      },
+      {
+        "caso": "data vazia vira hoje",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2026-10-06",
+          "parcelas": 1,
+          "cartao": null
+        }
+      },
+      {
+        "caso": "cartão 10x sem juros",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "parcelas": 10,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2026-11-12",
+          "parcelas": 10,
+          "cartao": {
+            "valorCompra": 1380,
+            "taxaMensal": 0,
+            "nParcelas": 10,
+            "totalCompra": 1380,
+            "jurosCompra": 0,
+            "parcelas": [
+              {
+                "valor": 138,
+                "data": "2026-11-12"
+              },
+              {
+                "valor": 138,
+                "data": "2026-12-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-01-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-02-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-03-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-04-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-05-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-06-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-07-12"
+              },
+              {
+                "valor": 138,
+                "data": "2027-08-12"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "caso": "cartão 3x com juros",
+        "args": [
+          {
+            "valor": 3000,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "parcelas": 3,
+            "juros": 2.5
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 3151.23,
+          "data": "2026-11-12",
+          "parcelas": 3,
+          "cartao": {
+            "valorCompra": 3000,
+            "taxaMensal": 2.5,
+            "nParcelas": 3,
+            "totalCompra": 3151.23,
+            "jurosCompra": 151.23,
+            "parcelas": [
+              {
+                "valor": 1050.41,
+                "data": "2026-11-12"
+              },
+              {
+                "valor": 1050.41,
+                "data": "2026-12-12"
+              },
+              {
+                "valor": 1050.41,
+                "data": "2027-01-12"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "caso": "cartão 1x",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "parcelas": 1,
+            "juros": 3
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1421.4,
+          "data": "2026-11-12",
+          "parcelas": 1,
+          "cartao": {
+            "valorCompra": 1380,
+            "taxaMensal": 3,
+            "nParcelas": 1,
+            "totalCompra": 1421.4,
+            "jurosCompra": 41.4,
+            "parcelas": [
+              {
+                "valor": 1421.4,
+                "data": "2026-11-12"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "caso": "cartão com juros ilegíveis",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 3,
+            "juros": null
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "cartao",
+          "mensagem": "Confira valor, parcelas, data e taxa de juros"
+        }
+      },
+      {
+        "caso": "cartão com juros acima de 100",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 3,
+            "juros": 101
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "cartao",
+          "mensagem": "Confira valor, parcelas, data e taxa de juros"
+        }
+      },
+      {
+        "caso": "cartão com mais parcelas que centavos",
+        "args": [
+          {
+            "valor": 0.02,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 3,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "cartao",
+          "mensagem": "Confira valor, parcelas, data e taxa de juros"
+        }
+      },
+      {
+        "caso": "cartão com data inválida",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-02-30",
+            "pagamento": "cartao",
+            "parcelas": 3,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "cartao",
+          "mensagem": "Confira valor, parcelas, data e taxa de juros"
+        }
+      },
+      {
+        "caso": "cartão com data vazia vence a partir de hoje",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "",
+            "pagamento": "cartao",
+            "parcelas": 2,
+            "juros": 0
+          },
+          null,
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2026-10-06",
+          "parcelas": 2,
+          "cartao": {
+            "valorCompra": 1380,
+            "taxaMensal": 0,
+            "nParcelas": 2,
+            "totalCompra": 1380,
+            "jurosCompra": 0,
+            "parcelas": [
+              {
+                "valor": 690,
+                "data": "2026-10-06"
+              },
+              {
+                "valor": 690,
+                "data": "2026-11-06"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "caso": "edição: data vazia fica a do gasto",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2025-03-20",
+          "parcelas": 1,
+          "cartao": null
+        }
+      },
+      {
+        "caso": "edição no cartão não parcela de novo",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 5,
+            "juros": 99
+          },
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1380,
+          "data": "2026-10-12",
+          "parcelas": 5,
+          "cartao": null
+        }
+      },
+      {
+        "caso": "edição de parcela",
+        "args": [
+          {
+            "valor": 1100,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "id": "g05a",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 1,
+              "de": 3
+            },
+            "valor": 1033.34,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-09-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          },
+          "2026-10-06"
+        ],
+        "saida": {
+          "valor": 1100,
+          "data": "2026-10-12",
+          "parcelas": 1,
+          "cartao": null
+        }
+      },
+      {
+        "caso": "edição com valor zero",
+        "args": [
+          {
+            "valor": 0,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          "2026-10-06"
+        ],
+        "saida": {
+          "erro": "valor"
+        }
+      }
+    ],
+    "dados.gastosLancados": [
+      {
+        "caso": "pix",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 1380,
+            "data": "2026-10-12",
+            "parcelas": 1,
+            "cartao": null
+          },
+          [
+            "n1"
+          ]
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
+        "caso": "cartão 1x guarda as condições da compra",
+        "args": [
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "parcelas": 1,
+            "juros": 3
+          },
+          {
+            "valor": 1421.4,
+            "data": "2026-11-12",
+            "parcelas": 1,
+            "cartao": {
+              "valorCompra": 1380,
+              "taxaMensal": 3,
+              "nParcelas": 1,
+              "totalCompra": 1421.4,
+              "jurosCompra": 41.4,
+              "parcelas": [
+                {
+                  "valor": 1421.4,
+                  "data": "2026-11-12"
+                }
+              ]
+            }
+          },
+          [
+            "n1"
+          ]
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "valor": 1421.4,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 3,
+              "valorCompra": 1380,
+              "nParcelas": 1,
+              "totalCompra": 1421.4,
+              "jurosCompra": 41.4
+            }
+          }
+        ]
+      },
+      {
+        "caso": "cartão 3x com juros: irmãos no mesmo grupo",
+        "args": [
+          {
+            "valor": 3000,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-01-31",
+            "pagamento": "cartao",
+            "parcelas": 3,
+            "juros": 2.5
+          },
+          {
+            "valor": 3151.23,
+            "data": "2026-01-31",
+            "parcelas": 3,
+            "cartao": {
+              "valorCompra": 3000,
+              "taxaMensal": 2.5,
+              "nParcelas": 3,
+              "totalCompra": 3151.23,
+              "jurosCompra": 151.23,
+              "parcelas": [
+                {
+                  "valor": 1050.41,
+                  "data": "2026-01-31"
+                },
+                {
+                  "valor": 1050.41,
+                  "data": "2026-02-28"
+                },
+                {
+                  "valor": 1050.41,
+                  "data": "2026-03-31"
+                }
+              ]
+            }
+          },
+          [
+            "grupo",
+            "n1",
+            "n2",
+            "n3"
+          ]
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "valor": 1050.41,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-01-31",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 1,
+              "de": 3
+            },
+            "jurosCartao": {
+              "taxaMensal": 2.5,
+              "valorCompra": 3000,
+              "nParcelas": 3,
+              "totalCompra": 3151.23,
+              "jurosCompra": 151.23
+            }
+          },
+          {
+            "id": "n2",
+            "valor": 1050.41,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-02-28",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 2,
+              "de": 3
+            },
+            "jurosCartao": {
+              "taxaMensal": 2.5,
+              "valorCompra": 3000,
+              "nParcelas": 3,
+              "totalCompra": 3151.23,
+              "jurosCompra": 151.23
+            }
+          },
+          {
+            "id": "n3",
+            "valor": 1050.41,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-03-31",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 3,
+              "de": 3
+            },
+            "jurosCartao": {
+              "taxaMensal": 2.5,
+              "valorCompra": 3000,
+              "nParcelas": 3,
+              "totalCompra": 3151.23,
+              "jurosCompra": 151.23
+            }
+          }
+        ]
+      },
+      {
+        "caso": "cartão 7x sem juros, resto na última",
+        "args": [
+          {
+            "valor": 1000,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "parcelas": 7,
+            "juros": 0
+          },
+          {
+            "valor": 1000,
+            "data": "2026-11-12",
+            "parcelas": 7,
+            "cartao": {
+              "valorCompra": 1000,
+              "taxaMensal": 0,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0,
+              "parcelas": [
+                {
+                  "valor": 142.85,
+                  "data": "2026-11-12"
+                },
+                {
+                  "valor": 142.85,
+                  "data": "2026-12-12"
+                },
+                {
+                  "valor": 142.85,
+                  "data": "2027-01-12"
+                },
+                {
+                  "valor": 142.85,
+                  "data": "2027-02-12"
+                },
+                {
+                  "valor": 142.85,
+                  "data": "2027-03-12"
+                },
+                {
+                  "valor": 142.85,
+                  "data": "2027-04-12"
+                },
+                {
+                  "valor": 142.9,
+                  "data": "2027-05-12"
+                }
+              ]
+            }
+          },
+          [
+            "grupo",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6",
+            "n7"
+          ]
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "valor": 142.85,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-11-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 1,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "n2",
+            "valor": 142.85,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-12-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 2,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "n3",
+            "valor": 142.85,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2027-01-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 3,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "n4",
+            "valor": 142.85,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2027-02-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 4,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "n5",
+            "valor": 142.85,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2027-03-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 5,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "n6",
+            "valor": 142.85,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2027-04-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 6,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "n7",
+            "valor": 142.9,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2027-05-12",
+            "pagamento": "cartao",
+            "grupoId": "grupo",
+            "parcela": {
+              "n": 7,
+              "de": 7
+            },
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 1000,
+              "nParcelas": 7,
+              "totalCompra": 1000,
+              "jurosCompra": 0
+            }
+          }
+        ]
+      }
+    ],
+    "dados.gastoEditado": [
+      {
+        "caso": "pix continua pix",
+        "args": [
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          {
+            "valor": 99000,
+            "topico": "matbasicos",
+            "descricao": "Sapatas",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 99000,
+            "data": "2026-10-12",
+            "parcelas": 1,
+            "cartao": null
+          }
+        ],
+        "saida": {
+          "id": "g01",
+          "valor": 99000,
+          "topico": "matbasicos",
+          "descricao": "Sapatas",
+          "data": "2026-10-12",
+          "pagamento": "pix"
+        }
+      },
+      {
+        "caso": "pix vira cartão",
+        "args": [
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 1380,
+            "data": "2026-10-12",
+            "parcelas": 1,
+            "cartao": null
+          }
+        ],
+        "saida": {
+          "id": "g01",
+          "valor": 1380,
+          "topico": "matbasicos",
+          "descricao": "Cimento",
+          "data": "2026-10-12",
+          "pagamento": "cartao"
+        }
+      },
+      {
+        "caso": "cartão vira pix: as condições da compra saem",
+        "args": [
+          {
+            "id": "k1",
+            "valor": 250.5,
+            "topico": "outros",
+            "descricao": "Fone",
+            "data": "2026-02-10",
+            "pagamento": "cartao",
+            "notaSoDoSite": "fica",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 250.5,
+              "nParcelas": 1,
+              "totalCompra": 250.5,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 1380,
+            "data": "2026-10-12",
+            "parcelas": 1,
+            "cartao": null
+          }
+        ],
+        "saida": {
+          "id": "k1",
+          "valor": 1380,
+          "topico": "matbasicos",
+          "descricao": "Cimento",
+          "data": "2026-10-12",
+          "pagamento": "pix",
+          "notaSoDoSite": "fica"
+        }
+      },
+      {
+        "caso": "cartão continua cartão: as condições ficam",
+        "args": [
+          {
+            "id": "k1",
+            "valor": 250.5,
+            "topico": "outros",
+            "descricao": "Fone",
+            "data": "2026-02-10",
+            "pagamento": "cartao",
+            "notaSoDoSite": "fica",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 250.5,
+              "nParcelas": 1,
+              "totalCompra": 250.5,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-10-12",
+            "pagamento": "cartao",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 1380,
+            "data": "2026-10-12",
+            "parcelas": 1,
+            "cartao": null
+          }
+        ],
+        "saida": {
+          "id": "k1",
+          "valor": 1380,
+          "topico": "matbasicos",
+          "descricao": "Cimento",
+          "data": "2026-10-12",
+          "pagamento": "cartao",
+          "notaSoDoSite": "fica",
+          "jurosCartao": {
+            "taxaMensal": 0,
+            "valorCompra": 250.5,
+            "nParcelas": 1,
+            "totalCompra": 250.5,
+            "jurosCompra": 0
+          }
+        }
+      },
+      {
+        "caso": "parcela: muda só ela e o pagamento fica",
+        "args": [
+          {
+            "id": "g05a",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 1,
+              "de": 3
+            },
+            "valor": 1033.34,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-09-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "valor": 1100,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "2026-09-30",
+            "pagamento": "cartao",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 1100,
+            "data": "2026-09-30",
+            "parcelas": 1,
+            "cartao": null
+          }
+        ],
+        "saida": {
+          "id": "g05a",
+          "grupoId": "gr1",
+          "parcela": {
+            "n": 1,
+            "de": 3
+          },
+          "valor": 1100,
+          "topico": "matbasicos",
+          "descricao": "Cimento",
+          "data": "2026-09-30",
+          "pagamento": "cartao",
+          "jurosCartao": {
+            "taxaMensal": 0,
+            "valorCompra": 3100,
+            "nParcelas": 3,
+            "totalCompra": 3100,
+            "jurosCompra": 0
+          }
+        }
+      },
+      {
+        "caso": "data vazia fica a do gasto",
+        "args": [
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          {
+            "valor": 1380,
+            "topico": "matbasicos",
+            "descricao": "Cimento",
+            "data": "",
+            "pagamento": "pix",
+            "parcelas": 1,
+            "juros": 0
+          },
+          {
+            "valor": 1380,
+            "data": "2025-03-20",
+            "parcelas": 1,
+            "cartao": null
+          }
+        ],
+        "saida": {
+          "id": "g01",
+          "valor": 1380,
+          "topico": "matbasicos",
+          "descricao": "Cimento",
+          "data": "2025-03-20",
+          "pagamento": "pix"
+        }
+      }
+    ],
     "push.hashEndpoint": [
       {
         "caso": "\"\"",

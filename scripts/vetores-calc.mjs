@@ -517,6 +517,48 @@ n('orçamento de modo desconhecido vira total', obraCom({ orcamento: { modo: 'xy
 n('orçamento total zero some', obraCom({ orcamento: { modo: 'total', total: 0 } }));
 n('orçamento que não é objeto some', obraCom({ orcamento: 'muito' }));
 
+/* O que o formulário do gasto grava. Os juros ilegíveis (NaN) vão como null no caso. */
+const ENTRADA = { valor: 1380, topico: 'matbasicos', descricao: 'Cimento', data: '2026-10-12', pagamento: 'pix', parcelas: 1, juros: 0 };
+const comNaN = e => ({ ...e, juros: e.juros ?? NaN });
+const conferir = (nome, entrada, editado) => caso('dados.conferirGasto', nome, [entrada, editado, HOJE], (e, ed, h) => D.conferirGasto(comNaN(e), ed, h));
+const EM_PIX = O1.gastos[0], PARCELA = O1.gastos[4];
+const NO_CARTAO = { id: 'k1', valor: 250.5, topico: 'outros', descricao: 'Fone', data: '2026-02-10', pagamento: 'cartao', notaSoDoSite: 'fica',
+  jurosCartao: { taxaMensal: 0, valorCompra: 250.5, nParcelas: 1, totalCompra: 250.5, jurosCompra: 0 } };
+conferir('pix', ENTRADA, null);
+conferir('valor zero', { ...ENTRADA, valor: 0 }, null);
+conferir('valor negativo', { ...ENTRADA, valor: -5 }, null);
+conferir('descrição com 500', { ...ENTRADA, descricao: 'a'.repeat(500) }, null);
+conferir('descrição com 501', { ...ENTRADA, descricao: 'a'.repeat(501) }, null);
+conferir('descrição conta unidades UTF-16', { ...ENTRADA, descricao: '😀'.repeat(250) + 'a' }, null);
+conferir('data vazia vira hoje', { ...ENTRADA, data: '' }, null);
+conferir('cartão 10x sem juros', { ...ENTRADA, pagamento: 'cartao', parcelas: 10, data: '2026-11-12' }, null);
+conferir('cartão 3x com juros', { ...ENTRADA, valor: 3000, pagamento: 'cartao', parcelas: 3, juros: 2.5, data: '2026-11-12' }, null);
+conferir('cartão 1x', { ...ENTRADA, pagamento: 'cartao', parcelas: 1, juros: 3, data: '2026-11-12' }, null);
+conferir('cartão com juros ilegíveis', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, juros: null }, null);
+conferir('cartão com juros acima de 100', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, juros: 101 }, null);
+conferir('cartão com mais parcelas que centavos', { ...ENTRADA, valor: 0.02, pagamento: 'cartao', parcelas: 3 }, null);
+conferir('cartão com data inválida', { ...ENTRADA, pagamento: 'cartao', parcelas: 3, data: '2026-02-30' }, null);
+conferir('cartão com data vazia vence a partir de hoje', { ...ENTRADA, pagamento: 'cartao', parcelas: 2, data: '' }, null);
+conferir('edição: data vazia fica a do gasto', { ...ENTRADA, data: '' }, EM_PIX);
+conferir('edição no cartão não parcela de novo', { ...ENTRADA, pagamento: 'cartao', parcelas: 5, juros: 99 }, EM_PIX);
+conferir('edição de parcela', { ...ENTRADA, valor: 1100, pagamento: 'cartao' }, PARCELA);
+conferir('edição com valor zero', { ...ENTRADA, valor: 0 }, EM_PIX);
+const lancados = (nome, entrada, ids) => caso('dados.gastosLancados', nome, [entrada, D.conferirGasto(comNaN(entrada), null, HOJE), ids],
+  (e, c, l) => { const fila = [...l]; return D.gastosLancados(e, c, () => fila.shift()); });
+lancados('pix', ENTRADA, ['n1']);
+lancados('cartão 1x guarda as condições da compra', { ...ENTRADA, pagamento: 'cartao', parcelas: 1, juros: 3, data: '2026-11-12' }, ['n1']);
+lancados('cartão 3x com juros: irmãos no mesmo grupo', { ...ENTRADA, valor: 3000, pagamento: 'cartao', parcelas: 3, juros: 2.5, data: '2026-01-31' },
+  ['grupo', 'n1', 'n2', 'n3']);
+lancados('cartão 7x sem juros, resto na última', { ...ENTRADA, valor: 1000, pagamento: 'cartao', parcelas: 7, data: '2026-11-12' },
+  ['grupo', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7']);
+const editado = (nome, gasto, entrada) => caso('dados.gastoEditado', nome, [gasto, entrada, D.conferirGasto(comNaN(entrada), gasto, HOJE)], D.gastoEditado);
+editado('pix continua pix', EM_PIX, { ...ENTRADA, valor: 99000, descricao: 'Sapatas' });
+editado('pix vira cartão', EM_PIX, { ...ENTRADA, pagamento: 'cartao' });
+editado('cartão vira pix: as condições da compra saem', NO_CARTAO, { ...ENTRADA });
+editado('cartão continua cartão: as condições ficam', NO_CARTAO, { ...ENTRADA, pagamento: 'cartao' });
+editado('parcela: muda só ela e o pagamento fica', PARCELA, { ...ENTRADA, valor: 1100, pagamento: 'cartao', data: '2026-09-30' });
+editado('data vazia fica a do gasto', EM_PIX, { ...ENTRADA, data: '' });
+
 /* ---------- push.js e id ---------- */
 for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx', 'https://fcm.googleapis.com/fcm/send/eXyZ', 'ç😀', 'x'.repeat(300)])
   caso('push.hashEndpoint', JSON.stringify(t.length > 40 ? t.slice(0, 40) + '…' : t), [t], P.hashEndpoint);

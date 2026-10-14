@@ -999,22 +999,17 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
   if(isEdit) $('#fVal').focus();
   $('#cCancel').onclick = fechar;
   $('#cSave').onclick = ()=>{
-    let valor = parseNum($('#fVal').value);
-    if(!Number.isFinite(valor) || valor<=0){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
-    const desc = $('#fDesc').value.trim();
-    if(!textoValido(desc, 'descricao', $('#fDesc'))) return;
+    // regras puras no dados.js e no calc.js, as mesmas que o app nativo confere pelos vetores
+    const entrada = { valor:parseNum($('#fVal').value), topico:top, descricao:$('#fDesc').value.trim(), data:$('#fData').value,
+      pagamento:pagto, parcelas:parseInt($('#fParc')?.value,10)||1, juros:OBRA_CALC.lerTaxaCartao($('#fJuros')?.value) };
+    const r = OBRA_DADOS.conferirGasto(entrada, isEdit ? gasto : null, todayISO());
+    if(r.erro==='valor'){ if(isEdit) $('#fVal').focus(); else pedirValor(); return; }
+    if(r.erro==='descricao'){ toast(r.mensagem, "erro"); $('#fDesc').focus(); return; }
     const o = obraById(oFix ? oFix.id : $('#fObra').value);
     if(!o) return;
-    const data0 = $('#fData').value || (isEdit ? gasto.data : todayISO());
-    const nParc = !isParcela && pagto==='cartao' ? parseInt($('#fParc').value,10)||1 : 1;
-    const cartao = !isEdit && pagto==='cartao' ? calcularCartao() : null;
-    if(!isEdit && pagto==='cartao' && !cartao){
-      toast('Confira valor, parcelas, data e taxa de juros');
-      $('#fJuros').focus(); return;
-    }
-    if(cartao) valor=cartao.totalCompra;
-    const assinatura=[o.id,top,OBRA_CALC.normalizaDescricao(desc),Math.round(valor*100),data0,nParc,cartao?.taxaMensal].join('|');
-    const pareceDuplicado=OBRA_CALC.gastoRepetido(o, desc, valor, data0, isEdit ? gasto.id : null);
+    if(r.erro==='cartao'){ toast(r.mensagem); $('#fJuros').focus(); return; }
+    const assinatura=[o.id,top,OBRA_CALC.normalizaDescricao(entrada.descricao),Math.round(r.valor*100),r.data,r.parcelas,r.cartao?.taxaMensal].join('|');
+    const pareceDuplicado=OBRA_CALC.gastoRepetido(o, entrada.descricao, r.valor, r.data, isEdit ? gasto.id : null);
     if(pareceDuplicado && duplicadoConfirmado!==assinatura){
       duplicadoConfirmado=assinatura;
       $('#dupWarning').textContent='Este gasto parece já lançado: mesma descrição, valor e data. Confira ou toque novamente para salvar mesmo assim.';
@@ -1023,30 +1018,10 @@ function formGasto(obraId, gasto, valorInicial, aoFechar){
       return;
     }
     if(isEdit){
-      const g = o.gastos.find(x=>x.id===gasto.id); if(!g) return;
-      g.valor = valor; g.topico = top;
-      g.descricao = desc;
-      g.data = data0;
-      if(!isParcela) g.pagamento = pagto;
-      if(pagto!=='cartao') delete g.jurosCartao;
+      const i = o.gastos.findIndex(x=>x.id===gasto.id); if(i<0) return;
+      o.gastos[i] = OBRA_DADOS.gastoEditado(o.gastos[i], entrada, r);
     } else {
-      const dadosCartao = cartao ? { jurosCartao:{taxaMensal:cartao.taxaMensal,valorCompra:cartao.valorCompra,
-        nParcelas:cartao.nParcelas,totalCompra:cartao.totalCompra,jurosCompra:cartao.jurosCompra} } : {};
-      if(nParc > 1){
-        const grupoId = uid();
-        const parcelas = cartao.parcelas;
-        if(!parcelas.length){
-          toast('O valor precisa ter pelo menos um centavo por parcela');
-          $('#fParc').focus();
-          return;
-        }
-        parcelas.forEach((p,i)=>{
-          o.gastos.push({ id:uid(), valor:p.valor, topico:top, descricao:desc,
-            data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:nParc}, ...dadosCartao });
-        });
-      } else {
-        o.gastos.push({ id:uid(), valor, topico:top, descricao:desc, data:data0, pagamento:pagto, ...dadosCartao });
-      }
+      o.gastos.push(...OBRA_DADOS.gastosLancados(entrada, r, uid));
     }
     salvarComAviso(isEdit ? 'Gasto atualizado' : 'Gasto lançado com sucesso')
       .then(()=>OBRA_NATIVO.vibrar(), ()=>{}); // vibra só com o servidor confirmando

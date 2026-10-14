@@ -66,7 +66,47 @@
       taxaMensal:taxa>0&&taxa<=20?taxa:1,
       topicosCustom:lista(config.topicosCustom,t=>texto(t.id)&&texto(t.nm)?{...t,id:texto(t.id),nm:texto(t.nm),ic:texto(t.ic)||'etiqueta'}:null)}};
   }
-  const api={normaliza,LIMITES};
+  /* ---- o que o formulário do gasto grava (app.js formGasto) ----
+     O calc.js carrega antes deste arquivo no navegador; no Node vem pelo require. */
+  const calc = () => root.OBRA_CALC || require('./calc.js');
+  /* "Salvar" do gasto, na ordem do formulário. entrada: {valor, topico, descricao, data, pagamento, parcelas,
+     juros} como a tela leu (valor em reais, descrição aparada, parcelas inteiras e juros pelo lerTaxaCartao);
+     editado: o gasto em edição ou null; hoje: AAAA-MM-DD. Erro: {erro:'valor'} (a tela volta ao valor),
+     {erro:'descricao', mensagem} ou {erro:'cartao', mensagem}. Certo: {valor, data, parcelas, cartao}, com o
+     valor que vai para o documento (no cartão, o total com juros) e a data (no cartão, o primeiro vencimento). */
+  function conferirGasto(entrada, editado, hoje){
+    const valor=entrada.valor;
+    if(!Number.isFinite(valor) || valor<=0) return {erro:'valor'};
+    if(entrada.descricao.length>LIMITES.descricao) return {erro:'descricao', mensagem:`Use até ${LIMITES.descricao} caracteres.`};
+    const data=entrada.data || (editado ? editado.data : hoje);
+    const parcelas=!(editado && editado.grupoId) && entrada.pagamento==='cartao' ? entrada.parcelas||1 : 1;
+    const cartao=!editado && entrada.pagamento==='cartao' ? calc().parcelamentoCartao(valor, entrada.parcelas, entrada.juros, data) : null;
+    if(!editado && entrada.pagamento==='cartao' && !cartao) return {erro:'cartao', mensagem:'Confira valor, parcelas, data e taxa de juros'};
+    return {valor:cartao ? cartao.totalCompra : valor, data, parcelas, cartao};
+  }
+  /* Os gastos de um lançamento novo: no cartão parcelado, um por parcela, com o mesmo grupoId (o primeiro id
+     pedido) e parcela {n, de}; no cartão, as condições da compra em jurosCartao; senão, um gasto só. */
+  function gastosLancados(entrada, conferido, novoId){
+    const c=conferido.cartao;
+    const dadosCartao=c ? {jurosCartao:{taxaMensal:c.taxaMensal, valorCompra:c.valorCompra, nParcelas:c.nParcelas,
+      totalCompra:c.totalCompra, jurosCompra:c.jurosCompra}} : {};
+    if(conferido.parcelas>1){
+      const grupoId=novoId();
+      return c.parcelas.map((p,i)=>({id:novoId(), valor:p.valor, topico:entrada.topico, descricao:entrada.descricao,
+        data:p.data, pagamento:'cartao', grupoId, parcela:{n:i+1, de:conferido.parcelas}, ...dadosCartao}));
+    }
+    return [{id:novoId(), valor:conferido.valor, topico:entrada.topico, descricao:entrada.descricao, data:conferido.data,
+      pagamento:entrada.pagamento, ...dadosCartao}];
+  }
+  /* O gasto editado: valor, tópico, descrição e data; o pagamento só fora de uma compra parcelada; fora do
+     cartão, sem jurosCartao. Os outros campos, inclusive os que o app não conhece, ficam como estavam. */
+  function gastoEditado(gasto, entrada, conferido){
+    const g={...gasto, valor:conferido.valor, topico:entrada.topico, descricao:entrada.descricao, data:conferido.data};
+    if(!gasto.grupoId) g.pagamento=entrada.pagamento;
+    if(entrada.pagamento!=='cartao') delete g.jurosCartao;
+    return g;
+  }
+  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado};
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.OBRA_DADOS=api;
 })(typeof window !== 'undefined' ? window : globalThis);

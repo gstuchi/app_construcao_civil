@@ -74,7 +74,8 @@ enum DadosDeExemplo {
 
     /// As três obras do mockup aprovado (Casa Alphaville, Sobrado Granja Viana e Casa Tamboré 4), com as
     /// datas contadas a partir de hoje: a lista mostra sempre os números do mockup (14 meses, R$ 842 mil,
-    /// R$ 928 mil corrigido, 70% do orçamento…), para comparar o simulador com ele lado a lado.
+    /// R$ 927 mil corrigido, 70% do orçamento…), para comparar o simulador com ele lado a lado. A Casa
+    /// Alphaville tem os 46 lançamentos da tela da obra do mockup da etapa 2 (VitrineDaObra.swift).
     static func vitrine(hoje: Date = .now) -> ValorJSON {
         let calendario = Calendar(identifier: .gregorian)
         func data(_ mesesAtras: Int) -> ValorJSON {
@@ -94,9 +95,9 @@ enum DadosDeExemplo {
         }
         return .objeto([
             "obras": .lista([
-                obra("v1", "Casa Alphaville", "construcao", inicio: 14,
-                     gastos: [(14, 92_000), (13, 150_000), (11, 230_000), (8, 190_000), (5, 180_000)],
-                     extra: ["orcamento": .objeto(["modo": .texto("total"), "total": .numero(1_200_000)])]),
+                obra("v1", "Casa Alphaville", "construcao", inicio: 14, gastos: [],
+                     extra: ["orcamento": .objeto(["modo": .texto("total"), "total": .numero(1_200_000)]),
+                             "valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300), "gastos": gastosDaVitrine(hoje: hoje)]),
                 obra("v2", "Sobrado Granja Viana", "pronta", inicio: 23,
                      gastos: [(23, 250_000), (21, 330_000), (18, 310_000), (15, 280_000), (12, 210_000)]),
                 obra("v3", "Casa Tamboré 4", "vendida", inicio: 20,

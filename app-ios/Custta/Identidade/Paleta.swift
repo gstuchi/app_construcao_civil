@@ -62,6 +62,9 @@ enum Token: String, CaseIterable, Sendable {
     case globoOceano = "GloboOceano"
     case globoHalo = "GloboHalo"
     case globoAro = "GloboAro"
+    /// O lucro e o prejuízo da obra vendida sobre o vidro (o Positivo e o Negativo não fechavam 4,5:1 com a aurora atrás).
+    case positivoNoVidro = "PositivoNoVidro"
+    case negativoNoVidro = "NegativoNoVidro"
 }
 
 struct Paleta: Equatable, Sendable {

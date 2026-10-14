@@ -70,6 +70,10 @@ export const CORES = {
     GloboOceano: ['#0F7C6A', '#0F7C6A'],
     GloboHalo: ['#14B39A', '#14B39A'],
     GloboAro: ['#3AD17E', '#3AD17E'],
+    // O lucro e o prejuízo da obra vendida sobre o vidro (etapa 2): o Positivo e o Negativo do site ficavam entre 2,5 e
+    // 3,7:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel nos quatro combos.
+    PositivoNoVidro: ['#8CF0BC', '#084A27'],
+    NegativoNoVidro: ['#FFC4CE', '#8A1538'],
   },
   Azul: {
     Fundo: ['#070C18', '#EEF2F9'],
@@ -120,6 +124,8 @@ export const CORES = {
     GloboOceano: ['#4E72E0', '#4E72E0'],
     GloboHalo: ['#3A64F5', '#3A64F5'],
     GloboAro: ['#648CFF', '#648CFF'],
+    PositivoNoVidro: ['#86EFAC', '#084A27'],
+    NegativoNoVidro: ['#FFC4CE', '#8A1538'],
   },
 };
 
@@ -130,6 +136,7 @@ export const PARES_SOLIDOS = [
   ['Texto', 'Superficie'], ['SecundarioSolido', 'Superficie'], ['LinkNoVidro', 'Superficie'], ['ErroNoVidro', 'Superficie'],
   ['Texto', 'Campo'], ['SobreMarca', 'Marca'], ['SobreTinta', 'Tinta'], ['FantasmaTexto', 'FantasmaFundo'],
   ['Alerta', 'AlertaFundo'], ['AlertaEtiqueta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
+  ['TextoSecundario', 'Campo'], ['PositivoNoVidro', 'Superficie'], ['NegativoNoVidro', 'Superficie'],
 ];
 
 const info = { author: 'xcode', version: 1 };

@@ -190,6 +190,8 @@ struct HaloDoTitulo: View {
     /// halo, o título "Obras", branco do sistema, ficava em 4,41:1, e a versão em Ajustes, em 4,42:1).
     nonisolated static let naEntrada = 0.50
     nonisolated static let naBarra = 0.05
+    /// Atrás do nome da obra (etapa 2): o nome quebra em várias linhas e, na letra grande, chega à parte clara da aurora.
+    nonisolated static let naObra = 0.30
     let grande: Bool
     var opacidade = HaloDoTitulo.naEntrada
     @Environment(\.paleta) private var paleta

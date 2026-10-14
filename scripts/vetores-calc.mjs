@@ -1,5 +1,5 @@
 /* Vetores de teste compartilhados entre o site e o app nativo (docs/specs/2026-10-06-app-nativo-design.md,
-   "Testes e validação"). Roda as funções de verdade do calc.js, do dados.js, do push.js e do cadastro.js sobre casos
+   "Testes e validação"). Roda as funções de verdade do calc.js, do dados.js, do push.js, do cadastro.js e do teclado.js sobre casos
    fixos e grava entrada e saída em tests/vetores/calc.json. O teste do site (tests/vetores.test.mjs)
    confere que o arquivo está em dia com o código; o núcleo Swift (app-ios/CusttaNucleo) lê o mesmo
    arquivo. Se as duas cópias das regras divergirem, um dos lados falha.
@@ -36,6 +36,7 @@ const C = require('../calc.js');
 const D = require('../dados.js');
 const P = require('../push.js');
 const K = require('../cadastro.js');
+const T = require('../teclado.js');
 
 /* ---------- registro dos casos ---------- */
 const grupos = {};
@@ -575,6 +576,16 @@ for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx'
 for(const ms of [0, 35, 36, 1759750000000, 1700000000123, 4102444800000])
   caso('id.base36', String(ms), [ms], x => x.toString(36));
 
+/* ---------- teclado.js: o teclado de valor (centavos como inteiro) ---------- */
+constante('teclado.TETO', T.TETO);
+for(const [c, t] of [[0, '1'], [1, '2'], [12, '3'], [0, '0'], [0, '00'], [5, '00'], [123, 'del'], [0, 'del'], [999999999, '9'],
+  [9999999999, '1'], [999999999, '00'], [99999999, '00'], [12, 'x'], [12, '10'], [9999999999, 'del']])
+  caso('teclado.aplicarTecla', `${c} ${t}`, [c, t], T.aplicarTecla);
+for(const c of [0, 5, 100, 123456, 100000000, 9999999999]) caso('teclado.fmtCentavos', String(c), [c], T.fmtCentavos);
+for(const c of [0, 1, 12345, 9999999999]) caso('teclado.centavosParaReais', String(c), [c], T.centavosParaReais);
+for(const r of [0, 8.7, 0.1 + 0.2, 1380, -5, 99999999.99, 1e12, 0.005, 1.005])
+  caso('teclado.reaisParaCentavos', String(r), [r], T.reaisParaCentavos);
+
 /* ---------- cadastro.js ---------- */
 constante('cadastro.REGRAS_SENHA', K.REGRAS_SENHA);
 constante('cadastro.ORIGENS', K.ORIGENS);
@@ -650,7 +661,9 @@ for(const s of ['  12 ', '0x10', '0X1f', '1,5', '1e3', '1E-2', '.5', '5.', '+5',
   '0x200000000000018', '0o20000000000000003', '0b1000000000000000000000000000000000000000000000000000011', '0o4000000000000000014'])
   caso('js.textoParaNumero', JSON.stringify(s), [s], v => { const x = Number(v); return Number.isFinite(x) ? x : null; });
 for(const [x, casas] of [[8.25, 1], [1.005, 2], [2.5, 0], [0.5, 0], [10.25, 1], [12.35, 1], [1.45, 1], [999.95, 1], [0.05, 1], [1.25, 1], [1234.5678, 2], [0, 2],
-  [-1.5, 0], [-0.001, 2], [1e21, 2]]) // bordas: negativo no empate, negativo que zera e o limite de 1e21
+  [-1.5, 0], [-0.001, 2], [1e21, 2], // bordas: negativo no empate, negativo que zera e o limite de 1e21
+  // 4 casas, as do teclado de valor (reaisParaCentavos): o toFixed(4) acerta o 8,7 × 100 e o 1,005 × 100
+  [8.7 * 100, 4], [1.005 * 100, 4], [0.1 * 3 * 100, 4], [9999999999, 4], [0.5, 4], [1.00005, 4], [2.00015, 4], [99999999.99 * 100, 4], [123.45675, 3]])
   caso('js.toFixed', `${x}.toFixed(${casas})`, [x, casas], (v, c) => v.toFixed(c));
 for(const x of [0.5, 1.5, 2.5, -0.5, -1.5, -2.5, 0.49999999999999994, 1e16 + 1, -0.4])
   caso('js.round', String(x), [x], v => Math.round(v) + 0); // + 0 tira o −0, que o JSON já não guarda

@@ -52,11 +52,11 @@ public func arredondarJS(_ x: Double) -> Double {
     return x - piso >= 0.5 ? piso + 1 : piso
 }
 
-/// `numero.toFixed(casas)` do JavaScript para casas de 0 a 2, as que o site usa: arredonda pelo valor
-/// binário exato e, no empate exato, fica com o maior (8.25 → "8.3", 1.005 → "1.00"). Com mais casas,
-/// valor grande estouraria os 128 bits da conta.
+/// `numero.toFixed(casas)` do JavaScript para casas de 0 a 4, as que o site usa (o teclado de valor arredonda em 4):
+/// arredonda pelo valor binário exato e, no empate exato, fica com o maior (8.25 → "8.3", 1.005 → "1.00"). Abaixo de
+/// 1e21 a conta cabe em 84 bits com 4 casas; com muito mais casas, valor grande estouraria os 128 bits.
 public func toFixedJS(_ x: Double, _ casas: Int) -> String {
-    precondition((0...2).contains(casas), "toFixedJS: casas de 0 a 2")
+    precondition((0...4).contains(casas), "toFixedJS: casas de 0 a 4")
     if x.isNaN { return "NaN" }
     if abs(x) >= 1e21 { return numeroJS(x) }
     let negativo = x < 0

@@ -20,6 +20,7 @@ on:
       - 'dados.js'
       - 'push.js'
       - 'cadastro.js'
+      - 'teclado.js'
       - 'scripts/vetores-calc.mjs'
       - 'scripts/simulador-ios.mjs'
       - 'tests/vetores/**'

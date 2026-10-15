@@ -82,8 +82,8 @@ private struct PassoDaFolha: ViewModifier {
     @Environment(\.pedirParaFechar) private var pedirParaFechar
     @Environment(\.paleta) private var paleta
 
-    func body(content: Content) -> some View {
-        content
+    @ViewBuilder func body(content: Content) -> some View {
+        let passo = content
             .containerBackground(.clear, for: .navigation)
             .navigationTitle(titulo)
             .navigationBarTitleDisplayMode(.inline)
@@ -97,7 +97,9 @@ private struct PassoDaFolha: ViewModifier {
                     }
                 }
             }
-            .accessibilityAction(.escape) { if raiz { pedirParaFechar() } }
+        // Só na raiz: num passo de dentro, a ação de escape (mesmo vazia) engole o escape do VoiceOver, e o Z deixa de
+        // voltar ao passo anterior pelo NavigationStack.
+        if raiz { passo.accessibilityAction(.escape) { pedirParaFechar() } } else { passo }
     }
 }
 

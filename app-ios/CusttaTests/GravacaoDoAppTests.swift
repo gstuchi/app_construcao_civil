@@ -144,6 +144,11 @@ struct GravacaoDoAppTests {
                        "data": .texto("2026-10-01"), "pagamento": .texto("boleto")]])
         let r = RascunhoDoGasto(obra: o, editado: o.gastos[0], todas: [o], proprios: [], hoje: "2026-10-13")
         #expect(r.entrada.pagamento == "boleto", "o site regrava o que estava enquanto nenhuma forma é escolhida")
+        #expect(r.data == "2026-10-01", "o calendário mostra a data do gasto, não a de hoje")
+        r.data = "2026-10-02"
+        #expect(r.entrada.data == "2026-10-02", "a data escolhida vale, como no campo único do site")
+        r.pagamento = "pix"
+        #expect(r.entrada.data == "2026-10-02", "na edição a data é uma só, qualquer que seja o pagamento")
     }
 
     @Test func todosOsTopicosSemRepetirOsUsados() {
@@ -160,6 +165,12 @@ struct GravacaoDoAppTests {
         r.descricao = String(repeating: "a", count: 499) + "🧱🧱"
         r.limitarDescricao()
         #expect(r.descricao.utf16.count == 499, "o tijolo (2 unidades) não cabe inteiro e sai")
+        r.descricao = String(repeating: "a", count: 499) + "🧱b"
+        r.limitarDescricao()
+        #expect(r.descricao == String(repeating: "a", count: 499), "corta no tijolo, como o maxlength: o b depois dele não entra")
+        r.descricao = String(repeating: "a", count: 501)
+        r.limitarDescricao()
+        #expect(r.descricao.utf16.count == 500, "cabe até a 500ª unidade")
         r.descricao = "  Cimento  "
         #expect(r.entrada.descricao == "Cimento", "a descrição sai aparada, como no site")
     }

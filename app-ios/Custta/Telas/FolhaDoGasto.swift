@@ -62,7 +62,8 @@ final class RascunhoDoGasto {
     }
 
     var data: String {
-        get { datas[pagamento] ?? "" }
+        // Na edição as duas formas guardam a mesma data, e o pagamento pode ser um que o app não oferece ("boleto").
+        get { datas[editado == nil ? pagamento : "pix"] ?? "" }
         set {
             if editado == nil { datas[pagamento] = newValue } else { datas = ["pix": newValue, "cartao": newValue] }
         }
@@ -99,7 +100,11 @@ final class RascunhoDoGasto {
     func limitarDescricao() {
         guard descricao.utf16.count > Limites.descricao else { return }
         var r = ""
-        for c in descricao where r.utf16.count + String(c).utf16.count <= Limites.descricao { r.append(c) }
+        // Corta no primeiro caractere que não cabe, como o maxlength: nada depois dele entra.
+        for c in descricao {
+            guard r.utf16.count + c.utf16.count <= Limites.descricao else { break }
+            r.append(c)
+        }
         descricao = r
     }
 }

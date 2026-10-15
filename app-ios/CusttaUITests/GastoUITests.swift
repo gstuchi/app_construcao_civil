@@ -240,6 +240,16 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.elemento("tituloDaFolha").exists, "a folha continua aberta")
     }
 
+    /// Sem descrição o aviso do repetido não segura o segundo toque: o toque duplo lança um gasto só.
+    func testToqueDuploNoSalvarLancaUmGasto() {
+        let app = abrirObra()
+        lancarValor(app, "100")
+        app.buttons["salvarGasto"].doubleTap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+        sleep(1)
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
+    }
+
     func testRepetidoPedeOSegundoToque() {
         let app = abrirObra()
         for vez in 0..<2 {

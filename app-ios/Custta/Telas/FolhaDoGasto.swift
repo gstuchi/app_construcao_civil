@@ -482,6 +482,8 @@ private struct PassoDosDetalhes: View {
     }
 
     private func salvar() {
+        // A folha já está descendo (o primeiro toque gravou): o segundo toque de um toque duplo não lança de novo.
+        guard folhas.aberta != nil else { return }
         foco = nil
         let entrada = rascunho.entrada
         switch conferirGasto(entrada, editado: rascunho.editado, hoje: dataLocalISO(.now, fuso: .current)) {

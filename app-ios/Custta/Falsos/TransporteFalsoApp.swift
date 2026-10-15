@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import notify
 import CusttaNucleo
 
 /// Transporte falso dos testes (só Debug): entrega um blob fixo e confirma gravações depois de
@@ -33,6 +34,15 @@ final class TransporteFalsoApp: TransporteDados {
             if let falha { aoFalhar(falha); return }
             aoReceber(Instantaneo(dados: dados, doCache: semRede, gravacaoPendente: false))
             guard let remoto else { return }
+            // Os segundos contam do aviso do teste (notify_post de "br.com.custta.falso.apagarRemoto", com a folha já
+            // aberta), não da abertura do app: um relógio desde a abertura corria contra o teste, mais lento na CI.
+            await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
+                var token: Int32 = 0
+                notify_register_dispatch("br.com.custta.falso.apagarRemoto", &token, .main) { t in
+                    notify_cancel(t)
+                    avisado.resume()
+                }
+            }
             try? await Task.sleep(for: .seconds(remoto.depois))
             aoReceber(Instantaneo(dados: Self.sem(remoto.gasto, naObra: remoto.obra, em: dados), doCache: semRede, gravacaoPendente: false))
         }

@@ -1,4 +1,5 @@
 import XCTest
+import notify
 
 /* O gasto (etapa 2, PR 2), na obra da vitrine (46 lançamentos): lançar no Pix (com e sem rede) e no cartão parcelado,
    editar (a descrição e o valor no teclado), apagar arrastando e pela folha, a parcela (só esta ou a compra toda),
@@ -111,13 +112,16 @@ final class GastoUITests: XCTestCase {
     }
 
     func testFolhaFechaQuandoOutroAparelhoApagaOGasto() {
-        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g027@12"])
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g027@0"])
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         let linha = app.elemento("gasto-g027")
         app.rolarAte(linha)
         linha.tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForExistence(timeout: 5), "a edição abriu antes de o outro aparelho apagar")
-        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 20), "o gasto sumiu: a folha fecha sem gravar")
+        // O outro aparelho apaga agora, com a folha aberta. Um relógio desde a abertura do app corria contra o teste: na CI
+        // (consultas ~4× mais lentas) a linha sumia antes do toque.
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 10), "o gasto sumiu: a folha fecha sem gravar")
         XCTAssertFalse(app.elemento("gasto-g027").exists)
     }
 

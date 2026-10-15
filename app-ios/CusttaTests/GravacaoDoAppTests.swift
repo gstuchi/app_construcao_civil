@@ -40,6 +40,33 @@ struct GravacaoDoAppTests {
         #expect(transporte.gravacoes == 0)
     }
 
+    /// A guarda do TestFlight ligada no `gravar`. Em Debug o `ehRelease` é falso: o teste o liga sem espera no meio (nada
+    /// mais roda na thread principal entre ligar e desligar) para provar que o `gravar` pergunta pelo e-mail de quem entrou
+    /// antes de mudar o estado.
+    @Test func noBuildDoTestFlightOGravarSoPassaNaContaDeTeste() async throws {
+        let novo = Gasto(campos: ["id": .texto("novo"), "valor": .numero(10), "topico": .texto("outros"), "descricao": .texto(""),
+                                  "data": .texto("2026-10-13"), "pagamento": .texto("pix")])
+        let (m, transporte, _) = montar()
+        await ate { m.sincronizador.dadosCarregados }
+        let estado = m.sincronizador.estado
+        ContaDeTeste.ehRelease = true
+        let naContaDeSempre = m.gravar { $0.lancandoGastos([novo], naObra: $0.obras[0].id) }
+        ContaDeTeste.ehRelease = false
+        #expect(naContaDeSempre == .contaReal)
+        #expect(m.sincronizador.estado == estado && transporte.gravacoes == 0, "nada muda nem sobe")
+
+        let conta = ContaFalsa(inicial: "nenhuma")
+        let outro = TransporteFalsoApp(dados: DadosDeExemplo.blob, semRede: false)
+        let deTeste = ModeloApp(conta: conta, sincronizador: Sincronizador(transporte: outro, relogio: RelogioDoSistema(), online: true, marca: MarcaEmMemoria()),
+                                rede: MonitorDeRede(forcarSemRede: false))
+        try await conta.entrar(email: "giovani+custta-teste@gmail.com", senha: ContaFalsa.senhaCerta)
+        await ate { deTeste.sincronizador.dadosCarregados && deTeste.usuario != nil }
+        ContaDeTeste.ehRelease = true
+        let naContaDeTeste = deTeste.gravar { $0.lancandoGastos([novo], naObra: $0.obras[0].id) }
+        ContaDeTeste.ehRelease = false
+        #expect(naContaDeTeste == .gravou && outro.gravacoes == 1)
+    }
+
     @Test func antesDeVerOsDadosRecusaComOTextoDoSite() async {
         let (m, transporte, _) = montar(semRede: true, dados: nil)
         await ate { m.fase.ehPrincipal }

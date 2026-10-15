@@ -466,6 +466,22 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
                'o ValorEmDinheiro numa linha, encolhendo até a metade');
 });
 
+test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
+  // Nenhum teste de tela vê isso: eles tocam as teclas pelo identificador (a ordem não aparece), nenhum digita além do
+  // teto, o anúncio do VoiceOver não chega ao XCUITest e a auditoria não mede o limite de tamanho das teclas.
+  const t = ler('app-ios/Custta/Identidade/TecladoDeValor.swift');
+  const tabela = t.match(/static let linhas: \[\[TeclaDeValor\]\] = \[\n([\s\S]*?)\n {4}\]/);
+  assert.ok(tabela, 'a tabela das teclas');
+  const linhas = tabela[1].trim().split('\n').map(l => [...l.matchAll(/\.(?:digito\((\d)\)|(duploZero|apagar))/g)].map(m => m[1] ?? m[2]));
+  assert.deepEqual(linhas, [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['duploZero', '0', 'apagar']], 'ordem do telefone, 1 2 3 em cima');
+  const tocar = t.slice(t.indexOf('private func tocar('), t.indexOf('\n    }\n', t.indexOf('private func tocar(')));
+  assert.match(tocar, /let novo = aplicarTecla\(centavos, tecla\)\n\s*guard novo != centavos else \{ return \}\n\s*centavos = novo\n/, 'o teto e a tecla ignorada vêm do núcleo');
+  assert.match(tocar, /AccessibilityNotification\.Announcement\(fmtCentavos\(novo\)\)\.post\(\)/, 'o VoiceOver ouve o valor novo a cada tecla');
+  assert.match(t, /case \.duploZero: "zero zero"/);
+  assert.match(t, /TeclaDoValor\(tecla: tecla\) \{ tocar\(tecla\) \}\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)/, 'as teclas param no AX2');
+  assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

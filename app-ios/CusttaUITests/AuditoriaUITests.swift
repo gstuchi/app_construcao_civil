@@ -28,7 +28,7 @@ final class AuditoriaUITests: XCTestCase {
     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
     /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste.
     @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType) throws {
-        let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+        let abas = ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
         let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
         let barra = app.navigationBars.firstMatch
         let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0

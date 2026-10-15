@@ -4,7 +4,7 @@ import Testing
 import CusttaNucleo
 
 /* O que as telas que gravam usam (etapa 2): o `gravar` do modelo (troca o estado na hora e sobe o documento; recusa
-   sem ver os dados; nada sobe quando a obra sumiu). */
+   sem ver os dados; nada sobe quando a obra sumiu), o vaivém das folhas e o rascunho do gasto. */
 @MainActor
 struct GravacaoDoAppTests {
     func montar(semRede: Bool = false, dados: ValorJSON? = DadosDeExemplo.blob) -> (ModeloApp, TransporteFalsoApp, ContaFalsa) {
@@ -82,5 +82,84 @@ struct GravacaoDoAppTests {
         m.sincronizador.parar()
         #expect(m.gravar { $0 } == .semConta)
         #expect(transporte.gravacoes == 0)
+    }
+
+    @Test func folhasRodamODepoisSoQuandoAFolhaDesce() {
+        let folhas = Folhas()
+        folhas.aberta = .novoGasto(obraId: "o1")
+        var rodou = false
+        folhas.fechar { rodou = true }
+        #expect(folhas.aberta == nil && !rodou, "o depois espera a folha terminar de descer")
+        folhas.fechou()
+        #expect(rodou)
+        folhas.fechou()
+        folhas.destacar(["a"], novo: true)
+        let primeiro = folhas.destaque
+        folhas.destacar(["a"], novo: true)
+        #expect(folhas.destaque != primeiro, "o mesmo gasto acende de novo")
+        folhas.apagar(.init(obraId: "o1", gastoId: "g", grupoId: nil))
+        #expect(folhas.pedidoDeApagar?.gastoId == "g")
+    }
+
+    func obra(_ gastos: [[String: ValorJSON]]) -> Obra {
+        Obra(arvore: ["id": .texto("o1"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+                      "gastos": .lista(gastos.map(ValorJSON.objeto))])
+    }
+
+    @Test func rascunhoDoGastoNovoComecaComoOMockup() {
+        let o = obra([["id": .texto("a"), "valor": .numero(1), "topico": .texto("pintura"), "descricao": .texto("Tinta"),
+                       "data": .texto("2026-10-01"), "pagamento": .texto("pix")]])
+        let r = RascunhoDoGasto(obra: o, editado: nil, todas: [o], proprios: [], hoje: "2026-01-31")
+        #expect(r.topico == "pintura", "o tópico do último gasto da obra")
+        #expect(r.pagamento == "pix" && r.data == "2026-01-31")
+        r.pagamento = "cartao"
+        #expect(r.data == "2026-02-28", "o cartão começa um mês à frente, com o fim do mês ajustado")
+        r.data = "2026-03-10"
+        r.pagamento = "pix"
+        #expect(r.data == "2026-01-31", "cada forma de pagamento guarda a sua data")
+        #expect(!r.temOQuePerder, "no valor ainda, fechar não pergunta")
+        r.passouDoValor = true
+        #expect(r.temOQuePerder)
+    }
+
+    @Test func rascunhoDaEdicaoPerguntaSoSeMudou() {
+        let g: [String: ValorJSON] = ["id": .texto("p1"), "valor": .numero(615), "topico": .texto("revest"), "descricao": .texto("Piso"),
+                                      "data": .texto("2026-10-05"), "pagamento": .texto("cartao"), "grupoId": .texto("gr"),
+                                      "parcela": .objeto(["n": .numero(4), "de": .numero(10)])]
+        let o = obra([g])
+        let r = RascunhoDoGasto(obra: o, editado: o.gastos[0], todas: [o], proprios: [], hoje: "2026-10-13")
+        #expect(r.centavos == 61_500 && r.parcela == Parcela(n: 4, de: 10) && !r.cartaoNovo)
+        #expect(!r.temOQuePerder)
+        r.descricao = "Piso novo"
+        #expect(r.temOQuePerder)
+        r.descricao = "Piso"
+        #expect(!r.temOQuePerder, "voltou ao que era")
+        r.data = "2026-10-06"
+        #expect(r.entrada.data == "2026-10-06", "na edição a data é uma só, qualquer que seja o pagamento")
+    }
+
+    @Test func pagamentoDesconhecidoFicaComoVeio() {
+        let o = obra([["id": .texto("b"), "valor": .numero(5), "topico": .texto("outros"), "descricao": .texto("Taxa"),
+                       "data": .texto("2026-10-01"), "pagamento": .texto("boleto")]])
+        let r = RascunhoDoGasto(obra: o, editado: o.gastos[0], todas: [o], proprios: [], hoje: "2026-10-13")
+        #expect(r.entrada.pagamento == "boleto", "o site regrava o que estava enquanto nenhuma forma é escolhida")
+    }
+
+    @Test func todosOsTopicosSemRepetirOsUsados() {
+        let o = obra([["id": .texto("a"), "valor": .numero(1), "topico": .texto("pintura"), "descricao": .texto(""),
+                       "data": .texto("2026-10-01"), "pagamento": .texto("pix")]])
+        let r = RascunhoDoGasto(obra: o, editado: nil, todas: [o], proprios: [], hoje: "2026-10-13")
+        #expect(r.usados.map(\.id) == ["pintura"])
+        #expect(r.topicosSemOsUsados.count == 20 && !r.topicosSemOsUsados.contains { $0.id == "pintura" })
+    }
+
+    @Test func descricaoParaEm500UnidadesSemPartirEmoji() {
+        let o = obra([])
+        let r = RascunhoDoGasto(obra: o, editado: nil, todas: [o], proprios: [], hoje: "2026-10-13")
+        r.descricao = String(repeating: "a", count: 499) + "🧱🧱"
+        r.limitarDescricao()
+        #expect(r.descricao.utf16.count == 499, "o tijolo (2 unidades) não cabe inteiro e sai")
+        r.descricao = "  Cimento  "
+        #expect(r.entrada.descricao == "Cimento", "a descrição sai aparada, como no site")
     }
 }

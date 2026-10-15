@@ -10,6 +10,8 @@ import CusttaNucleo
 struct PrincipalView: View {
     @State private var aba = Aba.obras
     @State private var caminhoDeObras = PrincipalView.caminhoInicial
+    @State private var folhas = Folhas()
+    @Environment(ModeloApp.self) private var modelo
 
     var body: some View {
         Group {
@@ -18,8 +20,28 @@ struct PrincipalView: View {
             case .ajustes: AjustesView()
             }
         }
+        .environment(folhas)
         // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
-        .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba) }
+        .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
+        .sheet(item: $folhas.aberta, onDismiss: folhas.fechou) { qual in
+            switch qual {
+            case .novoGasto(let obraId): FolhaDoGasto(obraId: obraId, gastoId: nil).environment(folhas)
+            case .editarGasto(let obraId, let gastoId): FolhaDoGasto(obraId: obraId, gastoId: gastoId).environment(folhas)
+            }
+        }
+        // Com a folha aberta o fundo para: ela cobre quase tudo, e cada quadro da aurora refaria o desfoque dela.
+        .pausaOFundo(enquanto: folhas.aberta != nil)
+        #if DEBUG
+        .task { await abrirFolhaDeTeste() }
+        // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
+        .overlay(alignment: .topLeading) {
+            if UserDefaults.standard.bool(forKey: "custta.contarPontes") {
+                TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                    Text("pontes \(ControladorDaPonte.vivas)").font(.caption2).accessibilityIdentifier("pontesVivas")
+                }
+            }
+        }
+        #endif
         // A cápsula se mede da borda da tela, como a barra de abas do sistema, e não acompanha o teclado: ao
         // entrar com ele aberto, o teclado da entrada ainda está fechando quando esta tela aparece, e a barra
         // nascia em cima dele, no meio da tela, e saltava. As telas das abas não têm campo de texto.
@@ -28,6 +50,26 @@ struct PrincipalView: View {
 }
 
 extension PrincipalView {
+    /// O + da cápsula: dentro de uma obra que ainda recebe gasto, lança gasto nela. Obra vendida não recebe gasto novo
+    /// (como no site); a escolha de outra obra chega no PR 3, junto com "Nova obra" na lista.
+    private var acaoDoMais: AcaoDoMais? {
+        guard aba == .obras, case .obra(let id)? = caminhoDeObras.last,
+              let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == id }), obra.fase != .vendida else { return nil }
+        return AcaoDoMais(rotulo: "Lançar gasto") { folhas.aberta = .novoGasto(obraId: id) }
+    }
+
+    #if DEBUG
+    /// Laudo de leitura, auditoria e conferência visual: com `CUSTTA_ABRIR=obra:<id>`, `-custta.folha <passo>` abre a folha
+    /// do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e `-custta.folha editar:<gasto>`, a edição.
+    private func abrirFolhaDeTeste() async {
+        guard let passo = UserDefaults.standard.string(forKey: "custta.folha"), case .obra(let obraId)? = caminhoDeObras.last else { return }
+        while !modelo.sincronizador.dadosCarregados { try? await Task.sleep(for: .milliseconds(100)) }
+        try? await Task.sleep(for: .milliseconds(300))
+        folhas.aberta = passo.hasPrefix("editar:") ? .editarGasto(obraId: obraId, gastoId: String(passo.dropFirst(7)))
+                                                   : .novoGasto(obraId: obraId)
+    }
+    #endif
+
     /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto (testes de tela, laudo
     /// de leitura e conferência visual).
     static var caminhoInicial: [RotaDeObras] {

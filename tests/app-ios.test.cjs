@@ -150,9 +150,18 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
     // sumia a 1,0–1,5:1); no claro, o próprio Linha.
     const linha = bloco.match(/\bLinha: \['#\w+', '(#\w+)'\]/)[1];
     assert.match(bloco, new RegExp(`\\bLinhaNoVidro: \\['#FFFFFF17', '${linha}'\\]`), `LinhaNoVidro da pele ${pele}`);
+    // O texto âmbar das etiquetas: no claro, um âmbar mais escuro que o Alerta do site, que ficava em 4,42:1 sob o véu do
+    // topo no Pro Max (faixa que o laudo deixa de fora, porque ali o texto é borrado); no escuro, o próprio Alerta.
+    const alerta = bloco.match(/\bAlerta: \['(#\w+)', '#\w+'\]/)[1];
+    assert.match(bloco, new RegExp(`\\bAlertaEtiqueta: \\['${alerta}', '#7A5410'\\]`), `AlertaEtiqueta da pele ${pele}`);
   }
   const pecas = ler('app-ios/Custta/Telas/PecasDaObra.swift');
   assert.match(pecas.slice(pecas.indexOf('struct LinhaFina')), /^[^}]*paleta\.cor\(\.linhaNoVidro\)/, 'a linha fina sobre o vidro usa o LinhaNoVidro');
+  // Sobre o fundo âmbar, o texto é o AlertaEtiqueta, nunca o Alerta.
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f), conta = token => (t.match(new RegExp(String.raw`\.${token}\b`, 'g')) || []).length;
+    assert.equal(conta('alertaEtiqueta'), conta('alertaFundo'), `${f}: texto sobre a AlertaFundo no AlertaEtiqueta`);
+  }
 });
 
 test('aurora nas mesmas cores do site, nos quatro combos', async () => {
@@ -450,6 +459,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // ValorEmDinheiro, que encolhe.
   for(const f of arquivosSwift('app-ios/Custta/Telas'))
     assert.doesNotMatch(ler(f), /Text\(moeda\(/, `${f}: dinheiro por extenso num Text; use o ValorEmDinheiro`);
+  // E o ValorEmDinheiro fica numa linha: sem o lineLimit, num iPhone de 375 pt o valor quebra antes de encolher.
+  const componentes = ler('app-ios/Custta/Identidade/Componentes.swift');
+  assert.match(componentes.slice(componentes.indexOf('struct ValorEmDinheiro')), /^[^}]*\.lineLimit\(1\)\s*\.minimumScaleFactor\(0\.5\)/,
+               'o ValorEmDinheiro numa linha, encolhendo até a metade');
 });
 
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {

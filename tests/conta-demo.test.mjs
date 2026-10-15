@@ -107,6 +107,14 @@ test('importar recusa o que não é arquivo do Custta e o que as rules recusaria
   assert.throws(() => documentoImportado(JSON.stringify({ obras: [] })), /não é um arquivo exportado/);
   const muitas = Array.from({ length: 301 }, (_, i) => ({ id: `o${i}`, nome: 'O', dataInicio: '2026-01-01', gastos: [] }));
   assert.throws(() => documentoImportado(exportado({ obras: muitas, config: {} })), /até 300/);
+  assert.equal(documentoImportado(exportado({ obras: muitas.slice(1), config: {} })).obras.length, 300, 'as rules aceitam 300 obras');
+  assert.throws(() => documentoImportado(JSON.stringify({ formato: 'custta', versao: 2, dados: {} })), /não é um arquivo exportado/);
+  assert.throws(() => documentoImportado(JSON.stringify({ formato: 'outro', versao: 1, dados: {} })), /não é um arquivo exportado/);
+  const topicos = n => Array.from({ length: n }, (_, i) => ({ id: `t${i}`, nm: `Tópico ${i}` }));
+  assert.equal(documentoImportado(exportado({ obras: [], config: { topicosCustom: topicos(50) } })).config.topicosCustom.length, 50);
+  assert.throws(() => documentoImportado(exportado({ obras: [], config: { topicosCustom: topicos(51) } })), /até 50/);
+  const grande = [{ id: 'o', nome: 'O', dataInicio: '2026-01-01', gastos: [], anotacao: 'x'.repeat(900000) }];
+  assert.throws(() => documentoImportado(exportado({ obras: grande, config: {} })), /limite de tamanho/);
 });
 
 test('importar exige a conta de teste: a de revisão da Apple nunca recebe dados de verdade', () => {

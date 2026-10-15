@@ -29,7 +29,9 @@ extension XCUIApplication {
     func rolarAte(_ elemento: XCUIElement, tentativas: Int = 12) {
         let capsula = buttons["aba-obras"]
         let limite = (capsula.exists ? capsula.frame.minY : frame.maxY) - 16
-        for _ in 0..<tentativas where !(elemento.exists && elemento.isHittable && elemento.frame.maxY < limite) {
+        // Sai assim que chega: o `where` do for não sai do laço, e cada volta ociosa custa três consultas (~1,8 s na CI).
+        for _ in 0..<tentativas {
+            if elemento.exists && elemento.isHittable && elemento.frame.maxY < limite { return }
             coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
                 .press(forDuration: 0.05, thenDragTo: coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)),
                        withVelocity: .slow, thenHoldForDuration: 0.3)

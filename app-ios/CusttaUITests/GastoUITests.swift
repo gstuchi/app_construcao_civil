@@ -163,6 +163,21 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.elemento("gasto-g027").exists)
     }
 
+    /// Com uma linha aberta, tocar outra só fecha a aberta; o toque seguinte edita.
+    func testTocarOutraLinhaComUmaAbertaSoFecha() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.swipeLeft()
+        XCTAssertTrue(app.buttons["apagar-g027"].waitForExistence(timeout: 3))
+        let outra = app.elemento("gasto-g026")
+        outra.tap()
+        XCTAssertTrue(app.buttons["apagar-g027"].waitForNonExistence(timeout: 3), "o toque fecha a linha aberta")
+        XCTAssertFalse(app.elemento("linhaTopico").waitForExistence(timeout: 2), "e não abre a edição")
+        outra.tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForExistence(timeout: 5), "o toque seguinte edita")
+    }
+
     func testApagarACompraTodaDeUmaParcela() {
         let app = abrirObra()
         let linha = app.elemento("gasto-g031")

@@ -23,6 +23,7 @@ struct TecladoDeValor: View {
             Spacer(minLength: 12)
             VisorDoValor(centavos: centavos)
             Spacer(minLength: 12)
+            Spacer(minLength: 0)
             Grid(horizontalSpacing: 10, verticalSpacing: 10) {
                 ForEach(Self.linhas.indices, id: \.self) { i in
                     GridRow {
@@ -38,11 +39,11 @@ struct TecladoDeValor: View {
             Button(acao, action: confirmar)
                 .buttonStyle(BotaoDaFolha())
                 .disabled(centavos == 0)
-                .padding(.top, 14)
+                .padding(.top, 16)
                 .accessibilityIdentifier("confirmarValor")
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 8)
+        .padding(.bottom, 0)
     }
 
     private func tocar(_ tecla: TeclaDeValor) {
@@ -65,7 +66,7 @@ struct VisorDoValor: View {
             // os identificadores levam a exceção da auditoria de tipo dinâmico, que olha cada texto.
             Text("R$")
                 .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(paleta.cor(.textoSecundario))
+                .foregroundStyle(paleta.cor(.secundarioTransparente))
                 .accessibilityIdentifier("visorDoValor-rs")
             Text(fmtCentavos(centavos))
                 .font(.system(size: 64, weight: .bold).monospacedDigit())

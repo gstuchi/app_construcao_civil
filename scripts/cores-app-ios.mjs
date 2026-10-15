@@ -86,6 +86,7 @@ export const CORES = {
     TeclaTocada: ['#1E5247', '#E2EFE8'],            // --folha-tecla-on
     SegmentadoFundo: ['#FFFFFF14', '#142B2312'],    // --seg-fundo: trilho do Pix | Cartão
     SegmentadoEscolhido: ['#2A6B5C', '#FFFFFF'],    // --seg-on
+    SombraDoSegmentado: ['#0000002E', '#0000002E'], // sombra do --seg-on (0 1px 3px, preto 18%): no claro, separa o branco do trilho
     Apagar: ['#C42B3A', '#C22E55'],                 // botão do arrastar (o vermelho do sistema não passa 4,5:1 com branco)
     SobreApagar: ['#FFFFFF', '#FFFFFF'],
     SobreAlerta: ['#1F1503', '#FFFFFF'],            // "Salvar mesmo assim", sobre o Alerta
@@ -150,6 +151,7 @@ export const CORES = {
     TeclaTocada: ['#2A3B60', '#E7EDF7'],
     SegmentadoFundo: ['#FFFFFF14', '#142B2312'],
     SegmentadoEscolhido: ['#34477A', '#FFFFFF'],
+    SombraDoSegmentado: ['#0000002E', '#0000002E'],
     Apagar: ['#C42B3A', '#C22E55'],
     SobreApagar: ['#FFFFFF', '#FFFFFF'],
     SobreAlerta: ['#1F1503', '#FFFFFF'],
@@ -165,7 +167,7 @@ export const PARES_SOLIDOS = [
   ['Texto', 'Campo'], ['SobreMarca', 'Marca'], ['SobreTinta', 'Tinta'], ['FantasmaTexto', 'FantasmaFundo'],
   ['Alerta', 'AlertaFundo'], ['AlertaEtiqueta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
   ['TextoSecundario', 'Campo'], ['PositivoNoVidro', 'Superficie'], ['NegativoNoVidro', 'Superficie'],
-  ['Texto', 'LinhaDaFolha'], ['SecundarioSolido', 'LinhaDaFolha'], ['LinkNoVidro', 'LinhaDaFolha'], ['ErroNoVidro', 'LinhaDaFolha'],
+  ['Texto', 'LinhaDaFolha'], ['SecundarioSolido', 'LinhaDaFolha'], ['SecundarioTransparente', 'LinhaDaFolha'], ['LinkNoVidro', 'LinhaDaFolha'], ['ErroNoVidro', 'LinhaDaFolha'],
   ['Alerta', 'LinhaDaFolha'], ['Texto', 'Tecla'], ['Texto', 'TeclaTocada'], ['Texto', 'SegmentadoEscolhido'],
   ['SobreApagar', 'Apagar'], ['SobreAlerta', 'Alerta'],
 ];

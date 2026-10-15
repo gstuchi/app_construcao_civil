@@ -69,7 +69,7 @@ struct SetaDaLinha: View {
     var body: some View {
         Image(systemName: "chevron.right")
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(paleta.cor(.secundarioSolido))
+            .foregroundStyle(paleta.cor(.textoTerciario))
             .accessibilityHidden(true)
             .foraDoLaudo()
     }
@@ -79,7 +79,7 @@ struct SetaDaLinha: View {
 /// grupo + 18), como o rodapé de um grupo de Ajustes do sistema.
 struct NotaDaFolha: View {
     let texto: String
-    var cor: Token = .textoSecundario
+    var cor: Token = .secundarioTransparente
     var identificador: String?
 
     @Environment(\.paleta) private var paleta
@@ -113,7 +113,7 @@ struct TituloDaFolha: View {
             if let subtitulo {
                 Text(subtitulo)
                     .font(.footnote)
-                    .foregroundStyle(paleta.cor(.textoSecundario))
+                    .foregroundStyle(paleta.cor(.secundarioTransparente))
                     .accessibilityIdentifier("tituloDaFolha-obra")
             }
         }
@@ -149,16 +149,20 @@ struct SegmentadoDaFolha<Opcao: Hashable>: View {
                     else { withAnimation(.spring(duration: 0.3, bounce: 0)) { escolhida = opcao.valor } }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(decorative: opcao.icone).resizable().frame(width: 18, height: 18)
-                        Text(opcao.rotulo).font(.body.weight(ativa ? .semibold : .regular))
+                        Image(decorative: opcao.icone).resizable().frame(width: 15, height: 15)
+                        Text(opcao.rotulo).font(.subheadline.weight(ativa ? .semibold : .medium))
                     }
                     .fixedSize()
                     .foregroundStyle(paleta.cor(.texto))
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
                     .frame(minWidth: 86, minHeight: 36)
                     .frame(maxWidth: tamanho.isAccessibilitySize ? .infinity : nil)
                     .background {
-                        if ativa { Capsule().fill(paleta.cor(.segmentadoEscolhido)) }
+                        if ativa {
+                            // A sombra do mockup (0 1px 3px): no claro, é ela que separa o branco do trilho.
+                            Capsule().fill(paleta.cor(.segmentadoEscolhido))
+                                .shadow(color: paleta.cor(.sombraDoSegmentado), radius: 1.5, y: 1)
+                        }
                     }
                     .contentShape(.capsule)
                 }

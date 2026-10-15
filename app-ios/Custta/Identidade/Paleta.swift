@@ -74,9 +74,10 @@ enum Token: String, CaseIterable, Sendable {
     /// Teclas do teclado de valor, soltas e tocadas.
     case tecla = "Tecla"
     case teclaTocada = "TeclaTocada"
-    /// O segmentado Pix | Cartão: o trilho e a opção escolhida.
+    /// O segmentado Pix | Cartão: o trilho, a opção escolhida e a sombra sob ela.
     case segmentadoFundo = "SegmentadoFundo"
     case segmentadoEscolhido = "SegmentadoEscolhido"
+    case sombraDoSegmentado = "SombraDoSegmentado"
     /// O botão do arrastar para apagar e o texto sobre ele.
     case apagar = "Apagar"
     case sobreApagar = "SobreApagar"

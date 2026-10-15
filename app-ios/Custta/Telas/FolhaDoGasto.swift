@@ -273,13 +273,15 @@ private struct PassoDosDetalhes: View {
                     pagamento
                     if let c = rascunho.editado.flatMap(condicoesOriginais) { NotaDaFolha(texto: c) }
                     descricao.id("descricao")
-                    GrupoDaFolha {
-                        let rotulo = rascunho.cartaoNovo ? "Primeiro vencimento" : "Data"
-                        LinhaDaFolhaComRotulo(rotulo: rotulo) {
-                            CampoDeData(iso: $rascunho.data, rotulo: rotulo)
+                    VStack(spacing: 8) {
+                        GrupoDaFolha {
+                            let rotulo = rascunho.cartaoNovo ? "Primeiro vencimento" : "Data"
+                            LinhaDaFolhaComRotulo(rotulo: rotulo) {
+                                CampoDeData(iso: $rascunho.data, rotulo: rotulo)
+                            }
                         }
+                        if avisoDeRepetido { NotaDaFolha(texto: CusttaNucleo.avisoDeRepetido, cor: .alerta, identificador: "avisoRepetido") }
                     }
-                    if avisoDeRepetido { NotaDaFolha(texto: CusttaNucleo.avisoDeRepetido, cor: .alerta, identificador: "avisoRepetido") }
                     if rascunho.editado != nil {
                         GrupoDaFolha {
                             Button("Apagar gasto") { apagando = true }
@@ -289,7 +291,7 @@ private struct PassoDosDetalhes: View {
                         }
                     }
                 }
-                .padding(.top, 8)
+                .padding(.top, 4)
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -310,7 +312,7 @@ private struct PassoDosDetalhes: View {
                     .accessibilityIdentifier("salvarGasto")
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
-                    .padding(.bottom, 8)
+                    .padding(.bottom, 0)
                     .background {
                         LinearGradient(stops: [.init(color: paleta.cor(.folha), location: 0.62), .init(color: paleta.cor(.folha).opacity(0), location: 1)],
                                        startPoint: .bottom, endPoint: .top)
@@ -353,7 +355,7 @@ private struct PassoDosDetalhes: View {
         } label: {
             LinhaDaFolhaComRotulo(rotulo: "Valor", altura: 60) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioSolido))
+                    Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioTransparente))
                     ValorEmDinheiro(texto: fmtCentavos(rascunho.centavos), fonte: .title2.weight(.bold))
                         .foregroundStyle(paleta.cor(.texto))
                     SetaDaLinha()
@@ -393,7 +395,7 @@ private struct PassoDosDetalhes: View {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Image(decorative: "Icones/cartao").resizable().frame(width: 20, height: 20)
                         .foregroundStyle(paleta.cor(.linkNoVidro))
-                    Text(avisoDaParcela(p)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
+                    Text(avisoDaParcela(p)).font(.subheadline).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
@@ -417,7 +419,7 @@ private struct PassoDosDetalhes: View {
                             .labelsHidden()
                             .tint(paleta.cor(.linkNoVidro))
                             .padding(.horizontal, 4)
-                            .frame(minHeight: 36)
+                            .frame(minHeight: 34)
                             .background(paleta.cor(.segmentadoFundo), in: .rect(cornerRadius: 12, style: .continuous))
                             .accessibilityIdentifier("parcelas")
                         }
@@ -428,13 +430,13 @@ private struct PassoDosDetalhes: View {
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
                                     .focused($foco, equals: .juros)
-                                    .frame(minWidth: 44, maxWidth: 90)
+                                    .frame(minWidth: 44, maxWidth: 44)
                                     .accessibilityLabel("Juros ao mês, em porcentagem")
                                     .accessibilityIdentifier("juros")
-                                Text("%").foregroundStyle(paleta.cor(.secundarioSolido)).accessibilityHidden(true)
+                                Text("%").foregroundStyle(paleta.cor(.secundarioTransparente)).accessibilityHidden(true)
                             }
                             .padding(.horizontal, 12)
-                            .frame(minHeight: 36)
+                            .frame(minHeight: 34)
                             .background(paleta.cor(.segmentadoFundo), in: .rect(cornerRadius: 12, style: .continuous))
                         }
                     }
@@ -457,8 +459,8 @@ private struct PassoDosDetalhes: View {
             GrupoDaFolha {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Descrição (opcional)")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(paleta.cor(.secundarioSolido))
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(paleta.cor(.secundarioTransparente))
                         .accessibilityHidden(true)
                     TextField("Descrição (opcional)", text: $rascunho.descricao,
                               prompt: Text("Ex: 50 sacos de cimento").foregroundStyle(paleta.cor(.textoTerciario)))
@@ -568,12 +570,16 @@ private struct LinhaDeSugestao: View {
     let sugestao: SugestaoDeDescricao
     let termo: String
     @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "clock").foregroundStyle(paleta.cor(.secundarioSolido)).accessibilityHidden(true)
-            texto.frame(maxWidth: .infinity, alignment: .leading)
-            Text(sugestao.contexto).font(.footnote).foregroundStyle(paleta.cor(.secundarioSolido))
+            Image(systemName: "clock").imageScale(.small).foregroundStyle(paleta.cor(.secundarioTransparente)).accessibilityHidden(true)
+            let layout = tamanho.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout(spacing: 12))
+            layout {
+                texto.frame(maxWidth: .infinity, alignment: .leading)
+                Text(sugestao.contexto).font(.footnote).foregroundStyle(paleta.cor(.secundarioTransparente))
+            }
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 48)
@@ -661,7 +667,7 @@ private struct ListaDeTopicos: View {
     private func cabecalho(_ texto: String) -> some View {
         Text(texto)
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(paleta.cor(.textoSecundario))
+            .foregroundStyle(paleta.cor(.secundarioTransparente))
             .padding(.horizontal, 34)
             .accessibilityAddTraits(.isHeader)
     }
@@ -683,7 +689,7 @@ private struct ListaDeTopicos: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .frame(minHeight: 52)
+                    .frame(minHeight: 54)
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)

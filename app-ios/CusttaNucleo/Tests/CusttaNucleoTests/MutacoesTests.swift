@@ -103,6 +103,13 @@ struct RegrasDaFolhaBordasTests {
         }
     }
 
+    @Test func indiceComADescricaoPrimeiroEmOutraObra() {
+        let obras = [obra("o2", [("x", "pintura", "Tinta acrílica", "2026-01-01")]), obra("o1", [("y", "pintura", "Tinta acrílica", "2026-01-02")])]
+        let s = IndiceDeSugestoes(obras, obraId: "o1", ignorarId: nil).sugestoes(topicoId: "pintura", termo: "tinta")
+        #expect(s.first?.mesmaObra == true, "lançada antes em outra obra, ainda pesa a desta")
+        #expect(s == sugestoesDescricao(obras, obraId: "o1", topicoId: "pintura", termo: "tinta", ignorarId: nil))
+    }
+
     @Test func topicoProprioComIdDeFixoNaoRepete() {
         let ids = topicosDoFormulario([TopicoProprio(campos: ["id": .texto("pintura"), "nm": .texto("Pintura"), "ic": .texto("etiqueta")])]).map(\.id)
         #expect(ids.count == 21 && Set(ids).count == 21)

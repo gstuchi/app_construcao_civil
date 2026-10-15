@@ -13436,3 +13436,19 @@ git commit -m "feat: o app grava na conta de quem entra (sai a guarda da conta d
 ```
 
 **Ponto de controle do PR 4:** `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` verdes no Mac; o Orquestrador manda o build; o Giovani entra na conta de sempre, lança um gasto de teste e o apaga, e confere no site.
+
+---
+
+## O que a implementação mudou
+
+Decisões tomadas durante o PR 1, depois que este plano foi escrito. Valem para os PRs 2 a 4 no lugar do texto das tarefas correspondentes.
+
+**Tarefa 11, a marca do servidor sai quando a conta aparece com documento.** O Firestore deixa o cache fora do backup do iPhone, mas o `UserDefaults` entra nele, e a marca "o servidor já respondeu a esta conta" só saía com a limpeza do cache. Num iPhone restaurado e aberto sem rede, a conta com obras passaria por vazia, a guarda liberaria a gravação e a primeira gravação subiria o blob vazio por cima das obras. Por isso todo snapshot com documento, do servidor ou do cache, tira a marca da conta (`desmarcar(uid:)` no protocolo `MarcaDoServidor`), e marcas velhas se apagam sozinhas. Fica dormente até as gravações do PR 2, e os testes da marca cobrem a limpeza retomada, o cache sem documento e o instante antes do primeiro snapshot.
+
+**Tarefa 12, o aviso de `nao-carregado` com o texto de qualquer erro de leitura.** O plano só trocava o "Carregando suas obras, tente em instantes." pelo texto do erro no `formato-desconhecido`. Uma escuta que falha antes de carregar não reabre sozinha (só pelo "Tentar de novo", e conectar não a reabre), então com `permission-denied` o alerta diria "Carregando…" para sempre enquanto a lista diz "Não deu para ler suas obras". Regra adotada: qualquer erro de leitura antes de carregar mostra o texto do erro, com e sem rede; sem erro, ficam os textos do site ("Carregando…" com rede, "Conecte à internet…" sem).
+
+**Tarefa 15, o mockup aprovado vence o plano nas medidas da tela da obra.** As etiquetas dos indicadores ficam em 13 semibold com recuo 3/10 (o plano dizia 15 pt e recuo 12) e a pílula "Lançamentos" em 15 semibold, número em peso 500, com recuo 14 (o plano dizia 17 e recuo 16). O vão entre gastos no "A vencer" aberto é o do cartão do mês (o `.padding(.bottom, 6)` só no fim do cartão); o fim da tela fica acima da cápsula de abas, como no mockup (o último gasto e o cartão vazio ficavam cobertos); a linha fina dos cartões usa o token `LinhaNoVidro`, claro sobre o vidro no escuro (branco 9%), porque o `Linha` sólido sumia (1,0–1,5:1); o "—" da venda sem estimativa vem no tom secundário; o título e a pílula da fase seguem as alturas do mockup; e o total do mês passa pelo `ValorEmDinheiro`, porque partia em duas linhas na letra máxima em 375 pt.
+
+**Tarefas 16 e 17, guardas a mais.** As guardas em Node conferem também o `AlertaEtiqueta` nas etiquetas e o dinheiro numa linha só (`lineLimit`), e a importação da conta de teste confere sozinha todos os limites das rules (300 obras, 50 tópicos próprios, tamanho do documento, versão e formato do arquivo), porque o Admin SDK passa por cima delas. Com esses casos, as contagens de teste dos "Expected" das tarefas seguintes podem ficar acima das do plano: confira pela falha esperada, não só pelo número.
+
+**Nota para os blocos do PR 2.** Os ajustes da Tarefa 15 (a folga de baixo da tela da obra e a doc da `LinhaFina`) mudam linhas que 6 dos 13 blocos do PR 2 usam como contexto: o bloco da linha 8577 e os 4 que dependem dele, e o da linha 8844. Esses blocos precisam do contexto atualizado (a correção já existe, aplicada com `git apply --recount`) antes das Tarefas 22 e 23; com ela, os 13 aplicam.

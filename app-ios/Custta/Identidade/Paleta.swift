@@ -67,6 +67,23 @@ enum Token: String, CaseIterable, Sendable {
     /// O lucro e o prejuízo da obra vendida sobre o vidro (o Positivo e o Negativo não fechavam 4,5:1 com a aurora atrás).
     case positivoNoVidro = "PositivoNoVidro"
     case negativoNoVidro = "NegativoNoVidro"
+    /// A folha do sistema (etapa 2): o fundo, os grupos sólidos dentro dela e a linha fina entre as linhas de um grupo.
+    case folha = "Folha"
+    case linhaDaFolha = "LinhaDaFolha"
+    case separadorDaFolha = "SeparadorDaFolha"
+    /// Teclas do teclado de valor, soltas e tocadas.
+    case tecla = "Tecla"
+    case teclaTocada = "TeclaTocada"
+    /// O segmentado Pix | Cartão: o trilho e a opção escolhida.
+    case segmentadoFundo = "SegmentadoFundo"
+    case segmentadoEscolhido = "SegmentadoEscolhido"
+    /// O botão do arrastar para apagar e o texto sobre ele.
+    case apagar = "Apagar"
+    case sobreApagar = "SobreApagar"
+    /// Texto sobre o Alerta ("Salvar mesmo assim").
+    case sobreAlerta = "SobreAlerta"
+    /// O fundo da linha que acabou de entrar.
+    case aceso = "Aceso"
 }
 
 struct Paleta: Equatable, Sendable {

@@ -77,6 +77,19 @@ export const CORES = {
     // 3,7:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel nos quatro combos.
     PositivoNoVidro: ['#8CF0BC', '#084A27'],
     NegativoNoVidro: ['#FFC4CE', '#8A1538'],
+    // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
+    // sistema e o que vai dentro dela, o arrastar para apagar e a linha que acabou de entrar.
+    Folha: ['#0A1E18E6', '#F4F9F6F0'],              // --folha: fundo da folha (presentationBackground)
+    LinhaDaFolha: ['#12352C', '#FFFFFF'],           // --folha-linha: grupos sólidos da folha; a linha arrastada
+    SeparadorDaFolha: ['#FFFFFF14', '#142B2317'],   // --folha-sep: linha fina entre as linhas de um grupo
+    Tecla: ['#16403A', '#FFFFFF'],                  // --folha-tecla: teclas do teclado de valor
+    TeclaTocada: ['#1E5247', '#E2EFE8'],            // --folha-tecla-on
+    SegmentadoFundo: ['#FFFFFF14', '#142B2312'],    // --seg-fundo: trilho do Pix | Cartão
+    SegmentadoEscolhido: ['#2A6B5C', '#FFFFFF'],    // --seg-on
+    Apagar: ['#C42B3A', '#C22E55'],                 // botão do arrastar (o vermelho do sistema não passa 4,5:1 com branco)
+    SobreApagar: ['#FFFFFF', '#FFFFFF'],
+    SobreAlerta: ['#1F1503', '#FFFFFF'],            // "Salvar mesmo assim", sobre o Alerta
+    Aceso: ['#14B39A38', '#0B7A6824'],              // --aceso: a linha nova, por 2 s
   },
   Azul: {
     Fundo: ['#070C18', '#EEF2F9'],
@@ -130,6 +143,17 @@ export const CORES = {
     GloboAro: ['#648CFF', '#648CFF'],
     PositivoNoVidro: ['#86EFAC', '#084A27'],
     NegativoNoVidro: ['#FFC4CE', '#8A1538'],
+    Folha: ['#0E1628E6', '#F4F9F6F0'],              // no claro, o mockup usa o mesmo das duas peles
+    LinhaDaFolha: ['#1A2640', '#FFFFFF'],
+    SeparadorDaFolha: ['#FFFFFF14', '#142B2317'],
+    Tecla: ['#1F2D4A', '#FFFFFF'],
+    TeclaTocada: ['#2A3B60', '#E7EDF7'],
+    SegmentadoFundo: ['#FFFFFF14', '#142B2312'],
+    SegmentadoEscolhido: ['#34477A', '#FFFFFF'],
+    Apagar: ['#C42B3A', '#C22E55'],
+    SobreApagar: ['#FFFFFF', '#FFFFFF'],
+    SobreAlerta: ['#1F1503', '#FFFFFF'],
+    Aceso: ['#5B8CFF38', '#3560CF24'],
   },
 };
 
@@ -141,6 +165,9 @@ export const PARES_SOLIDOS = [
   ['Texto', 'Campo'], ['SobreMarca', 'Marca'], ['SobreTinta', 'Tinta'], ['FantasmaTexto', 'FantasmaFundo'],
   ['Alerta', 'AlertaFundo'], ['AlertaEtiqueta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
   ['TextoSecundario', 'Campo'], ['PositivoNoVidro', 'Superficie'], ['NegativoNoVidro', 'Superficie'],
+  ['Texto', 'LinhaDaFolha'], ['SecundarioSolido', 'LinhaDaFolha'], ['LinkNoVidro', 'LinhaDaFolha'], ['ErroNoVidro', 'LinhaDaFolha'],
+  ['Alerta', 'LinhaDaFolha'], ['Texto', 'Tecla'], ['Texto', 'TeclaTocada'], ['Texto', 'SegmentadoEscolhido'],
+  ['SobreApagar', 'Apagar'], ['SobreAlerta', 'Alerta'],
 ];
 
 const info = { author: 'xcode', version: 1 };

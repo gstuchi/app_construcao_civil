@@ -445,9 +445,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // A auditoria de texto cortado do Xcode não vê dentro de um elemento que o VoiceOver lê inteiro (o cartão da
   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
-  // dinheiro (ValorEmDinheiro, mockup da etapa 2: encolhe até a metade em vez de quebrar) e o título pequeno da
-  // barra da obra (corta como o do sistema, em vez de empurrar o voltar e o lápis).
-  const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'TituloPequenoDaBarra']);
+  // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
+  // e os títulos da barra, o pequeno da obra e o da folha (cortam como o do sistema, em vez de empurrar os botões).
+  const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
+    'TituloDaFolha']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){

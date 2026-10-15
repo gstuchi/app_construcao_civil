@@ -125,4 +125,16 @@ struct ObraNaTelaTests {
         #expect(valor == "R$\u{a0}150.000,00" && etiqueta == "Vendida em 30/06/26" && !positivo)
         #expect(nota.hasPrefix("lucro -R$ 50 mil · -R$"), "\(nota)")
     }
+
+    @Test func textosDeApagar() {
+        let topicos = mapaDeTopicos([])
+        let pix = linhaDeGasto(Gasto(campos: gasto("a", "2026-10-10", 4980, descricao: "Cimento CP-II, 120 sacos").comoObjeto!), topicos: topicos)
+        #expect(textoDeApagarGasto(pix).titulo == "Apagar este gasto?")
+        #expect(textoDeApagarGasto(pix).mensagem == "Cimento CP-II, 120 sacos · R$\u{a0}4.980,00. Não dá para desfazer.")
+        let parcela = linhaDeGasto(Gasto(campos: gasto("p", "2026-10-05", 6150, descricao: "Porcelanato 60×60", parcela: (4, 10)).comoObjeto!), topicos: topicos)
+        let t = textoDeApagarParcela(parcela, parcela: Parcela(n: 4, de: 10), restantes: 10)
+        #expect(t.titulo == "Porcelanato 60×60 (4/10)" && t.mensagem == "Esta parcela faz parte de uma compra em 10x no cartão.")
+        #expect(t.soEsta == "Apagar só esta parcela" && t.compraToda == "Apagar a compra toda (10 parcelas)")
+        #expect(textoDeApagarParcela(parcela, parcela: Parcela(n: 4, de: 10), restantes: 1).compraToda == "Apagar a compra toda (1 parcela)")
+    }
 }

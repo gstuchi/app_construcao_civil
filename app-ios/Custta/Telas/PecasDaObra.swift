@@ -273,6 +273,8 @@ struct LinhaDeGastoView: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
+    @Environment(\.colorScheme) private var esquema
+    @Environment(\.displayScale) private var escala
 
     var body: some View {
         Group {
@@ -316,11 +318,19 @@ struct LinhaDeGastoView: View {
         }
     }
 
+    /// A etiqueta "novo" vai no fim do texto, colada à última palavra (mockup: `::after` em linha, 8 pt depois), e não ao
+    /// lado do bloco: ao lado, ela tomava 53 pt da largura e o título quebrava uma linha a mais (3 no 13 mini). O espaço
+    /// rígido não deixa a etiqueta descer sozinha para a linha de baixo.
     private var titulo: some View {
-        HStack(spacing: 8) {
-            Text(linha.titulo).font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
-            if acesa && novo { EtiquetaNovo() }
+        Group {
+            if acesa && novo,
+               let etiqueta = EtiquetaNovo.imagem(paleta: paleta, esquema: esquema, tamanho: tamanho, escala: escala) {
+                Text("\(linha.titulo)\u{a0}\(Text(Image(uiImage: etiqueta)).baselineOffset(-2.5))")
+            } else {
+                Text(linha.titulo)
+            }
         }
+        .font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
     }
 
     private var valor: some View { ValorEmDinheiro(texto: linha.valor, fonte: .body.weight(.semibold)) }
@@ -356,6 +366,16 @@ struct EtiquetaNovo: View {
             .padding(.vertical, 1)
             .background(paleta.cor(.marca), in: .capsule)
             .accessibilityHidden(true)
+    }
+
+    /// A etiqueta como imagem, para entrar no Text do título da linha. O ImageRenderer não herda nada da tela: a pele, o
+    /// esquema de cor, o tamanho de letra e a escala vêm de quem desenha a linha, que os lê do environment e refaz a
+    /// imagem quando um deles muda (nada guardado em estado).
+    @MainActor static func imagem(paleta: Paleta, esquema: ColorScheme, tamanho: DynamicTypeSize, escala: CGFloat) -> UIImage? {
+        let r = ImageRenderer(content: EtiquetaNovo().padding(.leading, 4)
+            .environment(\.paleta, paleta).environment(\.colorScheme, esquema).environment(\.dynamicTypeSize, tamanho))
+        r.scale = escala
+        return r.uiImage
     }
 }
 

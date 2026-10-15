@@ -285,7 +285,7 @@ private struct PassoDosDetalhes: View {
                     if rascunho.editado != nil {
                         GrupoDaFolha {
                             Button("Apagar gasto") { apagando = true }
-                                .foregroundStyle(paleta.cor(.erroNoVidro))
+                                .foregroundStyle(paleta.cor(.negativo))
                                 .frame(maxWidth: .infinity, minHeight: 52)
                                 .accessibilityIdentifier("apagarGasto")
                         }

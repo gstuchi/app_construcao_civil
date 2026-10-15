@@ -77,7 +77,7 @@ struct ObraView: View {
                                 .id("aVencer")
                         }
                         ForEach(lista.meses) { mes in
-                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes).id("mes-\(mes.id)")
+                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
                         }
                     }
                 }
@@ -140,7 +140,7 @@ extension ObraView {
     private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
         guard let primeiro = d.ids.first else { return }
         let noAVencer = lista.aVencer?.meses.contains { $0.gastos.contains { $0.id == primeiro } } ?? false
-        let cartao = noAVencer ? "aVencer" : lista.meses.first { $0.gastos.contains { $0.id == primeiro } }.map { "mes-\($0.id)" }
+        let cartao = noAVencer ? "aVencer" : lista.meses.first { $0.gastos.contains { $0.id == primeiro } }.map(\.id)
         if noAVencer { aVencerAberto = true }
         acesos = Set(d.ids)
         novos = d.novo
@@ -164,9 +164,10 @@ extension ObraView {
         let ordem = (aVencerAberto ? (lista.aVencer?.meses ?? []) : []).flatMap(\.gastos).map(\.id)
             + lista.meses.flatMap(\.gastos).map(\.id)
         let vizinho = vizinhoDepoisDeApagar(saem, ordem: ordem)
-        linhaAberta = nil
+        // A linha sai aberta, com o "Apagar": fechar antes, fora da transação, a fazia voltar num quadro e só então sair.
         let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
-            modelo.gravar { e in p.grupoId.map { e.apagandoCompra($0, daObra: p.obraId) } ?? e.apagandoGasto(p.gastoId, daObra: p.obraId) }
+            linhaAberta = nil
+            return modelo.gravar { e in p.grupoId.map { e.apagandoCompra($0, daObra: p.obraId) } ?? e.apagandoGasto(p.gastoId, daObra: p.obraId) }
         }
         if resultado == .naoCarregado { naoCarregado = true; return }
         if resultado == .contaReal { contaReal = true; return }

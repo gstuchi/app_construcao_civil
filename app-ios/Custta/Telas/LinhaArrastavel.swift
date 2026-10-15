@@ -5,7 +5,7 @@ import UIKit
    só existe dentro de List, e a List não desenha um cartão de vidro por mês (vira um vidro por linha, com emenda); o
    swipeActionsContainer do iOS 27 ignora a cor e não compila no Xcode da CI. Por isso o arrastar é próprio, com a física
    da List: só começa num arrasto mais horizontal que vertical, para a esquerda (para a direita só com a linha aberta);
-   os 20 pt da borda esquerda ficam com o voltar do sistema; a linha abre em −100 pt (o botão de 80 e as folgas), estica
+   os 20 pt da borda esquerda ficam com o voltar do sistema; a linha abre em −96 pt (o botão de 80, 10 da borda e 6 até a linha, como o mockup), estica
    com resistência além disso, decide no soltar pela posição projetada com o impulso (gestos.js) e assenta numa mola sem
    quique que parte da velocidade do dedo. Vibra uma vez ao passar de −40 pt. Nunca apaga no arrasto até o fim: o botão
    pergunta antes. Tocar com uma linha aberta só fecha; rolar fecha. */
@@ -23,7 +23,7 @@ struct LinhaArrastavel<Conteudo: View>: View {
     @ScaledMetric(relativeTo: .footnote) private var larguraDoBotao: CGFloat = 80
 
     private var largura: CGFloat { min(larguraDoBotao, 120) }
-    private var revelado: CGFloat { largura + 20 }
+    private var revelado: CGFloat { largura + 16 }
     static var limiar: CGFloat { 40 }
 
     var body: some View {
@@ -33,7 +33,7 @@ struct LinhaArrastavel<Conteudo: View>: View {
             if x < 0 {
                 Button(action: apagar) {
                     VStack(spacing: 4) {
-                        Image(systemName: "trash").font(.system(size: 18, weight: .semibold))
+                        Image(systemName: "trash").font(.subheadline.weight(.semibold))
                         Text("Apagar").font(.footnote.weight(.semibold))
                     }
                     .foregroundStyle(paleta.cor(.sobreApagar))

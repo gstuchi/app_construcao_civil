@@ -83,6 +83,7 @@ struct VidroTokensTests {
     @Test func haloNoMenorPassoQuePassaNoProMax() {
         #expect(HaloDoTitulo.naEntrada == 0.50, "com 45%, a dica da entrada ficava em 4,06:1")
         #expect(HaloDoTitulo.naBarra == 0.05, "sem halo, o título grande ficava em 4,41:1")
+        #expect(HaloDoTitulo.naObraNoClaro == 0.10, "sem halo no claro, o nome da obra ficava em 4,40:1 no 17 Pro da CI")
     }
 
     @Test func textoSobreOVidroPorNivel() {

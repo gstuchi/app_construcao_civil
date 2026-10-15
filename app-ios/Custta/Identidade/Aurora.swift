@@ -183,7 +183,8 @@ struct CamadaAurora: View, Animatable, Equatable {
 
 /// Halo do texto solto sobre a aurora, só no escuro: o tom do fundo no centro, com borda gradual. Na entrada,
 /// atrás do título, do logo e da dica; nos tamanhos de acessibilidade cresce junto com o título e o miolo fica
-/// mais largo. No título grande da barra (Obras e Ajustes) e na versão em Ajustes, mais leve.
+/// mais largo. No título grande da barra (Obras e Ajustes) e na versão em Ajustes, mais leve. No claro, só atrás do
+/// nome da obra (`noClaro`).
 struct HaloDoTitulo: View {
     /// Opacidade no centro: o menor passo que passa de 4,5:1 no Pro Max (decisão do Giovani em 10/10). Na entrada,
     /// 50% (com 45%, a dica "Role para entrar" ficava em 4,06:1 no pior momento da aurora); na barra, 5% (sem
@@ -192,13 +193,17 @@ struct HaloDoTitulo: View {
     nonisolated static let naBarra = 0.05
     /// Atrás do nome da obra (etapa 2): o nome quebra em várias linhas e, na letra grande, chega à parte clara da aurora.
     nonisolated static let naObra = 0.30
+    /// No claro, atrás do nome da obra: na tela de 402 pt a aurora azul cai mais escura sob a primeira palavra (sem halo,
+    /// 4,40:1 no iPhone 17 Pro da CI, 4,80:1 no Pro Max).
+    nonisolated static let naObraNoClaro = 0.10
     let grande: Bool
     var opacidade = HaloDoTitulo.naEntrada
+    var noClaro = 0.0
     @Environment(\.paleta) private var paleta
     @Environment(\.colorScheme) private var esquema
 
     var body: some View {
-        let a = esquema == .dark ? opacidade : 0
+        let a = esquema == .dark ? opacidade : noClaro
         let fundo = paleta.cor(.fundo)
         let paradas: [(Double, Double)] = grande
             ? [(0, 1), (0.66, 1), (0.76, 0.8), (0.87, 0.45), (0.95, 0.15), (1, 0)]

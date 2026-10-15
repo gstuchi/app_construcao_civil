@@ -20,7 +20,7 @@ struct TituloDaObra: View {
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier("tituloDaObra")    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra) }
+            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra, noClaro: HaloDoTitulo.naObraNoClaro) }
             .padding(EdgeInsets(top: -6, leading: 0, bottom: -2, trailing: 0))
     }
 }

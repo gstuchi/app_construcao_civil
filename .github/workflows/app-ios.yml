@@ -5,8 +5,9 @@ name: app-ios
 #   dados.js, push.js, cadastro.js ou o gerador mudam;
 # - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
 #   unidade e de tela no simulador com os serviços falsos;
-# - laudo: o laudo de leitura sobre o vidro e as auditorias de acessibilidade, num simulador próprio,
-#   em paralelo com o app (os dois juntos passavam dos 65 min com as telas da etapa 2).
+# - laudo e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade, cada um num
+#   simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
+#   e os dois num job só chegavam a 75 min com a folha do gasto).
 # Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
 # (npm run test:app-ios:emuladores e npm run test:app-ios:cruzado): precisam de Java, dos
 # emuladores e da assinatura de simulador para o keychain do Firebase Auth.
@@ -65,7 +66,7 @@ jobs:
 
   app:
     runs-on: macos-26
-    # Sem o laudo e as auditorias (job laudo), o job fica perto de 30 min; o teto é o de 12/10, com folga para a VM lenta.
+    # Sem o laudo e as auditorias (jobs laudo e auditoria), o job fica perto de 30 min; o teto é o de 12/10, com folga para a VM lenta.
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,7 +112,7 @@ jobs:
             build
 
       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
-      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam no job laudo.
+      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria.
       - name: Testes de unidade e de tela no simulador
         run: |
           set -o pipefail
@@ -141,9 +142,12 @@ jobs:
 
   laudo:
     runs-on: macos-26
-    # ~29 s por cena do laudo; com as telas da etapa 2 (obra, folhas, quatro combos e letra máxima), o laudo e as
-    # auditorias passam de 30 min sozinhos.
-    timeout-minutes: 75
+    # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
+    # 718 s e ~7 min de build e simulador, 54 min; a folha do gasto soma ~1150 s de leitura e ~320 s de auditoria (perto
+    # do dobro do Mac), 75–79 min. A leitura da folha, a mais pesada, roda no job auditoria: ~35 min de testes e ~43 min de
+    # job em cada um. Teto de 60 min; se um passar de ~50, mova uma leitura para o outro (-skip-testing aqui e
+    # -only-testing lá).
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -155,8 +159,8 @@ jobs:
 
       # O laudo de leitura sobre o vidro (LeituraNoVidroUITests) é portão aqui também: o simulador da máquina virtual
       # desenha o vidro diferente do Mac, mas igual de uma rodada para outra. A lista sob a cápsula de abas é medida só
-      # em 0, 20, 40 e 260 pt (a varredura completa fica no Mac).
-      - name: Laudo de leitura e auditorias de acessibilidade no simulador
+      # em 0, 20, 40 e 260 pt (a varredura completa fica no Mac). A leitura da folha do gasto roda no job auditoria.
+      - name: Laudo de leitura no simulador
         env:
           TEST_RUNNER_CUSTTA_VARREDURA: curta
         run: |
@@ -173,14 +177,57 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/laudo.xcresult" \
             -only-testing:CusttaUITests/LeituraNoVidroUITests \
-            -only-testing:CusttaUITests/AuditoriaUITests \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo ou auditorias reprovados: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
       - name: Resultado do laudo quando reprova
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: laudo-app-ios
           path: ${{ runner.temp }}/laudo.xcresult
+          retention-days: 7
+
+  auditoria:
+    runs-on: macos-26
+    # As auditorias de acessibilidade e a leitura da folha do gasto; a conta do tempo está no job laudo.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # A mesma varredura curta do job laudo: uma leitura troca de job sem mudar o que mede.
+      - name: Auditorias de acessibilidade e leitura da folha do gasto no simulador
+        env:
+          TEST_RUNNER_CUSTTA_VARREDURA: curta
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/auditoria.xcresult" \
+            -only-testing:CusttaUITests/AuditoriaUITests \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Auditoria ou leitura reprovadas: o resultado e os prints anotados ficam 7 dias no artefato.
+      - name: Resultado das auditorias quando reprovam
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: auditoria-app-ios
+          path: ${{ runner.temp }}/auditoria.xcresult
           retention-days: 7

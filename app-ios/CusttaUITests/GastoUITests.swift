@@ -1,7 +1,9 @@
 import XCTest
 
-/* O gasto (etapa 2, PR 2), na obra da vitrine (46 lançamentos): lançar no Pix (com e sem rede), descartar pelo × e
-   puxando a folha, o voltar pela borda dentro da folha, o repetido e o `nao-carregado`. */
+/* O gasto (etapa 2, PR 2), na obra da vitrine (46 lançamentos): lançar no Pix (com e sem rede) e no cartão parcelado,
+   editar (a descrição e o valor no teclado), apagar arrastando e pela folha, a parcela (só esta ou a compra toda),
+   descartar pelo × e puxando a folha, o voltar pela borda dentro da folha, o repetido, o `nao-carregado` e a folha que
+   fecha quando outro aparelho apaga o gasto. */
 @MainActor
 final class GastoUITests: XCTestCase {
     private func abrirObra(_ argumentos: [String] = []) -> XCUIApplication {
@@ -56,6 +58,145 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
         XCTAssertTrue(comRotulo(app, comecando: "Areia sem rede").firstMatch.waitForExistence(timeout: 5), "sem rede, o gasto entra na lista")
         XCTAssertEqual(app.elemento("indicadorSincronizacao").label, "Sem conexão", "e espera a rede na fila")
+    }
+
+    func testLancarNoCartaoEm10xVaiParaOAVencer() {
+        let app = abrirObra()
+        lancarValor(app, "498000")
+        app.buttons["pagamento-Cartão"].tap()
+        app.buttons["parcelas"].tap()
+        app.buttons["10x"].tap()
+        let resumo = app.elemento("resumoDoCartao")
+        XCTAssertTrue(resumo.waitForExistence(timeout: 3))
+        XCTAssertEqual(resumo.label, "10x de R$\u{a0}498,00 · Juros do cartão: R$\u{a0}0,00 · Total: R$\u{a0}4.980,00")
+        escrever(app, "Revestimento da varanda")
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+        XCTAssertEqual(app.elemento("aVencer").value as? String, "aberto", "o primeiro vencimento é daqui a um mês: o A vencer abre")
+        XCTAssertTrue(comRotulo(app, comecando: "Revestimento da varanda (1/10)").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("56"), "10 parcelas entraram")
+    }
+
+    func testEditarGastoTrocaADescricao() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.tap()
+        XCTAssertTrue(app.elemento("tituloDaFolha").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Editar gasto"))
+        XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}4.980,00")
+        escrever(app, "Cimento CP-V, 120 sacos", apagando: 30)
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("gasto-g027").label.hasPrefix("Cimento CP-V, 120 sacos"), app.elemento("gasto-g027").label)
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("46"))
+    }
+
+    func testEditarOValorPeloTeclado() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.tap()
+        XCTAssertTrue(app.elemento("linhaValor").waitForExistence(timeout: 5))
+        app.elemento("linhaValor").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["confirmarValor"].label, "Pronto")
+        for _ in 0..<6 { app.buttons["tecla-del"].tap() }
+        for t in "12345" { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}123,45", "o valor novo volta aos detalhes")
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+        XCTAssertEqual(app.elemento("gasto-g027").value as? String, "R$\u{a0}123,45")
+    }
+
+    func testFolhaFechaQuandoOutroAparelhoApagaOGasto() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g027@12"])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForExistence(timeout: 5), "a edição abriu antes de o outro aparelho apagar")
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 20), "o gasto sumiu: a folha fecha sem gravar")
+        XCTAssertFalse(app.elemento("gasto-g027").exists)
+    }
+
+    func testEditarParcelaMostraOAvisoDoSite() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g031")
+        app.rolarAte(linha)
+        linha.tap()
+        let aviso = app.elemento("avisoParcela")
+        XCTAssertTrue(aviso.waitForExistence(timeout: 5))
+        XCTAssertEqual(aviso.label, "Parcela 4/10 de uma compra no cartão — a edição vale só pra esta parcela.")
+        XCTAssertFalse(app.buttons["pagamento-Pix"].exists, "numa parcela o pagamento não muda")
+    }
+
+    func testApagarArrastandoPerguntaComNomeEValor() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.swipeLeft()
+        let apagar = app.buttons["apagar-g027"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3), "arrastar para a esquerda mostra Apagar")
+        apagar.tap()
+        let alerta = app.alerts["Apagar este gasto?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        XCTAssertTrue(alerta.staticTexts["Cimento CP-II, 120 sacos · R$\u{a0}4.980,00. Não dá para desfazer."].exists)
+        alerta.buttons["Apagar"].tap()
+        XCTAssertTrue(app.elemento("gasto-g027").waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("45"))
+    }
+
+    func testCancelarFechaALinhaENaoApaga() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.swipeLeft()
+        app.buttons["apagar-g027"].tap()
+        app.alerts["Apagar este gasto?"].buttons["Cancelar"].tap()
+        XCTAssertTrue(app.buttons["apagar-g027"].waitForNonExistence(timeout: 3), "cancelar fecha a linha")
+        XCTAssertTrue(app.elemento("gasto-g027").exists)
+    }
+
+    func testApagarACompraTodaDeUmaParcela() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g031")
+        app.rolarAte(linha)
+        linha.swipeLeft()
+        app.buttons["apagar-g031"].tap()
+        let alerta = app.alerts["Porcelanato 60×60 (4/10)"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        XCTAssertTrue(alerta.buttons["Apagar só esta parcela"].exists)
+        alerta.buttons["Apagar a compra toda (10 parcelas)"].tap()
+        XCTAssertTrue(app.elemento("gasto-g031").waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("36"), "as 10 parcelas saíram juntas")
+    }
+
+    func testApagarSoEstaParcela() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g031")
+        app.rolarAte(linha)
+        linha.swipeLeft()
+        app.buttons["apagar-g031"].tap()
+        let alerta = app.alerts["Porcelanato 60×60 (4/10)"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        alerta.buttons["Apagar só esta parcela"].tap()
+        XCTAssertTrue(app.elemento("gasto-g031").waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("45"), "só a parcela saiu; as outras nove ficam")
+    }
+
+    func testApagarPelaFolhaDeEdicao() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.tap()
+        let botao = app.buttons["apagarGasto"]
+        XCTAssertTrue(botao.waitForExistence(timeout: 5))
+        botao.tap()
+        app.alerts["Apagar este gasto?"].buttons["Apagar"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
+        XCTAssertTrue(app.elemento("gasto-g027").waitForNonExistence(timeout: 5), "e a linha sai depois")
     }
 
     func testFecharDepoisDoValorPerguntaAntes() {

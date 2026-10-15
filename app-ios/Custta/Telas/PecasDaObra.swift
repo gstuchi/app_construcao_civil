@@ -267,6 +267,9 @@ struct LinhaDoAVencer: View {
 struct LinhaDeGastoView: View {
     let gasto: Gasto
     let linha: LinhaDeGasto
+    /// Acabou de ser salvo: o fundo Aceso por 2 s; `novo` põe a etiqueta (gasto lançado, não editado).
+    var acesa = false
+    var novo = false
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
@@ -277,6 +280,7 @@ struct LinhaDeGastoView: View {
         }
         .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 18))
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(acesa ? paleta.cor(.aceso) : .clear)
         .contentShape(.rect)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(linha.rotulo)
@@ -313,7 +317,10 @@ struct LinhaDeGastoView: View {
     }
 
     private var titulo: some View {
-        Text(linha.titulo).font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+        HStack(spacing: 8) {
+            Text(linha.titulo).font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+            if acesa && novo { EtiquetaNovo() }
+        }
     }
 
     private var valor: some View { ValorEmDinheiro(texto: linha.valor, fonte: .body.weight(.semibold)) }
@@ -334,6 +341,21 @@ struct LinhaDeGastoView: View {
 
     private func detalhe(_ texto: String) -> some View {
         Text(texto).font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
+    }
+}
+
+/// A etiqueta "novo" da linha que acabou de ser lançada (some com o destaque, em ~2 s).
+struct EtiquetaNovo: View {
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        Text("novo")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(paleta.cor(.sobreMarca))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 1)
+            .background(paleta.cor(.marca), in: .capsule)
+            .accessibilityHidden(true)
     }
 }
 

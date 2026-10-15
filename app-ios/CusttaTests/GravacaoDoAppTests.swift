@@ -4,7 +4,8 @@ import Testing
 import CusttaNucleo
 
 /* O que as telas que gravam usam (etapa 2): o `gravar` do modelo (troca o estado na hora e sobe o documento; recusa
-   sem ver os dados; nada sobe quando a obra sumiu), o vaivém das folhas e o rascunho do gasto. */
+   sem ver os dados; nada sobe quando a obra sumiu), o vaivém das folhas, o rascunho do gasto e para onde o VoiceOver vai
+   depois de apagar. */
 @MainActor
 struct GravacaoDoAppTests {
     func montar(semRede: Bool = false, dados: ValorJSON? = DadosDeExemplo.blob) -> (ModeloApp, TransporteFalsoApp, ContaFalsa) {
@@ -161,5 +162,12 @@ struct GravacaoDoAppTests {
         #expect(r.descricao.utf16.count == 499, "o tijolo (2 unidades) não cabe inteiro e sai")
         r.descricao = "  Cimento  "
         #expect(r.entrada.descricao == "Cimento", "a descrição sai aparada, como no site")
+    }
+
+    @Test func vizinhoDoVoiceOverDepoisDeApagar() {
+        #expect(vizinhoDepoisDeApagar(["b"], ordem: ["a", "b", "c"]) == "c")
+        #expect(vizinhoDepoisDeApagar(["c"], ordem: ["a", "b", "c"]) == "b")
+        #expect(vizinhoDepoisDeApagar(["b", "c"], ordem: ["a", "b", "c", "d"]) == "d", "a compra toda sai junta")
+        #expect(vizinhoDepoisDeApagar(["a"], ordem: ["a"]) == nil, "sem vizinho, vai para Lançamentos")
     }
 }

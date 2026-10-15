@@ -9,13 +9,28 @@ struct ObraView: View {
     let id: String
     @Binding var caminho: [RotaDeObras]
     @Environment(ModeloApp.self) private var modelo
+    @Environment(Folhas.self) private var folhas
+    @Environment(\.opcoes) private var opcoes
     @State private var aVencerAberto = false
+    /// A linha arrastada que mostra "Apagar" (uma por vez).
+    @State private var linhaAberta: String?
+    /// "Apagar" tocado na linha: o gasto da pergunta. Fica depois que o alerta fecha, para ele não trocar de texto saindo.
+    @State private var alvoDoApagar: Gasto?
+    @State private var perguntando = false
+    @State private var naoCarregado = false
+    @State private var contaReal = false
+    /// Os gastos que acabaram de ser salvos (acesos por 2 s) e se levam a etiqueta "novo".
+    @State private var acesos: Set<String> = []
+    @State private var novos = false
+    @AccessibilityFocusState private var foco: AlvoDoFoco?
     /// O título pequeno mora num objeto próprio, lido só pela peça da barra: ao cruzar o limite no meio da rolagem, só
     /// ela se refaz, e não a tela inteira (lista, indicadores e cartões).
     @State private var barra = BarraDaObra()
     #if DEBUG
     /// Laudo de leitura e conferência visual: a tela parada numa rolagem dada, em pt (o mesmo gancho de Obras).
     @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
+    /// Laudo e conferência visual: a linha que abre mostrando "Apagar" (`-custta.linhaAberta g027`).
+    @AppStorage("custta.linhaAberta") private var linhaDeTeste = ""
     @State private var posicao = ScrollPosition(edge: .top)
     #endif
 
@@ -35,29 +50,59 @@ struct ObraView: View {
     private func conteudo(_ obra: Obra, taxa: Double, topicos: [String: Topico]) -> some View {
         let hoje = dataLocalISO(.now, fuso: .current)
         let lista = listaDaObra(obra, hoje: hoje)
-        return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 10) {
-                TituloDaObra(nome: obra.nome)
-                PilulaDaFase(obra: obra, hoje: hoje)
-                IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje))
-                    .padding(.bottom, 14)
-                PilulaDeLancamentos(quantidade: obra.gastos.count)
-                if obra.gastos.isEmpty {
-                    CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.",
-                                   identificador: "obraSemGastos", icone: "Icones/notas") { EmptyView() }
-                } else {
-                    if let aVencer = lista.aVencer {
-                        CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos)
+        let acoes = AcoesDaLista(aberta: $linhaAberta, acesos: acesos, novos: novos, foco: $foco,
+                                 tocar: { gasto in
+                                     if linhaAberta != nil { fecharLinha(); return }
+                                     folhas.aberta = .editarGasto(obraId: obra.id, gastoId: gasto.id)
+                                 },
+                                 apagar: { gasto in
+                                     alvoDoApagar = gasto
+                                     perguntando = true
+                                 })
+        return ScrollViewReader { leitor in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    TituloDaObra(nome: obra.nome)
+                    PilulaDaFase(obra: obra, hoje: hoje)
+                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje))
+                        .padding(.bottom, 14)
+                    PilulaDeLancamentos(quantidade: obra.gastos.count)
+                        .accessibilityFocused($foco, equals: .lancamentos)
+                    if obra.gastos.isEmpty {
+                        CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.",
+                                       identificador: "obraSemGastos", icone: "Icones/notas") { EmptyView() }
+                    } else {
+                        if let aVencer = lista.aVencer {
+                            CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos, lista: acoes)
+                                .id("aVencer")
+                        }
+                        ForEach(lista.meses) { mes in
+                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes).id("mes-\(mes.id)")
+                        }
                     }
-                    ForEach(lista.meses) { mes in CartaoDoMes(mes: mes, topicos: topicos) }
                 }
+                .padding(.horizontal, 20)
+                // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
+                // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
+                .padding(.bottom, 98)
+                // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
+                .contentShape(.rect)
+                .onTapGesture { if linhaAberta != nil { fecharLinha() } }
             }
-            .padding(.horizontal, 20)
-            // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
-            // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
-            .padding(.bottom, 98)
+            .onChange(of: folhas.destaque) { _, d in if let d { mostrar(d, lista: lista, leitor: leitor) } }
         }
         .scrollIndicators(.hidden)
+        .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
+        .onChange(of: folhas.aberta) { _, aberta in if aberta != nil { linhaAberta = nil } }
+        .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
+        .onDisappear { linhaAberta = nil }
+        .sensoryFeedback(.success, trigger: folhas.destaque)
+        .modifier(PerguntaDeApagar(apresentada: $perguntando, obraId: obra.id, gasto: alvoDoApagar) { pedido in
+            apagar(pedido, obra: obra, lista: lista)
+        })
+        .onChange(of: perguntando) { _, agora in if !agora { fecharLinha() } }
+        .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) { Button("OK", role: .cancel) {} }
+        .alert(ContaDeTeste.titulo, isPresented: $contaReal) { Button("OK", role: .cancel) {} } message: { Text(ContaDeTeste.mensagem) }
         // O título pequeno entra na barra quando o grande sai de baixo dela (como o título grande do sistema).
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 44 } action: { _, saiu in
             withAnimation(.easeOut(duration: 0.2)) { barra.tituloVisivel = saiu }
@@ -65,6 +110,7 @@ struct ObraView: View {
         #if DEBUG
         .scrollPosition($posicao)
         .task {
+            if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste }
             guard rolagemFixa >= 0 else { return }
             try? await Task.sleep(for: .milliseconds(300))
             posicao.scrollTo(y: rolagemFixa)
@@ -80,6 +126,102 @@ struct ObraView: View {
             ToolbarItem(placement: .topBarTrailing) { IndicadorDeSincronizacao() }
                 .sharedBackgroundVisibility(.hidden)
         }
+    }
+}
+
+extension ObraView {
+    private func fecharLinha() {
+        guard linhaAberta != nil else { return }
+        if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }
+    }
+
+    /// Depois de salvar: abre o "A vencer" se o gasto foi para lá, rola em dois tempos (o cartão do mês, que a LazyVStack
+    /// cria, e depois a linha), acende por 2 s e leva o VoiceOver para a linha.
+    private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
+        guard let primeiro = d.ids.first else { return }
+        let noAVencer = lista.aVencer?.meses.contains { $0.gastos.contains { $0.id == primeiro } } ?? false
+        let cartao = noAVencer ? "aVencer" : lista.meses.first { $0.gastos.contains { $0.id == primeiro } }.map { "mes-\($0.id)" }
+        if noAVencer { aVencerAberto = true }
+        acesos = Set(d.ids)
+        novos = d.novo
+        Task { @MainActor in
+            if let cartao { leitor.scrollTo(cartao, anchor: .center) }
+            try? await Task.sleep(for: .milliseconds(80))
+            withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(primeiro, anchor: .center) }
+            try? await Task.sleep(for: .milliseconds(450))
+            foco = .gasto(primeiro)
+            try? await Task.sleep(for: .seconds(2))
+            guard folhas.destaque == d else { return }
+            withAnimation(.easeOut(duration: 0.4)) { acesos = [] }
+        }
+    }
+
+    /// Apaga um gasto (ou a compra toda) com a animação do sistema: a linha sai pela esquerda, as de baixo sobem e os
+    /// totais mudam na mesma transação. Depois, o VoiceOver vai para a linha vizinha (ou para "Lançamentos") e ouve o
+    /// que aconteceu, um depois do outro.
+    private func apagar(_ p: Folhas.PedidoDeApagar, obra: Obra, lista: ListaDaObra) {
+        let saem: Set<String> = p.grupoId.map { g in Set(obra.gastos.filter { $0.grupoId == g }.map(\.id)) } ?? [p.gastoId]
+        let ordem = (aVencerAberto ? (lista.aVencer?.meses ?? []) : []).flatMap(\.gastos).map(\.id)
+            + lista.meses.flatMap(\.gastos).map(\.id)
+        let vizinho = vizinhoDepoisDeApagar(saem, ordem: ordem)
+        linhaAberta = nil
+        let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
+            modelo.gravar { e in p.grupoId.map { e.apagandoCompra($0, daObra: p.obraId) } ?? e.apagandoGasto(p.gastoId, daObra: p.obraId) }
+        }
+        if resultado == .naoCarregado { naoCarregado = true; return }
+        if resultado == .contaReal { contaReal = true; return }
+        guard resultado == .gravou else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            foco = vizinho.map(AlvoDoFoco.gasto) ?? .lancamentos
+            try? await Task.sleep(for: .milliseconds(700))
+            var aviso = AttributedString(saem.count > 1 ? "Compra apagada" : "Gasto apagado")
+            aviso.accessibilitySpeechAnnouncementPriority = .low
+            AccessibilityNotification.Announcement(aviso).post()
+        }
+    }
+}
+
+/// Onde o VoiceOver vai depois de apagar: a próxima linha que fica na lista, senão a anterior; nil, "Lançamentos".
+func vizinhoDepoisDeApagar(_ saem: Set<String>, ordem: [String]) -> String? {
+    guard let i = ordem.firstIndex(where: saem.contains) else { return nil }
+    return ordem[i...].first { !saem.contains($0) } ?? ordem[..<i].last { !saem.contains($0) }
+}
+
+/// Para onde o VoiceOver vai na lista da obra.
+enum AlvoDoFoco: Hashable {
+    case gasto(String)
+    case lancamentos
+}
+
+/// O que as linhas da lista fazem, passado do ObraView aos cartões.
+struct AcoesDaLista {
+    let aberta: Binding<String?>
+    let acesos: Set<String>
+    let novos: Bool
+    let foco: AccessibilityFocusState<AlvoDoFoco?>.Binding
+    let tocar: (Gasto) -> Void
+    let apagar: (Gasto) -> Void
+}
+
+/// Uma linha de gasto na lista: tocar edita, arrastar mostra "Apagar", acende depois de salvar. Para o VoiceOver é um
+/// botão (abre a edição) com a ação "Apagar"; o Controle por Voz chama pelo título.
+struct LinhaDaLista: View {
+    let gasto: Gasto
+    let linha: LinhaDeGasto
+    let lista: AcoesDaLista
+
+    var body: some View {
+        LinhaArrastavel(id: gasto.id, aberta: lista.aberta, apagar: { lista.apagar(gasto) }) {
+            LinhaDeGastoView(gasto: gasto, linha: linha, acesa: lista.acesos.contains(gasto.id), novo: lista.novos)
+                .onTapGesture { lista.tocar(gasto) }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction { lista.tocar(gasto) }
+                .accessibilityInputLabels([linha.titulo])
+                .accessibilityFocused(lista.foco, equals: .gasto(gasto.id))
+        }
+        .id(gasto.id)
+        .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
     }
 }
 
@@ -131,6 +273,7 @@ struct CartaoDoAVencer: View {
     let grupo: GrupoAVencer
     @Binding var aberto: Bool
     let topicos: [String: Topico]
+    let lista: AcoesDaLista
     @Environment(\.opcoes) private var opcoes
     @Environment(\.paleta) private var paleta
 
@@ -156,13 +299,19 @@ struct CartaoDoAVencer: View {
     }
 
     private func alternar() {
+        // Com uma linha aberta, o toque só fecha a linha.
+        if lista.aberta.wrappedValue != nil {
+            if opcoes.reduzirMovimento { lista.aberta.wrappedValue = nil }
+            else { withAnimation(.spring(duration: 0.3, bounce: 0)) { lista.aberta.wrappedValue = nil } }
+            return
+        }
         if opcoes.reduzirMovimento { aberto.toggle() } else { withAnimation(.snappy) { aberto.toggle() } }
     }
 
     @ViewBuilder private func linhas(_ mes: MesDeGastos) -> some View {
         ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
             if i > 0 { LinhaFina().padding(.leading, 67) }
-            LinhaDeGastoView(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos))
+            LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
         }
     }
 }
@@ -171,6 +320,7 @@ struct CartaoDoAVencer: View {
 struct CartaoDoMes: View {
     let mes: MesDeGastos
     let topicos: [String: Topico]
+    let lista: AcoesDaLista
     @Environment(\.paleta) private var paleta
 
     var body: some View {
@@ -178,7 +328,7 @@ struct CartaoDoMes: View {
             CabecalhoDoMes(mes: mes)
             ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
                 if i > 0 { LinhaFina().padding(.leading, 67) }
-                LinhaDeGastoView(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos))
+                LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
             }
             Color.clear.frame(height: 6)
         }

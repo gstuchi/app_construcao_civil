@@ -1,11 +1,13 @@
 import XCTest
 
-/// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase. `abrir: "obra:v1"` já abre a obra.
+/// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase. `abrir: "obra:v1"` já abre a obra;
+/// `extra` passa outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`).
 @MainActor
 func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
-              limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, argumentos: [String] = []) -> XCUIApplication {
+              limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, argumentos: [String] = [],
+              extra: [String: String] = [:]) -> XCUIApplication {
     let app = XCUIApplication()
-    var ambiente = ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": conta, "CUSTTA_DADOS": dados]
+    var ambiente = ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": conta, "CUSTTA_DADOS": dados].merging(extra) { _, novo in novo }
     if let abrir { ambiente["CUSTTA_ABRIR"] = abrir }
     if let marca { ambiente["CUSTTA_MARCA"] = marca }
     if let rede { ambiente["CUSTTA_REDE"] = rede }

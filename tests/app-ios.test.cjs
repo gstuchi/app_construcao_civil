@@ -146,6 +146,21 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
   for(const pele of ['Esmeralda', 'Azul']){
     const bloco = tabela.slice(tabela.indexOf(`${pele}: {`), tabela.indexOf('}', tabela.indexOf(`${pele}: {`)));
     assert.deepEqual([...bloco.matchAll(/^\s+(\w+): \['/gm)].map(m => m[1]).sort(), tokens, `tokens da pele ${pele}`);
+    // A linha fina dentro dos cartões de vidro: branco 9% no escuro, como o mockup (o Linha sólido, mais escuro que o vidro,
+    // sumia a 1,0–1,5:1); no claro, o próprio Linha.
+    const linha = bloco.match(/\bLinha: \['#\w+', '(#\w+)'\]/)[1];
+    assert.match(bloco, new RegExp(`\\bLinhaNoVidro: \\['#FFFFFF17', '${linha}'\\]`), `LinhaNoVidro da pele ${pele}`);
+    // O texto âmbar das etiquetas: no claro, um âmbar mais escuro que o Alerta do site, que ficava em 4,42:1 sob o véu do
+    // topo no Pro Max (faixa que o laudo deixa de fora, porque ali o texto é borrado); no escuro, o próprio Alerta.
+    const alerta = bloco.match(/\bAlerta: \['(#\w+)', '#\w+'\]/)[1];
+    assert.match(bloco, new RegExp(`\\bAlertaEtiqueta: \\['${alerta}', '#7A5410'\\]`), `AlertaEtiqueta da pele ${pele}`);
+  }
+  const pecas = ler('app-ios/Custta/Telas/PecasDaObra.swift');
+  assert.match(pecas.slice(pecas.indexOf('struct LinhaFina')), /^[^}]*paleta\.cor\(\.linhaNoVidro\)/, 'a linha fina sobre o vidro usa o LinhaNoVidro');
+  // Sobre o fundo âmbar, o texto é o AlertaEtiqueta, nunca o Alerta.
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f), conta = token => (t.match(new RegExp(String.raw`\.${token}\b`, 'g')) || []).length;
+    assert.equal(conta('alertaEtiqueta'), conta('alertaFundo'), `${f}: texto sobre a AlertaFundo no AlertaEtiqueta`);
   }
 });
 
@@ -211,6 +226,9 @@ test('ícones em dia com o icons.js do site', async () => {
     for(const chave of ['viewBox', 'fill', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'traco'])
       assert.equal(app[chave], site[chave], `${nome}: ${chave} diferente do ICON() do site`);
   }
+  // Todo tópico do site tem o seu ícone no catálogo: o que faltasse cairia no "etiqueta" do iconeDoCatalogo.
+  const { TOPICOS } = require(join(RAIZ, 'calc.js'));
+  for(const t of TOPICOS) assert.ok(USADOS.includes(t.ic), `${t.nm}: ícone ${t.ic} fora do USADOS`);
 });
 
 test('globo com os mesmos continentes do globe.js', () => {
@@ -423,11 +441,13 @@ test('ícone junto de texto cresce com a letra: o dos Label, a seta da dica de e
   assert.doesNotMatch(conta[0], /\.frame\(width: \d/, 'o logo da Apple é letra (.body): o círculo e o G do Google crescem junto (@ScaledMetric)');
 });
 
-test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do Google e no indicador da barra', () => {
+test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do Google, no indicador da barra e no dinheiro', () => {
   // A auditoria de texto cortado do Xcode não vê dentro de um elemento que o VoiceOver lê inteiro (o cartão da
   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
-  // do Google (letra travada, fora da auditoria de tipo dinâmico) e o indicador de sincronização da barra.
-  const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao']);
+  // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
+  // dinheiro (ValorEmDinheiro, mockup da etapa 2: encolhe até a metade em vez de quebrar) e o título pequeno da
+  // barra da obra (corta como o do sistema, em vez de empurrar o voltar e o lápis).
+  const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'TituloPequenoDaBarra']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
@@ -435,6 +455,14 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
       assert.ok(fixos.has(dono), `${f}: ${m[0]} em ${dono}; texto cortado se resolve deixando o texto crescer`);
     }
   }
+  // Dinheiro por extenso sozinho num Text quebra na letra grande ("R$" numa linha, o número na outra): vai pelo
+  // ValorEmDinheiro, que encolhe.
+  for(const f of arquivosSwift('app-ios/Custta/Telas'))
+    assert.doesNotMatch(ler(f), /Text\(moeda\(/, `${f}: dinheiro por extenso num Text; use o ValorEmDinheiro`);
+  // E o ValorEmDinheiro fica numa linha: sem o lineLimit, num iPhone de 375 pt o valor quebra antes de encolher.
+  const componentes = ler('app-ios/Custta/Identidade/Componentes.swift');
+  assert.match(componentes.slice(componentes.indexOf('struct ValorEmDinheiro')), /^[^}]*\.lineLimit\(1\)\s*\.minimumScaleFactor\(0\.5\)/,
+               'o ValorEmDinheiro numa linha, encolhendo até a metade');
 });
 
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {

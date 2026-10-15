@@ -9,6 +9,8 @@ import CusttaNucleo
    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê)
+   CUSTTA_MARCA   servidor (o servidor já respondeu a esta conta numa abertura anterior: com CUSTTA_REDE=offline e
+                  CUSTTA_DADOS=vazio, é a conta vazia que abre sem rede e pode lançar)
    CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
                   e a 1ª nova tentativa também falha); cada nova tentativa leva 8 s, para o "Limpando…" ficar à
                   vista mesmo no simulador da CI, onde o teste só o encontra uns 4 s depois do toque */
@@ -29,8 +31,21 @@ extension Composicao {
         }
         let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falhaDeLeitura: falha)
         let rede = MonitorDeRede(forcarSemRede: semRede)
-        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede)
+        let marca = MarcaEmMemoria()
+        if ambiente["CUSTTA_MARCA"] == "servidor" { marca.marcarTodas = true }
+        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede, marca: marca)
         return ModeloApp(conta: conta, sincronizador: sincronizador, rede: rede)
     }
+}
+
+/// A marca "o servidor já respondeu" em memória (só Debug): cada abertura com os falsos começa sem ela, a não ser que o
+/// teste peça (`marcarTodas`, a conta de qualquer uid já vista).
+@MainActor
+final class MarcaEmMemoria: MarcaDoServidor {
+    var marcarTodas = false
+    private(set) var contas: Set<String> = []
+    func respondeu(uid: String) -> Bool { marcarTodas || contas.contains(uid) }
+    func marcar(uid: String) { contas.insert(uid) }
+    func desmarcar(uid: String) { contas.remove(uid) }
 }
 #endif

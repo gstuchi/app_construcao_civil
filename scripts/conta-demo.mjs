@@ -11,6 +11,14 @@
      node scripts/conta-demo.mjs                              # emulador (padrão, não toca em nada real)
      node scripts/conta-demo.mjs --producao --senha 'SENHA'   # projeto real
      node scripts/conta-demo.mjs --email outro@exemplo.com    # troca o e-mail
+     node scripts/conta-demo.mjs --producao --email teste@exemplo.com --senha 'SENHA' \
+       --importar ~/Downloads/custta-2026-10-13.json          # conta de teste com uma cópia das obras
+
+   --importar lê o arquivo que o site exporta (Ajustes → Seus dados → Exportar dados completos) e grava as obras e a
+   config dele no lugar dos dados de demonstração: é a conta de teste em que o app nativo grava até a
+   conferência da etapa 2 (docs/specs/2026-10-13-app-nativo-etapa2-design.md, "Conta de teste"). O
+   arquivo tem dados pessoais e nunca entra no repositório (o .gitignore barra custta-*.json); a conta
+   de revisão da Apple nunca recebe uma cópia dele.
 
    No emulador nada é preciso além do próprio emulador rodando. Em produção,
    FIREBASE_SERVICE_ACCOUNT precisa ter o JSON da conta de serviço — a mesma
@@ -20,8 +28,14 @@
 
    O script é idempotente: rodar de novo na mesma conta só repõe os dados. */
 'use strict';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { dadosDemo } from './dados-demo.mjs';
+
+const require = createRequire(import.meta.url);
+const { normaliza, LIMITE_OBRAS } = require('../dados.js');
+const { tamanhoBlob, LIMITE_BLOB } = require('../calc.js');
 
 export const EMAIL_PADRAO = 'revisao.custta@gmail.com';
 export const PROJETO = 'app-construcao-civil';
@@ -34,6 +48,23 @@ export const PROJETO = 'app-construcao-civil';
 export function documentoDados(agora = Date.now()){
   const { obras, config } = dadosDemo();
   return { obras, config, _atualizado: agora };
+}
+
+/* A cópia das obras de um arquivo exportado pelo site ({formato: 'custta', versao: 1, dados}),
+   normalizada como o app lê e cortada ao que as rules aceitam: no topo só obras, config e
+   _atualizado; na config só taxaMensal e topicosCustom; até LIMITE_OBRAS obras; e o tamanho que o
+   cliente aceita gravar. Recusa o que não for um arquivo do Custta em vez de gravar pela metade. */
+export function documentoImportado(texto, agora = Date.now()){
+  let arquivo;
+  try { arquivo = JSON.parse(texto); } catch { throw new Error('--importar: o arquivo não é JSON.'); }
+  if(arquivo?.formato !== 'custta' || arquivo?.versao !== 1 || typeof arquivo?.dados !== 'object' || !arquivo.dados)
+    throw new Error('--importar: não é um arquivo exportado pelo Custta (formato "custta", versão 1).');
+  const { obras, config } = normaliza(arquivo.dados);
+  if(obras.length > LIMITE_OBRAS) throw new Error(`--importar: ${obras.length} obras; as rules aceitam até ${LIMITE_OBRAS}.`);
+  if(config.topicosCustom.length > 50) throw new Error('--importar: mais de 50 tópicos próprios; as rules aceitam até 50.');
+  const doc = { obras, config: { taxaMensal: config.taxaMensal, topicosCustom: config.topicosCustom }, _atualizado: agora };
+  if(tamanhoBlob({ obras: doc.obras, config: doc.config }) > LIMITE_BLOB) throw new Error('--importar: os dados passam do limite de tamanho do documento.');
+  return doc;
 }
 
 /* `perfis` aceita só email, criado e tz. `plano` fica de fora de propósito:
@@ -49,13 +80,22 @@ export function documentoPerfil(email, agora = new Date()){
 export const SENHA_EMULADOR = 'emulador-local';
 
 export function lerArgs(argv, env = process.env){
+  // Outra opção logo depois do nome (`--importar --email x`) quer dizer valor vazio, e não o nome da opção.
   const valor = nome => {
     const i = argv.indexOf('--' + nome);
-    return i >= 0 ? (argv[i + 1] ?? '') : null;
+    if(i < 0) return null;
+    const v = argv[i + 1] ?? '';
+    return v.startsWith('--') ? '' : v;
   };
   const producao = argv.includes('--producao');
   const senha = valor('senha') || env.CONTA_DEMO_SENHA || (producao ? '' : SENHA_EMULADOR);
-  return { producao, email: valor('email') || EMAIL_PADRAO, senha };
+  const email = valor('email') || EMAIL_PADRAO;
+  const importar = valor('importar');
+  /* A conta de revisão da Apple mostra o app a quem revisa: os dados de verdade de alguém
+     nunca vão para ela. A cópia vai para uma conta de teste com e-mail próprio. */
+  if(importar !== null && (!importar || email === EMAIL_PADRAO))
+    throw new Error('--importar precisa do caminho do arquivo e de --email com a conta de teste: a conta de revisão da Apple só recebe os dados de demonstração.');
+  return { producao, email, senha, importar };
 }
 
 /* Cria o usuário, ou reaproveita o que já existe repondo a senha — ela precisa
@@ -108,7 +148,7 @@ async function principal(opcoes){
   const uid = await garantirUsuario(getAuth(), opcoes);
   const db = getFirestore();
 
-  const dados = documentoDados();
+  const dados = opcoes.importar ? documentoImportado(readFileSync(opcoes.importar, 'utf8')) : documentoDados();
   await db.doc(`dados/${uid}`).set(dados);
   console.log(`dados/${uid}: ${dados.obras.length} obras, ${dados.obras.reduce((s, o) => s + o.gastos.length, 0)} gastos`);
 
@@ -116,6 +156,11 @@ async function principal(opcoes){
   console.log(`perfis/${uid}: pronto`);
 
   console.log('');
+  if(opcoes.importar){
+    console.log(`Conta de teste pronta: ${opcoes.email}, com a cópia de ${opcoes.importar}.`);
+    if(!opcoes.producao) console.log('\n(isto rodou no EMULADOR — para valer, rode com --producao)');
+    return;
+  }
   console.log('Para colar em App Store Connect → Informações da versão → Login obrigatório:');
   console.log(`  E-mail: ${opcoes.email}`);
   /* A senha de produção veio de quem rodou o comando, que já a conhece.

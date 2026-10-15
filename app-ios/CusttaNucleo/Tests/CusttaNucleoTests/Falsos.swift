@@ -43,6 +43,14 @@
     }
 }
 
+/// A marca "o servidor já respondeu" em memória.
+@MainActor final class MarcaFalsa: MarcaDoServidor {
+    var contas: Set<String> = []
+    func respondeu(uid: String) -> Bool { contas.contains(uid) }
+    func marcar(uid: String) { contas.insert(uid) }
+    func desmarcar(uid: String) { contas.remove(uid) }
+}
+
 @MainActor final class RelogioFalso: Relogio {
     final class Agendado: Cancelavel {
         let quando: Int64

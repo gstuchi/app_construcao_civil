@@ -65,12 +65,11 @@ struct VidroTokensTests {
 
     @Test func escurecimentoSobOVidroSoNoEscuro() {
         let transparente = VidroTokens(nivel: .transparente, contorno: false), fosco = VidroTokens(nivel: .fosco, contorno: true)
-        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado] {
-            #expect(transparente.escurecimento(papel, escuro: true) == 0.45)
+        for papel in [PapelDoVidro.conteudo, .cartaoEntrada, .segmentado, .navegacao] {
+            #expect(transparente.escurecimento(papel, escuro: true) == 0.5)
             #expect(fosco.escurecimento(papel, escuro: true) == 0.2)
             #expect(transparente.escurecimento(papel, escuro: false) == 0 && fosco.escurecimento(papel, escuro: false) == 0)
         }
-        #expect(transparente.escurecimento(.navegacao, escuro: true) == 0, "a navegação tem o véu da borda")
         #expect(VidroTokens(nivel: .solido, contorno: false).escurecimento(.conteudo, escuro: true) == 0)
     }
 
@@ -84,12 +83,15 @@ struct VidroTokensTests {
     @Test func haloNoMenorPassoQuePassaNoProMax() {
         #expect(HaloDoTitulo.naEntrada == 0.50, "com 45%, a dica da entrada ficava em 4,06:1")
         #expect(HaloDoTitulo.naBarra == 0.05, "sem halo, o título grande ficava em 4,41:1")
+        #expect(HaloDoTitulo.naObraNoClaro == 0.10, "sem halo no claro, o nome da obra ficava em 4,40:1 no 17 Pro da CI")
     }
 
     @Test func textoSobreOVidroPorNivel() {
         #expect(VidroTokens(nivel: .transparente, contorno: false).secundario == .secundarioTransparente)
         #expect(VidroTokens(nivel: .fosco, contorno: false).secundario == .secundarioFosco)
         #expect(VidroTokens(nivel: .solido, contorno: false).secundario == .secundarioSolido)
+        #expect(VidroTokens(nivel: .fosco, contorno: true).secundario == .secundarioTransparente,
+                "com Aumentar contraste, o secundário mais forte: ligar a opção não pode baixar a leitura")
         #expect(VidroTokens(nivel: .transparente, contorno: false).link == .texto, "link solto na cor do texto")
         #expect(VidroTokens(nivel: .fosco, contorno: false).link == .linkNoVidro)
     }

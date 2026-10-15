@@ -257,21 +257,48 @@ struct DivisorOu: View {
 /// Etiqueta da fase da obra, nas cores do site (âmbar, azul e verde).
 struct EtiquetaDeFase: View {
     let fase: Fase
+    /// A da pílula da tela da obra: 13 semibold, com 3/12 de recuo (mockup da etapa 2).
+    var grande = false
     @Environment(\.paleta) private var paleta
 
     var body: some View {
         let (texto, fundo): (Token, Token) = switch fase {
-        case .construcao: (.alerta, .alertaFundo)
+        case .construcao: (.alertaEtiqueta, .alertaFundo)
         case .pronta: (.informacao, .informacaoFundo)
         case .vendida: (.positivo, .positivoFundo)
         }
         Text(fase.rotulo)
-            .font(.caption.weight(.semibold))
+            .font(grande ? .footnote.weight(.semibold) : .caption.weight(.semibold))
             .foregroundStyle(paleta.cor(texto))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 1)
+            .padding(.horizontal, grande ? 12 : 8)
+            .padding(.vertical, grande ? 3 : 1)
             .background(paleta.cor(fundo), in: .capsule)
     }
+}
+
+/// Dinheiro numa linha só, encolhendo até a metade para caber (mockup da etapa 2, letra máxima): um valor quebrado em
+/// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto ou na que o
+/// lugar pede (o total do mês vai no secundário do cabeçalho).
+struct ValorEmDinheiro: View {
+    let texto: String
+    let fonte: Font
+    var cor: Token = .texto
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        Text(texto)
+            .font(fonte)
+            .monospacedDigit()
+            .foregroundStyle(paleta.cor(cor))
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+    }
+}
+
+/// O ícone de um tópico no catálogo; o de um tópico que o app não tem (um nome de ícone que o site ainda não usava) cai
+/// no "etiqueta", como o tópico desconhecido do site.
+func iconeDoCatalogo(_ nome: String) -> String {
+    UIImage(named: "Icones/\(nome)") != nil ? "Icones/\(nome)" : "Icones/etiqueta"
 }
 
 /// Barra fina de progresso: degradê da marca, ou âmbar quando pede atenção.
@@ -342,4 +369,25 @@ struct BordaDeRolagem: ViewModifier {
 extension View {
     /// A borda de rolagem suave da tela; `abas` liga a de baixo, sob a cápsula de abas.
     func bordaDeRolagem(abas: Bool) -> some View { modifier(BordaDeRolagem(abas: abas)) }
+}
+
+extension View {
+    /// Símbolo que não é texto (as setas). O laudo de leitura mede palavras: o apagador de texto apagava também o traço
+    /// fino do símbolo, que virava uma "palavra" de nota errada. Em Debug, com `-custta.semSimbolos`, o símbolo some dos
+    /// dois prints; o contraste dele (3:1, de figura) fica com a auditoria do Xcode, com superfícies sólidas.
+    func foraDoLaudo() -> some View { modifier(ForaDoLaudo()) }
+}
+
+private struct ForaDoLaudo: ViewModifier {
+    #if DEBUG
+    @AppStorage("custta.semSimbolos") private var semSimbolos = false
+    #endif
+
+    func body(content: Content) -> some View {
+        #if DEBUG
+        content.opacity(semSimbolos ? 0 : 1)
+        #else
+        content
+        #endif
+    }
 }

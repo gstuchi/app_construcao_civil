@@ -13,6 +13,8 @@ enum Token: String, CaseIterable, Sendable {
     case fundo = "Fundo"
     case superficie = "Superficie"
     case linha = "Linha"
+    /// A linha fina dentro dos cartões de vidro: clara no escuro (o Linha sólido sumia sobre o vidro).
+    case linhaNoVidro = "LinhaNoVidro"
     case texto = "Texto"
     case textoSecundario = "TextoSecundario"
     case textoTerciario = "TextoTerciario"
@@ -22,6 +24,8 @@ enum Token: String, CaseIterable, Sendable {
     case positivoFundo = "PositivoFundo"
     case alerta = "Alerta"
     case alertaFundo = "AlertaFundo"
+    /// O texto âmbar sobre a AlertaFundo (etiquetas): no claro, mais escuro que o Alerta do site.
+    case alertaEtiqueta = "AlertaEtiqueta"
     case informacao = "Informacao"
     case informacaoFundo = "InformacaoFundo"
     case negativo = "Negativo"
@@ -60,6 +64,9 @@ enum Token: String, CaseIterable, Sendable {
     case globoOceano = "GloboOceano"
     case globoHalo = "GloboHalo"
     case globoAro = "GloboAro"
+    /// O lucro e o prejuízo da obra vendida sobre o vidro (o Positivo e o Negativo não fechavam 4,5:1 com a aurora atrás).
+    case positivoNoVidro = "PositivoNoVidro"
+    case negativoNoVidro = "NegativoNoVidro"
 }
 
 struct Paleta: Equatable, Sendable {

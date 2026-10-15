@@ -4,8 +4,9 @@ import UIKit
 /* Requisitos verificáveis do spec, seção 8, com a cara do PWA: no maior tamanho de letra de
    acessibilidade nada corta, todo controle tem rótulo e alvo de 44 pt; o contraste das cores passa nos
    quatro combos e sobre a aurora parada (no quadro inicial e nos extremos da deriva). Não crescem com a
-   letra, por decisão do mockup, a cápsula de abas e o botão do Google: os dois mostram o Visualizador de
-   Conteúdo Grande, e a auditoria de tipo dinâmico os deixa de fora.
+   letra, por decisão do mockup, a cápsula de abas, o botão do Google e o título pequeno da barra da obra
+   (para perto de 22 pt): os três mostram o Visualizador de Conteúdo Grande, e a auditoria de tipo dinâmico
+   os deixa de fora.
 
    Contraste: a auditoria do Xcode não lê fundo de vidro (no simulador do iOS 27 ela reprova até texto
    escuro sobre a pílula sólida do segmentado, e os mesmos textos com tinta de 6% ou de 50%). Aqui as cores
@@ -40,7 +41,9 @@ final class AuditoriaUITests: XCTestCase {
             let fora: Bool
             switch achado.auditType {
             case .dynamicType:
-                fora = elemento.label == "Continuar com o Google"
+                // O título pequeno da barra da obra para perto de 22 pt, como o do sistema (mockup da etapa 2), com o
+                // Visualizador de Conteúdo Grande.
+                fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
                     || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
@@ -89,6 +92,14 @@ final class AuditoriaUITests: XCTestCase {
     @MainActor func testObrasNoMaiorTamanho() throws {
         let app = abrirApp(conta: "senha-nao-confirmada", argumentos: maiorLetra + parado)
         XCTAssertTrue(app.elemento("avisoEmail").waitForExistence(timeout: 10))
+        try auditar(app, tiposDeAuditoria)
+        rolar(app)
+        try auditar(app, tiposDeAuditoria)
+    }
+
+    @MainActor func testObraNoMaiorTamanho() throws {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado)
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
         rolar(app)
         try auditar(app, tiposDeAuditoria)
@@ -190,6 +201,18 @@ final class AuditoriaUITests: XCTestCase {
     @MainActor func testContrasteNosQuatroCombos() throws {
         for (tema, pele) in quatroCombos {
             try contraste(["-custta.tema", tema, "-custta.pele", pele] + solido + parado)
+        }
+    }
+
+    /// A tela da obra (etapa 2), no topo e com a lista rolada, nos quatro combos, com superfícies sólidas.
+    @MainActor func testContrasteDaObraNosQuatroCombos() throws {
+        for (tema, pele) in quatroCombos {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + solido + parado)
+            XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+            try auditar(app, [.contrast])
+            rolar(app)
+            try auditar(app, [.contrast])
+            app.terminate()
         }
     }
 

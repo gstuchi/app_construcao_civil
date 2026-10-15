@@ -1,19 +1,20 @@
 import SwiftUI
 import CusttaNucleo
 
-/* O app por dentro: as abas da etapa 1 (Obras e Ajustes; "Vale a pena?" chega na etapa 4 e o + na 2)
-   com a cápsula de abas própria, e a barra de cada tela com a sincronização e o sair do topo, em vidro,
-   como no site. Sair pede confirmação pelo alerta do sistema (decisão do Giovani). Só a aba escolhida
-   fica montada: o TabView do sistema pinta um fundo opaco por trás das abas no iOS 26 (esconderia a
-   aurora), e uma aba só escondida continuaria na árvore do VoiceOver pela barra de navegação. O que
-   precisar sobreviver à troca de aba (o caminho dentro de Obras, na etapa 2) mora aqui, no PrincipalView. */
+/* O app por dentro: as abas (Obras e Ajustes; "Vale a pena?" chega na etapa 4) com a cápsula de abas
+   própria, e a barra de cada tela com a sincronização e o sair do topo, em vidro, como no site. Sair pede
+   confirmação pelo alerta do sistema (decisão do Giovani). Só a aba escolhida fica montada: o TabView do
+   sistema pinta um fundo opaco por trás das abas no iOS 26 (esconderia a aurora), e uma aba só escondida
+   continuaria na árvore do VoiceOver pela barra de navegação. Por isso o caminho dentro de Obras mora aqui:
+   quem vai a Ajustes e volta encontra a obra que tinha aberto. */
 struct PrincipalView: View {
     @State private var aba = Aba.obras
+    @State private var caminhoDeObras = PrincipalView.caminhoInicial
 
     var body: some View {
         Group {
             switch aba {
-            case .obras: ObrasView()
+            case .obras: ObrasView(caminho: $caminhoDeObras)
             case .ajustes: AjustesView()
             }
         }
@@ -23,6 +24,19 @@ struct PrincipalView: View {
         // entrar com ele aberto, o teclado da entrada ainda está fechando quando esta tela aparece, e a barra
         // nascia em cima dele, no meio da tela, e saltava. As telas das abas não têm campo de texto.
         .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+extension PrincipalView {
+    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto (testes de tela, laudo
+    /// de leitura e conferência visual).
+    static var caminhoInicial: [RotaDeObras] {
+        #if DEBUG
+        if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("obra:") {
+            return [.obra(String(abrir.dropFirst(5)))]
+        }
+        #endif
+        return []
     }
 }
 

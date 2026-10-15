@@ -72,4 +72,13 @@ final class ObrasUITests: XCTestCase {
         app.buttons["jaConfirmei"].tap()
         XCTAssertTrue(app.staticTexts["Ainda não recebemos a confirmação. Toque no link do e-mail e tente de novo."].waitForExistence(timeout: 5))
     }
+
+    /// A obra que some (apagada em outro aparelho) fecha a tela da obra e volta para Obras: aqui, aberta por um id que
+    /// os dados não têm, como o caminho que sobrou de uma obra apagada.
+    @MainActor func testAObraQueSomeVoltaParaObras() {
+        let app = abrirApp(conta: "senha", abrir: "obra:apagada")
+        let obra = app.elemento("obra-o1")
+        XCTAssertTrue(obra.waitForExistence(timeout: 10), "voltou para Obras")
+        XCTAssertTrue(obra.isHittable)
+    }
 }

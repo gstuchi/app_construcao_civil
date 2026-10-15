@@ -15,9 +15,12 @@ import Observation
      normalização e só trocam o estado se o conteúdo mudou.
 
    Como o site, nunca grava antes de ver os dados: até chegar um snapshot do servidor, ou do
-   cache com o documento, `salvar` recusa com "nao-carregado". Uma regra a mais que o site: volta
-   a recusar se chegar um documento que não deu para ler inteiro ("formato-desconhecido"). Sem
-   isso, uma edição regravaria o documento inteiro por cima do que o app não viu. */
+   cache com o documento, `salvar` recusa com "nao-carregado". Duas regras a mais que o site:
+   volta a recusar se chegar um documento que não deu para ler inteiro ("formato-desconhecido"),
+   porque uma edição regravaria o documento inteiro por cima do que o app não viu; e o cache sem
+   documento vale quando a marca diz que o servidor já respondeu a esta conta neste aparelho
+   (a conta vazia que fechou o app sem gravar e abriu sem rede). A marca some junto com o cache e
+   quando a conta aparece com documento. */
 
 public enum OrigemErro: String, Sendable {
     case escrita, leitura
@@ -57,6 +60,17 @@ public struct Instantaneo: Sendable {
     func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void)
     /// Conclui quando tudo o que o SDK guardou subiu (inclusive gravações de antes desta sessão).
     func aguardarGravacoesPendentes(concluir: @escaping @MainActor (String?) -> Void)
+}
+
+/// Marca, por conta, de que o servidor já respondeu neste aparelho que a conta não tem documento (com documento, o cache
+/// dele basta). Mora fora do cache do banco e é apagada junto com ele: com a marca, o cache sem documento quer dizer
+/// conta vazia, e não aparelho novo. Sai também quando a conta aparece com documento: o backup do iPhone leva a marca
+/// e deixa o cache do Firestore de fora, e no aparelho restaurado a marca de uma conta com obras faria o cache vazio
+/// passar por conta vazia.
+@MainActor public protocol MarcaDoServidor: AnyObject {
+    func respondeu(uid: String) -> Bool
+    func marcar(uid: String)
+    func desmarcar(uid: String)
 }
 
 @MainActor public protocol Relogio: AnyObject {
@@ -130,6 +144,7 @@ public final class Sincronizador {
 
     @ObservationIgnored private let transporte: TransporteDados
     @ObservationIgnored private let relogio: Relogio
+    @ObservationIgnored private let marca: MarcaDoServidor?
     @ObservationIgnored private var uid: String?
     @ObservationIgnored private var online: Bool
     @ObservationIgnored private var pendente: ValorJSON?
@@ -146,9 +161,10 @@ public final class Sincronizador {
     @ObservationIgnored private var pendenciaCache = false
     @ObservationIgnored private var ultimoAvisoRaro: Int64?
 
-    public init(transporte: TransporteDados, relogio: Relogio, online: Bool = true) {
+    public init(transporte: TransporteDados, relogio: Relogio, online: Bool = true, marca: MarcaDoServidor? = nil) {
         self.transporte = transporte
         self.relogio = relogio
+        self.marca = marca
         self.online = online
         self.estadoSinc = online ? .ocioso : .offline
     }
@@ -332,7 +348,10 @@ public final class Sincronizador {
         guard !sujo else { return }          // edição desta sessão ainda não confirmada vence o eco
         let novo = normaliza(i.dados)
         if !mesmoConteudo(novo, estado.arvore) { estado = Estado(normalizado: novo) }
-        if !i.doCache || i.dados != nil { dadosCarregados = true }
+        if !i.doCache, i.dados == nil, let uid { marca?.marcar(uid: uid) }
+        if i.dados != nil, let uid { marca?.desmarcar(uid: uid) }
+        let contaVaziaJaVista = uid.map { marca?.respondeu(uid: $0) ?? false } ?? false
+        if !i.doCache || i.dados != nil || contaVaziaJaVista { dadosCarregados = true }
     }
 
     /* ---------- estado e avisos ---------- */

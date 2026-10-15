@@ -15,6 +15,7 @@ struct BancoFirebaseTests {
         FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
         let preferencias = try #require(UserDefaults(suiteName: nome))
         preferencias.set(true, forKey: BancoFirebase.chaveLimpeza)
+        MarcaNasPreferencias(preferencias: preferencias).marcar(uid: "u1")
         let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080), preferencias: preferencias)
 
         let usou = Bandeira()
@@ -23,6 +24,33 @@ struct BancoFirebaseTests {
         await banco.aguardarPronto()
         #expect(usou.ligada)
         #expect(!banco.limpezaPendente, "a abertura terminou a limpeza e tirou a marca")
+        #expect(!MarcaNasPreferencias(preferencias: preferencias).respondeu(uid: "u1"), "a limpeza retomada também apaga a marca do servidor")
+    }
+
+    @Test func apagarOCacheLevaJuntoAMarcaDoServidor() async throws {
+        // A marca diz que o cache sem documento é conta vazia; sem o cache, ela mentiria.
+        let nome = "marca-\(UUID().uuidString.prefix(8).lowercased())"
+        FirebaseApp.configure(name: nome, options: Composicao.opcoesDosEmuladores())
+        let preferencias = try #require(UserDefaults(suiteName: nome))
+        let marca = MarcaNasPreferencias(preferencias: preferencias)
+        marca.marcar(uid: "u1")
+        marca.marcar(uid: "u2")
+        #expect(marca.respondeu(uid: "u1") && marca.respondeu(uid: "u2") && !marca.respondeu(uid: "u3"))
+        let banco = BancoFirebase(app: try #require(FirebaseApp.app(name: nome)), emulador: ("127.0.0.1", 8080), preferencias: preferencias)
+        banco.marcarLimpeza()
+        try await banco.limparCache()
+        #expect(!marca.respondeu(uid: "u1") && !marca.respondeu(uid: "u2"), "sem o cache, nenhuma conta fica marcada")
+        #expect(!banco.limpezaPendente)
+    }
+
+    @Test func desmarcarTiraSoAConta() throws {
+        let preferencias = try #require(UserDefaults(suiteName: "desmarcar-\(UUID().uuidString.prefix(8).lowercased())"))
+        let marca = MarcaNasPreferencias(preferencias: preferencias)
+        marca.marcar(uid: "u1")
+        marca.marcar(uid: "u2")
+        marca.desmarcar(uid: "u1")
+        marca.desmarcar(uid: "u3")
+        #expect(!marca.respondeu(uid: "u1") && marca.respondeu(uid: "u2"), "só a conta que apareceu com documento perde a marca")
     }
 
     @Test func limpezaRetomadaApagaOCacheDeVerdade() async throws {

@@ -21,6 +21,9 @@ export const CORES = {
     Fundo: ['#04100C', '#EDF5F1'],                  // --bg
     Superficie: ['#0C241D', '#FFFFFF'],             // --surface-solid: vidro com "Reduzir transparência"
     Linha: ['#1B3D33', '#C6DCD1'],                  // --line
+    // A linha fina dentro dos cartões de vidro (etapa 2): no escuro, branco 9% como o mockup; o Linha sólido, mais escuro
+    // que o vidro, sumia a 1,0–1,5:1 com a aurora atrás. No claro, o próprio Linha.
+    LinhaNoVidro: ['#FFFFFF17', '#C6DCD1'],
     Texto: ['#EAFFF6', '#13261E'],                  // --text
     TextoSecundario: ['#86AA9A', '#4D685C'],        // --muted
     TextoTerciario: ['#64887A', '#5F7A6D'],         // "(opcional)" nos rótulos
@@ -30,6 +33,9 @@ export const CORES = {
     PositivoFundo: ['#0C2F1E', '#D7F2E2'],
     Alerta: ['#E0A83A', '#8A5A06'],                 // --warn; fase em construção
     AlertaFundo: ['#33260F', '#F5ECD2'],
+    // O texto âmbar das etiquetas ("Em construção", "nada em 30 dias"): o Alerta do site (--warn) sobre a AlertaFundo ficava
+    // em 4,42:1 no laudo, na faixa do véu do topo; no claro, um âmbar mais escuro só nas etiquetas.
+    AlertaEtiqueta: ['#E0A83A', '#7A5410'],
     Informacao: ['#3AA0E0', '#1C68A0'],             // fase pronta
     InformacaoFundo: ['#0E2735', '#DCEBF7'],
     Negativo: ['#FB7185', '#C22E55'],               // --red
@@ -67,11 +73,16 @@ export const CORES = {
     GloboOceano: ['#0F7C6A', '#0F7C6A'],
     GloboHalo: ['#14B39A', '#14B39A'],
     GloboAro: ['#3AD17E', '#3AD17E'],
+    // O lucro e o prejuízo da obra vendida sobre o vidro (etapa 2): o Positivo e o Negativo do site ficavam entre 2,5 e
+    // 3,7:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel nos quatro combos.
+    PositivoNoVidro: ['#8CF0BC', '#084A27'],
+    NegativoNoVidro: ['#FFC4CE', '#8A1538'],
   },
   Azul: {
     Fundo: ['#070C18', '#EEF2F9'],
     Superficie: ['#111A2E', '#FFFFFF'],
     Linha: ['#243250', '#CDD8E8'],
+    LinhaNoVidro: ['#FFFFFF17', '#CDD8E8'],
     Texto: ['#EEF4FB', '#16233C'],
     TextoSecundario: ['#A3B4CA', '#556685'],
     TextoTerciario: ['#6E82A0', '#617594'],
@@ -81,6 +92,7 @@ export const CORES = {
     PositivoFundo: ['#0C2B1C', '#D7F2E2'],
     Alerta: ['#FBBF24', '#8A5A06'],
     AlertaFundo: ['#33280F', '#F8ECC9'],
+    AlertaEtiqueta: ['#FBBF24', '#7A5410'],
     Informacao: ['#60A5FA', '#2A63C4'],
     InformacaoFundo: ['#122238', '#DCE9FA'],
     Negativo: ['#FB7185', '#C22E55'],
@@ -116,6 +128,8 @@ export const CORES = {
     GloboOceano: ['#4E72E0', '#4E72E0'],
     GloboHalo: ['#3A64F5', '#3A64F5'],
     GloboAro: ['#648CFF', '#648CFF'],
+    PositivoNoVidro: ['#86EFAC', '#084A27'],
+    NegativoNoVidro: ['#FFC4CE', '#8A1538'],
   },
 };
 
@@ -125,7 +139,8 @@ export const CORES = {
 export const PARES_SOLIDOS = [
   ['Texto', 'Superficie'], ['SecundarioSolido', 'Superficie'], ['LinkNoVidro', 'Superficie'], ['ErroNoVidro', 'Superficie'],
   ['Texto', 'Campo'], ['SobreMarca', 'Marca'], ['SobreTinta', 'Tinta'], ['FantasmaTexto', 'FantasmaFundo'],
-  ['Alerta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
+  ['Alerta', 'AlertaFundo'], ['AlertaEtiqueta', 'AlertaFundo'], ['Informacao', 'InformacaoFundo'], ['Positivo', 'PositivoFundo'], ['GoogleTexto', 'GoogleFundo'],
+  ['TextoSecundario', 'Campo'], ['PositivoNoVidro', 'Superficie'], ['NegativoNoVidro', 'Superficie'],
 ];
 
 const info = { author: 'xcode', version: 1 };

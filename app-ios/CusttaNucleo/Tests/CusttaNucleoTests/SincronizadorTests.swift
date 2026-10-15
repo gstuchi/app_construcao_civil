@@ -27,6 +27,32 @@ struct SincronizadorEscritaTests {
         #expect(!s.temPendencia)
     }
 
+    @Test func aplicarTrocaOEstadoNaHoraEAConfirmacaoChegaDepois() async throws {
+        let s = montar(), t = transporte
+        let g = try s.aplicar(Estado.de(blobCom(["Nova"])))
+        #expect(s.estado.obras.map(\.nome) == ["Nova"], "o estado troca antes de qualquer espera: a tela anima na mesma transação")
+        #expect(t.gravacoes.count == 1 && !g.confirmou)
+        t.gravacoes[0].concluir(nil)
+        try await g.confirmada()
+        #expect(g.confirmou)
+    }
+
+    @Test func aplicarRecusaNaHoraAntesDeVerOsDados() {
+        let t = TransporteFalso()
+        let s = Sincronizador(transporte: t, relogio: RelogioFalso())
+        s.iniciar(uid: "u1")
+        #expect(throws: ErroSinc(codigo: "nao-carregado")) { try s.aplicar(Estado.de(blobCom(["Nova"]))) }
+        #expect(t.gravacoes.isEmpty && s.estado == .vazio)
+    }
+
+    @Test func aplicarComErroTerminalFalhaNaConfirmacao() async {
+        let s = montar(), t = transporte
+        let g = try! s.aplicar(Estado.de(blobCom(["Nova"])))
+        t.gravacoes[0].concluir("permission-denied")
+        await #expect(throws: ErroSinc(codigo: "permission-denied")) { try await g.confirmada() }
+        #expect(!g.confirmou)
+    }
+
     @Test func semRedeMostraSemConexaoEEnviaMesmoAssim() async throws {
         let s = montar(online: false)
         let tarefa = Task { try await s.salvar(Estado.de(blobCom(["Casa"]))) }

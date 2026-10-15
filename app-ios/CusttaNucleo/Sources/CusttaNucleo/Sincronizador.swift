@@ -201,6 +201,15 @@ public final class Sincronizador {
     /// versão (ou uma mais nova); lança ErroSinc no erro terminal, se a conta saiu ("cancelled") ou
     /// se ainda não deu para ver os dados desta conta ("nao-carregado").
     public func salvar(_ novo: Estado) async throws {
+        try await aplicar(novo).confirmada()
+    }
+
+    /// O começo do `salvar`, sem esperar: troca o estado na hora e entrega o documento para gravar. Quem chama
+    /// dentro de um `withAnimation` anima a mudança na mesma transação (o apagar e o lançar das telas). Lança na hora
+    /// o que o `salvar` lançaria antes de gravar ("cancelled", "nao-carregado"); a resposta do servidor chega pela
+    /// `Gravacao`.
+    @discardableResult
+    public func aplicar(_ novo: Estado) throws -> Gravacao {
         guard uid != nil else {
             avisar(.naoSalvou(codigo: "cancelled", terminal: true))
             throw ErroSinc(codigo: "cancelled")
@@ -211,17 +220,15 @@ public final class Sincronizador {
         let tamanho = tamanhoBlob(blob)
         if tamanho >= avisoBlob && tamanho <= limiteBlob && !avisouTamanho { avisouTamanho = true; avisar(.pertoDoLimite) }
         if tamanho < avisoBlob { avisouTamanho = false }
-        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
-            esperas.append { codigo in
-                if let codigo { c.resume(throwing: ErroSinc(codigo: codigo)) } else { c.resume() }
-            }
-            pendente = blob
-            sujo = true
-            if estadoSinc.ehErro { tentativa = 0 }
-            repeticao?.cancelar(); repeticao = nil
-            publicar(online ? .salvando : .offline)
-            enviar()
-        }
+        let gravacao = Gravacao()
+        esperas.append { codigo in gravacao.concluir(codigo) }
+        pendente = blob
+        sujo = true
+        if estadoSinc.ehErro { tentativa = 0 }
+        repeticao?.cancelar(); repeticao = nil
+        publicar(online ? .salvando : .offline)
+        enviar()
+        return gravacao
     }
 
     /// Toque no indicador de erro: reabre a leitura que falhou e reenvia o que está pendente.
@@ -368,6 +375,36 @@ public final class Sincronizador {
             ultimoAvisoRaro = agora
         }
         aoAvisar?(aviso)
+    }
+}
+
+/// A resposta do servidor a uma gravação já aplicada: chega quando ele confirma esta versão (ou uma mais nova) e falha no
+/// erro terminal ou se a conta saiu ("cancelled"). Quem não espera não perde nada: o estado já foi trocado e a fila segue.
+@MainActor public final class Gravacao {
+    /// nil enquanto espera; depois, o código do erro (nil dentro) ou a confirmação.
+    private var resultado: String??
+    private var esperando: [CheckedContinuation<Void, Error>] = []
+
+    init() {}
+
+    /// O servidor confirmou.
+    public var confirmou: Bool { resultado == .some(nil) }
+
+    func concluir(_ codigo: String?) {
+        guard resultado == nil else { return }
+        resultado = .some(codigo)
+        let todos = esperando
+        esperando = []
+        for c in todos { if let codigo { c.resume(throwing: ErroSinc(codigo: codigo)) } else { c.resume() } }
+    }
+
+    /// Espera a resposta do servidor.
+    public func confirmada() async throws {
+        if let r = resultado {
+            if let codigo = r { throw ErroSinc(codigo: codigo) }
+            return
+        }
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in esperando.append(c) }
     }
 }
 

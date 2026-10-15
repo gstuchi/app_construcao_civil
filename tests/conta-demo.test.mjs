@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { documentoDados, documentoPerfil, lerArgs, EMAIL_PADRAO, SENHA_EMULADOR } from '../scripts/conta-demo.mjs';
+import { documentoDados, documentoImportado, documentoPerfil, lerArgs, EMAIL_PADRAO, SENHA_EMULADOR } from '../scripts/conta-demo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rules = readFileSync(path.join(RAIZ, 'firestore.rules'), 'utf8');
@@ -83,4 +83,36 @@ test('nenhuma senha de verdade está escrita no script', () => {
   const literais = [...fonte.matchAll(/['"`]([^'"`\n]{8,})['"`]/g)].map(m => m[1]);
   const suspeitas = literais.filter(s => /[A-Z]/.test(s) && /[0-9]/.test(s) && /[^A-Za-z0-9\s./:@_-]/.test(s));
   assert.deepEqual(suspeitas, [], `parece senha escrita no código: ${suspeitas.join(', ')}`);
+});
+
+/* A conta de teste da etapa 2 recebe uma cópia das obras exportadas pelo site. O Admin SDK passa por
+   cima das rules, então o formato é conferido aqui, como no documento de demonstração. */
+const exportado = dados => JSON.stringify({ formato: 'custta', versao: 1, exportadoEm: '2026-10-13T12:00:00.000Z', dados });
+
+test('importar: só obras, config (taxa e tópicos) e _atualizado, normalizados', () => {
+  const doc = documentoImportado(exportado({
+    obras: [{ id: 'o1', nome: 'Casa', dataInicio: '2026-01-01', gastos: [{ id: 'g', valor: '10', data: '2026-01-02' }], campoDoSite: 1 }],
+    config: { taxaMensal: 1.2, topicosCustom: [], tema: 'claro' },
+    chaveSolta: true,
+  }), 1758240000000);
+  assert.deepEqual(Object.keys(doc).sort(), ['_atualizado', 'config', 'obras']);
+  assert.deepEqual(Object.keys(doc.config).sort(), ['taxaMensal', 'topicosCustom']);
+  assert.equal(doc.obras[0].gastos[0].valor, 10, 'normalizado como o app lê');
+  assert.equal(doc.obras[0].campoDoSite, 1, 'campo que o app não conhece fica dentro da obra');
+  assert.equal(doc._atualizado, 1758240000000);
+});
+
+test('importar recusa o que não é arquivo do Custta e o que as rules recusariam', () => {
+  assert.throws(() => documentoImportado('não é json'), /não é JSON/);
+  assert.throws(() => documentoImportado(JSON.stringify({ obras: [] })), /não é um arquivo exportado/);
+  const muitas = Array.from({ length: 301 }, (_, i) => ({ id: `o${i}`, nome: 'O', dataInicio: '2026-01-01', gastos: [] }));
+  assert.throws(() => documentoImportado(exportado({ obras: muitas, config: {} })), /até 300/);
+});
+
+test('importar exige a conta de teste: a de revisão da Apple nunca recebe dados de verdade', () => {
+  assert.throws(() => lerArgs(['--importar', 'x.json']), /conta de teste/);
+  assert.throws(() => lerArgs(['--importar', 'x.json', '--email', EMAIL_PADRAO]), /conta de teste/);
+  assert.throws(() => lerArgs(['--importar', '--email', 'teste@exemplo.com']), /caminho do arquivo/);
+  assert.equal(lerArgs(['--importar', 'x.json', '--email', 'teste@exemplo.com']).importar, 'x.json');
+  assert.equal(lerArgs([]).importar, null);
 });

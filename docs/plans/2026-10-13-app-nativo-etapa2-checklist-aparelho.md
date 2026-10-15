@@ -30,4 +30,4 @@ O app grava de verdade a partir desta etapa, e cada gravação regrava o documen
 - [ ] Ajustes do iPhone → Acessibilidade → Tela e Tamanho do Texto → Texto Maior, no máximo: o dinheiro fica numa linha só, encolhendo para caber; o resto quebra; cada informação da linha de gasto ocupa uma linha.
 - [ ] Modo avião com o app já aberto uma vez: a obra abre do cache, com "Sem conexão" na barra.
 - [ ] Leitura sobre o fundo: com o fundo animado, em claro e escuro, nada fica difícil de ler (títulos, cabeçalhos dos meses, linhas).
-- [ ] Compare a lista de obras com o build anterior: os cartões ficaram um pouco mais escuros no tema escuro (o escurecimento sob o vidro subiu de 45% para 50%). Diga se incomoda.
+- [ ] Compare a lista de obras com o build anterior, no tema escuro: os cartões ficaram um pouco mais escuros (o escurecimento sob o vidro subiu de 45% para 50%), e o vidro da navegação (a cápsula de abas, a pílula de sincronização, o botão de sair e os avisos), que não escurecia, ganhou os mesmos 50%. Diga se incomoda.

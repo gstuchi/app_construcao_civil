@@ -50,6 +50,18 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
     }
 
+    /// Na maior letra, depois de salvar, a lista rola até o gasto e ele acende à vista: o cartão do mês fica fora da parte
+    /// que a LazyVStack já criou, e a rolagem vai pela identidade do ForEach (um .id no cartão só existe depois de criado).
+    func testNaMaiorLetraAListaRolaAteOGastoSalvo() {
+        let app = abrirObra(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        lancarValor(app, "777777")
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
+        let linha = app.descendants(matching: .any).matching(NSPredicate(format: "value == %@", "R$\u{a0}7.777,77")).firstMatch
+        XCTAssertTrue(linha.waitForExistence(timeout: 5), "a lista rolou até o cartão do mês, que a LazyVStack cria")
+        XCTAssertTrue(app.frame.contains(linha.frame), "e a linha acesa está inteira à vista: \(linha.frame)")
+    }
+
     func testLancarSemRedeEntraNaLista() {
         let app = abrirApp(conta: "senha", dados: "vitrine", rede: "offline", abrir: "obra:v1")
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))

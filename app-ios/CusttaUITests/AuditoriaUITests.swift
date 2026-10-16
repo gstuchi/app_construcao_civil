@@ -111,17 +111,22 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
     }
 
-    /// A folha do gasto (etapa 2, PR 2) em cada passo, na maior letra; os detalhes também rolados.
+    /// A folha do gasto (etapa 2, PR 2) em cada passo, na maior letra; os detalhes também rolados, e o valor também com o
+    /// número mais largo do visor (13 caracteres, a largura do teto R$ 99.999.999,99), que encolhe para caber.
     @MainActor func testFolhaDoGastoNoMaiorTamanho() throws {
         for (passo, espera) in [("valor", "visorDoValor"), ("detalhes", "linhaTopico"), ("cartao", "linhaTopico"),
                                 ("topicos", "topico-terreno"), ("editar:g031", "avisoParcela")] {
             let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado + ["-custta.folha", passo])
             XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), passo)
             try auditar(app, tiposDeAuditoria)
-            if passo != "valor" {
+            if passo == "valor" {
+                // Do R$ 1.380,00 do passo de teste: os dígitos têm largura fixa, então este número corta onde o teto cortaria.
+                for _ in 0..<4 { app.buttons["tecla-9"].tap() }
+                XCTAssertEqual(app.elemento("visorDoValor").value as? String, "R$ 13.800.099,99")
+            } else {
                 rolar(app)
-                try auditar(app, tiposDeAuditoria)
             }
+            try auditar(app, tiposDeAuditoria)
             app.terminate()
         }
     }

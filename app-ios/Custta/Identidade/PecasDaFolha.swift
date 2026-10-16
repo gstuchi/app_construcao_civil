@@ -62,6 +62,40 @@ struct LinhaDaFolhaComRotulo<Valor: View>: View {
     }
 }
 
+/// Uma linha de dinheiro que abre o teclado de valor ("Valor estimado de venda", "Orçamento total", "Valor da venda"):
+/// "R$" e o valor, ou "Opcional" vazia, e a seta.
+struct LinhaDeDinheiro: View {
+    let rotulo: String
+    let centavos: Int
+    var opcional = true
+    var altura: CGFloat = 52
+    var identificador: String
+    let abrir: () -> Void
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        Button(action: abrir) {
+            LinhaDaFolhaComRotulo(rotulo: rotulo, altura: altura) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if centavos == 0 && opcional {
+                        Text("Opcional").foregroundStyle(paleta.cor(.secundarioSolido))
+                    } else {
+                        Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioSolido))
+                        ValorEmDinheiro(texto: fmtCentavos(centavos), fonte: altura > 52 ? .title2.weight(.bold) : .body.weight(.semibold))
+                    }
+                    SetaDaLinha()
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(rotulo)
+        .accessibilityValue(centavos == 0 && opcional ? "Opcional" : moeda(centavosParaReais(centavos)))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(identificador)
+    }
+}
+
 /// A seta ">" das linhas que abrem outro passo.
 struct SetaDaLinha: View {
     @Environment(\.paleta) private var paleta

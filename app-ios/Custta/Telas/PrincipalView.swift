@@ -24,16 +24,20 @@ struct PrincipalView: View {
         // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
         .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
         .sheet(item: $folhas.aberta, onDismiss: folhas.fechou) { qual in
-            switch qual {
-            case .novoGasto(let obraId): FolhaDoGasto(obraId: obraId, gastoId: nil).environment(folhas)
-            case .editarGasto(let obraId, let gastoId): FolhaDoGasto(obraId: obraId, gastoId: gastoId).environment(folhas)
+            Group {
+                switch qual {
+                case .novoGasto(let obraId): FolhaDoGasto(obraId: obraId, gastoId: nil)
+                case .editarGasto(let obraId, let gastoId): FolhaDoGasto(obraId: obraId, gastoId: gastoId)
+                case .venda(let obraId): FolhaDaVenda(obraId: obraId)
+                }
             }
+            .environment(folhas)
         }
         // Com a folha aberta o fundo para: ela cobre quase tudo, e cada quadro da aurora refaria o desfoque dela.
         .pausaOFundo(enquanto: folhas.aberta != nil)
         .modifier(AvisosDoPrincipal(folhaAberta: folhas.aberta != nil))
         #if DEBUG
-        .task { await abrirFolhaDeTeste() }
+        .task { await abrirFolhaDoGancho() }
         // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
         .overlay(alignment: .topLeading) {
             if UserDefaults.standard.bool(forKey: "custta.contarPontes") {
@@ -60,14 +64,28 @@ extension PrincipalView {
     }
 
     #if DEBUG
-    /// Laudo de leitura, auditoria e conferência visual: com `CUSTTA_ABRIR=obra:<id>`, `-custta.folha <passo>` abre a folha
-    /// do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e `-custta.folha editar:<gasto>`, a edição.
-    private func abrirFolhaDeTeste() async {
-        guard let passo = UserDefaults.standard.string(forKey: "custta.folha"), case .obra(let obraId)? = caminhoDeObras.last else { return }
-        while !modelo.sincronizador.dadosCarregados { try? await Task.sleep(for: .milliseconds(100)) }
+    /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`venda:<id>`,
+    /// `novoGasto:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+    /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
+    /// `-custta.folha editar:<gasto>`, a edição.
+    private func abrirFolhaDoGancho() async {
+        let pedido = ProcessInfo.processInfo.environment["CUSTTA_FOLHA"]
+        let passo = UserDefaults.standard.string(forKey: "custta.folha")
+        guard pedido != nil || passo != nil else { return }
+        for _ in 0..<50 where !modelo.sincronizador.dadosCarregados { try? await Task.sleep(for: .milliseconds(100)) }
         try? await Task.sleep(for: .milliseconds(300))
-        folhas.aberta = passo.hasPrefix("editar:") ? .editarGasto(obraId: obraId, gastoId: String(passo.dropFirst(7)))
-                                                   : .novoGasto(obraId: obraId)
+        if let pedido {
+            let partes = pedido.split(separator: ":", maxSplits: 1).map(String.init)
+            let id = partes.count > 1 ? partes[1] : ""
+            switch partes[0] {
+            case "venda": folhas.aberta = .venda(obraId: id)
+            case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
+            default: break
+            }
+        } else if let passo, case .obra(let obraId)? = caminhoDeObras.last {
+            folhas.aberta = passo.hasPrefix("editar:") ? .editarGasto(obraId: obraId, gastoId: String(passo.dropFirst(7)))
+                                                       : .novoGasto(obraId: obraId)
+        }
     }
     #endif
 

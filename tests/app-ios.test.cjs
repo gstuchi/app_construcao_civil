@@ -494,6 +494,17 @@ test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração
   assert.match(t, /\.sensoryFeedback\(\.impact\(weight: \.light\), trigger: mudouAFase\)/, 'a vibração leve, só da ação feita aqui (a de outro aparelho não vibra)');
 });
 
+test('folha da venda: gravação recusada avisa, como a folha do gasto', () => {
+  // Em Debug grava sempre, e nenhum teste de tela recusa pela conta de teste: no build do TestFlight, na conta de sempre,
+  // "Confirmar venda" sem o alerta não faria nada ao toque (o achado da T29 no mudar da fase).
+  const t = ler('app-ios/Custta/Telas/FolhaDaVenda.swift');
+  assert.match(t, /case \.naoCarregado: naoCarregado = true/, 'antes de ver os dados, o alerta do site');
+  // A troca para a conta real (fim do PR 3) apaga a ContaDeTeste e, com ela, este alerta.
+  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
+  assert.match(t, /case \.contaReal: contaReal = true/, 'na conta de sempre do TestFlight, o alerta da conta de teste');
+  assert.match(t, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

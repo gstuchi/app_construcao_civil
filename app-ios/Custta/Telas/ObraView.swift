@@ -153,7 +153,7 @@ extension ObraView {
         switch acao {
         case .marcarPronta: mudar(obra) { $0.mudandoFase(obra.id, para: .pronta) }
         case .voltarConstrucao: mudar(obra) { $0.mudandoFase(obra.id, para: .construcao) }
-        case .registrarVenda: break    // a folha da venda chega na Tarefa 31
+        case .registrarVenda: folhas.aberta = .venda(obraId: obra.id)
         case .desfazerVenda: desfazendo = true
         }
     }

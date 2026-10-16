@@ -85,6 +85,18 @@ struct GravacaoDoAppTests {
         #expect(transporte.gravacoes == 0)
     }
 
+    /// Toque duplo no "Confirmar venda": o segundo toque chega com a obra já vendida, e a regra do núcleo não vende de novo.
+    /// Sobe uma gravação só, também depois de o servidor confirmar a primeira (uma segunda subiria logo atrás dela).
+    @Test func vendaConfirmadaDuasVezesGravaUmaVez() async {
+        let (m, transporte, _) = montar(dados: DadosDeExemplo.vitrine())
+        await ate { m.sincronizador.dadosCarregados }
+        let vender: (Estado) -> Estado? = { $0.registrandoVenda("v2", valor: 1_380_000, data: dataLocalISO(.now, fuso: .current)) }
+        #expect(m.gravar(vender) == .gravou)
+        #expect(m.gravar(vender) == .sumiu)
+        await ate { m.sincronizador.confirmadas == 1 }
+        #expect(m.sincronizador.confirmadas == 1 && transporte.gravacoes == 1)
+    }
+
     @Test func folhasRodamODepoisSoQuandoAFolhaDesce() {
         let folhas = Folhas()
         folhas.aberta = .novoGasto(obraId: "o1")

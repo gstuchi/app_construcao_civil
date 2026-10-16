@@ -9,6 +9,7 @@ final class Folhas {
     enum Qual: Identifiable, Hashable {
         case novoGasto(obraId: String)
         case editarGasto(obraId: String, gastoId: String)
+        case venda(obraId: String)
 
         var id: Self { self }
     }

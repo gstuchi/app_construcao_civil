@@ -284,10 +284,18 @@ private struct PassoDosDetalhes: View {
                     }
                     if rascunho.editado != nil {
                         GrupoDaFolha {
-                            Button("Apagar gasto") { apagando = true }
-                                .foregroundStyle(paleta.cor(.negativo))
-                                .frame(maxWidth: .infinity, minHeight: 52)
-                                .accessibilityIdentifier("apagarGasto")
+                            // A linha inteira do grupo recebe o toque (o .f-lin.destr do mockup), não só o texto.
+                            Button { apagando = true } label: {
+                                Text("Apagar gasto")
+                                    .fontWeight(.medium)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 11)
+                                    .frame(maxWidth: .infinity, minHeight: 52)
+                                    .contentShape(.rect)
+                            }
+                            .foregroundStyle(paleta.cor(.negativo))
+                            .accessibilityIdentifier("apagarGasto")
                         }
                     }
                 }

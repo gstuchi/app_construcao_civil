@@ -246,6 +246,17 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.elemento("gasto-g027").waitForNonExistence(timeout: 5), "e a linha sai depois")
     }
 
+    /// A linha inteira do grupo é o "Apagar gasto", como no mockup: o toque nas pontas, longe do texto, abre o alerta.
+    func testApagarGastoPelasPontasDaLinha() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.tap()
+        let botao = app.buttons["apagarGasto"]
+        XCTAssertTrue(botao.waitForExistence(timeout: 5))
+        app.tocarNasPontas(da: botao, abrindo: app.alerts["Apagar este gasto?"])
+    }
+
     func testFecharDepoisDoValorPerguntaAntes() {
         let app = abrirObra()
         lancarValor(app, "1")

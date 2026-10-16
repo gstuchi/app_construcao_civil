@@ -613,6 +613,29 @@ test('barra: o botão de vidro (o sair, o lápis, a sincronização) sem o vidro
   assert.ok(itens >= 4, 'o sair e a sincronização de Obras, o lápis e a sincronização da obra');
 });
 
+test('apagar no fim da folha: a linha inteira é o botão, no vermelho de negativo e em peso médio', () => {
+  // O "Apagar obra" e o "Apagar gasto" são a única linha de um grupo sólido da folha (o .f-lin.destr do mockup): a cor é
+  // o --red, que no app é .negativo (o .erroNoVidro é o da nota sobre o vidro), o peso é 500, e o toque é a linha
+  // inteira. A medida e o contentShape ficam dentro do rótulo: fora dele, só o texto recebe o toque e o VoiceOver.
+  let botoes = 0;
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\.accessibilityIdentifier\("apagar(?:Obra|Gasto)"\)/g)){
+      botoes++;
+      const inicio = t.lastIndexOf('Button', m.index);
+      assert.ok(t.startsWith('Button {', inicio), `${f}: ${m[0]} sem rótulo próprio, o toque fica só no texto`);
+      const abre = t.indexOf('label: {', inicio);
+      let fim = abre + 'label: {'.length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+      const rotulo = t.slice(abre, fim), depois = t.slice(fim, m.index);
+      assert.match(rotulo, /\.frame\(maxWidth: \.infinity, minHeight: 52\)\s*\.contentShape\(\.rect\)/, `${f}: ${m[0]} sem a linha inteira no rótulo`);
+      assert.match(rotulo, /\.fontWeight\(\.medium\)/, `${f}: ${m[0]} fora do peso 500 do mockup`);
+      assert.match(depois, /\.foregroundStyle\(paleta\.cor\(\.negativo\)\)/, `${f}: ${m[0]} fora do vermelho de negativo`);
+    }
+  }
+  assert.equal(botoes, 2, 'o "Apagar obra" e o "Apagar gasto"');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

@@ -168,6 +168,16 @@ final class FolhaDaObraUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["2 obras"].waitForExistence(timeout: 3))
     }
 
+    /// A linha inteira do grupo é o "Apagar obra", como no mockup: o toque nas pontas, longe do texto, abre o alerta.
+    func testApagarObraPelasPontasDaLinha() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+        app.buttons["editarObra"].tap()
+        let apagar = app.buttons["apagarObra"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 5))
+        app.tocarNasPontas(da: apagar, abrindo: app.alerts["Apagar “Casa Alphaville”?"])
+    }
+
     /// Fechar "Editar obra" sem mudar nada não pergunta; com algo mudado, pergunta "Você mudou esta obra.", e "Descartar
     /// alterações" fecha sem gravar.
     func testFecharEditarObraSoPerguntaQuandoAlgoMudou() {

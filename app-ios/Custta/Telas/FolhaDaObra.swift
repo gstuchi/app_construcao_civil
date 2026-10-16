@@ -233,10 +233,19 @@ private struct FormularioDaObra: View {
                     }
                     if !rascunho.nova {
                         GrupoDaFolha {
-                            Button("Apagar obra") { foco = nil; apagando = true }
-                                .foregroundStyle(paleta.cor(.erroNoVidro))
-                                .frame(maxWidth: .infinity, minHeight: 52)
-                                .accessibilityIdentifier("apagarObra")
+                            // A linha inteira do grupo recebe o toque (o .f-lin.destr do mockup), não só o texto.
+                            Button { foco = nil; apagando = true } label: {
+                                Text("Apagar obra")
+                                    .fontWeight(.medium)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 11)
+                                    .frame(maxWidth: .infinity, minHeight: 52)
+                                    .contentShape(.rect)
+                            }
+                            // A linha é sólida, não vidro: .negativo, como o "Apagar gasto".
+                            .foregroundStyle(paleta.cor(.negativo))
+                            .accessibilityIdentifier("apagarObra")
                         }
                         .padding(.top, 8)
                     }

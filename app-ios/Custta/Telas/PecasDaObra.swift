@@ -455,3 +455,23 @@ struct PilulaDaAcao: ButtonStyle {
         .animation(configuration.isPressed ? .easeOut(duration: 0.1) : .spring(duration: 0.3), value: configuration.isPressed)
     }
 }
+
+/// O lápis da barra da obra: círculo de vidro com o ícone do site, como o sair do topo; abre "Editar obra".
+struct BotaoDeEditarObra: View {
+    let editar: () -> Void
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        Button(action: editar) {
+            Image(decorative: "Icones/lapis")
+                .resizable()
+                .frame(width: 22, height: 22)
+                .foregroundStyle(paleta.cor(.texto))
+                .frame(width: 44, height: 44)
+                .superficie(.navegacao, em: .circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Editar obra")
+        .accessibilityIdentifier("editarObra")
+    }
+}

@@ -593,6 +593,26 @@ test('campo de texto que quebra linha: o exemplo desenhado num Text, e o prompt 
   assert.ok(campos >= 2, 'os campos da entrada e o nome da obra');
 });
 
+test('barra: o botão de vidro (o sair, o lápis, a sincronização) sem o vidro da barra por trás', () => {
+  // A barra do iOS 26 põe um fundo de vidro atrás de cada item; o círculo de vidro do sair ou do lápis ficaria vidro
+  // dentro de vidro. Nenhum teste de tela vê o fundo; esta guarda liga cada peça de vidro posta na barra ao
+  // .sharedBackgroundVisibility(.hidden).
+  const fontes = arquivosSwift('app-ios/Custta').map(f => [f, ler(f)]);
+  const deVidro = new Set();
+  for(const [, t] of fontes)
+    for(const m of t.matchAll(/struct (\w+)(?:<[^>]*>)?: View \{[\s\S]*?\n\}/g)) if(m[0].includes('.superficie(')) deVidro.add(m[1]);
+  let itens = 0;
+  for(const [f, t] of fontes){
+    for(const m of t.matchAll(/ToolbarItem\([^)]*\) \{ (\w+)[ ({]/g)){
+      if(!deVidro.has(m[1])) continue;
+      itens++;
+      const depois = t.slice(m.index + m[0].length).split('\n').slice(0, 2).join('\n');
+      assert.match(depois, /\.sharedBackgroundVisibility\(\.hidden\)/, `${f}: ${m[1]} na barra com o vidro da barra por trás`);
+    }
+  }
+  assert.ok(itens >= 4, 'o sair e a sincronização de Obras, o lápis e a sincronização da obra');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

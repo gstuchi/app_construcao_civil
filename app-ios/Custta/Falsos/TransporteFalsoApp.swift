@@ -9,7 +9,7 @@ import CusttaNucleo
 /// nunca responde (CUSTTA_LEITURA=nunca: "Carregando suas obras…" para sempre). `recusa` responde toda gravação com
 /// esse código (CUSTTA_GRAVACAO=recusa: permission-denied, o "Não salvou" que não passa sozinho). `apagarRemoto`
 /// simula outro aparelho apagando um gasto: um segundo snapshot, sem ele, depois de alguns segundos
-/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>).
+/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>); com o gasto vazio, a obra inteira.
 @MainActor
 final class TransporteFalsoApp: TransporteDados {
     private final class Nada: Cancelavel { func cancelar() {} }
@@ -51,9 +51,20 @@ final class TransporteFalsoApp: TransporteDados {
                 }
             }
             try? await Task.sleep(for: .seconds(remoto.depois))
-            aoReceber(Instantaneo(dados: Self.sem(remoto.gasto, naObra: remoto.obra, em: dados), doCache: semRede, gravacaoPendente: false))
+            let depois = remoto.gasto.isEmpty ? Self.semAObra(remoto.obra, em: dados) : Self.sem(remoto.gasto, naObra: remoto.obra, em: dados)
+            aoReceber(Instantaneo(dados: depois, doCache: semRede, gravacaoPendente: false))
         }
         return Nada()
+    }
+
+    /// O blob sem uma obra, como outro aparelho o gravaria.
+    private static func semAObra(_ obraId: String, em dados: ValorJSON?) -> ValorJSON? {
+        guard case .objeto(var raiz)? = dados, case .lista(let obras)? = raiz["obras"] else { return dados }
+        raiz["obras"] = .lista(obras.filter { o in
+            if case .objeto(let campos) = o { return campos["id"] != .texto(obraId) }
+            return true
+        })
+        return .objeto(raiz)
     }
 
     /// O blob sem um gasto, como outro aparelho o gravaria.

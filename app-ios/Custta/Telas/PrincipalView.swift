@@ -96,6 +96,9 @@ extension PrincipalView {
             caminhoDeObras.removeAll()
             // Depois do voltar do sistema, a linha sai da lista com a animação do apagar gasto.
             Task { @MainActor in
+                #if DEBUG
+                await esperarOAvisoDoTesteParaApagarObra()
+                #endif
                 try? await Task.sleep(for: .milliseconds(opcoes.reduzirMovimento ? 100 : 500))
                 let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
                     modelo.gravar { $0.apagandoObra(id) }
@@ -172,7 +175,9 @@ enum AvisoDoMais: Equatable {
 }
 
 /// Os alertas do app por cima das abas: o aviso do + e o "Não salvou" (uma vez por erro, com "Tentar de novo"). Cada um
-/// num fundo vazio, com os botões na cor do texto, como o "Sair da conta?". O "Não salvou" espera a folha aberta descer.
+/// num fundo vazio, com os botões na cor do texto, como o "Sair da conta?". Os dois esperam a folha aberta descer: no iOS
+/// 27 o alerta da raiz derruba a folha, e o aviso do apagar obra chega meio segundo depois de voltar à lista, quando o +
+/// já pode ter aberto "Nova obra".
 private struct AvisosDoPrincipal: ViewModifier {
     @Binding var avisoDoMais: AvisoDoMais?
     let folhaAberta: Bool
@@ -184,7 +189,8 @@ private struct AvisosDoPrincipal: ViewModifier {
         content
             .background {
                 Color.clear
-                    .alert(avisoDoMais?.titulo ?? "", isPresented: Binding(get: { avisoDoMais != nil }, set: { if !$0 { avisoDoMais = nil } })) {
+                    .alert(avisoDoMais?.titulo ?? "", isPresented: Binding(get: { avisoDoMais != nil && !folhaAberta },
+                                                                          set: { if !$0 { avisoDoMais = nil } })) {
                         Button("OK", role: .cancel) {}
                     } message: {
                         if let m = avisoDoMais?.mensagem { Text(m) }
@@ -202,7 +208,7 @@ private struct AvisosDoPrincipal: ViewModifier {
                     }
                     .tint(paleta.cor(.texto))
             }
-            .pausaOFundo(enquanto: avisoDoMais != nil || (gravacao != nil && !folhaAberta))
+            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
     }
 }
 

@@ -193,4 +193,17 @@ struct GravacaoDoAppTests {
         #expect(vizinhoDepoisDeApagar(["b", "c"], ordem: ["a", "b", "c", "d"]) == "d", "a compra toda sai junta")
         #expect(vizinhoDepoisDeApagar(["a"], ordem: ["a"]) == nil, "sem vizinho, vai para Lançamentos")
     }
+
+    @Test func rascunhoDaObraEditadaPerguntaSoSeMudou() {
+        let o = Obra(arvore: ["id": .texto("o1"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+                              "areaM2": .numero(120.5), "valorEstimadoVenda": .numero(900_000), "gastos": .lista([])])
+        let r = RascunhoDaObra(obra: o, hoje: "2026-10-13")
+        #expect(r.area == "120,5" && r.estimado == 90_000_000 && r.dataInicio == "2026-01-01")
+        #expect(!r.temOQuePerder, "a área com vírgula que veio preenchida não é mudança")
+        r.area = "120,6"
+        #expect(r.temOQuePerder)
+        r.area = "120,5"
+        #expect(!r.temOQuePerder, "voltou ao que era")
+        #expect(r.campos.areaM2 == 120.5, "e a área volta ao documento como estava")
+    }
 }

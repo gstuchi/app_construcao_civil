@@ -13,6 +13,7 @@ enum RotaDeObras: Hashable, Sendable {
 struct ObrasView: View {
     @Binding var caminho: [RotaDeObras]
     @Environment(ModeloApp.self) private var modelo
+    @Environment(\.opcoes) private var opcoes
     @State private var confirmarSaida = false
     #if DEBUG
     /// Laudo de leitura (Tarefa 11): a lista parada numa rolagem dada, em pt, para dois prints iguais.
@@ -50,6 +51,8 @@ struct ObrasView: View {
                         ForEach(obras, id: \.id) { obra in
                             NavigationLink(value: RotaDeObras.obra(obra.id)) { CartaoDeObra(obra: obra, hoje: hoje) }
                                 .buttonStyle(.plain)
+                                .transition(opcoes.reduzirMovimento ? .opacity
+                                            : .asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
                         }
                         let comparativo = comparativoEntreObras(obras, taxa: sinc.estado.config.taxaMensal, hoje: hoje)
                         if !comparativo.isEmpty { PainelComparativo(linhas: comparativo).padding(.top, 2) }

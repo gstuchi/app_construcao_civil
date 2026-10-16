@@ -1,4 +1,5 @@
 import XCTest
+import notify
 
 /* Criar, editar e apagar obra (etapa 2, parte 3). Nova obra pelo + da lista: o cursor no nome e o teclado aberto; a área
    obrigatória com o erro do site, que some ao digitar; o valor estimado no teclado de valor; "Criar obra" entra direto na
@@ -126,6 +127,147 @@ final class FolhaDaObraUITests: XCTestCase {
         alerta.buttons["Descartar obra"].tap()
         XCTAssertTrue(app.textFields["nomeDaObra"].waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["3 obras"].exists, "nada foi gravado")
+    }
+
+    func testEditarObraPeloLapis() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        let lapis = app.buttons["editarObra"]
+        XCTAssertTrue(lapis.waitForExistence(timeout: 10))
+        lapis.tap()
+        let nome = app.textFields["nomeDaObra"]
+        XCTAssertTrue(nome.waitForExistence(timeout: 5))
+        XCTAssertEqual(nome.value as? String, "Casa Alphaville")
+        XCTAssertEqual(app.textFields["areaDaObra"].value as? String, "300")
+        XCTAssertFalse(app.elemento("linhaOrcamento").exists, "sem orçamento na edição")
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "editar não abre o teclado sozinho")
+        app.elemento("linhaEstimado").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        XCTAssertEqual(app.elemento("visorDoValor").value as? String, "R$ 1.450.000,00")
+        for _ in 0..<9 { app.buttons["tecla-del"].tap() }
+        for t in ["1", "5", "0", "0", "0", "0", "0", "0", "0"] { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.buttons["salvarObra"].waitForExistence(timeout: 5))
+        app.buttons["salvarObra"].tap()
+        XCTAssertTrue(nome.waitForNonExistence(timeout: 5), "a folha desce e a tela fica na obra")
+        XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.500.000,00"), app.elemento("indicadorVenda").label)
+    }
+
+    func testApagarObraVoltaParaAListaEALinhaSai() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+        app.buttons["editarObra"].tap()
+        let apagar = app.buttons["apagarObra"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 5))
+        apagar.tap()
+        let alerta = app.alerts["Apagar “Casa Alphaville”?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 5))
+        XCTAssertTrue(alerta.staticTexts["Os 46 lançamentos dela serão perdidos. Não dá para desfazer."].exists)
+        alerta.buttons["Apagar obra"].tap()
+        XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "volta para a lista")
+        XCTAssertTrue(app.elemento("obra-v1").waitForNonExistence(timeout: 5), "a linha sai")
+        XCTAssertTrue(app.staticTexts["2 obras"].waitForExistence(timeout: 3))
+    }
+
+    /// Fechar "Editar obra" sem mudar nada não pergunta; com algo mudado, pergunta "Você mudou esta obra.", e "Descartar
+    /// alterações" fecha sem gravar.
+    func testFecharEditarObraSoPerguntaQuandoAlgoMudou() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        let lapis = app.buttons["editarObra"]
+        XCTAssertTrue(lapis.waitForExistence(timeout: 10))
+        lapis.tap()
+        let nome = app.textFields["nomeDaObra"]
+        XCTAssertTrue(nome.waitForExistence(timeout: 5))
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(nome.waitForNonExistence(timeout: 5), "nada mudou: fecha sem perguntar")
+        lapis.tap()
+        XCTAssertTrue(nome.waitForExistence(timeout: 5))
+        app.elemento("linhaEstimado").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        app.buttons["tecla-del"].tap()
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(nome.waitForExistence(timeout: 5))
+        app.buttons["fecharFolha"].tap()
+        let alerta = app.alerts["Você mudou esta obra."]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 5))
+        alerta.buttons["Continuar editando"].tap()
+        XCTAssertTrue(nome.exists, "a edição continua aberta")
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(alerta.waitForExistence(timeout: 5))
+        alerta.buttons["Descartar alterações"].tap()
+        XCTAssertTrue(nome.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.450.000,00"), "nada foi gravado")
+    }
+
+    /// Salvar a edição muda só o que a folha mostra: a fase, o início e os lançamentos da obra ficam como estavam.
+    func testEditarObraMudaSoOsCamposDaFolha() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2")
+        let fase = app.elemento("faseDaObra")
+        XCTAssertTrue(fase.waitForExistence(timeout: 10))
+        let total = app.elemento("indicadorTotal")
+        let antes = (fase.label, total.label)
+        app.buttons["editarObra"].tap()
+        XCTAssertTrue(app.textFields["nomeDaObra"].waitForExistence(timeout: 5))
+        app.elemento("linhaEstimado").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        for t in ["9", "0", "0", "0", "0", "0", "0", "0"] { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.buttons["salvarObra"].waitForExistence(timeout: 5))
+        app.buttons["salvarObra"].tap()
+        XCTAssertTrue(app.textFields["nomeDaObra"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}900.000,00"), app.elemento("indicadorVenda").label)
+        XCTAssertEqual(fase.label, antes.0, "a fase e o início ficam")
+        XCTAssertEqual(total.label, antes.1, "os lançamentos ficam")
+    }
+
+    /// A obra apagada em outro aparelho com "Editar obra" aberta e mudada: a folha fecha sem perguntar e sem gravar, e a
+    /// tela volta a Obras.
+    func testEditarObraFechaQuandoOutroAparelhoApagaAObra() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
+        let lapis = app.buttons["editarObra"]
+        XCTAssertTrue(lapis.waitForExistence(timeout: 10))
+        lapis.tap()
+        let nome = app.textFields["nomeDaObra"]
+        XCTAssertTrue(nome.waitForExistence(timeout: 5))
+        app.elemento("linhaEstimado").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        app.buttons["tecla-del"].tap()
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(nome.waitForExistence(timeout: 5), "a edição mudada, antes de o outro aparelho apagar")
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(nome.waitForNonExistence(timeout: 10), "a obra sumiu: a folha fecha")
+        XCTAssertFalse(app.alerts["Você mudou esta obra."].exists, "sem perguntar")
+        XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "a tela volta a Obras")
+        XCTAssertFalse(app.elemento("obra-v1").exists)
+        XCTAssertTrue(app.staticTexts["2 obras"].exists)
+    }
+
+    /// Apagar pelo lápis grava meio segundo depois de voltar à lista. Se o + abrir "Nova obra" nesse meio-tempo, o aviso
+    /// desse apagar (aqui, o de dados não carregados) espera a folha descer: no iOS 27, o alerta da raiz derrubava a folha.
+    func testAvisoDoApagarEsperaANovaObraDescer() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
+                           argumentos: ["-custta.recusarGravacao", "nao-carregado"], extra: ["CUSTTA_APAGAR_OBRA": "aviso"])
+        let lapis = app.buttons["editarObra"]
+        XCTAssertTrue(lapis.waitForExistence(timeout: 10))
+        lapis.tap()
+        let apagar = app.buttons["apagarObra"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 5))
+        apagar.tap()
+        let pergunta = app.alerts["Apagar “Casa Alphaville”?"]
+        XCTAssertTrue(pergunta.waitForExistence(timeout: 5))
+        pergunta.buttons["Apagar obra"].tap()
+        XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "de volta à lista")
+        app.buttons["botaoMais"].tap()
+        let nome = app.textFields["nomeDaObra"]
+        XCTAssertTrue(nome.waitForExistence(timeout: 5))
+        notify_post("br.com.custta.falso.apagarObra")
+        let aviso = app.alerts["Carregando suas obras, tente em instantes."]
+        XCTAssertFalse(aviso.waitForExistence(timeout: 3), "o aviso espera a folha descer")
+        XCTAssertTrue(nome.exists, "\"Nova obra\" continua aberta")
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(aviso.waitForExistence(timeout: 5), "com a folha fechada, o aviso aparece")
+        aviso.buttons["OK"].tap()
+        XCTAssertTrue(aviso.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("obra-v1").exists, "nada foi apagado")
     }
 
     func testLimiteDe300ObrasAvisaAntesDeAbrir() {

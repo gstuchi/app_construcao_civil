@@ -9,6 +9,7 @@ import CusttaNucleo
    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê)
+   CUSTTA_GRAVACAO recusa (toda gravação volta com permission-denied: o "Não salvou" que não passa sozinho)
    CUSTTA_APAGAR_REMOTO <obra>/<gasto>@<segundos> (outro aparelho apaga o gasto, com o app aberto)
    CUSTTA_MARCA   servidor (o servidor já respondeu a esta conta numa abertura anterior: com CUSTTA_REDE=offline e
                   CUSTTA_DADOS=vazio, é a conta vazia que abre sem rede e pode lançar)
@@ -36,7 +37,9 @@ extension Composicao {
             guard partes.count == 3, let segundos = Double(partes[2]) else { return nil }
             return (partes[0], partes[1], segundos)
         }
-        let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falhaDeLeitura: falha, apagarRemoto: remoto)
+        let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falhaDeLeitura: falha,
+                                            recusa: ambiente["CUSTTA_GRAVACAO"] == "recusa" ? "permission-denied" : nil,
+                                            apagarRemoto: remoto)
         let rede = MonitorDeRede(forcarSemRede: semRede)
         let marca = MarcaEmMemoria()
         if ambiente["CUSTTA_MARCA"] == "servidor" { marca.marcarTodas = true }

@@ -31,6 +31,7 @@ struct PrincipalView: View {
         }
         // Com a folha aberta o fundo para: ela cobre quase tudo, e cada quadro da aurora refaria o desfoque dela.
         .pausaOFundo(enquanto: folhas.aberta != nil)
+        .modifier(AvisosDoPrincipal(folhaAberta: folhas.aberta != nil))
         #if DEBUG
         .task { await abrirFolhaDeTeste() }
         // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
@@ -82,6 +83,31 @@ extension PrincipalView {
     }
 }
 
+/// O alerta do "Não salvou" (uma vez por erro, com "Tentar de novo") por cima das abas, num fundo vazio, com os botões na
+/// cor do texto, como o "Sair da conta?". Espera a folha aberta descer.
+private struct AvisosDoPrincipal: ViewModifier {
+    let folhaAberta: Bool
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+
+    func body(content: Content) -> some View {
+        let gravacao = modelo.alertaDeGravacao
+        content
+            .background {
+                Color.clear
+                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && !folhaAberta },
+                                                                         set: { if !$0 { modelo.fecharAlertaDeGravacao() } })) {
+                        Button("OK", role: .cancel) {}
+                        Button("Tentar de novo") { modelo.tentarDeNovo() }
+                    } message: {
+                        Text(gravacao?.mensagem ?? "")
+                    }
+                    .tint(paleta.cor(.texto))
+            }
+            .pausaOFundo(enquanto: gravacao != nil && !folhaAberta)
+    }
+}
+
 /// Sincronização e sair, no canto da barra de Obras e de Ajustes.
 struct BarraDoApp: ToolbarContent {
     @Binding var confirmarSaida: Bool
@@ -108,7 +134,9 @@ struct IndicadorDeSincronizacao: View {
                 HStack(spacing: 7) {
                     if i.girando { ProgressView().controlSize(.mini) }
                     else { Circle().fill(paleta.cor(i.erro ? .erroNoVidro : .texto)).frame(width: 8, height: 8).opacity(i.erro ? 1 : 0.75) }
-                    Text(i.rotulo).font(.footnote.weight(.semibold)).lineLimit(1)
+                    // Na barra da obra, ao lado do lápis, a barra oferecia uns 2 pt a menos do que o rótulo pede e cortava
+                    // "Sem conex…": o rótulo fica na largura dele.
+                    Text(i.rotulo).font(.footnote.weight(.semibold)).lineLimit(1).fixedSize()
                 }
                 .foregroundStyle(paleta.cor(.texto))
                 .padding(.horizontal, 14)

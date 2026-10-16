@@ -32,6 +32,14 @@ struct PrincipalView: View {
                 switch qual {
                 case .novoGasto(let obraId): FolhaDoGasto(obraId: obraId, gastoId: nil)
                 case .editarGasto(let obraId, let gastoId): FolhaDoGasto(obraId: obraId, gastoId: gastoId)
+                case .gastoDeVendida(let vendidaId):
+                    // Vem marcada a primeira aberta da lista de obras (a que começou mais recente), não a primeira do
+                    // documento, como no site (em geral a mais antiga).
+                    if let destino = obrasAbertas(modelo.sincronizador.estado.obras).first {
+                        FolhaDoGasto(obraId: destino.id, gastoId: nil, vendida: vendidaId)
+                    } else {
+                        Color.clear.onAppear { folhas.fechar() }
+                    }
                 case .novaObra: FolhaDaObra(obraId: nil)
                 case .editarObra(let obraId): FolhaDaObra(obraId: obraId)
                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
@@ -62,15 +70,17 @@ struct PrincipalView: View {
 }
 
 extension PrincipalView {
-    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra que ainda recebe gasto, lança gasto nela.
-    /// Obra vendida não recebe gasto novo (como no site); a escolha de outra obra chega na Tarefa 34. Em Ajustes, some.
+    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra, lança gasto nela. Obra vendida não recebe
+    /// gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as abertas; sem nenhuma aberta, cria
+    /// obra. Em Ajustes, some.
     private var acaoDoMais: AcaoDoMais? {
         guard aba == .obras else { return nil }
         let obras = modelo.sincronizador.estado.obras
         guard case .obra(let id)? = caminhoDeObras.last else { return AcaoDoMais(rotulo: "Nova obra", acao: pedirNovaObra) }
         guard let obra = obras.first(where: { $0.id == id }) else { return nil }
-        guard obra.fase != .vendida else { return nil }
-        return AcaoDoMais(rotulo: "Lançar gasto") { folhas.aberta = .novoGasto(obraId: id) }
+        if obra.fase != .vendida { return AcaoDoMais(rotulo: "Lançar gasto") { folhas.aberta = .novoGasto(obraId: id) } }
+        if obrasAbertas(obras).isEmpty { return AcaoDoMais(rotulo: "Nova obra", acao: pedirNovaObra) }
+        return AcaoDoMais(rotulo: "Lançar gasto") { folhas.aberta = .gastoDeVendida(vendidaId: id) }
     }
 
     /// "Nova obra" avisa antes de abrir: sem os dados vistos, o "Carregando suas obras" do site; com o teto cheio, o
@@ -111,7 +121,7 @@ extension PrincipalView {
 
     #if DEBUG
     /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
-    /// `editarObra:<id>`, `venda:<id>`, `novoGasto:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
     /// `-custta.folha editar:<gasto>`, a edição.
     private func abrirFolhaDoGancho() async {
@@ -127,6 +137,7 @@ extension PrincipalView {
             case "novaObra": folhas.aberta = .novaObra
             case "editarObra": folhas.aberta = .editarObra(obraId: id)
             case "venda": folhas.aberta = .venda(obraId: id)
+            case "gastoDeVendida": folhas.aberta = .gastoDeVendida(vendidaId: id)
             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
             default: break
             }

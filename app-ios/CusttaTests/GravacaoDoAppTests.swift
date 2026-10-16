@@ -206,4 +206,31 @@ struct GravacaoDoAppTests {
         #expect(!r.temOQuePerder, "voltou ao que era")
         #expect(r.campos.areaM2 == 120.5, "e a área volta ao documento como estava")
     }
+
+    /// O gasto lançado de dentro de uma vendida: trocar a obra na linha "Obra" troca os "Usados nesta obra" e as sugestões
+    /// pelos dela (a mesma obra pesa na ordem); o tópico escolhido fica.
+    @Test func trocarAObraTrocaOsUsadosEAsSugestoes() {
+        func gasto(_ id: String, _ topico: String, _ descricao: String) -> ValorJSON {
+            .objeto(["id": .texto(id), "valor": .numero(1), "topico": .texto(topico), "descricao": .texto(descricao),
+                     "data": .texto("2026-10-01"), "pagamento": .texto("pix")])
+        }
+        func obra(_ id: String, _ fase: String, _ gastos: [ValorJSON]) -> Obra {
+            Obra(arvore: ["id": .texto(id), "nome": .texto(id), "fase": .texto(fase), "dataInicio": .texto("2026-01-01"),
+                          "gastos": .lista(gastos)])
+        }
+        let a = obra("a", "construcao", [gasto("a1", "pintura", "Tinta acrílica")])
+        let b = obra("b", "pronta", [gasto("b1", "eletrica", "Tinta epóxi")])
+        let todas = [a, b, obra("v", "vendida", [gasto("v1", "outros", "Tinta")])]
+        let r = RascunhoDoGasto(obra: a, editado: nil, todas: todas, proprios: [], hoje: "2026-10-13", vendida: "v")
+        r.topico = "outros"
+        let antes = r.indice.sugestoes(topicoId: "outros", termo: "tinta")
+        #expect(r.usados.map(\.id) == ["pintura"] && antes.map(\.texto) == ["Tinta", "Tinta acrílica", "Tinta epóxi"])
+        r.trocarObra(b)
+        #expect(r.obraId == "b" && r.vendida == "v")
+        #expect(r.usados.map(\.id) == ["eletrica"], "os usados da obra escolhida")
+        let depois = r.indice.sugestoes(topicoId: "outros", termo: "tinta")
+        #expect(depois == sugestoesDescricao(todas, obraId: "b", topicoId: "outros", termo: "tinta", ignorarId: nil))
+        #expect(depois.map(\.texto) == ["Tinta", "Tinta epóxi", "Tinta acrílica"], "a obra escolhida pesa a dela")
+        #expect(r.topico == "outros", "o tópico escolhido fica")
+    }
 }

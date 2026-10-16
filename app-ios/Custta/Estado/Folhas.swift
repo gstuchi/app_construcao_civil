@@ -10,6 +10,8 @@ final class Folhas {
     enum Qual: Identifiable, Hashable {
         case novoGasto(obraId: String)
         case editarGasto(obraId: String, gastoId: String)
+        /// O + numa obra vendida: o gasto vai para uma obra aberta, escolhida na linha "Obra" da folha.
+        case gastoDeVendida(vendidaId: String)
         case novaObra
         case editarObra(obraId: String)
         case venda(obraId: String)

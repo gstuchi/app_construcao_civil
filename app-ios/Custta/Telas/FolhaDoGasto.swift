@@ -4,24 +4,30 @@ import CusttaNucleo
 /* A folha do gasto (mockup da etapa 2, parte 2; formGasto do site). Gasto novo: o valor no teclado de valor e
    "Avançar" empurra os detalhes, na ordem do site (valor, tópico, pagamento, descrição e data), com "Salvar" fixo
    embaixo. Editar: direto nos detalhes; o valor abre o mesmo teclado ("Pronto"); numa parcela, o aviso do site no lugar
-   do pagamento; "Apagar gasto" no fim. O que vira gasto e as mensagens vêm do núcleo (as regras do dados.js); a tela só
-   guarda o rascunho e decide para onde ir. */
+   do pagamento; "Apagar gasto" no fim. Lançado de dentro de uma obra vendida (que não recebe gasto novo, como no site),
+   a folha ganha a linha "Obra" para escolher entre as abertas. O que vira gasto e as mensagens vêm do núcleo (as regras
+   do dados.js); a tela só guarda o rascunho e decide para onde ir. */
 
 enum PassoDoGasto: Hashable {
     case detalhes
     case valor
     case topicos
+    case obras
 }
 
 /// O formulário enquanto a folha está aberta: começa do gasto em edição, ou do vazio do gasto novo, e só vira gasto no
 /// "Salvar".
 @MainActor @Observable
 final class RascunhoDoGasto {
-    let obraId: String
+    /// A obra que recebe o gasto; lançado de dentro de uma vendida, a escolhida na linha "Obra".
+    private(set) var obraId: String
     let editado: Gasto?
+    /// O gasto lançado de dentro desta obra vendida (nil no caso comum).
+    let vendida: String?
     let topicos: [Topico]
-    let usados: [Topico]
-    let indice: IndiceDeSugestoes
+    private(set) var usados: [Topico]
+    private(set) var indice: IndiceDeSugestoes
+    private let todas: [Obra]
     var centavos: Int
     var topico: String
     var pagamento: String
@@ -38,9 +44,11 @@ final class RascunhoDoGasto {
     var passouDoValor = false
     private var inicial: [String] = []
 
-    init(obra: Obra, editado: Gasto?, todas: [Obra], proprios: [TopicoProprio], hoje: String) {
+    init(obra: Obra, editado: Gasto?, todas: [Obra], proprios: [TopicoProprio], hoje: String, vendida: String? = nil) {
         obraId = obra.id
         self.editado = editado
+        self.vendida = vendida
+        self.todas = todas
         topicos = topicosDoFormulario(proprios)
         usados = usadosNestaObra(obra, topicos: topicos)
         indice = IndiceDeSugestoes(todas, obraId: obra.id, ignorarId: editado?.id)
@@ -96,6 +104,14 @@ final class RascunhoDoGasto {
         [String(centavos), topico, pagamento, String(parcelas), juros, descricao, datas["pix"] ?? "", datas["cartao"] ?? ""]
     }
 
+    /// Outra obra na linha "Obra": os "Usados nesta obra" e as sugestões passam a ser os dela; o tópico escolhido fica.
+    func trocarObra(_ obra: Obra) {
+        guard obra.id != obraId else { return }
+        obraId = obra.id
+        usados = usadosNestaObra(obra, topicos: topicos)
+        indice = IndiceDeSugestoes(todas, obraId: obra.id, ignorarId: nil)
+    }
+
     /// A descrição tem até 500 unidades UTF-16, como o `maxlength` do site.
     func limitarDescricao() {
         guard descricao.utf16.count > Limites.descricao else { return }
@@ -112,6 +128,8 @@ final class RascunhoDoGasto {
 struct FolhaDoGasto: View {
     let obraId: String
     let gastoId: String?
+    /// Lançado de dentro desta obra vendida: `obraId` é a obra aberta que vem marcada na linha "Obra".
+    var vendida: String? = nil
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
     @State private var rascunho: RascunhoDoGasto?
@@ -131,7 +149,8 @@ struct FolhaDoGasto: View {
     }
 
     private var existe: Bool {
-        guard let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == obraId }) else { return false }
+        let id = rascunho?.obraId ?? obraId
+        guard let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == id }) else { return false }
         return gastoId.map { id in obra.gastos.contains { $0.id == id } } ?? true
     }
 
@@ -142,7 +161,7 @@ struct FolhaDoGasto: View {
         let editado = gastoId.flatMap { id in obra.gastos.first { $0.id == id } }
         if gastoId != nil && editado == nil { folhas.fechar(); return }
         rascunho = RascunhoDoGasto(obra: obra, editado: editado, todas: estado.obras, proprios: estado.config.topicosProprios,
-                                   hoje: dataLocalISO(.now, fuso: .current))
+                                   hoje: dataLocalISO(.now, fuso: .current), vendida: vendida)
         #if DEBUG
         if editado == nil, let r = rascunho { abrirNoPassoDeTeste(r, obra: obra) }
         #endif
@@ -191,8 +210,10 @@ private struct FolhaDoGastoAberta: View {
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
 
-    private var nomeDaObra: String {
-        modelo.sincronizador.estado.obras.first { $0.id == rascunho.obraId }?.nome ?? ""
+    /// O nome da obra embaixo do título; lançado de dentro de uma vendida, nenhum (a obra está na linha "Obra").
+    private var nomeDaObra: String? {
+        guard rascunho.vendida == nil else { return nil }
+        return modelo.sincronizador.estado.obras.first { $0.id == rascunho.obraId }?.nome ?? ""
     }
 
     var body: some View {
@@ -217,6 +238,8 @@ private struct FolhaDoGastoAberta: View {
                     }
                 case .topicos:
                     ListaDeTopicos(rascunho: rascunho) { caminho.removeLast() }
+                case .obras:
+                    ListaDeObrasAbertas(rascunho: rascunho) { caminho.removeLast() }
                 }
             }
         }
@@ -230,7 +253,7 @@ private struct FolhaDoGastoAberta: View {
 private struct PassoDoValor: View {
     @Bindable var rascunho: RascunhoDoGasto
     let titulo: String
-    let subtitulo: String
+    let subtitulo: String?
     let acao: String
     let raiz: Bool
     let confirmar: () -> Void
@@ -245,7 +268,7 @@ private struct PassoDoValor: View {
 private struct PassoDosDetalhes: View {
     @Bindable var rascunho: RascunhoDoGasto
     @Binding var caminho: [PassoDoGasto]
-    let subtitulo: String
+    let subtitulo: String?
     let raiz: Bool
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
@@ -265,6 +288,7 @@ private struct PassoDosDetalhes: View {
         ScrollViewReader { leitor in
             ScrollView {
                 VStack(spacing: 20) {
+                    if let vendida = rascunho.vendida { linhaDaObra(vendida) }
                     GrupoDaFolha {
                         linhaDoValor
                         SeparadorDaFolha()
@@ -356,6 +380,31 @@ private struct PassoDosDetalhes: View {
         guard let a = rascunho.assinaturaAvisada, case .success(let c) = conferirGasto(rascunho.entrada, editado: rascunho.editado,
                                                                                         hoje: dataLocalISO(.now, fuso: .current)) else { return false }
         return a == assinaturaDoGasto(obraId: rascunho.obraId, entrada: rascunho.entrada, conferido: c)
+    }
+
+    /// A linha "Obra" do gasto lançado de dentro de uma obra vendida, com a nota do mockup embaixo.
+    private func linhaDaObra(_ vendida: String) -> some View {
+        let obras = modelo.sincronizador.estado.obras
+        let nome = obras.first { $0.id == rascunho.obraId }?.nome ?? ""
+        return VStack(spacing: 8) {
+            GrupoDaFolha {
+                Button { caminho.append(.obras) } label: {
+                    LinhaDaFolhaComRotulo(rotulo: "Obra") {
+                        HStack(spacing: 10) {
+                            Text(nome).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(.trailing)
+                            SetaDaLinha()
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Obra")
+                .accessibilityValue(nome)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("linhaObra")
+            }
+            NotaDaFolha(texto: notaDaObraVendida(obras.first { $0.id == vendida }?.nome ?? ""), identificador: "notaObraVendida")
+        }
     }
 
     private var linhaDoValor: some View {
@@ -545,6 +594,9 @@ private struct PassoDosDetalhes: View {
         case .gravou:
             let ids = novos.map(\.id)
             let novo = rascunho.editado == nil
+            // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, que desce
+            // mostrando o gasto aceso onde ele entrou.
+            if rascunho.vendida != nil { folhas.navegar(.trocar(obraId)) }
             folhas.fechar { folhas.destacar(ids, novo: novo) }
         case .naoCarregado:
             naoCarregado = true
@@ -608,7 +660,9 @@ private struct LinhaDeSugestao: View {
     }
 }
 
-/// A data no calendário do iPhone (DatePicker compacto, que abre o calendário gráfico), em português.
+/// A data no calendário do iPhone (DatePicker compacto, que abre o calendário gráfico), em português. A pílula da data não
+/// quebra linha: no maior tamanho de letra ela passava da largura da folha e empurrava os grupos para fora da tela; para no
+/// AX2, como as teclas do teclado de valor (o calendário que ela abre é do sistema).
 struct CampoDeData: View {
     @Binding var iso: String
     /// O rótulo da linha, que o VoiceOver lê junto da data ("Primeiro vencimento", "Data da venda").
@@ -704,6 +758,53 @@ private struct ListaDeTopicos: View {
                 .accessibilityIdentifier("\(prefixo)-\(t.id)")
             }
         }
+    }
+}
+
+/// A lista das obras abertas dentro da folha (o gasto lançado de dentro de uma vendida): na ordem da lista de obras, com a
+/// marca na escolhida; tocar escolhe e volta.
+private struct ListaDeObrasAbertas: View {
+    @Bindable var rascunho: RascunhoDoGasto
+    let voltar: () -> Void
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        let abertas = obrasAbertas(modelo.sincronizador.estado.obras)
+        ScrollView {
+            GrupoDaFolha {
+                ForEach(Array(abertas.enumerated()), id: \.element.id) { i, obra in
+                    if i > 0 { SeparadorDaFolha() }
+                    Button {
+                        rascunho.trocarObra(obra)
+                        voltar()
+                    } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(obra.nome).foregroundStyle(paleta.cor(.texto))
+                                Text(obra.fase.rotulo).font(.footnote).foregroundStyle(paleta.cor(.secundarioSolido))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            if obra.id == rascunho.obraId {
+                                Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.linkNoVidro))
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .frame(minHeight: 52)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(obra.id == rascunho.obraId ? [.isSelected] : [])
+                    .accessibilityIdentifier("obraAberta-\(obra.id)")
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+        }
+        .passoDaFolha("Obra", fechar: nil)
     }
 }
 

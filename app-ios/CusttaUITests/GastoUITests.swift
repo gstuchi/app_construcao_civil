@@ -153,6 +153,22 @@ final class GastoUITests: XCTestCase {
         XCTAssertFalse(app.elemento("gasto-g027").exists)
     }
 
+    /// Lançado de dentro da vendida, a obra escolhida na linha "Obra" apagada em outro aparelho com a folha aberta: não há
+    /// onde gravar, e a folha fecha na vendida, como quando a obra do gasto some.
+    func testFolhaFechaQuandoOutroAparelhoApagaAObraEscolhida() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v3", extra: ["CUSTTA_APAGAR_REMOTO": "v2@0"])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        lancarValor(app, "100")
+        let linha = app.elemento("linhaObra")
+        linha.tap()
+        app.buttons["obraAberta-v2"].tap()
+        XCTAssertTrue(linha.waitForExistence(timeout: 5))
+        XCTAssertEqual(linha.value as? String, "Sobrado Granja Viana")
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 10), "a obra escolhida sumiu: a folha fecha")
+        XCTAssertEqual(app.elemento("tituloDaObra").label, "Casa Tamboré 4", "na vendida, que fica por trás")
+    }
+
     func testEditarParcelaMostraOAvisoDoSite() {
         let app = abrirObra()
         let linha = app.elemento("gasto-g031")

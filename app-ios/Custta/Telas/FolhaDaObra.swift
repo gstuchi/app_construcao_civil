@@ -135,6 +135,7 @@ private struct FormularioDaObra: View {
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
     @Environment(\.paleta) private var paleta
+    @Environment(\.opcoes) private var opcoes
     @FocusState private var foco: Campo?
     @State private var erroDoNome: String?
     @State private var erroDaArea: String?
@@ -148,90 +149,109 @@ private struct FormularioDaObra: View {
     enum Campo: Hashable { case nome, area }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                VStack(spacing: 8) {
-                    GrupoDaFolha {
-                        CampoComRotuloEmCima(rotulo: "Nome da obra") {
-                            // Quebra linha na letra grande, como os campos da entrada ("nada corta"); o Return, que aqui
-                            // viraria "\n", vai para a área.
-                            TextField("Nome da obra", text: $rascunho.nome,
-                                      prompt: Text("Ex: Casa Alphaville").foregroundStyle(paleta.cor(.textoTerciario)), axis: .vertical)
-                                .foregroundStyle(paleta.cor(.texto))
-                                .focused($foco, equals: .nome)
-                                .submitLabel(.next)
-                                .onChange(of: rascunho.nome) { _, novo in
-                                    if novo.contains("\n") {
-                                        rascunho.nome = novo.replacingOccurrences(of: "\n", with: "")
-                                        foco = .area
+        ScrollViewReader { rolagem in
+            ScrollView {
+                VStack(spacing: 20) {
+                    VStack(spacing: 8) {
+                        GrupoDaFolha {
+                            CampoComRotuloEmCima(rotulo: "Nome da obra") {
+                                // O exemplo é desenhado aqui, e não pelo prompt do campo, para quebrar linha na letra grande como os
+                                // campos da entrada ("nada corta"): o prompt do TextField fica numa linha só e corta com reticências.
+                                // O prompt continua no campo, transparente, para o VoiceOver.
+                                ZStack(alignment: .topLeading) {
+                                    if rascunho.nome.isEmpty {
+                                        Text("Ex: Casa Alphaville")
+                                            .foregroundStyle(paleta.cor(.textoTerciario))
+                                            .accessibilityHidden(true)
+                                            .onTapGesture { foco = .nome }
                                     }
-                                    rascunho.limitarNome()
-                                    erroDoNome = nil
-                                }
-                                .accessibilityIdentifier("nomeDaObra")
-                        }
-                        SeparadorDaFolha()
-                        LinhaDaFolhaComRotulo(rotulo: "Começou em") { CampoDeData(iso: $rascunho.dataInicio) }
-                    }
-                    if let erroDoNome { NotaDaFolha(texto: erroDoNome, cor: .erroNoVidro, identificador: "erroDoNome") }
-                }
-                VStack(spacing: 8) {
-                    GrupoDaFolha {
-                        CampoComRotuloEmCima(rotulo: rascunho.nova ? "Área construída em m²" : "Área construída em m² (opcional)",
-                                             erro: erroDaArea != nil) {
-                            TextField(rascunho.nova ? "Área construída em m²" : "Área construída em m², opcional", text: $rascunho.area,
-                                      prompt: Text("Ex: 320").foregroundStyle(paleta.cor(.textoTerciario)))
-                                .keyboardType(.decimalPad)
-                                .foregroundStyle(paleta.cor(.texto))
-                                .focused($foco, equals: .area)
-                                .onChange(of: rascunho.area) { _, _ in erroDaArea = nil }
-                                .accessibilityIdentifier("areaDaObra")
-                                // "280 m²": a unidade logo depois do número (um texto invisível igual ao digitado mede onde
-                                // ele termina), sem tirar a largura do campo, que continua todo tocável.
-                                .overlay(alignment: .leading) {
-                                    if !rascunho.area.isEmpty {
-                                        HStack(spacing: 4) {
-                                            Text(rascunho.area).hidden()
-                                            Text("m²").foregroundStyle(paleta.cor(.texto))
+                                    // O Return, que aqui viraria "\n", vai para a área.
+                                    TextField("Nome da obra", text: $rascunho.nome,
+                                              prompt: Text("Ex: Casa Alphaville").foregroundStyle(.clear), axis: .vertical)
+                                        .foregroundStyle(paleta.cor(.texto))
+                                        .focused($foco, equals: .nome)
+                                        .submitLabel(.next)
+                                        .onChange(of: rascunho.nome) { _, novo in
+                                            if novo.contains("\n") {
+                                                rascunho.nome = novo.replacingOccurrences(of: "\n", with: "")
+                                                foco = .area
+                                            }
+                                            rascunho.limitarNome()
+                                            erroDoNome = nil
                                         }
-                                        .allowsHitTesting(false)
-                                        .accessibilityHidden(true)
-                                    }
+                                        .accessibilityIdentifier("nomeDaObra")
                                 }
-                        }
-                    }
-                    if let erroDaArea { NotaDaFolha(texto: erroDaArea, cor: .erroNoVidro, identificador: "erroDaArea") }
-                }
-                VStack(spacing: 8) {
-                    GrupoDaFolha {
-                        LinhaDeDinheiro(rotulo: "Valor estimado de venda", centavos: rascunho.estimado, identificador: "linhaEstimado") {
-                            foco = nil
-                            caminho.append(.estimado)
-                        }
-                        if rascunho.nova {
+                            }
                             SeparadorDaFolha()
-                            LinhaDeDinheiro(rotulo: "Orçamento total", centavos: rascunho.orcamento, identificador: "linhaOrcamento") {
-                                foco = nil
-                                caminho.append(.orcamento)
+                            LinhaDaFolhaComRotulo(rotulo: "Começou em") { CampoDeData(iso: $rascunho.dataInicio) }
+                        }
+                        if let erroDoNome { NotaDaFolha(texto: erroDoNome, cor: .erroNoVidro, identificador: "erroDoNome") }
+                    }
+                    VStack(spacing: 8) {
+                        GrupoDaFolha {
+                            CampoComRotuloEmCima(rotulo: rascunho.nova ? "Área construída em m²" : "Área construída em m² (opcional)",
+                                                 erro: erroDaArea != nil) {
+                                TextField(rascunho.nova ? "Área construída em m²" : "Área construída em m², opcional", text: $rascunho.area,
+                                          prompt: Text("Ex: 320").foregroundStyle(paleta.cor(.textoTerciario)))
+                                    .keyboardType(.decimalPad)
+                                    .foregroundStyle(paleta.cor(.texto))
+                                    .focused($foco, equals: .area)
+                                    .onChange(of: rascunho.area) { _, _ in erroDaArea = nil }
+                                    .accessibilityIdentifier("areaDaObra")
+                                    // "280 m²": a unidade logo depois do número (um texto invisível igual ao digitado mede onde
+                                    // ele termina), sem tirar a largura do campo, que continua todo tocável.
+                                    .overlay(alignment: .leading) {
+                                        if !rascunho.area.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Text(rascunho.area).hidden()
+                                                Text("m²").foregroundStyle(paleta.cor(.secundarioTransparente))
+                                            }
+                                            .allowsHitTesting(false)
+                                            .accessibilityHidden(true)
+                                        }
+                                    }
                             }
                         }
+                        if let erroDaArea { NotaDaFolha(texto: erroDaArea, cor: .erroNoVidro, identificador: "erroDaArea") }
                     }
-                    if rascunho.nova { NotaDaFolha(texto: "Os dois são opcionais e podem ser informados depois.") }
-                }
-                if !rascunho.nova {
-                    GrupoDaFolha {
-                        Button("Apagar obra") { foco = nil; apagando = true }
-                            .foregroundStyle(paleta.cor(.erroNoVidro))
-                            .frame(maxWidth: .infinity, minHeight: 52)
-                            .accessibilityIdentifier("apagarObra")
+                    .id(Campo.area)
+                    VStack(spacing: 8) {
+                        GrupoDaFolha {
+                            LinhaDeDinheiro(rotulo: "Valor estimado de venda", centavos: rascunho.estimado, identificador: "linhaEstimado") {
+                                foco = nil
+                                caminho.append(.estimado)
+                            }
+                            if rascunho.nova {
+                                SeparadorDaFolha()
+                                LinhaDeDinheiro(rotulo: "Orçamento total", centavos: rascunho.orcamento, identificador: "linhaOrcamento") {
+                                    foco = nil
+                                    caminho.append(.orcamento)
+                                }
+                            }
+                        }
+                        if rascunho.nova { NotaDaFolha(texto: "Os dois são opcionais e podem ser informados depois.") }
                     }
-                    .padding(.top, 8)
+                    if !rascunho.nova {
+                        GrupoDaFolha {
+                            Button("Apagar obra") { foco = nil; apagando = true }
+                                .foregroundStyle(paleta.cor(.erroNoVidro))
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .accessibilityIdentifier("apagarObra")
+                        }
+                        .padding(.top, 8)
+                    }
                 }
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .scrollDismissesKeyboard(.interactively)
+            // Na letra grande, o teclado que sobe com o foco na área e o botão em cima dele cobrem a nota do erro, embaixo do
+            // campo: quando o teclado termina de subir, rola até ela.
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                guard foco == .area, erroDaArea != nil else { return }
+                withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.25)) { rolagem.scrollTo(Campo.area, anchor: .bottom) }
+            }
         }
-        .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             // O identificador no próprio botão (o fundo desce até a borda, atrás do teclado; ver a folha do gasto).
             Button(rascunho.nova ? "Criar obra" : "Salvar", action: salvar)
@@ -239,7 +259,8 @@ private struct FormularioDaObra: View {
                 .accessibilityIdentifier("salvarObra")
                 .padding(.horizontal, 20)
                 .padding(.top, 14)
-                .padding(.bottom, 0)
+                // Com o teclado aberto, 10 acima dele (o .f-pe.sobe do mockup); sem ele, 0, na altura das outras folhas.
+                .padding(.bottom, foco == nil ? 0 : 10)
                 .background {
                     LinearGradient(stops: [.init(color: paleta.cor(.folha), location: 0.62), .init(color: paleta.cor(.folha).opacity(0), location: 1)],
                                    startPoint: .bottom, endPoint: .top)

@@ -306,8 +306,8 @@ struct AvisoDeEmail: View {
 }
 
 /// Cartão de estado (lista vazia, carregando, erro de leitura, obra sem gastos), o "Estado vazio" do mockup da etapa 2:
-/// ícone de 52 num quadrado de raio 16 (ou, carregando, só o indicador), título em .body semibold, texto em .subheadline
-/// secundário e a ação.
+/// ícone de 52 num quadrado de raio 16, que sai na letra grande (ou, carregando, só o indicador, no secundário), título em
+/// .body semibold, texto em .subheadline secundário (carregando, o título é esse texto) e a ação, 10 entre eles.
 struct CartaoDeEstado<Acao: View>: View {
     let titulo: String
     let texto: String?
@@ -317,26 +317,29 @@ struct CartaoDeEstado<Acao: View>: View {
     @ViewBuilder let acao: () -> Acao
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             if carregando {
-                ProgressView().padding(.bottom, 4)
-            } else if let icone {
+                // O indicador do sistema (cresce com a letra) numa caixa de 28, a do mockup: o texto fica no lugar dele.
+                ProgressView()
+                    .tint(paleta.cor(vidro.secundario))
+                    .frame(minWidth: 28, minHeight: 28)
+            } else if let icone, !tamanho.isAccessibilitySize {
                 Image(decorative: icone)
-                    .resizable().frame(width: 26, height: 26)
+                    .resizable().frame(width: 28, height: 28)
                     .foregroundStyle(paleta.cor(.marca))
                     .frame(width: 52, height: 52)
                     .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 16, style: .continuous))
                     .accessibilityHidden(true)
-                    .padding(.bottom, 6)
             }
             Text(titulo)
-                .font(carregando ? .body : .body.weight(.semibold))
-                .foregroundStyle(paleta.cor(.texto))
+                .font(carregando ? .subheadline : .body.weight(.semibold))
+                .foregroundStyle(paleta.cor(carregando ? vidro.secundario : .texto))
                 .accessibilityIdentifier(identificador)
             if let texto {
-                Text(texto).font(.subheadline).foregroundStyle(paleta.cor(vidro.secundario))
+                Text(texto).font(.subheadline).foregroundStyle(paleta.cor(vidro.secundario)).padding(.top, 2)
             }
             acao().padding(.top, 4)
         }

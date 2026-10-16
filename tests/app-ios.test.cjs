@@ -550,7 +550,8 @@ test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da fol
   // O botão de baixo de cada folha (Salvar, Confirmar venda, Criar obra) tem atrás o degradê da folha, o .f-pe do mockup:
   // o que rola por baixo some antes de encostar nele (na maior letra, num iPhone de 375 pt, a nota da venda passava
   // cortada seca). E encosta no fundo, sem recuo embaixo: com 8, ficava 8 pt acima do mockup (784 no 18 Pro) e do Avançar
-  // do teclado de valor. Nenhum teste de tela vê o degradê.
+  // do teclado de valor. Com o teclado do sistema aberto (folha com campo de texto), fica 10 acima dele, o .f-pe.sobe do
+  // mockup: com 0, o botão encostava no teclado. Nenhum teste de tela vê o degradê.
   const degrade = /\.background \{\s*LinearGradient\(stops: \[\.init\(color: paleta\.cor\(\.folha\), location: 0\.62\), \.init\(color: paleta\.cor\(\.folha\)\.opacity\(0\), location: 1\)\],\s*startPoint: \.bottom, endPoint: \.top\)\s*\.ignoresSafeArea\(\)/;
   let botoes = 0;
   for(const f of arquivosSwift('app-ios/Custta/Telas')){
@@ -562,10 +563,34 @@ test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da fol
       if(!bloco.includes('BotaoDaFolha(')) continue;
       botoes++;
       assert.match(bloco, degrade, `${f}: botão de baixo da folha sem o degradê da folha atrás`);
-      assert.match(bloco, /\.padding\(\.bottom, 0\)/, `${f}: botão de baixo da folha com recuo embaixo`);
+      // A folha com campo de texto tem o recuo do teclado; a sem (a venda), 0.
+      const comTeclado = t.includes('TextField(');
+      assert.match(bloco, comTeclado ? /\.padding\(\.bottom, foco == nil \? 0 : 10\)/ : /\.padding\(\.bottom, 0\)/,
+                   `${f}: botão de baixo da folha ${comTeclado ? 'sem os 10 acima do teclado' : 'com recuo embaixo'}`);
     }
   }
   assert.ok(botoes >= 3, 'o Salvar do gasto, o Confirmar venda e o Criar obra');
+});
+
+test('campo de texto que quebra linha: o exemplo desenhado num Text, e o prompt transparente', () => {
+  // O prompt do TextField fica numa linha só e corta com reticências na maior letra, mesmo com axis: .vertical ("Ex: Casa
+  // Alp…" no nome da obra), e a auditoria não vê o exemplo de um campo. O campo que quebra linha desenha o exemplo num Text,
+  // que quebra, e deixa o prompt transparente, só para o VoiceOver, como os campos da entrada.
+  let campos = 0;
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\bTextField\(/g)){
+      let fim = m.index + m[0].length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '(' ? 1 : t[fim] === ')' ? -1 : 0;
+      const chamada = t.slice(m.index, fim);
+      if(!chamada.includes('axis:')) continue;
+      campos++;
+      const prompt = chamada.match(/prompt: (Text\([^)]*\))\.foregroundStyle\(\.clear\)/);
+      assert.ok(prompt, `${f}: campo que quebra linha com o exemplo visível no prompt`);
+      assert.ok(t.split(prompt[1]).length > 2, `${f}: o exemplo ${prompt[1]} não está desenhado num Text fora do prompt`);
+    }
+  }
+  assert.ok(campos >= 2, 'os campos da entrada e o nome da obra');
 });
 
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {

@@ -312,7 +312,8 @@ private struct PassoDosDetalhes: View {
                     .accessibilityIdentifier("salvarGasto")
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
-                    .padding(.bottom, 0)
+                    // Com o teclado aberto, 10 acima dele (o .f-pe.sobe do mockup); sem ele, 0.
+                    .padding(.bottom, foco == nil ? 0 : 10)
                     .background {
                         LinearGradient(stops: [.init(color: paleta.cor(.folha), location: 0.62), .init(color: paleta.cor(.folha).opacity(0), location: 1)],
                                        startPoint: .bottom, endPoint: .top)

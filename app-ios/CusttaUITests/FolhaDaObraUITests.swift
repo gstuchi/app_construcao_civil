@@ -42,6 +42,23 @@ final class FolhaDaObraUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["4 obras"].waitForExistence(timeout: 5), "a obra nova está na lista")
     }
 
+    /// Na maior letra, o erro da área leva o foco à área e o teclado decimal sobe com o botão em cima dele: a folha rola até
+    /// a mensagem, que ficava atrás do botão (só o rótulo vermelho à vista).
+    func testNaMaiorLetraOErroDaAreaFicaAVista() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", folha: "novaObra",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        app.digitarComFoco("Casa", em: app.textFields["nomeDaObra"])
+        let criar = app.buttons["salvarObra"]
+        criar.tap()
+        let erro = app.elemento("erroDaArea")
+        XCTAssertTrue(erro.waitForExistence(timeout: 5))
+        // A folha rola depois que o teclado termina de subir: espera a rolagem.
+        let prazo = Date().addingTimeInterval(5)
+        while erro.frame.maxY > criar.frame.minY, Date() < prazo { RunLoop.current.run(until: Date().addingTimeInterval(0.3)) }
+        XCTAssertLessThanOrEqual(erro.frame.maxY, criar.frame.minY, "a mensagem do erro acima do botão, à vista")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "o foco na área, com o teclado aberto")
+    }
+
     /// Toque duplo no "Criar obra": cria uma obra só e entra nela. Sem a guarda, o segundo toque que chegasse enquanto a
     /// folha desce criaria outra, com outro id (o núcleo não tem como barrar). No simulador, sem a guarda, este teste ainda
     /// passa (o segundo toque não chegou a criar em 9 rodadas, ao contrário do Salvar do gasto): quem prende a guarda é a

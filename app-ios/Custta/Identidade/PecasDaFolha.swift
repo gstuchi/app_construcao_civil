@@ -63,7 +63,8 @@ struct LinhaDaFolhaComRotulo<Valor: View>: View {
 }
 
 /// Um campo de texto com o rótulo em cima, dentro de um grupo ("Nome da obra", "Área construída em m²"), como a
-/// descrição do gasto: rótulo em 13 semibold secundário (no erro, na cor do erro) e o campo embaixo.
+/// descrição do gasto: rótulo em 13 medium secundário (no erro, na cor do erro), na linha de 18 pt do mockup, e o campo
+/// embaixo.
 struct CampoComRotuloEmCima<Campo: View>: View {
     let rotulo: String
     var erro = false
@@ -73,9 +74,10 @@ struct CampoComRotuloEmCima<Campo: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(rotulo)
-                .font(.footnote.weight(.semibold))
+                .font(.footnote.weight(.medium))
                 .foregroundStyle(paleta.cor(erro ? .erroNoVidro : .secundarioTransparente))
                 .accessibilityHidden(true)
+                .padding(.vertical, 1)          // linha de 18 pt, a do rótulo no mockup (o footnote ocupa 16)
             campo()
         }
         .padding(.horizontal, 16)

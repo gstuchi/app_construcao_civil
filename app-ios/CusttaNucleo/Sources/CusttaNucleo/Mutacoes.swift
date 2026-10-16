@@ -41,6 +41,33 @@ public extension Estado {
     }
 }
 
+/* As da obra (app.js formNovaObra, formEditarObra e o apagar). */
+public extension Estado {
+    /// A obra nova (de `obraNova`) no fim do documento, como o `push` do site; nil com o teto de obras cheio (a obra a mais
+    /// faria toda gravação seguinte ser recusada pelas rules até apagar uma).
+    func criandoObra(_ arvore: [String: ValorJSON]) -> Estado? {
+        guard obras.count < limiteDeObras else { return nil }
+        var e = self
+        e.obras.append(Obra(arvore: arvore))
+        return e
+    }
+
+    /// Nome, início, valor estimado e área pela regra do `obraEditada`; o resto da obra fica.
+    func editandoObra(_ obraId: String, _ campos: CamposDaObra) -> Estado? {
+        guard let i = indiceDaObra(obraId) else { return nil }
+        var e = self
+        e.obras[i].campos = obraEditada(obras[i].campos, campos)
+        return e
+    }
+
+    func apagandoObra(_ obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId) else { return nil }
+        var e = self
+        e.obras.remove(at: i)
+        return e
+    }
+}
+
 /// As parcelas que restam da compra do gasto (o N do "Apagar a compra toda (N parcelas)", contado como o site: as irmãs
 /// que ainda existem, não o `parcela.de`).
 public func parcelasDaCompra(_ gasto: Gasto, naObra obra: Obra) -> Int {

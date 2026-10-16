@@ -417,9 +417,9 @@ struct AcoesDaFaseView: View {
             ForEach(acoesDaFase(fase), id: \.self) { acao in
                 Button { agir(acao) } label: {
                     Label {
-                        Text(acao.rotulo)
+                        Text(acao.rotulo).multilineTextAlignment(.center)
                     } icon: {
-                        Image(decorative: "Icones/\(acao.icone)").resizable().frame(width: icone, height: icone)
+                        Image(decorative: "Icones/\(acao.icone)").resizable().frame(width: min(icone, 34), height: min(icone, 34))
                     }
                 }
                 .buttonStyle(PilulaDaAcao(principal: acao.principal))

@@ -1,6 +1,7 @@
 import Testing
 import SwiftUI
 @testable import Custta
+import CusttaNucleo
 
 /* Medidas das peças das telas que o mockup aprovado fixa e o print não tira sozinho: a caixa do campo não é
    elemento de acessibilidade, então a altura sai do layout, num UIHostingController. O ImageRenderer não serve:
@@ -73,5 +74,68 @@ struct EtiquetaNovoTests {
 
     @Test func cresceComALetra() throws {
         #expect(try imagem(.dark, tamanho: .accessibility5).size.width > imagem(.dark).size.width * 1.5)
+    }
+}
+
+/* As ações da fase na maior letra (quadro "Ações da fase" do mockup da parte 3, AX5): o ícone para nos 34 pt do mockup
+   e o rótulo fica centrado em cada linha. Sem o teto, o ícone ia a cerca de 62 pt e "Voltar pra construção" partia a
+   palavra em três linhas. A pílula tem 362 pt no 18 Pro (402 menos 20 de cada lado) e 335 num iPhone de 375 pt. */
+@MainActor
+struct AcoesDaFaseTests {
+    private func altura(_ fase: Fase, largura: CGFloat) -> CGFloat {
+        UIHostingController(rootView: AcoesDaFaseView(fase: fase, agir: { _ in }).dynamicTypeSize(.accessibility5)
+            .environment(\.displayScale, 1))
+            .sizeThatFits(in: CGSize(width: largura, height: CGFloat.infinity)).height
+    }
+
+    /// Na pronta, no 18 Pro, "Voltar pra construção" fica em duas linhas, como "Registrar venda": as duas pílulas somam o
+    /// dobro da de "Desfazer venda", que tem duas linhas, mais os 10 entre elas. Num iPhone de 375 pt não cabe:
+    /// "construção" pede 268 pt na maior letra e sobram 253 (335 menos 20 de cada lado, o ícone e 8 até o texto).
+    @Test func voltarPraConstrucaoEmDuasLinhasNo18Pro() {
+        #expect(altura(.pronta, largura: 362) == 2 * altura(.vendida, largura: 362) + 10)
+    }
+
+    /// Começo e fim (em pt, na escala 1) de cada linha do rótulo de "Marcar como pronta", sem o ícone de 34 pt à
+    /// esquerda da primeira linha. É texto o pixel opaco longe da cor do fundo da pílula.
+    private func linhas(largura: CGFloat) throws -> [ClosedRange<Int>] {
+        let render = ImageRenderer(content: AcoesDaFaseView(fase: .construcao, agir: { _ in }).frame(width: largura)
+            .dynamicTypeSize(.accessibility5))
+        render.scale = 1
+        let imagem = try #require(render.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        func pixel(_ x: Int, _ y: Int) -> [Int] { (0..<4).map { Int(rgba[(y * w + x) * 4 + $0]) } }
+        let fundo = pixel(5, h / 2)
+        func texto(_ x: Int, _ y: Int) -> Bool {
+            let p = pixel(x, y)
+            return p[3] > 250 && zip(p.prefix(3), fundo.prefix(3)).map { abs($0 - $1) }.reduce(0, +) > 150
+        }
+        let depoisDoIcone = ((0..<w).first { x in (0..<h).contains { texto(x, $0) } } ?? 0) + 34 + 2
+        var linhas: [ClosedRange<Int>] = []
+        var atual: ClosedRange<Int>?
+        for y in 0..<h {
+            let xs = (depoisDoIcone..<w).filter { texto($0, y) }
+            if let a = xs.first, let b = xs.last {
+                atual = min(atual?.lowerBound ?? a, a)...max(atual?.upperBound ?? b, b)
+            } else if let linha = atual {
+                linhas.append(linha)
+                atual = nil
+            }
+        }
+        return linhas
+    }
+
+    /// Cada linha de "Marcar como pronta" fica centrada, como no mockup (text-align:center), em vez de todas começarem
+    /// rente ao ícone.
+    @Test(arguments: [CGFloat(362), 335]) func rotuloCentradoEmCadaLinha(largura: CGFloat) throws {
+        let linhas = try linhas(largura: largura)
+        let centros = linhas.map { Double($0.lowerBound + $0.upperBound) / 2 }
+        #expect(linhas.count >= 2, "\(linhas)")
+        #expect((centros.max() ?? 0) - (centros.min() ?? 0) <= 3, "\(linhas)")
     }
 }

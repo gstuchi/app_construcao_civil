@@ -430,18 +430,20 @@ struct AcoesDaFaseView: View {
 }
 
 /// A pílula de uma ação da fase: sólida na Marca, com o texto em SobreMarca, ou no vidro do conteúdo, com o texto na cor
-/// do texto. Encolhe no toque, como os botões do app.
+/// do texto. Encolhe no toque, como os botões do app. Nos tamanhos de acessibilidade o recuo interno cai de 20 para 10,
+/// como no mockup em 375 pt: "construção" cabe ao lado do ícone, em vez de partir com hífen.
 struct PilulaDaAcao: ButtonStyle {
     let principal: Bool
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     func makeBody(configuration: Configuration) -> some View {
         let rotulo = configuration.label
             .font(.body.weight(.semibold))
             .multilineTextAlignment(.center)
             .foregroundStyle(paleta.cor(principal ? .sobreMarca : .texto))
-            .padding(.horizontal, 20)
+            .padding(.horizontal, tamanho.isAccessibilitySize ? 10 : 20)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, minHeight: 52)
         Group {

@@ -77,9 +77,11 @@ struct EtiquetaNovoTests {
     }
 }
 
-/* As ações da fase na maior letra (quadro "Ações da fase" do mockup da parte 3, AX5): o ícone para nos 34 pt do mockup
-   e o rótulo fica centrado em cada linha. Sem o teto, o ícone ia a cerca de 62 pt e "Voltar pra construção" partia a
-   palavra em três linhas. A pílula tem 362 pt no 18 Pro (402 menos 20 de cada lado) e 335 num iPhone de 375 pt. */
+/* As ações da fase na maior letra (quadro "Ações da fase" do mockup da parte 3, AX5): o ícone para nos 34 pt do mockup,
+   o recuo interno cai de 20 para 10 nos tamanhos de acessibilidade (o mockup em 375 deixa o texto a cerca de 10 pt da
+   borda) e o rótulo fica centrado em cada linha. Sem o teto, o ícone ia a cerca de 62 pt; com o recuo de 20, "construção",
+   que pede 268 pt, partia em três linhas com hífen em 375. A pílula tem 362 pt no 18 Pro (402 menos 20 de cada lado) e
+   335 num iPhone de 375 pt. */
 @MainActor
 struct AcoesDaFaseTests {
     private func altura(_ fase: Fase, largura: CGFloat) -> CGFloat {
@@ -88,18 +90,23 @@ struct AcoesDaFaseTests {
             .sizeThatFits(in: CGSize(width: largura, height: CGFloat.infinity)).height
     }
 
-    /// Na pronta, no 18 Pro, "Voltar pra construção" fica em duas linhas, como "Registrar venda": as duas pílulas somam o
-    /// dobro da de "Desfazer venda", que tem duas linhas, mais os 10 entre elas. Num iPhone de 375 pt não cabe:
-    /// "construção" pede 268 pt na maior letra e sobram 253 (335 menos 20 de cada lado, o ícone e 8 até o texto).
-    @Test func voltarPraConstrucaoEmDuasLinhasNo18Pro() {
-        #expect(altura(.pronta, largura: 362) == 2 * altura(.vendida, largura: 362) + 10)
+    /// Na pronta, "Voltar pra construção" fica em duas linhas, como "Registrar venda": as duas pílulas somam o dobro da de
+    /// "Desfazer venda", que tem duas linhas, mais os 10 entre elas. Em 375 sobram 273 pt para "construção" (335 menos 10
+    /// de cada lado, o ícone e 8 até o texto).
+    @Test(arguments: [CGFloat(362), 335]) func voltarPraConstrucaoEmDuasLinhas(largura: CGFloat) {
+        #expect(altura(.pronta, largura: largura) == 2 * altura(.vendida, largura: largura) + 10)
     }
 
-    /// Começo e fim (em pt, na escala 1) de cada linha do rótulo de "Marcar como pronta", sem o ícone de 34 pt à
-    /// esquerda da primeira linha. É texto o pixel opaco longe da cor do fundo da pílula.
-    private func linhas(largura: CGFloat) throws -> [ClosedRange<Int>] {
-        let render = ImageRenderer(content: AcoesDaFaseView(fase: .construcao, agir: { _ in }).frame(width: largura)
-            .dynamicTypeSize(.accessibility5))
+    /// No 18 Pro, "Marcar como pronta" também vira um bloco de duas linhas (com o recuo de 20 eram três). Em 375 fica em
+    /// três, uma palavra por linha.
+    @Test func marcarComoProntaEmDuasLinhasNo18Pro() {
+        #expect(altura(.construcao, largura: 362) == altura(.vendida, largura: 362))
+    }
+
+    /// O desenho das ações da fase em escala 1 e o teste de texto: pixel opaco longe da cor do fundo da pílula, lida a
+    /// 5 pt da borda esquerda, na meia altura.
+    private func desenho(_ conteudo: some View) throws -> (largura: Int, altura: Int, texto: (Int, Int) -> Bool) {
+        let render = ImageRenderer(content: conteudo)
         render.scale = 1
         let imagem = try #require(render.cgImage)
         let (w, h) = (imagem.width, imagem.height)
@@ -109,12 +116,20 @@ struct AcoesDaFaseTests {
                       space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
                 .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
         }
-        func pixel(_ x: Int, _ y: Int) -> [Int] { (0..<4).map { Int(rgba[(y * w + x) * 4 + $0]) } }
+        let pixels = rgba
+        func pixel(_ x: Int, _ y: Int) -> [Int] { (0..<4).map { Int(pixels[(y * w + x) * 4 + $0]) } }
         let fundo = pixel(5, h / 2)
-        func texto(_ x: Int, _ y: Int) -> Bool {
+        return (w, h, { x, y in
             let p = pixel(x, y)
             return p[3] > 250 && zip(p.prefix(3), fundo.prefix(3)).map { abs($0 - $1) }.reduce(0, +) > 150
-        }
+        })
+    }
+
+    /// Começo e fim (em pt, na escala 1) de cada linha do rótulo de "Marcar como pronta", sem o ícone de 34 pt à
+    /// esquerda da primeira linha.
+    private func linhas(largura: CGFloat) throws -> [ClosedRange<Int>] {
+        let (w, h, texto) = try desenho(AcoesDaFaseView(fase: .construcao, agir: { _ in }).frame(width: largura)
+            .dynamicTypeSize(.accessibility5))
         let depoisDoIcone = ((0..<w).first { x in (0..<h).contains { texto(x, $0) } } ?? 0) + 34 + 2
         var linhas: [ClosedRange<Int>] = []
         var atual: ClosedRange<Int>?
@@ -137,5 +152,15 @@ struct AcoesDaFaseTests {
         let centros = linhas.map { Double($0.lowerBound + $0.upperBound) / 2 }
         #expect(linhas.count >= 2, "\(linhas)")
         #expect((centros.max() ?? 0) - (centros.min() ?? 0) <= 3, "\(linhas)")
+    }
+
+    /// Na largura ideal (uma linha), o rótulo termina a 20 pt da borda da pílula na letra padrão, como sempre foi, e a 10
+    /// nos tamanhos de acessibilidade. A folga vai do último pixel da letra à borda e soma o respiro da própria letra
+    /// (2 a 3 pt na AX5).
+    @Test(arguments: zip([DynamicTypeSize.large, .xxxLarge, .accessibility1, .accessibility5], [20, 20, 10, 10]))
+    func recuoInternoSoMenorNaLetraDeAcessibilidade(tamanho: DynamicTypeSize, recuo: Int) throws {
+        let (w, h, texto) = try desenho(AcoesDaFaseView(fase: .construcao, agir: { _ in }).dynamicTypeSize(tamanho))
+        let fim = try #require((0..<w).last { x in (0..<h).contains { texto(x, $0) } })
+        #expect((recuo...recuo + 5).contains(w - 1 - fim), "rótulo termina em \(fim) de \(w)")
     }
 }

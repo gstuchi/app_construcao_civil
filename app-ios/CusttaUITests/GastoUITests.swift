@@ -62,6 +62,22 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.frame.contains(linha.frame), "e a linha acesa está inteira à vista: \(linha.frame)")
     }
 
+    /// Na maior letra, a compra no cartão vai para o "A vencer", que também fica fora da parte que a LazyVStack já criou:
+    /// a lista rola até ele, que abre, e a 1ª parcela acende à vista (o primeiro vencimento é daqui a um mês).
+    func testNaMaiorLetraAListaRolaAteOAVencer() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: [
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL", "-custta.folha", "cartao"])
+        XCTAssertTrue(app.elemento("resumoDoCartao").waitForExistence(timeout: 10), "R$ 4.980,00 em 10x no cartão")
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
+        let aVencer = app.elemento("aVencer")
+        XCTAssertTrue(aVencer.waitForExistence(timeout: 5), "a lista rolou até o A vencer, que a LazyVStack cria")
+        XCTAssertEqual(aVencer.value as? String, "aberto")
+        let parcela = app.descendants(matching: .any).matching(NSPredicate(format: "value == %@", "R$\u{a0}498,00")).firstMatch
+        XCTAssertTrue(parcela.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.frame.contains(parcela.frame), "e a 1ª parcela está inteira à vista: \(parcela.frame)")
+    }
+
     func testLancarSemRedeEntraNaLista() {
         let app = abrirApp(conta: "senha", dados: "vitrine", rede: "offline", abrir: "obra:v1")
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))

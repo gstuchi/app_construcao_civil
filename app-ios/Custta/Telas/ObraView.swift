@@ -135,17 +135,22 @@ extension ObraView {
         if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }
     }
 
-    /// Depois de salvar: abre o "A vencer" se o gasto foi para lá, rola em dois tempos (o cartão do mês, que a LazyVStack
-    /// cria, e depois a linha), acende por 2 s e leva o VoiceOver para a linha.
+    /// Depois de salvar: rola em dois tempos (o cartão, que a LazyVStack cria, e depois a linha), abre o "A vencer" se o
+    /// gasto foi para lá, acende por 2 s e leva o VoiceOver para a linha.
     private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
         guard let primeiro = d.ids.first else { return }
         let noAVencer = lista.aVencer?.meses.contains { $0.gastos.contains { $0.id == primeiro } } ?? false
         let cartao = noAVencer ? "aVencer" : lista.meses.first { $0.gastos.contains { $0.id == primeiro } }.map(\.id)
-        if noAVencer { aVencerAberto = true }
         acesos = Set(d.ids)
         novos = d.novo
         Task { @MainActor in
             if let cartao { leitor.scrollTo(cartao, anchor: .center) }
+            // O "A vencer" abre depois de a lista chegar nele, ainda fechado: aberto antes, na maior letra (milhares de
+            // pontos que a LazyVStack ainda não criou), a rolagem parava num mês lá embaixo.
+            if noAVencer {
+                try? await Task.sleep(for: .milliseconds(80))
+                aVencerAberto = true
+            }
             try? await Task.sleep(for: .milliseconds(80))
             withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(primeiro, anchor: .center) }
             try? await Task.sleep(for: .milliseconds(450))

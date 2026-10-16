@@ -41,7 +41,8 @@ public extension Estado {
     }
 }
 
-/* As da obra (app.js formNovaObra, formEditarObra e o apagar). */
+/* As da obra e das fases (app.js formNovaObra, formEditarObra, formVenda, mudarFase e o desfazer da venda). A fase só
+   anda pelos caminhos que a tela oferece: quem a mudou em outro aparelho com esta tela aberta não é atropelado (nil). */
 public extension Estado {
     /// A obra nova (de `obraNova`) no fim do documento, como o `push` do site; nil com o teto de obras cheio (a obra a mais
     /// faria toda gravação seguinte ser recusada pelas rules até apagar uma).
@@ -64,6 +65,33 @@ public extension Estado {
         guard let i = indiceDaObra(obraId) else { return nil }
         var e = self
         e.obras.remove(at: i)
+        return e
+    }
+
+    /// O `mudarFase` do site, só entre construção e pronta: vender é pela folha da venda, e da vendida só se sai desfazendo.
+    func mudandoFase(_ obraId: String, para fase: Fase) -> Estado? {
+        guard let i = indiceDaObra(obraId), fase != .vendida, obras[i].fase != .vendida else { return nil }
+        var e = self
+        e.obras[i].fase = fase
+        return e
+    }
+
+    /// "Confirmar venda": `venda {valor, data}` e a fase vendida, só a partir da pronta. Valor e data já conferidos
+    /// (`conferirVenda`).
+    func registrandoVenda(_ obraId: String, valor: Double, data: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), obras[i].fase == .pronta else { return nil }
+        var e = self
+        e.obras[i].venda = Venda(valor: valor, data: data)
+        e.obras[i].fase = .vendida
+        return e
+    }
+
+    /// "Desfazer venda": a chave `venda` sai (o `delete` do site, não `null`) e a obra volta para pronta.
+    func desfazendoVenda(_ obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), obras[i].fase == .vendida else { return nil }
+        var e = self
+        e.obras[i].campos["venda"] = nil
+        e.obras[i].fase = .pronta
         return e
     }
 }

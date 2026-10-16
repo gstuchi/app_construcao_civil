@@ -72,6 +72,9 @@ const roteiro = [
   { acao: 'lancar', obra: 'c1', entrada: { valor: 3000, topico: 'eletrica', descricao: 'Quadro de luz', data: '2026-04-10', pagamento: 'cartao', parcelas: 3, juros: 2.5 } },
   { acao: 'editar', obra: 'c1', gasto: 'x1', entrada: { valor: 12000, topico: 'fundacao', descricao: 'Sapatas e baldrames', data: '2026-02-02', pagamento: 'cartao' } },
   { acao: 'editar', obra: 'c3', gasto: 'z2', entrada: { valor: 1100, topico: 'eletrica', descricao: 'Fios e disjuntores', data: '2026-04-10', pagamento: 'cartao' } },
+  /* A z2 sai com a compra toda no fim: a parcela editada que fica no documento é a da compra lançada acima, com o
+     mesmo valor e a mesma data (o total e as datas conferidos embaixo não mudam). */
+  { acao: 'editar', obra: 'c1', gasto: 'app4', entrada: { valor: C.parcelamentoCartao(3000, 3, 2.5, '2026-04-10').parcelas[1].valor, topico: 'eletrica', descricao: 'Quadro de luz, 2ª parcela', data: '2026-05-10', pagamento: 'cartao' } },
   { acao: 'apagar', obra: 'c2', gasto: 'y3' },
   { acao: 'apagarCompra', obra: 'c3', grupo: 'gz' },
 ];

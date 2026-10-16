@@ -145,6 +145,7 @@ struct IndicadoresDaObraView: View {
         Text(texto).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
     }
 
+
     private func linha(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
                        identificador: String, corDaNota: Token? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -400,5 +401,55 @@ struct CartaoDaLista<Conteudo: View>: View {
         VStack(alignment: .leading, spacing: 0, content: conteudo)
             .clipShape(.rect(cornerRadius: 24, style: .continuous))
             .background { Color.clear.superficie(.conteudo, em: .rect(cornerRadius: 24, style: .continuous)) }
+    }
+}
+
+/// As ações da fase, logo abaixo dos indicadores (mockup da etapa 2, parte 3): o próximo passo numa pílula sólida da marca
+/// ("Marcar como pronta", "Registrar venda"); voltar numa pílula de vidro ("Voltar pra construção", "Desfazer venda").
+/// Pílulas de 52 pt que crescem com a letra, 10 entre elas, ícone de 20 e o texto em .body semibold.
+struct AcoesDaFaseView: View {
+    let fase: Fase
+    let agir: (AcaoDaFase) -> Void
+    @ScaledMetric(relativeTo: .body) private var icone: CGFloat = 20
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ForEach(acoesDaFase(fase), id: \.self) { acao in
+                Button { agir(acao) } label: {
+                    Label {
+                        Text(acao.rotulo)
+                    } icon: {
+                        Image(decorative: "Icones/\(acao.icone)").resizable().frame(width: icone, height: icone)
+                    }
+                }
+                .buttonStyle(PilulaDaAcao(principal: acao.principal))
+                .accessibilityIdentifier("acao-\(acao.rawValue)")
+            }
+        }
+    }
+}
+
+/// A pílula de uma ação da fase: sólida na Marca, com o texto em SobreMarca, ou no vidro do conteúdo, com o texto na cor
+/// do texto. Encolhe no toque, como os botões do app.
+struct PilulaDaAcao: ButtonStyle {
+    let principal: Bool
+    @Environment(\.paleta) private var paleta
+    @Environment(\.opcoes) private var opcoes
+
+    func makeBody(configuration: Configuration) -> some View {
+        let rotulo = configuration.label
+            .font(.body.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .foregroundStyle(paleta.cor(principal ? .sobreMarca : .texto))
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 52)
+        Group {
+            if principal { rotulo.background(paleta.cor(.marca), in: .capsule) }
+            else { rotulo.superficie(.conteudo, em: .capsule) }
+        }
+        .contentShape(.capsule)
+        .scaleEffect(configuration.isPressed && !opcoes.reduzirMovimento ? 0.97 : 1)
+        .animation(configuration.isPressed ? .easeOut(duration: 0.1) : .spring(duration: 0.3), value: configuration.isPressed)
     }
 }

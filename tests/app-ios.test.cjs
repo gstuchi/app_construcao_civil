@@ -482,6 +482,18 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
   assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
 });
 
+test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração leve só da ação feita aqui', () => {
+  // Nenhum teste de tela vê isso: o XCUITest espera a mola acabar e não sente a vibração, e a guarda de animação acima é
+  // por arquivo (a ObraView já olha o Reduzir movimento ao fechar a linha arrastada).
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  const inicio = t.indexOf('private func mudar(');
+  assert.ok(inicio > 0, 'a mudança da fase na ObraView');
+  const mudar = t.slice(inicio, t.indexOf('\n    }\n', inicio));
+  assert.match(mudar, /withAnimation\(opcoes\.reduzirMovimento \? nil : \.spring\(/, 'com Reduzir movimento, a etiqueta e as ações trocam sem mola');
+  assert.match(mudar, /if resultado == \.gravou \{ mudouAFase \+= 1 \}/, 'vibra só quando a mudança foi gravada');
+  assert.match(t, /\.sensoryFeedback\(\.impact\(weight: \.light\), trigger: mudouAFase\)/, 'a vibração leve, só da ação feita aqui (a de outro aparelho não vibra)');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

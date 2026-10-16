@@ -1,34 +1,66 @@
 #if DEBUG
 import Foundation
+import notify
 import CusttaNucleo
 
 /// Transporte falso dos testes (só Debug): entrega um blob fixo e confirma gravações depois de
 /// 300 ms (nunca, sem rede). `falhaDeLeitura` faz a escuta falhar com esse código antes do primeiro
-/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido).
+/// snapshot (CUSTTA_LEITURA=erro: permission-denied; formato: formato-desconhecido). `apagarRemoto`
+/// simula outro aparelho apagando um gasto: um segundo snapshot, sem ele, depois de alguns segundos
+/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>).
 @MainActor
 final class TransporteFalsoApp: TransporteDados {
     private final class Nada: Cancelavel { func cancelar() {} }
     private let dados: ValorJSON?
     private let semRede: Bool
     private let falhaDeLeitura: String?
+    private let apagarRemoto: (obra: String, gasto: String, depois: Double)?
     /// Quantas gravações chegaram (os testes conferem que abrir o app não grava nada).
     private(set) var gravacoes = 0
 
-    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil) {
+    init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil,
+         apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil) {
         self.dados = dados
         self.semRede = semRede
         self.falhaDeLeitura = falhaDeLeitura
+        self.apagarRemoto = apagarRemoto
     }
 
     func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
                  aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
-        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura
+        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
             if let falha { aoFalhar(falha); return }
             aoReceber(Instantaneo(dados: dados, doCache: semRede, gravacaoPendente: false))
+            guard let remoto else { return }
+            // Os segundos contam do aviso do teste (notify_post de "br.com.custta.falso.apagarRemoto", com a folha já
+            // aberta), não da abertura do app: um relógio desde a abertura corria contra o teste, mais lento na CI.
+            await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
+                var token: Int32 = 0
+                notify_register_dispatch("br.com.custta.falso.apagarRemoto", &token, .main) { t in
+                    notify_cancel(t)
+                    avisado.resume()
+                }
+            }
+            try? await Task.sleep(for: .seconds(remoto.depois))
+            aoReceber(Instantaneo(dados: Self.sem(remoto.gasto, naObra: remoto.obra, em: dados), doCache: semRede, gravacaoPendente: false))
         }
         return Nada()
+    }
+
+    /// O blob sem um gasto, como outro aparelho o gravaria.
+    private static func sem(_ gastoId: String, naObra obraId: String, em dados: ValorJSON?) -> ValorJSON? {
+        guard case .objeto(var raiz)? = dados, case .lista(let obras)? = raiz["obras"] else { return dados }
+        raiz["obras"] = .lista(obras.map { o in
+            guard case .objeto(var obra) = o, obra["id"] == .texto(obraId), case .lista(let gastos)? = obra["gastos"] else { return o }
+            obra["gastos"] = .lista(gastos.filter { g in
+                if case .objeto(let campos) = g { return campos["id"] != .texto(gastoId) }
+                return true
+            })
+            return .objeto(obra)
+        })
+        return .objeto(raiz)
     }
 
     func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void) {

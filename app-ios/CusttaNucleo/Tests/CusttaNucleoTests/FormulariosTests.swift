@@ -118,3 +118,40 @@ struct FormulariosDaObraTests {
         }
     }
 }
+
+struct ResumoEAssinaturaTests {
+    @Test func resumoDoCartaoComOTextoDoSite() {
+        #expect(resumoDoCartao(parcelamentoCartao(100, 3, 0, "2026-01-15"))
+                == "3x de R$\u{a0}33,33 (última: R$\u{a0}33,34) · Juros do cartão: R$\u{a0}0,00 · Total: R$\u{a0}100,00")
+        #expect(resumoDoCartao(parcelamentoCartao(1000, 2, 10, "2026-10-11"))
+                == "2x de R$\u{a0}576,19 · Juros do cartão: R$\u{a0}152,38 · Total: R$\u{a0}1.152,38", "o exemplo do teste do site (cartao.cjs)")
+        #expect(resumoDoCartao(nil) == "Informe valor, parcelas, data válida e taxa entre 0 e 100% ao mês.")
+    }
+
+    @Test func assinaturaMudaComQualquerCampo() throws {
+        let e = EntradaDoGasto(valor: 1380, topico: "matbasicos", descricao: "Cimento", data: "2026-10-12", pagamento: "pix")
+        let c = try conferirGasto(e, editado: nil, hoje: "2026-10-12").get()
+        let a = assinaturaDoGasto(obraId: "o1", entrada: e, conferido: c)
+        #expect(a == "o1|matbasicos|cimento|138000|2026-10-12|1|")
+        var outra = e
+        outra.descricao = "Cimento cola"
+        #expect(assinaturaDoGasto(obraId: "o1", entrada: outra, conferido: try conferirGasto(outra, editado: nil, hoje: "2026-10-12").get()) != a)
+        #expect(assinaturaDoGasto(obraId: "o2", entrada: e, conferido: c) != a)
+    }
+}
+
+struct TextosDaFolhaDoGastoTests {
+    @Test func avisoDaParcelaEAjuda() {
+        #expect(avisoDaParcela(Parcela(n: 4, de: 10)) == "Parcela 4/10 de uma compra no cartão — a edição vale só pra esta parcela.")
+        #expect(ajudaDoCartao.hasPrefix("0 = sem juros.") && ajudaDoCartao.hasSuffix("A data abaixo é o primeiro vencimento."))
+    }
+
+    @Test func condicoesOriginaisComATaxaDoJavaScript() {
+        let g = Gasto(campos: ["id": .texto("p"), "jurosCartao": .objeto(["taxaMensal": .numero(2.5), "valorCompra": .numero(1000),
+                                                                       "nParcelas": .numero(10), "totalCompra": .numero(1124.6),
+                                                                       "jurosCompra": .numero(124.6)])])
+        #expect(condicoesOriginais(g) == "Condições originais da compra: 2,5% ao mês · 10x · juros R$\u{a0}124,60 · total R$\u{a0}1.124,60. "
+                + "O valor editável já inclui juros; não serão aplicados novamente.")
+        #expect(condicoesOriginais(Gasto(campos: ["id": .texto("x")])) == nil)
+    }
+}

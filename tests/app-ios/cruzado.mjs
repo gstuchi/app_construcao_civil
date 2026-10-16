@@ -8,9 +8,12 @@
         tópico estourado, obra com compra parcelada no cartão com juros e campos que só o site conhece);
      2. CruzadoUITests entra pelo formulário e confere o total e o orçamento que o calc.js calculou;
      3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos;
-     4. CruzadoTests lança um gasto no app e grava pelo Sincronizador;
-     5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou),
-        que é exatamente a v2 normalizada com o gasto do app e que o site soma esse gasto.
+     4. CruzadoTests segue o roteiro de gastos abaixo pelas regras das telas do app (lançar no Pix e no cartão
+        parcelado com juros, editar um gasto do site e uma parcela, apagar um gasto da obra vendida e a compra
+        toda), gravando cada passo pelo Sincronizador;
+     5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou), que é
+        exatamente o que o site gravaria com as mesmas respostas (dados.js, com os mesmos ids), sem perder os
+        campos que só o site conhece, e que o site soma o resultado.
    Teste pulado não passa: sem o pedido de mudança ou sem a gravação do app, o roteiro falha. */
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -61,7 +64,37 @@ const v1 = {
 };
 const v2 = structuredClone(v1);
 v2.obras[0].gastos.push({ id: 'x2', valor: 40000, topico: 'estrutura', descricao: 'Laje', data: '2026-03-01', pagamento: 'pix' });
-const gastoDoApp = { id: 'w1app', valor: 999.99, topico: 'pintura', descricao: 'Tinta lançada no app', data: '2026-04-01', pagamento: 'pix' };
+/* O roteiro de gastos do app (etapa 2): cada passo é o que a pessoa responde na folha do gasto. Os ids dos gastos
+   novos vêm daqui, para o site montar o mesmo resultado com as regras dele. */
+const HOJE = '2026-04-01';
+const roteiro = [
+  { acao: 'lancar', obra: 'c1', entrada: { valor: 999.99, topico: 'pintura', descricao: 'Tinta lançada no app', data: '2026-04-01', pagamento: 'pix' } },
+  { acao: 'lancar', obra: 'c1', entrada: { valor: 3000, topico: 'eletrica', descricao: 'Quadro de luz', data: '2026-04-10', pagamento: 'cartao', parcelas: 3, juros: 2.5 } },
+  { acao: 'editar', obra: 'c1', gasto: 'x1', entrada: { valor: 12000, topico: 'fundacao', descricao: 'Sapatas e baldrames', data: '2026-02-02', pagamento: 'cartao' } },
+  { acao: 'editar', obra: 'c3', gasto: 'z2', entrada: { valor: 1100, topico: 'eletrica', descricao: 'Fios e disjuntores', data: '2026-04-10', pagamento: 'cartao' } },
+  /* A z2 sai com a compra toda no fim: a parcela editada que fica no documento é a da compra lançada acima, com o
+     mesmo valor e a mesma data (o total e as datas conferidos embaixo não mudam). */
+  { acao: 'editar', obra: 'c1', gasto: 'app4', entrada: { valor: C.parcelamentoCartao(3000, 3, 2.5, '2026-04-10').parcelas[1].valor, topico: 'eletrica', descricao: 'Quadro de luz, 2ª parcela', data: '2026-05-10', pagamento: 'cartao' } },
+  { acao: 'apagar', obra: 'c2', gasto: 'y3' },
+  { acao: 'apagarCompra', obra: 'c3', grupo: 'gz' },
+];
+const ids = ['app1', 'app2', 'app3', 'app4', 'app5'];
+/** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js. */
+function comoOSite(blob){
+  const db = D.normaliza(structuredClone(blob));
+  const fila = [...ids], novoId = () => fila.shift();
+  for(const p of roteiro){
+    const o = db.obras.find(x => x.id === p.obra);
+    if(p.acao === 'lancar') o.gastos.push(...D.gastosLancados(p.entrada, D.conferirGasto(p.entrada, null, HOJE), novoId));
+    else if(p.acao === 'editar'){
+      const i = o.gastos.findIndex(g => g.id === p.gasto);
+      o.gastos[i] = D.gastoEditado(o.gastos[i], p.entrada, D.conferirGasto(p.entrada, o.gastos[i], HOJE));
+    }
+    else if(p.acao === 'apagar') o.gastos = o.gastos.filter(g => g.id !== p.gasto);
+    else o.gastos = o.gastos.filter(g => g.grupoId !== p.grupo);
+  }
+  return db;
+}
 
 /* O que a lista de obras do site mostra (app.js, renderInicio): total curto na tela, completo para o
    leitor de tela, e a linha do orçamento. */
@@ -83,7 +116,7 @@ await new Promise(r => auxiliar.listen(8124, '127.0.0.1', r));
 
 const env = { CUSTTA_CRUZADO: '1', CUSTTA_EMULADORES: '1', CUSTTA_EMAIL: email, CUSTTA_SENHA: senha,
   CUSTTA_ESPERADO_V1: JSON.stringify(esperado(v1)), CUSTTA_ESPERADO_V2: JSON.stringify(esperado(v2)),
-  CUSTTA_OBRA_DO_APP: 'c1', CUSTTA_GASTO_DO_APP: JSON.stringify(gastoDoApp) };
+  CUSTTA_ROTEIRO: JSON.stringify(roteiro), CUSTTA_IDS: ids.join(','), CUSTTA_HOJE: HOJE };
 let antesDoApp;
 try{
   await testarNoSimulador(['CusttaUITests/CruzadoUITests'], env);
@@ -96,12 +129,23 @@ const final = (await getDocFromServer(documento)).data();
 assert.ok(final._atualizado instanceof Timestamp, 'a gravação do app leva _atualizado do servidor');
 assert.ok(final._atualizado.toMillis() > antesDoApp.toMillis(), 'o documento não foi regravado depois do teste do app: ele foi pulado ou não gravou');
 delete final._atualizado;
-const v3 = structuredClone(v2);
-v3.obras[0].gastos.push(gastoDoApp);
-assert.equal(C.canon(final), C.canon(D.normaliza(v3)), 'o app gravou a v2 normalizada com o gasto lançado nele, sem tirar nem pôr nada');
+const v3 = comoOSite(v2);
+assert.equal(C.canon(final), C.canon(D.normaliza(v3)), 'o app gravou o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
 assert.deepEqual(final.obras[0].campoSoDoSite, { versao: 7 }, 'campo de obra que só o site conhece');
-assert.equal(final.obras[0].gastos[0].notaSoDoSite, 'fica', 'campo de gasto que só o site conhece');
-assert.equal(C.money(C.totalBruto(D.normaliza(final).obras[0])), C.money(12345.67 + 40000 + 999.99), 'o site soma o gasto lançado no app');
+const x1 = final.obras[0].gastos.find(g => g.id === 'x1');
+assert.equal(x1.notaSoDoSite, 'fica', 'campo de gasto que só o site conhece, num gasto editado no app');
+assert.equal(x1.pagamento, 'cartao', 'a edição trocou o Pix pelo cartão');
+assert.ok(!('jurosCartao' in x1), 'cartão na edição não ganha juros nem parcelas (app.js:1071)');
+const z = final.obras[2].gastos;
+assert.equal(z.length, 0, 'a compra toda da obra c3 saiu, inclusive a parcela editada');
+assert.deepEqual(final.obras[1].gastos.map(g => g.id), ['y1', 'y2'], 'gasto de obra vendida também se apaga');
+const compraDoApp = final.obras[0].gastos.filter(g => g.grupoId === 'app2');
+assert.deepEqual(compraDoApp.map(g => [g.parcela.n, g.parcela.de, g.data]), [[1, 3, '2026-04-10'], [2, 3, '2026-05-10'], [3, 3, '2026-06-10']],
+  'a compra em 3x lançada no app: as parcelas e as datas do site');
+const cartao = C.parcelamentoCartao(3000, 3, 2.5, '2026-04-10');
+assert.deepEqual(compraDoApp[0].jurosCartao, { taxaMensal: 2.5, valorCompra: 3000, nParcelas: 3, totalCompra: cartao.totalCompra, jurosCompra: cartao.jurosCompra },
+  'as condições da compra, iguais nas parcelas');
+assert.equal(C.money(C.totalBruto(D.normaliza(final).obras[0])), C.money(12000 + 40000 + 999.99 + cartao.totalCompra), 'o site soma o que o app gravou');
 await terminate(db);
-console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, gasto lançado no app chegou ao site sem perder nada');
+console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e o roteiro de gastos do app gravou o que o site gravaria, sem perder nada');
 process.exit(0);

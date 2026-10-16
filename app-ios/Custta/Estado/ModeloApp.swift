@@ -250,6 +250,38 @@ final class ModeloApp {
         return textoNaoCarregado(online: rede.online)
     }
 
+    /// O que aconteceu com uma gravação pedida por uma tela.
+    enum ResultadoDaGravacao: Equatable {
+        case gravou
+        /// A obra ou o gasto sumiram (apagados em outro aparelho com a folha aberta): nada foi gravado.
+        case sumiu
+        /// Antes de ver os dados da conta: o alerta com `mensagemDeNaoCarregado`, e nada foi gravado.
+        case naoCarregado
+        /// A conta saiu no meio.
+        case semConta
+        /// Build do TestFlight numa conta que não é de teste (até a conferência do PR 3): nada foi gravado.
+        case contaReal
+    }
+
+    /// Muda o estado na hora, pela regra do núcleo, e entrega o documento inteiro para gravar (o `save()` do site). A tela
+    /// que chama dentro de uma animação anima a mudança na mesma transação. A resposta do servidor segue pela pílula de
+    /// sincronização e pelos avisos, como no resto do app.
+    func gravar(_ mudanca: (Estado) -> Estado?) -> ResultadoDaGravacao {
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "custta.recusarGravacao") == "nao-carregado" { return .naoCarregado }
+        #endif
+        guard ContaDeTeste.podeGravar(email: usuario?.email) else { return .contaReal }
+        guard let novo = mudanca(sincronizador.estado) else { return .sumiu }
+        do {
+            try sincronizador.aplicar(novo)
+            return .gravou
+        } catch let erro as ErroSinc where erro.codigo == "nao-carregado" {
+            return .naoCarregado
+        } catch {
+            return .semConta
+        }
+    }
+
     /* ---------- sincronização e avisos ---------- */
 
     func tentarDeNovo() {

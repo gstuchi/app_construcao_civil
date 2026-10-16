@@ -28,7 +28,9 @@ final class AuditoriaUITests: XCTestCase {
     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
     /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste.
     @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType) throws {
-        let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+        // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
+        let folha = app.elemento("tituloDaFolha").exists
+        let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
         let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
         let barra = app.navigationBars.firstMatch
         let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
@@ -43,7 +45,11 @@ final class AuditoriaUITests: XCTestCase {
             case .dynamicType:
                 // O título pequeno da barra da obra para perto de 22 pt, como o do sistema (mockup da etapa 2), com o
                 // Visualizador de Conteúdo Grande.
+                // Na folha (mockup da etapa 2): o título para perto de 22 pt, as teclas e o "Apagar" do arrastar param no
+                // AX2, e o visor do valor (64 pt) já é maior que o texto na maior letra e encolhe para caber.
                 fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
+                    || elemento.identifier.hasPrefix("tituloDaFolha") || elemento.identifier.hasPrefix("visorDoValor")
+                    || elemento.identifier.hasPrefix("tecla-") || elemento.identifier.hasPrefix("apagar-")
                     || abas.contains { $0.contains(CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
@@ -103,6 +109,44 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
         rolar(app)
         try auditar(app, tiposDeAuditoria)
+    }
+
+    /// A folha do gasto (etapa 2, PR 2) em cada passo, na maior letra; os detalhes também rolados, e o valor também com o
+    /// número mais largo do visor (13 caracteres, a largura do teto R$ 99.999.999,99), que encolhe para caber.
+    @MainActor func testFolhaDoGastoNoMaiorTamanho() throws {
+        for (passo, espera) in [("valor", "visorDoValor"), ("detalhes", "linhaTopico"), ("cartao", "linhaTopico"),
+                                ("topicos", "topico-terreno"), ("editar:g031", "avisoParcela")] {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado + ["-custta.folha", passo])
+            XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), passo)
+            try auditar(app, tiposDeAuditoria)
+            if passo == "valor" {
+                // Do R$ 1.380,00 do passo de teste: os dígitos têm largura fixa, então este número corta onde o teto cortaria.
+                for _ in 0..<4 { app.buttons["tecla-9"].tap() }
+                XCTAssertEqual(app.elemento("visorDoValor").value as? String, "R$ 13.800.099,99")
+            } else {
+                rolar(app)
+            }
+            try auditar(app, tiposDeAuditoria)
+            app.terminate()
+        }
+    }
+
+    /// A folha do gasto (valor e cartão) e a linha aberta com o "Apagar", nos quatro combos, com superfícies sólidas.
+    @MainActor func testContrasteDaFolhaNosQuatroCombos() throws {
+        for (tema, pele) in quatroCombos {
+            let combo = ["-custta.tema", tema, "-custta.pele", pele] + solido + parado
+            for (passo, espera) in [("valor", "visorDoValor"), ("cartao", "resumoDoCartao")] {
+                let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: combo + ["-custta.folha", passo])
+                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), passo)
+                try auditar(app, [.contrast])
+                app.terminate()
+            }
+            let lista = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
+                                 argumentos: combo + ["-custta.rolagem", "640", "-custta.linhaAberta", "g027"])
+            XCTAssertTrue(lista.buttons["apagar-g027"].waitForExistence(timeout: 10))
+            try auditar(lista, [.contrast])
+            lista.terminate()
+        }
     }
 
     @MainActor func testAjustesNoMaiorTamanho() throws {

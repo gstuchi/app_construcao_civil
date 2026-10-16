@@ -337,6 +337,40 @@ extension LeituraNoVidroUITests {
         }
         cobrar(cenas)
     }
+
+    /// A folha do gasto (PR 2 da etapa 2): o teclado de valor, os detalhes no Pix e no cartão (o resumo e a ajuda ficam
+    /// direto na Folha), a lista de tópicos, a edição de uma parcela e o "Salvar mesmo assim" âmbar, nos quatro combos;
+    /// na maior letra e com Aumentar contraste; e a linha arrastada com o "Apagar" na lista da obra.
+    @MainActor func testLeituraDaFolhaDoGasto() {
+        func folha(_ nome: String, _ passo: String, _ argumentos: [String], espera: String) -> Cena {
+            Cena(nome: nome, conta: "senha", argumentos: argumentos + ["-custta.folha", passo], espera: espera, escopo: "tudo",
+                 dados: "vitrine", abrir: "obra:v1")
+        }
+        var cenas: [Cena] = []
+        for (tema, pele) in quatroCombos {
+            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento
+            cenas += [
+                folha("folha, valor, \(tema), \(pele)", "valor", combo, espera: "visorDoValor"),
+                folha("folha, detalhes, \(tema), \(pele)", "detalhes", combo, espera: "linhaTopico"),
+                folha("folha, cartão, \(tema), \(pele)", "cartao", combo, espera: "resumoDoCartao"),
+                folha("folha, tópicos, \(tema), \(pele)", "topicos", combo, espera: "topico-terreno"),
+                folha("folha, parcela, \(tema), \(pele)", "editar:g031", combo, espera: "avisoParcela"),
+                folha("folha, repetido, \(tema), \(pele)", "repetido", combo, espera: "avisoRepetido"),
+                Cena(nome: "obra, linha aberta, \(tema), \(pele)", conta: "senha",
+                     argumentos: combo + ["-custta.rolagem", "640", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
+                     escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
+            ]
+        }
+        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let contraste = escuro + ["-custta.aumentarContraste", "YES"]
+        cenas += [
+            folha("folha, valor, na maior letra", "valor", escuro + maiorLetra, espera: "visorDoValor"),
+            folha("folha, cartão, na maior letra", "cartao", escuro + maiorLetra, espera: "linhaTopico"),
+            folha("folha, cartão, com Aumentar contraste", "cartao", contraste, espera: "resumoDoCartao"),
+            folha("folha, repetido, com Aumentar contraste", "repetido", contraste, espera: "avisoRepetido"),
+        ]
+        cobrar(cenas)
+    }
 }
 
 /* O medidor com imagens sintéticas: sem abrir o app. */

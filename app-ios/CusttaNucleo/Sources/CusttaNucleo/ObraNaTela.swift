@@ -171,3 +171,15 @@ public func indicadoresDaObra(_ obra: Obra, taxa: Double, hoje: String) -> Indic
         etiquetaDoAPagar: vencimentos.qtd == 0 ? "nada em 30 dias" : "\(vencimentos.qtd) vencimento\(vencimentos.qtd > 1 ? "s" : "")",
         venda: venda)
 }
+
+/// O alerta de apagar um gasto (mockup aprovado, "Apagar" em tudo): "Apagar este gasto?" com o nome e o valor.
+public func textoDeApagarGasto(_ linha: LinhaDeGasto) -> (titulo: String, mensagem: String) {
+    ("Apagar este gasto?", "\(linha.titulo) · \(linha.valorFalado). Não dá para desfazer.")
+}
+
+/// O alerta de apagar uma parcela: só esta ou a compra toda, com o N das que restam (o site conta as irmãs que existem).
+public func textoDeApagarParcela(_ linha: LinhaDeGasto, parcela: Parcela, restantes: Int)
+    -> (titulo: String, mensagem: String, soEsta: String, compraToda: String) {
+    (linha.titulo, "Esta parcela faz parte de uma compra em \(parcela.de)x no cartão.", "Apagar só esta parcela",
+     "Apagar a compra toda (\(restantes) parcela\(restantes == 1 ? "" : "s"))")
+}

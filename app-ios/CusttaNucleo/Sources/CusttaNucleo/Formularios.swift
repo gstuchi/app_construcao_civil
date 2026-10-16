@@ -169,3 +169,41 @@ public func conferirVenda(valor: Double, data: String, dataInicio: String, hoje:
     }
     return nil
 }
+
+/// A "assinatura" do gasto no aviso de repetido do site (app.js): obra, tópico, descrição comparável, valor em centavos,
+/// data, parcelas e taxa. O segundo toque em "Salvar mesmo assim" grava se ela não mudou; qualquer mudança pede de novo.
+public func assinaturaDoGasto(obraId: String, entrada: EntradaDoGasto, conferido: GastoConferido) -> String {
+    [obraId, entrada.topico, normalizaDescricao(entrada.descricao), numeroJS(arredondarJS(conferido.valor * 100)), conferido.data,
+     String(conferido.parcelas), conferido.cartao.map { numeroJS($0.taxaMensal) } ?? ""].joined(separator: "|")
+}
+
+/// O aviso de gasto repetido, com o texto do site.
+public let avisoDeRepetido = "Este gasto parece já lançado: mesma descrição, valor e data. Confira ou toque novamente para salvar mesmo assim."
+
+/// O resumo ao vivo do cartão, com o texto do site: "3x de R$ 33,33 (última: R$ 33,34) · Juros do cartão: R$ 0,00 ·
+/// Total: R$ 100,00", ou o pedido de conferir quando o parcelamento não fecha.
+public func resumoDoCartao(_ p: Parcelamento?) -> String {
+    guard let p, let primeira = p.parcelas.first, let ultima = p.parcelas.last else {
+        return "Informe valor, parcelas, data válida e taxa entre 0 e 100% ao mês."
+    }
+    let fim = ultima.valor != primeira.valor ? " (última: \(moeda(ultima.valor)))" : ""
+    return "\(p.nParcelas)x de \(moeda(primeira.valor))\(fim) · Juros do cartão: \(moeda(p.jurosCompra)) · Total: \(moeda(p.totalCompra))"
+}
+
+/// O aviso que toma o lugar do pagamento na edição de uma parcela (app.js:895).
+public func avisoDaParcela(_ p: Parcela) -> String {
+    "Parcela \(p.n)/\(p.de) de uma compra no cartão — a edição vale só pra esta parcela."
+}
+
+/// A ajuda do cartão no gasto novo (app.js:901).
+public let ajudaDoCartao = "0 = sem juros. Informe o valor da compra sem juros. Parcelas mensais fixas, com primeiro pagamento após um mês. A data abaixo é o primeiro vencimento."
+
+/// "Condições originais da compra" na edição de um gasto com `jurosCartao` (app.js:922): a taxa como o String() do
+/// JavaScript, com vírgula. nil quando o gasto não tem as condições (ou elas vêm sem os números).
+public func condicoesOriginais(_ gasto: Gasto) -> String? {
+    guard let j = gasto.campos["jurosCartao"]?.comoObjeto, let taxa = j["taxaMensal"]?.comoNumero, let n = j["nParcelas"]?.comoNumero,
+          let juros = j["jurosCompra"]?.comoNumero, let total = j["totalCompra"]?.comoNumero else { return nil }
+    let taxaTexto = numeroJS(taxa).replacingOccurrences(of: ".", with: ",")
+    return "Condições originais da compra: \(taxaTexto)% ao mês · \(numeroJS(n))x · juros \(moeda(juros)) · total \(moeda(total)). "
+        + "O valor editável já inclui juros; não serão aplicados novamente."
+}

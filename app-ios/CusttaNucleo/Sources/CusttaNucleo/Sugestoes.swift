@@ -119,3 +119,62 @@ public func lerTaxaCartao(_ texto: String?) -> Double {
     r.append(contentsOf: t.map { $0 == "," ? "." : $0 })
     return Double(String(r)) ?? .nan
 }
+
+/// As descrições já lançadas, prontas para as sugestões do formulário: monta uma vez ao abrir a folha e responde a cada
+/// letra sem passar por todos os gastos de novo. O resultado é o de `sugestoesDescricao` (o do site); os testes conferem
+/// os dois em todos os casos dos vetores.
+public struct IndiceDeSugestoes: Sendable {
+    struct Entrada: Sendable {
+        let texto: String
+        let chave: String
+        let vezes: Int
+        let naObra: Bool
+        let topicos: Set<String>
+        let ultima: String
+    }
+    private let entradas: [Entrada]
+
+    /// `obraId`: a obra do gasto (pesa "mesma obra" e é onde o `ignorarId`, o gasto em edição, sai).
+    public init(_ obras: [Obra], obraId: String, ignorarId: String?) {
+        var ordem: [String] = []
+        var itens: [String: (texto: String, vezes: Int, naObra: Bool, topicos: Set<String>, ultima: String)] = [:]
+        for o in obras {
+            for g in o.gastos {
+                if o.id == obraId && g.id == ignorarId { continue }
+                let texto = aparadoJS(g.descricao), chave = normalizaDescricao(texto)
+                if chave.isEmpty { continue }
+                var item = itens[chave] ?? (texto, 0, false, [], "")
+                if itens[chave] == nil { ordem.append(chave) }
+                item.vezes += 1
+                if o.id == obraId { item.naObra = true }
+                item.topicos.insert(g.topico)
+                if !menorJS(g.data, item.ultima) { item.ultima = g.data; item.texto = texto }
+                itens[chave] = item
+            }
+        }
+        entradas = ordem.compactMap { chave in
+            itens[chave].map { Entrada(texto: $0.texto, chave: chave, vezes: $0.vezes, naObra: $0.naObra, topicos: $0.topicos, ultima: $0.ultima) }
+        }
+    }
+
+    public func sugestoes(topicoId: String, termo: String) -> [SugestaoDeDescricao] {
+        let busca = normalizaDescricao(termo)
+        if busca.isEmpty { return [] }
+        let tamanho = busca.utf16.count
+        let candidatas = entradas.filter { x in
+            contem(x.chave, busca)
+                || (tamanho >= 4 && abs(x.chave.utf16.count - tamanho) <= 2 && distanciaEdicao(x.chave, busca) <= 2)
+        }.map { x in
+            SugestaoDeDescricao(texto: x.texto, chave: x.chave, vezes: x.vezes, mesmaObra: x.naObra,
+                                mesmoTopico: x.topicos.contains(topicoId), ultima: x.ultima)
+        }
+        func peso(_ x: SugestaoDeDescricao) -> Int { x.peso + (x.chave.utf16.starts(with: busca.utf16) ? 25 : 0) }
+        let ordenadas = ordenadoEstavel(candidatas) { a, b in
+            let pa = peso(a), pb = peso(b)
+            if pa != pb { return pa > pb }
+            if a.ultima != b.ultima { return menorJS(b.ultima, a.ultima) }
+            return ordemPtBR(a.texto, b.texto) == .orderedAscending
+        }
+        return Array(ordenadas.prefix(5))
+    }
+}

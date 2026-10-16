@@ -54,3 +54,27 @@ struct SugestoesTests {
         }
     }
 }
+
+struct IndiceDeSugestoesTests {
+    /// O índice responde igual à regra do site em todos os casos dos vetores.
+    @Test func igualAoDoSiteNosVetores() {
+        for c in Vetores.casos("calc.sugestoesDescricao") {
+            let obras = obrasDoCaso(c.args[0])
+            let obraId = c.args[1].comoTexto!, topico = c.args[2].comoTexto!, termo = c.args[3].comoTexto!, ignorar = c.args[4].comoTexto
+            let indice = IndiceDeSugestoes(obras, obraId: obraId, ignorarId: ignorar)
+            #expect(indice.sugestoes(topicoId: topico, termo: termo)
+                    == sugestoesDescricao(obras, obraId: obraId, topicoId: topico, termo: termo, ignorarId: ignorar), "\(c.caso)")
+        }
+    }
+
+    /// Trocar o tópico com a folha aberta muda o peso sem montar o índice de novo.
+    @Test func trocarDeTopicoNaoPedeOutroIndice() {
+        let c = Vetores.casos("calc.sugestoesDescricao").first { $0.caso == "mesmo tópico e mesma obra pesam" }!
+        let obras = obrasDoCaso(c.args[0])
+        let indice = IndiceDeSugestoes(obras, obraId: "s1", ignorarId: nil)
+        for topico in ["matbasicos", "revest", "eletrica", "outros"] {
+            #expect(indice.sugestoes(topicoId: topico, termo: "cimen")
+                    == sugestoesDescricao(obras, obraId: "s1", topicoId: topico, termo: "cimen", ignorarId: nil), "\(topico)")
+        }
+    }
+}

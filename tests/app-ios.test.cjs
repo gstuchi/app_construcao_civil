@@ -613,6 +613,17 @@ test('barra: o botão de vidro (o sair, o lápis, a sincronização) sem o vidro
   assert.ok(itens >= 4, 'o sair e a sincronização de Obras, o lápis e a sincronização da obra');
 });
 
+test('folha do gasto na letra grande: o nome da obra e o do tópico ficam embaixo do rótulo e à esquerda', () => {
+  // Na letra padrão o valor fica à direita, junto da seta. Na letra grande a linha empilha, com o rótulo em cima, e o
+  // mockup alinha o valor à esquerda (.f-lin .d{text-align:left} na AX5): com o .trailing fixo, o nome que quebra em
+  // duas linhas mostrava a 1ª à direita, em cima da 2ª (o EstadosUITests mede a linha "Obra" por pixel).
+  const t = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(t, /var alinhamentoDoValor: TextAlignment \{ tamanho\.isAccessibilitySize \? \.leading : \.trailing \}/);
+  for(const valor of ['Text(nome)', 'Text(t?.nome ?? rascunho.topico)'])
+    assert.ok(t.includes(`${valor}.foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(alinhamentoDoValor)`),
+      `${valor}: no alinhamento do valor`);
+});
+
 test('apagar no fim da folha: a linha inteira é o botão, no vermelho de negativo e em peso médio', () => {
   // O "Apagar obra" e o "Apagar gasto" são a única linha de um grupo sólido da folha (o .f-lin.destr do mockup): a cor é
   // o --red, que no app é .negativo (o .erroNoVidro é o da nota sobre o vidro), o peso é 500, e o toque é a linha

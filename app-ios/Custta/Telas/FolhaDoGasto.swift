@@ -274,6 +274,7 @@ private struct PassoDosDetalhes: View {
     @Environment(Folhas.self) private var folhas
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
+    @Environment(\.dynamicTypeSize) private var tamanho
     @FocusState private var foco: Campo?
     @State private var erroDoCartao: String?
     @State private var erroDaDescricao: String?
@@ -382,6 +383,10 @@ private struct PassoDosDetalhes: View {
         return a == assinaturaDoGasto(obraId: rascunho.obraId, entrada: rascunho.entrada, conferido: c)
     }
 
+    /// O valor que quebra linha (nome da obra, tópico): à direita, junto da seta; na letra grande, embaixo do rótulo e à
+    /// esquerda, como o mockup (`.f-lin .d{text-align:left}` na AX5).
+    private var alinhamentoDoValor: TextAlignment { tamanho.isAccessibilitySize ? .leading : .trailing }
+
     /// A linha "Obra" do gasto lançado de dentro de uma obra vendida, com a nota do mockup embaixo.
     private func linhaDaObra(_ vendida: String) -> some View {
         let obras = modelo.sincronizador.estado.obras
@@ -391,7 +396,7 @@ private struct PassoDosDetalhes: View {
                 Button { caminho.append(.obras) } label: {
                     LinhaDaFolhaComRotulo(rotulo: "Obra") {
                         HStack(spacing: 10) {
-                            Text(nome).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(.trailing)
+                            Text(nome).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(alinhamentoDoValor)
                             SetaDaLinha()
                         }
                     }
@@ -432,7 +437,7 @@ private struct PassoDosDetalhes: View {
             LinhaDaFolhaComRotulo(rotulo: "Tópico") {
                 HStack(spacing: 10) {
                     IconeDoTopico(icone: t?.icone ?? "etiqueta")
-                    Text(t?.nome ?? rascunho.topico).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(.trailing)
+                    Text(t?.nome ?? rascunho.topico).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(alinhamentoDoValor)
                     SetaDaLinha()
                 }
             }
@@ -782,7 +787,8 @@ private struct ListaDeObrasAbertas: View {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(obra.nome).foregroundStyle(paleta.cor(.texto))
-                                Text(obra.fase.rotulo).font(.footnote).foregroundStyle(paleta.cor(.secundarioSolido))
+                                // O secundário de dentro da folha (o --texto2-v do mockup), como a nota e o "Opcional".
+                                Text(obra.fase.rotulo).font(.footnote).foregroundStyle(paleta.cor(.secundarioTransparente))
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             if obra.id == rascunho.obraId {
@@ -791,7 +797,7 @@ private struct ListaDeObrasAbertas: View {
                             }
                         }
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 11)         // o recuo das linhas da folha (.f-lin)
                         .frame(minHeight: 52)
                         .contentShape(.rect)
                     }

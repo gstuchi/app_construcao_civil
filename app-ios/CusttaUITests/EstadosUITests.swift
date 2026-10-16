@@ -99,6 +99,57 @@ final class EstadosUITests: XCTestCase {
         XCTAssertTrue(app.elemento("indicadorTotal").label.contains("47 lançamentos"), app.elemento("indicadorTotal").label)
     }
 
+    /// Na maior letra o nome da obra quebra embaixo do rótulo e fica à esquerda, como no mockup (`.f-lin .d` alinhado à
+    /// esquerda na AX5): a 1ª linha do nome ("Casa") começa onde começa o rótulo "Obra", e não à direita, em cima de
+    /// "Alphaville".
+    func testNaMaiorLetraONomeDaObraFicaAEsquerda() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v3",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let linha = lancarDeDentroDaVendida(app)
+        XCTAssertEqual(linha.value as? String, "Casa Alphaville")
+        let faixas = faixasDeTexto(linha)
+        guard faixas.count >= 2 else { return XCTFail("o rótulo e o nome, por pixel: \(faixas)") }
+        XCTAssertEqual(faixas[1].x, faixas[0].x, accuracy: 6, "a 1ª linha do nome começa onde começa o rótulo: \(faixas)")
+    }
+
+    /// As faixas de texto de uma linha sólida da folha, de cima para baixo, por pixel: linhas de pixel seguidas com tinta
+    /// (o que se afasta do fundo, lido perto da beira esquerda), com o topo e o x da tinta mais à esquerda nos primeiros
+    /// 20 pt da faixa (mais abaixo a seta, centrada no nome, pode encostar), em pontos. Traço fino (borda, separador) não
+    /// conta como faixa.
+    private func faixasDeTexto(_ elemento: XCUIElement) -> [(topo: CGFloat, x: CGFloat)] {
+        guard let cg = elemento.screenshot().image.cgImage else { return [] }
+        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / elemento.frame.width)
+        var px = [UInt8](repeating: 0, count: l * a * 4)
+        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
+            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
+            return true
+        }
+        guard desenhou else { return [] }
+        let fundo = ((a / 2) * l + Int(4 * e)) * 4
+        let margem = Int(8 * e)
+        let primeira: [Int?] = (0..<a).map { y in
+            (margem..<(l - margem)).first { x in
+                (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[fundo + $0])) > 64 }
+            }
+        }
+        var faixas: [(topo: CGFloat, x: CGFloat)] = []
+        var y = 0
+        while y < a {
+            guard primeira[y] != nil else { y += 1; continue }
+            var fim = y
+            while fim + 1 < a, primeira[fim + 1] != nil { fim += 1 }
+            if CGFloat(fim - y + 1) >= 6 * e {
+                let x = (y...min(fim, y + Int(20 * e))).compactMap { primeira[$0] }.min() ?? 0
+                faixas.append((CGFloat(y) / e, CGFloat(x) / e))
+            }
+            y = fim + 1
+        }
+        return faixas
+    }
+
     /// Sem nenhuma obra aberta, o + da vendida cria obra, como no site (o formGasto e o + chamam o formNovaObra).
     func testMaisNaVendidaSemObraAbertaCriaObra() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")

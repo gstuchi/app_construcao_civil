@@ -99,6 +99,14 @@ private struct PassoDaDataDaVenda: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 14)
                 .padding(.bottom, 0)
+                // O degradê da folha atrás do botão, como no Salvar do gasto (o .f-pe do mockup): o que rola por baixo some
+                // antes de encostar no botão.
+                .background {
+                    LinearGradient(stops: [.init(color: paleta.cor(.folha), location: 0.62), .init(color: paleta.cor(.folha).opacity(0), location: 1)],
+                                   startPoint: .bottom, endPoint: .top)
+                        .ignoresSafeArea()
+                        .accessibilityHidden(true)
+                }
         }
         .onChange(of: rascunho.data) { _, _ in erro = nil }
         .passoDaFolha("Registrar venda", subtitulo: obra?.nome, fechar: .direita)

@@ -164,3 +164,82 @@ struct AcoesDaFaseTests {
         #expect((recuo...recuo + 5).contains(w - 1 - fim), "rótulo termina em \(fim) de \(w)")
     }
 }
+
+/* O "R$" das linhas de dinheiro da folha vem no mesmo texto do número, menor e no secundário transparente do mockup
+   (--texto2-v), e encolhe junto com ele: num Text à parte, na maior letra só o número encolhia e o "R" ficava 1,44 vez a
+   altura do "1" (no mockup, 0,875: o .rs de 49 sobre o valor de 56). A medida é por pixel, na última linha do desenho
+   (nos tamanhos de acessibilidade o rótulo vai em cima), em escala 3, como no 18 Pro; a cor esperada sai da mesma
+   renderização, num quadrado do token. */
+@MainActor
+struct LinhaDeDinheiroTests {
+    private struct Desenho {
+        let largura: Int, altura: Int, rgba: [UInt8]
+        func pixel(_ x: Int, _ y: Int) -> [Int] { (0..<4).map { Int(rgba[(y * largura + x) * 4 + $0]) } }
+        func tinta(_ x: Int, _ y: Int) -> Bool { rgba[(y * largura + x) * 4 + 3] > 127 }
+    }
+
+    private func desenho(_ conteudo: some View, escuro: Bool) throws -> Desenho {
+        let render = ImageRenderer(content: conteudo.environment(\.paleta, Paleta()).environment(\.colorScheme, escuro ? .dark : .light))
+        render.scale = 3
+        let imagem = try #require(render.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        return Desenho(largura: w, altura: h, rgba: rgba)
+    }
+
+    private func cor(_ token: Token, escuro: Bool) throws -> [Int] {
+        try desenho(Rectangle().fill(Paleta().cor(token)).frame(width: 4, height: 4), escuro: escuro).pixel(6, 6)
+    }
+
+    /// Os glifos da última linha de tinta, da esquerda para a direita (colunas seguidas com tinta): a altura de cada um, em
+    /// pixels, e a cor mais comum dos pixels opacos dele.
+    private func glifosDaUltimaLinha(_ d: Desenho) -> [(altura: Int, cor: [Int])] {
+        let comTinta = (0..<d.altura).map { y in (0..<d.largura).contains { d.tinta($0, y) } }
+        guard let fim = comTinta.lastIndex(of: true) else { return [] }
+        let inicio = (comTinta[..<fim].lastIndex(of: false) ?? -1) + 1
+        var glifos: [(altura: Int, cor: [Int])] = []
+        var colunas: [Int] = []
+        for x in 0...d.largura {
+            if x < d.largura, (inicio...fim).contains(where: { d.tinta(x, $0) }) { colunas.append(x); continue }
+            guard let a = colunas.first, let b = colunas.last else { continue }
+            let pontos = (a...b).flatMap { x in (inicio...fim).filter { d.tinta(x, $0) }.map { (x, $0) } }
+            let ys = pontos.map(\.1)
+            let opacos = pontos.map { d.pixel($0.0, $0.1) }.filter { $0[3] == 255 }.map { Array($0.prefix(3)) }
+            let cor = Dictionary(grouping: opacos, by: { $0 }).max { $0.value.count < $1.value.count }?.key ?? []
+            glifos.append((ys.max()! - ys.min()! + 1, cor))
+            colunas = []
+        }
+        return glifos
+    }
+
+    private func perto(_ a: [Int], _ b: [Int]) -> Bool {
+        a.count >= 3 && b.count >= 3 && zip(a.prefix(3), b.prefix(3)).map { abs($0 - $1) }.reduce(0, +) <= 6
+    }
+
+    /// Na maior letra, no grupo de 370 pt do 18 Pro e no de 343 de um iPhone de 375, "R$ 1.380.000,00" encolhe por inteiro:
+    /// o "R" fica menor que o "1", na proporção do mockup, e no secundário transparente, no escuro e no claro.
+    @Test(arguments: zip([CGFloat(370), 343], [true, false]))
+    func rsEncolheJuntoComONumeroNaMaiorLetra(largura: CGFloat, escuro: Bool) throws {
+        let linha = LinhaDeDinheiro(rotulo: "Valor da venda", centavos: 138_000_000, opcional: false, altura: 60,
+                                    identificador: "linha") {}
+        let glifos = glifosDaUltimaLinha(try desenho(linha.frame(width: largura).dynamicTypeSize(.accessibility5), escuro: escuro))
+        try #require(glifos.count > 3, "\(glifos)")
+        let (r, um) = (glifos[0], glifos[2]) // "R", "$", "1"
+        #expect((0.8...0.95).contains(Double(r.altura) / Double(um.altura)), "R com \(r.altura) px, 1 com \(um.altura) px")
+        let esperada = try cor(.secundarioTransparente, escuro: escuro)
+        #expect(perto(r.cor, esperada), "R em \(r.cor), token em \(esperada)")
+    }
+
+    /// A linha vazia, "Opcional", no mesmo secundário transparente.
+    @Test(arguments: [true, false]) func opcionalNoSecundarioTransparente(escuro: Bool) throws {
+        let linha = LinhaDeDinheiro(rotulo: "Valor estimado de venda", centavos: 0, identificador: "linha") {}
+        let o = try #require(glifosDaUltimaLinha(try desenho(linha.frame(width: 370).dynamicTypeSize(.accessibility5), escuro: escuro)).first)
+        let esperada = try cor(.secundarioTransparente, escuro: escuro)
+        #expect(perto(o.cor, esperada), "O em \(o.cor), token em \(esperada)")
+    }
+}

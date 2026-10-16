@@ -505,6 +505,31 @@ test('folha da venda: gravação recusada avisa, como a folha do gasto', () => {
   assert.match(t, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
 });
 
+test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da folha atrás do botão de baixo', () => {
+  // Na maior letra só o ValorEmDinheiro encolhe: um "R$" num Text à parte ficava maior que o número. Nas linhas da folha
+  // ele vem pelo prefixo do ValorEmDinheiro (o visor do teclado tem o dele, do tamanho do número). A LinhaDeDinheiro é
+  // medida por pixel no LinhaDeDinheiroTests; a linha do valor do gasto é privada da folha, e só esta guarda a vê.
+  for(const f of ['app-ios/Custta/Identidade/PecasDaFolha.swift', ...arquivosSwift('app-ios/Custta/Telas')])
+    assert.ok(!/Text\("R\$"\)/.test(ler(f)), `${f}: "R$" num Text à parte; use o prefixo do ValorEmDinheiro`);
+  // O botão de baixo de cada folha (Salvar, Confirmar venda) tem atrás o degradê da folha, o .f-pe do mockup: o que rola
+  // por baixo some antes de encostar nele (na maior letra, num iPhone de 375 pt, a nota da venda passava cortada seca).
+  // Nenhum teste de tela vê o degradê.
+  const degrade = /\.background \{\s*LinearGradient\(stops: \[\.init\(color: paleta\.cor\(\.folha\), location: 0\.62\), \.init\(color: paleta\.cor\(\.folha\)\.opacity\(0\), location: 1\)\],\s*startPoint: \.bottom, endPoint: \.top\)\s*\.ignoresSafeArea\(\)/;
+  let botoes = 0;
+  for(const f of arquivosSwift('app-ios/Custta/Telas')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\.safeAreaInset\(edge: \.bottom, spacing: 0\) \{/g)){
+      let fim = m.index + m[0].length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+      const bloco = t.slice(m.index, fim);
+      if(!bloco.includes('BotaoDaFolha(')) continue;
+      botoes++;
+      assert.match(bloco, degrade, `${f}: botão de baixo da folha sem o degradê da folha atrás`);
+    }
+  }
+  assert.ok(botoes >= 2, 'o Salvar do gasto e o Confirmar venda');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

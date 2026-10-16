@@ -278,20 +278,26 @@ struct EtiquetaDeFase: View {
 
 /// Dinheiro numa linha só, encolhendo até a metade para caber (mockup da etapa 2, letra máxima): um valor quebrado em
 /// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto ou na que o
-/// lugar pede (o total do mês vai no secundário do cabeçalho).
+/// lugar pede (o total do mês vai no secundário do cabeçalho). Com `prefixo`, o "R$" das linhas da folha vem no mesmo
+/// texto, menor e no secundário: encolhe junto com o número (em dois textos, na letra máxima só o número encolhia e o
+/// "R$" ficava maior que ele).
 struct ValorEmDinheiro: View {
     let texto: String
     let fonte: Font
     var cor: Token = .texto
+    var prefixo: Font?
     @Environment(\.paleta) private var paleta
 
     var body: some View {
-        Text(texto)
-            .font(fonte)
-            .monospacedDigit()
-            .foregroundStyle(paleta.cor(cor))
+        conteudo
             .lineLimit(1)
             .minimumScaleFactor(0.5)
+    }
+
+    private var conteudo: Text {
+        let numero = Text(texto).font(fonte).monospacedDigit().foregroundStyle(paleta.cor(cor))
+        guard let prefixo else { return numero }
+        return Text("\(Text("R$").font(prefixo).foregroundStyle(paleta.cor(.secundarioTransparente))) \(numero)")
     }
 }
 

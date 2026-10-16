@@ -78,10 +78,10 @@ struct LinhaDeDinheiro: View {
             LinhaDaFolhaComRotulo(rotulo: rotulo, altura: altura) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     if centavos == 0 && opcional {
-                        Text("Opcional").foregroundStyle(paleta.cor(.secundarioSolido))
+                        Text("Opcional").foregroundStyle(paleta.cor(.secundarioTransparente))
                     } else {
-                        Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioSolido))
-                        ValorEmDinheiro(texto: fmtCentavos(centavos), fonte: altura > 52 ? .title2.weight(.bold) : .body.weight(.semibold))
+                        ValorEmDinheiro(texto: fmtCentavos(centavos), fonte: altura > 52 ? .title2.weight(.bold) : .body.weight(.semibold),
+                                        prefixo: .callout.weight(.semibold))
                     }
                     SetaDaLinha()
                 }

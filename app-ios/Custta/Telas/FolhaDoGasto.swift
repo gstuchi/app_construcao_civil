@@ -355,9 +355,7 @@ private struct PassoDosDetalhes: View {
         } label: {
             LinhaDaFolhaComRotulo(rotulo: "Valor", altura: 60) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioTransparente))
-                    ValorEmDinheiro(texto: fmtCentavos(rascunho.centavos), fonte: .title2.weight(.bold))
-                        .foregroundStyle(paleta.cor(.texto))
+                    ValorEmDinheiro(texto: fmtCentavos(rascunho.centavos), fonte: .title2.weight(.bold), prefixo: .callout.weight(.semibold))
                     SetaDaLinha()
                 }
             }

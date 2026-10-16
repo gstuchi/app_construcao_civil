@@ -6,9 +6,10 @@ import CusttaNucleo
    Variáveis que o teste passa ao abrir o app:
    CUSTTA_CONTA   conta inicial da ContaFalsa (nenhuma, senha, senha-nao-confirmada, apple-sem-perfil,
                   google-sem-perfil, google-perfil-concorrente)
-   CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio
+   CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto)
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
-   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê)
+   CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
+                  não responde: "Carregando suas obras…")
    CUSTTA_GRAVACAO recusa (toda gravação volta com permission-denied: o "Não salvou" que não passa sozinho)
    CUSTTA_APAGAR_REMOTO <obra>/<gasto>@<segundos> (outro aparelho apaga o gasto, com o app aberto)
    CUSTTA_MARCA   servidor (o servidor já respondeu a esta conta numa abertura anterior: com CUSTTA_REDE=offline e
@@ -29,6 +30,7 @@ extension Composicao {
         let dados: ValorJSON? = switch ambiente["CUSTTA_DADOS"] {
         case "vazio": nil
         case "exemplo": DadosDeExemplo.blob
+        case "limite": DadosDeExemplo.noTeto()
         default: DadosDeExemplo.vitrine()
         }
         // CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>: outro aparelho apaga um gasto com o app aberto.
@@ -38,6 +40,7 @@ extension Composicao {
             return (partes[0], partes[1], segundos)
         }
         let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falhaDeLeitura: falha,
+                                            semLeitura: ambiente["CUSTTA_LEITURA"] == "nunca",
                                             recusa: ambiente["CUSTTA_GRAVACAO"] == "recusa" ? "permission-denied" : nil,
                                             apagarRemoto: remoto)
         let rede = MonitorDeRede(forcarSemRede: semRede)

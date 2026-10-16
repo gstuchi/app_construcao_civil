@@ -11,7 +11,11 @@ struct PrincipalView: View {
     @State private var aba = Aba.obras
     @State private var caminhoDeObras = PrincipalView.caminhoInicial
     @State private var folhas = Folhas()
+    /// O + da lista avisou em vez de abrir "Nova obra": o teto de obras ou os dados ainda não vistos.
+    @State private var avisoDoMais: AvisoDoMais?
     @Environment(ModeloApp.self) private var modelo
+    @Environment(\.opcoes) private var opcoes
+    @Environment(\.paleta) private var paleta
 
     var body: some View {
         Group {
@@ -28,6 +32,8 @@ struct PrincipalView: View {
                 switch qual {
                 case .novoGasto(let obraId): FolhaDoGasto(obraId: obraId, gastoId: nil)
                 case .editarGasto(let obraId, let gastoId): FolhaDoGasto(obraId: obraId, gastoId: gastoId)
+                case .novaObra: FolhaDaObra(obraId: nil)
+                case .editarObra(let obraId): FolhaDaObra(obraId: obraId)
                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
                 }
             }
@@ -35,7 +41,8 @@ struct PrincipalView: View {
         }
         // Com a folha aberta o fundo para: ela cobre quase tudo, e cada quadro da aurora refaria o desfoque dela.
         .pausaOFundo(enquanto: folhas.aberta != nil)
-        .modifier(AvisosDoPrincipal(folhaAberta: folhas.aberta != nil))
+        .onChange(of: folhas.navegacao) { _, pedido in if let pedido { navegar(pedido.navegacao) } }
+        .modifier(AvisosDoPrincipal(avisoDoMais: $avisoDoMais, folhaAberta: folhas.aberta != nil))
         #if DEBUG
         .task { await abrirFolhaDoGancho() }
         // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
@@ -55,17 +62,53 @@ struct PrincipalView: View {
 }
 
 extension PrincipalView {
-    /// O + da cápsula: dentro de uma obra que ainda recebe gasto, lança gasto nela. Obra vendida não recebe gasto novo
-    /// (como no site); a escolha de outra obra chega no PR 3, junto com "Nova obra" na lista.
+    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra que ainda recebe gasto, lança gasto nela.
+    /// Obra vendida não recebe gasto novo (como no site); a escolha de outra obra chega na Tarefa 34. Em Ajustes, some.
     private var acaoDoMais: AcaoDoMais? {
-        guard aba == .obras, case .obra(let id)? = caminhoDeObras.last,
-              let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == id }), obra.fase != .vendida else { return nil }
+        guard aba == .obras else { return nil }
+        let obras = modelo.sincronizador.estado.obras
+        guard case .obra(let id)? = caminhoDeObras.last else { return AcaoDoMais(rotulo: "Nova obra", acao: pedirNovaObra) }
+        guard let obra = obras.first(where: { $0.id == id }) else { return nil }
+        guard obra.fase != .vendida else { return nil }
         return AcaoDoMais(rotulo: "Lançar gasto") { folhas.aberta = .novoGasto(obraId: id) }
     }
 
+    /// "Nova obra" avisa antes de abrir: sem os dados vistos, o "Carregando suas obras" do site; com o teto cheio, o
+    /// "Limite de 300 obras" (a obra a mais faria toda gravação seguinte ser recusada).
+    private func pedirNovaObra() {
+        let sinc = modelo.sincronizador
+        if !sinc.dadosCarregados { avisoDoMais = .naoCarregado(modelo.mensagemDeNaoCarregado); return }
+        if let aviso = avisoLimiteDeObras(sinc.estado.obras.count) { avisoDoMais = .limite(aviso); return }
+        folhas.aberta = .novaObra
+    }
+
+    /// O que uma folha pediu para Obras depois de gravar.
+    private func navegar(_ n: Folhas.Navegacao) {
+        switch n {
+        case .entrar(let id):
+            aba = .obras
+            caminhoDeObras = [.obra(id)]
+        case .trocar(let id):
+            var semAnimacao = Transaction()
+            semAnimacao.disablesAnimations = true
+            withTransaction(semAnimacao) { caminhoDeObras = [.obra(id)] }
+        case .apagar(let id):
+            caminhoDeObras.removeAll()
+            // Depois do voltar do sistema, a linha sai da lista com a animação do apagar gasto.
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(opcoes.reduzirMovimento ? 100 : 500))
+                let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
+                    modelo.gravar { $0.apagandoObra(id) }
+                }
+                if resultado == .naoCarregado { avisoDoMais = .naoCarregado(modelo.mensagemDeNaoCarregado) }
+                if resultado == .contaReal { avisoDoMais = .contaReal }
+            }
+        }
+    }
+
     #if DEBUG
-    /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`venda:<id>`,
-    /// `novoGasto:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+    /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
+    /// `editarObra:<id>`, `venda:<id>`, `novoGasto:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
     /// `-custta.folha editar:<gasto>`, a edição.
     private func abrirFolhaDoGancho() async {
@@ -78,6 +121,8 @@ extension PrincipalView {
             let partes = pedido.split(separator: ":", maxSplits: 1).map(String.init)
             let id = partes.count > 1 ? partes[1] : ""
             switch partes[0] {
+            case "novaObra": folhas.aberta = .novaObra
+            case "editarObra": folhas.aberta = .editarObra(obraId: id)
             case "venda": folhas.aberta = .venda(obraId: id)
             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
             default: break
@@ -101,9 +146,35 @@ extension PrincipalView {
     }
 }
 
-/// O alerta do "Não salvou" (uma vez por erro, com "Tentar de novo") por cima das abas, num fundo vazio, com os botões na
-/// cor do texto, como o "Sair da conta?". Espera a folha aberta descer.
+/// O aviso do + da lista no lugar de "Nova obra", e o do apagar obra que não gravou (ele grava em Obras, depois de a
+/// folha descer).
+enum AvisoDoMais: Equatable {
+    case limite(AvisoDeLimite)
+    case naoCarregado(String)
+    /// Build do TestFlight numa conta que não é de teste: o alerta da conta de teste, como nas folhas.
+    case contaReal
+
+    @MainActor var titulo: String {
+        switch self {
+        case .limite(let a): return a.titulo
+        case .naoCarregado(let texto): return texto
+        case .contaReal: return ContaDeTeste.titulo
+        }
+    }
+
+    @MainActor var mensagem: String? {
+        switch self {
+        case .limite(let a): return a.texto
+        case .contaReal: return ContaDeTeste.mensagem
+        case .naoCarregado: return nil
+        }
+    }
+}
+
+/// Os alertas do app por cima das abas: o aviso do + e o "Não salvou" (uma vez por erro, com "Tentar de novo"). Cada um
+/// num fundo vazio, com os botões na cor do texto, como o "Sair da conta?". O "Não salvou" espera a folha aberta descer.
 private struct AvisosDoPrincipal: ViewModifier {
+    @Binding var avisoDoMais: AvisoDoMais?
     let folhaAberta: Bool
     @Environment(ModeloApp.self) private var modelo
     @Environment(\.paleta) private var paleta
@@ -111,6 +182,15 @@ private struct AvisosDoPrincipal: ViewModifier {
     func body(content: Content) -> some View {
         let gravacao = modelo.alertaDeGravacao
         content
+            .background {
+                Color.clear
+                    .alert(avisoDoMais?.titulo ?? "", isPresented: Binding(get: { avisoDoMais != nil }, set: { if !$0 { avisoDoMais = nil } })) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        if let m = avisoDoMais?.mensagem { Text(m) }
+                    }
+                    .tint(paleta.cor(.texto))
+            }
             .background {
                 Color.clear
                     .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && !folhaAberta },
@@ -122,7 +202,7 @@ private struct AvisosDoPrincipal: ViewModifier {
                     }
                     .tint(paleta.cor(.texto))
             }
-            .pausaOFundo(enquanto: gravacao != nil && !folhaAberta)
+            .pausaOFundo(enquanto: avisoDoMais != nil || (gravacao != nil && !folhaAberta))
     }
 }
 

@@ -4,10 +4,12 @@ import CusttaNucleo
 /* O teclado de valor (teclado.js, mockup da etapa 2, parte 2): centavos entram pela direita, "00" e apagar, teto de
    R$ 99.999.999,99 (a tecla que passaria do teto é ignorada). As teclas vêm na ordem do telefone, 1 2 3 em cima
    (sugestão aprovada; o site usa a da calculadora). Serve ao gasto, à venda, ao valor estimado e ao orçamento: quem usa
-   dá o rótulo do botão ("Avançar", "Pronto") e o que fazer com o valor. O botão fica desabilitado no zero, como no site. */
+   dá o rótulo do botão ("Avançar", "Pronto") e o que fazer com o valor. O botão fica desabilitado no zero, como no site;
+   nos valores opcionais da obra (valor estimado e orçamento), zero vale: é como apagar o valor. */
 struct TecladoDeValor: View {
     @Binding var centavos: Int
     let acao: String
+    var permiteZero = false
     let confirmar: () -> Void
     @Environment(\.paleta) private var paleta
 
@@ -38,7 +40,7 @@ struct TecladoDeValor: View {
             }
             Button(acao, action: confirmar)
                 .buttonStyle(BotaoDaFolha())
-                .disabled(centavos == 0)
+                .disabled(centavos == 0 && !permiteZero)
                 .padding(.top, 16)
                 .accessibilityIdentifier("confirmarValor")
         }

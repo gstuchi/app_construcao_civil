@@ -62,6 +62,28 @@ struct LinhaDaFolhaComRotulo<Valor: View>: View {
     }
 }
 
+/// Um campo de texto com o rótulo em cima, dentro de um grupo ("Nome da obra", "Área construída em m²"), como a
+/// descrição do gasto: rótulo em 13 semibold secundário (no erro, na cor do erro) e o campo embaixo.
+struct CampoComRotuloEmCima<Campo: View>: View {
+    let rotulo: String
+    var erro = false
+    @ViewBuilder let campo: () -> Campo
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(rotulo)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(paleta.cor(erro ? .erroNoVidro : .secundarioTransparente))
+                .accessibilityHidden(true)
+            campo()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+    }
+}
+
 /// Uma linha de dinheiro que abre o teclado de valor ("Valor estimado de venda", "Orçamento total", "Valor da venda"):
 /// "R$" e o valor, ou "Opcional" vazia, e a seta.
 struct LinhaDeDinheiro: View {

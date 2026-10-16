@@ -1,14 +1,17 @@
 import Foundation
 import Observation
 
-/* A folha aberta por cima das abas (o + da cápsula, o toque numa linha de gasto) e o que a tela da obra faz quando ela
-   termina de descer: rolar até o gasto que acabou de entrar e acendê-lo, ou apagar com a animação à vista. Mora acima
-   das abas, como o caminho de Obras, porque o + é da cápsula. */
+/* A folha aberta por cima das abas (o + da cápsula, o toque numa linha de gasto, o lápis e as ações da obra) e o que as
+   telas fazem quando ela termina de descer: rolar até o gasto que acabou de entrar e acendê-lo, apagar com a animação à
+   vista, entrar na obra criada ou voltar à lista e apagar a obra. Mora acima das abas, como o caminho de Obras, porque o
+   + é da cápsula. */
 @MainActor @Observable
 final class Folhas {
     enum Qual: Identifiable, Hashable {
         case novoGasto(obraId: String)
         case editarGasto(obraId: String, gastoId: String)
+        case novaObra
+        case editarObra(obraId: String)
         case venda(obraId: String)
 
         var id: Self { self }
@@ -31,9 +34,26 @@ final class Folhas {
         var vez = 0
     }
 
+    /// Para onde Obras vai por causa de uma folha.
+    enum Navegacao: Equatable {
+        /// Entra na obra (a que acabou de ser criada), com o push do sistema, depois que a folha desce.
+        case entrar(String)
+        /// Troca a obra aberta sem animação, por trás da folha: o gasto lançado de dentro de uma vendida foi para outra, e
+        /// a folha desce mostrando a obra que o recebeu.
+        case trocar(String)
+        /// Volta à lista e só então apaga a obra, para a linha sair com a animação à vista.
+        case apagar(String)
+    }
+
+    struct PedidoDeNavegacao: Equatable {
+        let navegacao: Navegacao
+        let vez: Int
+    }
+
     var aberta: Qual?
     private(set) var destaque: Destaque?
     private(set) var pedidoDeApagar: PedidoDeApagar?
+    private(set) var navegacao: PedidoDeNavegacao?
     @ObservationIgnored private var depoisDeFechar: (() -> Void)?
     @ObservationIgnored private var vezes = 0
 
@@ -60,5 +80,10 @@ final class Folhas {
         var p = pedido
         p.vez = vezes
         pedidoDeApagar = p
+    }
+
+    func navegar(_ n: Navegacao) {
+        vezes += 1
+        navegacao = PedidoDeNavegacao(navegacao: n, vez: vezes)
     }
 }

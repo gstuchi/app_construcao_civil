@@ -76,8 +76,8 @@ struct ObraView: View {
                     PilulaDeLancamentos(quantidade: obra.gastos.count)
                         .accessibilityFocused($foco, equals: .lancamentos)
                     if obra.gastos.isEmpty {
-                        CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.",
-                                       identificador: "obraSemGastos", icone: "Icones/notas") { EmptyView() }
+                        CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
+                                       identificador: "obraSemGastos") { EmptyView() }
                     } else {
                         if let aVencer = lista.aVencer {
                             CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos, lista: acoes)

@@ -505,15 +505,52 @@ test('folha da venda: gravação recusada avisa, como a folha do gasto', () => {
   assert.match(t, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
 });
 
+test('folha da obra e apagar obra: gravação recusada avisa, como as outras folhas', () => {
+  // Em Debug grava sempre, e nenhum teste de tela recusa pela conta de teste. O apagar obra grava em Obras, depois de a
+  // folha descer (a linha sai com a animação à vista), e avisa pelo alerta de Obras; o plano só tratava ali o
+  // "Carregando suas obras", e na conta de sempre do TestFlight o apagar não faria nada.
+  const f = ler('app-ios/Custta/Telas/FolhaDaObra.swift');
+  const p = ler('app-ios/Custta/Telas/PrincipalView.swift');
+  const inicio = p.indexOf('case .apagar(let id):');
+  assert.ok(inicio > 0, 'o apagar obra em Obras');
+  const apagar = p.slice(inicio, p.indexOf('\n    }\n', inicio));
+  assert.equal(f.match(/case \.naoCarregado: naoCarregado = true/g)?.length, 2, 'criar e salvar: antes de ver os dados, o alerta do site');
+  assert.match(apagar, /if resultado == \.naoCarregado \{ avisoDoMais = \.naoCarregado\(modelo\.mensagemDeNaoCarregado\) \}/);
+  // A troca para a conta real (fim do PR 3) apaga a ContaDeTeste e, com ela, estes alertas.
+  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
+  assert.equal(f.match(/case \.contaReal: contaReal = true/g)?.length, 2, 'criar e salvar: na conta de sempre do TestFlight, o alerta da conta de teste');
+  assert.match(f, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
+  assert.match(apagar, /if resultado == \.contaReal \{ avisoDoMais = \.contaReal \}/, 'o apagar obra na conta de sempre do TestFlight');
+  assert.match(p, /case \.contaReal: return ContaDeTeste\.titulo/);
+});
+
+test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {
+  // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
+  // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
+  // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
+  const acoes = {
+    'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
+    'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
+    'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
+  };
+  for(const [f, assinatura] of Object.entries(acoes)){
+    const t = ler(f);
+    assert.equal(t.split(assinatura).length, 2, `${f}: ${assinatura}`);
+    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), /^\n(?:\s*\/\/[^\n]*\n)*\s*guard folhas\.aberta != nil else \{ return \}\n/,
+                 `${f}: a guarda do toque duplo na primeira linha da ação`);
+  }
+});
+
 test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da folha atrás do botão de baixo', () => {
   // Na maior letra só o ValorEmDinheiro encolhe: um "R$" num Text à parte ficava maior que o número. Nas linhas da folha
   // ele vem pelo prefixo do ValorEmDinheiro (o visor do teclado tem o dele, do tamanho do número). A LinhaDeDinheiro é
   // medida por pixel no LinhaDeDinheiroTests; a linha do valor do gasto é privada da folha, e só esta guarda a vê.
   for(const f of ['app-ios/Custta/Identidade/PecasDaFolha.swift', ...arquivosSwift('app-ios/Custta/Telas')])
     assert.ok(!/Text\("R\$"\)/.test(ler(f)), `${f}: "R$" num Text à parte; use o prefixo do ValorEmDinheiro`);
-  // O botão de baixo de cada folha (Salvar, Confirmar venda) tem atrás o degradê da folha, o .f-pe do mockup: o que rola
-  // por baixo some antes de encostar nele (na maior letra, num iPhone de 375 pt, a nota da venda passava cortada seca).
-  // Nenhum teste de tela vê o degradê.
+  // O botão de baixo de cada folha (Salvar, Confirmar venda, Criar obra) tem atrás o degradê da folha, o .f-pe do mockup:
+  // o que rola por baixo some antes de encostar nele (na maior letra, num iPhone de 375 pt, a nota da venda passava
+  // cortada seca). E encosta no fundo, sem recuo embaixo: com 8, ficava 8 pt acima do mockup (784 no 18 Pro) e do Avançar
+  // do teclado de valor. Nenhum teste de tela vê o degradê.
   const degrade = /\.background \{\s*LinearGradient\(stops: \[\.init\(color: paleta\.cor\(\.folha\), location: 0\.62\), \.init\(color: paleta\.cor\(\.folha\)\.opacity\(0\), location: 1\)\],\s*startPoint: \.bottom, endPoint: \.top\)\s*\.ignoresSafeArea\(\)/;
   let botoes = 0;
   for(const f of arquivosSwift('app-ios/Custta/Telas')){
@@ -525,9 +562,10 @@ test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da fol
       if(!bloco.includes('BotaoDaFolha(')) continue;
       botoes++;
       assert.match(bloco, degrade, `${f}: botão de baixo da folha sem o degradê da folha atrás`);
+      assert.match(bloco, /\.padding\(\.bottom, 0\)/, `${f}: botão de baixo da folha com recuo embaixo`);
     }
   }
-  assert.ok(botoes >= 2, 'o Salvar do gasto e o Confirmar venda');
+  assert.ok(botoes >= 3, 'o Salvar do gasto, o Confirmar venda e o Criar obra');
 });
 
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {

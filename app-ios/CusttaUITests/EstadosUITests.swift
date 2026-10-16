@@ -7,6 +7,25 @@ import XCTest
 final class EstadosUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
+    func testListaVaziaConvidaParaOMais() {
+        let app = abrirApp(conta: "senha", dados: "vazio")
+        let vazio = app.elemento("obrasVazio")
+        XCTAssertTrue(vazio.waitForExistence(timeout: 10))
+        XCTAssertEqual(vazio.label, "Nenhuma obra ainda.")
+        XCTAssertTrue(app.staticTexts["Toque no + para criar a primeira obra."].exists)
+        XCTAssertEqual(app.buttons["botaoMais"].label, "Nova obra")
+    }
+
+    func testCarregandoOMaisAvisaEmVezDeAbrir() {
+        let app = abrirApp(conta: "senha", leitura: "nunca")
+        XCTAssertTrue(app.elemento("obrasCarregando").waitForExistence(timeout: 10))
+        app.buttons["botaoMais"].tap()
+        let alerta = app.alerts["Carregando suas obras, tente em instantes."]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 5))
+        alerta.buttons["OK"].tap()
+        XCTAssertFalse(app.textFields["nomeDaObra"].exists, "sem ver os dados, \"Nova obra\" não abre")
+    }
+
     func testSemConexaoGravarContinua() {
         let app = abrirApp(conta: "senha", dados: "vitrine", rede: "offline", abrir: "obra:v1")
         let pilula = app.buttons["indicadorSincronizacao"]

@@ -147,7 +147,7 @@ jobs:
     # do dobro do Mac), 75–79 min. A leitura da folha, a mais pesada, roda no job auditoria: ~35 min de testes e ~43 min de
     # job em cada um. Teto de 60 min; se um passar de ~50, mova uma leitura para o outro (-skip-testing aqui e
     # -only-testing lá). No fim do PR 2 o laudo já usava perto de 50 min, e a parte 3 da etapa 2 soma ~30 cenas: as
-    # leituras dela rodam no job laudo-parte3.
+    # leituras dela rodam no job laudo-parte3, e as auditorias dela também (~7 min na CI, o auditoria ia a ~50).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -197,8 +197,9 @@ jobs:
 
   laudo-parte3:
     runs-on: macos-26
-    # As leituras da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda, o gasto numa
-    # vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está no job laudo.
+    # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
+    # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
+    # no job laudo.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -210,7 +211,7 @@ jobs:
         run: xcodebuild -version
 
       # A mesma varredura curta do job laudo: uma leitura troca de job sem mudar o que mede.
-      - name: Laudo de leitura da parte 3 no simulador
+      - name: Laudo de leitura e auditorias da parte 3 no simulador
         env:
           TEST_RUNNER_CUSTTA_VARREDURA: curta
         run: |
@@ -230,6 +231,8 @@ jobs:
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraVendida \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3NaMaiorLetra \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
+            -only-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
+            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosQuatroCombos \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -243,7 +246,8 @@ jobs:
 
   auditoria:
     runs-on: macos-26
-    # As auditorias de acessibilidade e a leitura da folha do gasto; a conta do tempo está no job laudo.
+    # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3) e a leitura da folha do gasto; a conta do
+    # tempo está no job laudo.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -272,6 +276,8 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/auditoria.xcresult" \
             -only-testing:CusttaUITests/AuditoriaUITests \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosQuatroCombos \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
             CODE_SIGNING_ALLOWED=NO
 

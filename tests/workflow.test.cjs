@@ -234,14 +234,15 @@ assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO
 assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 5, 'build, testes, os dois laudos e auditoria com os pacotes travados');
 // O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3 e auditoria, em paralelo: o app pula os dois. O
 // laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2) e o auditoria rodam as leituras que o laudo
-// pula, e o auditoria também as auditorias, para cada job caber no teto com folga.
+// pula, e o auditoria também as auditorias, menos as da parte 3, que rodam no laudo-parte3, para cada job caber no teto
+// com folga.
 // Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
 const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
 const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
 assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
   'o job app pula o laudo e as auditorias');
 assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
-assert.ok(!/AuditoriaUITests/.test(jobLaudo + jobParte3), 'as auditorias rodam no job auditoria, não nos laudos');
+assert.ok(!/AuditoriaUITests/.test(jobLaudo), 'as auditorias rodam no auditoria e no laudo-parte3, não no laudo');
 assert.match(jobAuditoria, /-only-testing:CusttaUITests\/AuditoriaUITests \\\n/, 'o job auditoria roda as auditorias');
 assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria + jobParte3), 'o laudo-parte3 e o auditoria rodam só as leituras que o laudo pula');
 assert.match(jobParte3, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-parte3 roda as leituras da parte 3');
@@ -253,6 +254,14 @@ assert.deepStrictEqual([...leiturasDe(jobParte3, 'only'), ...leiturasDe(jobAudit
 const leituraNoVidro = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'LeituraNoVidroUITests.swift'), 'utf8');
 for(const metodo of puladasNoLaudo)
   assert.match(leituraNoVidro, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no LeituraNoVidroUITests`);
+// As auditorias da parte 3 rodam no laudo-parte3: a que o auditoria pula roda lá, uma vez só, e só ela.
+const auditoriasDe = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/AuditoriaUITests/(\\w+)`, 'g'))].map(m => m[1]).sort();
+const puladasNoAuditoria = auditoriasDe(jobAuditoria, 'skip');
+assert.deepStrictEqual(auditoriasDe(jobParte3, 'only'), puladasNoAuditoria, 'a auditoria que o auditoria pula roda no laudo-parte3, e só ela');
+assert.ok(!/-only-testing:CusttaUITests\/AuditoriaUITests \\\n/.test(jobParte3), 'o laudo-parte3 roda só as auditorias que o auditoria pula');
+const auditoria = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'AuditoriaUITests.swift'), 'utf8');
+for(const metodo of puladasNoAuditoria)
+  assert.match(auditoria, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no AuditoriaUITests`);
 for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['auditoria', jobAuditoria]]){
   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
   assert.match(job, /\n\s+TEST_RUNNER_CUSTTA_VARREDURA: curta\n/, `o job ${nome} usa a varredura curta (a lista sob a cápsula só em 0, 20, 40 e 260 pt)`);

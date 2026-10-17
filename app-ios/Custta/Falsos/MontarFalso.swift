@@ -6,7 +6,8 @@ import CusttaNucleo
    Variáveis que o teste passa ao abrir o app:
    CUSTTA_CONTA   conta inicial da ContaFalsa (nenhuma, senha, senha-nao-confirmada, apple-sem-perfil,
                   google-sem-perfil, google-perfil-concorrente)
-   CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto)
+   CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto) |
+                  prejuizo (a vitrine com a vendida no prejuízo)
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
                   não responde: "Carregando suas obras…")
@@ -32,6 +33,7 @@ extension Composicao {
         case "vazio": nil
         case "exemplo": DadosDeExemplo.blob
         case "limite": DadosDeExemplo.noTeto()
+        case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
         default: DadosDeExemplo.vitrine()
         }
         // CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>: outro aparelho apaga um gasto com o app aberto; sem o gasto

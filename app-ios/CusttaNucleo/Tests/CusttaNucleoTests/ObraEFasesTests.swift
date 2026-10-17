@@ -61,6 +61,18 @@ struct MutacoesDaObraTests {
         #expect(estado().editandoObra("sumiu", CamposDaObra(nome: "X", dataInicio: "")) == nil)
     }
 
+    @Test func editarAVendidaEApagarPeloId() throws {
+        let antes = estado()
+        let e = try #require(antes.editandoObra("o3", CamposDaObra(nome: "Vendida 2", dataInicio: "", valorEstimadoVenda: 850_000, areaM2: 90)))
+        var esperada = antes.obras[2].arvore
+        esperada["nome"] = .texto("Vendida 2"); esperada["valorEstimadoVenda"] = .numero(850_000); esperada["areaM2"] = .numero(90)
+        #expect(e.obras[2].arvore == esperada, "a vendida editada guarda a fase, a venda inteira e o resto")
+        #expect(Array(e.obras.prefix(2)) == Array(antes.obras.prefix(2)), "as outras obras não mudam")
+        let semAPrimeira = try #require(antes.apagandoObra("o1"))
+        let semAUltima = try #require(antes.apagandoObra("o3"))
+        #expect(semAPrimeira.obras.map(\.id) == ["o2", "o3"] && semAUltima.obras.map(\.id) == ["o1", "o2"], "apaga a obra do id, não a da posição")
+    }
+
     @Test func apagarObra() throws {
         let e = try #require(estado().apagandoObra("o2"))
         #expect(e.obras.map(\.id) == ["o1", "o3"])

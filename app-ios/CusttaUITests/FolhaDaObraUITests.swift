@@ -30,7 +30,8 @@ final class FolhaDaObraUITests: XCTestCase {
         let erro = app.elemento("erroDaArea")
         XCTAssertTrue(erro.waitForExistence(timeout: 5))
         XCTAssertEqual(erro.label, "Informe área construída maior que zero.")
-        app.digitarComFoco("280", em: app.textFields["areaDaObra"])
+        // O cursor já está na área, como no site (sem foco em nenhum campo, o typeText falha).
+        app.typeText("280")
         XCTAssertTrue(erro.waitForNonExistence(timeout: 3), "o erro some ao digitar")
         app.buttons["salvarObra"].tap()
         let titulo = app.elemento("tituloDaObra")
@@ -109,9 +110,16 @@ final class FolhaDaObraUITests: XCTestCase {
     func testNomeVazioVoltaAoNomeSemMensagem() {
         let app = abrirApp(conta: "senha", dados: "vitrine", folha: "novaObra")
         XCTAssertTrue(app.textFields["nomeDaObra"].waitForExistence(timeout: 10))
+        // O cursor sai do nome (a área preenchida), para o "volta ao nome" valer.
+        let area = app.textFields["areaDaObra"]
+        area.tap()
+        area.typeText("280")
         app.buttons["salvarObra"].tap()
         XCTAssertFalse(app.elemento("erroDoNome").exists, "sem mensagem, como o site")
         XCTAssertTrue(app.textFields["nomeDaObra"].exists, "a folha continua aberta")
+        // Sem foco em nenhum campo o typeText falha: o que se digita agora entra no nome.
+        app.typeText("Casa")
+        XCTAssertEqual(app.textFields["nomeDaObra"].value as? String, "Casa", "o cursor volta ao nome, como o site")
     }
 
     func testDescartarObraPreenchidaPergunta() {

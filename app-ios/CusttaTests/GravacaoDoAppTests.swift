@@ -151,6 +151,22 @@ struct GravacaoDoAppTests {
         #expect(r.entrada.data == "2026-10-06", "na edição a data é uma só, qualquer que seja o pagamento")
     }
 
+    /// O que vai para o `obraNova` do núcleo: o nome aparado, a área pelo parseNum e os dois valores em reais, como o site
+    /// lê o formulário. Nenhum teste de tela vê o orçamento nem a área da obra criada.
+    @Test func rascunhoDaObraNovaViraOsCamposDoSite() {
+        let r = RascunhoDaObra(obra: nil, hoje: "2026-10-16")
+        #expect(r.nova && r.campos == CamposDaObra(nome: "", dataInicio: "2026-10-16"), "começa hoje, vazia")
+        #expect(!r.temOQuePerder)
+        r.nome = "  Casa Granja Viana 2 "
+        r.dataInicio = "2026-10-01"
+        r.area = "1.280,5"
+        r.estimado = 160_000_000
+        r.orcamento = 90_000_050
+        #expect(r.campos == CamposDaObra(nome: "Casa Granja Viana 2", dataInicio: "2026-10-01", valorEstimadoVenda: 1_600_000,
+                                         areaM2: 1280.5, orcamento: 900_000.5))
+        #expect(r.temOQuePerder)
+    }
+
     @Test func pagamentoDesconhecidoFicaComoVeio() {
         let o = obra([["id": .texto("b"), "valor": .numero(5), "topico": .texto("outros"), "descricao": .texto("Taxa"),
                        "data": .texto("2026-10-01"), "pagamento": .texto("boleto")]])

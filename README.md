@@ -6,6 +6,8 @@
 
 PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro renderia no banco no mesmo período (valor corrigido) e o lucro real na venda — bruto e acima do banco.
 
+O app de iPhone está sendo refeito em SwiftUI nativo, com a mesma conta e os mesmos dados do site.
+
 ![Status](https://img.shields.io/badge/status-em%20produ%C3%A7%C3%A3o-2ecc71)
 ![PWA](https://img.shields.io/badge/PWA-offline--first-3ad17e)
 ![Stack](https://img.shields.io/badge/stack-vanilla%20JS-f7df1e)
@@ -78,7 +80,8 @@ camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 | `sw.js`, `manifest.json` | service worker e manifesto do PWA |
 | `firestore.rules` | as regras que de fato protegem os dados |
 | `vendor/` | SDKs do Firebase e do Sentry, versionados em vez de vindos de CDN |
-| `ios/` | projeto Capacitor do app para iPhone |
+| `app-ios/` | app nativo de iPhone em SwiftUI (em desenvolvimento) e o núcleo de cálculo em Swift (`CusttaNucleo`) |
+| `ios/` | projeto Capacitor do app para iPhone (o atual, até o nativo substituí-lo) |
 | `api/`, `notificacoes/` | função de cron e o job de notificações — não fazem parte do app web |
 | `tests/` | unidade, rules e suítes de browser |
 | `docs/` | arquitetura, specs e planos |

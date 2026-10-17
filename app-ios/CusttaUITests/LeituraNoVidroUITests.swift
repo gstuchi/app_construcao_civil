@@ -5,7 +5,8 @@ import UIKit
    Xcode não lê fundo de vidro, então ela audita as cores com superfícies sólidas (AuditoriaUITests) e este
    laudo mede o que aparece na tela: cada cena em dois prints, um normal e um com o texto apagado, com o
    fundo parado no pior caso (aurora no pior ponto da deriva inteira, globo no ângulo de partida, logo
-   pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra. Cada cena deixa no
+   pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra; só o exemplo da
+   descrição do gasto, informativo no mockup, fica de fora (exemploDaDescricao). Cada cena deixa no
    resultado o print anotado (verde passa, vermelho não) e a tabela, para o Lupa e o Giovani verem sem
    abrir o simulador. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro
    (decisão do Giovani em 09/10). Na CI (iOS 26) o laudo também é portão: o simulador de lá desenha o
@@ -44,7 +45,7 @@ final class LeituraNoVidroUITests: XCTestCase {
         var rolada = false
     }
 
-    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat) {
+    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect]) {
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir,
                            argumentos: cena.argumentos + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
         XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
@@ -56,8 +57,31 @@ final class LeituraNoVidroUITests: XCTestCase {
         let foto = XCUIScreen.main.screenshot()
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
         let largura = app.frame.width
+        let informativo = exemploDaDescricao(app, cena)
         app.terminate()
-        return (foto, abas, largura)
+        return (foto, abas, largura, informativo)
+    }
+
+    /// O exemplo da descrição do gasto ("Ex: 50 sacos de cimento") é o único texto fora do portão: o mockup aprovado o
+    /// marca como informativo (parte2.html:1981), no terciário sobre a linha sólida da folha (3,40:1 no escuro esmeralda,
+    /// 3,84 no escuro azul), o mesmo tom do prompt do campo no build 3.1. O laudo não via aquele prompt (quem o desenha é
+    /// o UIKit, e o texto apagado não o tira); o exemplo virou Text para quebrar linha na letra grande e passou a ser
+    /// medido. Sai a caixa do campo vazio e, embaixo dela, as linhas do exemplo, medidas como na AuditoriaUITests (letra
+    /// do corpo na largura do campo). Com texto digitado o exemplo some e nada sai: o texto do campo continua no portão.
+    @MainActor private func exemploDaDescricao(_ app: XCUIApplication, _ cena: Cena) -> [CGRect] {
+        let campo = app.textFields["descricao"]
+        guard campo.exists, let exemplo = campo.placeholderValue else { return [] }
+        let valor = campo.value as? String ?? ""
+        guard valor.isEmpty || valor == exemplo else { return [] }
+        let categoria = cena.argumentos.firstIndex(of: "-UIPreferredContentSizeCategoryName")
+            .map { UIContentSizeCategory(rawValue: cena.argumentos[$0 + 1]) } ?? .large
+        let corpo = UIFont.preferredFont(forTextStyle: .body, compatibleWith: UITraitCollection(preferredContentSizeCategory: categoria))
+        let altura = (exemplo as NSString).boundingRect(with: CGSize(width: campo.frame.width, height: .greatestFiniteMagnitude),
+                                                        options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                                        attributes: [.font: corpo], context: nil).height
+        var caixa = campo.frame
+        caixa.size.height = max(caixa.height, altura.rounded(.up))
+        return [caixa.insetBy(dx: -2, dy: -2)]
     }
 
     /// Mede as cenas e cobra o portão de cada uma.
@@ -74,8 +98,8 @@ final class LeituraNoVidroUITests: XCTestCase {
 
     /// Mede uma cena, anexa o print anotado e a tabela e devolve as palavras abaixo do portão.
     @MainActor private func conferir(_ cena: Cena) throws -> [String] {
-        let (normal, abas, largura) = fotografar(cena, textoApagado: false)
-        let (semTexto, _, _) = fotografar(cena, textoApagado: true)
+        let (normal, abas, largura, informativo) = fotografar(cena, textoApagado: false)
+        let (semTexto, _, _, _) = fotografar(cena, textoApagado: true)
         let imagem = normal.image.cgImage!
         let escala = CGFloat(imagem.width) / largura
         let capsula = abas.reduce(CGRect.null) { $0.union($1) }
@@ -92,7 +116,7 @@ final class LeituraNoVidroUITests: XCTestCase {
         let palavras = try LaudoDeContraste.medir(normal: Retrato(imagem), semTexto: Retrato(semTexto.image.cgImage!),
                                                   escala: escala, topo: Self.barraDeStatus,
                                                   somenteEm: cena.escopo == "navegacao" ? regiao : nil,
-                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + borda)
+                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + borda + informativo)
         XCTAssertFalse(palavras.isEmpty, "\(cena.nome): nenhum texto medido")
         anexar(cena.nome, normal.image, palavras, escala)
         Swift.print(String(format: "leitura | %@ | %d palavras, %d abaixo | pior nota %.2f", cena.nome, palavras.count,

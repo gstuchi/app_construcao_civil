@@ -35,7 +35,6 @@ final class AuditoriaUITests: XCTestCase {
         let barra = app.navigationBars.firstMatch
         let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
-        let barras = app.navigationBars.allElementsBoundByIndex.map(\.frame)
         try app.performAccessibilityAudit(for: tipos) { achado in
             guard let elemento = achado.element else {
                 Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
@@ -45,14 +44,15 @@ final class AuditoriaUITests: XCTestCase {
             switch achado.auditType {
             case .dynamicType:
                 // Os títulos das barras param perto de 22 pt, como os do sistema (mockup da etapa 2), com o Visualizador de
-                // Conteúdo Grande: o pequeno da obra e o das folhas (título e o nome da obra embaixo), na barra da folha.
-                // Na folha do gasto, as teclas e o "Apagar" do arrastar param no AX2, e o visor do valor (64 pt) já é
-                // maior que o texto na maior letra e encolhe para caber.
+                // Conteúdo Grande: o pequeno da obra e o das folhas (na maior letra o nome da obra sai da barra da folha e
+                // fica no valor do título, para o VoiceOver). Pelo identificador, e não pela barra inteira: o que passa por
+                // baixo dela continua na auditoria de tipo dinâmico. Na folha do gasto, as teclas e o "Apagar" do arrastar
+                // param no AX2, e o visor do valor (64 pt) já é maior que o texto na maior letra e encolhe para caber.
                 let centro = CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)
                 fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
                     || elemento.identifier.hasPrefix("tituloDaFolha") || elemento.identifier.hasPrefix("visorDoValor")
                     || elemento.identifier.hasPrefix("tecla-") || elemento.identifier.hasPrefix("apagar-")
-                    || barras.contains { $0.contains(centro) } || abas.contains { $0.contains(centro) }
+                    || abas.contains { $0.contains(centro) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
                 // O travessão da venda sem estimativa: um traço de 3 pt que a auditoria não consegue medir (como o "·"

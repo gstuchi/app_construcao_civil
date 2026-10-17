@@ -553,4 +553,22 @@ final class LaudoDeContrasteTests: XCTestCase {
         }
     }
 
+    /// O que muda 1 px entre os prints longe das letras (o valor que encolhe na maior letra empurra o que vem embaixo)
+    /// é a mesma cena: o separador não muda a cena e a borda forte não vira palavra. Com 2 px, a cena mudou.
+    func testBordaQueMudaUmPixelNaoMudaACena() throws {
+        let separador: (UInt8, UInt8, UInt8) = (0x26, 0x40, 0x38), borda: (UInt8, UInt8, UInt8) = (0x80, 0x90, 0x88)
+        func retratos(_ desce: CGFloat, _ cor: (UInt8, UInt8, UInt8)) -> (Retrato, Retrato) {
+            (retrato(200, 120, fundo: fundo, pintar: letras.map { ($0, branco) } + [(CGRect(x: 100, y: 100, width: 90, height: 1), cor)]),
+             retrato(200, 120, fundo: fundo, pintar: [(CGRect(x: 100, y: 100 + desce, width: 90, height: 1), cor)]))
+        }
+        for cor in [separador, borda] {
+            let (normal, semTexto) = retratos(1, cor)
+            XCTAssertEqual(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).count, 1, "só as três letras")
+        }
+        let (normal, semTexto) = retratos(2, separador)
+        XCTAssertThrowsError(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3)) { erro in
+            XCTAssertTrue(erro is LaudoDeContraste.CenaNaoDeterministica)
+        }
+    }
+
 }

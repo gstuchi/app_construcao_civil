@@ -182,6 +182,19 @@ final class EstadosUITests: XCTestCase {
         XCTAssertFalse(app.elemento("visorDoValor").exists)
     }
 
+    /// A linha "Obra" vem na primeira aberta da lista de obras (a que começou mais recente), não na primeira do documento,
+    /// e a escolha lista as abertas nessa ordem: nos dados de exemplo, o Terreno novo (2026) vem antes da Casa Alphaville,
+    /// que vem antes no documento.
+    func testLinhaObraNaOrdemDaListaDeObras() {
+        let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o2")
+        let linha = lancarDeDentroDaVendida(app)
+        XCTAssertEqual(linha.value as? String, "Terreno novo", "a primeira aberta da lista, não a do documento")
+        linha.tap()
+        let abertas = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'obraAberta-'"))
+        XCTAssertTrue(abertas.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(abertas.allElementsBoundByIndex.map(\.identifier), ["obraAberta-o3", "obraAberta-o1", "obraAberta-o4"])
+    }
+
     /// Na Casa Tamboré 4 (vendida): + → o valor no teclado → "Avançar"; devolve a linha "Obra" dos detalhes.
     private func lancarDeDentroDaVendida(_ app: XCUIApplication) -> XCUIElement {
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))

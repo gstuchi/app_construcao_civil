@@ -47,8 +47,8 @@ struct SeparadorDaFolha: View {
 }
 
 /// Uma linha com rótulo e valor ("Valor", "Tópico", "Data", "Parcelas"): lado a lado; na letra grande, um em cima do
-/// outro, o rótulo em 13 secundário e a seta na ponta direita, centrada na altura (o `.f-lin` do mockup na AX5). `altura`
-/// é a mínima (52; a do valor, 60, com o rótulo no secundário, o `.f-valor .r`).
+/// outro, o rótulo secundário e menor que o valor e a seta na ponta direita, centrada na altura (o `.f-lin` do mockup na
+/// AX5). `altura` é a mínima (52; a do valor, 60, com o rótulo no secundário, o `.f-valor .r`).
 struct LinhaDaFolhaComRotulo<Valor: View>: View {
     let rotulo: String
     var altura: CGFloat = 52
@@ -62,8 +62,10 @@ struct LinhaDaFolhaComRotulo<Valor: View>: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
             : AnyLayout(HStackLayout(spacing: 12))
         layout {
+            // Na letra grande, o subheadline (49 pt na AX5) e não o footnote do mockup (44): o footnote da AX1 tem os 23 pt
+            // do body da última letra comum, e a auditoria de tipo dinâmico marca o rótulo que não cresce na passagem.
             Text(rotulo)
-                .font(grande ? .footnote : nil)
+                .font(grande ? .subheadline : nil)
                 .foregroundStyle(paleta.cor(grande || altura > 52 ? .secundarioTransparente : .texto))
                 .fixedSize(horizontal: false, vertical: true)
             if !grande { Spacer(minLength: 0) }

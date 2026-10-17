@@ -625,13 +625,14 @@ test('folha do gasto na letra grande: o nome da obra e o do tópico ficam embaix
 });
 
 test('peças da folha na maior letra: rótulo, nota, cabeçalho dos tópicos e exemplo da descrição como no mockup', () => {
-  // O mockup na AX5 (parte3.html): o rótulo da linha em 13 secundário (o footnote dá 44 pt), também no .f-valor da letra
-  // padrão (as linhas de 60 pt); a nota e o cabeçalho a 22 pt da borda (34 na letra padrão), e a nota com os 2 pt que
-  // faltam embaixo (36 pt em duas linhas de 18); o exemplo da descrição quebra linha (o prompt do campo encolhia para
-  // caber numa) e o prompt fica no campo, transparente, para o VoiceOver. A seta, a nota, as teclas e o botão o
-  // EstadosUITests e o GastoUITests medem.
+  // O mockup na AX5 (parte3.html): o rótulo da linha no secundário (também no .f-valor da letra padrão, as linhas de
+  // 60 pt) e menor que o valor: no subheadline, 49 pt na AX5, e não no footnote do mockup (44 pt), que na AX1 fica nos
+  // 23 pt do body da última letra comum, e a auditoria de tipo dinâmico marca o rótulo que não cresce ali. A nota e o
+  // cabeçalho a 22 pt da borda (34 na letra padrão), e a nota com os 2 pt que faltam embaixo (36 pt em duas linhas de
+  // 18); o exemplo da descrição quebra linha (o prompt do campo encolhia para caber numa) e o prompt fica no campo,
+  // transparente, para o VoiceOver. A seta, a nota, as teclas e o botão o EstadosUITests e o GastoUITests medem.
   const pecas = ler('app-ios/Custta/Identidade/PecasDaFolha.swift');
-  assert.match(pecas, /Text\(rotulo\)\n\s*\.font\(grande \? \.footnote : nil\)\n\s*\.foregroundStyle\(paleta\.cor\(grande \|\| altura > 52 \? \.secundarioTransparente : \.texto\)\)/,
+  assert.match(pecas, /Text\(rotulo\)\n\s*\.font\(grande \? \.subheadline : nil\)\n\s*\.foregroundStyle\(paleta\.cor\(grande \|\| altura > 52 \? \.secundarioTransparente : \.texto\)\)/,
     'o rótulo da linha');
   assert.match(pecas, /\.padding\(\.bottom, 2\)\n\s*\.frame\(maxWidth: \.infinity, alignment: \.leading\)\n\s*\.padding\(\.horizontal, tamanho\.isAccessibilitySize \? 22 : 34\)/,
     'a nota');

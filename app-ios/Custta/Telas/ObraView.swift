@@ -37,6 +37,8 @@ struct ObraView: View {
     /// Laudo e conferência visual: a linha que abre mostrando "Apagar" (`-custta.linhaAberta g027`).
     @AppStorage("custta.linhaAberta") private var linhaDeTeste = ""
     @State private var posicao = ScrollPosition(edge: .top)
+    /// A rolagem fixa foi pedida e ninguém arrastou a lista depois: o gancho a segura.
+    @State private var segurandoARolagem = false
     #endif
 
     var body: some View {
@@ -131,7 +133,15 @@ struct ObraView: View {
             guard rolagemFixa >= 0 else { return }
             try? await Task.sleep(for: .milliseconds(300))
             posicao.scrollTo(y: rolagemFixa)
+            segurandoARolagem = true
         }
+        // No iOS 26, quando a obra abre já com os dados (sem o carregando), a lista às vezes volta sozinha ao topo uns 2 s
+        // depois de rolada: o laudo comparou um print rolado com outro no topo (CenaNaoDeterministica na CI, em 15/10 e
+        // 17/10). Até alguém arrastar, a rolagem que sai da pedida volta.
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+            if segurandoARolagem, abs(y - rolagemFixa) > 0.5 { posicao.scrollTo(y: rolagemFixa) }
+        }
+        .onScrollPhaseChange { _, fase in if fase == .interacting { segurandoARolagem = false } }
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

@@ -6,6 +6,17 @@ import CusttaNucleo
    a linha fina recuada 16 pt; cabeçalho e rodapé em 13 pt secundário. Dentro da folha nada é vidro: a folha já é. Na
    letra grande, o rótulo vai em cima do valor. */
 
+/// A seta de dentro do valor, na letra grande: só avisa a linha, que a desenha na ponta direita.
+private struct SetaNaPonta: PreferenceKey {
+    static let defaultValue = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) { value = value || nextValue() }
+}
+
+extension EnvironmentValues {
+    /// Dentro do valor de uma `LinhaDaFolhaComRotulo` na letra grande: a `SetaDaLinha` não segue o valor.
+    @Entry var setaNaPonta = false
+}
+
 /// Um grupo de linhas: o fundo sólido e o recorte no raio do grupo.
 struct GrupoDaFolha<Conteudo: View>: View {
     @ViewBuilder let conteudo: () -> Conteudo
@@ -36,7 +47,8 @@ struct SeparadorDaFolha: View {
 }
 
 /// Uma linha com rótulo e valor ("Valor", "Tópico", "Data", "Parcelas"): lado a lado; na letra grande, um em cima do
-/// outro. `altura` é a mínima (52; a do valor, 60).
+/// outro, o rótulo em 13 secundário e a seta na ponta direita, centrada na altura (o `.f-lin` do mockup na AX5). `altura`
+/// é a mínima (52; a do valor, 60, com o rótulo no secundário, o `.f-valor .r`).
 struct LinhaDaFolhaComRotulo<Valor: View>: View {
     let rotulo: String
     var altura: CGFloat = 52
@@ -45,19 +57,25 @@ struct LinhaDaFolhaComRotulo<Valor: View>: View {
     @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
-        let layout = tamanho.isAccessibilitySize
+        let grande = tamanho.isAccessibilitySize
+        let layout = grande
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
             : AnyLayout(HStackLayout(spacing: 12))
         layout {
             Text(rotulo)
-                .foregroundStyle(paleta.cor(.texto))
+                .font(grande ? .footnote : nil)
+                .foregroundStyle(paleta.cor(grande || altura > 52 ? .secundarioTransparente : .texto))
                 .fixedSize(horizontal: false, vertical: true)
-            if !tamanho.isAccessibilitySize { Spacer(minLength: 0) }
+            if !grande { Spacer(minLength: 0) }
             valor()
+                .environment(\.setaNaPonta, grande)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, minHeight: altura, alignment: .leading)
+        .overlayPreferenceValue(SetaNaPonta.self, alignment: .trailing) { tem in
+            if tem { SetaDaLinha().padding(.trailing, 16) }
+        }
         .contentShape(.rect)
     }
 }
@@ -120,44 +138,59 @@ struct LinhaDeDinheiro: View {
     }
 }
 
-/// A seta ">" das linhas que abrem outro passo.
+/// A seta ">" das linhas que abrem outro passo; para de crescer no AX3 (18 × 30 no mockup na AX5). Na letra grande,
+/// dentro do valor de uma `LinhaDaFolhaComRotulo`, não segue o valor: guarda o lugar dela no fim do valor (o valor para
+/// 40 pt antes da borda, como no mockup) e avisa a linha, que a desenha na ponta direita (o `.f-lin .chev` na AX5).
 struct SetaDaLinha: View {
     @Environment(\.paleta) private var paleta
+    @Environment(\.setaNaPonta) private var naPonta
 
     var body: some View {
-        Image(systemName: "chevron.right")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(paleta.cor(.textoTerciario))
-            .accessibilityHidden(true)
-            .foraDoLaudo()
+        if naPonta {
+            Color.clear.frame(width: 18, height: 0).preference(key: SetaNaPonta.self, value: true)
+        } else {
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .dynamicTypeSize(...DynamicTypeSize.accessibility3)
+                .foregroundStyle(paleta.cor(.textoTerciario))
+                .accessibilityHidden(true)
+                .foraDoLaudo()
+        }
     }
 }
 
 /// Texto solto na folha, fora dos grupos (resumo do cartão, ajuda, avisos): 13 pt secundário, a 34 pt da borda (16 do
-/// grupo + 18), como o rodapé de um grupo de Ajustes do sistema.
+/// grupo + 18; na letra grande, 22), como o rodapé de um grupo de Ajustes do sistema.
 struct NotaDaFolha: View {
     let texto: String
     var cor: Token = .secundarioTransparente
     var identificador: String?
 
     @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
         Text(texto)
             .font(.footnote)
             .foregroundStyle(paleta.cor(cor))
             .fixedSize(horizontal: false, vertical: true)
+            // O .f-rod do mockup é 36 pt em duas linhas de 18; o footnote ocupa 33,7, e o que falta fica embaixo: os glifos
+            // já caem onde o mockup os põe (1 pt abaixo, a meia entrelinha do SwiftUI), e o que vem depois desce para o lugar.
+            .padding(.bottom, 2)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 34)
+            .padding(.horizontal, tamanho.isAccessibilitySize ? 22 : 34)
             .accessibilityIdentifier(identificador ?? "")
     }
 }
 
 /// O título da folha na barra: 17 semibold e, embaixo, o nome da obra em 13 secundário (mockup). Uma linha cada; na
-/// letra grande para perto de 22 pt e mostra o Visualizador de Conteúdo Grande, como o título pequeno da obra.
+/// letra grande para perto de 22 pt e mostra o Visualizador de Conteúdo Grande, como o título pequeno da obra, e o nome
+/// da obra sai da barra (mockup), ficando só para o VoiceOver. `letraGrande` vem de fora: dentro da barra, o tamanho de
+/// letra chega limitado e nunca é de acessibilidade.
 struct TituloDaFolha: View {
     let titulo: String
     var subtitulo: String?
+    var letraGrande = false
     @Environment(\.paleta) private var paleta
 
     var body: some View {
@@ -168,7 +201,7 @@ struct TituloDaFolha: View {
                 .font(.headline)
                 .foregroundStyle(paleta.cor(.texto))
                 .accessibilityIdentifier("tituloDaFolha")
-            if let subtitulo {
+            if let subtitulo, !letraGrande {
                 Text(subtitulo)
                     .font(.footnote)
                     .foregroundStyle(paleta.cor(.secundarioTransparente))
@@ -179,6 +212,7 @@ struct TituloDaFolha: View {
         .frame(maxWidth: 250)
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityElement(children: .combine)
+        .accessibilityValue(letraGrande ? subtitulo ?? "" : "")
         .accessibilityAddTraits(.isHeader)
         .accessibilityShowsLargeContentViewer()
         .accessibilityIdentifier("tituloDaFolha")

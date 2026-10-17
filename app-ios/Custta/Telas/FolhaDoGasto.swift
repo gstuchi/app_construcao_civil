@@ -523,13 +523,24 @@ private struct PassoDosDetalhes: View {
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(paleta.cor(.secundarioTransparente))
                         .accessibilityHidden(true)
-                    TextField("Descrição (opcional)", text: $rascunho.descricao,
-                              prompt: Text("Ex: 50 sacos de cimento").foregroundStyle(paleta.cor(.textoTerciario)))
-                        .foregroundStyle(paleta.cor(.texto))
-                        .focused($foco, equals: .descricao)
-                        .submitLabel(.done)
-                        .onChange(of: rascunho.descricao) { _, _ in rascunho.limitarDescricao(); erroDaDescricao = nil }
-                        .accessibilityIdentifier("descricao")
+                    // O exemplo é desenhado aqui, e não pelo prompt do campo, para quebrar linha na letra grande: o prompt do
+                    // TextField fica numa linha e encolhia para caber. O prompt continua no campo, transparente, para o
+                    // VoiceOver; o exemplo fica na linha de base do campo, onde o prompt ficava.
+                    ZStack(alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline)) {
+                        if rascunho.descricao.isEmpty {
+                            Text("Ex: 50 sacos de cimento")
+                                .foregroundStyle(paleta.cor(.textoTerciario))
+                                .accessibilityHidden(true)
+                                .onTapGesture { foco = .descricao }
+                        }
+                        TextField("Descrição (opcional)", text: $rascunho.descricao,
+                                  prompt: Text("Ex: 50 sacos de cimento").foregroundStyle(.clear))
+                            .foregroundStyle(paleta.cor(.texto))
+                            .focused($foco, equals: .descricao)
+                            .submitLabel(.done)
+                            .onChange(of: rascunho.descricao) { _, _ in rascunho.limitarDescricao(); erroDaDescricao = nil }
+                            .accessibilityIdentifier("descricao")
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 11)
@@ -712,6 +723,7 @@ private struct ListaDeTopicos: View {
     @Bindable var rascunho: RascunhoDoGasto
     let voltar: () -> Void
     @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
         ScrollView {
@@ -734,7 +746,7 @@ private struct ListaDeTopicos: View {
         Text(texto)
             .font(.footnote.weight(.semibold))
             .foregroundStyle(paleta.cor(.secundarioTransparente))
-            .padding(.horizontal, 34)
+            .padding(.horizontal, tamanho.isAccessibilitySize ? 22 : 34)     // o .f-cab: 22 na letra grande, como a nota
             .accessibilityAddTraits(.isHeader)
     }
 

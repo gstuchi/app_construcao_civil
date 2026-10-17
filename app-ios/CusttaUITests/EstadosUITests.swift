@@ -39,6 +39,9 @@ final class EstadosUITests: XCTestCase {
         XCTAssertTrue(linha.waitForExistence(timeout: 5))
         XCTAssertEqual(linha.value as? String, "Casa Alphaville", "vem a primeira aberta da lista de obras")
         XCTAssertEqual(app.elemento("notaObraVendida").label, "Casa Tamboré 4 está vendida; o gasto vai para uma obra aberta.")
+        // O grupo do valor a 22 pt da nota: os 20 do espaço entre grupos e os 2 que faltam embaixo da nota (o .f-rod do
+        // mockup é 36 pt em duas linhas de 18; o footnote ocupa 33,7).
+        XCTAssertEqual(app.elemento("linhaValor").frame.minY - app.elemento("notaObraVendida").frame.maxY, 22, accuracy: 0.5)
         linha.tap()
         let sobrado = app.buttons["obraAberta-v2"]
         XCTAssertTrue(sobrado.waitForExistence(timeout: 5))
@@ -107,17 +110,29 @@ final class EstadosUITests: XCTestCase {
                            argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         let linha = lancarDeDentroDaVendida(app)
         XCTAssertEqual(linha.value as? String, "Casa Alphaville")
-        let faixas = faixasDeTexto(linha)
+        let faixas = tintaPorPixel(linha).faixas
         guard faixas.count >= 2 else { return XCTFail("o rótulo e o nome, por pixel: \(faixas)") }
         XCTAssertEqual(faixas[1].x, faixas[0].x, accuracy: 6, "a 1ª linha do nome começa onde começa o rótulo: \(faixas)")
     }
 
-    /// As faixas de texto de uma linha sólida da folha, de cima para baixo, por pixel: linhas de pixel seguidas com tinta
-    /// (o que se afasta do fundo, lido perto da beira esquerda), com o topo e o x da tinta mais à esquerda nos primeiros
-    /// 20 pt da faixa (mais abaixo a seta, centrada no nome, pode encostar), em pontos. Traço fino (borda, separador) não
-    /// conta como faixa.
-    private func faixasDeTexto(_ elemento: XCUIElement) -> [(topo: CGFloat, x: CGFloat)] {
-        guard let cg = elemento.screenshot().image.cgImage else { return [] }
+    /// Na maior letra, a seta da linha "Obra" fica na ponta direita, centrada na linha, e não segue o nome (o `.f-lin .chev`
+    /// do mockup na AX5), e a nota fica a 22 pt da borda, como o `.f-rod` (34 na letra padrão).
+    func testNaMaiorLetraASetaFicaNaPontaEANotaA22() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v3",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let linha = lancarDeDentroDaVendida(app)
+        continueAfterFailure = true     // as duas medidas são independentes
+        let direita = tintaPorPixel(linha).direita
+        XCTAssertGreaterThan(direita, linha.frame.width - 24, "a seta termina a 16 pt da ponta da linha: \(direita)")
+        XCTAssertEqual(app.elemento("notaObraVendida").frame.minX, 22, accuracy: 0.5)
+    }
+
+    /// A tinta de uma linha sólida da folha, por pixel: o que se afasta do fundo (lido perto da beira esquerda), fora dos
+    /// 8 pt de cada beira, em pontos. `faixas`: linhas de pixel seguidas com tinta, de cima para baixo, com o topo e o x da
+    /// tinta mais à esquerda nos primeiros 20 pt da faixa (mais abaixo a seta, centrada no nome, pode encostar); traço fino
+    /// (borda, separador) não conta como faixa. `direita`: o x da tinta mais à direita.
+    private func tintaPorPixel(_ elemento: XCUIElement) -> (faixas: [(topo: CGFloat, x: CGFloat)], direita: CGFloat) {
+        guard let cg = elemento.screenshot().image.cgImage else { return ([], 0) }
         let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / elemento.frame.width)
         var px = [UInt8](repeating: 0, count: l * a * 4)
         let desenhou = px.withUnsafeMutableBytes { b -> Bool in
@@ -127,14 +142,14 @@ final class EstadosUITests: XCTestCase {
             c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
             return true
         }
-        guard desenhou else { return [] }
+        guard desenhou else { return ([], 0) }
         let fundo = ((a / 2) * l + Int(4 * e)) * 4
-        let margem = Int(8 * e)
-        let primeira: [Int?] = (0..<a).map { y in
-            (margem..<(l - margem)).first { x in
-                (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[fundo + $0])) > 64 }
-            }
+        let colunas = Int(8 * e)..<(l - Int(8 * e))
+        func tinta(_ x: Int, _ y: Int) -> Bool {
+            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[fundo + $0])) > 64 }
         }
+        let primeira: [Int?] = (0..<a).map { y in colunas.first { tinta($0, y) } }
+        let ultima = (0..<a).compactMap { y in colunas.reversed().first { tinta($0, y) } }.max() ?? 0
         var faixas: [(topo: CGFloat, x: CGFloat)] = []
         var y = 0
         while y < a {
@@ -147,7 +162,7 @@ final class EstadosUITests: XCTestCase {
             }
             y = fim + 1
         }
-        return faixas
+        return (faixas, CGFloat(ultima) / e)
     }
 
     /// Sem nenhuma obra aberta, o + da vendida cria obra, como no site (o formGasto e o + chamam o formNovaObra).

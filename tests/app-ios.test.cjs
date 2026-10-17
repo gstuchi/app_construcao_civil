@@ -624,6 +624,23 @@ test('folha do gasto na letra grande: o nome da obra e o do tópico ficam embaix
       `${valor}: no alinhamento do valor`);
 });
 
+test('peças da folha na maior letra: rótulo, nota, cabeçalho dos tópicos e exemplo da descrição como no mockup', () => {
+  // O mockup na AX5 (parte3.html): o rótulo da linha em 13 secundário (o footnote dá 44 pt), também no .f-valor da letra
+  // padrão (as linhas de 60 pt); a nota e o cabeçalho a 22 pt da borda (34 na letra padrão), e a nota com os 2 pt que
+  // faltam embaixo (36 pt em duas linhas de 18); o exemplo da descrição quebra linha (o prompt do campo encolhia para
+  // caber numa) e o prompt fica no campo, transparente, para o VoiceOver. A seta, a nota, as teclas e o botão o
+  // EstadosUITests e o GastoUITests medem.
+  const pecas = ler('app-ios/Custta/Identidade/PecasDaFolha.swift');
+  assert.match(pecas, /Text\(rotulo\)\n\s*\.font\(grande \? \.footnote : nil\)\n\s*\.foregroundStyle\(paleta\.cor\(grande \|\| altura > 52 \? \.secundarioTransparente : \.texto\)\)/,
+    'o rótulo da linha');
+  assert.match(pecas, /\.padding\(\.bottom, 2\)\n\s*\.frame\(maxWidth: \.infinity, alignment: \.leading\)\n\s*\.padding\(\.horizontal, tamanho\.isAccessibilitySize \? 22 : 34\)/,
+    'a nota');
+  const gasto = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(gasto, /\.padding\(\.horizontal, tamanho\.isAccessibilitySize \? 22 : 34\)/, 'o cabeçalho dos tópicos');
+  assert.match(gasto, /Text\("Ex: 50 sacos de cimento"\)\n\s*\.foregroundStyle\(paleta\.cor\(\.textoTerciario\)\)/, 'o exemplo, que quebra linha');
+  assert.match(gasto, /prompt: Text\("Ex: 50 sacos de cimento"\)\.foregroundStyle\(\.clear\)/, 'o prompt transparente');
+});
+
 test('apagar no fim da folha: a linha inteira é o botão, no vermelho de negativo e em peso médio', () => {
   // O "Apagar obra" e o "Apagar gasto" são a única linha de um grupo sólido da folha (o .f-lin.destr do mockup): a cor é
   // o --red, que no app é .negativo (o .erroNoVidro é o da nota sobre o vidro), o peso é 500, e o toque é a linha

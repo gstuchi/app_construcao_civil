@@ -81,6 +81,7 @@ private struct PassoDaFolha: ViewModifier {
     let raiz: Bool
     @Environment(\.pedirParaFechar) private var pedirParaFechar
     @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     @ViewBuilder func body(content: Content) -> some View {
         let passo = content
@@ -88,7 +89,9 @@ private struct PassoDaFolha: ViewModifier {
             .navigationTitle(titulo)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) { TituloDaFolha(titulo: titulo, subtitulo: subtitulo) }
+                ToolbarItem(placement: .principal) {
+                    TituloDaFolha(titulo: titulo, subtitulo: subtitulo, letraGrande: tamanho.isAccessibilitySize)
+                }
                 if let lado {
                     ToolbarItem(placement: lado == .esquerda ? .topBarLeading : .topBarTrailing) {
                         Button(role: .close) { pedirParaFechar() }

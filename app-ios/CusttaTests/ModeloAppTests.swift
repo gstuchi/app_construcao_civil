@@ -328,6 +328,40 @@ struct ModeloAppTests {
         #expect(m.alertaDeGravacao != nil, "depois de salvar, o erro seguinte é outro")
     }
 
+    /// O erro que passa sozinho (a rede caiu no meio da gravação) não vira o alerta: fica o aviso do topo, como no site, e a
+    /// fila tenta de novo sozinha.
+    @Test func erroQuePassaSozinhoFicaNoAvisoDoTopo() async {
+        let transporte = TransporteNaMao()
+        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema())
+        let m = ModeloApp(conta: ContaFalsa(inicial: "senha"), sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: false))
+        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
+        _ = try? m.sincronizador.aplicar(Estado.de(.objeto(["obras": .lista([])])))
+        transporte.responder("unavailable")
+        #expect(m.alertaDeGravacao == nil, "erro de rede não é o \"Não salvou\" que pede ação")
+        #expect(m.aviso == "Sem salvar na nuvem agora — vamos tentar de novo sozinhos.")
+    }
+
+    /// A sessão que cai com o "Não salvou" aberto leva o alerta junto, e quem entra de novo começa do zero: o primeiro erro
+    /// da sessão nova alerta, mesmo sem gravação confirmada no meio.
+    @Test func sessaoQueCaiEsqueceONaoSalvou() async throws {
+        let transporte = TransporteNaMao()
+        let conta = ContaFalsa(inicial: "senha")
+        let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema())
+        let m = ModeloApp(conta: conta, sincronizador: sincronizador, rede: MonitorDeRede(forcarSemRede: false))
+        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
+        _ = try? m.sincronizador.aplicar(Estado.de(.objeto(["obras": .lista([])])))
+        transporte.responder("permission-denied")
+        #expect(m.alertaDeGravacao != nil)
+        try await conta.sair()                          // a sessão cai com o alerta aberto
+        await ate { m.fase == .entrada }
+        #expect(m.alertaDeGravacao == nil, "o alerta da sessão que caiu não fica para a próxima")
+        try await conta.entrar(email: "giovani@exemplo.com", senha: ContaFalsa.senhaCerta)
+        await ate { m.fase.ehPrincipal && m.sincronizador.dadosCarregados }
+        _ = try? m.sincronizador.aplicar(Estado.de(.objeto(["obras": .lista([])])))
+        transporte.responder("permission-denied")
+        #expect(m.alertaDeGravacao != nil, "o primeiro erro da sessão nova alerta")
+    }
+
     /// Como o cloud.js: a rede que volta confere a sessão sem forçar; a gravação recusada com
     /// "unauthenticated" força a conferência.
     @Test func sessaoSoEForcadaQuandoAGravacaoERecusada() async {

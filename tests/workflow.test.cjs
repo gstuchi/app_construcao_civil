@@ -228,36 +228,40 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
 assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
 assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
 assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
-assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 4, 'build, testes, laudo e auditoria sem assinatura');
+assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 5, 'build, testes, os dois laudos e auditoria sem assinatura');
 assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
 assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
-assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 4, 'build, testes, laudo e auditoria com os pacotes travados');
-// O laudo de leitura e as auditorias moram nos jobs laudo e auditoria, em paralelo: o app pula os dois. O laudo roda a
-// leitura; o auditoria roda as auditorias e as leituras que o laudo pula, para os dois jobs levarem o mesmo tempo.
+assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 5, 'build, testes, os dois laudos e auditoria com os pacotes travados');
+// O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3 e auditoria, em paralelo: o app pula os dois. O
+// laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2) e o auditoria rodam as leituras que o laudo
+// pula, e o auditoria também as auditorias, para cada job caber no teto com folga.
 // Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
 const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
-const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobAuditoria = jobAppIos('auditoria');
+const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
 assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
   'o job app pula o laudo e as auditorias');
 assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
-assert.ok(!/AuditoriaUITests/.test(jobLaudo), 'as auditorias rodam no job auditoria, não no laudo');
+assert.ok(!/AuditoriaUITests/.test(jobLaudo + jobParte3), 'as auditorias rodam no job auditoria, não nos laudos');
 assert.match(jobAuditoria, /-only-testing:CusttaUITests\/AuditoriaUITests \\\n/, 'o job auditoria roda as auditorias');
-assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria), 'o job auditoria roda só as leituras que o laudo pula');
-// Nenhuma leitura se perde nem roda duas vezes: a que o laudo pula roda no auditoria, e só ela.
+assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria + jobParte3), 'o laudo-parte3 e o auditoria rodam só as leituras que o laudo pula');
+assert.match(jobParte3, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-parte3 roda as leituras da parte 3');
+// Nenhuma leitura se perde nem roda duas vezes: a que o laudo pula roda no laudo-parte3 ou no auditoria, e só nele.
 const leiturasDe = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/LeituraNoVidroUITests/(\\w+)`, 'g'))].map(m => m[1]).sort();
 const puladasNoLaudo = leiturasDe(jobLaudo, 'skip');
-assert.deepStrictEqual(leiturasDe(jobAuditoria, 'only'), puladasNoLaudo, 'a leitura que o laudo pula roda no auditoria, e o auditoria só roda essas');
+assert.deepStrictEqual([...leiturasDe(jobParte3, 'only'), ...leiturasDe(jobAuditoria, 'only')].sort(), puladasNoLaudo,
+  'a leitura que o laudo pula roda num dos outros dois, uma vez só, e eles só rodam essas');
 const leituraNoVidro = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'LeituraNoVidroUITests.swift'), 'utf8');
 for(const metodo of puladasNoLaudo)
   assert.match(leituraNoVidro, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no LeituraNoVidroUITests`);
-for(const [nome, job] of [['laudo', jobLaudo], ['auditoria', jobAuditoria]]){
+for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['auditoria', jobAuditoria]]){
+  assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
   assert.match(job, /\n\s+TEST_RUNNER_CUSTTA_VARREDURA: curta\n/, `o job ${nome} usa a varredura curta (a lista sob a cápsula só em 0, 20, 40 e 260 pt)`);
   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${nome}\\.xcresult"[\\s\\S]*if: failure\\(\\)[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${nome}\\.xcresult`),
     `o job ${nome} guarda o próprio resultado quando reprova`);
 }
-assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobLaudo + jobAuditoria), 'o app, o laudo e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
-assert.ok(!/continue-on-error/.test(jobApp + jobLaudo + jobAuditoria), 'o app, o laudo e o auditoria são portão: nenhum passa com falha (continue-on-error)');
-for(const job of ['nucleo', 'app', 'laudo', 'auditoria'])
+assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobLaudo + jobParte3 + jobAuditoria), 'o app, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
+assert.ok(!/continue-on-error/.test(jobApp + jobLaudo + jobParte3 + jobAuditoria), 'o app, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
+for(const job of ['nucleo', 'app', 'laudo', 'laudo-parte3', 'auditoria'])
   assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
 const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
 const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');

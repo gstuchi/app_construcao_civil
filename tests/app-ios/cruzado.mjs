@@ -10,8 +10,8 @@
      3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos;
      4. CruzadoTests segue os roteiros abaixo pelas regras das telas do app: o dos gastos (lançar no Pix e no
         cartão parcelado com juros, editar um gasto do site e uma parcela, apagar um gasto da obra vendida e a
-        compra toda) e o da obra (criar duas, editar, marcar como pronta, vender, desfazer a venda da obra vendida
-        do site e apagar uma das criadas), gravando cada passo pelo Sincronizador;
+        compra toda) e o da obra (criar três, editar, marcar como pronta, vender, desfazer a venda da obra vendida
+        do site e apagar a terceira criada), gravando cada passo pelo Sincronizador;
      5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou), que é
         exatamente o que o site gravaria com as mesmas respostas (dados.js, com os mesmos ids), sem perder os
         campos que só o site conhece nem pôr o que a leitura acrescentaria, e que o site soma o resultado.
@@ -81,15 +81,18 @@ const roteiro = [
 ];
 const ids = ['app1', 'app2', 'app3', 'app4', 'app5'];
 /* O roteiro da obra (etapa 2, parte 3): o que a pessoa responde na folha "Nova obra" (a área com três casas, que o
-   editar do site multiplicava por 1000), em "Editar obra" (estimativa apagada), nas ações da fase e na folha da venda. */
+   editar do site multiplicava por 1000), em "Editar obra" (estimativa apagada), nas ações da fase e na folha da venda.
+   A conferência só compara o documento final: as obras criadas que ela confere ficam (uma com tudo preenchido, outra
+   com início, estimativa e orçamento vazios), e a que se apaga é uma terceira, criada só para isso. */
 const roteiroDaObra = [
   { acao: 'criar', id: 'appo1', campos: { nome: 'Galpão criado no app', dataInicio: '2026-04-01', valorEstimadoVenda: 350000, areaM2: 3.125, orcamento: 120000 } },
-  { acao: 'criar', id: 'appo2', campos: { nome: 'Obra criada e apagada no app', dataInicio: '', valorEstimadoVenda: 0, areaM2: 50, orcamento: 0 } },
+  { acao: 'criar', id: 'appo2', campos: { nome: 'Obra criada no app com campos vazios', dataInicio: '', valorEstimadoVenda: 0, areaM2: 50, orcamento: 0 } },
+  { acao: 'criar', id: 'appo3', campos: { nome: 'Obra criada e apagada no app', dataInicio: '', valorEstimadoVenda: 0, areaM2: 50, orcamento: 0 } },
   { acao: 'editar', obra: 'c1', campos: { nome: 'Casa do teste cruzado, editada', dataInicio: '2026-01-12', valorEstimadoVenda: 0, areaM2: 180.5, orcamento: 0 } },
   { acao: 'fase', obra: 'c1', fase: 'pronta' },
   { acao: 'vender', obra: 'c1', valor: 650000, data: '2026-04-01' },
   { acao: 'desfazer', obra: 'c2' },
-  { acao: 'apagarObra', obra: 'appo2' },
+  { acao: 'apagarObra', obra: 'appo3' },
 ];
 /** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js. */
 function comoOSite(blob){
@@ -154,8 +157,8 @@ delete final._atualizado;
 const v3 = comoOSite(v2);
 assert.equal(C.canon(final), C.canon(v3), 'o app gravou o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
 const porId = id => final.obras.find(o => o.id === id);
-assert.deepEqual(final.obras.map(o => o.id), ['c1', 'c2', 'c3', 'appo1'], 'a obra criada no app no fim, como o push do site; a outra criada foi apagada');
-const c1 = porId('c1'), c2 = porId('c2'), c3 = porId('c3'), criada = porId('appo1');
+assert.deepEqual(final.obras.map(o => o.id), ['c1', 'c2', 'c3', 'appo1', 'appo2'], 'as obras criadas no app no fim, como o push do site; a terceira, criada só para isso, foi apagada');
+const c1 = porId('c1'), c2 = porId('c2'), c3 = porId('c3'), criada = porId('appo1'), vazia = porId('appo2');
 assert.deepEqual(c1.campoSoDoSite, { versao: 7 }, 'campo de obra que só o site conhece, numa obra editada e vendida no app');
 const x1 = c1.gastos.find(g => g.id === 'x1');
 assert.equal(x1.notaSoDoSite, 'fica', 'campo de gasto que só o site conhece, num gasto editado no app');
@@ -175,6 +178,8 @@ assert.ok(!('afazeres' in criada) && !('venda' in criada), 'a obra criada no app
 assert.equal(criada.areaM2, 3.125, 'a área com três casas chega inteira');
 assert.deepEqual(criada.orcamento, { modo: 'total', total: 120000 }, 'o orçamento total da obra nova');
 assert.equal(criada.valorEstimadoVenda, 350000);
+assert.deepEqual([vazia.dataInicio, vazia.valorEstimadoVenda, 'orcamento' in vazia], [HOJE, null, false],
+  'a obra criada com campos vazios vai como no site: começa hoje, estimativa null e sem orçamento');
 assert.equal(c1.nome, 'Casa do teste cruzado, editada');
 assert.equal(c1.valorEstimadoVenda, null, 'a estimativa apagada na edição vira null, como no site');
 assert.equal(c1.areaM2, 180.5);

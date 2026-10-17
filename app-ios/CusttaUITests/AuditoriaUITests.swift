@@ -56,8 +56,8 @@ final class AuditoriaUITests: XCTestCase {
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
                 // O travessão da venda sem estimativa: um traço de 3 pt que a auditoria não consegue medir (como o "·"
-                // solto da linha de gasto); está na cor do texto, na mesma superfície dos valores que passam, e o laudo
-                // de leitura mede o pixel dele.
+                // solto da linha de gasto); está no secundário do vidro, a cor da nota logo abaixo, que passa na mesma
+                // superfície, e o laudo de leitura mede o pixel dele.
                 else if elemento.label == "—" { fora = true }
                 else {
                     let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)

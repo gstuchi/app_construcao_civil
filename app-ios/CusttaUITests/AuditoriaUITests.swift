@@ -266,14 +266,15 @@ final class AuditoriaUITests: XCTestCase {
         }
     }
 
-    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta (com as duas ações da fase, a sólida e a de vidro) em
-    /// rolagens fixas, a lista vazia, as folhas da obra (nova e editar) e a da venda. Na obra, rolagem fixa e não o arrasto:
+    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta (com as duas ações da fase, a sólida e a de vidro)
+    /// e a vendida (a venda com o lucro e o "Desfazer venda") em rolagens fixas, a lista vazia, as folhas da obra (nova
+    /// e editar), a da venda e a do gasto lançado de dentro de uma vendida. Na obra, rolagem fixa e não o arrasto:
     /// logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam (triagem em
     /// 0, 400 e 800 pt, na v1 e na v2).
     @MainActor func testParte3NoMaiorTamanho() throws {
         var app: XCUIApplication
-        for rolagem in [0, 800, 1600] {
-            app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2",
+        for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 1600), ("v3", 0), ("v3", 800), ("v3", 1600)] {
+            app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)",
                            argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1.5)
@@ -285,7 +286,8 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
         app.terminate()
         for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("editarObra:v1", "apagarObra", "obra:v1"),
-                                       ("venda:v2", "confirmarVenda", "obra:v2")] {
+                                       ("venda:v2", "confirmarVenda", "obra:v2"),
+                                       ("gastoDeVendida:v3", "linhaObra", "obra:v3")] {
             app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
                            argumentos: maiorLetra + parado + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
             XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)

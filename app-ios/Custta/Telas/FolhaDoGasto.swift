@@ -610,9 +610,14 @@ private struct PassoDosDetalhes: View {
         case .gravou:
             let ids = novos.map(\.id)
             let novo = rascunho.editado == nil
-            // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, que desce
-            // mostrando o gasto aceso onde ele entrou.
-            if rascunho.vendida != nil { folhas.navegar(.trocar(obraId)) }
+            if rascunho.vendida != nil {
+                // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, sem
+                // animação, e a folha desce no turno seguinte, com a animação dela, mostrando o gasto aceso onde ele entrou.
+                // No mesmo turno, a transação sem animação da troca valia também para a folha, que sumia de uma vez.
+                folhas.navegar(.trocar(obraId))
+                Task { @MainActor in folhas.fechar { folhas.destacar(ids, novo: novo) } }
+                return
+            }
             folhas.fechar { folhas.destacar(ids, novo: novo) }
         case .naoCarregado:
             naoCarregado = true

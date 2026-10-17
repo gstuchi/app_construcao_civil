@@ -678,6 +678,15 @@ test('apagar no fim da folha: a linha inteira é o botão, no vermelho de negati
   assert.equal(botoes, 2, 'o "Apagar obra" e o "Apagar gasto"');
 });
 
+test('gasto lançado de dentro de uma vendida: a obra troca por trás da folha, e a folha desce no turno seguinte', () => {
+  // A troca da obra (o .trocar da PrincipalView) vai sem animação. No mesmo turno do fechar, essa transação valia também
+  // para a folha, que sumia de uma vez em vez de descer (vídeo da revisão da T34): a troca vem primeiro, com a folha em
+  // cima, e a folha fecha no turno seguinte, com a animação dela.
+  const t = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(t, /folhas\.navegar\(\.trocar\(obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar \{ folhas\.destacar\(ids, novo: novo\) \} \}/,
+    'a troca da obra e, no turno seguinte, o fechar da folha');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

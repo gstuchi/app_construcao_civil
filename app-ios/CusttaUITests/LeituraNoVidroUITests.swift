@@ -69,7 +69,8 @@ final class LeituraNoVidroUITests: XCTestCase {
     /// 3,84 no escuro azul), o mesmo tom do prompt do campo no build 3.1. O laudo não via aquele prompt (quem o desenha é
     /// o UIKit, e o texto apagado não o tira); o exemplo virou Text para quebrar linha na letra grande e passou a ser
     /// medido. Sai a caixa do campo vazio e, embaixo dela, as linhas do exemplo, medidas como na AuditoriaUITests (letra
-    /// do corpo na largura do campo). Com texto digitado o exemplo some e nada sai: o texto do campo continua no portão.
+    /// do corpo na largura do campo). Com texto digitado o exemplo some e nada sai; o texto do campo, como o prompt, o
+    /// UIKit desenha e o laudo não vê (mutação no terciário passa): o Texto sobre a LinhaDaFolha fica no PARES_SOLIDOS.
     @MainActor private func exemploDaDescricao(_ app: XCUIApplication, _ cena: Cena) -> [CGRect] {
         let campo = app.textFields["descricao"]
         guard campo.exists, let exemplo = campo.placeholderValue else { return [] }

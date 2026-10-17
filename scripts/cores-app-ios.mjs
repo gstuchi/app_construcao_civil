@@ -73,10 +73,12 @@ export const CORES = {
     GloboOceano: ['#0F7C6A', '#0F7C6A'],
     GloboHalo: ['#14B39A', '#14B39A'],
     GloboAro: ['#3AD17E', '#3AD17E'],
-    // O lucro e o prejuízo da obra vendida sobre o vidro (etapa 2): o Positivo e o Negativo do site ficavam entre 2,5 e
-    // 3,7:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel nos quatro combos.
+    // O lucro e o prejuízo da obra vendida sobre o vidro (etapa 2): o Positivo e o Negativo do site ficavam entre 2,4 e
+    // 4,2:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel nos quatro combos. O prejuízo do
+    // escuro esmeralda é mais claro que o do azul: com o #FFC4CE dos dois, a nota da venda ficava em 4,25:1 onde a aurora
+    // do esmeralda é mais clara (T35); com o #FFD2D9, 4,68 (pior pixel 4,61, o mesmo do lucro).
     PositivoNoVidro: ['#8CF0BC', '#084A27'],
-    NegativoNoVidro: ['#FFC4CE', '#8A1538'],
+    NegativoNoVidro: ['#FFD2D9', '#8A1538'],
     // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
     // sistema e o que vai dentro dela, o arrastar para apagar e a linha que acabou de entrar.
     Folha: ['#0A1E18E6', '#F4F9F6F0'],              // --folha: fundo da folha (presentationBackground)

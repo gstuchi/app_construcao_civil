@@ -50,7 +50,7 @@ assert.notEqual(C.totalBruto({ gastos: parcelasComJuros }), compra.valorCompra, 
 const v1 = {
   obras: [
     { id: 'c1', nome: 'Casa do teste cruzado', dataInicio: '2026-01-10', fase: 'construcao', campoSoDoSite: { versao: 7 },
-      orcamento: { modo: 'total', total: 50000 },
+      valorEstimadoVenda: 600000, orcamento: { modo: 'total', total: 50000 },
       gastos: [{ id: 'x1', valor: 12345.67, topico: 'fundacao', descricao: 'Sapatas', data: '2026-02-01', pagamento: 'pix', notaSoDoSite: 'fica' }] },
     { id: 'c2', nome: 'Sobrado vendido', dataInicio: '2025-03-01', fase: 'vendida', venda: { valor: 480000, data: '2025-12-20' },
       orcamento: { modo: 'topicos', topicos: { estrutura: 100000, acabamento: 50000 } },
@@ -81,11 +81,12 @@ const roteiro = [
 ];
 const ids = ['app1', 'app2', 'app3', 'app4', 'app5'];
 /* O roteiro da obra (etapa 2, parte 3): o que a pessoa responde na folha "Nova obra" (a área com três casas, que o
-   editar do site multiplicava por 1000), em "Editar obra" (estimativa apagada), nas ações da fase e na folha da venda.
-   A conferência só compara o documento final: as obras criadas que ela confere ficam (uma com tudo preenchido, outra
-   com início, estimativa e orçamento vazios), e a que se apaga é uma terceira, criada só para isso. */
+   editar do site multiplicava por 1000), em "Editar obra" (a estimativa da c1 apagada), nas ações da fase e na folha
+   da venda. A conferência só compara o documento final: as obras criadas que ela confere ficam (uma com tudo
+   preenchido e o início diferente de HOJE, outra com início, estimativa e orçamento vazios), e a que se apaga é uma
+   terceira, criada só para isso. Pela mesma razão, a c1 já tem estimativa: apagar o que era null não mudaria nada. */
 const roteiroDaObra = [
-  { acao: 'criar', id: 'appo1', campos: { nome: 'Galpão criado no app', dataInicio: '2026-04-01', valorEstimadoVenda: 350000, areaM2: 3.125, orcamento: 120000 } },
+  { acao: 'criar', id: 'appo1', campos: { nome: 'Galpão criado no app', dataInicio: '2026-03-16', valorEstimadoVenda: 350000, areaM2: 3.125, orcamento: 120000 } },
   { acao: 'criar', id: 'appo2', campos: { nome: 'Obra criada no app com campos vazios', dataInicio: '', valorEstimadoVenda: 0, areaM2: 50, orcamento: 0 } },
   { acao: 'criar', id: 'appo3', campos: { nome: 'Obra criada e apagada no app', dataInicio: '', valorEstimadoVenda: 0, areaM2: 50, orcamento: 0 } },
   { acao: 'editar', obra: 'c1', campos: { nome: 'Casa do teste cruzado, editada', dataInicio: '2026-01-12', valorEstimadoVenda: 0, areaM2: 180.5, orcamento: 0 } },
@@ -178,6 +179,7 @@ assert.ok(!('afazeres' in criada) && !('venda' in criada), 'a obra criada no app
 assert.equal(criada.areaM2, 3.125, 'a área com três casas chega inteira');
 assert.deepEqual(criada.orcamento, { modo: 'total', total: 120000 }, 'o orçamento total da obra nova');
 assert.equal(criada.valorEstimadoVenda, 350000);
+assert.equal(criada.dataInicio, '2026-03-16', 'o início digitado na obra nova, não o de hoje');
 assert.deepEqual([vazia.dataInicio, vazia.valorEstimadoVenda, 'orcamento' in vazia], [HOJE, null, false],
   'a obra criada com campos vazios vai como no site: começa hoje, estimativa null e sem orçamento');
 assert.equal(c1.nome, 'Casa do teste cruzado, editada');

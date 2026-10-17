@@ -167,7 +167,7 @@ struct TextosDaObraTests {
     }
 
     @Test func areaNoCampoSemOErroDoSite() {
-        // O site mostra a área crua ("3.125") e o parseNum lê o ponto como milhar (3125); com a vírgula, volta igual.
+        // Com a vírgula, como o site mostra a área ao editar, o parseNum volta igual; o "3.125" cru viraria 3125.
         for area in [3.125, 280, 1234.5, 0.75, 12_345.678] { #expect(lerNumero(areaParaCampo(area)) == area, "\(area)") }
         #expect(areaParaCampo(3.125) == "3,125" && areaParaCampo(280) == "280" && areaParaCampo(nil) == "")
     }

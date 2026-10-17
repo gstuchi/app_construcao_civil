@@ -1,7 +1,7 @@
 import Foundation
 
 /* Regras e textos das telas da obra na etapa 2, parte 3 (mockup aprovado em 13/10): as ações da fase com os textos do
-   site (renderObra, app.js:428-433), as perguntas de apagar a obra e de desfazer a venda, as notas das folhas, a lista
+   site (renderObra, app.js:392-397), as perguntas de apagar a obra e de desfazer a venda, as notas das folhas, a lista
    vazia, o alerta de "Não salvou" e o campo da área. Os textos vêm do site; onde o mockup acrescenta (o "Não dá para
    desfazer", o plural de "lançamentos"), fica o do mockup, como no apagar gasto. */
 
@@ -46,7 +46,7 @@ public func textoDeApagarObra(nome: String, lancamentos n: Int) -> (titulo: Stri
     return ("Apagar “\(nome)”?", perdidos + "Não dá para desfazer.")
 }
 
-/// A pergunta do "Desfazer venda" (app.js:513), em título e mensagem.
+/// A pergunta do "Desfazer venda" (app.js:477), em título e mensagem.
 public let textoDeDesfazerVenda = (titulo: "Desfazer a venda?", mensagem: "A obra volta pra “Pronta”.", botao: "Desfazer venda")
 
 /// A nota embaixo da data da venda.
@@ -57,7 +57,7 @@ public func notaDaDataDaVenda(dataInicio: String) -> String {
 /// A nota da linha "Obra" no gasto lançado de dentro de uma obra vendida.
 public func notaDaObraVendida(_ nome: String) -> String { "\(nome) está vendida; o gasto vai para uma obra aberta." }
 
-/// A lista de obras vazia, com os dados já vistos (app.js:258, com "para").
+/// A lista de obras vazia, com os dados já vistos (app.js:222, com "para").
 public let listaDeObrasVazia = (titulo: "Nenhuma obra ainda.", texto: "Toque no + para criar a primeira obra.")
 
 /// O alerta de quando a gravação não passa sozinha (o erro terminal): o texto do site (`AvisoSinc.naoSalvou`), partido
@@ -68,8 +68,8 @@ public func alertaDeNaoSalvou(codigo: String) -> (titulo: String, mensagem: Stri
     return (String(texto[..<ponto.lowerBound]), String(texto[ponto.upperBound...]))
 }
 
-/// A área no campo da edição, com vírgula ("3,125"): o site mostra o número cru ("3.125"), que o `parseNum` lê como
-/// milhar (3125). Vazio sem área.
+/// A área no campo da edição, com vírgula ("3,125"), como o `formEditarObra` do site: o número cru ("3.125") o
+/// `parseNum` leria como milhar (3125). Vazio sem área.
 public func areaParaCampo(_ area: Double?) -> String {
     guard let area else { return "" }
     return numeroJS(area).replacingOccurrences(of: ".", with: ",")

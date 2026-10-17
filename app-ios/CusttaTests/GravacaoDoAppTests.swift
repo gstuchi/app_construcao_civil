@@ -85,6 +85,18 @@ struct GravacaoDoAppTests {
         #expect(transporte.gravacoes == 0)
     }
 
+    /// Toque duplo no "Confirmar venda": o segundo toque chega com a obra já vendida, e a regra do núcleo não vende de novo.
+    /// Sobe uma gravação só, também depois de o servidor confirmar a primeira (uma segunda subiria logo atrás dela).
+    @Test func vendaConfirmadaDuasVezesGravaUmaVez() async {
+        let (m, transporte, _) = montar(dados: DadosDeExemplo.vitrine())
+        await ate { m.sincronizador.dadosCarregados }
+        let vender: (Estado) -> Estado? = { $0.registrandoVenda("v2", valor: 1_380_000, data: dataLocalISO(.now, fuso: .current)) }
+        #expect(m.gravar(vender) == .gravou)
+        #expect(m.gravar(vender) == .sumiu)
+        await ate { m.sincronizador.confirmadas == 1 }
+        #expect(m.sincronizador.confirmadas == 1 && transporte.gravacoes == 1)
+    }
+
     @Test func folhasRodamODepoisSoQuandoAFolhaDesce() {
         let folhas = Folhas()
         folhas.aberta = .novoGasto(obraId: "o1")
@@ -139,6 +151,22 @@ struct GravacaoDoAppTests {
         #expect(r.entrada.data == "2026-10-06", "na edição a data é uma só, qualquer que seja o pagamento")
     }
 
+    /// O que vai para o `obraNova` do núcleo: o nome aparado, a área pelo parseNum e os dois valores em reais, como o site
+    /// lê o formulário. Nenhum teste de tela vê o orçamento nem a área da obra criada.
+    @Test func rascunhoDaObraNovaViraOsCamposDoSite() {
+        let r = RascunhoDaObra(obra: nil, hoje: "2026-10-16")
+        #expect(r.nova && r.campos == CamposDaObra(nome: "", dataInicio: "2026-10-16"), "começa hoje, vazia")
+        #expect(!r.temOQuePerder)
+        r.nome = "  Casa Granja Viana 2 "
+        r.dataInicio = "2026-10-01"
+        r.area = "1.280,5"
+        r.estimado = 160_000_000
+        r.orcamento = 90_000_050
+        #expect(r.campos == CamposDaObra(nome: "Casa Granja Viana 2", dataInicio: "2026-10-01", valorEstimadoVenda: 1_600_000,
+                                         areaM2: 1280.5, orcamento: 900_000.5))
+        #expect(r.temOQuePerder)
+    }
+
     @Test func pagamentoDesconhecidoFicaComoVeio() {
         let o = obra([["id": .texto("b"), "valor": .numero(5), "topico": .texto("outros"), "descricao": .texto("Taxa"),
                        "data": .texto("2026-10-01"), "pagamento": .texto("boleto")]])
@@ -175,10 +203,60 @@ struct GravacaoDoAppTests {
         #expect(r.entrada.descricao == "Cimento", "a descrição sai aparada, como no site")
     }
 
+    @Test func nomeDaObraParaEm120UnidadesSemPartirEmoji() {
+        let r = RascunhoDaObra(obra: nil, hoje: "2026-10-16")
+        r.nome = String(repeating: "a", count: 119) + "🧱b"
+        r.limitarNome()
+        #expect(r.nome == String(repeating: "a", count: 119), "corta no tijolo, como o maxlength: o b depois dele não entra")
+        r.nome = String(repeating: "a", count: 121)
+        r.limitarNome()
+        #expect(r.nome.utf16.count == 120, "cabe até a 120ª unidade")
+    }
+
     @Test func vizinhoDoVoiceOverDepoisDeApagar() {
         #expect(vizinhoDepoisDeApagar(["b"], ordem: ["a", "b", "c"]) == "c")
         #expect(vizinhoDepoisDeApagar(["c"], ordem: ["a", "b", "c"]) == "b")
         #expect(vizinhoDepoisDeApagar(["b", "c"], ordem: ["a", "b", "c", "d"]) == "d", "a compra toda sai junta")
         #expect(vizinhoDepoisDeApagar(["a"], ordem: ["a"]) == nil, "sem vizinho, vai para Lançamentos")
+    }
+
+    @Test func rascunhoDaObraEditadaPerguntaSoSeMudou() {
+        let o = Obra(arvore: ["id": .texto("o1"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+                              "areaM2": .numero(120.5), "valorEstimadoVenda": .numero(900_000), "gastos": .lista([])])
+        let r = RascunhoDaObra(obra: o, hoje: "2026-10-13")
+        #expect(r.area == "120,5" && r.estimado == 90_000_000 && r.dataInicio == "2026-01-01")
+        #expect(!r.temOQuePerder, "a área com vírgula que veio preenchida não é mudança")
+        r.area = "120,6"
+        #expect(r.temOQuePerder)
+        r.area = "120,5"
+        #expect(!r.temOQuePerder, "voltou ao que era")
+        #expect(r.campos.areaM2 == 120.5, "e a área volta ao documento como estava")
+    }
+
+    /// O gasto lançado de dentro de uma vendida: trocar a obra na linha "Obra" troca os "Usados nesta obra" e as sugestões
+    /// pelos dela (a mesma obra pesa na ordem); o tópico escolhido fica.
+    @Test func trocarAObraTrocaOsUsadosEAsSugestoes() {
+        func gasto(_ id: String, _ topico: String, _ descricao: String) -> ValorJSON {
+            .objeto(["id": .texto(id), "valor": .numero(1), "topico": .texto(topico), "descricao": .texto(descricao),
+                     "data": .texto("2026-10-01"), "pagamento": .texto("pix")])
+        }
+        func obra(_ id: String, _ fase: String, _ gastos: [ValorJSON]) -> Obra {
+            Obra(arvore: ["id": .texto(id), "nome": .texto(id), "fase": .texto(fase), "dataInicio": .texto("2026-01-01"),
+                          "gastos": .lista(gastos)])
+        }
+        let a = obra("a", "construcao", [gasto("a1", "pintura", "Tinta acrílica")])
+        let b = obra("b", "pronta", [gasto("b1", "eletrica", "Tinta epóxi")])
+        let todas = [a, b, obra("v", "vendida", [gasto("v1", "outros", "Tinta")])]
+        let r = RascunhoDoGasto(obra: a, editado: nil, todas: todas, proprios: [], hoje: "2026-10-13", vendida: "v")
+        r.topico = "outros"
+        let antes = r.indice.sugestoes(topicoId: "outros", termo: "tinta")
+        #expect(r.usados.map(\.id) == ["pintura"] && antes.map(\.texto) == ["Tinta", "Tinta acrílica", "Tinta epóxi"])
+        r.trocarObra(b)
+        #expect(r.obraId == "b" && r.vendida == "v")
+        #expect(r.usados.map(\.id) == ["eletrica"], "os usados da obra escolhida")
+        let depois = r.indice.sugestoes(topicoId: "outros", termo: "tinta")
+        #expect(depois == sugestoesDescricao(todas, obraId: "b", topicoId: "outros", termo: "tinta", ignorarId: nil))
+        #expect(depois.map(\.texto) == ["Tinta", "Tinta epóxi", "Tinta acrílica"], "a obra escolhida pesa a dela")
+        #expect(r.topico == "outros", "o tópico escolhido fica")
     }
 }

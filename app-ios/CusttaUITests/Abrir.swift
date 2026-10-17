@@ -1,14 +1,17 @@
 import XCTest
 
 /// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase. `abrir: "obra:v1"` já abre a obra;
-/// `extra` passa outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`).
+/// `folha: "novaObra"` abre uma folha quando os dados chegam; `gravacao: "recusa"` recusa toda gravação; `extra` passa
+/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`).
 @MainActor
 func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
-              limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, argumentos: [String] = [],
-              extra: [String: String] = [:]) -> XCUIApplication {
+              limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, folha: String? = nil, gravacao: String? = nil,
+              argumentos: [String] = [], extra: [String: String] = [:]) -> XCUIApplication {
     let app = XCUIApplication()
     var ambiente = ["CUSTTA_SERVICOS": "falsos", "CUSTTA_CONTA": conta, "CUSTTA_DADOS": dados].merging(extra) { _, novo in novo }
     if let abrir { ambiente["CUSTTA_ABRIR"] = abrir }
+    if let folha { ambiente["CUSTTA_FOLHA"] = folha }
+    if let gravacao { ambiente["CUSTTA_GRAVACAO"] = gravacao }
     if let marca { ambiente["CUSTTA_MARCA"] = marca }
     if let rede { ambiente["CUSTTA_REDE"] = rede }
     if let leitura { ambiente["CUSTTA_LEITURA"] = leitura }
@@ -44,11 +47,34 @@ extension XCUIApplication {
         borda.press(forDuration: 0.05, thenDragTo: coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
     }
 
+    /// Toca nas duas pontas da linha de um botão (x = 30 e a largura da tela − 30, na altura do meio dele), longe do
+    /// texto, e confere que cada toque abre o alerta; "Cancelar" fecha. A folga do dedo do SwiftUI (~12 pt) não chega lá:
+    /// só abre se a linha inteira for o botão.
+    func tocarNasPontas(da linha: XCUIElement, abrindo alerta: XCUIElement) {
+        for x in [30, frame.width - 30] {
+            coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: linha.frame.midY)).tap()
+            guard alerta.waitForExistence(timeout: 3) else { return XCTFail("o toque em x = \(Int(x)) não abre o alerta") }
+            alerta.buttons["Cancelar"].tap()
+            XCTAssertTrue(alerta.waitForNonExistence(timeout: 3))
+        }
+    }
+
     /// Troca de aba pela cápsula de abas (aba-obras, aba-ajustes).
     func abrirAba(_ aba: String) {
         let botao = buttons["aba-\(aba)"]
         XCTAssertTrue(botao.waitForExistence(timeout: 10), "aba \(aba)")
         botao.tap()
+    }
+
+    /// Digita num campo que já devia estar com o foco: o XCUITest não espera a transição da folha, então toca no campo até
+    /// o teclado aparecer (FinalizarSaida, be2242c).
+    func digitarComFoco(_ texto: String, em campo: XCUIElement) {
+        XCTAssertTrue(campo.waitForExistence(timeout: 10), "campo \(campo.identifier)")
+        for _ in 0..<5 where !keyboards.firstMatch.exists {
+            campo.tap()
+            _ = keyboards.firstMatch.waitForExistence(timeout: 1.5)
+        }
+        campo.typeText(texto)
     }
 
     func digitar(_ texto: String, em id: String, seguro: Bool = false) {

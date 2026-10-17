@@ -88,4 +88,12 @@ struct ModeloTests {
         #expect(obra.arvore["valorEstimadoVenda"] == .nulo)
         #expect(obra.arvore["areaM2"] == .nulo)
     }
+
+    @Test func obraSemAfazeresGravaSemAChaveAteGanharUm() {
+        var obra = Obra(arvore: ["id": .texto("o"), "gastos": .lista([])])
+        #expect(obra.arvore["afazeres"] == nil, "a obra nova do site volta sem a chave")
+        obra.afazeres.append(Afazer(campos: ["id": .texto("a"), "texto": .texto("Comprar cimento")]))
+        #expect(obra.arvore["afazeres"] == .lista([.objeto(["id": .texto("a"), "texto": .texto("Comprar cimento")])]),
+                "o afazer que entra depois vai para o documento")
+    }
 }

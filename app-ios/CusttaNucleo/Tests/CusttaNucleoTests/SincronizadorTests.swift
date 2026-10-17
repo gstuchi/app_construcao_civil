@@ -275,6 +275,37 @@ struct SincronizadorEscritaTests {
         relogio.avancar(30_000)
         #expect(transporte.gravacoes.count == 1, "a falha atrasada da u1 não volta para a fila e não sobe na u2")
     }
+
+    /// O "Não salvou" avisa uma vez por erro (etapa 2): quem avisa conta as gravações que o servidor confirmou, e só um erro
+    /// depois de uma confirmação nova é outro erro. Confirmação velha (de uma versão já trocada) não conta.
+    @Test func confirmadasContaSoAsVersoesQueOServidorConfirmou() throws {
+        let s = montar(), t = transporte
+        #expect(s.confirmadas == 0)
+        try s.aplicar(Estado.de(blobCom(["A"])))
+        t.gravacoes[0].concluir("permission-denied")
+        #expect(s.confirmadas == 0 && s.estadoSinc == .erro(codigo: "permission-denied", origem: .escrita))
+        s.tentarDeNovo()
+        t.gravacoes[1].concluir("permission-denied")
+        #expect(s.confirmadas == 0, "o erro que não passa sozinho continua o mesmo")
+        s.tentarDeNovo()
+        try s.aplicar(Estado.de(blobCom(["A", "B"])))
+        t.gravacoes[2].concluir(nil)
+        #expect(s.confirmadas == 0, "a confirmação de uma versão já trocada não conta")
+        t.gravacoes[3].concluir(nil)
+        #expect(s.confirmadas == 1 && s.estadoSinc == .ocioso)
+    }
+
+    /// Toque duplo no "Tentar de novo" do alerta ou da pílula: o segundo chega com a gravação em voo e não grava de novo.
+    @Test func tentarDeNovoDuasVezesSeguidasGravaUmaVez() throws {
+        let s = montar(), t = transporte
+        try s.aplicar(Estado.de(blobCom(["A"])))
+        t.gravacoes[0].concluir("permission-denied")
+        s.tentarDeNovo()
+        s.tentarDeNovo()
+        #expect(t.gravacoes.count == 2, "o segundo toque não regrava")
+        t.gravacoes[1].concluir(nil)
+        #expect(t.gravacoes.count == 2 && s.estadoSinc == .ocioso)
+    }
 }
 
 @MainActor

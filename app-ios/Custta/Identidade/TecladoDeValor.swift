@@ -4,10 +4,12 @@ import CusttaNucleo
 /* O teclado de valor (teclado.js, mockup da etapa 2, parte 2): centavos entram pela direita, "00" e apagar, teto de
    R$ 99.999.999,99 (a tecla que passaria do teto é ignorada). As teclas vêm na ordem do telefone, 1 2 3 em cima
    (sugestão aprovada; o site usa a da calculadora). Serve ao gasto, à venda, ao valor estimado e ao orçamento: quem usa
-   dá o rótulo do botão ("Avançar", "Pronto") e o que fazer com o valor. O botão fica desabilitado no zero, como no site. */
+   dá o rótulo do botão ("Avançar", "Pronto") e o que fazer com o valor. O botão fica desabilitado no zero, como no site;
+   nos valores opcionais da obra (valor estimado e orçamento), zero vale: é como apagar o valor. */
 struct TecladoDeValor: View {
     @Binding var centavos: Int
     let acao: String
+    var permiteZero = false
     let confirmar: () -> Void
     @Environment(\.paleta) private var paleta
 
@@ -38,7 +40,7 @@ struct TecladoDeValor: View {
             }
             Button(acao, action: confirmar)
                 .buttonStyle(BotaoDaFolha())
-                .disabled(centavos == 0)
+                .disabled(centavos == 0 && !permiteZero)
                 .padding(.top, 16)
                 .accessibilityIdentifier("confirmarValor")
         }
@@ -84,7 +86,8 @@ struct VisorDoValor: View {
 }
 
 /// Uma tecla: 62 pt de altura, raio 20, na cor Tecla; encolhe e acende no toque. A letra (30) e a altura crescem com o
-/// tamanho de letra, como o .title; quem usa limita no AX2 (mockup). Com a letra fixa, o limite não faria nada.
+/// tamanho de letra, como o .title; quem usa limita no AX2 (mockup). Com a letra fixa, o limite não faria nada. A altura
+/// para em 72, a do mockup na AX5: as quatro fileiras cabem com o visor e o botão.
 struct TeclaDoValor: View {
     let tecla: TeclaDeValor
     let tocar: () -> Void
@@ -103,7 +106,7 @@ struct TeclaDoValor: View {
                 }
             }
             .font(.system(size: letra, weight: .medium))
-            .frame(maxWidth: .infinity, minHeight: altura)
+            .frame(maxWidth: .infinity, minHeight: min(altura, 72))
         }
         .buttonStyle(EstiloDaTecla())
         .accessibilityLabel(rotulo)
@@ -133,12 +136,14 @@ private struct EstiloDaTecla: ButtonStyle {
 }
 
 /// O botão grande da folha ("Avançar", "Salvar", "Confirmar venda"): 56 pt, raio 28, na Marca; desabilitado, apagado.
+/// Na letra grande, 72 pt no mínimo, com 8 de recuo em cima e embaixo e 20 dos lados (o `.btn-f` do mockup na AX5).
 /// `ambar` é o "Salvar mesmo assim" do gasto repetido.
 struct BotaoDaFolha: ButtonStyle {
     var ambar = false
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
     @Environment(\.isEnabled) private var habilitado
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     func makeBody(configuration: Configuration) -> some View {
         let fundo: Color = !habilitado ? paleta.cor(.texto).opacity(0.12) : paleta.cor(ambar ? .alerta : .marca)
@@ -146,8 +151,9 @@ struct BotaoDaFolha: ButtonStyle {
             .font(.body.weight(.semibold))
             .multilineTextAlignment(.center)
             .foregroundStyle(paleta.cor(!habilitado ? .textoTerciario : ambar ? .sobreAlerta : .sobreMarca))
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, minHeight: tamanho.isAccessibilitySize ? 72 : 56)
+            .padding(.horizontal, tamanho.isAccessibilitySize ? 20 : 16)
             .background(fundo, in: .capsule)
             .scaleEffect(configuration.isPressed && !opcoes.reduzirMovimento ? 0.97 : 1)
             .animation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.3), value: configuration.isPressed)

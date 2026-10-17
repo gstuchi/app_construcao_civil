@@ -4,24 +4,30 @@ import CusttaNucleo
 /* A folha do gasto (mockup da etapa 2, parte 2; formGasto do site). Gasto novo: o valor no teclado de valor e
    "Avançar" empurra os detalhes, na ordem do site (valor, tópico, pagamento, descrição e data), com "Salvar" fixo
    embaixo. Editar: direto nos detalhes; o valor abre o mesmo teclado ("Pronto"); numa parcela, o aviso do site no lugar
-   do pagamento; "Apagar gasto" no fim. O que vira gasto e as mensagens vêm do núcleo (as regras do dados.js); a tela só
-   guarda o rascunho e decide para onde ir. */
+   do pagamento; "Apagar gasto" no fim. Lançado de dentro de uma obra vendida (que não recebe gasto novo, como no site),
+   a folha ganha a linha "Obra" para escolher entre as abertas. O que vira gasto e as mensagens vêm do núcleo (as regras
+   do dados.js); a tela só guarda o rascunho e decide para onde ir. */
 
 enum PassoDoGasto: Hashable {
     case detalhes
     case valor
     case topicos
+    case obras
 }
 
 /// O formulário enquanto a folha está aberta: começa do gasto em edição, ou do vazio do gasto novo, e só vira gasto no
 /// "Salvar".
 @MainActor @Observable
 final class RascunhoDoGasto {
-    let obraId: String
+    /// A obra que recebe o gasto; lançado de dentro de uma vendida, a escolhida na linha "Obra".
+    private(set) var obraId: String
     let editado: Gasto?
+    /// O gasto lançado de dentro desta obra vendida (nil no caso comum).
+    let vendida: String?
     let topicos: [Topico]
-    let usados: [Topico]
-    let indice: IndiceDeSugestoes
+    private(set) var usados: [Topico]
+    private(set) var indice: IndiceDeSugestoes
+    private let todas: [Obra]
     var centavos: Int
     var topico: String
     var pagamento: String
@@ -38,9 +44,11 @@ final class RascunhoDoGasto {
     var passouDoValor = false
     private var inicial: [String] = []
 
-    init(obra: Obra, editado: Gasto?, todas: [Obra], proprios: [TopicoProprio], hoje: String) {
+    init(obra: Obra, editado: Gasto?, todas: [Obra], proprios: [TopicoProprio], hoje: String, vendida: String? = nil) {
         obraId = obra.id
         self.editado = editado
+        self.vendida = vendida
+        self.todas = todas
         topicos = topicosDoFormulario(proprios)
         usados = usadosNestaObra(obra, topicos: topicos)
         indice = IndiceDeSugestoes(todas, obraId: obra.id, ignorarId: editado?.id)
@@ -96,6 +104,14 @@ final class RascunhoDoGasto {
         [String(centavos), topico, pagamento, String(parcelas), juros, descricao, datas["pix"] ?? "", datas["cartao"] ?? ""]
     }
 
+    /// Outra obra na linha "Obra": os "Usados nesta obra" e as sugestões passam a ser os dela; o tópico escolhido fica.
+    func trocarObra(_ obra: Obra) {
+        guard obra.id != obraId else { return }
+        obraId = obra.id
+        usados = usadosNestaObra(obra, topicos: topicos)
+        indice = IndiceDeSugestoes(todas, obraId: obra.id, ignorarId: nil)
+    }
+
     /// A descrição tem até 500 unidades UTF-16, como o `maxlength` do site.
     func limitarDescricao() {
         guard descricao.utf16.count > Limites.descricao else { return }
@@ -112,6 +128,8 @@ final class RascunhoDoGasto {
 struct FolhaDoGasto: View {
     let obraId: String
     let gastoId: String?
+    /// Lançado de dentro desta obra vendida: `obraId` é a obra aberta que vem marcada na linha "Obra".
+    var vendida: String? = nil
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
     @State private var rascunho: RascunhoDoGasto?
@@ -131,7 +149,8 @@ struct FolhaDoGasto: View {
     }
 
     private var existe: Bool {
-        guard let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == obraId }) else { return false }
+        let id = rascunho?.obraId ?? obraId
+        guard let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == id }) else { return false }
         return gastoId.map { id in obra.gastos.contains { $0.id == id } } ?? true
     }
 
@@ -142,7 +161,7 @@ struct FolhaDoGasto: View {
         let editado = gastoId.flatMap { id in obra.gastos.first { $0.id == id } }
         if gastoId != nil && editado == nil { folhas.fechar(); return }
         rascunho = RascunhoDoGasto(obra: obra, editado: editado, todas: estado.obras, proprios: estado.config.topicosProprios,
-                                   hoje: dataLocalISO(.now, fuso: .current))
+                                   hoje: dataLocalISO(.now, fuso: .current), vendida: vendida)
         #if DEBUG
         if editado == nil, let r = rascunho { abrirNoPassoDeTeste(r, obra: obra) }
         #endif
@@ -191,8 +210,10 @@ private struct FolhaDoGastoAberta: View {
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
 
-    private var nomeDaObra: String {
-        modelo.sincronizador.estado.obras.first { $0.id == rascunho.obraId }?.nome ?? ""
+    /// O nome da obra embaixo do título; lançado de dentro de uma vendida, nenhum (a obra está na linha "Obra").
+    private var nomeDaObra: String? {
+        guard rascunho.vendida == nil else { return nil }
+        return modelo.sincronizador.estado.obras.first { $0.id == rascunho.obraId }?.nome ?? ""
     }
 
     var body: some View {
@@ -217,6 +238,8 @@ private struct FolhaDoGastoAberta: View {
                     }
                 case .topicos:
                     ListaDeTopicos(rascunho: rascunho) { caminho.removeLast() }
+                case .obras:
+                    ListaDeObrasAbertas(rascunho: rascunho) { caminho.removeLast() }
                 }
             }
         }
@@ -230,7 +253,7 @@ private struct FolhaDoGastoAberta: View {
 private struct PassoDoValor: View {
     @Bindable var rascunho: RascunhoDoGasto
     let titulo: String
-    let subtitulo: String
+    let subtitulo: String?
     let acao: String
     let raiz: Bool
     let confirmar: () -> Void
@@ -245,12 +268,13 @@ private struct PassoDoValor: View {
 private struct PassoDosDetalhes: View {
     @Bindable var rascunho: RascunhoDoGasto
     @Binding var caminho: [PassoDoGasto]
-    let subtitulo: String
+    let subtitulo: String?
     let raiz: Bool
     @Environment(ModeloApp.self) private var modelo
     @Environment(Folhas.self) private var folhas
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
+    @Environment(\.dynamicTypeSize) private var tamanho
     @FocusState private var foco: Campo?
     @State private var erroDoCartao: String?
     @State private var erroDaDescricao: String?
@@ -265,6 +289,7 @@ private struct PassoDosDetalhes: View {
         ScrollViewReader { leitor in
             ScrollView {
                 VStack(spacing: 20) {
+                    if let vendida = rascunho.vendida { linhaDaObra(vendida) }
                     GrupoDaFolha {
                         linhaDoValor
                         SeparadorDaFolha()
@@ -284,10 +309,18 @@ private struct PassoDosDetalhes: View {
                     }
                     if rascunho.editado != nil {
                         GrupoDaFolha {
-                            Button("Apagar gasto") { apagando = true }
-                                .foregroundStyle(paleta.cor(.negativo))
-                                .frame(maxWidth: .infinity, minHeight: 52)
-                                .accessibilityIdentifier("apagarGasto")
+                            // A linha inteira do grupo recebe o toque (o .f-lin.destr do mockup), não só o texto.
+                            Button { apagando = true } label: {
+                                Text("Apagar gasto")
+                                    .fontWeight(.medium)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 11)
+                                    .frame(maxWidth: .infinity, minHeight: 52)
+                                    .contentShape(.rect)
+                            }
+                            .foregroundStyle(paleta.cor(.negativo))
+                            .accessibilityIdentifier("apagarGasto")
                         }
                     }
                 }
@@ -312,7 +345,8 @@ private struct PassoDosDetalhes: View {
                     .accessibilityIdentifier("salvarGasto")
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
-                    .padding(.bottom, 0)
+                    // Com o teclado aberto, 10 acima dele (o .f-pe.sobe do mockup); sem ele, 0.
+                    .padding(.bottom, foco == nil ? 0 : 10)
                     .background {
                         LinearGradient(stops: [.init(color: paleta.cor(.folha), location: 0.62), .init(color: paleta.cor(.folha).opacity(0), location: 1)],
                                        startPoint: .bottom, endPoint: .top)
@@ -349,15 +383,42 @@ private struct PassoDosDetalhes: View {
         return a == assinaturaDoGasto(obraId: rascunho.obraId, entrada: rascunho.entrada, conferido: c)
     }
 
+    /// O valor que quebra linha (nome da obra, tópico): à direita, junto da seta; na letra grande, embaixo do rótulo e à
+    /// esquerda, como o mockup (`.f-lin .d{text-align:left}` na AX5).
+    private var alinhamentoDoValor: TextAlignment { tamanho.isAccessibilitySize ? .leading : .trailing }
+
+    /// A linha "Obra" do gasto lançado de dentro de uma obra vendida, com a nota do mockup embaixo.
+    private func linhaDaObra(_ vendida: String) -> some View {
+        let obras = modelo.sincronizador.estado.obras
+        let nome = obras.first { $0.id == rascunho.obraId }?.nome ?? ""
+        return VStack(spacing: 8) {
+            GrupoDaFolha {
+                Button { caminho.append(.obras) } label: {
+                    LinhaDaFolhaComRotulo(rotulo: "Obra") {
+                        HStack(spacing: 10) {
+                            Text(nome).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(alinhamentoDoValor)
+                            SetaDaLinha()
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Obra")
+                .accessibilityValue(nome)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("linhaObra")
+            }
+            NotaDaFolha(texto: notaDaObraVendida(obras.first { $0.id == vendida }?.nome ?? ""), identificador: "notaObraVendida")
+        }
+    }
+
     private var linhaDoValor: some View {
         Button {
             if rascunho.editado == nil { caminho.removeAll() } else { caminho.append(.valor) }
         } label: {
             LinhaDaFolhaComRotulo(rotulo: "Valor", altura: 60) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("R$").font(.callout.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioTransparente))
-                    ValorEmDinheiro(texto: fmtCentavos(rascunho.centavos), fonte: .title2.weight(.bold))
-                        .foregroundStyle(paleta.cor(.texto))
+                    ValorEmDinheiro(texto: fmtCentavos(rascunho.centavos), fonte: .title2.weight(.bold), prefixo: .callout.weight(.semibold))
                     SetaDaLinha()
                 }
             }
@@ -376,7 +437,7 @@ private struct PassoDosDetalhes: View {
             LinhaDaFolhaComRotulo(rotulo: "Tópico") {
                 HStack(spacing: 10) {
                     IconeDoTopico(icone: t?.icone ?? "etiqueta")
-                    Text(t?.nome ?? rascunho.topico).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(.trailing)
+                    Text(t?.nome ?? rascunho.topico).foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(alinhamentoDoValor)
                     SetaDaLinha()
                 }
             }
@@ -462,13 +523,24 @@ private struct PassoDosDetalhes: View {
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(paleta.cor(.secundarioTransparente))
                         .accessibilityHidden(true)
-                    TextField("Descrição (opcional)", text: $rascunho.descricao,
-                              prompt: Text("Ex: 50 sacos de cimento").foregroundStyle(paleta.cor(.textoTerciario)))
-                        .foregroundStyle(paleta.cor(.texto))
-                        .focused($foco, equals: .descricao)
-                        .submitLabel(.done)
-                        .onChange(of: rascunho.descricao) { _, _ in rascunho.limitarDescricao(); erroDaDescricao = nil }
-                        .accessibilityIdentifier("descricao")
+                    // O exemplo é desenhado aqui, e não pelo prompt do campo, para quebrar linha na letra grande: o prompt do
+                    // TextField fica numa linha e encolhia para caber. O prompt continua no campo, transparente, para o
+                    // VoiceOver; o exemplo fica na linha de base do campo, onde o prompt ficava.
+                    ZStack(alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline)) {
+                        if rascunho.descricao.isEmpty {
+                            Text("Ex: 50 sacos de cimento")
+                                .foregroundStyle(paleta.cor(.textoTerciario))
+                                .accessibilityHidden(true)
+                                .onTapGesture { foco = .descricao }
+                        }
+                        TextField("Descrição (opcional)", text: $rascunho.descricao,
+                                  prompt: Text("Ex: 50 sacos de cimento").foregroundStyle(.clear))
+                            .foregroundStyle(paleta.cor(.texto))
+                            .focused($foco, equals: .descricao)
+                            .submitLabel(.done)
+                            .onChange(of: rascunho.descricao) { _, _ in rascunho.limitarDescricao(); erroDaDescricao = nil }
+                            .accessibilityIdentifier("descricao")
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 11)
@@ -538,6 +610,14 @@ private struct PassoDosDetalhes: View {
         case .gravou:
             let ids = novos.map(\.id)
             let novo = rascunho.editado == nil
+            if rascunho.vendida != nil {
+                // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, sem
+                // animação, e a folha desce no turno seguinte, com a animação dela, mostrando o gasto aceso onde ele entrou.
+                // No mesmo turno, a transação sem animação da troca valia também para a folha, que sumia de uma vez.
+                folhas.navegar(.trocar(obraId))
+                Task { @MainActor in folhas.fechar { folhas.destacar(ids, novo: novo) } }
+                return
+            }
             folhas.fechar { folhas.destacar(ids, novo: novo) }
         case .naoCarregado:
             naoCarregado = true
@@ -601,7 +681,9 @@ private struct LinhaDeSugestao: View {
     }
 }
 
-/// A data no calendário do iPhone (DatePicker compacto, que abre o calendário gráfico), em português.
+/// A data no calendário do iPhone (DatePicker compacto, que abre o calendário gráfico), em português. A pílula da data não
+/// quebra linha: no maior tamanho de letra ela passava da largura da folha e empurrava os grupos para fora da tela; para no
+/// AX2, como as teclas do teclado de valor (o calendário que ela abre é do sistema).
 struct CampoDeData: View {
     @Binding var iso: String
     /// O rótulo da linha, que o VoiceOver lê junto da data ("Primeiro vencimento", "Data da venda").
@@ -646,6 +728,7 @@ private struct ListaDeTopicos: View {
     @Bindable var rascunho: RascunhoDoGasto
     let voltar: () -> Void
     @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
         ScrollView {
@@ -668,7 +751,7 @@ private struct ListaDeTopicos: View {
         Text(texto)
             .font(.footnote.weight(.semibold))
             .foregroundStyle(paleta.cor(.secundarioTransparente))
-            .padding(.horizontal, 34)
+            .padding(.horizontal, tamanho.isAccessibilitySize ? 22 : 34)     // o .f-cab: 22 na letra grande, como a nota
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -697,6 +780,54 @@ private struct ListaDeTopicos: View {
                 .accessibilityIdentifier("\(prefixo)-\(t.id)")
             }
         }
+    }
+}
+
+/// A lista das obras abertas dentro da folha (o gasto lançado de dentro de uma vendida): na ordem da lista de obras, com a
+/// marca na escolhida; tocar escolhe e volta.
+private struct ListaDeObrasAbertas: View {
+    @Bindable var rascunho: RascunhoDoGasto
+    let voltar: () -> Void
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        let abertas = obrasAbertas(modelo.sincronizador.estado.obras)
+        ScrollView {
+            GrupoDaFolha {
+                ForEach(Array(abertas.enumerated()), id: \.element.id) { i, obra in
+                    if i > 0 { SeparadorDaFolha() }
+                    Button {
+                        rascunho.trocarObra(obra)
+                        voltar()
+                    } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(obra.nome).foregroundStyle(paleta.cor(.texto))
+                                // O secundário de dentro da folha (o --texto2-v do mockup), como a nota e o "Opcional".
+                                Text(obra.fase.rotulo).font(.footnote).foregroundStyle(paleta.cor(.secundarioTransparente))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            if obra.id == rascunho.obraId {
+                                Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.linkNoVidro))
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 11)         // o recuo das linhas da folha (.f-lin)
+                        .frame(minHeight: 52)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(obra.id == rascunho.obraId ? [.isSelected] : [])
+                    .accessibilityIdentifier("obraAberta-\(obra.id)")
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+        }
+        .passoDaFolha("Obra", fechar: nil)
     }
 }
 

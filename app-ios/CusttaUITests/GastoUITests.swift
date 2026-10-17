@@ -78,6 +78,19 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.frame.contains(parcela.frame), "e a 1ª parcela está inteira à vista: \(parcela.frame)")
     }
 
+    /// Na maior letra, a folha nas medidas do mockup (AX5): o nome da obra sai da barra e fica para o VoiceOver, no valor
+    /// do título; as teclas param em 72 pt, para as quatro fileiras caberem com o visor; o "Avançar" tem 72 pt no mínimo.
+    func testNaMaiorLetraTituloTeclasEBotaoComoNoMockup() {
+        let app = abrirObra(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        app.buttons["botaoMais"].tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        let titulo = app.elemento("tituloDaFolha")
+        XCTAssertEqual(titulo.label, "Valor do gasto")
+        XCTAssertEqual(titulo.value as? String, "Casa Alphaville")
+        XCTAssertEqual(app.buttons["tecla-1"].frame.height, 72, accuracy: 0.5)
+        XCTAssertGreaterThanOrEqual(app.buttons["confirmarValor"].frame.height, 72)
+    }
+
     func testLancarSemRedeEntraNaLista() {
         let app = abrirApp(conta: "senha", dados: "vitrine", rede: "offline", abrir: "obra:v1")
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
@@ -151,6 +164,22 @@ final class GastoUITests: XCTestCase {
         notify_post("br.com.custta.falso.apagarRemoto")
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 10), "o gasto sumiu: a folha fecha sem gravar")
         XCTAssertFalse(app.elemento("gasto-g027").exists)
+    }
+
+    /// Lançado de dentro da vendida, a obra escolhida na linha "Obra" apagada em outro aparelho com a folha aberta: não há
+    /// onde gravar, e a folha fecha na vendida, como quando a obra do gasto some.
+    func testFolhaFechaQuandoOutroAparelhoApagaAObraEscolhida() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v3", extra: ["CUSTTA_APAGAR_REMOTO": "v2@0"])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        lancarValor(app, "100")
+        let linha = app.elemento("linhaObra")
+        linha.tap()
+        app.buttons["obraAberta-v2"].tap()
+        XCTAssertTrue(linha.waitForExistence(timeout: 5))
+        XCTAssertEqual(linha.value as? String, "Sobrado Granja Viana")
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 10), "a obra escolhida sumiu: a folha fecha")
+        XCTAssertEqual(app.elemento("tituloDaObra").label, "Casa Tamboré 4", "na vendida, que fica por trás")
     }
 
     func testEditarParcelaMostraOAvisoDoSite() {
@@ -244,6 +273,17 @@ final class GastoUITests: XCTestCase {
         app.alerts["Apagar este gasto?"].buttons["Apagar"].tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
         XCTAssertTrue(app.elemento("gasto-g027").waitForNonExistence(timeout: 5), "e a linha sai depois")
+    }
+
+    /// A linha inteira do grupo é o "Apagar gasto", como no mockup: o toque nas pontas, longe do texto, abre o alerta.
+    func testApagarGastoPelasPontasDaLinha() {
+        let app = abrirObra()
+        let linha = app.elemento("gasto-g027")
+        app.rolarAte(linha)
+        linha.tap()
+        let botao = app.buttons["apagarGasto"]
+        XCTAssertTrue(botao.waitForExistence(timeout: 5))
+        app.tocarNasPontas(da: botao, abrindo: app.alerts["Apagar este gasto?"])
     }
 
     func testFecharDepoisDoValorPerguntaAntes() {

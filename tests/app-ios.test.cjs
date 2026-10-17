@@ -482,6 +482,211 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
   assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
 });
 
+test('ações da fase: gravação recusada avisa, como o apagar e as folhas', () => {
+  // No build do TestFlight, na conta de sempre, a ação sem o alerta da conta de teste não fazia nada ao toque.
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  assert.match(t, /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*(if resultado == \.contaReal \{ contaReal = true \}\n\s*)?if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
+    'o mudar da fase: o alerta do site antes de ver os dados, e a vibração só do que gravou');
+  // A troca para a conta real (T38, PR 4) apaga a ContaDeTeste e, com ela, este alerta: a linha do .contaReal sai do mudar.
+  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
+  assert.match(t,
+    /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*if resultado == \.contaReal \{ contaReal = true \}\n\s*if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
+    'o mudar da fase: o alerta do site antes de ver os dados, o da conta de teste no TestFlight, e a vibração só do que gravou');
+});
+
+test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração leve só da ação feita aqui', () => {
+  // Nenhum teste de tela vê isso: o XCUITest espera a mola acabar e não sente a vibração, e a guarda de animação acima é
+  // por arquivo (a ObraView já olha o Reduzir movimento ao fechar a linha arrastada).
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  const inicio = t.indexOf('private func mudar(');
+  assert.ok(inicio > 0, 'a mudança da fase na ObraView');
+  const mudar = t.slice(inicio, t.indexOf('\n    }\n', inicio));
+  assert.match(mudar, /withAnimation\(opcoes\.reduzirMovimento \? nil : \.spring\(/, 'com Reduzir movimento, a etiqueta e as ações trocam sem mola');
+  assert.match(mudar, /if resultado == \.gravou \{ mudouAFase \+= 1 \}/, 'vibra só quando a mudança foi gravada');
+  assert.match(t, /\.sensoryFeedback\(\.impact\(weight: \.light\), trigger: mudouAFase\)/, 'a vibração leve, só da ação feita aqui (a de outro aparelho não vibra)');
+  assert.equal(t.split('mudouAFase += 1').length - 1, 1, 'só o mudar soma: um onChange da fase vibraria também com a mudança vinda de outro aparelho');
+});
+
+test('folha da venda: gravação recusada avisa, como a folha do gasto', () => {
+  // Em Debug grava sempre, e nenhum teste de tela recusa pela conta de teste: no build do TestFlight, na conta de sempre,
+  // "Confirmar venda" sem o alerta não faria nada ao toque (o achado da T29 no mudar da fase).
+  const t = ler('app-ios/Custta/Telas/FolhaDaVenda.swift');
+  assert.match(t, /case \.naoCarregado: naoCarregado = true/, 'antes de ver os dados, o alerta do site');
+  // A troca para a conta real (fim do PR 3) apaga a ContaDeTeste e, com ela, este alerta.
+  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
+  assert.match(t, /case \.contaReal: contaReal = true/, 'na conta de sempre do TestFlight, o alerta da conta de teste');
+  assert.match(t, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
+});
+
+test('folha da obra e apagar obra: gravação recusada avisa, como as outras folhas', () => {
+  // Em Debug grava sempre, e nenhum teste de tela recusa pela conta de teste. O apagar obra grava em Obras, depois de a
+  // folha descer (a linha sai com a animação à vista), e avisa pelo alerta de Obras; o plano só tratava ali o
+  // "Carregando suas obras", e na conta de sempre do TestFlight o apagar não faria nada.
+  const f = ler('app-ios/Custta/Telas/FolhaDaObra.swift');
+  const p = ler('app-ios/Custta/Telas/PrincipalView.swift');
+  const inicio = p.indexOf('case .apagar(let id):');
+  assert.ok(inicio > 0, 'o apagar obra em Obras');
+  const apagar = p.slice(inicio, p.indexOf('\n    }\n', inicio));
+  assert.equal(f.match(/case \.naoCarregado: naoCarregado = true/g)?.length, 2, 'criar e salvar: antes de ver os dados, o alerta do site');
+  assert.match(apagar, /if resultado == \.naoCarregado \{ avisoDoMais = \.naoCarregado\(modelo\.mensagemDeNaoCarregado\) \}/);
+  // A troca para a conta real (fim do PR 3) apaga a ContaDeTeste e, com ela, estes alertas.
+  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
+  assert.equal(f.match(/case \.contaReal: contaReal = true/g)?.length, 2, 'criar e salvar: na conta de sempre do TestFlight, o alerta da conta de teste');
+  assert.match(f, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
+  assert.match(apagar, /if resultado == \.contaReal \{ avisoDoMais = \.contaReal \}/, 'o apagar obra na conta de sempre do TestFlight');
+  assert.match(p, /case \.contaReal: return ContaDeTeste\.titulo/);
+});
+
+test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {
+  // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
+  // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
+  // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
+  const acoes = {
+    'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
+    'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
+    'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
+  };
+  for(const [f, assinatura] of Object.entries(acoes)){
+    const t = ler(f);
+    assert.equal(t.split(assinatura).length, 2, `${f}: ${assinatura}`);
+    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), /^\n(?:\s*\/\/[^\n]*\n)*\s*guard folhas\.aberta != nil else \{ return \}\n/,
+                 `${f}: a guarda do toque duplo na primeira linha da ação`);
+  }
+});
+
+test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da folha atrás do botão de baixo', () => {
+  // Na maior letra só o ValorEmDinheiro encolhe: um "R$" num Text à parte ficava maior que o número. Nas linhas da folha
+  // ele vem pelo prefixo do ValorEmDinheiro (o visor do teclado tem o dele, do tamanho do número). A LinhaDeDinheiro é
+  // medida por pixel no LinhaDeDinheiroTests; a linha do valor do gasto é privada da folha, e só esta guarda a vê.
+  for(const f of ['app-ios/Custta/Identidade/PecasDaFolha.swift', ...arquivosSwift('app-ios/Custta/Telas')])
+    assert.ok(!/Text\("R\$"\)/.test(ler(f)), `${f}: "R$" num Text à parte; use o prefixo do ValorEmDinheiro`);
+  // O botão de baixo de cada folha (Salvar, Confirmar venda, Criar obra) tem atrás o degradê da folha, o .f-pe do mockup:
+  // o que rola por baixo some antes de encostar nele (na maior letra, num iPhone de 375 pt, a nota da venda passava
+  // cortada seca). E encosta no fundo, sem recuo embaixo: com 8, ficava 8 pt acima do mockup (784 no 18 Pro) e do Avançar
+  // do teclado de valor. Com o teclado do sistema aberto (folha com campo de texto), fica 10 acima dele, o .f-pe.sobe do
+  // mockup: com 0, o botão encostava no teclado. Nenhum teste de tela vê o degradê.
+  const degrade = /\.background \{\s*LinearGradient\(stops: \[\.init\(color: paleta\.cor\(\.folha\), location: 0\.62\), \.init\(color: paleta\.cor\(\.folha\)\.opacity\(0\), location: 1\)\],\s*startPoint: \.bottom, endPoint: \.top\)\s*\.ignoresSafeArea\(\)/;
+  let botoes = 0;
+  for(const f of arquivosSwift('app-ios/Custta/Telas')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\.safeAreaInset\(edge: \.bottom, spacing: 0\) \{/g)){
+      let fim = m.index + m[0].length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+      const bloco = t.slice(m.index, fim);
+      if(!bloco.includes('BotaoDaFolha(')) continue;
+      botoes++;
+      assert.match(bloco, degrade, `${f}: botão de baixo da folha sem o degradê da folha atrás`);
+      // A folha com campo de texto tem o recuo do teclado; a sem (a venda), 0.
+      const comTeclado = t.includes('TextField(');
+      assert.match(bloco, comTeclado ? /\.padding\(\.bottom, foco == nil \? 0 : 10\)/ : /\.padding\(\.bottom, 0\)/,
+                   `${f}: botão de baixo da folha ${comTeclado ? 'sem os 10 acima do teclado' : 'com recuo embaixo'}`);
+    }
+  }
+  assert.ok(botoes >= 3, 'o Salvar do gasto, o Confirmar venda e o Criar obra');
+});
+
+test('campo de texto que quebra linha: o exemplo desenhado num Text, e o prompt transparente', () => {
+  // O prompt do TextField fica numa linha só e corta com reticências na maior letra, mesmo com axis: .vertical ("Ex: Casa
+  // Alp…" no nome da obra), e a auditoria não vê o exemplo de um campo. O campo que quebra linha desenha o exemplo num Text,
+  // que quebra, e deixa o prompt transparente, só para o VoiceOver, como os campos da entrada.
+  let campos = 0;
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\bTextField\(/g)){
+      let fim = m.index + m[0].length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '(' ? 1 : t[fim] === ')' ? -1 : 0;
+      const chamada = t.slice(m.index, fim);
+      if(!chamada.includes('axis:')) continue;
+      campos++;
+      const prompt = chamada.match(/prompt: (Text\([^)]*\))\.foregroundStyle\(\.clear\)/);
+      assert.ok(prompt, `${f}: campo que quebra linha com o exemplo visível no prompt`);
+      assert.ok(t.split(prompt[1]).length > 2, `${f}: o exemplo ${prompt[1]} não está desenhado num Text fora do prompt`);
+    }
+  }
+  assert.ok(campos >= 2, 'os campos da entrada e o nome da obra');
+});
+
+test('barra: o botão de vidro (o sair, o lápis, a sincronização) sem o vidro da barra por trás', () => {
+  // A barra do iOS 26 põe um fundo de vidro atrás de cada item; o círculo de vidro do sair ou do lápis ficaria vidro
+  // dentro de vidro. Nenhum teste de tela vê o fundo; esta guarda liga cada peça de vidro posta na barra ao
+  // .sharedBackgroundVisibility(.hidden).
+  const fontes = arquivosSwift('app-ios/Custta').map(f => [f, ler(f)]);
+  const deVidro = new Set();
+  for(const [, t] of fontes)
+    for(const m of t.matchAll(/struct (\w+)(?:<[^>]*>)?: View \{[\s\S]*?\n\}/g)) if(m[0].includes('.superficie(')) deVidro.add(m[1]);
+  let itens = 0;
+  for(const [f, t] of fontes){
+    for(const m of t.matchAll(/ToolbarItem\([^)]*\) \{ (\w+)[ ({]/g)){
+      if(!deVidro.has(m[1])) continue;
+      itens++;
+      const depois = t.slice(m.index + m[0].length).split('\n').slice(0, 2).join('\n');
+      assert.match(depois, /\.sharedBackgroundVisibility\(\.hidden\)/, `${f}: ${m[1]} na barra com o vidro da barra por trás`);
+    }
+  }
+  assert.ok(itens >= 4, 'o sair e a sincronização de Obras, o lápis e a sincronização da obra');
+});
+
+test('folha do gasto na letra grande: o nome da obra e o do tópico ficam embaixo do rótulo e à esquerda', () => {
+  // Na letra padrão o valor fica à direita, junto da seta. Na letra grande a linha empilha, com o rótulo em cima, e o
+  // mockup alinha o valor à esquerda (.f-lin .d{text-align:left} na AX5): com o .trailing fixo, o nome que quebra em
+  // duas linhas mostrava a 1ª à direita, em cima da 2ª (o EstadosUITests mede a linha "Obra" por pixel).
+  const t = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(t, /var alinhamentoDoValor: TextAlignment \{ tamanho\.isAccessibilitySize \? \.leading : \.trailing \}/);
+  for(const valor of ['Text(nome)', 'Text(t?.nome ?? rascunho.topico)'])
+    assert.ok(t.includes(`${valor}.foregroundStyle(paleta.cor(.texto)).multilineTextAlignment(alinhamentoDoValor)`),
+      `${valor}: no alinhamento do valor`);
+});
+
+test('peças da folha na maior letra: rótulo, nota, cabeçalho dos tópicos e exemplo da descrição como no mockup', () => {
+  // O mockup na AX5 (parte3.html): o rótulo da linha no secundário (também no .f-valor da letra padrão, as linhas de
+  // 60 pt) e menor que o valor: no subheadline, 49 pt na AX5, e não no footnote do mockup (44 pt), que na AX1 fica nos
+  // 23 pt do body da última letra comum, e a auditoria de tipo dinâmico marca o rótulo que não cresce ali. A nota e o
+  // cabeçalho a 22 pt da borda (34 na letra padrão), e a nota com os 2 pt que faltam embaixo (36 pt em duas linhas de
+  // 18); o exemplo da descrição quebra linha (o prompt do campo encolhia para caber numa) e o prompt fica no campo,
+  // transparente, para o VoiceOver. A seta, a nota, as teclas e o botão o EstadosUITests e o GastoUITests medem.
+  const pecas = ler('app-ios/Custta/Identidade/PecasDaFolha.swift');
+  assert.match(pecas, /Text\(rotulo\)\n\s*\.font\(grande \? \.subheadline : nil\)\n\s*\.foregroundStyle\(paleta\.cor\(grande \|\| altura > 52 \? \.secundarioTransparente : \.texto\)\)/,
+    'o rótulo da linha');
+  assert.match(pecas, /\.padding\(\.bottom, 2\)\n\s*\.frame\(maxWidth: \.infinity, alignment: \.leading\)\n\s*\.padding\(\.horizontal, tamanho\.isAccessibilitySize \? 22 : 34\)/,
+    'a nota');
+  const gasto = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(gasto, /\.padding\(\.horizontal, tamanho\.isAccessibilitySize \? 22 : 34\)/, 'o cabeçalho dos tópicos');
+  assert.match(gasto, /Text\("Ex: 50 sacos de cimento"\)\n\s*\.foregroundStyle\(paleta\.cor\(\.textoTerciario\)\)/, 'o exemplo, que quebra linha');
+  assert.match(gasto, /prompt: Text\("Ex: 50 sacos de cimento"\)\.foregroundStyle\(\.clear\)/, 'o prompt transparente');
+});
+
+test('apagar no fim da folha: a linha inteira é o botão, no vermelho de negativo e em peso médio', () => {
+  // O "Apagar obra" e o "Apagar gasto" são a única linha de um grupo sólido da folha (o .f-lin.destr do mockup): a cor é
+  // o --red, que no app é .negativo (o .erroNoVidro é o da nota sobre o vidro), o peso é 500, e o toque é a linha
+  // inteira. A medida e o contentShape ficam dentro do rótulo: fora dele, só o texto recebe o toque e o VoiceOver.
+  let botoes = 0;
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/\.accessibilityIdentifier\("apagar(?:Obra|Gasto)"\)/g)){
+      botoes++;
+      const inicio = t.lastIndexOf('Button', m.index);
+      assert.ok(t.startsWith('Button {', inicio), `${f}: ${m[0]} sem rótulo próprio, o toque fica só no texto`);
+      const abre = t.indexOf('label: {', inicio);
+      let fim = abre + 'label: {'.length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+      const rotulo = t.slice(abre, fim), depois = t.slice(fim, m.index);
+      assert.match(rotulo, /\.frame\(maxWidth: \.infinity, minHeight: 52\)\s*\.contentShape\(\.rect\)/, `${f}: ${m[0]} sem a linha inteira no rótulo`);
+      assert.match(rotulo, /\.fontWeight\(\.medium\)/, `${f}: ${m[0]} fora do peso 500 do mockup`);
+      assert.match(depois, /\.foregroundStyle\(paleta\.cor\(\.negativo\)\)/, `${f}: ${m[0]} fora do vermelho de negativo`);
+    }
+  }
+  assert.equal(botoes, 2, 'o "Apagar obra" e o "Apagar gasto"');
+});
+
+test('gasto lançado de dentro de uma vendida: a obra troca por trás da folha, e a folha desce no turno seguinte', () => {
+  // A troca da obra (o .trocar da PrincipalView) vai sem animação. No mesmo turno do fechar, essa transação valia também
+  // para a folha, que sumia de uma vez em vez de descer (vídeo da revisão da T34): a troca vem primeiro, com a folha em
+  // cima, e a folha fecha no turno seguinte, com a animação dela.
+  const t = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(t, /folhas\.navegar\(\.trocar\(obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar \{ folhas\.destacar\(ids, novo: novo\) \} \}/,
+    'a troca da obra e, no turno seguinte, o fechar da folha');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

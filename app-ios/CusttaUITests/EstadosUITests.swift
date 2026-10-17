@@ -1,8 +1,10 @@
 import XCTest
+import notify
 
 /* Os estados da etapa 2, parte 3, e o gasto numa obra vendida: a lista vazia que convida ao +; o + que avisa enquanto os
    dados não chegam; o gasto lançado de dentro de uma vendida, que vai para uma aberta escolhida na linha "Obra"; sem
-   conexão, gravar continua; o "Não salvou" que não passa sozinho alerta uma vez e tocar na pílula tenta de novo. */
+   conexão, gravar continua; o "Não salvou" que não passa sozinho alerta uma vez e tocar na pílula tenta de novo; com
+   uma folha aberta, ele espera a folha descer. */
 @MainActor
 final class EstadosUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
@@ -238,5 +240,28 @@ final class EstadosUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Tentando de novo…"].waitForExistence(timeout: 3), "tocar na pílula tenta de novo")
         XCTAssertFalse(alerta.waitForExistence(timeout: 3))
         XCTAssertEqual(pilula.label, "Não salvou")
+    }
+
+    /// A recusa que chega com uma folha aberta espera a folha descer: o alerta por cima derrubava a folha, e o que a pessoa
+    /// tinha preenchido se perdia.
+    func testNaoSalvouEsperaAFolhaDescer() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", gravacao: "recusa",
+                           extra: ["CUSTTA_GRAVACAO_ESPERA": "aviso"])
+        let pronta = app.buttons["acao-marcarPronta"]
+        XCTAssertTrue(pronta.waitForExistence(timeout: 10))
+        app.rolarAte(pronta)
+        pronta.tap()
+        app.buttons["botaoMais"].tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        for t in "4980" { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForExistence(timeout: 5))
+        notify_post("br.com.custta.falso.responderGravacao")
+        let alerta = app.alerts["Não salvou na nuvem"]
+        XCTAssertFalse(alerta.waitForExistence(timeout: 3), "com a folha aberta, o alerta espera")
+        XCTAssertTrue(app.elemento("linhaTopico").exists, "a folha continua, com o que foi preenchido")
+        app.buttons["fecharFolha"].tap()
+        app.alerts["Você já preencheu este gasto."].buttons["Descartar gasto"].tap()
+        XCTAssertTrue(alerta.waitForExistence(timeout: 5), "a folha desceu: agora o alerta")
     }
 }

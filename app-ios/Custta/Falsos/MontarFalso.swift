@@ -18,7 +18,9 @@ import CusttaNucleo
                   CUSTTA_DADOS=vazio, é a conta vazia que abre sem rede e pode lançar)
    CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
                   e a 1ª nova tentativa também falha); cada nova tentativa leva 8 s, para o "Limpando…" ficar à
-                  vista mesmo no simulador da CI, onde o teste só o encontra uns 4 s depois do toque */
+                  vista mesmo no simulador da CI, onde o teste só o encontra uns 4 s depois do toque
+   CUSTTA_GRAVACAO_ESPERA aviso (cada gravação só responde no notify_post de "br.com.custta.falso.responderGravacao",
+                  e não em 300 ms: o teste abre uma folha antes de a recusa chegar) */
 extension Composicao {
     static func montarFalso(_ ambiente: [String: String]) -> ModeloApp {
         let semRede = ambiente["CUSTTA_REDE"] == "offline"
@@ -50,6 +52,7 @@ extension Composicao {
         let rede = MonitorDeRede(forcarSemRede: semRede)
         let marca = MarcaEmMemoria()
         if ambiente["CUSTTA_MARCA"] == "servidor" { marca.marcarTodas = true }
+        transporte.respostaNoAviso = ambiente["CUSTTA_GRAVACAO_ESPERA"] == "aviso"
         let sincronizador = Sincronizador(transporte: transporte, relogio: RelogioDoSistema(), online: !semRede, marca: marca)
         return ModeloApp(conta: conta, sincronizador: sincronizador, rede: rede)
     }

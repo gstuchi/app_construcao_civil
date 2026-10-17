@@ -81,12 +81,26 @@ final class TransporteFalsoApp: TransporteDados {
         return .objeto(raiz)
     }
 
+    /// Cada gravação só responde quando o teste avisa (notify_post de "br.com.custta.falso.responderGravacao"), e não
+    /// depois de 300 ms (CUSTTA_GRAVACAO_ESPERA=aviso): a recusa chega com a folha que o teste abriu depois de gravar.
+    var respostaNoAviso = false
+
     func gravar(uid: String, blob: ValorJSON, concluir: @escaping @MainActor (String?) -> Void) {
         gravacoes += 1
         guard !semRede else { return }
-        let recusa = self.recusa
+        let recusa = self.recusa, noAviso = respostaNoAviso
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(300))
+            if noAviso {
+                await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
+                    var token: Int32 = 0
+                    notify_register_dispatch("br.com.custta.falso.responderGravacao", &token, .main) { t in
+                        notify_cancel(t)
+                        avisado.resume()
+                    }
+                }
+            } else {
+                try? await Task.sleep(for: .milliseconds(300))
+            }
             concluir(recusa)
         }
     }

@@ -50,7 +50,11 @@ final class RascunhoDaObra {
     func limitarNome() {
         guard nome.utf16.count > Limites.nome else { return }
         var r = ""
-        for c in nome where r.utf16.count + String(c).utf16.count <= Limites.nome { r.append(c) }
+        // Corta no primeiro caractere que não cabe, como o maxlength (e a descrição do gasto): nada depois dele entra.
+        for c in nome {
+            guard r.utf16.count + c.utf16.count <= Limites.nome else { break }
+            r.append(c)
+        }
         nome = r
     }
 }

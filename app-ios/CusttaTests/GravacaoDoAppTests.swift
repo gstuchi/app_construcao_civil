@@ -203,6 +203,16 @@ struct GravacaoDoAppTests {
         #expect(r.entrada.descricao == "Cimento", "a descrição sai aparada, como no site")
     }
 
+    @Test func nomeDaObraParaEm120UnidadesSemPartirEmoji() {
+        let r = RascunhoDaObra(obra: nil, hoje: "2026-10-16")
+        r.nome = String(repeating: "a", count: 119) + "🧱b"
+        r.limitarNome()
+        #expect(r.nome == String(repeating: "a", count: 119), "corta no tijolo, como o maxlength: o b depois dele não entra")
+        r.nome = String(repeating: "a", count: 121)
+        r.limitarNome()
+        #expect(r.nome.utf16.count == 120, "cabe até a 120ª unidade")
+    }
+
     @Test func vizinhoDoVoiceOverDepoisDeApagar() {
         #expect(vizinhoDepoisDeApagar(["b"], ordem: ["a", "b", "c"]) == "c")
         #expect(vizinhoDepoisDeApagar(["c"], ordem: ["a", "b", "c"]) == "b")

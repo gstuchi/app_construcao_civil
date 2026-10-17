@@ -104,6 +104,26 @@ struct MutacoesDaObraTests {
         #expect(estado().desfazendoVenda("o2") == nil, "só a vendida")
         #expect(estado().desfazendoVenda("sumiu") == nil)
     }
+
+    @Test func venderNaPontaEDesfazerSemMexerNoResto() throws {
+        // A obra da ponta (o1) e a árvore inteira: vender e desfazer só mexem na fase e na venda daquela obra.
+        let antes = estado()
+        var o1 = try #require(gravada(antes, 0))
+        let pronta = try #require(antes.mudandoFase("o1", para: .pronta))
+        o1["fase"] = .texto("pronta")
+        #expect(gravada(pronta, 0) == o1, "mudar a fase só troca a fase")
+        let vendida = try #require(pronta.registrandoVenda("o1", valor: 1_380_000, data: "2026-10-12"))
+        o1["fase"] = .texto("vendida")
+        o1["venda"] = .objeto(["valor": .numero(1_380_000), "data": .texto("2026-10-12")])
+        #expect(gravada(vendida, 0) == o1, "vender grava a fase e a venda, sem mexer no valor estimado")
+        #expect(gravada(vendida, 1) == gravada(antes, 1) && gravada(vendida, 2) == gravada(antes, 2), "as outras obras ficam como estavam")
+        var o3 = try #require(gravada(antes, 2))
+        let desfeita = try #require(antes.desfazendoVenda("o3"))
+        o3["fase"] = .texto("pronta")
+        o3["venda"] = nil
+        #expect(gravada(desfeita, 2) == o3, "desfazer volta a fase e tira a venda, sem mexer no resto")
+        #expect(gravada(desfeita, 0) == gravada(antes, 0) && gravada(desfeita, 1) == gravada(antes, 1), "as outras obras ficam como estavam")
+    }
 }
 
 struct TextosDaObraTests {

@@ -138,4 +138,16 @@ final class FasesUITests: XCTestCase {
         XCTAssertTrue(confirmar.waitForExistence(timeout: 3), "a venda continua na folha")
         XCTAssertEqual(app.elemento("linhaValorDaVenda").value as? String, "R$\u{a0}1.380.000,00")
     }
+
+    /// "Avançar" marca a venda como preenchida: na data, fechar pergunta antes de descartar. Os testes acima abrem a folha
+    /// já na data pelo gancho de Debug, que marca isso sozinho; este passa pelo teclado, como quem vende.
+    func testFecharDepoisDeAvancarPergunta() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", folha: "venda:v2")
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 10))
+        app.buttons["tecla-5"].tap()
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.buttons["confirmarVenda"].waitForExistence(timeout: 5))
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(app.alerts["Você já preencheu esta venda."].waitForExistence(timeout: 5), "depois do valor, fechar pergunta")
+    }
 }

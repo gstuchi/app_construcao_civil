@@ -504,6 +504,7 @@ test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração
   assert.match(mudar, /withAnimation\(opcoes\.reduzirMovimento \? nil : \.spring\(/, 'com Reduzir movimento, a etiqueta e as ações trocam sem mola');
   assert.match(mudar, /if resultado == \.gravou \{ mudouAFase \+= 1 \}/, 'vibra só quando a mudança foi gravada');
   assert.match(t, /\.sensoryFeedback\(\.impact\(weight: \.light\), trigger: mudouAFase\)/, 'a vibração leve, só da ação feita aqui (a de outro aparelho não vibra)');
+  assert.equal(t.split('mudouAFase += 1').length - 1, 1, 'só o mudar soma: um onChange da fase vibraria também com a mudança vinda de outro aparelho');
 });
 
 test('folha da venda: gravação recusada avisa, como a folha do gasto', () => {

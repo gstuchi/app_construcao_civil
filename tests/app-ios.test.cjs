@@ -482,6 +482,18 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
   assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
 });
 
+test('ações da fase: gravação recusada avisa, como o apagar e as folhas', () => {
+  // No build do TestFlight, na conta de sempre, a ação sem o alerta da conta de teste não fazia nada ao toque.
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  assert.match(t, /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*(if resultado == \.contaReal \{ contaReal = true \}\n\s*)?if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
+    'o mudar da fase: o alerta do site antes de ver os dados, e a vibração só do que gravou');
+  // A troca para a conta real (T38, PR 4) apaga a ContaDeTeste e, com ela, este alerta: a linha do .contaReal sai do mudar.
+  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
+  assert.match(t,
+    /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*if resultado == \.contaReal \{ contaReal = true \}\n\s*if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
+    'o mudar da fase: o alerta do site antes de ver os dados, o da conta de teste no TestFlight, e a vibração só do que gravou');
+});
+
 test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração leve só da ação feita aqui', () => {
   // Nenhum teste de tela vê isso: o XCUITest espera a mola acabar e não sente a vibração, e a guarda de animação acima é
   // por arquivo (a ObraView já olha o Reduzir movimento ao fechar a linha arrastada).

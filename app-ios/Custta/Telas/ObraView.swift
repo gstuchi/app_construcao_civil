@@ -163,6 +163,7 @@ extension ObraView {
     private func mudar(_ obra: Obra, _ mudanca: (Estado) -> Estado?) {
         let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.35, bounce: 0)) { modelo.gravar(mudanca) }
         if resultado == .naoCarregado { naoCarregado = true }
+        if resultado == .contaReal { contaReal = true }
         if resultado == .gravou { mudouAFase += 1 }
     }
 

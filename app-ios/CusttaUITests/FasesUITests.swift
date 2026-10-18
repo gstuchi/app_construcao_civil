@@ -124,7 +124,7 @@ final class FasesUITests: XCTestCase {
     }
 
     /// Gravação recusada antes de ver os dados: "Confirmar venda" avisa com o texto do site e a venda continua na folha,
-    /// como no gasto. A recusa da conta de teste (só no TestFlight) usa o mesmo caminho; a guarda Node a confere.
+    /// como no gasto.
     func testNaoCarregadoAvisaEMantemAVenda() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", folha: "venda:v2",
                            argumentos: ["-custta.folha", "detalhes", "-custta.recusarGravacao", "nao-carregado"])

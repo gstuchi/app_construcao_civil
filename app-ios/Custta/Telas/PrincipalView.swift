@@ -114,7 +114,6 @@ extension PrincipalView {
                     modelo.gravar { $0.apagandoObra(id) }
                 }
                 if resultado == .naoCarregado { avisoDoMais = .naoCarregado(modelo.mensagemDeNaoCarregado) }
-                if resultado == .contaReal { avisoDoMais = .contaReal }
             }
         }
     }
@@ -165,21 +164,17 @@ extension PrincipalView {
 enum AvisoDoMais: Equatable {
     case limite(AvisoDeLimite)
     case naoCarregado(String)
-    /// Build do TestFlight numa conta que não é de teste: o alerta da conta de teste, como nas folhas.
-    case contaReal
 
-    @MainActor var titulo: String {
+    var titulo: String {
         switch self {
         case .limite(let a): return a.titulo
         case .naoCarregado(let texto): return texto
-        case .contaReal: return ContaDeTeste.titulo
         }
     }
 
-    @MainActor var mensagem: String? {
+    var mensagem: String? {
         switch self {
         case .limite(let a): return a.texto
-        case .contaReal: return ContaDeTeste.mensagem
         case .naoCarregado: return nil
         }
     }

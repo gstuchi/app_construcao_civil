@@ -19,7 +19,6 @@ struct ObraView: View {
     @State private var alvoDoApagar: Gasto?
     @State private var perguntando = false
     @State private var naoCarregado = false
-    @State private var contaReal = false
     /// "Desfazer venda" tocado: a pergunta do site.
     @State private var desfazendo = false
     /// Muda a cada ação da fase feita aqui: a vibração leve do mockup (a de outro aparelho não vibra).
@@ -112,7 +111,6 @@ struct ObraView: View {
         })
         .onChange(of: perguntando) { _, agora in if !agora { fecharLinha() } }
         .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) { Button("OK", role: .cancel) {} }
-        .alert(ContaDeTeste.titulo, isPresented: $contaReal) { Button("OK", role: .cancel) {} } message: { Text(ContaDeTeste.mensagem) }
         .background {
             Color.clear
                 .alert(textoDeDesfazerVenda.titulo, isPresented: $desfazendo) {
@@ -173,7 +171,6 @@ extension ObraView {
     private func mudar(_ obra: Obra, _ mudanca: (Estado) -> Estado?) {
         let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.35, bounce: 0)) { modelo.gravar(mudanca) }
         if resultado == .naoCarregado { naoCarregado = true }
-        if resultado == .contaReal { contaReal = true }
         if resultado == .gravou { mudouAFase += 1 }
     }
 
@@ -222,7 +219,6 @@ extension ObraView {
             return modelo.gravar { e in p.grupoId.map { e.apagandoCompra($0, daObra: p.obraId) } ?? e.apagandoGasto(p.gastoId, daObra: p.obraId) }
         }
         if resultado == .naoCarregado { naoCarregado = true; return }
-        if resultado == .contaReal { contaReal = true; return }
         guard resultado == .gravou else { return }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(500))

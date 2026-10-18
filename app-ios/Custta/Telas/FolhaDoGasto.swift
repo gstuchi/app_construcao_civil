@@ -279,7 +279,6 @@ private struct PassoDosDetalhes: View {
     @State private var erroDoCartao: String?
     @State private var erroDaDescricao: String?
     @State private var naoCarregado = false
-    @State private var contaReal = false
     @State private var apagando = false
     @State private var sugestaoEscolhida: String?
 
@@ -366,11 +365,6 @@ private struct PassoDosDetalhes: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("O gasto continua aqui; nada foi salvo ainda.")
-        }
-        .alert(ContaDeTeste.titulo, isPresented: $contaReal) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(ContaDeTeste.mensagem)
         }
         .modifier(PerguntaDeApagar(apresentada: $apagando, obraId: rascunho.obraId, gasto: rascunho.editado) { pedido in
             folhas.fechar { folhas.apagar(pedido) }
@@ -621,8 +615,6 @@ private struct PassoDosDetalhes: View {
             folhas.fechar { folhas.destacar(ids, novo: novo) }
         case .naoCarregado:
             naoCarregado = true
-        case .contaReal:
-            contaReal = true
         case .sumiu, .semConta:
             folhas.fechar()
         }

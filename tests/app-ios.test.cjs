@@ -483,15 +483,10 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
 });
 
 test('ações da fase: gravação recusada avisa, como o apagar e as folhas', () => {
-  // No build do TestFlight, na conta de sempre, a ação sem o alerta da conta de teste não fazia nada ao toque.
+  // Nenhum teste de tela recusa a gravação no mudar: sem o alerta, a ação recusada não faria nada ao toque.
   const t = ler('app-ios/Custta/Telas/ObraView.swift');
-  assert.match(t, /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*(if resultado == \.contaReal \{ contaReal = true \}\n\s*)?if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
+  assert.match(t, /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
     'o mudar da fase: o alerta do site antes de ver os dados, e a vibração só do que gravou');
-  // A troca para a conta real (T38, PR 4) apaga a ContaDeTeste e, com ela, este alerta: a linha do .contaReal sai do mudar.
-  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
-  assert.match(t,
-    /if resultado == \.naoCarregado \{ naoCarregado = true \}\n\s*if resultado == \.contaReal \{ contaReal = true \}\n\s*if resultado == \.gravou \{ mudouAFase \+= 1 \}/,
-    'o mudar da fase: o alerta do site antes de ver os dados, o da conta de teste no TestFlight, e a vibração só do que gravou');
 });
 
 test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração leve só da ação feita aqui', () => {
@@ -508,20 +503,14 @@ test('ações da fase: a troca na mola só sem Reduzir movimento, e a vibração
 });
 
 test('folha da venda: gravação recusada avisa, como a folha do gasto', () => {
-  // Em Debug grava sempre, e nenhum teste de tela recusa pela conta de teste: no build do TestFlight, na conta de sempre,
-  // "Confirmar venda" sem o alerta não faria nada ao toque (o achado da T29 no mudar da fase).
+  // Sem o alerta, "Confirmar venda" recusado não faria nada ao toque (o achado da T29 no mudar da fase).
   const t = ler('app-ios/Custta/Telas/FolhaDaVenda.swift');
   assert.match(t, /case \.naoCarregado: naoCarregado = true/, 'antes de ver os dados, o alerta do site');
-  // A troca para a conta real (fim do PR 3) apaga a ContaDeTeste e, com ela, este alerta.
-  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
-  assert.match(t, /case \.contaReal: contaReal = true/, 'na conta de sempre do TestFlight, o alerta da conta de teste');
-  assert.match(t, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
 });
 
 test('folha da obra e apagar obra: gravação recusada avisa, como as outras folhas', () => {
-  // Em Debug grava sempre, e nenhum teste de tela recusa pela conta de teste. O apagar obra grava em Obras, depois de a
-  // folha descer (a linha sai com a animação à vista), e avisa pelo alerta de Obras; o plano só tratava ali o
-  // "Carregando suas obras", e na conta de sempre do TestFlight o apagar não faria nada.
+  // O apagar obra grava em Obras, depois de a folha descer (a linha sai com a animação à vista), e avisa pelo alerta de
+  // Obras.
   const f = ler('app-ios/Custta/Telas/FolhaDaObra.swift');
   const p = ler('app-ios/Custta/Telas/PrincipalView.swift');
   const inicio = p.indexOf('case .apagar(let id):');
@@ -529,12 +518,6 @@ test('folha da obra e apagar obra: gravação recusada avisa, como as outras fol
   const apagar = p.slice(inicio, p.indexOf('\n    }\n', inicio));
   assert.equal(f.match(/case \.naoCarregado: naoCarregado = true/g)?.length, 2, 'criar e salvar: antes de ver os dados, o alerta do site');
   assert.match(apagar, /if resultado == \.naoCarregado \{ avisoDoMais = \.naoCarregado\(modelo\.mensagemDeNaoCarregado\) \}/);
-  // A troca para a conta real (fim do PR 3) apaga a ContaDeTeste e, com ela, estes alertas.
-  if (!readdirSync(join(RAIZ, 'app-ios/Custta/Estado')).includes('ContaDeTeste.swift')) return;
-  assert.equal(f.match(/case \.contaReal: contaReal = true/g)?.length, 2, 'criar e salvar: na conta de sempre do TestFlight, o alerta da conta de teste');
-  assert.match(f, /\.alert\(ContaDeTeste\.titulo, isPresented: \$contaReal\)/);
-  assert.match(apagar, /if resultado == \.contaReal \{ avisoDoMais = \.contaReal \}/, 'o apagar obra na conta de sempre do TestFlight');
-  assert.match(p, /case \.contaReal: return ContaDeTeste\.titulo/);
 });
 
 test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {

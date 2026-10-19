@@ -92,4 +92,4 @@ O app grava de verdade a partir desta etapa, e cada gravação regrava o documen
 
 ## Depois do OK do PR 3: a conta real
 
-- [ ] Com os itens acima marcados, o Orquestrador abre o PR da conta real (a guarda da conta de teste sai) e manda o build. Instale, entre na conta de sempre, lance um gasto de teste e apague-o; confira no site que ele entrou e saiu.
+- [x] Com os itens acima marcados, o Orquestrador abre o PR da conta real (a guarda da conta de teste sai) e manda o build. Instale, entre na conta de sempre, lance um gasto de teste e apague-o; confira no site que ele entrou e saiu. Feito em 18/10 no build 5.1 (PR #76, `33ba862`): o Giovani lançou e apagou um gasto na conta de sempre.

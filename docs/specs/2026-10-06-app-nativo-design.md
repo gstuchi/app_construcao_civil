@@ -178,8 +178,8 @@ Cada etapa tem spec curto de telas (quando houver decisão de desenho), plano, c
 | Etapa | Entrega no TestFlight |
 | --- | --- |
 | 1. Base | Projeto, pacotes travados, núcleo de cálculo com vetores, entrar (e-mail, Apple, Google), cadastro, sincronização e uso sem internet |
-| 2. Obras e gastos | Lista de obras, obra com indicadores, lançar/editar/apagar gasto, fases e venda |
-| 3. Dentro da obra | Parcelas no cartão, afazeres, orçamento previsto × real, busca e filtro, detalhe do tópico, a pagar |
+| 2. Obras e gastos | Lista de obras, obra com indicadores, lançar/editar/apagar gasto (com parcelas no cartão), fases e venda |
+| 3. Dentro da obra | Afazeres, orçamento previsto × real, busca e filtro, detalhe do tópico, a pagar |
 | 4. Análise | Gráficos, relatório, simulador "Vale a pena?", PDF |
 | 5. Conta e avisos | Ajustes, notificações, exportar, trocar senha, apagar conta, aparência |
 | 6. Acabamento | Acessibilidade completa, tela de abertura e ícone, capturas novas, pré-revisão das regras da Apple |

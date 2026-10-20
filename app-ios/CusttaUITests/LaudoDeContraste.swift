@@ -93,10 +93,12 @@ enum LaudoDeContraste {
         }
         for i in 0..<min(w * h, Int((topo * escala).rounded(.up)) * w) { dentro[i] = false }
 
-        // A maior diferença de canal entre os dois prints, pixel a pixel, contra o mesmo pixel do print sem texto ou o
-        // de cima ou o de baixo dele, o que bater mais. Na maior letra, o valor que encolhe para caber (ValorEmDinheiro)
-        // mede 1/3 pt a mais ou a menos com o texto apagado, e o que vem embaixo dele muda 1 px: sem a folga, as bordas
-        // viravam letra (nota 1,00) ou "cena que mudou" (a obra pronta no Pro Max, T35).
+        // A maior diferença de canal entre os dois prints, pixel a pixel, contra o mesmo pixel do print sem texto ou um
+        // dos de cima ou de baixo dele, até 1 pt, o que bater mais. Na maior letra, o valor que encolhe para caber
+        // (ValorEmDinheiro) mede 1/3 pt a mais ou a menos com o texto apagado, e o que vem embaixo dele muda 1 px por valor:
+        // sem a folga, as bordas viravam letra (nota 1,00) ou "cena que mudou" (a obra pronta no Pro Max, T35). Com mais
+        // de um valor em cima, 1 px não basta: a tela Orçamento e a obra com orçamento, na maior letra no Pro Max.
+        let folga = max(1, Int(escala.rounded()))
         func diferencaEntre(_ i: Int, _ j: Int) -> Int {
             let k = i * 4, m = j * 4
             return max(abs(Int(a[k]) - Int(b[m])), abs(Int(a[k + 1]) - Int(b[m + 1])), abs(Int(a[k + 2]) - Int(b[m + 2])))
@@ -105,8 +107,11 @@ enum LaudoDeContraste {
         var letra = [Bool](repeating: false, count: w * h)
         for i in 0..<(w * h) where dentro[i] {
             var d = diferencaEntre(i, i)
-            if d > ruido, i >= w { d = min(d, diferencaEntre(i, i - w)) }
-            if d > ruido, i < w * (h - 1) { d = min(d, diferencaEntre(i, i + w)) }
+            for k in 1...folga {
+                guard d > ruido else { break }
+                if i >= k * w { d = min(d, diferencaEntre(i, i - k * w)) }
+                if i < w * (h - k) { d = min(d, diferencaEntre(i, i + k * w)) }
+            }
             diferenca[i] = UInt8(d)
             letra[i] = d > limiarDaLetra
         }

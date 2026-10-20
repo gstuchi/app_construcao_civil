@@ -32,9 +32,21 @@ final class AuditoriaUITests: XCTestCase {
         let folha = app.elemento("tituloDaFolha").exists
         let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
         let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
-        let barra = app.navigationBars.firstMatch
-        let topoDoConteudo = barra.exists ? max(barra.frame.maxY, borda) : 0
+        // Com a folha aberta, a barra é a da folha, e não a da tela por trás dela (a primeira da árvore); e a folha não tem a
+        // borda de rolagem das telas: o conteúdo dela começa onde a barra acaba.
+        let barra = folha ? app.navigationBars.containing(.any, identifier: "tituloDaFolha").firstMatch : app.navigationBars.firstMatch
+        let topoDoConteudo = barra.exists ? (folha ? barra.frame.maxY : max(barra.frame.maxY, borda)) : 0
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
+        // Com as teclas encaixadas abertas (folha do orçamento), a lista termina onde a faixa delas começa: o que a lista tem
+        // embaixo da faixa está escondido (montado pela lista preguiçosa, mas fora da vista). As teclas e a barra entram.
+        let teclas = app.elemento("tecladoEncaixado")
+        let topoDasTeclas = teclas.exists ? teclas.frame.minY : .infinity
+        let dasTeclas = teclas.exists ? teclas.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
+        // E começa embaixo do cabeçalho fixo da folha (o segmentado e o total): o que a lista tem em cima dele foi rolado para
+        // fora da vista. No 18 Pro essas linhas ficam sob a barra; no Pro Max, com a faixa mais alta, entre a barra e o total.
+        let lista = app.elemento("listaDoOrcamento")
+        let topoDaLista = lista.exists ? lista.frame.minY : -.infinity
+        let daLista = lista.exists ? lista.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         try app.performAccessibilityAudit(for: tipos) { achado in
             guard let elemento = achado.element else {
                 Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
@@ -47,11 +59,13 @@ final class AuditoriaUITests: XCTestCase {
                 // Conteúdo Grande: o pequeno da obra e o das folhas (na maior letra o nome da obra sai da barra da folha e
                 // fica no valor do título, para o VoiceOver). Pelo identificador, e não pela barra inteira: o que passa por
                 // baixo dela continua na auditoria de tipo dinâmico. Na folha do gasto, as teclas e o "Apagar" do arrastar
-                // param no AX2, e o visor do valor (64 pt) já é maior que o texto na maior letra e encolhe para caber.
+                // param no AX2, e o visor do valor (64 pt) já é maior que o texto na maior letra e encolhe para caber. Na
+                // folha do orçamento (etapa 3), a barra das teclas encaixadas para no xxxLarge, como o título da folha.
                 let centro = CGPoint(x: elemento.frame.midX, y: elemento.frame.midY)
                 fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
                     || elemento.identifier.hasPrefix("tituloDaFolha") || elemento.identifier.hasPrefix("visorDoValor")
                     || elemento.identifier.hasPrefix("tecla-") || elemento.identifier.hasPrefix("apagar-")
+                    || elemento.identifier.hasPrefix("barraDasTeclas-")
                     || abas.contains { $0.contains(centro) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
@@ -61,7 +75,9 @@ final class AuditoriaUITests: XCTestCase {
                 else if elemento.label == "—" { fora = true }
                 else {
                     let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
-                    fora = sobABarra || elemento.frame.maxY > fundoDaTela
+                    let sobAsTeclas = elemento.frame.maxY > topoDasTeclas + 0.5 && !dasTeclas.contains(elemento.frame)
+                    let acimaDaLista = elemento.frame.minY < topoDaLista - 0.5 && daLista.contains(elemento.frame)
+                    fora = sobABarra || sobAsTeclas || acimaDaLista || elemento.frame.maxY > fundoDaTela
                 }
             default:
                 fora = false
@@ -138,6 +154,7 @@ final class AuditoriaUITests: XCTestCase {
     }
 
     /// A folha do gasto (valor e cartão) e a linha aberta com o "Apagar", no escuro e no claro, com superfícies sólidas.
+    /// A linha aberta em 758 pt (640 até a etapa 2, antes da linha do orçamento da vitrine, de 118 pt).
     @MainActor func testContrasteDaFolhaNosDoisTemas() throws {
         for tema in temas {
             let combo = ["-custta.tema", tema] + solido + parado
@@ -148,7 +165,7 @@ final class AuditoriaUITests: XCTestCase {
                 app.terminate()
             }
             let lista = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
-                                 argumentos: combo + ["-custta.rolagem", "640", "-custta.linhaAberta", "g027"])
+                                 argumentos: combo + ["-custta.rolagem", "758", "-custta.linhaAberta", "g027"])
             XCTAssertTrue(lista.buttons["apagar-g027"].waitForExistence(timeout: 10))
             try auditar(lista, [.contrast])
             lista.terminate()
@@ -339,6 +356,66 @@ final class AuditoriaUITests: XCTestCase {
     @MainActor func testContrasteNaMaiorLetra() throws {
         for tema in temas {
             try contraste(["-custta.tema", tema] + maiorLetra + solido + parado)
+        }
+    }
+}
+
+extension AuditoriaUITests {
+    /// O orçamento (etapa 3, PR 1) na maior letra: a linha na obra, a tela Orçamento no alto e rolada (o cartão e os primeiros
+    /// tópicos; os tópicos a 3000 pt; no modo total, o gasto por tópico a 2200 pt) e a folha, com as teclas fechadas e abertas,
+    /// por tópico e no "Definir". A tela Orçamento sem o meio (1500 pt): ali, enquanto a auditoria trocava o tamanho da letra,
+    /// saíam achados sem elemento (como a vendida a 800 pt da etapa 2). E sem o fim do modo total (a 3000 pt e mais): a
+    /// auditoria diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, com o gancho da rolagem fixa ou
+    /// sem ele, e os achados saem sem elemento (ponto cego, 21/10); o que só o fim tem, a dica, tem guarda Node. Roda no job
+    /// laudo-etapa3.
+    @MainActor func testOrcamentoNoMaiorTamanho() throws {
+        var app: XCUIApplication
+        for (dados, abrir, rolagem, espera) in [("porTopico", "obra:v1", 700, "editarObra"), ("porTopico", "orcamento:v1", 0, "editarOrcamento"),
+                                                ("porTopico", "orcamento:v1", 3000, "editarOrcamento"),
+                                                ("vitrine", "orcamento:v1", 2200, "editarOrcamento")] {
+            app = abrirApp(conta: "senha", dados: dados, abrir: abrir, argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
+            XCTAssertTrue(app.buttons[espera].waitForExistence(timeout: 10), "\(abrir) em \(rolagem)")
+            Thread.sleep(forTimeInterval: 1.5)
+            try auditar(app, tiposDeAuditoria)
+            app.terminate()
+        }
+        for (dados, abrir, passo, espera) in [("porTopico", "orcamento:v1", "topicos", "linhaOrc-terreno"),
+                                              ("porTopico", "orcamento:v1", "teclas:eletrica", "barraDasTeclas-pronto"),
+                                              ("semOrcamento", "obra:v1", "", "tecla-1")] {
+            app = abrirApp(conta: "senha", dados: dados, abrir: abrir, folha: "orcamento:v1",
+                           argumentos: maiorLetra + parado + (passo.isEmpty ? [] : ["-custta.folha", passo]))
+            XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), passo)
+            Thread.sleep(forTimeInterval: 1)
+            try auditar(app, tiposDeAuditoria)
+            if passo == "topicos" {
+                app.swipeUp()
+                Thread.sleep(forTimeInterval: 1.5)
+                try auditar(app, tiposDeAuditoria)
+            }
+            app.terminate()
+        }
+    }
+
+    /// As mesmas telas no escuro e no claro, com superfícies sólidas.
+    @MainActor func testContrasteDoOrcamentoNosDoisTemas() throws {
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + solido + parado
+            var app = abrirApp(conta: "senha", dados: "porTopico", abrir: "obra:v1", argumentos: combo)
+            XCTAssertTrue(app.elemento("indicadorOrcamento").waitForExistence(timeout: 10))
+            try auditar(app, [.contrast])
+            app.terminate()
+            app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", argumentos: combo)
+            XCTAssertTrue(app.elemento("cartaoDoOrcamento").waitForExistence(timeout: 10))
+            try auditar(app, [.contrast])
+            rolar(app)
+            try auditar(app, [.contrast])
+            app.terminate()
+            app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
+                           argumentos: combo + ["-custta.folha", "teclas:eletrica"])
+            XCTAssertTrue(app.elemento("barraDasTeclas-nome").waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1)
+            try auditar(app, [.contrast])
+            app.terminate()
         }
     }
 }

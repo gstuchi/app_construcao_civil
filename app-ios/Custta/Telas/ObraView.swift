@@ -88,7 +88,13 @@ struct ObraView: View {
                         agir($0, obra: obra)
                     }
                         .padding(.top, 2)
-                        .padding(.bottom, 14)
+                        .padding(.bottom, 2)
+                    // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
+                    NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
+                        LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 14)
                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,

@@ -78,6 +78,25 @@ extension DadosDeExemplo {
             return .objeto(campos)
         })
     }
+
+    /// Os afazeres da Casa Alphaville do mockup da etapa 3 (parte 2, seção 4): 3 pendentes (um de 213 caracteres, que se lê
+    /// inteiro na tela Afazeres) e 4 feitos, na ordem do array.
+    static let afazeresDaVitrine: ValorJSON = .lista([
+        afazer("a1", "Pagar a quinzena do pedreiro na sexta", feito: false),
+        afazer("a2", "Ligar para o vidraceiro e confirmar a medida das janelas da sala, do quarto do casal e do banheiro social "
+               + "antes de sexta. Ele pediu as medidas por escrito, com a altura do peitoril e o lado de abrir de cada folha.",
+               feito: false),
+        afazer("a3", "Comprar 10 sacos de argamassa para o banheiro", feito: false),
+        afazer("a4", "Agendar a entrega do porcelanato", feito: true),
+        afazer("a5", "Buscar a tinta na loja", feito: true),
+        afazer("a6", "Mandar o projeto elétrico para a concessionária", feito: true),
+        afazer("a7", "Trocar o cadeado do portão", feito: true),
+    ])
+
+    /// Um afazer como o site grava.
+    static func afazer(_ id: String, _ texto: String, feito: Bool) -> ValorJSON {
+        .objeto(["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
+    }
 }
 
 extension DadosDeExemplo {

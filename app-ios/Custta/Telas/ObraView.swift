@@ -66,7 +66,11 @@ struct ObraView: View {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
-                                          rotaDoOrcamento: .orcamento(obra.id))
+                                          rotaDoOrcamento: .orcamento(obra.id)) {
+                        // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
+                        if linhaAberta != nil { fecharLinha(); return }
+                        folhas.aberta = .aPagar(obraId: obra.id)
+                    }
                     AcoesDaFaseView(fase: obra.fase,
                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
                         agir($0, obra: obra)

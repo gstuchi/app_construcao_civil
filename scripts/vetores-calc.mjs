@@ -461,6 +461,20 @@ pecas('total na vendida', O2);
 pecas('por tópico: só os previstos com gasto abrem, na ordem da lista', O1);
 pecas('gasto de valor zero ainda abre', comOrcamento({ modo: 'topicos', topicos: { pintura: 1000, eletrica: 500 } }, [g('pintura', 0)]));
 pecas('orçamento inválido conta como sem', comOrcamento({ modo: 'total', total: 0 }, [g('pintura', 10)]));
+/* A folha do orçamento: o total ao vivo e o total preenchido ao trocar para "Só o total" (valores lidos pelo parseNum, nunca NaN). */
+const soma = calc('somaTopicosOrc');
+soma('folha vazia', []);
+soma('soma na ordem da folha', [180000, 100000, 250000, 180000, 5000.5]);
+soma('negativo e zero não contam', [-3, 100, 0]);
+soma('negativo grande não desconta', [1e6, -1e6]);
+soma('centavos em ponto flutuante', [0.1, 0.2]);
+const preenchido = calc('totalPreenchidoOrc');
+preenchido('campo vazio ganha a soma', '', [90000, 0, 5000.5]);
+preenchido('campo vazio e folha vazia', '', []);
+preenchido('soma só de negativos não preenche', '', [-5]);
+preenchido('soma abaixo de meio centavo ainda preenche', '', [0.004]);
+preenchido('campo com valor fica', '1.008.000,00', [5000]);
+preenchido('campo com zero digitado fica', '0', [5000]);
 
 /* ---------- versão ---------- */
 const versao = calc('versaoMaior');

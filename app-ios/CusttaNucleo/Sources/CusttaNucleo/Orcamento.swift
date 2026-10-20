@@ -157,3 +157,14 @@ public func pecasOrcamento(_ obra: Obra) -> PecasDoOrcamento {
     return PecasDoOrcamento(cartao: orc != nil, porTopico: orc?.modo == "topicos", definir: orc == nil && obra.fase != .vendida,
                             tocaveis: (orc?.topicos ?? []).compactMap(\.id).filter { comGasto.contains($0) })
 }
+
+/// `somaTopicosOrc` do calc.js: o total ao vivo da folha soma só o que é positivo em cada linha, na ordem da folha.
+public func somaTopicosOrc(_ numeros: [Double]) -> Double { numeros.reduce(0) { $0 + max(0, $1) } }
+
+/// `totalPreenchidoOrc` do calc.js: trocar para "Só o total" com o campo vazio preenche com a soma dos tópicos, se ela passar de
+/// zero (o previsto por tópico não some sem o número à vista); campo com texto fica como está.
+public func totalPreenchidoOrc(_ campo: String, _ numeros: [Double]) -> String {
+    if !campo.isEmpty { return campo }
+    let soma = somaTopicosOrc(numeros)
+    return soma > 0 ? numParaCampo(soma) : ""
+}

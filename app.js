@@ -1719,9 +1719,9 @@ function formOrcamento(obraId){
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
   const entradas = [...sheet.querySelectorAll('#orcTopWrap input[data-top]')];
-  const somaTopicos = () => entradas.reduce((s, i) => s + Math.max(0, parseNum(i.value)), 0);
+  const numerosDaFolha = () => entradas.map(i => parseNum(i.value));
   const pintaSoma = () => {
-    $('#orcSoma').textContent = money(somaTopicos());
+    $('#orcSoma').textContent = money(OBRA_CALC.somaTopicosOrc(numerosDaFolha()));
   };
   const aplicaModo = m => {
     modo = m;
@@ -1732,12 +1732,8 @@ function formOrcamento(obraId){
     });
     $('#orcTotalWrap').classList.toggle('hidden', m !== 'total');
     $('#orcTopWrap').classList.toggle('hidden', m !== 'topicos');
-    // trocar pra "só o total" com o campo vazio não pode apagar o previsto por tópico
-    // sem o construtor ver o número: pré-preenche com a soma atual (salvar ainda grava só o modo ativo).
-    if(m === 'total' && !$('#orcTotal').value){
-      const soma = somaTopicos();
-      if(soma > 0) $('#orcTotal').value = OBRA_CALC.numParaCampo(soma);
-    }
+    // "só o total" com o campo vazio ganha a soma dos tópicos (salvar ainda grava só o modo ativo)
+    if(m === 'total') $('#orcTotal').value = OBRA_CALC.totalPreenchidoOrc($('#orcTotal').value, numerosDaFolha());
   };
   sheet.querySelectorAll('.seg button').forEach(b => { b.onclick = () => aplicaModo(b.dataset.modo); });
   maskMoney('#orcTotal');

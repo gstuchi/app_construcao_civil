@@ -65,6 +65,18 @@ struct OrcamentoTests {
         }
     }
 
+    @Test func totalAoVivoDaFolha() {
+        for c in Vetores.casos("calc.somaTopicosOrc") {
+            confere(.numero(somaTopicosOrc((c.args[0].comoLista ?? []).map(\.numero))), c.saida, .exata, c.caso)
+        }
+    }
+
+    @Test func totalPreenchidoAoTrocarDeModo() {
+        for c in Vetores.casos("calc.totalPreenchidoOrc") {
+            confere(.texto(totalPreenchidoOrc(c.args[0].comoTexto!, (c.args[1].comoLista ?? []).map(\.numero))), c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func pecasQueAObraMostra() {
         for c in Vetores.casos("calc.pecasOrcamento") {
             let p = pecasOrcamento(c.args[0].obra)

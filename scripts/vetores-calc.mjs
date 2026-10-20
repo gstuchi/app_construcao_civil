@@ -685,6 +685,58 @@ gravado('antigo que não é objeto conta como sem orçamento', 'lixo', 'topicos'
 gravado('antigo lista conta como sem orçamento', [1, 2], 'total', 10, FOLHA);
 gravado('tópicos do antigo que não são objeto não entram', { modo: 'topicos', topicos: [5] }, 'topicos', 0, { ...FOLHA, pintura: 3000 });
 
+/* Afazeres (app.js addAfazer, renderAfazeres e afazerRow): o que adicionar, marcar, desmarcar e apagar gravam, a ordem da
+   lista e o contador. As listas passam pela leitura normalizada, como o app as vê. */
+const afazeresLidos = afazeres => D.normaliza({ obras: [{ id: 'x', dataInicio: '2026-01-01', afazeres }] }).obras[0].afazeres;
+const AFZ = afazeresLidos([
+  { id: 'a1', texto: 'Comprar tinta', feito: false },
+  { id: 'a2', texto: 'Pagar pedreiro', feito: true },
+  { id: 'a3', texto: 'Ligar eletricista', feito: false, prioridade: 'alta' },
+  { id: 'a4', texto: 'Medir janelas', feito: true },
+]);
+const AFZ_REPETIDO = afazeresLidos([{ id: 'x', texto: 'Um', feito: false }, { id: 'x', texto: 'Dois', feito: true }, { id: 'y', texto: 'Três', feito: false }]);
+const conferirAfz = (nome, texto) => caso('dados.conferirAfazer', nome, [texto], D.conferirAfazer);
+conferirAfz('texto comum', 'Comprar tinta');
+conferirAfz('aparado, com o espaço do meio', '  Pagar  o pedreiro  ');
+conferirAfz('vazio', '');
+conferirAfz('só espaços', '   ');
+conferirAfz('espaço duro, quebra e tab', '\u00a0\n\t');
+conferirAfz('BOM nas pontas sai', '\ufeffabc\ufeff');
+conferirAfz('espaço de largura zero fica', '\u200b');
+conferirAfz('500 letras', 'a'.repeat(500));
+conferirAfz('501 letras', 'a'.repeat(501));
+conferirAfz('500 depois de aparar', ' ' + 'a'.repeat(500) + ' ');
+conferirAfz('250 emojis são 500 unidades', '😀'.repeat(250));
+conferirAfz('250 emojis e uma letra', '😀'.repeat(250) + 'a');
+const comNovo = (nome, ...args) => caso('dados.afazeresComNovo', nome, args, D.afazeresComNovo);
+comNovo('no começo da lista, pendente', AFZ, 'Comprar areia', 'n1');
+comNovo('lista vazia', [], 'Primeiro', 'n1');
+comNovo('obra sem a chave afazeres', undefined, 'Primeiro', 'n1');
+const alternado = (nome, ...args) => caso('dados.afazeresAlternado', nome, args, D.afazeresAlternado);
+alternado('marcar o do meio leva ao começo, com o campo desconhecido', AFZ, 'a3');
+alternado('desmarcar o último leva ao começo', AFZ, 'a4');
+alternado('marcar o primeiro', AFZ, 'a1');
+alternado('id que sumiu', AFZ, 'zz');
+alternado('obra sem a chave afazeres', undefined, 'a1');
+alternado('id repetido troca o primeiro', AFZ_REPETIDO, 'x');
+const sem = (nome, ...args) => caso('dados.afazeresSem', nome, args, D.afazeresSem);
+sem('apagar o do meio', AFZ, 'a2');
+sem('id que sumiu', AFZ, 'zz');
+sem('id repetido sai todo', AFZ_REPETIDO, 'x');
+sem('obra sem a chave afazeres', undefined, 'a1');
+const ordemAfz = calc('afazeresEmOrdem');
+ordemAfz('pendentes e depois feitos, cada grupo na ordem da lista', AFZ);
+ordemAfz('o recém-marcado fica no alto dos feitos', D.afazeresAlternado(AFZ, 'a3'));
+ordemAfz('o desmarcado volta ao alto dos pendentes', D.afazeresAlternado(AFZ, 'a4'));
+ordemAfz('lista vazia', []);
+ordemAfz('obra sem a chave afazeres', undefined);
+const contadorAfz = calc('contadorDeAfazeres');
+contadorAfz('dois pendentes', AFZ);
+contadorAfz('um pendente', D.afazeresAlternado(AFZ, 'a1'));
+contadorAfz('tudo feito', AFZ.map(a => ({ ...a, feito: true })));
+contadorAfz('lista vazia', []);
+contadorAfz('obra sem a chave afazeres', undefined);
+
 /* ---------- push.js e id ---------- */
 for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx', 'https://fcm.googleapis.com/fcm/send/eXyZ', 'ç😀', 'x'.repeat(300)])
   caso('push.hashEndpoint', JSON.stringify(t.length > 40 ? t.slice(0, 40) + '…' : t), [t], P.hashEndpoint);

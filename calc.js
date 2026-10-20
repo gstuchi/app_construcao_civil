@@ -484,6 +484,13 @@
     const soma = somaTopicosOrc(numeros);
     return soma > 0 ? numParaCampo(soma) : '';
   }
+  /* Afazeres na tela (app.js renderAfazeres): pendentes e depois feitos, cada grupo na ordem da lista; o contador dos pendentes.
+     Feito é só o true (a leitura normalizada já o deixa assim). */
+  const afazeresEmOrdem = lista => { const l = Array.isArray(lista) ? lista : []; return [...l.filter(a => a.feito !== true), ...l.filter(a => a.feito === true)]; };
+  function contadorDeAfazeres(lista){
+    const n = (Array.isArray(lista) ? lista : []).filter(a => a.feito !== true).length;
+    return n ? `(${n} pendente${n > 1 ? 's' : ''})` : '';
+  }
   /* Peças do orçamento na obra: o cartão (e o "Editar") com orçamento válido; a lista "Por tópico" só no modo por tópico;
      "Definir orçamento" sem orçamento e fora da vendida; e os tópicos previstos que abrem a folha do tópico, os que têm gasto
      (qualquer gasto, até de valor zero), na ordem da lista. */
@@ -499,7 +506,7 @@
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

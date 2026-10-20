@@ -161,7 +161,32 @@
     for(const [id, v] of Object.entries(antes)) if(!Object.prototype.hasOwnProperty.call(valores, id)) topicos[id] = v;
     return {...resto, modo:'topicos', topicos};
   }
-  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,LIMITE_OBRAS,avisoLimiteDeObras,conferirObra,obraNova,obraEditada,conferirVenda,orcamentoGravado};
+  /* ---- afazeres (app.js addAfazer e afazerRow) ----
+     "Adicionar": o texto aparado; vazio não faz nada; até LIMITES.afazer unidades. O novo entra no começo da lista, pendente.
+     Marcar e desmarcar trocam o feito e levam o afazer ao começo: com a lista mostrada em pendentes e depois feitos, cada grupo
+     na ordem da lista (calc.js afazeresEmOrdem), o recém-marcado fica no alto dos feitos e o desmarcado volta ao alto dos
+     pendentes. Apagar não pergunta. Os campos desconhecidos de cada afazer ficam. Lista ausente conta como vazia; id que sumiu
+     (apagado em outro aparelho) devolve null: nada a gravar. */
+  function conferirAfazer(texto){
+    const t = texto.trim();
+    if(!t) return {erro:'vazio'};
+    if(t.length>LIMITES.afazer) return {erro:'afazer', mensagem:`Use até ${LIMITES.afazer} caracteres.`};
+    return {texto:t};
+  }
+  const afazeresDaLista = l => Array.isArray(l) ? l : [];
+  function afazeresComNovo(lista, texto, id){
+    return [{id, texto, feito:false}, ...afazeresDaLista(lista)];
+  }
+  function afazeresAlternado(lista, id){
+    const l = afazeresDaLista(lista), i = l.findIndex(a => a.id === id);
+    if(i < 0) return null;
+    return [{...l[i], feito:l[i].feito !== true}, ...l.slice(0, i), ...l.slice(i + 1)];
+  }
+  function afazeresSem(lista, id){
+    const l = afazeresDaLista(lista);
+    return l.some(a => a.id === id) ? l.filter(a => a.id !== id) : null;
+  }
+  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,LIMITE_OBRAS,avisoLimiteDeObras,conferirObra,obraNova,obraEditada,conferirVenda,orcamentoGravado,conferirAfazer,afazeresComNovo,afazeresAlternado,afazeresSem};
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.OBRA_DADOS=api;
 })(typeof window !== 'undefined' ? window : globalThis);

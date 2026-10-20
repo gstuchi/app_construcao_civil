@@ -423,6 +423,35 @@ orc('empate de razão desempata pelo id', comOrcamento({ modo: 'topicos', topico
 orc('dois tópicos fora com o mesmo gasto desempatam pelo id', comOrcamento({ modo: 'topicos', topicos: { fundacao: 1000 } }, [g('fundacao', 500), g('pintura', 300), g('eletrica', 300)]));
 orc('sem orçamento', O3);
 orc('previsto zero some', comOrcamento({ modo: 'total', total: 0 }, []));
+/* Os textos do cartão e da lista por tópico (app.js orcamentoHtml), sobre itens do próprio orcamentoObra. Valores de
+   mil para cima separam o moneyCurto do money; o meio centavo da sobra fica dos dois lados. */
+const itemOrc = (gasto, previsto) => { const { modo, topicos, fora, foraTotal, ...item } = C.orcamentoObra(comOrcamento({ modo: 'total', total: previsto }, [g('pintura', gasto)])); return item; };
+constante('calc.ORC_PILULA', C.ORC_PILULA);
+const largura = calc('larguraBarraOrc');
+for(const p of [-5, 0, 55, 100, 104, 250]) largura(String(p), p);
+const frase = calc('fraseTopicoOrc');
+frase('passou: R$ 8 mil do previsto', itemOrc(98000, 90000));
+frase('passou na casa do milhão', itemOrc(3.5e6, 1e6));
+frase('passou por menos de mil', itemOrc(1000.75, 1000));
+frase('perto: faltam R$ 19 mil', itemOrc(231000, 250000));
+frase('perto: faltam menos de mil', itemOrc(9000.01, 10000));
+frase('perto: faltam R$ 8 mil, sem o ",0"', itemOrc(92000, 100000));
+frase('sobra de mais de meio centavo: faltam', itemOrc(999.994, 1000));
+frase('sobra de meio centavo: chegou', itemOrc(999.996, 1000));
+frase('exatamente no previsto: chegou', itemOrc(1000, 1000));
+frase('meio centavo acima: chegou, não passou', itemOrc(1000.004, 1000));
+frase('dentro do previsto: sem frase', itemOrc(500, 1000));
+const rodape = calc('rodapeOrc');
+rodape('dentro: sobra', itemOrc(612000, 800000));
+rodape('passou: o valor sem sinal', itemOrc(1048000, 1008000));
+rodape('meio centavo acima ainda sobra', itemOrc(1000.004, 1000));
+rodape('sem gasto', itemOrc(0, 1000));
+const linhaOrc = calc('linhaTopicoOrc');
+linhaOrc('mil e mil', itemOrc(98000, 90000));
+linhaOrc('sem gasto e mil redondo', itemOrc(0, 1000));
+linhaOrc('previsto abaixo de mil perde o R$ com espaço duro', itemOrc(12000.5, 500));
+linhaOrc('milhões', itemOrc(1234567, 2500000));
+linhaOrc('um milhão redondo', itemOrc(8500, 1e6));
 
 /* ---------- versão ---------- */
 const versao = calc('versaoMaior');

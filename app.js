@@ -64,7 +64,6 @@ const taxa = () => db.config.taxaMensal;
 /* ---------- helpers ---------- */
 /* Moeda, meses e canon moram no calc.js (puros; o app nativo confere a cópia dele pelos vetores). */
 const { money, moneyShort, moneyCurto, fmtMeses, canon } = OBRA_CALC;
-const semCifrao = s => s.replace(/^R\$\s/, '');
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const todayISO = () => OBRA_CALC.dataLocalISO();
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return escapeHtml(`${d}/${m}/${y.slice(2)}`); };
@@ -271,39 +270,39 @@ function drawComp(arr, hoje){
 
 /* ===== ORÇAMENTO previsto × real =====
    Um número por vez: o card mostra gasto de previsto, barra e sobra; o detalhe
-   fica na lista por tópico. Verde-marca abaixo de 90%, âmbar daí pra cima. */
-const ORC_PILL = { ok:'dentro do previsto', perto:'perto do limite', passou:'passou do previsto' };
+   fica na lista por tópico. Verde-marca abaixo de 90%, âmbar daí pra cima.
+   Os textos e a largura da barra vêm do calc.js (o app nativo usa os mesmos). */
 function barraOrcHtml(pct, nivel, extra){
-  return `<div class="orc-barra${extra ? ' ' + extra : ''}${nivel === 'ok' ? '' : ' alerta'}" aria-hidden="true"><i data-pct="${Math.max(0, Math.min(100, pct))}"></i></div>`;
+  return `<div class="orc-barra${extra ? ' ' + extra : ''}${nivel === 'ok' ? '' : ' alerta'}" aria-hidden="true"><i data-pct="${OBRA_CALC.larguraBarraOrc(pct)}"></i></div>`;
 }
 /* largura via CSSOM: a CSP proíbe atributo style no HTML */
 function pintaBarrasOrc(escopo){
   escopo.querySelectorAll('.orc-barra i[data-pct]').forEach(i => { i.style.width = i.dataset.pct + '%'; });
 }
-function fraseTopicoOrc(t){
-  if(t.nivel === 'passou') return `<div class="orc-frase alerta">Passou ${moneyCurto(-t.sobra)} do previsto</div>`;
-  if(t.nivel === 'perto') return `<div class="orc-frase">${t.sobra > 0.005 ? `Faltam ${moneyCurto(t.sobra)} — ${t.pct}%` : `Chegou ao previsto — ${t.pct}%`}</div>`;
-  return '';
+function fraseTopicoHtml(t){
+  const f = OBRA_CALC.fraseTopicoOrc(t);
+  return f ? `<div class="orc-frase${f.alerta ? ' alerta' : ''}">${f.texto}</div>` : '';
 }
 function orcamentoHtml(o, orc){
-  const passou = orc.nivel === 'passou';
+  const rodape = OBRA_CALC.rodapeOrc(orc);
   const card = `
     <div class="panel orc-card" id="oOrc">
       <div class="orc-topo"><span class="orc-rotulo">Orçamento</span>
-        <span class="orc-pill${orc.nivel === 'ok' ? '' : ' alerta'}">${ORC_PILL[orc.nivel]}</span></div>
+        <span class="orc-pill${orc.nivel === 'ok' ? '' : ' alerta'}">${OBRA_CALC.ORC_PILULA[orc.nivel]}</span></div>
       <div class="orc-num">${money(orc.gasto)} <small>de ${money(orc.previsto)}</small></div>
       ${barraOrcHtml(orc.pct, orc.nivel)}
-      <div class="orc-rodape"><span><b>${orc.pct}%</b> usado</span>
-        <span>${passou ? 'passou' : 'sobra'} <b>${money(Math.abs(orc.sobra))}</b></span></div>
+      <div class="orc-rodape"><span><b>${rodape.usado}</b> usado</span>
+        <span>${rodape.rotulo} <b>${rodape.valor}</b></span></div>
     </div>`;
   let lista = '';
   if(orc.modo === 'topicos'){
     const comGasto = new Set(o.gastos.map(g => g.topico));
     const linhas = orc.topicos.map(t => {
+      const valores = OBRA_CALC.linhaTopicoOrc(t);
       const miolo = `
         <div class="orc-linha"><span class="orc-nome">${escapeHtml(nomeTopico(t.id))}</span>
-          <span class="orc-val"><b>${moneyCurto(t.gasto)}</b> / ${semCifrao(moneyCurto(t.previsto))}</span></div>
-        ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoOrc(t)}`;
+          <span class="orc-val"><b>${valores.gasto}</b> / ${valores.previsto}</span></div>
+        ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoHtml(t)}`;
       // tópico com gasto vira botão de verdade (semântica de lista/botão corretas pra leitor de tela)
       return comGasto.has(t.id)
         ? `<li class="orc-item"><button type="button" class="orc-item-conteudo" data-top="${escapeHtml(t.id)}">${miolo}</button></li>`

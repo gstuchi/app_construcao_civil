@@ -186,6 +186,18 @@ for(const o of BLOB.obras) bruto(o.nome, o);
 const totalCorr = calc('totalCorrigido');
 for(const o of BLOB.obras) for(const taxa of [1, 0.85, 20]) totalCorr(`${o.nome} a ${taxa}%`, o, taxa, HOJE);
 totalCorr('vendida corrige até a venda, mesmo com outro hoje', O2, 1, '2030-01-01');
+/* O resumo da folha do tópico (app.js sheetTopico). */
+const resumoTop = calc('resumoTopico');
+resumoTop('parcelas a vencer contam no bruto', O1, 'eletrica', HOJE, 1);
+resumoTop('um gasto só', O1, 'fundacao', HOJE, 1);
+resumoTop('vendida corrige até a venda', O2, 'alvenaria', '2030-01-01', 1);
+resumoTop('tópico sem gasto', O1, 'telhado', HOJE, 1);
+resumoTop('obra sem gasto', O3, 'pintura', HOJE, 1);
+resumoTop('taxa zero: corrigido igual ao bruto', O1, 'estrutura', HOJE, 0);
+resumoTop('tópico próprio', O4, 'c_mgf1abcd', HOJE, 1);
+resumoTop('meio ponto arredonda para cima, como o donut', { id: 'r', dataInicio: '2026-01-01', gastos: [
+  { id: 'r1', valor: 1, topico: 'pintura', descricao: '', data: '2026-01-01', pagamento: 'pix' },
+  { id: 'r2', valor: 7, topico: 'eletrica', descricao: '', data: '2026-01-01', pagamento: 'pix' }] }, 'pintura', HOJE, 1);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);

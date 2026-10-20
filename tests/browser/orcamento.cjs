@@ -78,6 +78,11 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     // tocar no tópico abre a folha do tópico que já existe
     await item('Fundação').click();
     assert.match(await page.locator('#sheet').textContent(),/Fundação/);
+    // o resumo do tópico: bruto, corrigido até hoje e o % da obra arredondado (98 mil de 624 mil = 15,7%)
+    assert.equal((await page.locator('#sheet .top-resumo .sub').textContent()).trim(),'1 gasto · 16% da obra');
+    assert.equal((await page.locator('#sheet .top-resumo b').textContent()).replace(/\s/g,' '),'R$ 98.000,00');
+    assert.equal(await page.locator('#sheet .top-resumo .corr').textContent(),
+      await page.evaluate(()=>`corrigido: ${OBRA_CALC.money(OBRA_CALC.corrigido(98000,'2026-03-01',OBRA_CALC.dataLocalISO(),1))}`));
     await page.evaluate(()=>closeSheet());
 
     // Obra com orçamento total estourado

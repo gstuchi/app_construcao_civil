@@ -2464,6 +2464,736 @@
         "saida": 609820.0811482214
       }
     ],
+    "calc.resumoTopico": [
+      {
+        "caso": "parcelas a vencer contam no bruto",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "eletrica",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 3,
+          "bruto": 3100,
+          "corrigido": 3103.7222868121294,
+          "pct": 1
+        }
+      },
+      {
+        "caso": "um gasto só",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "fundacao",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 98000,
+          "corrigido": 117878.75574995887,
+          "pct": 28
+        }
+      },
+      {
+        "caso": "vendida corrige até a venda",
+        "args": [
+          {
+            "id": "o2",
+            "nome": "Sobrado Centro",
+            "dataInicio": "2024-01-15",
+            "fase": "vendida",
+            "venda": {
+              "valor": 980000,
+              "data": "2025-02-10"
+            },
+            "valorEstimadoVenda": 950000,
+            "areaM2": 180,
+            "orcamento": {
+              "modo": "total",
+              "total": 700000
+            },
+            "gastos": [
+              {
+                "id": "h01",
+                "valor": 150000,
+                "topico": "terreno",
+                "descricao": "Terreno",
+                "data": "2024-01-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h02",
+                "valor": 320000.75,
+                "topico": "alvenaria",
+                "descricao": "Blocos e mão de obra",
+                "data": "2024-05-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h03",
+                "valor": 85000,
+                "topico": "acabamento",
+                "descricao": "Porcelanato",
+                "data": "2024-12-01",
+                "pagamento": "cartao"
+              },
+              {
+                "id": "h04",
+                "valor": 4500,
+                "topico": "outros",
+                "descricao": "Limpeza depois da venda",
+                "data": "2025-03-01",
+                "pagamento": "pix"
+              }
+            ],
+            "afazeres": []
+          },
+          "alvenaria",
+          "2030-01-01",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 320000.75,
+          "corrigido": 347817.740317476,
+          "pct": 57
+        }
+      },
+      {
+        "caso": "tópico sem gasto",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "telhado",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 0,
+          "bruto": 0,
+          "corrigido": 0,
+          "pct": 0
+        }
+      },
+      {
+        "caso": "obra sem gasto",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": []
+          },
+          "pintura",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 0,
+          "bruto": 0,
+          "corrigido": 0,
+          "pct": 0
+        }
+      },
+      {
+        "caso": "taxa zero: corrigido igual ao bruto",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "estrutura",
+          "2026-10-06",
+          0
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 231000,
+          "corrigido": 231000,
+          "pct": 67
+        }
+      },
+      {
+        "caso": "tópico próprio",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          },
+          "c_mgf1abcd",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 7000,
+          "corrigido": 7446.105266191087,
+          "pct": 2
+        }
+      },
+      {
+        "caso": "meio ponto arredonda para cima, como o donut",
+        "args": [
+          {
+            "id": "r",
+            "dataInicio": "2026-01-01",
+            "gastos": [
+              {
+                "id": "r1",
+                "valor": 1,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "r2",
+                "valor": 7,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          "pintura",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 1,
+          "corrigido": 1.0951305573693542,
+          "pct": 13
+        }
+      }
+    ],
     "calc.lucroVenda": [
       {
         "caso": "Casa Alphaville",

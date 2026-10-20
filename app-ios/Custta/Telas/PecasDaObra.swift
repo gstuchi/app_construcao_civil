@@ -223,10 +223,11 @@ struct IndicadoresDaObraView: View {
     }
 }
 
-/// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`) e, na tela Orçamento, "Por tópico 14" e
-/// "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline semibold e o número em peso médio, no secundário (sem
-/// número, só o título), num texto só: na maior letra a pílula quebra como texto corrido ("Lançamentos" numa linha, "12/46"
-/// na de baixo), como o mockup, que põe título e número no mesmo fluxo; um `HStack` dos dois hifenizaria o título na AX5.
+/// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`), "Pendentes 3" nos afazeres
+/// (`AfazeresView`) e, na tela Orçamento, "Por tópico 14" e "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline
+/// semibold e o número em peso médio, no secundário (sem número, só o título), num texto só: na maior letra a pílula quebra
+/// como texto corrido ("Lançamentos" numa linha, "12/46" na de baixo), como o mockup, que põe título e número no mesmo
+/// fluxo; um `HStack` dos dois hifenizaria o título na AX5.
 struct PilulaDaLista: View {
     let titulo: String
     let numero: String

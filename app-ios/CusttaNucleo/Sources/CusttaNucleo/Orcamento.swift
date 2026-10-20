@@ -138,3 +138,22 @@ public func linhaTopicoOrc(_ t: ItemOrcamento) -> LinhaDoTopicoOrc {
     }
     return LinhaDoTopicoOrc(gasto: moedaCurtaSemZero(t.gasto), previsto: previsto)
 }
+
+public struct PecasDoOrcamento: Equatable, Sendable {
+    /// O cartão (e o lápis que edita), com orçamento válido.
+    public let cartao: Bool
+    /// A lista "Por tópico", só no modo por tópico.
+    public let porTopico: Bool
+    /// "Definir orçamento", sem orçamento e fora da vendida.
+    public let definir: Bool
+    /// Os tópicos previstos que abrem o detalhe (os que têm gasto, até de valor zero), na ordem da lista.
+    public let tocaveis: [String]
+}
+
+/// `pecasOrcamento` do calc.js: quais peças do orçamento a obra mostra.
+public func pecasOrcamento(_ obra: Obra) -> PecasDoOrcamento {
+    let orc = orcamentoObra(obra)
+    let comGasto = Set(obra.gastos.map(\.topico))
+    return PecasDoOrcamento(cartao: orc != nil, porTopico: orc?.modo == "topicos", definir: orc == nil && obra.fase != .vendida,
+                            tocaveis: (orc?.topicos ?? []).compactMap(\.id).filter { comGasto.contains($0) })
+}

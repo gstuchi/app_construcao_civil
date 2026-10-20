@@ -76,7 +76,7 @@ extension PrincipalView {
     private var acaoDoMais: AcaoDoMais? {
         guard aba == .obras else { return nil }
         let obras = modelo.sincronizador.estado.obras
-        guard case .obra(let id)? = caminhoDeObras.last else { return AcaoDoMais(rotulo: "Nova obra", acao: pedirNovaObra) }
+        guard let id = caminhoDeObras.last?.obraId else { return AcaoDoMais(rotulo: "Nova obra", acao: pedirNovaObra) }
         guard let obra = obras.first(where: { $0.id == id }) else { return nil }
         if obra.fase != .vendida { return AcaoDoMais(rotulo: "Lançar gasto") { folhas.aberta = .novoGasto(obraId: id) } }
         if obrasAbertas(obras).isEmpty { return AcaoDoMais(rotulo: "Nova obra", acao: pedirNovaObra) }
@@ -140,19 +140,23 @@ extension PrincipalView {
             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
             default: break
             }
-        } else if let passo, case .obra(let obraId)? = caminhoDeObras.last {
+        } else if let passo, let obraId = caminhoDeObras.last?.obraId {
             folhas.aberta = passo.hasPrefix("editar:") ? .editarGasto(obraId: obraId, gastoId: String(passo.dropFirst(7)))
                                                        : .novoGasto(obraId: obraId)
         }
     }
     #endif
 
-    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto (testes de tela, laudo
-    /// de leitura e conferência visual).
+    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto e
+    /// `CUSTTA_ABRIR=orcamento:<id>`, a tela Orçamento dela (testes de tela, laudo de leitura e conferência visual).
     static var caminhoInicial: [RotaDeObras] {
         #if DEBUG
         if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("obra:") {
             return [.obra(String(abrir.dropFirst(5)))]
+        }
+        if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("orcamento:") {
+            let id = String(abrir.dropFirst(10))
+            return [.obra(id), .orcamento(id)]
         }
         #endif
         return []

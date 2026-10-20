@@ -144,7 +144,7 @@ Como na etapa 2, a regra que hoje só existe dentro do `app.js` sobe antes para 
 | 8 | Contador dos lançamentos: vazio, "N" ou "achados/total" | 711-712 | `calc.js` |
 | 9 | Resumo do tópico: bruto, corrigido até a venda ou hoje (pelo `fimCorrecao`, que o `app.js` hoje copia à mão) e "% da obra" | 1133-1139 | `calc.js` |
 
-- **Recomendo uma décima, pequena: o item 10 do inventário**, o texto da folha do A pagar ("{N} vencimento(s) · a partir de amanhã", app.js:1117). Ele não está no núcleo: a etiqueta do indicador (`ObraNaTela.swift:171`) usa a mesma contagem, mas diz "nada em 30 dias" no zero, e a folha vazia diz "0 vencimentos · a partir de amanhã". O mockup o marca como obrigatório, e um vetor custa pouco. Se ficar fora do PR 0, o app o escreve com teste próprio.
+- **Uma décima, pequena, aprovada pelo Giovani em 18/10: o item 10 do inventário**, o texto da folha do A pagar ("{N} vencimento(s) · a partir de amanhã", app.js:1117). Ele não está no núcleo: a etiqueta do indicador (`ObraNaTela.swift:171`) usa a mesma contagem, mas diz "nada em 30 dias" no zero, e a folha vazia diz "0 vencimentos · a partir de amanhã". O mockup o marca como obrigatório, e um vetor custa pouco.
 - O item 11, a guarda de Ajustes, fica para a etapa 5.
 - O rótulo "out/26" do `<select>` fica no site: o app escreve o mês por extenso.
 - Quantos gastos cada mês tem (o menu do app) entra na regra 7, que passa a devolver o mês e a contagem; o site ignora a contagem.
@@ -154,12 +154,10 @@ Como na etapa 2, a regra que hoje só existe dentro do `app.js` sobe antes para 
 - O conserto é o mesmo do app: a lista de meses da regra 7 inclui o mês escolhido mesmo sem gasto. O `<select>` continua mostrando o mês que filtra, e a pessoa pode tirá-lo.
 - Entra com vetor (mês escolhido sem gasto; mês escolhido com gasto não se repete; sem mês escolhido, nada muda) e com um teste de browser do caminho do defeito: escolher o mês, apagar o último gasto dele, conferir o `<select>` e o contador.
 
-**Alinhamentos recomendados (além do pedido; cada um sai sem mexer no resto).** Em três regras, o mockup aprovado faz o app diferir do site. Subir a regra já com o comportamento do app evita duas cópias diferentes da mesma gravação:
+**Três alinhamentos, aprovados pelo Giovani em 18/10 (além do pedido).** Em três regras, o mockup aprovado faz o app diferir do site. Subir a regra já com o comportamento do app evita duas cópias diferentes da mesma gravação:
 - **Ordem do afazer (achado 4):** marcar ou desmarcar leva o afazer ao começo do array. Com a exibição de hoje do site (pendentes e depois feitos, cada grupo na ordem do array), o feito vai para o alto dos Feitos e o desmarcado para o alto dos pendentes, no app e no site. O mockup desenha os dois: o que acabou de ser marcado fica no alto dos Feitos, e tocar de novo devolve ao alto dos pendentes. É o que o mockup chama de "a ordem dos afazeres muda o array na nuvem, e o site mostra a mesma ordem".
 - **O orçamento guarda o que a folha não mostra (achado 7):** com a regra 4 no `dados.js` já preservando, o site deixa de perder esses dados.
 - **Busca aparada (achado 16):** o texto é aparado antes do `filtraGastos`; no site, é um `trim()` na leitura do campo.
-
-Se o Giovani preferir o site intocado nesses três, o app aplica a diferença na própria camada, com teste próprio, e o vetor fica com a regra do site.
 
 **Armadilhas conferidas.** Nenhuma chave nova no blob, então as rules não mudam. Nenhum arquivo novo na raiz, então o `ASSETS` do `sw.js` não muda; o `CACHE` sobe uma vez, porque `calc.js`, `dados.js` e `app.js` mudam. Nenhuma dependência de runtime no browser. Nada inline no HTML (CSP).
 
@@ -177,7 +175,7 @@ Se o Giovani preferir o site intocado nesses três, o app aplica a diferença na
 As três camadas do spec do app nativo, sem pacote novo.
 
 **Núcleo (`CusttaNucleo`).**
-- A cópia das regras do PR 0 (as nove, ou dez com a recomendada), com os vetores, e as regras novas do app, com teste próprio.
+- A cópia das dez regras do PR 0, com os vetores, e as regras novas do app, com teste próprio.
 - Duas mutações novas sobre o estado, que devolvem o estado novo, como as da etapa 2 (`Mutacoes.swift`):
   - orçamento: definir ou editar (o objeto da regra 4, guardando o que a folha não mostra) e tirar;
   - afazeres: adicionar, alternar e apagar.
@@ -203,7 +201,7 @@ Recomendação, que passa pelo conselho (é a ordem do trabalho): **fatias que j
 
 | PR | O que entrega | Build |
 | --- | --- | --- |
-| 0 (site) | As nove regras do `app.js` no `calc.js` e no `dados.js` (e a décima, se aprovada), com vetores, cópia em Swift e leitores; a correção do filtro de mês preso; os três alinhamentos, se aprovados; uma subida do `CACHE`. | — |
+| 0 (site) | As dez regras do `app.js` no `calc.js` e no `dados.js`, com vetores, cópia em Swift e leitores; a correção do filtro de mês preso; os três alinhamentos; uma subida do `CACHE`. | — |
 | 1 | Orçamento (a parte 1 sem o detalhe do tópico): a linha nos indicadores com os três níveis e o aviso dos tópicos; a tela Orçamento; a folha com as teclas encaixadas; definir, editar e tirar; a obra vendida; o token âmbar sobre o vidro; a decisão 6; a correção do "A vencer" na letra máxima, se o app tiver o defeito. Conferência cruzada do orçamento. | sim |
 | 2 | Detalhe do tópico e A pagar, com a volta à folha de origem: a seta no indicador; as duas folhas; a edição empurrada; apagar à vista e parcela de dentro da folha; o puxar que pergunta; o arrastar dentro da folha; a folha do tópico que desce sem gasto. As linhas da tela Orçamento passam a abrir o detalhe. | sim |
 | 3 | Busca e filtro por mês; afazeres (linha, tela, adicionar, marcar, apagar e ordem); os quatro combos e a letra máxima conferidos em todas as telas da etapa; o checklist do aparelho da etapa 3. Conferência cruzada completa. | sim |
@@ -216,7 +214,7 @@ Recomendação, que passa pelo conselho (é a ordem do trabalho): **fatias que j
 
 Desde o #76, o app grava na conta de quem entra, e os builds da etapa 3 já gravam na conta de sempre.
 
-Recomendação: **seguir na conta de sempre**. O caminho de gravação é o da etapa 2, já conferido no aparelho. As duas mutações novas só mexem dentro de uma obra e passam pelos vetores e pela conferência cruzada antes de cada build. Os itens do checklist que tiram dado (tirar orçamento, apagar afazer, apagar gasto de dentro da folha) usam uma obra de teste criada no próprio app e apagada no fim. A conta de teste (`custta-teste`) continua existindo para o caso de uma gravação suspeita.
+Aprovado pelo Giovani em 18/10: **seguir na conta de sempre**. O caminho de gravação é o da etapa 2, já conferido no aparelho. As duas mutações novas só mexem dentro de uma obra e passam pelos vetores e pela conferência cruzada antes de cada build. Os itens do checklist que tiram dado (tirar orçamento, apagar afazer, apagar gasto de dentro da folha) usam uma obra de teste criada no próprio app e apagada no fim. A conta de teste (`custta-teste`) continua existindo para o caso de uma gravação suspeita.
 
 ## Testes e validação
 
@@ -268,10 +266,10 @@ Não vão ao conselho, porque o mockup ou o spec já fixam, ou porque são peque
 
 - **Mockup:** todas as recomendações do Croqui, aprovadas pelo Giovani em 18/10 ("A, recomendado, todas" na parte 1; todas na parte 2; o vidro do escuro como está), inclusive a decisão 6.
 - **PR 0 na forma do da etapa 2:** a cópia em Swift e os leitores no mesmo PR do site; é o que mantém site e app conferidos pelos mesmos vetores desde o primeiro commit.
-- **As nove regras pedidas e uma décima recomendada:** o texto da folha do A pagar não está no núcleo e é obrigatório no mockup; a guarda de Ajustes é da etapa 5.
+- **As nove regras pedidas e uma décima, aprovada em 18/10:** o texto da folha do A pagar não está no núcleo e é obrigatório no mockup; a guarda de Ajustes é da etapa 5.
 - **O conserto do filtro preso é o mesmo no site e no app:** o mês escolhido nunca some da lista.
-- **Três alinhamentos no PR 0** (ordem do afazer, orçamento que guarda o que não mostra, busca aparada): uma regra só para os dois. Cada um sai sem mexer no resto, se o Giovani preferir o site intocado.
-- **Conta de sempre**, com uma obra de teste para os itens que tiram dado.
+- **Três alinhamentos no PR 0, aprovados em 18/10** (ordem do afazer, orçamento que guarda o que não mostra, busca aparada): uma regra só para os dois.
+- **Conta de sempre, aprovada em 18/10**, com uma obra de teste para os itens que tiram dado.
 - **Teto do orçamento igual ao do teclado** (R$ 99.999.999,99): o app já tem esse teto em todo valor.
 - **Checklist da etapa 2 fechado** neste PR: o último item ("Depois do OK do PR 3: a conta real") foi feito pelo Giovani no build 5.1.
 

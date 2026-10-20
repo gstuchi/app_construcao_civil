@@ -268,6 +268,16 @@ filtra('texto e mês', O1.gastos, TOPICOS_MAPA, { texto: 'tinta', mes: '2025-08'
 filtra('tópico próprio pelo nome', O4.gastos, TOPICOS_MAPA, { texto: 'automacao' });
 filtra('tópico apagado busca pelo id', [{ id: 'k', valor: 1, topico: 'c_sumiu', descricao: '', data: '2026-01-01' }], TOPICOS_MAPA, { texto: 'c_sum' });
 filtra('nada encontrado', O1.gastos, TOPICOS_MAPA, { texto: 'xyz' });
+/* Os meses do filtro (app.js renderObra), com quantos gastos cada um tem. O mês escolhido nunca some da lista. */
+const mesesFiltro = calc('mesesDoFiltro');
+mesesFiltro('do mais novo ao mais antigo, com os futuros', O1.gastos, '');
+mesesFiltro('mês escolhido com gasto não se repete', O1.gastos, '2025-08');
+mesesFiltro('mês escolhido sem gasto entra com zero, no meio', O1.gastos, '2026-01');
+mesesFiltro('mês escolhido sem gasto, o mais novo', O1.gastos, '2027-01');
+mesesFiltro('mês escolhido sem gasto, o mais antigo', O1.gastos, '2024-12');
+mesesFiltro('sem gasto e sem mês', [], '');
+mesesFiltro('sem gasto, com o mês escolhido', [], '2026-03');
+mesesFiltro('sem o argumento do mês', O1.gastos);
 
 /* ---------- descrição do gasto: sugestões e repetido ---------- */
 const normDesc = calc('normalizaDescricao');

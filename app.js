@@ -426,7 +426,8 @@ function renderObra(){
     ${evoChartHtml(o)}
     ${mesChartHtml(o)}`;
 
-  const mesesComGasto = [...new Set(o.gastos.map(g=>g.data.slice(0,7)))].sort().reverse();
+  // o mês escolhido fica na lista mesmo sem gasto: o filtro que vale nunca some do <select>
+  const mesesDoFiltro = OBRA_CALC.mesesDoFiltro(o.gastos, filtroMes);
   // no celular a busca divide a linha com o mês: a dica curta do iOS cabe inteira (a longa era cortada)
   const dicaBusca = matchMedia('(max-width:899px)').matches ? 'Buscar' : 'Pesquisar gasto ou tópico';
   const lanc = `
@@ -435,7 +436,7 @@ function renderObra(){
         <label class="busca"><span class="busca-ic" aria-hidden="true">${ICON('lupa')}</span>
           <input id="fBusca" placeholder="${dicaBusca}" aria-label="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}"></label>
         <select id="fMes"><option value="">Todos os meses</option>
-          ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${escapeHtml(m.slice(2,4))}</option>`).join('')}
+          ${mesesDoFiltro.map(({mes:m})=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${escapeHtml(m.slice(2,4))}</option>`).join('')}
         </select>
       </div>
       <ul class="list" id="oGastos"></ul>

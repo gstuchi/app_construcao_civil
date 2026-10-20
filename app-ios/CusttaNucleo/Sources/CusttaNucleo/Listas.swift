@@ -60,6 +60,21 @@ func contem(_ texto: String, _ trecho: String) -> Bool {
     return false
 }
 
+public struct MesDoFiltro: Equatable, Sendable {
+    /// AAAA-MM.
+    public let mes: String
+    public let qtd: Int
+}
+
+/// `mesesDoFiltro` do calc.js: os meses com gasto, do mais novo ao mais antigo (com os futuros), e quantos gastos cada um tem.
+/// O mês escolhido entra mesmo sem gasto (com zero): o filtro que continua valendo nunca some da lista.
+public func mesesDoFiltro(_ gastos: [Gasto], escolhido: String) -> [MesDoFiltro] {
+    var qtd: [String: Int] = [:]
+    for g in gastos { qtd[String(g.data.prefix(7)), default: 0] += 1 }
+    if !escolhido.isEmpty && qtd[escolhido] == nil { qtd[escolhido] = 0 }
+    return qtd.keys.sorted { menorJS($1, $0) }.map { MesDoFiltro(mes: $0, qtd: qtd[$0]!) }
+}
+
 public struct FiltroGastos: Equatable, Sendable {
     public var texto: String?
     public var mes: String?

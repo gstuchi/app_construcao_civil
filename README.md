@@ -4,7 +4,7 @@
 
 **Controle de custos e lucro por obra, na ponta do lápis.**
 
-PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro renderia no banco no mesmo período (valor corrigido) e o lucro real na venda — bruto e acima do banco.
+App de iPhone e PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro renderia no banco no mesmo período (valor corrigido) e o lucro real na venda — bruto e acima do banco.
 
 O app de iPhone está sendo refeito em SwiftUI nativo, com a mesma conta e os mesmos dados do site.
 

@@ -16,8 +16,8 @@ extension EnvironmentValues {
     /// Dentro do valor de uma `LinhaDaFolhaComRotulo` na letra grande: a `SetaDaLinha` não segue o valor.
     @Entry var setaNaPonta = false
     /// Peças da lista da obra postas numa folha (a do A pagar, etapa 3), sobre o fundo sólido do grupo: o secundário é o da
-    /// folha (o --texto2-v do mockup, o SecundarioTransparente), e não o do vidro, e o cabeçalho do mês fica nas medidas do
-    /// grupo da folha.
+    /// folha (o --texto2-v do mockup, o SecundarioTransparente), e não o do vidro, o cabeçalho do mês fica nas medidas do
+    /// grupo da folha e a linha arrastada aberta fica na Tecla.
     @Entry var dentroDaFolha = false
 }
 

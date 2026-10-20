@@ -8,7 +8,8 @@ import notify
    com os números novos (e, na maior letra, a linha que foi para o fim da lista fica à vista); sem mudança, o voltar do
    sistema e a borda voltam; com mudança, o chevron, a borda e o puxar perguntam, a borda sem tocar no botão de baixo e sem
    atrapalhar a rolagem; o toque duplo no "Salvar"; o "Carregando" e o "Não salvou" com a origem aberta; o gasto apagado em
-   outro aparelho com a edição aberta. */
+   outro aparelho com a edição aberta. Apagar de dentro da folha: da edição (à vista e parcela, com as três saídas) e
+   arrastando a linha, com a folha aberta, mesmo vazia. */
 @MainActor
 final class FolhasDeOrigemUITests: XCTestCase {
     private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
@@ -393,5 +394,150 @@ final class FolhasDeOrigemUITests: XCTestCase {
         voltouAoAPagar(app, "o gasto sumiu: a edição volta ao A pagar, em vez de fechar a folha")
         XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("2 vencimentos"), app.elemento("resumoDoAPagar").label)
         XCTAssertNil(naFolha(app, "gasto-g045"))
+    }
+
+    // MARK: Apagar de dentro da folha
+
+    /// Arrasta a linha da folha para a esquerda e toca no "Apagar" dela.
+    private func arrastarEApagar(_ app: XCUIApplication, _ id: String) {
+        guard let linha = rolarNaFolha(app, ate: "gasto-\(id)") else { return XCTFail("a linha \(id) na folha") }
+        linha.swipeLeft()
+        let apagar = app.buttons["apagar-\(id)"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3), "arrastar para a esquerda mostra Apagar, com a folha aberta")
+        apagar.tap()
+    }
+
+    /// Gasto à vista (o Pix agendado da vitrine com vencimento à vista): "Apagar gasto" na edição pergunta com o nome e o
+    /// valor; "Apagar" volta ao A pagar e a linha sai lá.
+    func testApagarAVistaDaEdicaoVoltaEApagaNaOrigem() {
+        let app = abrirApp(conta: "senha", dados: "avista", abrir: "obra:v1")
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        abrirAPagar(app)
+        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("4 vencimentos"), app.elemento("resumoDoAPagar").label)
+        editar(app, "g047")
+        app.buttons["apagarGasto"].tap()
+        let alerta = app.alerts["Apagar este gasto?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        XCTAssertTrue(alerta.staticTexts["Caçamba de entulho · R$\u{a0}650,00. Não dá para desfazer."].exists)
+        alerta.buttons["Apagar"].tap()
+        voltouAoAPagar(app, "Apagar volta ao A pagar")
+        XCTAssertTrue(app.elemento("gasto-g047").waitForNonExistence(timeout: 5), "e a linha sai, na origem")
+        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("3 vencimentos"), app.elemento("resumoDoAPagar").label)
+    }
+
+    /// Parcela: as três saídas do alerta da etapa 2. "Só esta parcela" volta e apaga a parcela (o quadro do mockup: o mês de
+    /// outubro sai inteiro); "Cancelar" fica na edição.
+    func testApagarSoEstaParcelaDaEdicao() {
+        let app = abrirObra()
+        abrirAPagar(app)
+        editar(app, "g039")
+        app.buttons["apagarGasto"].tap()
+        let alerta = app.alerts["Janelas e portas de alumínio (2/6)"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        XCTAssertTrue(alerta.staticTexts["Esta parcela faz parte de uma compra em 6x no cartão."].exists)
+        XCTAssertTrue(alerta.buttons["Apagar a compra toda (6 parcelas)"].exists)
+        alerta.buttons["Cancelar"].tap()
+        XCTAssertTrue(alerta.waitForNonExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["salvarGasto"].exists, "Cancelar fica na edição")
+        app.buttons["apagarGasto"].tap()
+        app.alerts["Janelas e portas de alumínio (2/6)"].buttons["Apagar só esta parcela"].tap()
+        voltouAoAPagar(app, "Apagar só esta parcela volta ao A pagar")
+        XCTAssertTrue(app.elemento("gasto-g039").waitForNonExistence(timeout: 5))
+        let resumo = app.elemento("resumoDoAPagar")
+        XCTAssertTrue(resumo.label.contains("R$\u{a0}8.450,00") && resumo.label.contains("2 vencimentos"), resumo.label)
+        XCTAssertTrue(app.elemento("ponteDoAPagar").label.contains("mais 10 gastos"), "as outras parcelas da compra ficam")
+    }
+
+    func testApagarACompraTodaDaEdicao() {
+        let app = abrirObra()
+        abrirAPagar(app)
+        editar(app, "g045")
+        app.buttons["apagarGasto"].tap()
+        let alerta = app.alerts["Tinta acrílica (2/3)"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        alerta.buttons["Apagar a compra toda (3 parcelas)"].tap()
+        voltouAoAPagar(app, "Apagar a compra toda volta ao A pagar")
+        XCTAssertTrue(app.elemento("gasto-g045").waitForNonExistence(timeout: 5))
+        let resumo = app.elemento("resumoDoAPagar")
+        XCTAssertTrue(resumo.label.contains("R$\u{a0}10.950,00") && resumo.label.contains("2 vencimentos"), resumo.label)
+        XCTAssertTrue(app.elemento("ponteDoAPagar").label.contains("mais 9 gastos a vencer (R$\u{a0}49.950,00)"),
+                      "a parcela de depois dos 30 dias também sai: \(app.elemento("ponteDoAPagar").label)")
+    }
+
+    /// Arrastar para apagar dentro da folha: a pergunta da parcela, e a folha continua aberta.
+    func testArrastarParaApagarDentroDaFolha() {
+        let app = abrirObra()
+        abrirAPagar(app)
+        arrastarEApagar(app, "g032")
+        let alerta = app.alerts["Porcelanato 60×60 (5/10)"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "a pergunta da parcela: \(alertas(app))")
+        alerta.buttons["Apagar só esta parcela"].tap()
+        XCTAssertTrue(app.elemento("gasto-g032").waitForNonExistence(timeout: 5))
+        let resumo = app.elemento("resumoDoAPagar")
+        XCTAssertTrue(resumo.label.contains("2 vencimentos") && resumo.label.contains("R$\u{a0}7.100,00"), resumo.label)
+        XCTAssertTrue(app.buttons["fecharFolha"].exists, "a folha continua aberta")
+    }
+
+    /// A linha aberta fecha como na lista da obra: tocando fora dela, rolando, e tocando noutra linha, que só fecha (o toque
+    /// seguinte edita).
+    func testLinhaAbertaFechaTocandoForaRolandoEEmOutraLinha() {
+        let app = abrirObra()
+        abrirAPagar(app)
+        let apagar = app.buttons["apagar-g032"]
+        naFolha(app, "gasto-g032")?.swipeLeft()
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3))
+        app.elemento("resumoDoAPagar").tap()
+        XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "tocar fora fecha a linha")
+        naFolha(app, "gasto-g032")?.swipeLeft()
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3))
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)), withVelocity: .slow, thenHoldForDuration: 0.2)
+        XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "rolar fecha a linha")
+        naFolha(app, "gasto-g032")?.swipeLeft()
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3))
+        naFolha(app, "gasto-g045")?.tap()
+        XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "tocar noutra linha fecha a aberta")
+        XCTAssertFalse(app.buttons["salvarGasto"].waitForExistence(timeout: 2), "e não abre a edição")
+        naFolha(app, "gasto-g045")?.tap()
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5), "o toque seguinte edita")
+    }
+
+    func testCancelarNoArrastarFechaALinhaENaoApaga() {
+        let app = abrirObra()
+        abrirAPagar(app)
+        arrastarEApagar(app, "g045")
+        app.alerts["Tinta acrílica (2/3)"].buttons["Cancelar"].tap()
+        XCTAssertTrue(app.buttons["apagar-g045"].waitForNonExistence(timeout: 3), "cancelar fecha a linha")
+        XCTAssertNotNil(naFolha(app, "gasto-g045"))
+        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("3 vencimentos"))
+    }
+
+    /// Sem vencimento nenhum, a folha do A pagar fica aberta, com o cartão do vazio (site).
+    func testApagarOUltimoVencimentoDeixaAFolhaAbertaEVazia() {
+        let app = abrirObra()
+        abrirAPagar(app)
+        for (id, titulo) in [("g039", "Janelas e portas de alumínio (2/6)"), ("g032", "Porcelanato 60×60 (5/10)"), ("g045", "Tinta acrílica (2/3)")] {
+            arrastarEApagar(app, id)
+            let alerta = app.alerts[titulo]
+            XCTAssertTrue(alerta.waitForExistence(timeout: 3), titulo)
+            alerta.buttons["Apagar só esta parcela"].tap()
+            XCTAssertTrue(app.elemento("gasto-\(id)").waitForNonExistence(timeout: 5))
+        }
+        XCTAssertTrue(app.elemento("aPagarVazio").waitForExistence(timeout: 3), "o cartão do vazio")
+        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("0 vencimentos"))
+        sleep(1)
+        XCTAssertTrue(app.buttons["fecharFolha"].exists, "a folha não fecha quando fica vazia")
+    }
+
+    func testCarregandoNoArrastarAvisaNaFolhaENaoApaga() {
+        let app = abrirObra(argumentos: ["-custta.recusarGravacao", "nao-carregado"])
+        abrirAPagar(app)
+        arrastarEApagar(app, "g045")
+        app.alerts["Tinta acrílica (2/3)"].buttons["Apagar só esta parcela"].tap()
+        let alerta = app.alerts["Carregando suas obras, tente em instantes."]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "o alerta do site, dentro da folha: \(alertas(app))")
+        alerta.buttons["OK"].tap()
+        XCTAssertNotNil(naFolha(app, "gasto-g045"), "nada foi apagado")
+        XCTAssertTrue(app.buttons["fecharFolha"].exists)
     }
 }

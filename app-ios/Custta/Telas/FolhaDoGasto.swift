@@ -373,7 +373,8 @@ struct PassoDosDetalhes: View {
         }
         .pausaOFundo(enquanto: naoCarregado)
         .modifier(PerguntaDeApagar(apresentada: $apagando, obraId: rascunho.obraId, gasto: rascunho.editado) { pedido in
-            folhas.fechar { folhas.apagar(pedido) }
+            // Na folha de origem, a edição volta e a origem apaga a linha, à vista; na folha do gasto, ela desce e a obra apaga.
+            if case .origem(let origem) = saida { origem.apagou(pedido) } else { folhas.fechar { folhas.apagar(pedido) } }
         })
     }
 

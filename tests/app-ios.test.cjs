@@ -458,9 +458,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
-  // e os títulos da barra, o pequeno da obra e o da folha (cortam como o do sistema, em vez de empurrar os botões).
+  // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
+  // sistema, em vez de empurrar os botões).
   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
-    'TituloDaFolha']);
+    'TituloDaFolha', 'BarraDasTeclas']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
@@ -490,7 +491,11 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
   assert.match(tocar, /let novo = aplicarTecla\(centavos, tecla\)\n\s*guard novo != centavos else \{ return \}\n\s*centavos = novo\n/, 'o teto e a tecla ignorada vêm do núcleo');
   assert.match(tocar, /AccessibilityNotification\.Announcement\(fmtCentavos\(novo\)\)\.post\(\)/, 'o VoiceOver ouve o valor novo a cada tecla');
   assert.match(t, /case \.duploZero: "zero zero"/);
-  assert.match(t, /TeclaDoValor\(tecla: tecla\) \{ tocar\(tecla\) \}\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)/, 'as teclas param no AX2');
+  assert.match(t, /TeclaDoValor\(tecla: tecla, tamanho: tamanho\) \{ tocar\(tecla\) \}\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)/, 'as teclas param no AX2');
+  // As teclas encaixadas da folha do orçamento (etapa 3) são a mesma grade: a ordem, o teto e o anúncio valem nos dois.
+  assert.match(t, /GradeDeTeclas\(centavos: \$centavos, tamanho: \.padrao\)/, 'o TecladoDeValor usa a grade');
+  assert.match(ler('app-ios/Custta/Identidade/TecladoEncaixado.swift'), /GradeDeTeclas\(centavos: \$centavos, tamanho: \.encaixado\)/,
+    'as teclas encaixadas usam a mesma grade');
   assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
 });
 

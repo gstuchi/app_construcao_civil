@@ -22792,6 +22792,833 @@
         }
       }
     ],
+    "dados.conferirAfazer": [
+      {
+        "caso": "texto comum",
+        "args": [
+          "Comprar tinta"
+        ],
+        "saida": {
+          "texto": "Comprar tinta"
+        }
+      },
+      {
+        "caso": "aparado, com o espaço do meio",
+        "args": [
+          "  Pagar  o pedreiro  "
+        ],
+        "saida": {
+          "texto": "Pagar  o pedreiro"
+        }
+      },
+      {
+        "caso": "vazio",
+        "args": [
+          ""
+        ],
+        "saida": {
+          "erro": "vazio"
+        }
+      },
+      {
+        "caso": "só espaços",
+        "args": [
+          "   "
+        ],
+        "saida": {
+          "erro": "vazio"
+        }
+      },
+      {
+        "caso": "espaço duro, quebra e tab",
+        "args": [
+          " \n\t"
+        ],
+        "saida": {
+          "erro": "vazio"
+        }
+      },
+      {
+        "caso": "BOM nas pontas sai",
+        "args": [
+          "﻿abc﻿"
+        ],
+        "saida": {
+          "texto": "abc"
+        }
+      },
+      {
+        "caso": "espaço de largura zero fica",
+        "args": [
+          "​"
+        ],
+        "saida": {
+          "texto": "​"
+        }
+      },
+      {
+        "caso": "500 letras",
+        "args": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "saida": {
+          "texto": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      {
+        "caso": "501 letras",
+        "args": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "saida": {
+          "erro": "afazer",
+          "mensagem": "Use até 500 caracteres."
+        }
+      },
+      {
+        "caso": "500 depois de aparar",
+        "args": [
+          " aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "
+        ],
+        "saida": {
+          "texto": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      {
+        "caso": "250 emojis são 500 unidades",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        ],
+        "saida": {
+          "texto": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        }
+      },
+      {
+        "caso": "250 emojis e uma letra",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a"
+        ],
+        "saida": {
+          "erro": "afazer",
+          "mensagem": "Use até 500 caracteres."
+        }
+      }
+    ],
+    "dados.afazeresComNovo": [
+      {
+        "caso": "no começo da lista, pendente",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "Comprar areia",
+          "n1"
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "texto": "Comprar areia",
+            "feito": false
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "lista vazia",
+        "args": [
+          [],
+          "Primeiro",
+          "n1"
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "texto": "Primeiro",
+            "feito": false
+          }
+        ]
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null,
+          "Primeiro",
+          "n1"
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "texto": "Primeiro",
+            "feito": false
+          }
+        ]
+      }
+    ],
+    "dados.afazeresAlternado": [
+      {
+        "caso": "marcar o do meio leva ao começo, com o campo desconhecido",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a3"
+        ],
+        "saida": [
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": true,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "desmarcar o último leva ao começo",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a4"
+        ],
+        "saida": [
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": false
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          }
+        ]
+      },
+      {
+        "caso": "marcar o primeiro",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a1"
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": true
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "id que sumiu",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "zz"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null,
+          "a1"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "id repetido troca o primeiro",
+        "args": [
+          [
+            {
+              "id": "x",
+              "texto": "Um",
+              "feito": false
+            },
+            {
+              "id": "x",
+              "texto": "Dois",
+              "feito": true
+            },
+            {
+              "id": "y",
+              "texto": "Três",
+              "feito": false
+            }
+          ],
+          "x"
+        ],
+        "saida": [
+          {
+            "id": "x",
+            "texto": "Um",
+            "feito": true
+          },
+          {
+            "id": "x",
+            "texto": "Dois",
+            "feito": true
+          },
+          {
+            "id": "y",
+            "texto": "Três",
+            "feito": false
+          }
+        ]
+      }
+    ],
+    "dados.afazeresSem": [
+      {
+        "caso": "apagar o do meio",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a2"
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "id que sumiu",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "zz"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "id repetido sai todo",
+        "args": [
+          [
+            {
+              "id": "x",
+              "texto": "Um",
+              "feito": false
+            },
+            {
+              "id": "x",
+              "texto": "Dois",
+              "feito": true
+            },
+            {
+              "id": "y",
+              "texto": "Três",
+              "feito": false
+            }
+          ],
+          "x"
+        ],
+        "saida": [
+          {
+            "id": "y",
+            "texto": "Três",
+            "feito": false
+          }
+        ]
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null,
+          "a1"
+        ],
+        "saida": null
+      }
+    ],
+    "calc.afazeresEmOrdem": [
+      {
+        "caso": "pendentes e depois feitos, cada grupo na ordem da lista",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "o recém-marcado fica no alto dos feitos",
+        "args": [
+          [
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": true,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": true,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "o desmarcado volta ao alto dos pendentes",
+        "args": [
+          [
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": false
+            },
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": false
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "lista vazia",
+        "args": [
+          []
+        ],
+        "saida": []
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null
+        ],
+        "saida": []
+      }
+    ],
+    "calc.contadorDeAfazeres": [
+      {
+        "caso": "dois pendentes",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": "(2 pendentes)"
+      },
+      {
+        "caso": "um pendente",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": true
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": "(1 pendente)"
+      },
+      {
+        "caso": "tudo feito",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": true
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": true,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "lista vazia",
+        "args": [
+          []
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null
+        ],
+        "saida": ""
+      }
+    ],
     "push.hashEndpoint": [
       {
         "caso": "\"\"",

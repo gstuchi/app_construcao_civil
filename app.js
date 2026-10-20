@@ -454,11 +454,11 @@ function renderObra(){
 
   renderAfazeres(o);
   const addAfazer = ()=>{
-    const inp = $('#afzInput'); const txt = inp.value.trim();
-    if(!txt){ inp.focus(); return; }
-    if(!textoValido(txt, 'afazer', inp)) return;
+    const inp = $('#afzInput'); const c = OBRA_DADOS.conferirAfazer(inp.value);
+    if(c.erro === 'vazio'){ inp.focus(); return; }
+    if(c.erro){ toast(c.mensagem, 'erro'); inp.focus(); return; }
     const oo = obraById(obraAberta); if(!oo) return;
-    (oo.afazeres || (oo.afazeres = [])).unshift({ id:uid(), texto:txt, feito:false });
+    oo.afazeres = OBRA_DADOS.afazeresComNovo(oo.afazeres, c.texto, uid());
     save(); inp.value = ''; renderAfazeres(oo); inp.focus();
   };
   $('#afzAdd').onclick = addAfazer;
@@ -486,20 +486,19 @@ function renderObra(){
 function renderAfazeres(o){
   const list = $('#oAfazeres'); if(!list) return;
   const items = o.afazeres || [];
-  const pend = items.filter(a=>!a.feito);
-  const done = items.filter(a=>a.feito);
-  $('#afzCount').textContent = pend.length ? `(${pend.length} pendente${pend.length>1?'s':''})` : '';
+  $('#afzCount').textContent = OBRA_CALC.contadorDeAfazeres(items);
   list.innerHTML = '';
   if(!items.length){ list.innerHTML = emptyBlock(ICON('check'),'Nenhum afazer.<br>Anote o que falta na obra.'); return; }
-  [...pend, ...done].forEach(a=>list.appendChild(afazerRow(o, a)));
+  OBRA_CALC.afazeresEmOrdem(items).forEach(a=>list.appendChild(afazerRow(o, a)));
 }
 
 function afazerRow(o, a){
   const li = el('li', a.feito ? 'afz-done' : '');
+  // marcar e desmarcar levam o afazer ao começo da lista (dados.js afazeresAlternado)
   const toggle = ()=>{
     const oo = obraById(o.id); if(!oo) return;
-    const aa = (oo.afazeres||[]).find(x=>x.id===a.id); if(!aa) return;
-    aa.feito = !aa.feito; save(); renderAfazeres(oo);
+    const nova = OBRA_DADOS.afazeresAlternado(oo.afazeres, a.id); if(!nova) return;
+    oo.afazeres = nova; save(); renderAfazeres(oo);
   };
   const check = el('button','afz-check', ICON('check'));
   check.setAttribute('aria-label', a.feito ? 'Desmarcar afazer' : 'Marcar feito');
@@ -511,7 +510,9 @@ function afazerRow(o, a){
   del.setAttribute('aria-label','Apagar afazer');
   del.onclick = ()=>{
     const oo = obraById(o.id); if(!oo) return;
-    oo.afazeres = (oo.afazeres||[]).filter(x=>x.id!==a.id); save(); renderAfazeres(oo);
+    const nova = OBRA_DADOS.afazeresSem(oo.afazeres, a.id);
+    if(nova){ oo.afazeres = nova; save(); }
+    renderAfazeres(oo);
   };
   li.append(check, main, del);
   return li;

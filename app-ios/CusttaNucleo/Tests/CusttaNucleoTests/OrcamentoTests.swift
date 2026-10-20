@@ -64,4 +64,12 @@ struct OrcamentoTests {
             confere(.objeto(["gasto": .texto(l.gasto), "previsto": .texto(l.previsto)]), c.saida, .exata, c.caso)
         }
     }
+
+    @Test func pecasQueAObraMostra() {
+        for c in Vetores.casos("calc.pecasOrcamento") {
+            let p = pecasOrcamento(c.args[0].obra)
+            confere(.objeto(["cartao": .booleano(p.cartao), "porTopico": .booleano(p.porTopico), "definir": .booleano(p.definir),
+                             "tocaveis": .lista(p.tocaveis.map(ValorJSON.texto))]), c.saida, .exata, c.caso)
+        }
+    }
 }

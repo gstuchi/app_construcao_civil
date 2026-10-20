@@ -475,13 +475,22 @@
   function linhaTopicoOrc(t){
     return { gasto: moneyCurto(t.gasto), previsto: semCifrao(moneyCurto(t.previsto)) };
   }
+  /* Peças do orçamento na obra: o cartão (e o "Editar") com orçamento válido; a lista "Por tópico" só no modo por tópico;
+     "Definir orçamento" sem orçamento e fora da vendida; e os tópicos previstos que abrem a folha do tópico, os que têm gasto
+     (qualquer gasto, até de valor zero), na ordem da lista. */
+  function pecasOrcamento(obra){
+    const orc = orcamentoObra(obra);
+    const comGasto = new Set((Array.isArray(obra.gastos) ? obra.gastos : []).map(g => g.topico));
+    return { cartao: !!orc, porTopico: !!orc && orc.modo === 'topicos', definir: !orc && obra.fase !== 'vendida',
+      tocaveis: orc ? orc.topicos.filter(t => comGasto.has(t.id)).map(t => t.id) : [] };
+  }
   /* stringify com chaves ordenadas — compara estados sem depender da ordem do Firestore */
   function canon(x){
     return JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v)
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, pecasOrcamento, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

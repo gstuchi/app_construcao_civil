@@ -91,6 +91,15 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     await page.evaluate(()=>openObra('c'));
     assert.equal(await page.locator('#oOrc').count(),0);
     assert.equal(await page.locator('#oOrcDefinir').count(),1);
+    // Vendida sem orçamento não oferece "Definir orçamento"
+    await page.evaluate(()=>{const c=obraById('c');c.fase='vendida';c.venda={valor:1000000,data:'2026-03-01'};openObra('c');});
+    assert.equal(await page.locator('#oOrcDefinir').count(),0);
+    // Por tópico: só o previsto com gasto abre a folha do tópico; o sem gasto fica na lista, sem toque
+    await page.evaluate(()=>{const c=obraById('c');c.fase='construcao';delete c.venda;c.orcamento={modo:'topicos',topicos:{terreno:900000,pintura:5000}};openObra('c');});
+    assert.equal(await page.locator('.orc-item-conteudo[data-top="terreno"]').count(),1);
+    assert.equal(await page.locator('.orc-item-conteudo[data-top="pintura"]').count(),0);
+    assert.equal(await page.locator('.orc-topicos .orc-item',{hasText:'Pintura'}).count(),1);
+    await page.evaluate(()=>{delete obraById('c').orcamento;openObra('c');});
 
     // Folha: definir só o total numa obra sem orçamento
     await page.locator('#oOrcDefinir').click();

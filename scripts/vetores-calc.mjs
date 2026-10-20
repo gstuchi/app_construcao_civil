@@ -452,6 +452,15 @@ linhaOrc('sem gasto e mil redondo', itemOrc(0, 1000));
 linhaOrc('previsto abaixo de mil perde o R$ com espaço duro', itemOrc(12000.5, 500));
 linhaOrc('milhões', itemOrc(1234567, 2500000));
 linhaOrc('um milhão redondo', itemOrc(8500, 1e6));
+/* Quais peças do orçamento a obra mostra (app.js renderObra e orcamentoHtml). */
+const pecas = calc('pecasOrcamento');
+pecas('sem orçamento, em construção', O3);
+pecas('sem orçamento, pronta', { ...O4, orcamento: undefined });
+pecas('sem orçamento, vendida: sem o Definir', { ...O2, orcamento: undefined });
+pecas('total na vendida', O2);
+pecas('por tópico: só os previstos com gasto abrem, na ordem da lista', O1);
+pecas('gasto de valor zero ainda abre', comOrcamento({ modo: 'topicos', topicos: { pintura: 1000, eletrica: 500 } }, [g('pintura', 0)]));
+pecas('orçamento inválido conta como sem', comOrcamento({ modo: 'total', total: 0 }, [g('pintura', 10)]));
 
 /* ---------- versão ---------- */
 const versao = calc('versaoMaior');

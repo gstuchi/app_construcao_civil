@@ -283,7 +283,7 @@ function fraseTopicoHtml(t){
   const f = OBRA_CALC.fraseTopicoOrc(t);
   return f ? `<div class="orc-frase${f.alerta ? ' alerta' : ''}">${f.texto}</div>` : '';
 }
-function orcamentoHtml(o, orc){
+function orcamentoHtml(o, orc, pecas){
   const rodape = OBRA_CALC.rodapeOrc(orc);
   const card = `
     <div class="panel orc-card" id="oOrc">
@@ -295,8 +295,7 @@ function orcamentoHtml(o, orc){
         <span>${rodape.rotulo} <b>${rodape.valor}</b></span></div>
     </div>`;
   let lista = '';
-  if(orc.modo === 'topicos'){
-    const comGasto = new Set(o.gastos.map(g => g.topico));
+  if(pecas.porTopico){
     const linhas = orc.topicos.map(t => {
       const valores = OBRA_CALC.linhaTopicoOrc(t);
       const miolo = `
@@ -304,7 +303,7 @@ function orcamentoHtml(o, orc){
           <span class="orc-val"><b>${valores.gasto}</b> / ${valores.previsto}</span></div>
         ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoHtml(t)}`;
       // tópico com gasto vira botão de verdade (semântica de lista/botão corretas pra leitor de tela)
-      return comGasto.has(t.id)
+      return pecas.tocaveis.includes(t.id)
         ? `<li class="orc-item"><button type="button" class="orc-item-conteudo" data-top="${escapeHtml(t.id)}">${miolo}</button></li>`
         : `<li class="orc-item"><div class="orc-item-conteudo">${miolo}</div></li>`;
     }).join('');
@@ -328,6 +327,7 @@ function renderObra(){
   const corr  = OBRA_CALC.totalCorrigido(o, taxa(), hoje);
   const lucro = OBRA_CALC.lucroVenda(o, taxa());
   const orc = OBRA_CALC.orcamentoObra(o);
+  const pecasOrc = OBRA_CALC.pecasOrcamento(o);
 
   let head = `
     <div class="panel obra-head">
@@ -394,7 +394,7 @@ function renderObra(){
     <button class="btn primary" id="oVender">${ICON('acordo')} Registrar venda</button>
     <button class="btn ghost" id="oVoltarConstr">${ICON('voltar')} Voltar pra construção</button>`;
   if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">${ICON('voltar')} Desfazer venda</button>`;
-  if(!orc && o.fase !== 'vendida') acoes += `<button class="btn ghost" id="oOrcDefinir">${ICON('alvo')} Definir orçamento</button>`;
+  if(pecasOrc.definir) acoes += `<button class="btn ghost" id="oOrcDefinir">${ICON('alvo')} Definir orçamento</button>`;
   if(o.gastos.length) acoes += `
     <button class="btn ghost" id="oGraf">${ICON('calculadora')} Ver gráficos</button>
     <button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
@@ -441,7 +441,7 @@ function renderObra(){
       <ul class="list" id="oGastos"></ul>
     </div>`;
 
-  $('#obraBody').innerHTML = head + (orc ? orcamentoHtml(o, orc) : '') + resumo + acoes + afazeres + graficos + lanc;
+  $('#obraBody').innerHTML = head + (pecasOrc.cartao ? orcamentoHtml(o, orc, pecasOrc) : '') + resumo + acoes + afazeres + graficos + lanc;
   fitNums($('#obraBody'));
   pintaBarrasOrc($('#obraBody'));
 

@@ -136,14 +136,24 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
 
     // Trocar pra "Só o total" e salvar vazio tira o orçamento
     await page.locator('#oOrcEditar').click();
+    await campo('fundacao').fill('200000');
     await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
     assert.equal(await page.locator('#orcTotal').isVisible(),true);
-    // trocar de modo não pode apagar o previsto por tópico sem o construtor ver o número
-    assert.equal(await page.locator('#orcTotal').inputValue(),'715.000,50');
+    // trocar de modo não pode apagar o previsto por tópico sem o construtor ver o número: a soma da hora da troca
+    assert.equal(await page.locator('#orcTotal').inputValue(),'815.000,50');
     await page.locator('#orcTotal').fill('');
     await page.locator('#cSave').click();
     assert.equal(await page.evaluate(()=>'orcamento' in obraById('a')),false);
     assert.equal(await page.locator('#oOrcDefinir').count(),1);
+
+    // Total já preenchido não muda ao voltar para "Só o total"
+    await page.evaluate(()=>openObra('b'));
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#sheet .seg button',{hasText:'Por tópico'}).click();
+    await page.locator('#orcTopWrap input[data-top="fundacao"]').fill('5000');
+    await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
+    assert.equal(await page.locator('#orcTotal').inputValue(),'1.008.000,00');
+    await page.evaluate(()=>closeSheet());
 
     // Tirar orçamento pede confirmação
     await page.evaluate(()=>openObra('b'));

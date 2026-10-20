@@ -16345,6 +16345,121 @@
         }
       }
     ],
+    "calc.somaTopicosOrc": [
+      {
+        "caso": "folha vazia",
+        "args": [
+          []
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "soma na ordem da folha",
+        "args": [
+          [
+            180000,
+            100000,
+            250000,
+            180000,
+            5000.5
+          ]
+        ],
+        "saida": 715000.5
+      },
+      {
+        "caso": "negativo e zero não contam",
+        "args": [
+          [
+            -3,
+            100,
+            0
+          ]
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "negativo grande não desconta",
+        "args": [
+          [
+            1000000,
+            -1000000
+          ]
+        ],
+        "saida": 1000000
+      },
+      {
+        "caso": "centavos em ponto flutuante",
+        "args": [
+          [
+            0.1,
+            0.2
+          ]
+        ],
+        "saida": 0.30000000000000004
+      }
+    ],
+    "calc.totalPreenchidoOrc": [
+      {
+        "caso": "campo vazio ganha a soma",
+        "args": [
+          "",
+          [
+            90000,
+            0,
+            5000.5
+          ]
+        ],
+        "saida": "95.000,50"
+      },
+      {
+        "caso": "campo vazio e folha vazia",
+        "args": [
+          "",
+          []
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "soma só de negativos não preenche",
+        "args": [
+          "",
+          [
+            -5
+          ]
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "soma abaixo de meio centavo ainda preenche",
+        "args": [
+          "",
+          [
+            0.004
+          ]
+        ],
+        "saida": "0,00"
+      },
+      {
+        "caso": "campo com valor fica",
+        "args": [
+          "1.008.000,00",
+          [
+            5000
+          ]
+        ],
+        "saida": "1.008.000,00"
+      },
+      {
+        "caso": "campo com zero digitado fica",
+        "args": [
+          "0",
+          [
+            5000
+          ]
+        ],
+        "saida": "0"
+      }
+    ],
     "calc.versaoMaior": [
       {
         "caso": "patch numérico",

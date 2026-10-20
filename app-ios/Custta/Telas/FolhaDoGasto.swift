@@ -243,14 +243,14 @@ private struct FolhaDoGastoAberta: View {
                 }
             }
         }
-        .folhaDoApp(perguntar: rascunho.temOQuePerder, pergunta: "Você já preencheu este gasto.", descartar: "Descartar gasto") {
+        .folhaDoApp(perguntar: { rascunho.temOQuePerder }, pergunta: "Você já preencheu este gasto.", descartar: "Descartar gasto") {
             folhas.fechar()
         }
     }
 }
 
 /// O passo do valor: o teclado de valor ocupando a folha.
-private struct PassoDoValor: View {
+struct PassoDoValor: View {
     @Bindable var rascunho: RascunhoDoGasto
     let titulo: String
     let subtitulo: String?
@@ -260,12 +260,14 @@ private struct PassoDoValor: View {
 
     var body: some View {
         TecladoDeValor(centavos: $rascunho.centavos, acao: acao, confirmar: confirmar)
-            .passoDaFolha(titulo, subtitulo: subtitulo, fechar: raiz ? .esquerda : nil, raiz: raiz)
+            .passoDaFolha(titulo, subtitulo: subtitulo, fechar: raiz ? .esquerda : nil, escape: raiz ? .fechar : .sistema)
     }
 }
 
-/// Os detalhes: valor, tópico, pagamento (com o cartão), descrição e data; "Salvar" fixo embaixo.
-private struct PassoDosDetalhes: View {
+/// Os detalhes: valor, tópico, pagamento (com o cartão), descrição e data; "Salvar" fixo embaixo. É também a edição
+/// empurrada numa folha de origem (`saidaDaEdicao` .origem): sem o ×, com o voltar e o nome da origem no subtítulo, e as
+/// saídas voltando para ela.
+struct PassoDosDetalhes: View {
     @Bindable var rascunho: RascunhoDoGasto
     @Binding var caminho: [PassoDoGasto]
     let subtitulo: String?
@@ -281,6 +283,9 @@ private struct PassoDosDetalhes: View {
     @State private var naoCarregado = false
     @State private var apagando = false
     @State private var sugestaoEscolhida: String?
+    /// O chevron, a borda ou o Z com mudança, na edição empurrada numa folha de origem: "Você mudou este gasto.".
+    @State private var perguntandoAVolta = false
+    @Environment(\.saidaDaEdicao) private var saida
 
     enum Campo: Hashable { case juros, descricao }
 
@@ -359,16 +364,32 @@ private struct PassoDosDetalhes: View {
                 withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.25)) { leitor.scrollTo("descricao", anchor: .top) }
             }
         }
-        .passoDaFolha(rascunho.editado == nil ? "Novo gasto" : "Editar gasto", subtitulo: subtitulo,
-                      fechar: raiz ? .esquerda : .direita, raiz: raiz)
+        .passoDaFolha(rascunho.editado == nil ? "Novo gasto" : "Editar gasto", subtitulo: subtitulo, fechar: lado, escape: escape)
+        .modifier(VoltaNaOrigem(saida: saida, sujo: rascunho.temOQuePerder, perguntando: $perguntandoAVolta))
         .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("O gasto continua aqui; nada foi salvo ainda.")
         }
+        .pausaOFundo(enquanto: naoCarregado)
         .modifier(PerguntaDeApagar(apresentada: $apagando, obraId: rascunho.obraId, gasto: rascunho.editado) { pedido in
             folhas.fechar { folhas.apagar(pedido) }
         })
+    }
+
+    /// Na folha de origem não há ×: o voltar fica à esquerda, no lugar dele.
+    private var lado: LadoDoFechar? {
+        if case .origem = saida { return nil }
+        return raiz ? .esquerda : .direita
+    }
+
+    /// O Z do VoiceOver, fixo por passo: na edição empurrada numa folha de origem, a mesma volta do chevron (com mudança,
+    /// pergunta; sem, volta).
+    private var escape: EscapeDoPasso {
+        if case .origem(let origem) = saida {
+            return .proprio { if rascunho.temOQuePerder { perguntandoAVolta = true } else { origem.voltar() } }
+        }
+        return raiz ? .fechar : .sistema
     }
 
     private var avisoDeRepetido: Bool {
@@ -555,8 +576,9 @@ private struct PassoDosDetalhes: View {
     }
 
     private func salvar() {
-        // A folha já está descendo (o primeiro toque gravou): o segundo toque de um toque duplo não lança de novo.
-        guard folhas.aberta != nil else { return }
+        // O primeiro toque já gravou, e a folha está descendo (ou a edição voltando à folha de origem): o segundo toque de
+        // um toque duplo não lança de novo.
+        guard saida.aberta(folhas, gastoId: rascunho.editado?.id) else { return }
         foco = nil
         let entrada = rascunho.entrada
         switch conferirGasto(entrada, editado: rascunho.editado, hoje: dataLocalISO(.now, fuso: .current)) {
@@ -603,6 +625,8 @@ private struct PassoDosDetalhes: View {
         switch resultado {
         case .gravou:
             let ids = novos.map(\.id)
+            // Na folha de origem, a edição volta para ela, que acende a linha (sem a etiqueta "novo", de gasto lançado).
+            if case .origem(let origem) = saida { origem.salvou(ids); return }
             let novo = rascunho.editado == nil
             if rascunho.vendida != nil {
                 // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, sem
@@ -615,7 +639,10 @@ private struct PassoDosDetalhes: View {
             folhas.fechar { folhas.destacar(ids, novo: novo) }
         case .naoCarregado:
             naoCarregado = true
-        case .sumiu, .semConta:
+        case .sumiu:
+            // O gasto sumiu com a edição aberta: na origem, a edição volta para ela; na folha, ela desce.
+            if case .origem(let origem) = saida, let id = rascunho.editado?.id { origem.sumiu(id) } else { folhas.fechar() }
+        case .semConta:
             folhas.fechar()
         }
     }
@@ -716,7 +743,7 @@ struct CampoDeData: View {
 }
 
 /// A lista de tópicos dentro da folha: "Usados nesta obra" no alto (três) e "Todos"; tocar escolhe e volta.
-private struct ListaDeTopicos: View {
+struct ListaDeTopicos: View {
     @Bindable var rascunho: RascunhoDoGasto
     let voltar: () -> Void
     @Environment(\.paleta) private var paleta

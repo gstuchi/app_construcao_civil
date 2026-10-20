@@ -225,10 +225,12 @@ func vizinhoDepoisDeApagar(_ saem: Set<String>, ordem: [String]) -> String? {
     return ordem[i...].first { !saem.contains($0) } ?? ordem[..<i].last { !saem.contains($0) }
 }
 
-/// Para onde o VoiceOver vai na lista da obra.
+/// Para onde o VoiceOver vai na lista da obra e na de uma folha de origem.
 enum AlvoDoFoco: Hashable {
     case gasto(String)
     case lancamentos
+    /// O cartão do vazio de uma folha de origem (o A pagar sem nenhum vencimento).
+    case vazio
 }
 
 /// O que as linhas da lista fazem, passado do ObraView aos cartões.

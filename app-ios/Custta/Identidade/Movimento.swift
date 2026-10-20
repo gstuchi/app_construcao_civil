@@ -152,7 +152,8 @@ extension View {
     /// A tela avisa o fundo quando rola (ScrollView ou List).
     func pausaOFundoAoRolar() -> some View { modifier(AvisaRolagem()) }
 
-    /// Segura o fundo enquanto `ativo` (um alerta do sistema por cima).
+    /// Segura o fundo enquanto `ativo` (um alerta do sistema por cima). Dentro de uma folha de origem, conta também o
+    /// alerta à vista nela: o "Não salvou" de dentro da folha espera.
     func pausaOFundo(enquanto ativo: Bool) -> some View { modifier(SeguraOFundo(ativo: ativo)) }
 
     /// Pouca Energia e calor do aparelho. Os avisos do sistema chegam numa fila qualquer: passam para a
@@ -178,11 +179,19 @@ private struct AvisaRolagem: ViewModifier {
 private struct SeguraOFundo: ViewModifier {
     let ativo: Bool
     @Environment(\.pausasDoFundo) private var pausas
+    @Environment(\.alertasNaFolha) private var alertas
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: ativo) { _, novo in pausas?.cobrir(novo) }
-            .onDisappear { if ativo { pausas?.cobrir(false) } }
+            .onChange(of: ativo) { _, novo in
+                pausas?.cobrir(novo)
+                alertas?.mudou(novo)
+            }
+            .onDisappear {
+                guard ativo else { return }
+                pausas?.cobrir(false)
+                alertas?.mudou(false)
+            }
     }
 }
 

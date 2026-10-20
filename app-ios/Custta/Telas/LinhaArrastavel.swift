@@ -19,6 +19,7 @@ struct LinhaArrastavel<Conteudo: View>: View {
     @State private var passou = false
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
+    @Environment(\.dentroDaFolha) private var naFolha
     /// O botão cresce com a letra até o tamanho AX2 (mockup: "Apagar" de 13 pt num botão de 80).
     @ScaledMetric(relativeTo: .footnote) private var larguraDoBotao: CGFloat = 80
 
@@ -50,7 +51,9 @@ struct LinhaArrastavel<Conteudo: View>: View {
                 .accessibilityIdentifier("apagar-\(id)")
             }
             conteudo()
-                .background(x < 0 ? paleta.cor(.linhaDaFolha) : .clear)
+                // A linha aberta, sólida por cima do botão: na Linha da folha sobre o vidro; dentro da folha, na Tecla (o
+                // .folha .gasto.puxada do mockup), que se separa do fundo do grupo.
+                .background(x < 0 ? paleta.cor(naFolha ? .tecla : .linhaDaFolha) : .clear)
                 .offset(x: x)
                 .accessibilityAction(named: "Apagar", apagar)
         }

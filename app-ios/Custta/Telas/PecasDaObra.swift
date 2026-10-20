@@ -223,33 +223,36 @@ struct IndicadoresDaObraView: View {
     }
 }
 
-/// "Lançamentos 46": a pílula de vidro antes da lista, nas medidas do mockup (subheadline, o número em peso médio).
-struct PilulaDeLancamentos: View {
-    let quantidade: Int
-
-    var body: some View { PilulaDaLista(titulo: "Lançamentos", quantidade: quantidade, identificador: "lancamentos") }
-}
-
-/// A pílula de vidro antes de uma lista ("Lançamentos 46"; na tela Orçamento, "Por tópico 14" e "Gasto por tópico 14"): o
-/// título em subheadline semibold e o número em peso médio, no secundário.
+/// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`) e, na tela Orçamento, "Por tópico 14" e
+/// "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline semibold e o número em peso médio, no secundário (sem
+/// número, só o título), num texto só: na maior letra a pílula quebra como texto corrido ("Lançamentos" numa linha, "12/46"
+/// na de baixo), como o mockup, que põe título e número no mesmo fluxo; um `HStack` dos dois hifenizaria o título na AX5.
 struct PilulaDaLista: View {
     let titulo: String
-    let quantidade: Int
+    let numero: String
+    let falado: String
     let identificador: String
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
     var body: some View {
-        HStack(spacing: 4) {                             // um espaço de texto, como no mockup
-            Text(titulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
-            Text("\(quantidade)").font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .superficie(.conteudo, em: .capsule)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
-        .accessibilityIdentifier(identificador)
+        let quanto = Text(numero).font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
+        Text("\(Text(titulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)))\(numero.isEmpty ? "" : " ")\(quanto)")
+            .font(.subheadline)                          // o espaço também: no body da tela, a linha crescia 2,3 pt
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .superficie(.conteudo, em: .capsule)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(falado)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier(identificador)
+    }
+}
+
+extension PilulaDaLista {
+    /// O número é uma quantidade, e o VoiceOver lê "Por tópico, 14".
+    init(titulo: String, quantidade: Int, identificador: String) {
+        self.init(titulo: titulo, numero: "\(quantidade)", falado: "\(titulo), \(quantidade)", identificador: identificador)
     }
 }
 

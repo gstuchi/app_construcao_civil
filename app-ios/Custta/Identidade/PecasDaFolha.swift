@@ -221,13 +221,15 @@ struct TituloDaFolha: View {
     }
 }
 
-/// O segmentado de duas opções da folha (Pix | Cartão): o trilho em cápsula e a opção escolhida sólida. Opções de 36 pt,
-/// no mínimo 86 de largura, ícone e palavra; na letra grande, uma em cima da outra. VoiceOver lê cada opção como botão,
-/// com "1 de 2" e "selecionado", como a cápsula de abas.
+/// O segmentado de duas opções da folha (Pix | Cartão; "Só o total" | "Por tópico"): o trilho em cápsula e a opção escolhida
+/// sólida. Opções de 36 pt, no mínimo 86 de largura, ícone (se houver) e palavra; com `larguraToda`, as opções dividem a
+/// largura; na letra grande, uma em cima da outra. VoiceOver lê cada opção como botão, com "1 de 2" e "selecionado", como a
+/// cápsula de abas.
 struct SegmentadoDaFolha<Opcao: Hashable>: View {
-    let opcoes: [(valor: Opcao, rotulo: String, icone: String)]
+    let opcoes: [(valor: Opcao, rotulo: String, icone: String?)]
     @Binding var escolhida: Opcao
     var identificador: String
+    var larguraToda = false
     @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var tamanho
     @Environment(\.opcoes) private var opcoesDoAparelho
@@ -243,14 +245,14 @@ struct SegmentadoDaFolha<Opcao: Hashable>: View {
                     else { withAnimation(.spring(duration: 0.3, bounce: 0)) { escolhida = opcao.valor } }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(decorative: opcao.icone).resizable().frame(width: 15, height: 15)
+                        if let icone = opcao.icone { Image(decorative: icone).resizable().frame(width: 15, height: 15) }
                         Text(opcao.rotulo).font(.subheadline.weight(ativa ? .semibold : .medium))
                     }
                     .fixedSize()
                     .foregroundStyle(paleta.cor(.texto))
                     .padding(.horizontal, 12)
                     .frame(minWidth: 86, minHeight: 36)
-                    .frame(maxWidth: tamanho.isAccessibilitySize ? .infinity : nil)
+                    .frame(maxWidth: tamanho.isAccessibilitySize || larguraToda ? .infinity : nil)
                     .background {
                         if ativa {
                             // A sombra do mockup (0 1px 3px): no claro, é ela que separa o branco do trilho.

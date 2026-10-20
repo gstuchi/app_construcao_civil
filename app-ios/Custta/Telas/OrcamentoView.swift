@@ -2,16 +2,18 @@ import SwiftUI
 import CusttaNucleo
 
 /* A tela Orçamento (mockup aprovado da etapa 3, parte 1, seção 3): empurrada pela linha do orçamento da obra, no caminho de
-   Obras, com o título grande. O cartão do site, com "previstos em N tópicos" e a frase do que está fora (no modo por tópico,
-   o cartão soma só os tópicos previstos e não fecha com o Total gasto: achado 10); o "Por tópico" com as frases do site, na
-   ordem do site, e uma linha por tópico fora do orçamento (no site, uma linha só, com os nomes: achado 11); no modo total, o
-   "Gasto por tópico" (bruto e % da obra, na ordem da legenda do donut) e a dica do lápis. As linhas dos tópicos ainda não
+   Obras, com o título grande e o lápis na barra (o mesmo círculo da obra), que abre a folha do orçamento. O cartão do site,
+   com "previstos em N tópicos" e a frase do que está fora (no modo por tópico, o cartão soma só os tópicos previstos e não
+   fecha com o Total gasto: achado 10); o "Por tópico" com as frases do site, na ordem do site, e uma linha por tópico fora
+   do orçamento (no site, uma linha só, com os nomes: achado 11); no modo total, o "Gasto por tópico" (bruto e % da obra, na
+   ordem da legenda do donut) e a dica do lápis. As linhas dos tópicos ainda não
    abrem nada: o detalhe do tópico chega no PR 2, e até lá elas ficam sem seta e sem toque (conselho de 19/10, decisão 3).
    Sem a obra (apagada em outro aparelho) ou sem o orçamento (tirado), a tela volta. */
 struct OrcamentoView: View {
     let id: String
     @Binding var caminho: [RotaDeObras]
     @Environment(ModeloApp.self) private var modelo
+    @Environment(Folhas.self) private var folhas
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @State private var barra = BarraDaObra()
@@ -90,6 +92,10 @@ struct OrcamentoView: View {
         .toolbar {
             ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: "Orçamento") }
             ToolbarItem(placement: .topBarTrailing) { IndicadorDeSincronizacao() }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarTrailing) {
+                BotaoDeEditarObra(rotulo: "Editar orçamento", identificador: "editarOrcamento") { folhas.aberta = .orcamento(obraId: id) }
+            }
                 .sharedBackgroundVisibility(.hidden)
         }
     }

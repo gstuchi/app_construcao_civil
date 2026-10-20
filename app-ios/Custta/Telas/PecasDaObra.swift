@@ -432,9 +432,11 @@ struct CartaoDaLista<Conteudo: View>: View {
 
 /// As ações da fase, logo abaixo dos indicadores (mockup da etapa 2, parte 3): o próximo passo numa pílula sólida da marca
 /// ("Marcar como pronta", "Registrar venda"); voltar numa pílula de vidro ("Voltar pra construção", "Desfazer venda").
-/// Pílulas de 52 pt que crescem com a letra, 10 entre elas, ícone de 20 e o texto em .body semibold.
+/// Pílulas de 52 pt que crescem com a letra, 10 entre elas, ícone de 20 e o texto em .body semibold. Sem orçamento e fora da
+/// vendida (o `pecasOrcamento` do site), "Definir orçamento" vem depois delas, em vidro (mockup da etapa 3).
 struct AcoesDaFaseView: View {
     let fase: Fase
+    var definirOrcamento: (() -> Void)? = nil
     let agir: (AcaoDaFase) -> Void
     @ScaledMetric(relativeTo: .body) private var icone: CGFloat = 20
 
@@ -450,6 +452,17 @@ struct AcoesDaFaseView: View {
                 }
                 .buttonStyle(PilulaDaAcao(principal: acao.principal))
                 .accessibilityIdentifier("acao-\(acao.rawValue)")
+            }
+            if let definirOrcamento {
+                Button(action: definirOrcamento) {
+                    Label {
+                        Text("Definir orçamento").multilineTextAlignment(.center)
+                    } icon: {
+                        Image(decorative: "Icones/alvo").resizable().frame(width: min(icone, 34), height: min(icone, 34))
+                    }
+                }
+                .buttonStyle(PilulaDaAcao(principal: false))
+                .accessibilityIdentifier("definirOrcamento")
             }
         }
     }
@@ -482,8 +495,11 @@ struct PilulaDaAcao: ButtonStyle {
     }
 }
 
-/// O lápis da barra da obra: círculo de vidro com o ícone do site, como o sair do topo; abre "Editar obra".
+/// O lápis da barra da obra: círculo de vidro com o ícone do site, como o sair do topo; abre "Editar obra" (na tela
+/// Orçamento, "Editar orçamento").
 struct BotaoDeEditarObra: View {
+    var rotulo = "Editar obra"
+    var identificador = "editarObra"
     let editar: () -> Void
     @Environment(\.paleta) private var paleta
 
@@ -497,7 +513,7 @@ struct BotaoDeEditarObra: View {
                 .superficie(.navegacao, em: .circle)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Editar obra")
-        .accessibilityIdentifier("editarObra")
+        .accessibilityLabel(rotulo)
+        .accessibilityIdentifier(identificador)
     }
 }

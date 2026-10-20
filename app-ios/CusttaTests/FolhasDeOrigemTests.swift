@@ -5,8 +5,8 @@ import CusttaNucleo
 
 /* A lógica das folhas de origem da etapa 3 (o A pagar): as peças da lista, filhas diretas da LazyVStack, com o lugar de
    cada uma no grupo do mês (o fundo do grupo é desenhado por peça); a volta da edição empurrada (o caminho, o rascunho
-   que sai na raiz, a volta por qualquer caminho, a guarda do toque duplo); e para onde o VoiceOver vai quando a edição
-   volta. */
+   que sai na raiz, a volta por qualquer caminho, a guarda do toque duplo, o apagar); e para onde o VoiceOver vai quando a
+   edição volta ou uma linha sai. */
 @MainActor
 struct FolhasDeOrigemTests {
     /// A obra com três vencimentos e o rascunho da edição do primeiro.
@@ -88,6 +88,27 @@ struct FolhasDeOrigemTests {
         origem.voltarDoPasso(.valor)
         origem.salvou(["a"])
         #expect(!SaidaDaEdicao.origem(origem).aberta(folhas, gastoId: "a"), "voltando: o segundo toque não grava")
+    }
+
+    @Test func apagarDaEdicaoVoltaComOPedido() {
+        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
+        origem.abrir(edicao().1, ordem: ["a", "b"])
+        let pedido = Folhas.PedidoDeApagar(obraId: "o1", gastoId: "a", grupoId: nil)
+        origem.apagou(pedido)
+        #expect(origem.volta?.motivo == .apagou(pedido), "a lista apaga a linha, à vista")
+        #expect(origem.caminho.isEmpty)
+        #expect(origem.edicao == nil)
+    }
+
+    @Test func focoDoVoiceOverDepoisDeApagar() {
+        let antes = ["a", "b", "c"]
+        #expect(focoNaOrigem(.apagou(["b"], compra: false), antes: antes, depois: ["a", "c"]) == FocoNaOrigem(alvo: .gasto("c"), anuncio: "Gasto apagado"))
+        #expect(focoNaOrigem(.apagou(["c"], compra: false), antes: antes, depois: ["a", "b"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: "Gasto apagado"),
+                "a última: a anterior")
+        #expect(focoNaOrigem(.apagou(["b", "fora"], compra: true), antes: antes, depois: ["a", "c"])
+                == FocoNaOrigem(alvo: .gasto("c"), anuncio: "Compra apagada"), "a compra toda, com parcelas fora da lista")
+        #expect(focoNaOrigem(.apagou(["a"], compra: false), antes: ["a"], depois: []) == FocoNaOrigem(alvo: .vazio, anuncio: "Gasto apagado"),
+                "o A pagar que fica vazio: o cartão do vazio")
     }
 
     @Test func focoDoVoiceOverNaVoltaDaEdicao() {

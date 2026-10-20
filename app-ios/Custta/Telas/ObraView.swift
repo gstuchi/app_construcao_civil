@@ -67,7 +67,10 @@ struct ObraView: View {
                     PilulaDaFase(obra: obra, hoje: hoje)
                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
                                           rotaDoOrcamento: .orcamento(obra.id))
-                    AcoesDaFaseView(fase: obra.fase) { agir($0, obra: obra) }
+                    AcoesDaFaseView(fase: obra.fase,
+                                    definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
+                        agir($0, obra: obra)
+                    }
                         .padding(.top, 2)
                         .padding(.bottom, 14)
                     PilulaDeLancamentos(quantidade: obra.gastos.count)

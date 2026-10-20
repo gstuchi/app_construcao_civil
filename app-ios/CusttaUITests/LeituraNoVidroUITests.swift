@@ -5,8 +5,9 @@ import UIKit
    Xcode não lê fundo de vidro, então ela audita as cores com superfícies sólidas (AuditoriaUITests) e este
    laudo mede o que aparece na tela: cada cena em dois prints, um normal e um com o texto apagado, com o
    fundo parado no pior caso (aurora no pior ponto da deriva inteira, globo no ângulo de partida, logo
-   pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra; só o exemplo da
-   descrição do gasto, informativo no mockup, fica de fora (exemploDaDescricao). Cada cena deixa no
+   pronto). Portão: 4,5:1 no pior ponto de cada palavra, em qualquer tamanho de letra; fica de fora só o que
+   a tabela de exceções diz (excecoes): o exemplo da descrição do gasto, informativo no mockup
+   (exemploDaDescricao), e, numa cena, o triângulo do aviso do orçamento. Cada cena deixa no
    resultado o print anotado (verde passa, vermelho não) e a tabela, para o Lupa e o Giovani verem sem
    abrir o simulador. As 15 cenas passam com o escurecimento sob o vidro e o globo mais fundo no escuro
    (decisão do Giovani em 09/10). Na CI (iOS 26) o laudo também é portão: o simulador de lá desenha o
@@ -47,9 +48,21 @@ final class LeituraNoVidroUITests: XCTestCase {
         var rolada = false
     }
 
+    /// A tabela de exceções do laudo: a cena e a figura que sai dos dois prints dela (`foraDoLaudo(_:)` no app, com
+    /// `-custta.foraDoLaudo`; no print anotado da cena ela não aparece). Fora da tabela, só o exemplo da descrição do gasto,
+    /// em toda cena em que aparece (`exemploDaDescricao`).
+    /// - "obra com orçamento por tópico, na maior letra": o triângulo do aviso dos tópicos. É uma Image ao lado do texto, e o
+    ///   texto apagado não a tira: ela fica nos dois prints, mas no Pro Max o print sem texto a desenha 0,26 px mais baixo
+    ///   (os valores que encolhem em cima dela medem uma fração de ponto diferente sem o texto) e as bordas, reamostradas,
+    ///   mudam até 204: viram "letra" com o próprio triângulo de fundo (1,33:1). Nenhuma folga inteira casa (a melhor é
+    ///   0 px). Só o ícone sai: a frase do aviso, na mesma cor (alertaNoVidro), segue medida nesta cena, nas outras e no
+    ///   18 Pro (decisão do Prumo, 21/10).
+    private static let excecoes = ["obra com orçamento por tópico, na maior letra": "iconeDoAviso"]
+
     @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect]) {
+        let excecao = Self.excecoes[cena.nome].map { ["-custta.foraDoLaudo", $0] } ?? []
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir, folha: cena.folha,
-                           argumentos: cena.argumentos + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
+                           argumentos: cena.argumentos + excecao + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
         XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
         if let aba = cena.aba {
             app.abrirAba(aba)
@@ -317,7 +330,8 @@ extension LeituraNoVidroUITests {
 
     /// A tela da obra (etapa 2): o topo (título, fase, indicadores) e a lista rolada (o "A vencer" e os cartões dos meses),
     /// no escuro e no claro; mais a maior letra e o Aumentar contraste, no escuro esmeralda. A vendida fica no
-    /// testLeituraDaObraVendida (lucro e prejuízo).
+    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 758 pt: a 640 até a etapa 2, e a linha do orçamento da
+    /// vitrine (118 pt, etapa 3) empurrou tudo o que vem depois dos indicadores.
     @MainActor func testLeituraDaObra() {
         var cenas: [Cena] = []
         for tema in temas {
@@ -325,7 +339,7 @@ extension LeituraNoVidroUITests {
             cenas += [
                 Cena(nome: "obra, topo, \(tema)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
                      dados: "vitrine", abrir: "obra:v1"),
-                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "640"],
+                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "758"],
                      espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
             ]
         }
@@ -333,7 +347,7 @@ extension LeituraNoVidroUITests {
         cenas += [
             Cena(nome: "obra na maior letra", conta: "senha", argumentos: escuro + maiorLetra, espera: "tituloDaObra", escopo: "tudo",
                  dados: "vitrine", abrir: "obra:v1"),
-            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "640"],
+            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "758"],
                  espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
         ]
         cobrar(cenas)
@@ -343,7 +357,9 @@ extension LeituraNoVidroUITests {
     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, seis rolagens; na
     /// CI, duas.
     @MainActor func testLeituraDaObraRolando() {
-        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [400, 900] : [200, 400, 640, 900, 1200, 1500]
+        // 118 pt abaixo das da etapa 2 (200 a 1500), a altura da linha do orçamento da vitrine: o mesmo pedaço da tela de
+        // antes, sem palavra cortada pela borda (a 640 e a 1200, o pedaço de baixo de uma palavra ficava em 4,04 a 4,36).
+        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [518, 1018] : [318, 518, 758, 1018, 1318, 1618]
         var cenas: [Cena] = []
         for contraste in [false, true] {
             for y in rolagens {
@@ -377,7 +393,7 @@ extension LeituraNoVidroUITests {
                 folha("folha, parcela, \(tema)", "editar:g031", combo, espera: "avisoParcela"),
                 folha("folha, repetido, \(tema)", "repetido", combo, espera: "avisoRepetido"),
                 Cena(nome: "obra, linha aberta, \(tema)", conta: "senha",
-                     argumentos: combo + ["-custta.rolagem", "640", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
+                     argumentos: combo + ["-custta.rolagem", "758", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
                      escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
             ]
         }
@@ -484,6 +500,68 @@ extension LeituraNoVidroUITests {
     }
 }
 
+extension LeituraNoVidroUITests {
+    /// O orçamento (etapa 3, PR 1), no escuro e no claro: a linha do orçamento por tópico na obra (o aviso dos tópicos no
+    /// âmbar sobre o vidro), a tela Orçamento no alto e rolada (as frases do "Por tópico" e o que está fora) e no modo total
+    /// (o gasto por tópico e a dica), e a folha com as teclas encaixadas, por tópico e no "Definir orçamento". Roda no job
+    /// laudo-etapa3.
+    @MainActor func testLeituraDoOrcamento() {
+        var cenas: [Cena] = []
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
+            cenas += [
+                Cena(nome: "obra com orçamento por tópico, \(tema)", conta: "senha", argumentos: combo,
+                     espera: "indicadorOrcamento", escopo: "tudo", dados: "porTopico", abrir: "obra:v1"),
+                Cena(nome: "tela Orçamento, topo, \(tema)", conta: "senha", argumentos: combo,
+                     espera: "cartaoDoOrcamento", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1"),
+                // Espera o título pequeno da barra: rolada, a lista já soltou o título grande da árvore.
+                Cena(nome: "tela Orçamento, rolada, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "700"],
+                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", rolada: true),
+                // 8 pt antes do fim: no fim, a borda de cima cortava o "5% da obra" do Telhado (o laudo mede a parte de baixo
+                // de uma palavra que entra no véu); aqui ela fica entre o nome do Telhado e o percentual, e a dica ainda aparece.
+                Cena(nome: "tela Orçamento, só o total, fim, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "606"],
+                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "orcamento:v1", rolada: true),
+                Cena(nome: "folha do orçamento, por tópico, digitando, \(tema)", conta: "senha",
+                     argumentos: combo + ["-custta.folha", "teclas:eletrica"], espera: "barraDasTeclas-nome", escopo: "tudo",
+                     dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1"),
+                Cena(nome: "folha do orçamento, definir, \(tema)", conta: "senha", argumentos: combo, espera: "tecla-1",
+                     escopo: "tudo", dados: "semOrcamento", abrir: "obra:v1", folha: "orcamento:v1"),
+            ]
+        }
+        cobrar(cenas)
+    }
+
+    /// O orçamento na maior letra (o dinheiro das frases na própria linha, o chip que quebra, as teclas no tamanho do AX2) e
+    /// com Aumentar contraste, no escuro esmeralda.
+    @MainActor func testLeituraDoOrcamentoNaMaiorLetra() {
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
+        let grande = escuro + maiorLetra, contraste = escuro + ["-custta.aumentarContraste", "YES"]
+        cobrar([
+            // O triângulo do aviso sai dos dois prints desta cena (a tabela de exceções, `excecoes`); a frase dele fica.
+            Cena(nome: "obra com orçamento por tópico, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "700"],
+                 espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "obra:v1", rolada: true),
+            Cena(nome: "tela Orçamento, topo, na maior letra", conta: "senha", argumentos: grande, espera: "cartaoDoOrcamento",
+                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1"),
+            // A 1637 pt, nos dois iPhones, a borda de cima fica no vão entre a Estrutura e a Fundação, sem texto nem barra logo
+            // abaixo dela, sob o véu: no 18 Pro (a largura da CI), o nome da Fundação começa 11 pt abaixo; no Pro Max, só o fio
+            // entre as linhas (3 pt) e o nome, a 28. A 1500, no Pro Max, a barra da Estrutura ficava 6 pt abaixo da borda, com o
+            // texto borrado pelo véu logo acima, e o alto dela mudava entre os dois prints (1837 px longe das letras:
+            // CenaNaoDeterministica). De 1615 a 1660, nos dois, nenhum pixel muda longe das letras.
+            Cena(nome: "tela Orçamento, rolada, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "1637"],
+                 espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", rolada: true),
+            // Na maior letra, a linha ativa no meio da faixa leva o alto da lista (o segmentado) para baixo da barra da folha,
+            // que borra o que passa por ela: as cenas da folha com as teclas são roladas.
+            Cena(nome: "folha do orçamento, por tópico, digitando, na maior letra", conta: "senha",
+                 argumentos: grande + ["-custta.folha", "teclas:eletrica"], espera: "barraDasTeclas-pronto", escopo: "tudo",
+                 dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1", rolada: true),
+            Cena(nome: "folha do orçamento, definir, na maior letra", conta: "senha", argumentos: grande, espera: "tecla-1",
+                 escopo: "tudo", dados: "semOrcamento", abrir: "obra:v1", folha: "orcamento:v1", rolada: true),
+            Cena(nome: "tela Orçamento com Aumentar contraste", conta: "senha", argumentos: contraste, espera: "cartaoDoOrcamento",
+                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1"),
+        ])
+    }
+}
+
 /* O medidor com imagens sintéticas: sem abrir o app. */
 final class LaudoDeContrasteTests: XCTestCase {
     private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),
@@ -553,19 +631,23 @@ final class LaudoDeContrasteTests: XCTestCase {
         }
     }
 
-    /// O que muda 1 px entre os prints longe das letras (o valor que encolhe na maior letra empurra o que vem embaixo)
-    /// é a mesma cena: o separador não muda a cena e a borda forte não vira palavra. Com 2 px, a cena mudou.
-    func testBordaQueMudaUmPixelNaoMudaACena() throws {
+    /// O que muda até 1 pt entre os prints longe das letras (o valor que encolhe na maior letra empurra o que vem embaixo
+    /// 1 px, e na tela Orçamento há mais de um valor em cima) é a mesma cena: o separador não muda a cena e a borda forte
+    /// não vira palavra. Na escala 3, a folga é de 3 px; com 4 px, a cena mudou.
+    func testBordaQueMudaAteUmPontoNaoMudaACena() throws {
         let separador: (UInt8, UInt8, UInt8) = (0x26, 0x40, 0x38), borda: (UInt8, UInt8, UInt8) = (0x80, 0x90, 0x88)
         func retratos(_ desce: CGFloat, _ cor: (UInt8, UInt8, UInt8)) -> (Retrato, Retrato) {
             (retrato(200, 120, fundo: fundo, pintar: letras.map { ($0, branco) } + [(CGRect(x: 100, y: 100, width: 90, height: 1), cor)]),
              retrato(200, 120, fundo: fundo, pintar: [(CGRect(x: 100, y: 100 + desce, width: 90, height: 1), cor)]))
         }
-        for cor in [separador, borda] {
-            let (normal, semTexto) = retratos(1, cor)
-            XCTAssertEqual(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).count, 1, "só as três letras")
+        for desce in 1...3 {
+            for cor in [separador, borda] {
+                let (normal, semTexto) = retratos(CGFloat(desce), cor)
+                XCTAssertEqual(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).count, 1,
+                               "\(desce) px: só as três letras")
+            }
         }
-        let (normal, semTexto) = retratos(2, separador)
+        let (normal, semTexto) = retratos(4, separador)
         XCTAssertThrowsError(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3)) { erro in
             XCTAssertTrue(erro is LaudoDeContraste.CenaNaoDeterministica)
         }

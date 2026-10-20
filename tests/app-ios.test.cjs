@@ -479,6 +479,20 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
                'o ValorEmDinheiro numa linha, encolhendo até a metade');
 });
 
+test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura fixa', () => {
+  // A auditoria não vê o fim da tela Orçamento no modo total na maior letra: ela diminui a letra, a lista longa encolhe para
+  // cima da rolagem e a tela fica vazia (achados sem elemento; a cena dela fica a 2200 pt). As linhas do fim são as mesmas
+  // da cena; só a dica não aparece em outro lugar. Que ela não corta, garante o código: letra do sistema, nenhum limite de
+  // linhas (guarda acima), quebra para baixo e nenhuma altura fixa.
+  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
+  const inicio = t.indexOf('struct DicaDoModoTotal');
+  assert.ok(inicio >= 0, 'a DicaDoModoTotal');
+  const dica = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(dica, /Text\(dicaDoModoTotal\)\n\s*\.font\(\.footnote\)/, 'a dica na letra do sistema, que cresce');
+  assert.match(dica, /\.fixedSize\(horizontal: false, vertical: true\)/, 'a dica quebra linha e cresce para baixo');
+  assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
+});
+
 test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
   // Nenhum teste de tela vê isso: eles tocam as teclas pelo identificador (a ordem não aparece), nenhum digita além do
   // teto, o anúncio do VoiceOver não chega ao XCUITest e a auditoria não mede o limite de tamanho das teclas.

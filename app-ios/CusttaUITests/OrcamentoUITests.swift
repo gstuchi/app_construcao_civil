@@ -79,7 +79,7 @@ extension OrcamentoUITests {
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5), "o círculo volta para a obra")
         linha.tap()
         XCTAssertTrue(titulo.waitForExistence(timeout: 5))
-        app.voltarPelaBorda()
+        app.voltarPelaBorda(saindo: titulo)
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5), "a borda volta para a obra")
     }
 

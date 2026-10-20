@@ -9042,6 +9042,796 @@
         "saida": []
       }
     ],
+    "calc.mesesDoFiltro": [
+      {
+        "caso": "do mais novo ao mais antigo, com os futuros",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          ""
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido com gasto não se repete",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2025-08"
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido sem gasto entra com zero, no meio",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2026-01"
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-01",
+            "qtd": 0
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido sem gasto, o mais novo",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2027-01"
+        ],
+        "saida": [
+          {
+            "mes": "2027-01",
+            "qtd": 0
+          },
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido sem gasto, o mais antigo",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2024-12"
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          },
+          {
+            "mes": "2024-12",
+            "qtd": 0
+          }
+        ]
+      },
+      {
+        "caso": "sem gasto e sem mês",
+        "args": [
+          [],
+          ""
+        ],
+        "saida": []
+      },
+      {
+        "caso": "sem gasto, com o mês escolhido",
+        "args": [
+          [],
+          "2026-03"
+        ],
+        "saida": [
+          {
+            "mes": "2026-03",
+            "qtd": 0
+          }
+        ]
+      },
+      {
+        "caso": "sem o argumento do mês",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      }
+    ],
     "calc.normalizaDescricao": [
       {
         "caso": "\"  Cimento   CP-II \"",

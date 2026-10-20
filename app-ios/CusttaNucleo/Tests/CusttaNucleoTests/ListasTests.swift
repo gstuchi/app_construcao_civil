@@ -34,6 +34,13 @@ struct ListasTests {
         }
     }
 
+    @Test func mesesDoFiltroComOEscolhido() {
+        for c in Vetores.casos("calc.mesesDoFiltro") {
+            let r = mesesDoFiltro(c.args[0].gastos, escolhido: c.arg(1)?.comoTexto ?? "")
+            confere(.lista(r.map { .objeto(["mes": .texto($0.mes), "qtd": .numero(Double($0.qtd))]) }), c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func filtroDosLancamentos() {
         for c in Vetores.casos("calc.filtraGastos") {
             let topicos = (c.args[1].comoObjeto ?? [:]).mapValues { t in

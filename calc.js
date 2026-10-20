@@ -237,6 +237,16 @@
     });
   }
 
+  /* Meses do filtro dos lançamentos: os que têm gasto, do mais novo ao mais antigo (com os futuros), e quantos gastos cada um
+     tem. O mês escolhido entra mesmo sem gasto (com zero): apagar o último gasto dele, ou mudar a data, não esconde o filtro que
+     continua valendo. */
+  function mesesDoFiltro(gastos, escolhido){
+    const qtd = Object.create(null);
+    (Array.isArray(gastos) ? gastos : []).forEach(g => { const m = g.data.slice(0, 7); qtd[m] = (qtd[m] || 0) + 1; });
+    if(escolhido && !(escolhido in qtd)) qtd[escolhido] = 0;
+    return Object.keys(qtd).sort().reverse().map(mes => ({ mes, qtd: qtd[mes] }));
+  }
+
   /* ---- descrição do gasto: sugestões e repetido (formulário do gasto) ---- */
   /* Descrição comparável: sem acento, em minúsculas, aparada e com os espaços do meio juntados. */
   function normalizaDescricao(s){
@@ -506,7 +516,7 @@
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

@@ -144,7 +144,24 @@
       return {erro:'data', mensagem:'Data da venda precisa ficar entre o início da obra e hoje'};
     return null;
   }
-  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,LIMITE_OBRAS,avisoLimiteDeObras,conferirObra,obraNova,obraEditada,conferirVenda};
+  /* ---- o que a folha do orçamento grava (app.js formOrcamento) ----
+     "Salvar", só o modo ativo. antigo: o orçamento da obra no momento do Salvar (não o da abertura da folha); modo: 'total' ou
+     'topicos'; total: o total lido pelo parseNum; valores: {idDoTópico: valor lido} de todas as linhas da folha. No total, só
+     maior que zero; por tópico, só os valores maiores que zero. O que a folha não mostra fica: os campos desconhecidos do orçamento
+     e, por tópico, o previsto de tópico sem linha na folha (tópico próprio apagado). Nada a gravar: null, e a chave sai da obra.
+     Não corta em 100 tópicos como a leitura: o corte escolhe pela ordem de inserção, que o Firestore do app não guarda. */
+  function orcamentoGravado(antigo, modo, total, valores){
+    const resto = {};
+    if(objeto(antigo)) for(const [k, v] of Object.entries(antigo)) if(!['modo', 'total', 'topicos'].includes(k)) resto[k] = v;
+    if(modo === 'total') return total > 0 ? {...resto, modo:'total', total} : null;
+    const topicos = {};
+    for(const [id, v] of Object.entries(valores)) if(v > 0) topicos[id] = v;
+    if(!Object.keys(topicos).length) return null;
+    const antes = objeto(antigo) && objeto(antigo.topicos) ? antigo.topicos : {};
+    for(const [id, v] of Object.entries(antes)) if(!Object.prototype.hasOwnProperty.call(valores, id)) topicos[id] = v;
+    return {...resto, modo:'topicos', topicos};
+  }
+  const api={normaliza,LIMITES,conferirGasto,gastosLancados,gastoEditado,LIMITE_OBRAS,avisoLimiteDeObras,conferirObra,obraNova,obraEditada,conferirVenda,orcamentoGravado};
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.OBRA_DADOS=api;
 })(typeof window !== 'undefined' ? window : globalThis);

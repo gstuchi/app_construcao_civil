@@ -648,6 +648,29 @@ venda('depois de hoje', 1500000, '2026-10-07');
 venda('data vazia', 1500000, '');
 venda('data inválida', 1500000, '2026-02-30');
 
+/* O "Salvar" da folha do orçamento (app.js formOrcamento): só o modo ativo, e o que a folha não mostra fica. FOLHA são as linhas da
+   folha, vazias; o antigo é o orçamento da obra no momento do Salvar. */
+const gravado = (nome, ...args) => caso('dados.orcamentoGravado', nome, args, D.orcamentoGravado);
+const FOLHA = { terreno: 0, fundacao: 0, estrutura: 0, pintura: 0, c_portao: 0 };
+gravado('só o total, sem orçamento antes', undefined, 'total', 500000, FOLHA);
+gravado('total zero tira', { modo: 'total', total: 1000 }, 'total', 0, FOLHA);
+gravado('total negativo tira', { modo: 'total', total: 1000 }, 'total', -5, FOLHA);
+gravado('total ilegível tira', { modo: 'total', total: 1000 }, 'total', NaN, FOLHA);
+gravado('total guarda o campo desconhecido e larga os tópicos', { modo: 'topicos', topicos: { fundacao: 90000, c_apagado: 1000 }, nota: 'do site', versao: 2 },
+  'total', 1250000.5, FOLHA);
+gravado('total ignora os valores da folha', undefined, 'total', 1000, { ...FOLHA, terreno: 5 });
+gravado('por tópico: só os valores acima de zero', undefined, 'topicos', 0,
+  { ...FOLHA, terreno: 180000, fundacao: 100000, estrutura: -3, c_portao: 5000.5, pintura: NaN });
+gravado('por tópico ignora o total', undefined, 'topicos', 999, { ...FOLHA, terreno: 5 });
+gravado('por tópico tudo vazio tira, mesmo com tópico fora da folha', { modo: 'topicos', topicos: { c_apagado: 1000 } }, 'topicos', 0, FOLHA);
+gravado('por tópico guarda o tópico fora da folha e o campo desconhecido', { modo: 'topicos', topicos: { fundacao: 90000, c_apagado: 1000 }, nota: 'do site' },
+  'topicos', 0, { ...FOLHA, fundacao: 95000 });
+gravado('tópico da folha zerado não volta do antigo', { modo: 'topicos', topicos: { fundacao: 90000, estrutura: 250000 } }, 'topicos', 0, { ...FOLHA, estrutura: 250000 });
+gravado('do total para por tópico: o total sai, o desconhecido fica', { modo: 'total', total: 700000, nota: 'x' }, 'topicos', 0, { ...FOLHA, terreno: 1000 });
+gravado('antigo que não é objeto conta como sem orçamento', 'lixo', 'topicos', 0, { ...FOLHA, pintura: 3000 });
+gravado('antigo lista conta como sem orçamento', [1, 2], 'total', 10, FOLHA);
+gravado('tópicos do antigo que não são objeto não entram', { modo: 'topicos', topicos: [5] }, 'topicos', 0, { ...FOLHA, pintura: 3000 });
+
 /* ---------- push.js e id ---------- */
 for(const t of ['', 'a', 'abc', 'fcm-token:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx', 'https://fcm.googleapis.com/fcm/send/eXyZ', 'ç😀', 'x'.repeat(300)])
   caso('push.hashEndpoint', JSON.stringify(t.length > 40 ? t.slice(0, 40) + '…' : t), [t], P.hashEndpoint);

@@ -22334,6 +22334,349 @@
         }
       }
     ],
+    "dados.orcamentoGravado": [
+      {
+        "caso": "só o total, sem orçamento antes",
+        "args": [
+          null,
+          "total",
+          500000,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "total",
+          "total": 500000
+        }
+      },
+      {
+        "caso": "total zero tira",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000
+          },
+          "total",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total negativo tira",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000
+          },
+          "total",
+          -5,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total ilegível tira",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000
+          },
+          "total",
+          null,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total guarda o campo desconhecido e larga os tópicos",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "c_apagado": 1000
+            },
+            "nota": "do site",
+            "versao": 2
+          },
+          "total",
+          1250000.5,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "nota": "do site",
+          "versao": 2,
+          "modo": "total",
+          "total": 1250000.5
+        }
+      },
+      {
+        "caso": "total ignora os valores da folha",
+        "args": [
+          null,
+          "total",
+          1000,
+          {
+            "terreno": 5,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "total",
+          "total": 1000
+        }
+      },
+      {
+        "caso": "por tópico: só os valores acima de zero",
+        "args": [
+          null,
+          "topicos",
+          0,
+          {
+            "terreno": 180000,
+            "fundacao": 100000,
+            "estrutura": -3,
+            "pintura": null,
+            "c_portao": 5000.5
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "terreno": 180000,
+            "fundacao": 100000,
+            "c_portao": 5000.5
+          }
+        }
+      },
+      {
+        "caso": "por tópico ignora o total",
+        "args": [
+          null,
+          "topicos",
+          999,
+          {
+            "terreno": 5,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "terreno": 5
+          }
+        }
+      },
+      {
+        "caso": "por tópico tudo vazio tira, mesmo com tópico fora da folha",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "c_apagado": 1000
+            }
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "por tópico guarda o tópico fora da folha e o campo desconhecido",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "c_apagado": 1000
+            },
+            "nota": "do site"
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 95000,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "nota": "do site",
+          "modo": "topicos",
+          "topicos": {
+            "fundacao": 95000,
+            "c_apagado": 1000
+          }
+        }
+      },
+      {
+        "caso": "tópico da folha zerado não volta do antigo",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "estrutura": 250000
+            }
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 250000,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "estrutura": 250000
+          }
+        }
+      },
+      {
+        "caso": "do total para por tópico: o total sai, o desconhecido fica",
+        "args": [
+          {
+            "modo": "total",
+            "total": 700000,
+            "nota": "x"
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 1000,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "nota": "x",
+          "modo": "topicos",
+          "topicos": {
+            "terreno": 1000
+          }
+        }
+      },
+      {
+        "caso": "antigo que não é objeto conta como sem orçamento",
+        "args": [
+          "lixo",
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 3000,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "pintura": 3000
+          }
+        }
+      },
+      {
+        "caso": "antigo lista conta como sem orçamento",
+        "args": [
+          [
+            1,
+            2
+          ],
+          "total",
+          10,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "total",
+          "total": 10
+        }
+      },
+      {
+        "caso": "tópicos do antigo que não são objeto não entram",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": [
+              5
+            ]
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 3000,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "pintura": 3000
+          }
+        }
+      }
+    ],
     "push.hashEndpoint": [
       {
         "caso": "\"\"",

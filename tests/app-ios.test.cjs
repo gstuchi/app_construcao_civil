@@ -856,6 +856,19 @@ test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com
                'os cantos de cima do grupo no gasto vêm da peça');
 });
 
+test('obra: o campo da busca fica fora da LazyVStack, que fica só com a lista', () => {
+  // No iOS 26, a LazyVStack refazia o campo da busca à vista quando o teclado subia, e o foco caía (sonda do foco, run
+  // 40508695109; o teclado foi embora no run 40440188222). As peças de cima, do título à soma dos achados, ficam num VStack, e
+  // a pilha preguiçosa só com o A vencer e os meses. Nenhum teste de tela vê isso: no iOS 27, o campo não é refeito.
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  const campo = t.indexOf('CampoDaBusca(');
+  assert.ok(campo > 0, 'o campo da busca na obra');
+  const pilhas = [...t.matchAll(/LazyVStack\(/g)].map(m => m.index);
+  assert.equal(pilhas.length, 1, 'uma LazyVStack só na obra, a da lista');
+  assert.ok(campo < pilhas[0], 'o campo da busca antes da LazyVStack, fora dela');
+  assert.ok(t.indexOf('ForEach(lista.meses)') > pilhas[0], 'os meses dentro da LazyVStack');
+});
+
 test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
   // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
   // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de

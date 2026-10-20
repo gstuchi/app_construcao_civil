@@ -16,6 +16,8 @@ import CusttaNucleo
    CUSTTA_GRAVACAO recusa (toda gravação volta com permission-denied: o "Não salvou" que não passa sozinho)
    CUSTTA_APAGAR_REMOTO <obra>/<gasto>@<segundos> (outro aparelho apaga o gasto, com o app aberto) | <obra>@<segundos>
                   (apaga a obra)
+   CUSTTA_MUDANCA_REMOTA afazer:<obra> (outro aparelho anota um afazer no alto da lista da obra quando o teste avisa, pelo
+                  notify_post de "br.com.custta.falso.mudancaRemota": o documento novo chega com a tela em uso, achado 3)
    CUSTTA_MARCA   servidor (o servidor já respondeu a esta conta numa abertura anterior: com CUSTTA_REDE=offline e
                   CUSTTA_DADOS=vazio, é a conta vazia que abre sem rede e pode lançar)
    CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
@@ -56,10 +58,11 @@ extension Composicao {
             guard partes.count == 2 || partes.count == 3, let segundos = Double(partes[partes.count - 1]) else { return nil }
             return (partes[0], partes.count == 3 ? partes[1] : "", segundos)
         }
+        let afazerRemoto = ambiente["CUSTTA_MUDANCA_REMOTA"].flatMap { $0.hasPrefix("afazer:") ? String($0.dropFirst(7)) : nil }
         let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falhaDeLeitura: falha,
                                             semLeitura: ambiente["CUSTTA_LEITURA"] == "nunca",
                                             recusa: ambiente["CUSTTA_GRAVACAO"] == "recusa" ? "permission-denied" : nil,
-                                            apagarRemoto: remoto)
+                                            apagarRemoto: remoto, afazerRemoto: afazerRemoto)
         let rede = MonitorDeRede(forcarSemRede: semRede)
         let marca = MarcaEmMemoria()
         if ambiente["CUSTTA_MARCA"] == "servidor" { marca.marcarTodas = true }

@@ -2,7 +2,7 @@ import XCTest
 
 /// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase. `abrir: "obra:v1"` já abre a obra;
 /// `folha: "novaObra"` abre uma folha quando os dados chegam; `gravacao: "recusa"` recusa toda gravação; `extra` passa
-/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`).
+/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`, `CUSTTA_MUDANCA_REMOTA`).
 @MainActor
 func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
               limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, folha: String? = nil, gravacao: String? = nil,

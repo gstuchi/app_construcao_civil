@@ -6,9 +6,10 @@ import notify
    caracteres, com o + que grava os 500 mesmo depois de rajadas de teclas; marcar pelo círculo e desmarcar pelo texto, na
    ordem nova (o feito no alto dos Feitos, o desmarcado no alto dos pendentes), com o círculo que troca na hora e o segundo
    toque que desiste; "Feitos" fechado, que abre; apagar arrastando, sem pergunta; o texto longo inteiro na tela e cortado
-   em duas linhas na obra; o vazio; a gravação recusada antes de ver os dados; a obra apagada em outro aparelho; e o + da
-   cápsula, que lança gasto na obra. Na vitrine, a Casa Alphaville tem os 7 afazeres do mockup (3 pendentes e 4 feitos), o
-   Sobrado Granja Viana, 2 feitos, e a Casa Tamboré 4, nenhum. */
+   em duas linhas na obra; o vazio; a gravação recusada antes de ver os dados; a obra apagada em outro aparelho; o + da
+   cápsula, que lança gasto na obra; e a mudança vinda de outro aparelho durante a digitação (achado 3). Na vitrine, a
+   Casa Alphaville tem os 7 afazeres do mockup (3 pendentes e 4 feitos), o Sobrado Granja Viana, 2 feitos, e a Casa
+   Tamboré 4, nenhum. */
 @MainActor
 final class AfazeresUITests: XCTestCase {
     private func abrirAfazeres(_ obra: String = "v1", argumentos: [String] = []) -> XCUIApplication {
@@ -239,6 +240,23 @@ final class AfazeresUITests: XCTestCase {
         alerta.buttons["OK"].tap()
         XCTAssertEqual(campo.value as? String, "Comprar areia", "o texto continua no campo")
         XCTAssertEqual(pendentes(app), "Pendentes, 3", "nada foi gravado")
+    }
+
+    /// Achado 3: outro aparelho anota um afazer enquanto um é digitado aqui. A lista ganha o de lá, e o texto e o cursor
+    /// ficam no campo (o texto em digitação e o foco moram na tela, e o redesenho que chega do Sincronizador não os recria).
+    func testMudancaDeOutroAparelhoNaoApagaOAfazerEmDigitacao() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "afazeres:v1", extra: ["CUSTTA_MUDANCA_REMOTA": "afazer:v1"])
+        let campo = app.textFields["novoAfazer"]
+        app.digitarComFoco("Comprar cimen", em: campo)
+        // O outro aparelho grava agora, com o afazer em digitação (um relógio desde a abertura correria contra o teste).
+        notify_post("br.com.custta.falso.mudancaRemota")
+        XCTAssertTrue(app.elemento("afazer-remoto1").waitForExistence(timeout: 10), "o afazer do outro aparelho chega")
+        XCTAssertEqual(pendentes(app), "Pendentes, 4")
+        XCTAssertEqual(campo.value as? String, "Comprar cimen", "o texto em digitação fica")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "e o teclado também")
+        campo.typeText("to\n")                         // sem o foco, o XCUITest não digita ("no keyboard focus")
+        XCTAssertEqual(pendentes(app), "Pendentes, 5")
+        XCTAssertEqual(Array(ordem(app).prefix(2)), ["Comprar cimento", "Ver a entrega do gesso"])
     }
 
     /// Nos afazeres, o + da cápsula lança gasto na obra, como dentro dela.

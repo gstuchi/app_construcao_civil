@@ -5,8 +5,8 @@ name: app-ios
 #   dados.js, push.js, cadastro.js ou o gerador mudam;
 # - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
 #   unidade e de tela no simulador com os serviços falsos;
-# - app-etapa3: os testes de tela da etapa 3, num simulador próprio, em paralelo com o app (com eles, o app passou do
-#   teto de 75 min);
+# - app-etapa3 e app-etapa3-parte3: os testes de tela da etapa 3, cada um num simulador próprio, em paralelo com o app
+#   (com eles, o app passou do teto de 75 min, e o app-etapa3 sozinho chegou a 58,8 min);
 # - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
 #   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
 #   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da
@@ -70,8 +70,8 @@ jobs:
   app:
     runs-on: macos-26
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
-    # (job app-etapa3): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa lenta, 67 min, com 48,9 de testes
-    # de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90.
+    # (jobs app-etapa3 e app-etapa3-parte3): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa lenta,
+    # 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90.
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -118,7 +118,7 @@ jobs:
 
       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
       # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
-      # testes de tela da etapa 3, no app-etapa3.
+      # testes de tela da etapa 3, no app-etapa3 e no app-etapa3-parte3.
       - name: Testes de unidade e de tela no simulador
         run: |
           set -o pipefail
@@ -137,6 +137,7 @@ jobs:
             -skip-testing:CusttaUITests/AuditoriaUITests \
             -skip-testing:CusttaUITests/OrcamentoUITests \
             -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
+            -skip-testing:CusttaUITests/BuscaUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
@@ -194,6 +195,47 @@ jobs:
         with:
           name: testes-etapa3-app-ios
           path: ${{ runner.temp }}/testes-etapa3.xcresult
+          retention-days: 7
+
+  app-etapa3-parte3:
+    runs-on: macos-26
+    # Mais testes de tela da etapa 3, na mesma forma do app-etapa3, que não cresce mais: ele chegou a 58,8 min numa VM
+    # lenta no run 39813469497. No PR 3, o BuscaUITests. Como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # Os mesmos serviços falsos do job app, que pula estas suítes.
+      - name: Testes de tela da parte 3 da etapa 3 no simulador
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/testes-etapa3-parte3.xcresult" \
+            -only-testing:CusttaUITests/BuscaUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Tela reprovada ou job cortado no teto: o resultado dos testes fica 7 dias no artefato.
+      - name: Resultado dos testes da parte 3 da etapa 3 quando reprovam ou o job é cortado
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testes-etapa3-parte3-app-ios
+          path: ${{ runner.temp }}/testes-etapa3-parte3.xcresult
           retention-days: 7
 
   laudo:

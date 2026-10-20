@@ -22,6 +22,14 @@ struct CorrecaoTests {
         }
     }
 
+    @Test func resumoDoTopico() {
+        for c in Vetores.casos("calc.resumoTopico") {
+            let r = resumoTopico(c.args[0].obra, topico: c.args[1].comoTexto!, hoje: c.args[2].comoTexto!, taxaMensal: c.args[3].numero)
+            confere(.objeto(["qtd": .numero(Double(r.qtd)), "bruto": .numero(r.bruto), "corrigido": .numero(r.corrigido), "pct": .numero(r.pct)]),
+                    c.saida, .dinheiro, c.caso)
+        }
+    }
+
     @Test func lucroNaVenda() {
         for c in Vetores.casos("calc.lucroVenda") {
             confere(lucroVenda(c.args[0].obra, taxa: c.args[1].numero)?.json ?? .nulo, c.saida, .dinheiro, c.caso)

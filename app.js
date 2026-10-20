@@ -1107,8 +1107,8 @@ function renderGraficos(){
   ligarImprimir($('#grafPrint'));
 }
 
-/* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
-   Só leitura sobre db; editar/excluir sai daqui pelo próprio gastoRow. */
+/* Folha do "A pagar": os vencimentos dos próximos 30 dias (calc.js aPagar). Editar e
+   excluir saem daqui pelo próprio gastoRow e voltam para ela. */
 function sheetAPagar(obraId){
   const o = obraById(obraId);
   if(!o){ closeSheet(); return; }
@@ -1123,6 +1123,8 @@ function sheetAPagar(obraId){
   $('#aPagarFechar').onclick = closeSheet;
 }
 
+/* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
+   Só leitura sobre db; editar/excluir sai daqui pelo próprio gastoRow. */
 function sheetTopico(obraId, topicoId){
   const o = obraById(obraId);
   if(!o) return;
@@ -1130,21 +1132,15 @@ function sheetTopico(obraId, topicoId){
   if(!gs.length){ closeSheet(); return; } // último gasto do tópico foi excluído
 
   const t = TOP_MAP()[topicoId] || {nm:topicoId, ic:'etiqueta'};
-  const hoje = todayISO();
-  const fim = (o.venda && o.venda.data) || hoje;
-  const tx = taxa();
-  const bruto = gs.reduce((s,g)=>s+g.valor, 0);
-  const corr  = gs.reduce((s,g)=>s+OBRA_CALC.corrigido(g.valor, g.data, fim, tx), 0);
-  const totalObra = OBRA_CALC.totalBruto(o);
-  // mesmo arredondamento da legenda do donut, senão o número muda ao abrir
-  const pct = totalObra > 0 ? Math.round(bruto/totalObra*100) : 0;
+  // o % usa o arredondamento da legenda do donut, senão o número muda ao abrir
+  const r = OBRA_CALC.resumoTopico(o, topicoId, todayISO(), taxa());
 
   openSheet(`
     <div class="top-head">${ICON(t.ic)}<h3>${escapeHtml(t.nm)}</h3></div>
     <div class="top-resumo">
-      <div class="sub">${gs.length} gasto${gs.length>1?'s':''} · ${pct}% da obra</div>
-      <b>${money(bruto)}</b>
-      <div class="corr">corrigido: ${money(corr)}</div>
+      <div class="sub">${r.qtd} gasto${r.qtd>1?'s':''} · ${r.pct}% da obra</div>
+      <b>${money(r.bruto)}</b>
+      <div class="corr">corrigido: ${money(r.corrigido)}</div>
     </div>
     <ul class="list" id="topGastos"></ul>
     <div class="sheet-actions"><button class="btn ghost" id="topFechar">Fechar</button></div>`);

@@ -16,10 +16,11 @@ const PASTA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../app
 
 /** Ícones que as telas usam: abas, fases da obra, sair, olho da senha e a seta da dica; na etapa 2, os dos 21 tópicos
     (TOPICOS do calc.js) e o "etiqueta" dos tópicos próprios, o calendário do "A vencer", o cartão do pagamento, o lápis
-    de editar, o acordo da venda, o voltar das fases e as notas da obra sem gastos. */
+    de editar, o acordo da venda, o voltar das fases e as notas da obra sem gastos; na etapa 3, o triângulo do aviso dos tópicos
+    na linha do orçamento. */
 export const USADOS = ['predio', 'engrenagem', 'sair', 'guindaste', 'casa', 'check', 'olho', 'olhoFechado', 'setaBaixo',
   'mapa', 'documento', 'tijolos', 'pa', 'vergalhao', 'raio', 'gota', 'porta', 'ladrilho', 'rolo', 'piscina', 'arvore', 'capacete',
-  'caixa', 'mais', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas'];
+  'caixa', 'mais', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas', 'alerta'];
 
 const info = { author: 'xcode', version: 1 };
 

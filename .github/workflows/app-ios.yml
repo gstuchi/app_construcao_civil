@@ -144,6 +144,7 @@ jobs:
             -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
             -skip-testing:CusttaUITests/DetalheDoTopicoUITests \
             -skip-testing:CusttaUITests/BuscaUITests \
+            -skip-testing:CusttaUITests/AfazeresUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
@@ -255,8 +256,8 @@ jobs:
   app-etapa3-c:
     runs-on: macos-26
     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
-    # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests. O mesmo preparo do app-etapa3, em paralelo com ele.
-    # Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
+    # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
+    # paralelo com ele. Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -283,6 +284,7 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/testes-etapa3-c.xcresult" \
             -only-testing:CusttaUITests/BuscaUITests \
+            -only-testing:CusttaUITests/AfazeresUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.

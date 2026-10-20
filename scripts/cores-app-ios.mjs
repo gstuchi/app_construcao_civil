@@ -46,7 +46,9 @@ export const CORES = {
     CampoBorda: ['#1B3D33', '#C6DCD1'],
     FantasmaFundo: ['#0A3F30', '#D6F0E7'],          // botão secundário ("Reenviar link", "Sair da conta")
     FantasmaTexto: ['#8FE8D5', '#096453'],
-    SecundarioFosco: ['#B8D4C7', '#3B574B'],        // texto secundário sobre o Fosco (entrada e opção)
+    // Texto secundário sobre o Fosco (entrada e opção). No escuro, o do Transparente (decisão 6 da etapa 3: o #B8D4C7 ficava
+    // em 4,24:1 e 4,47:1 em dois pontos claros da aurora); no claro, o do Fosco.
+    SecundarioFosco: ['#D6E8E0', '#3B574B'],
     SecundarioTransparente: ['#D6E8E0', '#2B463B'], // sobre o Transparente corrigido
     SecundarioSolido: ['#9DBDAF', '#4D685C'],       // sobre a superfície sólida
     LinkNoVidro: ['#8FE8D5', '#075243'],            // link e aba ativa sobre o vidro
@@ -78,6 +80,12 @@ export const CORES = {
     // com o #FFC4CE, a nota da venda ficava em 4,25:1 onde a aurora é mais clara (T35); com ele, 4,68 (pior pixel 4,61).
     PositivoNoVidro: ['#8CF0BC', '#084A27'],
     NegativoNoVidro: ['#FFD2D9', '#8A1538'],
+    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup: o aviso dos tópicos na linha do orçamento e o
+    // "Passou … do previsto"): no claro, #6F4705 (o Alerta do site dava 3,79–4,15:1 sobre a aurora clara; este, 5,21–5,71:1).
+    // No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
+    // rolada, na maior letra, onde a aurora clareia o vidro (laudo da etapa 3); este, 4,9 ali. Não é o AlertaEtiqueta, que vai
+    // sobre o fundo âmbar das etiquetas.
+    AlertaNoVidro: ['#FFD98A', '#6F4705'],
     // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
     // sistema e o que vai dentro dela, o arrastar para apagar e a linha que acabou de entrar.
     Folha: ['#0A1E18E6', '#F4F9F6F0'],              // --folha: fundo da folha (presentationBackground)

@@ -67,6 +67,9 @@ enum Token: String, CaseIterable, Sendable {
     /// O lucro e o prejuízo da obra vendida sobre o vidro (o Positivo e o Negativo não fechavam 4,5:1 com a aurora atrás).
     case positivoNoVidro = "PositivoNoVidro"
     case negativoNoVidro = "NegativoNoVidro"
+    /// O texto âmbar sobre o vidro do conteúdo (etapa 3): o aviso dos tópicos na linha do orçamento e o "Passou … do
+    /// previsto". No claro, mais escuro que o Alerta, que não fechava 4,5:1 sobre a aurora clara.
+    case alertaNoVidro = "AlertaNoVidro"
     /// A folha do sistema (etapa 2): o fundo, os grupos sólidos dentro dela e a linha fina entre as linhas de um grupo.
     case folha = "Folha"
     case linhaDaFolha = "LinhaDaFolha"

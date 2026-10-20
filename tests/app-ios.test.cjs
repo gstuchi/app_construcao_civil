@@ -594,18 +594,47 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
   // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
+  // A edição empurrada numa folha de origem (etapa 3) não fecha a folha: a guarda dela é a edição ainda no topo do caminho.
   const acoes = {
-    'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
-    'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
-    'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
-    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': 'private func salvar() {',
+    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDaVenda.swift': ['private func confirmar(inicio: String, hoje: String) {', /guard folhas\.aberta != nil else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDaObra.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
   };
-  for(const [f, assinatura] of Object.entries(acoes)){
+  for(const [f, [assinatura, guarda]] of Object.entries(acoes)){
     const t = ler(f);
     assert.equal(t.split(assinatura).length, 2, `${f}: ${assinatura}`);
-    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), /^\n(?:\s*\/\/[^\n]*\n)*\s*guard folhas\.aberta != nil else \{ return \}\n/,
+    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), new RegExp(String.raw`^\n(?:\s*\/\/[^\n]*\n)*\s*` + guarda.source + String.raw`\n`),
                  `${f}: a guarda do toque duplo na primeira linha da ação`);
   }
+  const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
+  assert.match(origem, /case \.folha: folhas\.aberta != nil\n\s*case \.origem\(let origem\): origem\.editando\(gastoId\)/,
+               'a guarda da edição: a folha aberta ou, na origem, a edição no topo do caminho');
+  assert.match(origem, /func editando\(_ gastoId: String\?\) -> Bool \{\n\s*guard let gastoId else \{ return false \}\n\s*return caminho\.last == \.editar\(gastoId\)/);
+});
+
+test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo', () => {
+  // Nenhum teste de tela vê isso. A trava do puxar lida no corpo de quem monta a pilha refaria a lista da origem a cada tecla
+  // da descrição; dentro do passo ela não chega à folha (medido em 19/10), e o puxar descartaria a mudança. O voltar trocado
+  // por um `if` de estrutura recriaria o passo e derrubaria o foco do teclado na primeira tecla. E a ação de escape escolhida
+  // pelo rascunho trocaria o passo do mesmo jeito, ou engoliria o voltar do VoiceOver (revisão da T22).
+  const passos = ler('app-ios/Custta/Telas/FolhaEmPassos.swift');
+  assert.match(passos, /func folhaDoApp\(perguntar: @escaping \(\) -> Bool,/, 'o folhaDoApp recebe uma função, e não o valor');
+  assert.match(passos, /let temOQuePerder = perguntar\(\)[\s\S]*?\.interactiveDismissDisabled\(temOQuePerder\)/, 'lida no corpo do próprio FolhaDoApp');
+  for(const f of arquivosSwift('app-ios/Custta').filter(f => !f.endsWith('FolhaEmPassos.swift')))
+    assert.doesNotMatch(ler(f), /\.interactiveDismissDisabled\(/, `${f}: a trava do puxar só no FolhaDoApp, fora da pilha`);
+  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
+  assert.match(aPagar, /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
+               'o folhaDoApp em volta da pilha da origem, com a mudança lida por ele');
+  const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
+  assert.match(origem, /\.navigationBarBackButtonHidden\(sujo\)\n\s*\.toolbar \{\n\s*if sujo \{\n\s*ToolbarItem\(placement: \.topBarLeading\)/,
+               'o voltar do sistema sai por modificador, e o chevron entra pela barra');
+  assert.equal(origem.match(/if sujo/g)?.length, 1, 'nenhum outro `if sujo`: a estrutura do passo não muda com a mudança');
+  assert.match(origem, /\.gesture\(BordaQuePergunta\(ativa: sujo\)/, 'a borda que pergunta, ligada só com mudança');
+  const gasto = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(gasto, /private var escape: EscapeDoPasso \{\n\s*if case \.origem\(let origem\) = saida \{\n\s*return \.proprio \{ if rascunho\.temOQuePerder \{ perguntandoAVolta = true \} else \{ origem\.voltar\(\) \} \}\n\s*\}\n\s*return raiz \? \.fechar : \.sistema\n\s*\}/,
+               'o Z da edição: fixo pela saída e pela raiz; o rascunho só decide dentro da ação');
+  assert.match(gasto, /\.passoDaFolha\(rascunho\.editado == nil \? "Novo gasto" : "Editar gasto", subtitulo: subtitulo, fechar: lado, escape: escape\)/);
 });
 
 test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da folha atrás do botão de baixo', () => {
@@ -746,7 +775,7 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
   // só, criada de uma vez com todas as linhas (o detalhe do tópico, com a mesma lista, passa de cem gastos). Nenhum teste
   // de tela vê isso: a tela fica igual.
   const t = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
-  const pecas = t.indexOf('ForEach(pecasDaOrigem(');
+  const pecas = t.search(/ForEach\(pecas(?:DaOrigem\([^)]*\))?\) \{/);
   assert.ok(pecas > 0, 'as peças da lista num ForEach');
   let nivel = 0, abre = -1;
   for(let i = pecas - 1; i >= 0 && abre < 0; i--){
@@ -754,8 +783,9 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
     else if(t[i] === '{'){ if(nivel === 0) abre = i; else nivel--; }
   }
   assert.match(t.slice(0, abre), /LazyVStack\([^)]*\)\s*$/, 'o ForEach das peças direto dentro da LazyVStack');
-  const corpo = t.slice(pecas, t.indexOf('\n                    }\n', pecas));
-  assert.equal(corpo.match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
+  let fim = t.indexOf('{', pecas) + 1;
+  for(let n = 1; n > 0 && fim < t.length; fim++) n += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+  assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
 });
 
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {

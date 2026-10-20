@@ -213,9 +213,29 @@ private struct AvisosDoPrincipal: ViewModifier {
                     }
                     .tint(paleta.cor(.texto))
             }
+            .alertaDeNaoSalvou(quando: !folhaAberta)
+            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
+    }
+}
+
+extension View {
+    /// O "Não salvou" (uma vez por erro, com "Tentar de novo"), quando `mostrar` deixa: na raiz, só com a folha fechada;
+    /// numa folha de origem, que não desce no "Salvar", dentro dela e sem outro alerta à vista.
+    func alertaDeNaoSalvou(quando mostrar: Bool) -> some View { modifier(AlertaDeNaoSalvou(mostrar: mostrar)) }
+}
+
+/// O alerta do "Não salvou" num fundo vazio, com os botões na cor do texto, como o "Sair da conta?".
+private struct AlertaDeNaoSalvou: ViewModifier {
+    let mostrar: Bool
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+
+    func body(content: Content) -> some View {
+        let gravacao = modelo.alertaDeGravacao
+        content
             .background {
                 Color.clear
-                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && !folhaAberta },
+                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && mostrar },
                                                                          set: { if !$0 { modelo.fecharAlertaDeGravacao() } })) {
                         Button("OK", role: .cancel) {}
                         Button("Tentar de novo") { modelo.tentarDeNovo() }
@@ -224,7 +244,6 @@ private struct AvisosDoPrincipal: ViewModifier {
                     }
                     .tint(paleta.cor(.texto))
             }
-            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
     }
 }
 

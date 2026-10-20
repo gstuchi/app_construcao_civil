@@ -1,9 +1,11 @@
 import XCTest
+import notify
 
 /* A busca e o filtro por mês da lista de lançamentos (etapa 3, PR 3; mockup da parte 2, seção 3): buscar com e sem acento,
    pelo tópico e pela descrição, com o texto aparado; o × que fecha e limpa; o mês pelo menu, o chip e o contador; o mês que
    fica sem gasto e não some (achado 1); "Limpar a busca", "Limpar busca e mês" e "Ver todos os meses"; o filtro que zera ao
-   trocar de obra; a obra sem gasto, só com a pílula; e a lupa que vira × na maior letra. A busca usa a vitrine (os 46
+   trocar de obra; a obra sem gasto, só com a pílula; a lupa que vira × na maior letra; e a mudança vinda de outro
+   aparelho com a busca aberta (achado 3). A busca usa a vitrine (os 46
    lançamentos do mockup; as datas contam de hoje), e o mês, o exemplo (datas fixas: a Casa Alphaville do exemplo tem um
    gasto em março e outro em junho de 2025). */
 @MainActor
@@ -255,6 +257,25 @@ final class BuscaUITests: XCTestCase {
         XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
         XCTAssertEqual(pilula(app), "Lançamentos, 46", "de volta à mesma obra, sem o filtro")
         XCTAssertFalse(app.textFields["campoDaBusca"].exists)
+    }
+
+    /// Achado 3: com a busca aberta e o teclado à vista, outro aparelho apaga um dos achados. A lista e a pílula mudam, e
+    /// o texto e o foco ficam no campo.
+    func testMudancaDeOutroAparelhoNaoTiraOFocoDaBusca() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g027@0"])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        buscar(app, "cimen")
+        XCTAssertEqual(pilula(app), "Lançamentos, 2 de 46")
+        notify_post("br.com.custta.falso.apagarRemoto")
+        let ate = Date.now.addingTimeInterval(10)
+        while pilula(app) != "Lançamentos, 1 de 45" && Date.now < ate { usleep(200_000) }
+        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 45", "o cimento apagado lá sai da lista")
+        let campo = app.textFields["campoDaBusca"]
+        XCTAssertEqual(campo.value as? String, "cimen", "o texto fica")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "e o teclado também")
+        campo.typeText("to")                            // sem o foco, o XCUITest não digita ("no keyboard focus")
+        XCTAssertEqual(campo.value as? String, "cimento")
+        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 45")
     }
 
     /// Na maior letra a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira ×.

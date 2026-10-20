@@ -44,6 +44,7 @@ struct PrincipalView: View {
                 case .editarObra(let obraId): FolhaDaObra(obraId: obraId)
                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
                 case .orcamento(let obraId): FolhaDoOrcamento(obraId: obraId)
+                case .aPagar(let obraId): FolhaDoAPagar(obraId: obraId)
                 }
             }
             .environment(folhas)
@@ -123,7 +124,7 @@ extension PrincipalView {
 
     #if DEBUG
     /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
-    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`, `aPagar:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
     /// `-custta.folha editar:<gasto>`, a edição.
     private func abrirFolhaDoGancho() async {
@@ -142,6 +143,7 @@ extension PrincipalView {
             case "gastoDeVendida": folhas.aberta = .gastoDeVendida(vendidaId: id)
             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
             case "orcamento": folhas.aberta = .orcamento(obraId: id)
+            case "aPagar": folhas.aberta = .aPagar(obraId: id)
             default: break
             }
         } else if let passo, let obraId = caminhoDeObras.last?.obraId {

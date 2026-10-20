@@ -201,9 +201,9 @@ private struct FolhaDoOrcamentoAberta: View {
     var body: some View {
         NavigationStack {
             CorpoDaFolhaDoOrcamento(rascunho: rascunho, ativo: $ativo)
-                .passoDaFolha("Orçamento da obra", subtitulo: nomeDaObra, fechar: .esquerda, raiz: true)
+                .passoDaFolha("Orçamento da obra", subtitulo: nomeDaObra, fechar: .esquerda, escape: .fechar)
         }
-        .folhaDoApp(perguntar: rascunho.temOQuePerder,
+        .folhaDoApp(perguntar: { rascunho.temOQuePerder },
                     pergunta: rascunho.tinhaOrcamento ? "Você mudou este orçamento." : "Você já preencheu este orçamento.",
                     descartar: rascunho.tinhaOrcamento ? "Descartar alterações" : "Descartar orçamento") {
             folhas.fechar()

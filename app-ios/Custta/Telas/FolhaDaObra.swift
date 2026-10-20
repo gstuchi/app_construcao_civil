@@ -123,7 +123,7 @@ private struct FolhaDaObraAberta: View {
                     }
                 }
         }
-        .folhaDoApp(perguntar: rascunho.temOQuePerder,
+        .folhaDoApp(perguntar: { rascunho.temOQuePerder },
                     pergunta: rascunho.nova ? "Você já preencheu esta obra." : "Você mudou esta obra.",
                     descartar: rascunho.nova ? "Descartar obra" : "Descartar alterações") {
             folhas.fechar()
@@ -280,7 +280,7 @@ private struct FormularioDaObra: View {
                         .accessibilityHidden(true)
                 }
         }
-        .passoDaFolha(rascunho.nova ? "Nova obra" : "Editar obra", subtitulo: subtitulo, fechar: .esquerda, raiz: true)
+        .passoDaFolha(rascunho.nova ? "Nova obra" : "Editar obra", subtitulo: subtitulo, fechar: .esquerda, escape: .fechar)
         // Obra nova: o cursor no nome e o teclado aberto (sugestão aprovada; o site só faz isso no computador).
         .onAppear {
             guard !abriu else { return }

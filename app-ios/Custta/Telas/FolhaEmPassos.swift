@@ -20,24 +20,39 @@ extension EnvironmentValues {
 
 extension View {
     /// Em volta do NavigationStack da folha: a Folha de fundo, a pergunta antes de descartar e a ponte do puxar para baixo.
-    /// `perguntar` diz se há o que perder; `pergunta` e `descartar` são os textos do alerta ("Você já preencheu este
-    /// gasto." / "Descartar gasto"); `fechar` fecha de fato.
-    func folhaDoApp(perguntar: Bool, pergunta: String, descartar: String, fechar: @escaping () -> Void) -> some View {
-        modifier(FolhaDoApp(perguntar: perguntar, pergunta: pergunta, descartar: descartar, fechar: fechar))
+    /// `perguntar` diz se há o que perder, lido no corpo deste modificador (na folha de origem, lido no corpo de quem monta a
+    /// pilha, cada tecla da edição refaria a lista); `pergunta`, `mensagem` e `descartar` são os textos do alerta ("Você já
+    /// preencheu este gasto." / "Descartar gasto"); `fechar` fecha de fato.
+    func folhaDoApp(perguntar: @escaping () -> Bool, pergunta: String, mensagem: String? = nil, descartar: String,
+                    fechar: @escaping () -> Void) -> some View {
+        modifier(FolhaDoApp(perguntar: perguntar, pergunta: pergunta, mensagem: mensagem, descartar: descartar, fechar: fechar))
     }
 
     /// Um passo da folha: o título na barra, o × no lado dado (nil: sem ×, como a lista de tópicos), o fundo transparente
-    /// para a Folha aparecer. Na raiz, o escapar do VoiceOver fecha (pedindo antes).
-    func passoDaFolha(_ titulo: String, subtitulo: String? = nil, fechar lado: LadoDoFechar?, raiz: Bool = false) -> some View {
-        modifier(PassoDaFolha(titulo: titulo, subtitulo: subtitulo, lado: lado, raiz: raiz))
+    /// para a Folha aparecer, e o que o escapar do VoiceOver faz nele.
+    func passoDaFolha(_ titulo: String, subtitulo: String? = nil, fechar lado: LadoDoFechar?, escape: EscapeDoPasso = .sistema) -> some View {
+        modifier(PassoDaFolha(titulo: titulo, subtitulo: subtitulo, lado: lado, escape: escape))
     }
 }
 
 enum LadoDoFechar { case esquerda, direita }
 
+/// O que o gesto de escapar do VoiceOver (Z com dois dedos) faz num passo. É fixo por passo, nunca escolhido pelo rascunho:
+/// trocar a ação recriaria o passo (o foco do teclado cai na primeira tecla), e uma ação de escape, mesmo vazia, engole o
+/// voltar do NavigationStack (revisão da T22).
+enum EscapeDoPasso {
+    /// A raiz da folha: fecha, perguntando antes se houver o que perder.
+    case fechar
+    /// Um passo de dentro: nenhuma ação própria, e o escape sobe até o voltar do NavigationStack.
+    case sistema
+    /// A edição empurrada numa folha de origem: ela decide (com mudança, pergunta; sem, volta).
+    case proprio(() -> Void)
+}
+
 private struct FolhaDoApp: ViewModifier {
-    let perguntar: Bool
+    let perguntar: () -> Bool
     let pergunta: String
+    let mensagem: String?
     let descartar: String
     let fechar: () -> Void
     @State private var confirmando = false
@@ -48,19 +63,29 @@ private struct FolhaDoApp: ViewModifier {
     #endif
 
     func body(content: Content) -> some View {
-        let pedido = PedidoDeFechar { if perguntar { confirmando = true } else { fechar() } }
+        let temOQuePerder = perguntar()
+        let pedido = PedidoDeFechar { if perguntar() { confirmando = true } else { fechar() } }
         content
             #if DEBUG
             // Laudo de leitura: o apagador de texto da raiz não chega dentro da .sheet.
             .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
             #endif
             .environment(\.pedirParaFechar, pedido)
-            .interactiveDismissDisabled(perguntar)
-            .background { PonteDeFechamento { if perguntar { confirmando = true } } }
-            .alert(pergunta, isPresented: $confirmando) {
-                Button(descartar, role: .destructive, action: fechar)
-                Button("Continuar editando", role: .cancel) {}
+            .interactiveDismissDisabled(temOQuePerder)
+            .background { PonteDeFechamento { if perguntar() { confirmando = true } } }
+            // Num fundo vazio, com os botões na cor do texto, como os outros alertas do app (a Marca na cápsula do alerta
+            // fica em 2,5:1).
+            .background {
+                Color.clear
+                    .alert(pergunta, isPresented: $confirmando) {
+                        Button(descartar, role: .destructive, action: fechar)
+                        Button("Continuar editando", role: .cancel) {}
+                    } message: {
+                        if let mensagem { Text(mensagem) }
+                    }
+                    .tint(paleta.cor(.texto))
             }
+            .pausaOFundo(enquanto: confirmando)
             .presentationDragIndicator(.visible)
             .presentationBackground {
                 // A Folha (vidro denso do mockup): a cor do token sobre o desfoque do que fica atrás. Com "Reduzir
@@ -78,7 +103,7 @@ private struct PassoDaFolha: ViewModifier {
     let titulo: String
     let subtitulo: String?
     let lado: LadoDoFechar?
-    let raiz: Bool
+    let escape: EscapeDoPasso
     @Environment(\.pedirParaFechar) private var pedirParaFechar
     @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var tamanho
@@ -100,9 +125,13 @@ private struct PassoDaFolha: ViewModifier {
                     }
                 }
             }
-        // Só na raiz: num passo de dentro, a ação de escape (mesmo vazia) engole o escape do VoiceOver, e o Z deixa de
+        // Num passo de dentro, nenhuma ação: a de escape (mesmo vazia) engoliria o escape do VoiceOver, e o Z deixaria de
         // voltar ao passo anterior pelo NavigationStack.
-        if raiz { passo.accessibilityAction(.escape) { pedirParaFechar() } } else { passo }
+        switch escape {
+        case .fechar: passo.accessibilityAction(.escape) { pedirParaFechar() }
+        case .sistema: passo
+        case .proprio(let acao): passo.accessibilityAction(.escape, acao)
+        }
     }
 }
 

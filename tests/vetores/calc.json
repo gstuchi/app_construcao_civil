@@ -15560,6 +15560,388 @@
         "saida": null
       }
     ],
+    "calc.ORC_PILULA": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": {
+          "ok": "dentro do previsto",
+          "perto": "perto do limite",
+          "passou": "passou do previsto"
+        }
+      }
+    ],
+    "calc.larguraBarraOrc": [
+      {
+        "caso": "-5",
+        "args": [
+          -5
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "0",
+        "args": [
+          0
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "55",
+        "args": [
+          55
+        ],
+        "saida": 55
+      },
+      {
+        "caso": "100",
+        "args": [
+          100
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "104",
+        "args": [
+          104
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "250",
+        "args": [
+          250
+        ],
+        "saida": 100
+      }
+    ],
+    "calc.fraseTopicoOrc": [
+      {
+        "caso": "passou: R$ 8 mil do previsto",
+        "args": [
+          {
+            "previsto": 90000,
+            "gasto": 98000,
+            "pct": 109,
+            "sobra": -8000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "texto": "Passou R$ 8 mil do previsto",
+          "alerta": true
+        }
+      },
+      {
+        "caso": "passou na casa do milhão",
+        "args": [
+          {
+            "previsto": 1000000,
+            "gasto": 3500000,
+            "pct": 350,
+            "sobra": -2500000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "texto": "Passou R$ 2,50 mi do previsto",
+          "alerta": true
+        }
+      },
+      {
+        "caso": "passou por menos de mil",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000.75,
+            "pct": 100,
+            "sobra": -0.75,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "texto": "Passou R$ 0,75 do previsto",
+          "alerta": true
+        }
+      },
+      {
+        "caso": "perto: faltam R$ 19 mil",
+        "args": [
+          {
+            "previsto": 250000,
+            "gasto": 231000,
+            "pct": 92,
+            "sobra": 19000,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 19 mil — 92%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "perto: faltam menos de mil",
+        "args": [
+          {
+            "previsto": 10000,
+            "gasto": 9000.01,
+            "pct": 90,
+            "sobra": 999.9899999999998,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 999,99 — 90%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "perto: faltam R$ 8 mil, sem o \",0\"",
+        "args": [
+          {
+            "previsto": 100000,
+            "gasto": 92000,
+            "pct": 92,
+            "sobra": 8000,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 8 mil — 92%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "sobra de mais de meio centavo: faltam",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 999.994,
+            "pct": 100,
+            "sobra": 0.005999999999971806,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 0,01 — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "sobra de meio centavo: chegou",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 999.996,
+            "pct": 100,
+            "sobra": 0.004000000000019099,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Chegou ao previsto — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "exatamente no previsto: chegou",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000,
+            "pct": 100,
+            "sobra": 0,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Chegou ao previsto — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "meio centavo acima: chegou, não passou",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000.004,
+            "pct": 100,
+            "sobra": -0.004000000000019099,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Chegou ao previsto — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "dentro do previsto: sem frase",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 500,
+            "pct": 50,
+            "sobra": 500,
+            "nivel": "ok"
+          }
+        ],
+        "saida": null
+      }
+    ],
+    "calc.rodapeOrc": [
+      {
+        "caso": "dentro: sobra",
+        "args": [
+          {
+            "previsto": 800000,
+            "gasto": 612000,
+            "pct": 77,
+            "sobra": 188000,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "usado": "77%",
+          "rotulo": "sobra",
+          "valor": "R$ 188.000,00"
+        }
+      },
+      {
+        "caso": "passou: o valor sem sinal",
+        "args": [
+          {
+            "previsto": 1008000,
+            "gasto": 1048000,
+            "pct": 104,
+            "sobra": -40000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "usado": "104%",
+          "rotulo": "passou",
+          "valor": "R$ 40.000,00"
+        }
+      },
+      {
+        "caso": "meio centavo acima ainda sobra",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000.004,
+            "pct": 100,
+            "sobra": -0.004000000000019099,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "usado": "100%",
+          "rotulo": "sobra",
+          "valor": "R$ 0,00"
+        }
+      },
+      {
+        "caso": "sem gasto",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 0,
+            "pct": 0,
+            "sobra": 1000,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "usado": "0%",
+          "rotulo": "sobra",
+          "valor": "R$ 1.000,00"
+        }
+      }
+    ],
+    "calc.linhaTopicoOrc": [
+      {
+        "caso": "mil e mil",
+        "args": [
+          {
+            "previsto": 90000,
+            "gasto": 98000,
+            "pct": 109,
+            "sobra": -8000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 98 mil",
+          "previsto": "90 mil"
+        }
+      },
+      {
+        "caso": "sem gasto e mil redondo",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 0,
+            "pct": 0,
+            "sobra": 1000,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 0,00",
+          "previsto": "1 mil"
+        }
+      },
+      {
+        "caso": "previsto abaixo de mil perde o R$ com espaço duro",
+        "args": [
+          {
+            "previsto": 500,
+            "gasto": 12000.5,
+            "pct": 2400,
+            "sobra": -11500.5,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 12 mil",
+          "previsto": "500,00"
+        }
+      },
+      {
+        "caso": "milhões",
+        "args": [
+          {
+            "previsto": 2500000,
+            "gasto": 1234567,
+            "pct": 49,
+            "sobra": 1265433,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 1,23 mi",
+          "previsto": "2,50 mi"
+        }
+      },
+      {
+        "caso": "um milhão redondo",
+        "args": [
+          {
+            "previsto": 1000000,
+            "gasto": 8500,
+            "pct": 1,
+            "sobra": 991500,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 8,5 mil",
+          "previsto": "1 mi"
+        }
+      }
+    ],
     "calc.versaoMaior": [
       {
         "caso": "patch numérico",

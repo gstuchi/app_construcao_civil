@@ -64,6 +64,7 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     assert.deepEqual(nomes,['Fundação','Terreno','Estrutura','Elétrica','Acabamento','Fora do orçamento']);
     const item=nome=>page.locator('.orc-topicos .orc-item').filter({has:page.locator('.orc-nome',{hasText:nome})});
     assert.equal((await item('Fundação').locator('.orc-frase').textContent()).trim(),'Passou R$ 8 mil do previsto');
+    assert.equal((await item('Fundação').locator('.orc-val').textContent()).trim(),'R$ 98 mil / 90 mil');
     assert.equal(await item('Fundação').locator('.orc-frase.alerta').count(),1);
     assert.equal(await item('Fundação').locator('.orc-barra.alerta').count(),1);
     assert.equal((await item('Estrutura').locator('.orc-frase').textContent()).trim(),'Faltam R$ 19 mil — 92%');
@@ -82,6 +83,7 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     // Obra com orçamento total estourado
     await page.evaluate(()=>openObra('b'));
     assert.equal((await page.locator('#oOrc .orc-pill').textContent()).trim(),'passou do previsto');
+    assert.equal(await page.locator('#oOrc .orc-barra i').evaluate(i=>i.style.width),'100%','no passou a barra para no previsto');
     assert.match((await page.locator('#oOrc .orc-rodape').textContent()).replace(/\s+/g,' '),/104% usado passou R\$\s40\.000,00/);
     assert.equal(await page.locator('.orc-topicos').count(),0);
 

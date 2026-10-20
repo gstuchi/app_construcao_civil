@@ -456,13 +456,32 @@
     const r = Math.round(m);
     return r + (r === 1 ? ' mês' : ' meses');
   }
+  /* ---- textos do orçamento (app.js orcamentoHtml): moravam no app.js; o app nativo confere a cópia pelos vetores ---- */
+  const ORC_PILULA = Object.freeze({ ok:'dentro do previsto', perto:'perto do limite', passou:'passou do previsto' });
+  /* Largura da barra em %: no "passou" ela para no previsto. */
+  const larguraBarraOrc = pct => Math.max(0, Math.min(100, pct));
+  /* Frase do tópico: quanto passou, quanto falta ou que chegou (meio centavo de sobra já é "chegou"); nada no "dentro". */
+  function fraseTopicoOrc(t){
+    if(t.nivel === 'passou') return { texto: `Passou ${moneyCurto(-t.sobra)} do previsto`, alerta: true };
+    if(t.nivel === 'perto') return { texto: t.sobra > 0.005 ? `Faltam ${moneyCurto(t.sobra)} — ${t.pct}%` : `Chegou ao previsto — ${t.pct}%`, alerta: false };
+    return null;
+  }
+  /* Rodapé do cartão: "{pct}% usado" e "sobra" ou "passou" com o valor sem sinal. */
+  function rodapeOrc(orc){
+    return { usado: `${orc.pct}%`, rotulo: orc.nivel === 'passou' ? 'passou' : 'sobra', valor: money(Math.abs(orc.sobra)) };
+  }
+  /* Linha do tópico: "{gasto} / {previsto}", o previsto sem o "R$". */
+  const semCifrao = s => s.replace(/^R\$\s/, '');
+  function linhaTopicoOrc(t){
+    return { gasto: moneyCurto(t.gasto), previsto: semCifrao(moneyCurto(t.previsto)) };
+  }
   /* stringify com chaves ordenadas — compara estados sem depender da ordem do Firestore */
   function canon(x){
     return JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v)
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

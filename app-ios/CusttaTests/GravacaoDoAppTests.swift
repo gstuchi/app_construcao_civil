@@ -51,6 +51,45 @@ struct GravacaoDoAppTests {
         #expect(transporte.gravacoes == 0)
     }
 
+    /// Orçamento e afazeres (etapa 3) pelo mesmo `gravar`: a tela vê na hora, cada um sobe o documento inteiro, a chave do
+    /// orçamento sai em vez de virar null, e nada sobe quando a obra ou o afazer sumiram.
+    @Test func orcamentoEAfazeresGravamPeloMesmoCaminho() async {
+        let (m, transporte, _) = montar()
+        await ate { m.sincronizador.dadosCarregados }
+        #expect(m.gravar { $0.salvandoOrcamento(modo: "topicos", total: 0, valores: ["fundacao": 120_000, "estrutura": 0], naObra: "o1") }
+                == .gravou)
+        #expect(m.sincronizador.estado.obras[0].orcamento
+                == .objeto(["modo": .texto("topicos"), "topicos": .objeto(["fundacao": .numero(120_000)])]))
+        #expect(m.gravar { $0.adicionandoAfazer("Comprar tinta", id: "a1", naObra: "o1") } == .gravou)
+        #expect(m.gravar { $0.alternandoAfazer("a1", naObra: "o1") } == .gravou)
+        #expect(m.sincronizador.estado.obras[0].afazeres.map(\.feito) == [true], "a tela vê antes do servidor responder")
+        #expect(m.gravar { $0.apagandoAfazer("a1", daObra: "o1") } == .gravou)
+        #expect(m.gravar { $0.tirandoOrcamento(daObra: "o1") } == .gravou)
+        let obra = m.sincronizador.estado.obras[0].arvore
+        #expect(obra["orcamento"] == nil && obra["afazeres"] == .lista([]))
+        #expect(m.sincronizador.estado.obras[1].orcamento == .objeto(["modo": .texto("total"), "total": .numero(500_000)]), "a outra obra fica")
+        #expect(transporte.gravacoes == 5)
+        #expect(m.gravar { $0.alternandoAfazer("a1", naObra: "o1") } == .sumiu, "o afazer já saiu")
+        #expect(m.gravar { $0.salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: "nao-existe") } == .sumiu)
+        #expect(transporte.gravacoes == 5)
+    }
+
+    @Test func orcamentoEAfazeresAntesDeVerOsDadosNaoGravam() async {
+        let (m, transporte, _) = montar(semRede: true, dados: nil)
+        await ate { m.fase.ehPrincipal }
+        let estado = m.sincronizador.estado
+        let id: (Estado) -> String = { $0.obras.first?.id ?? "" }
+        let mudancas: [(Estado) -> Estado?] = [
+            { $0.salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: id($0)) ?? $0 },
+            { $0.tirandoOrcamento(daObra: id($0)) ?? $0 },
+            { $0.adicionandoAfazer("Comprar tinta", id: "a1", naObra: id($0)) ?? $0 },
+            { $0.alternandoAfazer("a1", naObra: id($0)) ?? $0 },
+            { $0.apagandoAfazer("a1", daObra: id($0)) ?? $0 },
+        ]
+        for mudanca in mudancas { #expect(m.gravar(mudanca) == .naoCarregado) }
+        #expect(m.sincronizador.estado == estado && transporte.gravacoes == 0)
+    }
+
     /// Toque duplo no "Confirmar venda": o segundo toque chega com a obra já vendida, e a regra do núcleo não vende de novo.
     /// Sobe uma gravação só, também depois de o servidor confirmar a primeira (uma segunda subiria logo atrás dela).
     @Test func vendaConfirmadaDuasVezesGravaUmaVez() async {

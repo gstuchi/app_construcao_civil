@@ -138,3 +138,139 @@ struct RegrasDaFolhaBordasTests {
                 == "terreno")
     }
 }
+
+/* As da etapa 3 (orçamento e afazeres). Cada uma opera nas pontas (a primeira e a última obra de três) e confere a árvore
+   inteira: a da obra mudada menos a chave da ação e a das outras obras, para pegar a obra errada e a chave que vaza. */
+struct MutacoesDaEtapa3Tests {
+    func estado() -> Estado {
+        Estado.de(.objeto(["obras": .lista([
+            .objeto(["id": .texto("o1"), "nome": .texto("Casa"), "dataInicio": .texto("2026-01-01"), "campoDoSite": .numero(7),
+                     "orcamento": .objeto(["modo": .texto("topicos"), "notaDoSite": .texto("fica"),
+                                           "topicos": .objeto(["pintura": .numero(100), "c_apagado": .numero(50)])]),
+                     "afazeres": .lista([
+                        .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
+                        .objeto(["id": .texto("p2"), "texto": .texto("Ligar pro pedreiro"), "feito": .booleano(false)]),
+                        .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
+                     ]),
+                     "gastos": .lista([
+                        .objeto(["id": .texto("a"), "valor": .numero(10), "topico": .texto("pintura"), "descricao": .texto("Tinta"),
+                                 "data": .texto("2026-02-01"), "pagamento": .texto("pix")]),
+                     ])]),
+            .objeto(["id": .texto("o2"), "nome": .texto("Sobrado"), "dataInicio": .texto("2026-01-01"),
+                     "orcamento": .objeto(["modo": .texto("total"), "total": .numero(1000)]),
+                     "afazeres": .lista([.objeto(["id": .texto("x"), "texto": .texto("Outro"), "feito": .booleano(false)])]),
+                     "gastos": .lista([])]),
+            .objeto(["id": .texto("o3"), "nome": .texto("Terreno"), "dataInicio": .texto("2026-01-01"),
+                     "orcamento": .objeto(["modo": .texto("total"), "total": .numero(2000), "extra": .booleano(true)]),
+                     "afazeres": .lista([.objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(true)])]),
+                     "gastos": .lista([])]),
+        ]), "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])]), "chaveDoTopo": .texto("fica")]))
+    }
+
+    /// O que não pode mudar: a árvore da obra `i` sem a chave da ação, as das outras obras inteiras, a configuração e as
+    /// chaves de topo.
+    func resto(_ e: Estado, obra i: Int, sem chave: String) -> [ValorJSON] {
+        e.obras.enumerated().map { j, o in
+            var a = o.arvore
+            if j == i { a[chave] = nil }
+            return .objeto(a)
+        } + [.objeto(e.config.arvore), .objeto(e.campos)]
+    }
+
+    @Test func salvarPorTopicoGuardaOQueAFolhaNaoMostra() throws {
+        let antes = estado()
+        let e = try #require(antes.salvandoOrcamento(modo: "topicos", total: 900, valores: ["pintura": 250, "eletrica": 80, "terreno": 0],
+                                                     naObra: "o1"))
+        #expect(e.obras[0].orcamento == .objeto(["modo": .texto("topicos"), "notaDoSite": .texto("fica"),
+                                                 "topicos": .objeto(["pintura": .numero(250), "eletrica": .numero(80), "c_apagado": .numero(50)])]))
+        #expect(resto(e, obra: 0, sem: "orcamento") == resto(antes, obra: 0, sem: "orcamento"))
+    }
+
+    @Test func salvarPorTotalNaUltimaObraPartindoDoOrcamentoDoMomento() throws {
+        // Outro aparelho mudou o orçamento com a folha aberta: o "Salvar" parte do que está no estado agora.
+        var agora = estado()
+        agora.obras[2].orcamento = .objeto(["modo": .texto("total"), "total": .numero(2000), "extra": .booleano(false), "novo": .numero(1)])
+        let e = try #require(agora.salvandoOrcamento(modo: "total", total: 3500.5, valores: ["pintura": 9], naObra: "o3"))
+        #expect(e.obras[2].orcamento == .objeto(["modo": .texto("total"), "total": .numero(3500.5), "extra": .booleano(false),
+                                                 "novo": .numero(1)]))
+        #expect(resto(e, obra: 2, sem: "orcamento") == resto(agora, obra: 2, sem: "orcamento"))
+    }
+
+    @Test func salvarTudoVazioETirarSoltamAChave() throws {
+        let antes = estado()
+        for (e, caso) in [(antes.salvandoOrcamento(modo: "topicos", total: 900, valores: ["pintura": 0], naObra: "o1"), "por tópico vazio"),
+                          (antes.salvandoOrcamento(modo: "total", total: 0, valores: ["pintura": 10], naObra: "o1"), "total vazio"),
+                          (antes.tirandoOrcamento(daObra: "o1"), "tirar")] {
+            let depois = try #require(e, "\(caso)")
+            #expect(depois.obras[0].arvore["orcamento"] == nil, "a chave sai (o delete do site), nunca null: \(caso)")
+            #expect(resto(depois, obra: 0, sem: "orcamento") == resto(antes, obra: 0, sem: "orcamento"), "\(caso)")
+        }
+        let ultima = try #require(antes.tirandoOrcamento(daObra: "o3"))
+        #expect(ultima.obras[2].arvore["orcamento"] == nil)
+        #expect(resto(ultima, obra: 2, sem: "orcamento") == resto(antes, obra: 2, sem: "orcamento"))
+    }
+
+    @Test func orcamentoDeObraQueSumiuNaoGrava() {
+        #expect(estado().salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: "sumiu") == nil)
+        #expect(estado().tirandoOrcamento(daObra: "sumiu") == nil)
+    }
+
+    @Test func adicionarAfazerNoComecoDaUltimaObra() throws {
+        let antes = estado()
+        let e = try #require(antes.adicionandoAfazer("Comprar disjuntor de 40 A", id: "n1", naObra: "o3"))
+        #expect(e.obras[2].arvore["afazeres"] == .lista([
+            .objeto(["id": .texto("n1"), "texto": .texto("Comprar disjuntor de 40 A"), "feito": .booleano(false)]),
+            .objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(true)]),
+        ]))
+        #expect(resto(e, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
+        let primeira = try #require(antes.adicionandoAfazer("Ver o reboco", id: "n2", naObra: "o1"))
+        #expect(primeira.obras[0].afazeres.map(\.id) == ["n2", "p1", "p2", "f1"])
+        #expect(resto(primeira, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
+        #expect(antes.adicionandoAfazer("x", id: "n3", naObra: "sumiu") == nil)
+    }
+
+    @Test func obraSemAChaveDosAfazeresGanhaAChaveComoNoSite() throws {
+        // A obra nova do site não traz `afazeres`; o primeiro afazer cria a lista (`oo.afazeres = []`), e apagar o último
+        // deixa `afazeres: []` no documento, como o site grava.
+        let criada = try #require(estado().criandoObra(["id": .texto("o4"), "nome": .texto("Nova"), "dataInicio": .texto("2026-10-01"),
+                                                         "fase": .texto("construcao"), "gastos": .lista([])]))
+        #expect(criada.obras[3].arvore["afazeres"] == nil)
+        let com = try #require(criada.adicionandoAfazer("Murar", id: "m", naObra: "o4"))
+        #expect(com.obras[3].arvore["afazeres"] == .lista([.objeto(["id": .texto("m"), "texto": .texto("Murar"), "feito": .booleano(false)])]))
+        let sem = try #require(com.apagandoAfazer("m", daObra: "o4"))
+        #expect(sem.obras[3].arvore["afazeres"] == .lista([]))
+        #expect(resto(sem, obra: 3, sem: "afazeres") == resto(criada, obra: 3, sem: "afazeres"))
+    }
+
+    @Test func marcarEDesmarcarLevamAoComecoNaObraCerta() throws {
+        let antes = estado()
+        let marcado = try #require(antes.alternandoAfazer("p2", naObra: "o1"))
+        #expect(marcado.obras[0].arvore["afazeres"] == .lista([
+            .objeto(["id": .texto("p2"), "texto": .texto("Ligar pro pedreiro"), "feito": .booleano(true)]),
+            .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
+            .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
+        ]))
+        #expect(resto(marcado, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
+        let desmarcado = try #require(marcado.alternandoAfazer("f1", naObra: "o1"))
+        #expect(desmarcado.obras[0].afazeres.map(\.id) == ["f1", "p2", "p1"] && desmarcado.obras[0].afazeres.map(\.feito) == [false, true, false])
+        let ultima = try #require(antes.alternandoAfazer("q1", naObra: "o3"))
+        #expect(ultima.obras[2].arvore["afazeres"] == .lista([.objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(false)])]))
+        #expect(resto(ultima, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
+        #expect(antes.alternandoAfazer("x", naObra: "o1") == nil, "o afazer sumiu desta obra (o x é de outra)")
+        #expect(antes.alternandoAfazer("p1", naObra: "sumiu") == nil)
+    }
+
+    @Test func apagarAfazerNaObraCerta() throws {
+        let antes = estado()
+        let e = try #require(antes.apagandoAfazer("p2", daObra: "o1"))
+        #expect(e.obras[0].arvore["afazeres"] == .lista([
+            .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
+            .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
+        ]))
+        #expect(resto(e, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
+        let ultima = try #require(antes.apagandoAfazer("q1", daObra: "o3"))
+        #expect(ultima.obras[2].arvore["afazeres"] == .lista([]))
+        #expect(resto(ultima, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
+        #expect(antes.apagandoAfazer("x", daObra: "o3") == nil && antes.apagandoAfazer("q1", daObra: "sumiu") == nil)
+    }
+}

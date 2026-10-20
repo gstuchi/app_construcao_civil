@@ -60,6 +60,13 @@ func contem(_ texto: String, _ trecho: String) -> Bool {
     return false
 }
 
+/// `contadorLancamentos` do calc.js: nada sem gasto; o total; ou "achados/total" com busca ou mês (busca só de espaços não filtra).
+public func contadorLancamentos(total: Int, achados: Int, filtro: FiltroGastos?) -> String {
+    if total == 0 { return "" }
+    let filtrando = !aparadoJS(semAcento(filtro?.texto)).isEmpty || !(filtro?.mes ?? "").isEmpty
+    return filtrando ? "\(achados)/\(total)" : "\(total)"
+}
+
 public struct MesDoFiltro: Equatable, Sendable {
     /// AAAA-MM.
     public let mes: String
@@ -81,9 +88,9 @@ public struct FiltroGastos: Equatable, Sendable {
     public init(texto: String? = nil, mes: String? = nil) { self.texto = texto; self.mes = mes }
 }
 
-/// `filtraGastos` do calc.js: texto na descrição ou no nome do tópico (sem acento) e mês AAAA-MM, em E.
+/// `filtraGastos` do calc.js: texto aparado na descrição ou no nome do tópico (sem acento) e mês AAAA-MM, em E.
 public func filtraGastos(_ gastos: [Gasto], topicos: [String: Topico], filtro: FiltroGastos?) -> [Gasto] {
-    let texto = semAcento(filtro?.texto)
+    let texto = aparadoJS(semAcento(filtro?.texto))
     let mes = filtro?.mes ?? ""
     return gastos.filter { g in
         if !mes.isEmpty && String(g.data.prefix(7)) != mes { return false }

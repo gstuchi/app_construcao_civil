@@ -41,6 +41,13 @@ struct ListasTests {
         }
     }
 
+    @Test func contadorDaPilula() {
+        for c in Vetores.casos("calc.contadorLancamentos") {
+            let f = c.args[2].comoObjeto.map { FiltroGastos(texto: $0["texto"]?.comoTexto, mes: $0["mes"]?.comoTexto) }
+            confere(.texto(contadorLancamentos(total: Int(c.args[0].numero), achados: Int(c.args[1].numero), filtro: f)), c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func filtroDosLancamentos() {
         for c in Vetores.casos("calc.filtraGastos") {
             let topicos = (c.args[1].comoObjeto ?? [:]).mapValues { t in

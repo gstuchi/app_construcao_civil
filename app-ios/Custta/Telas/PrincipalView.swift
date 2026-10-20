@@ -55,6 +55,7 @@ struct PrincipalView: View {
         .modifier(AvisosDoPrincipal(avisoDoMais: $avisoDoMais, folhaAberta: folhas.aberta != nil))
         #if DEBUG
         .task { await abrirFolhaDoGancho() }
+        .task { await abrirAfazeresDoGancho() }
         // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
         .overlay(alignment: .topLeading) {
             if UserDefaults.standard.bool(forKey: "custta.contarPontes") {
@@ -72,9 +73,9 @@ struct PrincipalView: View {
 }
 
 extension PrincipalView {
-    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra, lança gasto nela. Obra vendida não recebe
-    /// gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as abertas; sem nenhuma aberta, cria
-    /// obra. Em Ajustes, some.
+    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra (e no orçamento e nos afazeres dela), lança
+    /// gasto nela. Obra vendida não recebe gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as
+    /// abertas; sem nenhuma aberta, cria obra. Em Ajustes, some.
     private var acaoDoMais: AcaoDoMais? {
         guard aba == .obras else { return nil }
         let obras = modelo.sincronizador.estado.obras
@@ -151,14 +152,28 @@ extension PrincipalView {
                                                        : .novoGasto(obraId: obraId)
         }
     }
+
+    /// `CUSTTA_ABRIR=afazeres:<id>`: a obra abre pelo caminho inicial e os afazeres dela são empurrados quando os dados
+    /// chegam, como num toque na linha. Empurrados junto com a obra na abertura, o título grande "Afazeres" nascia recolhido.
+    private func abrirAfazeresDoGancho() async {
+        guard let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("afazeres:") else { return }
+        for _ in 0..<50 {
+            guard !modelo.sincronizador.dadosCarregados else { break }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        try? await Task.sleep(for: .milliseconds(300))
+        caminhoDeObras.append(.afazeres(String(abrir.dropFirst(9))))
+    }
     #endif
 
-    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto e
-    /// `CUSTTA_ABRIR=orcamento:<id>`, a tela Orçamento dela (testes de tela, laudo de leitura e conferência visual).
+    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto,
+    /// `CUSTTA_ABRIR=orcamento:<id>`, a tela Orçamento dela (testes de tela, laudo de leitura e conferência visual), e
+    /// `afazeres:<id>`, a obra, com os afazeres dela empurrados depois.
     static var caminhoInicial: [RotaDeObras] {
         #if DEBUG
-        if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("obra:") {
-            return [.obra(String(abrir.dropFirst(5)))]
+        if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] {
+            if abrir.hasPrefix("obra:") { return [.obra(String(abrir.dropFirst(5)))] }
+            if abrir.hasPrefix("afazeres:") { return [.obra(String(abrir.dropFirst(9)))] }
         }
         if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("orcamento:") {
             let id = String(abrir.dropFirst(10))

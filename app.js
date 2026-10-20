@@ -708,9 +708,9 @@ function bindMesChart(o, suf = ''){
 function renderGastosFiltrados(o){
   if(!o) return;
   const list = $('#oGastos');
-  const filtrados = OBRA_CALC.filtraGastos(o.gastos, TOP_MAP(), { texto: filtroTexto, mes: filtroMes });
-  const filtrando = !!(filtroTexto || filtroMes);
-  $('#lanCount').textContent = o.gastos.length ? (filtrando ? `${filtrados.length}/${o.gastos.length}` : o.gastos.length) : '';
+  const filtro = { texto: filtroTexto, mes: filtroMes };
+  const filtrados = OBRA_CALC.filtraGastos(o.gastos, TOP_MAP(), filtro);
+  $('#lanCount').textContent = OBRA_CALC.contadorLancamentos(o.gastos.length, filtrados.length, filtro);
   list.innerHTML = '';
   if(!o.gastos.length){ list.innerHTML = emptyBlock(ICON('recibo'),'Nenhum gasto lançado.<br>Toque no + pra lançar o primeiro.'); return; }
   if(!filtrados.length){ list.innerHTML = emptyBlock(ICON('recibo'),'Nada encontrado com esse filtro.'); return; }

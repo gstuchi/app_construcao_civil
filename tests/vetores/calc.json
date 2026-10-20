@@ -9040,6 +9040,1225 @@
           }
         ],
         "saida": []
+      },
+      {
+        "caso": "texto aparado",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "  tinta  "
+          }
+        ],
+        "saida": [
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
+        "caso": "tab e quebra nas pontas",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "\ttinta\n"
+          }
+        ],
+        "saida": [
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
+        "caso": "só espaços não filtra",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "   "
+          }
+        ],
+        "saida": [
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g02",
+            "valor": 231000,
+            "topico": "estrutura",
+            "descricao": "Laje do térreo",
+            "data": "2025-06-02",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g03",
+            "valor": 12000.5,
+            "topico": "hidraulica",
+            "descricao": "Tubos e conexões",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g05a",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 1,
+              "de": 3
+            },
+            "valor": 1033.34,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-09-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "g05b",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 2,
+              "de": 3
+            },
+            "valor": 1033.33,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-10-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "g05c",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 3,
+              "de": 3
+            },
+            "valor": 1033.33,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-11-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          }
+        ]
+      },
+      {
+        "caso": "espaço duplo no meio não vira um",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "e  c"
+          }
+        ],
+        "saida": []
+      },
+      {
+        "caso": "acento solto antes do espaço sai antes de aparar",
+        "args": [
+          [
+            {
+              "id": "k1",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "Conexões",
+              "data": "2026-01-01"
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "́ conexoes"
+          }
+        ],
+        "saida": [
+          {
+            "id": "k1",
+            "valor": 1,
+            "topico": "outros",
+            "descricao": "Conexões",
+            "data": "2026-01-01"
+          }
+        ]
+      }
+    ],
+    "calc.contadorLancamentos": [
+      {
+        "caso": "sem gasto",
+        "args": [
+          0,
+          0,
+          null
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "sem gasto, com busca",
+        "args": [
+          0,
+          0,
+          {
+            "texto": "tinta"
+          }
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "sem filtro: o total",
+        "args": [
+          7,
+          7,
+          null
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "sem filtro vale o total, nunca os achados",
+        "args": [
+          7,
+          5,
+          null
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "com busca: achados/total",
+        "args": [
+          7,
+          1,
+          {
+            "texto": "tinta",
+            "mes": ""
+          }
+        ],
+        "saida": "1/7"
+      },
+      {
+        "caso": "busca só de espaços não filtra",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "   ",
+            "mes": ""
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "só o mês",
+        "args": [
+          7,
+          0,
+          {
+            "texto": "",
+            "mes": "2025-08"
+          }
+        ],
+        "saida": "0/7"
+      },
+      {
+        "caso": "busca e mês",
+        "args": [
+          7,
+          2,
+          {
+            "texto": "tinta",
+            "mes": "2025-08"
+          }
+        ],
+        "saida": "2/7"
+      },
+      {
+        "caso": "busca só de acento solto não filtra",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "́"
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "milhares sem ponto",
+        "args": [
+          1234,
+          1000,
+          {
+            "texto": "a"
+          }
+        ],
+        "saida": "1000/1234"
       }
     ],
     "calc.mesesDoFiltro": [

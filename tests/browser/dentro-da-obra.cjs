@@ -1,4 +1,5 @@
-/* Dentro da obra com dados sintéticos: afazeres (o que grava, a ordem e o contador) e o filtro dos lançamentos. Sem contas nem rede.
+/* Dentro da obra com dados sintéticos: afazeres (o que grava, a ordem e o contador), o filtro de mês e a busca dos lançamentos.
+   Sem contas nem rede.
    Precisa de `node tests/browser/servidor.cjs` no ar (porta 8123). O duplê do CLOUD guarda cada blob gravado em `salvos`:
    o teste confere o que foi para a nuvem, não só o `db` da página. */
 const assert=require('node:assert/strict');
@@ -113,8 +114,18 @@ const OBRA_FILTRO={id:'f',nome:'Sobrado Centro',dataInicio:'2026-01-10',afazeres
     await page.evaluate(()=>renderAll());
     assert.deepEqual(await meses(),[['','Todos os meses'],['2026-02','fev/26']]);
 
+    // Busca aparada (achado 16): espaço nas pontas não esconde o gasto, e busca só de espaços não filtra
+    const linhasDaLista=()=>page.locator('#oGastos li.gasto-row').count();
+    await page.locator('#fBusca').fill('  tomadas  ');
+    assert.equal(await lancamentos(),'1/2');
+    assert.equal(await linhasDaLista(),1);
+    await page.locator('#fBusca').fill('   ');
+    assert.equal(await lancamentos(),'2');
+    assert.equal(await linhasDaLista(),2);
+    await page.locator('#fBusca').fill('');
+
     assert.deepEqual(await page.evaluate(()=>errosObra),[]);
     await ctx.close();
-    console.log('ok - dentro da obra: afazeres e filtro de mês');
+    console.log('ok - dentro da obra: afazeres, filtro de mês e busca');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

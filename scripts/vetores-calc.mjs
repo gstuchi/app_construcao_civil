@@ -268,6 +268,24 @@ filtra('texto e mês', O1.gastos, TOPICOS_MAPA, { texto: 'tinta', mes: '2025-08'
 filtra('tópico próprio pelo nome', O4.gastos, TOPICOS_MAPA, { texto: 'automacao' });
 filtra('tópico apagado busca pelo id', [{ id: 'k', valor: 1, topico: 'c_sumiu', descricao: '', data: '2026-01-01' }], TOPICOS_MAPA, { texto: 'c_sum' });
 filtra('nada encontrado', O1.gastos, TOPICOS_MAPA, { texto: 'xyz' });
+filtra('texto aparado', O1.gastos, TOPICOS_MAPA, { texto: '  tinta  ' });
+filtra('tab e quebra nas pontas', O1.gastos, TOPICOS_MAPA, { texto: '\ttinta\n' });
+filtra('só espaços não filtra', O1.gastos, TOPICOS_MAPA, { texto: '   ' });
+filtra('espaço duplo no meio não vira um', O1.gastos, TOPICOS_MAPA, { texto: 'e  c' });
+filtra('acento solto antes do espaço sai antes de aparar', [{ id: 'k1', valor: 1, topico: 'outros', descricao: 'Conexões', data: '2026-01-01' }],
+  TOPICOS_MAPA, { texto: '\u0301 conexoes' });
+/* O contador da pílula "Lançamentos" (app.js renderGastosFiltrados). */
+const contadorLanc = calc('contadorLancamentos');
+contadorLanc('sem gasto', 0, 0, null);
+contadorLanc('sem gasto, com busca', 0, 0, { texto: 'tinta' });
+contadorLanc('sem filtro: o total', 7, 7, null);
+contadorLanc('sem filtro vale o total, nunca os achados', 7, 5, null);
+contadorLanc('com busca: achados/total', 7, 1, { texto: 'tinta', mes: '' });
+contadorLanc('busca só de espaços não filtra', 7, 7, { texto: '   ', mes: '' });
+contadorLanc('só o mês', 7, 0, { texto: '', mes: '2025-08' });
+contadorLanc('busca e mês', 7, 2, { texto: 'tinta', mes: '2025-08' });
+contadorLanc('busca só de acento solto não filtra', 7, 7, { texto: '\u0301' });
+contadorLanc('milhares sem ponto', 1234, 1000, { texto: 'a' });
 /* Os meses do filtro (app.js renderObra), com quantos gastos cada um tem. O mês escolhido nunca some da lista. */
 const mesesFiltro = calc('mesesDoFiltro');
 mesesFiltro('do mais novo ao mais antigo, com os futuros', O1.gastos, '');

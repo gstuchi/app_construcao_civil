@@ -573,13 +573,18 @@ private struct TotalAoVivo: View {
     var body: some View {
         let layout = tamanho.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
                                                  : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+        // Os identificadores vão também em cada texto: o VoiceOver lê o total como um elemento só, mas a auditoria do Xcode
+        // olha cada texto (e a exceção dela no iOS 26 é por identificador).
         layout {
             Text("Total").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioTransparente))
+                .accessibilityIdentifier("totalDoOrcamento-rotulo")
             if !tamanho.isAccessibilitySize { Spacer(minLength: 0) }
             VStack(alignment: tamanho.isAccessibilitySize ? .leading : .trailing, spacing: 0) {
                 ValorEmDinheiro(texto: moeda(soma), fonte: .title3.weight(.bold))
+                    .accessibilityIdentifier("totalDoOrcamento-soma")
                 Text(comValor).font(.footnote).foregroundStyle(paleta.cor(.secundarioTransparente))
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("totalDoOrcamento-comValor")
             }
         }
         .padding(.horizontal, 16)

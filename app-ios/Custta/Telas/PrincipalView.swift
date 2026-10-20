@@ -43,6 +43,7 @@ struct PrincipalView: View {
                 case .novaObra: FolhaDaObra(obraId: nil)
                 case .editarObra(let obraId): FolhaDaObra(obraId: obraId)
                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
+                case .orcamento(let obraId): FolhaDoOrcamento(obraId: obraId)
                 }
             }
             .environment(folhas)
@@ -102,6 +103,8 @@ extension PrincipalView {
             var semAnimacao = Transaction()
             semAnimacao.disablesAnimations = true
             withTransaction(semAnimacao) { caminhoDeObras = [.obra(id)] }
+        case .sairDoOrcamento(let id):
+            caminhoDeObras.removeAll { $0 == .orcamento(id) }
         case .apagar(let id):
             caminhoDeObras.removeAll()
             // Depois do voltar do sistema, a linha sai da lista com a animação do apagar gasto.
@@ -120,7 +123,7 @@ extension PrincipalView {
 
     #if DEBUG
     /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
-    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
     /// `-custta.folha editar:<gasto>`, a edição.
     private func abrirFolhaDoGancho() async {
@@ -138,6 +141,7 @@ extension PrincipalView {
             case "venda": folhas.aberta = .venda(obraId: id)
             case "gastoDeVendida": folhas.aberta = .gastoDeVendida(vendidaId: id)
             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
+            case "orcamento": folhas.aberta = .orcamento(obraId: id)
             default: break
             }
         } else if let passo, let obraId = caminhoDeObras.last?.obraId {

@@ -545,6 +545,37 @@ test('folha da obra e apagar obra: gravação recusada avisa, como as outras fol
   assert.match(apagar, /if resultado == \.naoCarregado \{ avisoDoMais = \.naoCarregado\(modelo\.mensagemDeNaoCarregado\) \}/);
 });
 
+test('folha do orçamento: gravação recusada avisa, e tirar o orçamento leva a tela Orçamento de volta antes de a folha descer', () => {
+  // A recusa de antes de ver os dados avisa dentro da folha, como nas outras. Tirar (pelo botão ou pelo "Salvar" vazio) volta
+  // a tela Orçamento para a obra com a folha ainda em cima, e a folha desce no turno seguinte: no mesmo turno, a navegação
+  // levaria junto a descida da folha (o achado da T34 com o gasto lançado de dentro de uma vendida). O "Tirar orçamento"
+  // confirmado não grava duas vezes.
+  const t = ler('app-ios/Custta/Telas/FolhaDoOrcamento.swift');
+  assert.equal(t.match(/case \.naoCarregado: naoCarregado = true/g)?.length, 1, 'antes de ver os dados, o alerta do site');
+  assert.match(t, /folhas\.navegar\(\.sairDoOrcamento\(rascunho\.obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar\(\) \}/,
+    'a tela Orçamento volta e, no turno seguinte, a folha desce');
+  assert.match(t.slice(t.indexOf('private func tirar() {')), /^private func tirar\(\) \{\n\s*guard folhas\.aberta != nil else \{ return \}\n/,
+    'a guarda do toque duplo também no tirar');
+  // Com Reduzir movimento, a lista vai até a linha ativa sem animar e o cursor fica parado (nenhum teste de tela vê a
+  // animação: o XCUITest espera a rolagem acabar).
+  assert.match(t, /if opcoes\.reduzirMovimento \{ leitor\.scrollTo\(campo, anchor: \.center\) \}\n\s*else \{ withAnimation/,
+    'a rolagem até a linha ativa sem animação com Reduzir movimento');
+  assert.match(t, /if opcoes\.reduzirMovimento \{\n\s*barra\(visivel: true\)/, 'o cursor parado com Reduzir movimento');
+});
+
+test('folha do orçamento: o teclado físico apaga como a tecla da tela, e a linha ativa volta ao meio quando a letra muda', () => {
+  // O ⌫ de um teclado de verdade chega à folha como .delete (U+0008) e o ⌦ como .deleteForward: os dois são a tecla de apagar
+  // da tela. Nenhum teste de tela prova isso: o typeKey do XCTest não entrega o apagar a uma view que não é campo de texto
+  // (os dígitos ele entrega, e o testTecladoFisicoDigitaNaLinhaAtiva os confere). Com a letra trocada e as teclas abertas,
+  // as linhas mudam de altura e a rolagem fica onde estava: sem voltar ao meio, a linha ativa sumia da vista (e, na auditoria
+  // de tipo dinâmico, os achados saíam sem elemento).
+  const t = ler('app-ios/Custta/Telas/FolhaDoOrcamento.swift');
+  assert.match(t, /\.onKeyPress\(keys: \[\.delete, \.deleteForward\], phases: \.down\) \{ _ in\n\s*tocar\(\.apagar, em: campo\)/,
+    'o apagar do teclado físico vai para a tecla de apagar');
+  assert.match(t, /\.onChange\(of: tamanho\) \{ if let ativo \{ rolar\(ate: ativo, leitor\) \} \}/,
+    'a linha ativa volta ao meio quando a letra muda');
+});
+
 test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {
   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
@@ -553,6 +584,7 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
     'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
     'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
     'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
+    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': 'private func salvar() {',
   };
   for(const [f, assinatura] of Object.entries(acoes)){
     const t = ler(f);

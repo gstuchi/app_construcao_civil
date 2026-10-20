@@ -21,6 +21,12 @@ struct ListasTests {
         }
     }
 
+    @Test func subtituloDaFolhaDoAPagar() {
+        for c in Vetores.casos("calc.textoVencimentos") {
+            confere(.texto(textoVencimentos(Int(c.args[0].numero))), c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func recentes() {
         for c in Vetores.casos("calc.gastosRecentes") {
             let r = c.args.count > 1 ? gastosRecentes(c.args[0].obras, n: Int(c.args[1].numero)) : gastosRecentes(c.args[0].obras)

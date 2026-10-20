@@ -262,6 +262,8 @@ apagar('mesmo dia não entra', [{ id: 'z', gastos: [{ id: 'z1', valor: 100, data
 apagar('empate de data mantém a ordem das obras', [
   { id: 'p', gastos: [{ id: 'p1', valor: 1, data: '2026-07-10' }] },
   { id: 'q', gastos: [{ id: 'q1', valor: 2, data: '2026-07-10' }, { id: 'q2', valor: 3, data: '2026-07-08' }] }], '2026-07-06', 30);
+const vencimentos = calc('textoVencimentos');
+for(const n of [0, 1, 2, 31, 1000]) vencimentos(String(n), n);
 const recentes = calc('gastosRecentes');
 recentes('cinco mais recentes', BLOB.obras, 5);
 recentes('padrão', BLOB.obras);

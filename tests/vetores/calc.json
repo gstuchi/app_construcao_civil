@@ -6807,6 +6807,43 @@
         }
       }
     ],
+    "calc.textoVencimentos": [
+      {
+        "caso": "0",
+        "args": [
+          0
+        ],
+        "saida": "0 vencimentos · a partir de amanhã"
+      },
+      {
+        "caso": "1",
+        "args": [
+          1
+        ],
+        "saida": "1 vencimento · a partir de amanhã"
+      },
+      {
+        "caso": "2",
+        "args": [
+          2
+        ],
+        "saida": "2 vencimentos · a partir de amanhã"
+      },
+      {
+        "caso": "31",
+        "args": [
+          31
+        ],
+        "saida": "31 vencimentos · a partir de amanhã"
+      },
+      {
+        "caso": "1000",
+        "args": [
+          1000
+        ],
+        "saida": "1000 vencimentos · a partir de amanhã"
+      }
+    ],
     "calc.gastosRecentes": [
       {
         "caso": "cinco mais recentes",

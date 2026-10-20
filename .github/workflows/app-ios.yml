@@ -136,6 +136,7 @@ jobs:
             -skip-testing:CusttaUITests/LeituraNoVidroUITests \
             -skip-testing:CusttaUITests/AuditoriaUITests \
             -skip-testing:CusttaUITests/OrcamentoUITests \
+            -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
@@ -151,9 +152,12 @@ jobs:
   app-etapa3:
     runs-on: macos-26
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
-    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests: 20,8 min de testes + ~11 de
-    # preparo ≈ 32 min. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do job, e ele se divide se passar de ~50.
-    timeout-minutes: 60
+    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
+    # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
+    # lenta (≈ 51 no run 39799242127). O app, com as mesmas suítes, levou 42 min num run e 67 no outro: cada job pega a
+    # sua VM. O teto vai pela mais lenta: 90, como o do app. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do
+    # job; este não cresce mais, e as suítes de tela do PR 3 vão para um job novo.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -179,6 +183,7 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/testes-etapa3.xcresult" \
             -only-testing:CusttaUITests/OrcamentoUITests \
+            -only-testing:CusttaUITests/FolhasDeOrigemUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Tela reprovada: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run 39710458060

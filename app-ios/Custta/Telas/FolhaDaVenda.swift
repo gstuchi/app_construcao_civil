@@ -35,12 +35,12 @@ struct FolhaDaVenda: View {
                 rascunho.passouDoValor = true
                 caminho = [.data]
             }
-            .passoDaFolha("Valor da venda", subtitulo: obra?.nome, fechar: .esquerda, raiz: true)
+            .passoDaFolha("Valor da venda", subtitulo: obra?.nome, fechar: .esquerda, escape: .fechar)
             .navigationDestination(for: PassoDaVenda.self) { _ in
                 PassoDaDataDaVenda(rascunho: rascunho, caminho: $caminho, obraId: obraId)
             }
         }
-        .folhaDoApp(perguntar: rascunho.passouDoValor, pergunta: "Você já preencheu esta venda.", descartar: "Descartar venda") {
+        .folhaDoApp(perguntar: { rascunho.passouDoValor }, pergunta: "Você já preencheu esta venda.", descartar: "Descartar venda") {
             folhas.fechar()
         }
         // A obra sumiu ou outro aparelho mudou a fase com a folha aberta: não há o que vender; a folha fecha.

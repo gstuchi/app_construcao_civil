@@ -153,6 +153,22 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     await page.waitForFunction(()=>!('orcamento' in obraById('b')));
     assert.equal(await page.locator('#oOrc').count(),0);
 
+    // O que a folha não mostra fica (achado 7): o campo desconhecido e o previsto de tópico sem linha na folha
+    await page.evaluate(()=>{obraById('a').orcamento={modo:'topicos',topicos:{fundacao:90000,c_apagado:1000},nota:'do site'};openObra('a');});
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#orcTopWrap input[data-top="fundacao"]').fill('95000');
+    // com a folha aberta, outro aparelho troca o documento: vale o orçamento do momento do Salvar
+    await page.evaluate(()=>{db=normaliza(JSON.parse(JSON.stringify(db)));obraById('a').orcamento.nota='do outro aparelho';});
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>obraById('a').orcamento),
+      {modo:'topicos',topicos:{fundacao:95000,c_apagado:1000},nota:'do outro aparelho'});
+    // no "Só o total" o desconhecido fica e os tópicos saem
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
+    await page.locator('#orcTotal').fill('500000');
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>obraById('a').orcamento),{nota:'do outro aparelho',modo:'total',total:500000});
+
     // Nova obra com orçamento total
     await page.evaluate(()=>formNovaObra());
     await page.locator('#fNome').fill('Casa Nova');

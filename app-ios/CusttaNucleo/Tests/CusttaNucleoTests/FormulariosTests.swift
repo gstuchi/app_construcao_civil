@@ -117,6 +117,14 @@ struct FormulariosDaObraTests {
             confere(r?.json ?? .nulo, c.saida, .exata, c.caso)
         }
     }
+
+    @Test func orcamentoGravadoComoOSiteGrava() {
+        for c in Vetores.casos("dados.orcamentoGravado") {
+            let valores = (c.args[3].comoObjeto ?? [:]).mapValues(\.numero)
+            let r = orcamentoGravado(c.arg(0), modo: c.args[1].comoTexto!, total: c.args[2].numero, valores: valores)
+            confere(r ?? .nulo, c.saida, .exata, c.caso)
+        }
+    }
 }
 
 struct ResumoEAssinaturaTests {

@@ -1689,7 +1689,8 @@ backdrop.onclick = e=>{ if(e.target===backdrop) closeSheet(); };
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classList.contains('show')) closeSheet(); });
 
 /* Folha do orçamento: só o total, ou valor por tópico (fixos e próprios).
-   Grava só o modo ativo; salvar tudo vazio tira o orçamento da obra. */
+   O que o Salvar grava vem do dados.js (orcamentoGravado): só o modo ativo, o que a folha
+   não mostra fica, e salvar tudo vazio tira o orçamento da obra. */
 function formOrcamento(obraId){
   const o = obraById(obraId);
   if(!o) return;
@@ -1743,25 +1744,22 @@ function formOrcamento(obraId){
   entradas.forEach(i => { maskMoney(i); i.addEventListener('input', pintaSoma); });
   aplicaModo(modo);
   pintaSoma();
-  const aplica = novo => {
+  // relê a obra no toque: um snapshot com a folha aberta troca os objetos do db
+  const aplica = gravar => {
     const oo = obraById(obraId);
-    if(oo){ if(novo) oo.orcamento = novo; else delete oo.orcamento; save(); }
+    if(oo){ const novo = gravar(oo.orcamento); if(novo) oo.orcamento = novo; else delete oo.orcamento; save(); }
     closeSheet(); renderAll();
   };
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = () => {
-    if(modo === 'total'){
-      const total = parseNum($('#orcTotal').value);
-      aplica(total > 0 ? { modo:'total', total } : null);
-      return;
-    }
-    const tops = {};
-    entradas.forEach(i => { const v = parseNum(i.value); if(v > 0) tops[i.dataset.top] = v; });
-    aplica(Object.keys(tops).length ? { modo:'topicos', topicos:tops } : null);
+    const total = parseNum($('#orcTotal').value);
+    const valores = {};
+    entradas.forEach(i => { valores[i.dataset.top] = parseNum(i.value); });
+    aplica(antigo => OBRA_DADOS.orcamentoGravado(antigo, modo, total, valores));
   };
   const tirar = $('#orcTirar');
   if(tirar) tirar.onclick = async () => {
-    if(await OBRA_CONFIRM.perguntar('Tirar o orçamento desta obra? Os gastos continuam como estão.', { confirmar:'Tirar orçamento' })) aplica(null);
+    if(await OBRA_CONFIRM.perguntar('Tirar o orçamento desta obra? Os gastos continuam como estão.', { confirmar:'Tirar orçamento' })) aplica(() => null);
   };
 }
 

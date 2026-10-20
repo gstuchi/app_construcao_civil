@@ -409,17 +409,23 @@ extension View {
     /// Símbolo que não é texto (as setas). O laudo de leitura mede palavras: o apagador de texto apagava também o traço
     /// fino do símbolo, que virava uma "palavra" de nota errada. Em Debug, com `-custta.semSimbolos`, o símbolo some dos
     /// dois prints; o contraste dele (3:1, de figura) fica com a auditoria do Xcode, com superfícies sólidas.
-    func foraDoLaudo() -> some View { modifier(ForaDoLaudo()) }
+    func foraDoLaudo() -> some View { modifier(ForaDoLaudo(excecao: nil)) }
+
+    /// Figura que uma cena só do laudo deixa de fora (a tabela de exceções da LeituraNoVidroUITests, com o porquê). Em
+    /// Debug, com `-custta.foraDoLaudo <nome>`, ela some dos dois prints daquela cena; nas outras, fica nos dois.
+    func foraDoLaudo(_ excecao: String) -> some View { modifier(ForaDoLaudo(excecao: excecao)) }
 }
 
 private struct ForaDoLaudo: ViewModifier {
+    let excecao: String?
     #if DEBUG
     @AppStorage("custta.semSimbolos") private var semSimbolos = false
+    @AppStorage("custta.foraDoLaudo") private var foraNestaCena = ""
     #endif
 
     func body(content: Content) -> some View {
         #if DEBUG
-        content.opacity(semSimbolos ? 0 : 1)
+        content.opacity((excecao.map { $0 == foraNestaCena } ?? semSimbolos) ? 0 : 1)
         #else
         content
         #endif

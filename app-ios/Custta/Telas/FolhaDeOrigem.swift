@@ -4,8 +4,9 @@ import CusttaNucleo
 
 /* A volta à folha de origem (etapa 3; decisão 1 do conselho de 19/10). Editar um gasto de dentro de uma folha (o A pagar;
    o detalhe do tópico vem depois) empurra a edição da etapa 2 no NavigationStack da própria folha, sem o ×, com o voltar e
-   o nome da origem no subtítulo. "Salvar" e o voltar voltam à origem, que fica montada embaixo: a mesma rolagem, os
-   números novos e, no "Salvar", a linha acesa. Puxar fecha a folha inteira e, com mudança, pergunta antes. Continua uma folha por vez: o `Folhas` é só a folha sobre as abas, e o estado da volta mora na folha de origem
+   o nome da origem no subtítulo. "Salvar", o voltar e as saídas do apagar voltam à origem, que fica montada embaixo: a
+   mesma rolagem, os números novos e, no "Salvar", a linha acesa; no apagar, a linha sai lá, à vista. Puxar fecha a folha
+   inteira e, com mudança, pergunta antes. Continua uma folha por vez: o `Folhas` é só a folha sobre as abas, e o estado da volta mora na folha de origem
    (`OrigemDaEdicao`). */
 
 /// Um passo empurrado na folha de origem: a edição de um gasto e, em cima dela, o teclado do valor e a lista de tópicos.
@@ -48,7 +49,7 @@ final class OrigemDaEdicao {
         self.nome = nome
     }
 
-    /// Como a edição voltou, para a lista: rolar até a linha e apagar a luz, mover o foco.
+    /// Como a edição voltou, para a lista: rolar até a linha e apagar a luz, apagar a linha, mover o foco.
     struct Volta: Equatable {
         enum Motivo: Equatable {
             /// "Salvar": a linha volta acesa.
@@ -57,6 +58,8 @@ final class OrigemDaEdicao {
             case voltou(String)
             /// O gasto sumiu com a edição aberta (apagado em outro aparelho).
             case sumiu(String)
+            /// "Apagar" confirmado dentro da edição: a lista apaga no turno seguinte, com a animação da etapa 2.
+            case apagou(Folhas.PedidoDeApagar)
         }
 
         let motivo: Motivo
@@ -82,6 +85,8 @@ final class OrigemDaEdicao {
     /// As linhas acesas depois de salvar (2 s), e quantas vezes acenderam: a luz de um "Salvar" não apaga a do seguinte.
     var acesos: Set<String> = []
     @ObservationIgnored private(set) var vezDoAceso = 0
+    /// A linha arrastada que mostra "Apagar" (uma por vez).
+    var linhaAberta: String?
     /// A última volta da edição.
     private(set) var volta: Volta?
     @ObservationIgnored private var motivoDaVolta: Volta.Motivo?
@@ -135,6 +140,9 @@ final class OrigemDaEdicao {
         sair(.voltou(id))
     }
 
+    /// "Apagar" confirmado na edição (só esta parcela, a compra toda ou o gasto à vista): volta, e a lista apaga a linha.
+    func apagou(_ pedido: Folhas.PedidoDeApagar) { sair(.apagou(pedido)) }
+
     /// O gasto da edição sumiu (apagado em outro aparelho): volta, em vez de fechar a folha.
     func sumiu(_ gastoId: String) { sair(.sumiu(gastoId)) }
 
@@ -182,6 +190,7 @@ enum SaidaDaLinha: Equatable {
     case salvou(String)
     case voltou(String)
     case sumiu(String)
+    case apagou(Set<String>, compra: Bool)
 }
 
 /// Para onde o VoiceOver vai na lista da folha de origem, e o que ele ouve depois.
@@ -191,8 +200,8 @@ struct FocoNaOrigem: Equatable {
 }
 
 /// "Salvar": a linha editada; se ela saiu da lista (no A pagar, a data passou dos 30 dias), a vizinha, com "O gasto saiu
-/// desta lista.". O voltar sem salvar: a linha que abriu a edição. O gasto apagado em outro aparelho: a vizinha, com o
-/// anúncio do apagar da etapa 2. A lista que ficou vazia: o cartão do vazio. A vizinha é a próxima linha que ficou, senão a
+/// desta lista.". O voltar sem salvar: a linha que abriu a edição. Apagar, e o gasto apagado em outro aparelho: a vizinha,
+/// com o anúncio do apagar da etapa 2. A lista que ficou vazia: o cartão do vazio. A vizinha é a próxima linha que ficou, senão a
 /// anterior, na ordem de `antes` (a lista antes da mudança); `depois` é a lista de agora.
 func focoNaOrigem(_ saida: SaidaDaLinha, antes: [String], depois: [String]) -> FocoNaOrigem {
     func vizinha(_ saem: Set<String>) -> AlvoDoFoco {
@@ -209,6 +218,8 @@ func focoNaOrigem(_ saida: SaidaDaLinha, antes: [String], depois: [String]) -> F
         return FocoNaOrigem(alvo: depois.contains(id) ? .gasto(id) : vizinha([id]), anuncio: nil)
     case .sumiu(let id):
         return FocoNaOrigem(alvo: vizinha([id]), anuncio: "Gasto apagado")
+    case .apagou(let saem, let compra):
+        return FocoNaOrigem(alvo: vizinha(saem), anuncio: compra ? "Compra apagada" : "Gasto apagado")
     }
 }
 

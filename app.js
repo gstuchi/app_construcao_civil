@@ -1115,7 +1115,7 @@ function sheetAPagar(obraId){
   const venc = OBRA_CALC.aPagar([o], todayISO());
   openSheet(`<h3>A pagar · próximos 30 dias</h3>
     <div class="top-resumo"><b>${money(venc.total)}</b>
-      <div class="sub">${venc.qtd} vencimento${venc.qtd===1?'':'s'} · a partir de amanhã</div></div>
+      <div class="sub">${OBRA_CALC.textoVencimentos(venc.qtd)}</div></div>
     <ul class="list" id="aPagarGastos"></ul>
     ${venc.qtd?'': '<p class="muted-note">Nenhum gasto previsto para esse período.</p>'}
     <div class="sheet-actions"><button class="btn ghost" id="aPagarFechar">Fechar</button></div>`);

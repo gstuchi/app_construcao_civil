@@ -1,5 +1,5 @@
-/* Dentro da obra com dados sintéticos: afazeres (o que grava, a ordem e o contador), o filtro de mês e a busca dos lançamentos.
-   Sem contas nem rede.
+/* Dentro da obra com dados sintéticos: afazeres (o que grava, a ordem e o contador), o filtro de mês e a busca dos lançamentos,
+   e o A pagar vazio. Sem contas nem rede.
    Precisa de `node tests/browser/servidor.cjs` no ar (porta 8123). O duplê do CLOUD guarda cada blob gravado em `salvos`:
    o teste confere o que foi para a nuvem, não só o `db` da página. */
 const assert=require('node:assert/strict');
@@ -124,8 +124,14 @@ const OBRA_FILTRO={id:'f',nome:'Sobrado Centro',dataInicio:'2026-01-10',afazeres
     assert.equal(await linhasDaLista(),2);
     await page.locator('#fBusca').fill('');
 
+    // A pagar vazio: abre com "0 vencimentos" e a frase do site
+    await page.locator('#oAPagar').click();
+    assert.equal((await page.locator('#sheet .top-resumo .sub').textContent()).trim(),'0 vencimentos · a partir de amanhã');
+    assert.match(await page.locator('#sheet').textContent(),/Nenhum gasto previsto para esse período\./);
+    await page.locator('#aPagarFechar').click();
+
     assert.deepEqual(await page.evaluate(()=>errosObra),[]);
     await ctx.close();
-    console.log('ok - dentro da obra: afazeres, filtro de mês e busca');
+    console.log('ok - dentro da obra: afazeres, filtro de mês, busca e A pagar vazio');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

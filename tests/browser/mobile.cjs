@@ -29,6 +29,7 @@ const {chromium}=require('playwright');
     });
     await page.locator('#oAPagar').click();
     assert.equal(await page.locator('#aPagarGastos .gasto-row').count(),1);
+    assert.equal((await page.locator('#sheet .top-resumo .sub').textContent()).trim(),'1 vencimento · a partir de amanhã');
     await page.locator('#aPagarGastos .li-main').click();
     await page.locator('#fDesc').fill('Cimento editado');
     await page.locator('#cSave').click();

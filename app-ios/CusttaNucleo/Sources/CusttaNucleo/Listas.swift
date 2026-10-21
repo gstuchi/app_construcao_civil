@@ -26,6 +26,9 @@ public func aPagar(_ obras: [Obra], hoje: String, dias: Int = 30) -> APagar {
     return APagar(total: total, qtd: qtd, itens: ordenadoEstavel(itens) { menorJS($0.gasto.data, $1.gasto.data) })
 }
 
+/// `textoVencimentos` do calc.js: o subtítulo da folha do "A pagar" ("0 vencimentos" também: a folha abre vazia).
+public func textoVencimentos(_ qtd: Int) -> String { "\(qtd) vencimento\(qtd == 1 ? "" : "s") · a partir de amanhã" }
+
 public struct GastoRecente: Equatable, Sendable {
     public let obraId: String
     public let obraNome: String

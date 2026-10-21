@@ -1,7 +1,7 @@
 import Foundation
 
 /* Regras das telas da etapa 3 (dentro da obra) que o site não tem: o mockup aprovado em 18/10 as acrescenta ao que vem do
-   app.js. Os números saem das regras com vetor (orcamentoObra, resumoTopico); o que está aqui é
+   app.js. Os números saem das regras com vetor (orcamentoObra, aPagar, resumoTopico); o que está aqui é
    texto e agrupamento, com teste próprio (DentroDaObraTests). */
 
 /* ---------- orçamento: a linha nos indicadores e o cartão da tela Orçamento ---------- */
@@ -78,4 +78,73 @@ public let dicaDoModoTotal = "Para comparar tópico a tópico, toque no lápis e
 /// "N de M tópicos com valor", na linha do total da folha por tópico.
 public func topicosComValor(_ valores: [String: Double], de total: Int) -> String {
     "\(valores.values.filter { $0 > 0 }.count) de \(total) tópicos com valor"
+}
+
+/* ---------- A pagar · 30 dias ---------- */
+
+/// A folha "A pagar · 30 dias" de uma obra: os vencimentos do indicador por mês e o que vem depois dos 30 dias.
+public struct APagarDaObra: Equatable, Sendable {
+    public let total: Double
+    public let qtd: Int
+    /// Por mês, do mais próximo ao mais distante; dentro do mês, a ordem do `aPagar` (por data).
+    public let meses: [MesDeGastos]
+    /// Os gastos a vencer depois de hoje + 30 dias: estão no "A vencer" da obra, não na folha.
+    public let depoisQtd: Int
+    public let depoisTotal: Double
+    /// "Depois de 11/11/26, mais 10 gastos a vencer (R$ 52.250,00), no "A vencer" da obra."; nil sem nada depois.
+    public let ponte: String?
+}
+
+public func aPagarDaObra(_ obra: Obra, hoje: String) -> APagarDaObra {
+    let vencimentos = aPagar([obra], hoje: hoje)
+    let limite = somarDias(hoje, 30)
+    let depois = obra.gastos.filter { menorJS(limite, $0.data) }
+    let total = depois.reduce(0) { $0 + $1.valor }
+    let ponte = depois.isEmpty ? nil
+        : "Depois de \(dataCurta(limite)), mais \(depois.count) gasto\(depois.count == 1 ? "" : "s") a vencer (\(moeda(total))), no \"A vencer\" da obra."
+    return APagarDaObra(total: vencimentos.total, qtd: vencimentos.qtd, meses: porMes(vencimentos.itens.map(\.gasto)),
+                        depoisQtd: depois.count, depoisTotal: total, ponte: ponte)
+}
+
+/* ---------- detalhe do tópico ---------- */
+
+/// A linha do orçamento dentro do detalhe do tópico.
+public enum OrcamentoDoTopico: Equatable, Sendable {
+    /// A obra não tem orçamento por tópico (sem orçamento, ou só o total): nada no lugar da barra.
+    case nenhum
+    /// O tópico tem previsto: "No orçamento", o valor, a barra e a frase do site (ou "{pct}% usado").
+    case previsto(ItemOrcamento)
+    /// Por tópico, mas sem valor para este: `semValorNoOrcamento` no lugar da barra.
+    case semValor
+}
+
+public let semValorNoOrcamento = "Sem valor no orçamento: não entra na comparação."
+
+/// A folha do detalhe do tópico.
+public struct DetalheDoTopico: Equatable, Sendable {
+    public let resumo: ResumoDoTopico
+    /// "6 gastos · 12% da obra".
+    public let linha: String
+    /// "corrigido: R$ …".
+    public let corrigido: String
+    public let orcamento: OrcamentoDoTopico
+    /// Os de data depois de hoje, o próximo primeiro (como o "A vencer" da obra).
+    public let aVencer: [Gasto]
+    /// Os outros, do mais novo para o mais antigo (data e id, como o site).
+    public let pagos: [Gasto]
+}
+
+public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMensal: Double) -> DetalheDoTopico {
+    let r = resumoTopico(obra, topico: topico, hoje: hoje, taxaMensal: taxaMensal)
+    let ordenados = ordenadoEstavel(obra.gastos.filter { $0.topico == topico }) { menorJS($1.data + $1.id, $0.data + $0.id) }
+    let orcamento: OrcamentoDoTopico
+    if let o = orcamentoObra(obra), o.modo == "topicos" {
+        orcamento = o.topicos.first { $0.id == topico }.map(OrcamentoDoTopico.previsto) ?? .semValor
+    } else {
+        orcamento = .nenhum
+    }
+    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(textoDaParteDaObra(r.pct))",
+                           corrigido: "corrigido: " + moeda(r.corrigido), orcamento: orcamento,
+                           aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
+                           pagos: ordenados.filter { !menorJS(hoje, $0.data) })
 }

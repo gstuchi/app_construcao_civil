@@ -63,7 +63,7 @@ public struct ListaDaObra: Equatable, Sendable {
     public let meses: [MesDeGastos]
 }
 
-private func porMes(_ gastos: [Gasto]) -> [MesDeGastos] {
+func porMes(_ gastos: [Gasto]) -> [MesDeGastos] {
     var ordem: [String] = []
     var grupos: [String: [Gasto]] = [:]
     for g in gastos {

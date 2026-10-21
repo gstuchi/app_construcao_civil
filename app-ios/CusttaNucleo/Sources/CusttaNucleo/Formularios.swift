@@ -161,6 +161,28 @@ public func obraEditada(_ obra: [String: ValorJSON], _ campos: CamposDaObra) -> 
     return o
 }
 
+/// `orcamentoGravado` do dados.js: o "Salvar" da folha do orçamento, só o modo ativo. `antigo` é o orçamento da obra no momento do
+/// Salvar; `valores`, o valor lido de cada linha da folha (todos os tópicos da lista). No total, só maior que zero; por tópico, só os
+/// valores maiores que zero. O que a folha não mostra fica: os campos desconhecidos do orçamento e, por tópico, o previsto de tópico
+/// sem linha na folha. nil: nada a gravar, e a chave sai da obra.
+public func orcamentoGravado(_ antigo: ValorJSON?, modo: String, total: Double, valores: [String: Double]) -> ValorJSON? {
+    var orcamento = antigo?.comoObjeto ?? [:]
+    let antes = orcamento["topicos"]?.comoObjeto ?? [:]
+    for chave in ["modo", "total", "topicos"] { orcamento[chave] = nil }
+    if modo == "total" {
+        guard total > 0 else { return nil }
+        orcamento["modo"] = .texto("total")
+        orcamento["total"] = .numero(total)
+        return .objeto(orcamento)
+    }
+    var topicos = valores.filter { $0.value > 0 }.mapValues(ValorJSON.numero)
+    if topicos.isEmpty { return nil }
+    for (id, valor) in antes where valores[id] == nil { topicos[id] = valor }
+    orcamento["modo"] = .texto("topicos")
+    orcamento["topicos"] = .objeto(topicos)
+    return .objeto(orcamento)
+}
+
 /// `conferirVenda` do dados.js: valor maior que zero e data entre o início da obra e hoje.
 public func conferirVenda(valor: Double, data: String, dataInicio: String, hoje: String) -> ErroDeFormulario? {
     if valor <= 0 { return ErroDeFormulario(campo: "valor") }

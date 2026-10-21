@@ -2464,6 +2464,772 @@
         "saida": 609820.0811482214
       }
     ],
+    "calc.resumoTopico": [
+      {
+        "caso": "parcelas a vencer contam no bruto",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "eletrica",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 3,
+          "bruto": 3100,
+          "corrigido": 3103.7222868121294,
+          "pct": 1
+        }
+      },
+      {
+        "caso": "um gasto só",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "fundacao",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 98000,
+          "corrigido": 117878.75574995887,
+          "pct": 28
+        }
+      },
+      {
+        "caso": "vendida corrige até a venda",
+        "args": [
+          {
+            "id": "o2",
+            "nome": "Sobrado Centro",
+            "dataInicio": "2024-01-15",
+            "fase": "vendida",
+            "venda": {
+              "valor": 980000,
+              "data": "2025-02-10"
+            },
+            "valorEstimadoVenda": 950000,
+            "areaM2": 180,
+            "orcamento": {
+              "modo": "total",
+              "total": 700000
+            },
+            "gastos": [
+              {
+                "id": "h01",
+                "valor": 150000,
+                "topico": "terreno",
+                "descricao": "Terreno",
+                "data": "2024-01-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h02",
+                "valor": 320000.75,
+                "topico": "alvenaria",
+                "descricao": "Blocos e mão de obra",
+                "data": "2024-05-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h03",
+                "valor": 85000,
+                "topico": "acabamento",
+                "descricao": "Porcelanato",
+                "data": "2024-12-01",
+                "pagamento": "cartao"
+              },
+              {
+                "id": "h04",
+                "valor": 4500,
+                "topico": "outros",
+                "descricao": "Limpeza depois da venda",
+                "data": "2025-03-01",
+                "pagamento": "pix"
+              }
+            ],
+            "afazeres": []
+          },
+          "alvenaria",
+          "2030-01-01",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 320000.75,
+          "corrigido": 347817.740317476,
+          "pct": 57
+        }
+      },
+      {
+        "caso": "tópico sem gasto",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "telhado",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 0,
+          "bruto": 0,
+          "corrigido": 0,
+          "pct": 0
+        }
+      },
+      {
+        "caso": "obra sem gasto",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": []
+          },
+          "pintura",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 0,
+          "bruto": 0,
+          "corrigido": 0,
+          "pct": 0
+        }
+      },
+      {
+        "caso": "taxa zero: corrigido igual ao bruto",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          "estrutura",
+          "2026-10-06",
+          0
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 231000,
+          "corrigido": 231000,
+          "pct": 67
+        }
+      },
+      {
+        "caso": "tópico próprio",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          },
+          "c_mgf1abcd",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 7000,
+          "corrigido": 7446.105266191087,
+          "pct": 2
+        }
+      },
+      {
+        "caso": "meio ponto arredonda para cima, como o donut",
+        "args": [
+          {
+            "id": "r",
+            "dataInicio": "2026-01-01",
+            "gastos": [
+              {
+                "id": "r1",
+                "valor": 1,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "r2",
+                "valor": 7,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          "pintura",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 1,
+          "corrigido": 1.0951305573693542,
+          "pct": 13
+        }
+      },
+      {
+        "caso": "a base do % conta a parcela a vencer de outro tópico",
+        "args": [
+          {
+            "id": "v",
+            "dataInicio": "2026-01-01",
+            "gastos": [
+              {
+                "id": "v1",
+                "valor": 50,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "v2",
+                "valor": 50,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-12-01",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          "pintura",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 50,
+          "corrigido": 54.75652786846771,
+          "pct": 50
+        }
+      }
+    ],
     "calc.lucroVenda": [
       {
         "caso": "Casa Alphaville",
@@ -6077,6 +6843,43 @@
         }
       }
     ],
+    "calc.textoVencimentos": [
+      {
+        "caso": "0",
+        "args": [
+          0
+        ],
+        "saida": "0 vencimentos · a partir de amanhã"
+      },
+      {
+        "caso": "1",
+        "args": [
+          1
+        ],
+        "saida": "1 vencimento · a partir de amanhã"
+      },
+      {
+        "caso": "2",
+        "args": [
+          2
+        ],
+        "saida": "2 vencimentos · a partir de amanhã"
+      },
+      {
+        "caso": "31",
+        "args": [
+          31
+        ],
+        "saida": "31 vencimentos · a partir de amanhã"
+      },
+      {
+        "caso": "1000",
+        "args": [
+          1000
+        ],
+        "saida": "1000 vencimentos · a partir de amanhã"
+      }
+    ],
     "calc.gastosRecentes": [
       {
         "caso": "cinco mais recentes",
@@ -9040,6 +9843,2316 @@
           }
         ],
         "saida": []
+      },
+      {
+        "caso": "texto aparado",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "  tinta  "
+          }
+        ],
+        "saida": [
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
+        "caso": "tab e quebra nas pontas",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "\ttinta\n"
+          }
+        ],
+        "saida": [
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
+        "caso": "só espaços não filtra",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "   "
+          }
+        ],
+        "saida": [
+          {
+            "id": "g01",
+            "valor": 98000,
+            "topico": "fundacao",
+            "descricao": "Sapatas e baldrame",
+            "data": "2025-03-20",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g02",
+            "valor": 231000,
+            "topico": "estrutura",
+            "descricao": "Laje do térreo",
+            "data": "2025-06-02",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g03",
+            "valor": 12000.5,
+            "topico": "hidraulica",
+            "descricao": "Tubos e conexões",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          },
+          {
+            "id": "g05a",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 1,
+              "de": 3
+            },
+            "valor": 1033.34,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-09-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "g05b",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 2,
+              "de": 3
+            },
+            "valor": 1033.33,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-10-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          },
+          {
+            "id": "g05c",
+            "grupoId": "gr1",
+            "parcela": {
+              "n": 3,
+              "de": 3
+            },
+            "valor": 1033.33,
+            "topico": "eletrica",
+            "descricao": "Fios",
+            "data": "2026-11-25",
+            "pagamento": "cartao",
+            "jurosCartao": {
+              "taxaMensal": 0,
+              "valorCompra": 3100,
+              "nParcelas": 3,
+              "totalCompra": 3100,
+              "jurosCompra": 0
+            }
+          }
+        ]
+      },
+      {
+        "caso": "espaço duplo no meio não vira um",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "e  c"
+          }
+        ],
+        "saida": []
+      },
+      {
+        "caso": "BOM no começo sai, como no trim do JS",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "﻿tinta"
+          }
+        ],
+        "saida": [
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
+        "caso": "acento solto antes do espaço sai antes de aparar",
+        "args": [
+          [
+            {
+              "id": "k1",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "Conexões",
+              "data": "2026-01-01"
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "́ conexoes"
+          }
+        ],
+        "saida": [
+          {
+            "id": "k1",
+            "valor": 1,
+            "topico": "outros",
+            "descricao": "Conexões",
+            "data": "2026-01-01"
+          }
+        ]
+      }
+    ],
+    "calc.contadorLancamentos": [
+      {
+        "caso": "sem gasto",
+        "args": [
+          0,
+          0,
+          null
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "sem gasto, com busca",
+        "args": [
+          0,
+          0,
+          {
+            "texto": "tinta"
+          }
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "sem filtro: o total",
+        "args": [
+          7,
+          7,
+          null
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "sem filtro vale o total, nunca os achados",
+        "args": [
+          7,
+          5,
+          null
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "sem filtro, com milhar: o total sem ponto",
+        "args": [
+          1234,
+          1234,
+          null
+        ],
+        "saida": "1234"
+      },
+      {
+        "caso": "com busca: achados/total",
+        "args": [
+          7,
+          1,
+          {
+            "texto": "tinta",
+            "mes": ""
+          }
+        ],
+        "saida": "1/7"
+      },
+      {
+        "caso": "busca só de espaços não filtra",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "   ",
+            "mes": ""
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "só o mês",
+        "args": [
+          7,
+          0,
+          {
+            "texto": "",
+            "mes": "2025-08"
+          }
+        ],
+        "saida": "0/7"
+      },
+      {
+        "caso": "busca e mês",
+        "args": [
+          7,
+          2,
+          {
+            "texto": "tinta",
+            "mes": "2025-08"
+          }
+        ],
+        "saida": "2/7"
+      },
+      {
+        "caso": "busca só de acento solto não filtra",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "́"
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "acento solto, espaço e acento solto: o espaço sobra e é aparado",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "́ ́"
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "busca só de BOM não filtra",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "﻿"
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "milhares sem ponto",
+        "args": [
+          1234,
+          1000,
+          {
+            "texto": "a"
+          }
+        ],
+        "saida": "1000/1234"
+      }
+    ],
+    "calc.mesesDoFiltro": [
+      {
+        "caso": "do mais novo ao mais antigo, com os futuros",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          ""
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido com gasto não se repete",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2025-08"
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido sem gasto entra com zero, no meio",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2026-01"
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-01",
+            "qtd": 0
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido sem gasto, o mais novo",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2027-01"
+        ],
+        "saida": [
+          {
+            "mes": "2027-01",
+            "qtd": 0
+          },
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês escolhido sem gasto, o mais antigo",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          "2024-12"
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          },
+          {
+            "mes": "2024-12",
+            "qtd": 0
+          }
+        ]
+      },
+      {
+        "caso": "sem gasto e sem mês",
+        "args": [
+          [],
+          ""
+        ],
+        "saida": []
+      },
+      {
+        "caso": "sem gasto, com o mês escolhido",
+        "args": [
+          [],
+          "2026-03"
+        ],
+        "saida": [
+          {
+            "mes": "2026-03",
+            "qtd": 0
+          }
+        ]
+      },
+      {
+        "caso": "sem o argumento do mês",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "mes": "2026-11",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-10",
+            "qtd": 1
+          },
+          {
+            "mes": "2026-09",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-08",
+            "qtd": 2
+          },
+          {
+            "mes": "2025-06",
+            "qtd": 1
+          },
+          {
+            "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês com três gastos: conta os três, também com dia e tópico repetidos",
+        "args": [
+          [
+            {
+              "id": "m0",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "",
+              "data": "2026-05-03"
+            },
+            {
+              "id": "m1",
+              "valor": 1,
+              "topico": "pintura",
+              "descricao": "",
+              "data": "2026-05-03"
+            },
+            {
+              "id": "m2",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "",
+              "data": "2026-05-20"
+            },
+            {
+              "id": "m3",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "",
+              "data": "2026-04-30"
+            }
+          ],
+          ""
+        ],
+        "saida": [
+          {
+            "mes": "2026-05",
+            "qtd": 3
+          },
+          {
+            "mes": "2026-04",
+            "qtd": 1
+          }
+        ]
       }
     ],
     "calc.normalizaDescricao": [
@@ -15560,6 +18673,977 @@
         "saida": null
       }
     ],
+    "calc.ORC_PILULA": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": {
+          "ok": "dentro do previsto",
+          "perto": "perto do limite",
+          "passou": "passou do previsto"
+        }
+      }
+    ],
+    "calc.larguraBarraOrc": [
+      {
+        "caso": "-5",
+        "args": [
+          -5
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "0",
+        "args": [
+          0
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "55",
+        "args": [
+          55
+        ],
+        "saida": 55
+      },
+      {
+        "caso": "100",
+        "args": [
+          100
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "104",
+        "args": [
+          104
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "250",
+        "args": [
+          250
+        ],
+        "saida": 100
+      }
+    ],
+    "calc.fraseTopicoOrc": [
+      {
+        "caso": "passou: R$ 8 mil do previsto",
+        "args": [
+          {
+            "previsto": 90000,
+            "gasto": 98000,
+            "pct": 109,
+            "sobra": -8000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "texto": "Passou R$ 8 mil do previsto",
+          "alerta": true
+        }
+      },
+      {
+        "caso": "passou na casa do milhão",
+        "args": [
+          {
+            "previsto": 1000000,
+            "gasto": 3500000,
+            "pct": 350,
+            "sobra": -2500000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "texto": "Passou R$ 2,50 mi do previsto",
+          "alerta": true
+        }
+      },
+      {
+        "caso": "passou por menos de mil",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000.75,
+            "pct": 100,
+            "sobra": -0.75,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "texto": "Passou R$ 0,75 do previsto",
+          "alerta": true
+        }
+      },
+      {
+        "caso": "perto: faltam R$ 19 mil",
+        "args": [
+          {
+            "previsto": 250000,
+            "gasto": 231000,
+            "pct": 92,
+            "sobra": 19000,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 19 mil — 92%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "perto: faltam menos de mil",
+        "args": [
+          {
+            "previsto": 10000,
+            "gasto": 9000.01,
+            "pct": 90,
+            "sobra": 999.9899999999998,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 999,99 — 90%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "perto: faltam R$ 8 mil, sem o \",0\"",
+        "args": [
+          {
+            "previsto": 100000,
+            "gasto": 92000,
+            "pct": 92,
+            "sobra": 8000,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 8 mil — 92%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "sobra de mais de meio centavo: faltam",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 999.994,
+            "pct": 100,
+            "sobra": 0.005999999999971806,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Faltam R$ 0,01 — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "sobra de meio centavo: chegou",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 999.996,
+            "pct": 100,
+            "sobra": 0.004000000000019099,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Chegou ao previsto — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "exatamente no previsto: chegou",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000,
+            "pct": 100,
+            "sobra": 0,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Chegou ao previsto — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "meio centavo acima: chegou, não passou",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000.004,
+            "pct": 100,
+            "sobra": -0.004000000000019099,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "texto": "Chegou ao previsto — 100%",
+          "alerta": false
+        }
+      },
+      {
+        "caso": "dentro do previsto: sem frase",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 500,
+            "pct": 50,
+            "sobra": 500,
+            "nivel": "ok"
+          }
+        ],
+        "saida": null
+      }
+    ],
+    "calc.rodapeOrc": [
+      {
+        "caso": "dentro: sobra",
+        "args": [
+          {
+            "previsto": 800000,
+            "gasto": 612000,
+            "pct": 77,
+            "sobra": 188000,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "usado": "77%",
+          "rotulo": "sobra",
+          "valor": "R$ 188.000,00"
+        }
+      },
+      {
+        "caso": "passou: o valor sem sinal",
+        "args": [
+          {
+            "previsto": 1008000,
+            "gasto": 1048000,
+            "pct": 104,
+            "sobra": -40000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "usado": "104%",
+          "rotulo": "passou",
+          "valor": "R$ 40.000,00"
+        }
+      },
+      {
+        "caso": "meio centavo acima ainda sobra",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 1000.004,
+            "pct": 100,
+            "sobra": -0.004000000000019099,
+            "nivel": "perto"
+          }
+        ],
+        "saida": {
+          "usado": "100%",
+          "rotulo": "sobra",
+          "valor": "R$ 0,00"
+        }
+      },
+      {
+        "caso": "sem gasto",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 0,
+            "pct": 0,
+            "sobra": 1000,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "usado": "0%",
+          "rotulo": "sobra",
+          "valor": "R$ 1.000,00"
+        }
+      }
+    ],
+    "calc.linhaTopicoOrc": [
+      {
+        "caso": "mil e mil",
+        "args": [
+          {
+            "previsto": 90000,
+            "gasto": 98000,
+            "pct": 109,
+            "sobra": -8000,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 98 mil",
+          "previsto": "90 mil"
+        }
+      },
+      {
+        "caso": "sem gasto e mil redondo",
+        "args": [
+          {
+            "previsto": 1000,
+            "gasto": 0,
+            "pct": 0,
+            "sobra": 1000,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 0,00",
+          "previsto": "1 mil"
+        }
+      },
+      {
+        "caso": "previsto abaixo de mil perde o R$ com espaço duro",
+        "args": [
+          {
+            "previsto": 500,
+            "gasto": 12000.5,
+            "pct": 2400,
+            "sobra": -11500.5,
+            "nivel": "passou"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 12 mil",
+          "previsto": "500,00"
+        }
+      },
+      {
+        "caso": "milhões",
+        "args": [
+          {
+            "previsto": 2500000,
+            "gasto": 1234567,
+            "pct": 49,
+            "sobra": 1265433,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 1,23 mi",
+          "previsto": "2,50 mi"
+        }
+      },
+      {
+        "caso": "um milhão redondo",
+        "args": [
+          {
+            "previsto": 1000000,
+            "gasto": 8500,
+            "pct": 1,
+            "sobra": 991500,
+            "nivel": "ok"
+          }
+        ],
+        "saida": {
+          "gasto": "R$ 8,5 mil",
+          "previsto": "1 mi"
+        }
+      }
+    ],
+    "calc.pecasOrcamento": [
+      {
+        "caso": "sem orçamento, em construção",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": []
+          }
+        ],
+        "saida": {
+          "cartao": false,
+          "porTopico": false,
+          "definir": true,
+          "tocaveis": []
+        }
+      },
+      {
+        "caso": "sem orçamento, pronta",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          }
+        ],
+        "saida": {
+          "cartao": false,
+          "porTopico": false,
+          "definir": true,
+          "tocaveis": []
+        }
+      },
+      {
+        "caso": "sem orçamento, vendida: sem o Definir",
+        "args": [
+          {
+            "id": "o2",
+            "nome": "Sobrado Centro",
+            "dataInicio": "2024-01-15",
+            "fase": "vendida",
+            "venda": {
+              "valor": 980000,
+              "data": "2025-02-10"
+            },
+            "valorEstimadoVenda": 950000,
+            "areaM2": 180,
+            "gastos": [
+              {
+                "id": "h01",
+                "valor": 150000,
+                "topico": "terreno",
+                "descricao": "Terreno",
+                "data": "2024-01-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h02",
+                "valor": 320000.75,
+                "topico": "alvenaria",
+                "descricao": "Blocos e mão de obra",
+                "data": "2024-05-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h03",
+                "valor": 85000,
+                "topico": "acabamento",
+                "descricao": "Porcelanato",
+                "data": "2024-12-01",
+                "pagamento": "cartao"
+              },
+              {
+                "id": "h04",
+                "valor": 4500,
+                "topico": "outros",
+                "descricao": "Limpeza depois da venda",
+                "data": "2025-03-01",
+                "pagamento": "pix"
+              }
+            ],
+            "afazeres": []
+          }
+        ],
+        "saida": {
+          "cartao": false,
+          "porTopico": false,
+          "definir": false,
+          "tocaveis": []
+        }
+      },
+      {
+        "caso": "total na vendida",
+        "args": [
+          {
+            "id": "o2",
+            "nome": "Sobrado Centro",
+            "dataInicio": "2024-01-15",
+            "fase": "vendida",
+            "venda": {
+              "valor": 980000,
+              "data": "2025-02-10"
+            },
+            "valorEstimadoVenda": 950000,
+            "areaM2": 180,
+            "orcamento": {
+              "modo": "total",
+              "total": 700000
+            },
+            "gastos": [
+              {
+                "id": "h01",
+                "valor": 150000,
+                "topico": "terreno",
+                "descricao": "Terreno",
+                "data": "2024-01-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h02",
+                "valor": 320000.75,
+                "topico": "alvenaria",
+                "descricao": "Blocos e mão de obra",
+                "data": "2024-05-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h03",
+                "valor": 85000,
+                "topico": "acabamento",
+                "descricao": "Porcelanato",
+                "data": "2024-12-01",
+                "pagamento": "cartao"
+              },
+              {
+                "id": "h04",
+                "valor": 4500,
+                "topico": "outros",
+                "descricao": "Limpeza depois da venda",
+                "data": "2025-03-01",
+                "pagamento": "pix"
+              }
+            ],
+            "afazeres": []
+          }
+        ],
+        "saida": {
+          "cartao": true,
+          "porTopico": false,
+          "definir": false,
+          "tocaveis": []
+        }
+      },
+      {
+        "caso": "a ordem é a da lista, não a dos gastos",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "estrutura",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "fundacao",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": [],
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000
+              }
+            }
+          }
+        ],
+        "saida": {
+          "cartao": true,
+          "porTopico": true,
+          "definir": false,
+          "tocaveis": [
+            "fundacao",
+            "estrutura"
+          ]
+        }
+      },
+      {
+        "caso": "por tópico: só os previstos com gasto abrem, na ordem da lista",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          }
+        ],
+        "saida": {
+          "cartao": true,
+          "porTopico": true,
+          "definir": false,
+          "tocaveis": [
+            "fundacao",
+            "estrutura"
+          ]
+        }
+      },
+      {
+        "caso": "gasto de valor zero ainda abre",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "pintura",
+                "valor": 0,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": [],
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "pintura": 1000,
+                "eletrica": 500
+              }
+            }
+          }
+        ],
+        "saida": {
+          "cartao": true,
+          "porTopico": true,
+          "definir": false,
+          "tocaveis": [
+            "pintura"
+          ]
+        }
+      },
+      {
+        "caso": "orçamento inválido conta como sem",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "pintura",
+                "valor": 10,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": [],
+            "orcamento": {
+              "modo": "total",
+              "total": 0
+            }
+          }
+        ],
+        "saida": {
+          "cartao": false,
+          "porTopico": false,
+          "definir": true,
+          "tocaveis": []
+        }
+      }
+    ],
+    "calc.somaTopicosOrc": [
+      {
+        "caso": "folha vazia",
+        "args": [
+          []
+        ],
+        "saida": 0
+      },
+      {
+        "caso": "soma na ordem da folha",
+        "args": [
+          [
+            180000,
+            100000,
+            250000,
+            180000,
+            5000.5
+          ]
+        ],
+        "saida": 715000.5
+      },
+      {
+        "caso": "negativo e zero não contam",
+        "args": [
+          [
+            -3,
+            100,
+            0
+          ]
+        ],
+        "saida": 100
+      },
+      {
+        "caso": "negativo grande não desconta",
+        "args": [
+          [
+            1000000,
+            -1000000
+          ]
+        ],
+        "saida": 1000000
+      },
+      {
+        "caso": "centavos em ponto flutuante",
+        "args": [
+          [
+            0.1,
+            0.2
+          ]
+        ],
+        "saida": 0.30000000000000004
+      },
+      {
+        "caso": "de cima para baixo: 0,1 + 0,2 + 0,3 não fecha em 0,6",
+        "args": [
+          [
+            0.1,
+            0.2,
+            0.3
+          ]
+        ],
+        "saida": 0.6000000000000001
+      }
+    ],
+    "calc.totalPreenchidoOrc": [
+      {
+        "caso": "campo vazio ganha a soma",
+        "args": [
+          "",
+          [
+            90000,
+            0,
+            5000.5
+          ]
+        ],
+        "saida": "95.000,50"
+      },
+      {
+        "caso": "campo vazio e folha vazia",
+        "args": [
+          "",
+          []
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "soma só de negativos não preenche",
+        "args": [
+          "",
+          [
+            -5
+          ]
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "linha negativa não desconta do que preenche",
+        "args": [
+          "",
+          [
+            100,
+            -30
+          ]
+        ],
+        "saida": "100,00"
+      },
+      {
+        "caso": "soma abaixo de meio centavo ainda preenche",
+        "args": [
+          "",
+          [
+            0.004
+          ]
+        ],
+        "saida": "0,00"
+      },
+      {
+        "caso": "campo com valor fica",
+        "args": [
+          "1.008.000,00",
+          [
+            5000
+          ]
+        ],
+        "saida": "1.008.000,00"
+      },
+      {
+        "caso": "campo com zero digitado fica",
+        "args": [
+          "0",
+          [
+            5000
+          ]
+        ],
+        "saida": "0"
+      }
+    ],
     "calc.versaoMaior": [
       {
         "caso": "patch numérico",
@@ -21547,6 +25631,1439 @@
           "erro": "data",
           "mensagem": "Data da venda precisa ficar entre o início da obra e hoje"
         }
+      }
+    ],
+    "dados.orcamentoGravado": [
+      {
+        "caso": "só o total, sem orçamento antes",
+        "args": [
+          null,
+          "total",
+          500000,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "total",
+          "total": 500000
+        }
+      },
+      {
+        "caso": "total zero tira",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000
+          },
+          "total",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total negativo tira",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000
+          },
+          "total",
+          -5,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total ilegível tira",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000
+          },
+          "total",
+          null,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total zero tira, e leva o campo desconhecido junto",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000,
+            "nota": "do site"
+          },
+          "total",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "total guarda o campo desconhecido e larga os tópicos",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "c_apagado": 1000
+            },
+            "nota": "do site",
+            "versao": 2
+          },
+          "total",
+          1250000.5,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "nota": "do site",
+          "versao": 2,
+          "modo": "total",
+          "total": 1250000.5
+        }
+      },
+      {
+        "caso": "total ignora os valores da folha",
+        "args": [
+          null,
+          "total",
+          1000,
+          {
+            "terreno": 5,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "total",
+          "total": 1000
+        }
+      },
+      {
+        "caso": "por tópico: só os valores acima de zero",
+        "args": [
+          null,
+          "topicos",
+          0,
+          {
+            "terreno": 180000,
+            "fundacao": 100000,
+            "estrutura": -3,
+            "pintura": null,
+            "c_portao": 5000.5
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "terreno": 180000,
+            "fundacao": 100000,
+            "c_portao": 5000.5
+          }
+        }
+      },
+      {
+        "caso": "por tópico ignora o total",
+        "args": [
+          null,
+          "topicos",
+          999,
+          {
+            "terreno": 5,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "terreno": 5
+          }
+        }
+      },
+      {
+        "caso": "por tópico tudo vazio tira, mesmo com tópico fora da folha",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "c_apagado": 1000
+            }
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "por tópico tudo vazio tira, e leva o campo desconhecido junto",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000
+            },
+            "nota": "do site"
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
+        "caso": "por tópico guarda o tópico fora da folha e o campo desconhecido",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "c_apagado": 1000
+            },
+            "nota": "do site"
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 95000,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "nota": "do site",
+          "modo": "topicos",
+          "topicos": {
+            "fundacao": 95000,
+            "c_apagado": 1000
+          }
+        }
+      },
+      {
+        "caso": "tópico da folha zerado não volta do antigo",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000,
+              "estrutura": 250000
+            }
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 250000,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "estrutura": 250000
+          }
+        }
+      },
+      {
+        "caso": "por tópico não corta em 100",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "c_fora0": 1000,
+              "c_fora1": 1001,
+              "c_fora2": 1002,
+              "c_fora3": 1003,
+              "c_fora4": 1004,
+              "c_fora5": 1005,
+              "c_fora6": 1006,
+              "c_fora7": 1007,
+              "c_fora8": 1008,
+              "c_fora9": 1009,
+              "c_fora10": 1010,
+              "c_fora11": 1011,
+              "c_fora12": 1012,
+              "c_fora13": 1013,
+              "c_fora14": 1014,
+              "c_fora15": 1015,
+              "c_fora16": 1016,
+              "c_fora17": 1017,
+              "c_fora18": 1018,
+              "c_fora19": 1019,
+              "c_fora20": 1020,
+              "c_fora21": 1021,
+              "c_fora22": 1022,
+              "c_fora23": 1023,
+              "c_fora24": 1024,
+              "c_fora25": 1025,
+              "c_fora26": 1026,
+              "c_fora27": 1027,
+              "c_fora28": 1028,
+              "c_fora29": 1029
+            }
+          },
+          "topicos",
+          0,
+          {
+            "c_folha0": 1000,
+            "c_folha1": 1001,
+            "c_folha2": 1002,
+            "c_folha3": 1003,
+            "c_folha4": 1004,
+            "c_folha5": 1005,
+            "c_folha6": 1006,
+            "c_folha7": 1007,
+            "c_folha8": 1008,
+            "c_folha9": 1009,
+            "c_folha10": 1010,
+            "c_folha11": 1011,
+            "c_folha12": 1012,
+            "c_folha13": 1013,
+            "c_folha14": 1014,
+            "c_folha15": 1015,
+            "c_folha16": 1016,
+            "c_folha17": 1017,
+            "c_folha18": 1018,
+            "c_folha19": 1019,
+            "c_folha20": 1020,
+            "c_folha21": 1021,
+            "c_folha22": 1022,
+            "c_folha23": 1023,
+            "c_folha24": 1024,
+            "c_folha25": 1025,
+            "c_folha26": 1026,
+            "c_folha27": 1027,
+            "c_folha28": 1028,
+            "c_folha29": 1029,
+            "c_folha30": 1030,
+            "c_folha31": 1031,
+            "c_folha32": 1032,
+            "c_folha33": 1033,
+            "c_folha34": 1034,
+            "c_folha35": 1035,
+            "c_folha36": 1036,
+            "c_folha37": 1037,
+            "c_folha38": 1038,
+            "c_folha39": 1039,
+            "c_folha40": 1040,
+            "c_folha41": 1041,
+            "c_folha42": 1042,
+            "c_folha43": 1043,
+            "c_folha44": 1044,
+            "c_folha45": 1045,
+            "c_folha46": 1046,
+            "c_folha47": 1047,
+            "c_folha48": 1048,
+            "c_folha49": 1049,
+            "c_folha50": 1050,
+            "c_folha51": 1051,
+            "c_folha52": 1052,
+            "c_folha53": 1053,
+            "c_folha54": 1054,
+            "c_folha55": 1055,
+            "c_folha56": 1056,
+            "c_folha57": 1057,
+            "c_folha58": 1058,
+            "c_folha59": 1059,
+            "c_folha60": 1060,
+            "c_folha61": 1061,
+            "c_folha62": 1062,
+            "c_folha63": 1063,
+            "c_folha64": 1064,
+            "c_folha65": 1065,
+            "c_folha66": 1066,
+            "c_folha67": 1067,
+            "c_folha68": 1068,
+            "c_folha69": 1069,
+            "c_folha70": 1070
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "c_folha0": 1000,
+            "c_folha1": 1001,
+            "c_folha2": 1002,
+            "c_folha3": 1003,
+            "c_folha4": 1004,
+            "c_folha5": 1005,
+            "c_folha6": 1006,
+            "c_folha7": 1007,
+            "c_folha8": 1008,
+            "c_folha9": 1009,
+            "c_folha10": 1010,
+            "c_folha11": 1011,
+            "c_folha12": 1012,
+            "c_folha13": 1013,
+            "c_folha14": 1014,
+            "c_folha15": 1015,
+            "c_folha16": 1016,
+            "c_folha17": 1017,
+            "c_folha18": 1018,
+            "c_folha19": 1019,
+            "c_folha20": 1020,
+            "c_folha21": 1021,
+            "c_folha22": 1022,
+            "c_folha23": 1023,
+            "c_folha24": 1024,
+            "c_folha25": 1025,
+            "c_folha26": 1026,
+            "c_folha27": 1027,
+            "c_folha28": 1028,
+            "c_folha29": 1029,
+            "c_folha30": 1030,
+            "c_folha31": 1031,
+            "c_folha32": 1032,
+            "c_folha33": 1033,
+            "c_folha34": 1034,
+            "c_folha35": 1035,
+            "c_folha36": 1036,
+            "c_folha37": 1037,
+            "c_folha38": 1038,
+            "c_folha39": 1039,
+            "c_folha40": 1040,
+            "c_folha41": 1041,
+            "c_folha42": 1042,
+            "c_folha43": 1043,
+            "c_folha44": 1044,
+            "c_folha45": 1045,
+            "c_folha46": 1046,
+            "c_folha47": 1047,
+            "c_folha48": 1048,
+            "c_folha49": 1049,
+            "c_folha50": 1050,
+            "c_folha51": 1051,
+            "c_folha52": 1052,
+            "c_folha53": 1053,
+            "c_folha54": 1054,
+            "c_folha55": 1055,
+            "c_folha56": 1056,
+            "c_folha57": 1057,
+            "c_folha58": 1058,
+            "c_folha59": 1059,
+            "c_folha60": 1060,
+            "c_folha61": 1061,
+            "c_folha62": 1062,
+            "c_folha63": 1063,
+            "c_folha64": 1064,
+            "c_folha65": 1065,
+            "c_folha66": 1066,
+            "c_folha67": 1067,
+            "c_folha68": 1068,
+            "c_folha69": 1069,
+            "c_folha70": 1070,
+            "c_fora0": 1000,
+            "c_fora1": 1001,
+            "c_fora2": 1002,
+            "c_fora3": 1003,
+            "c_fora4": 1004,
+            "c_fora5": 1005,
+            "c_fora6": 1006,
+            "c_fora7": 1007,
+            "c_fora8": 1008,
+            "c_fora9": 1009,
+            "c_fora10": 1010,
+            "c_fora11": 1011,
+            "c_fora12": 1012,
+            "c_fora13": 1013,
+            "c_fora14": 1014,
+            "c_fora15": 1015,
+            "c_fora16": 1016,
+            "c_fora17": 1017,
+            "c_fora18": 1018,
+            "c_fora19": 1019,
+            "c_fora20": 1020,
+            "c_fora21": 1021,
+            "c_fora22": 1022,
+            "c_fora23": 1023,
+            "c_fora24": 1024,
+            "c_fora25": 1025,
+            "c_fora26": 1026,
+            "c_fora27": 1027,
+            "c_fora28": 1028,
+            "c_fora29": 1029
+          }
+        }
+      },
+      {
+        "caso": "do total para por tópico: o total sai, o desconhecido fica",
+        "args": [
+          {
+            "modo": "total",
+            "total": 700000,
+            "nota": "x"
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 1000,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "nota": "x",
+          "modo": "topicos",
+          "topicos": {
+            "terreno": 1000
+          }
+        }
+      },
+      {
+        "caso": "antigo que não é objeto conta como sem orçamento",
+        "args": [
+          "lixo",
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 3000,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "pintura": 3000
+          }
+        }
+      },
+      {
+        "caso": "antigo lista conta como sem orçamento",
+        "args": [
+          [
+            1,
+            2
+          ],
+          "total",
+          10,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "total",
+          "total": 10
+        }
+      },
+      {
+        "caso": "tópicos do antigo que não são objeto não entram",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": [
+              5
+            ]
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 3000,
+            "c_portao": 0
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "pintura": 3000
+          }
+        }
+      }
+    ],
+    "dados.conferirAfazer": [
+      {
+        "caso": "texto comum",
+        "args": [
+          "Comprar tinta"
+        ],
+        "saida": {
+          "texto": "Comprar tinta"
+        }
+      },
+      {
+        "caso": "aparado, com o espaço do meio",
+        "args": [
+          "  Pagar  o pedreiro  "
+        ],
+        "saida": {
+          "texto": "Pagar  o pedreiro"
+        }
+      },
+      {
+        "caso": "vazio",
+        "args": [
+          ""
+        ],
+        "saida": {
+          "erro": "vazio"
+        }
+      },
+      {
+        "caso": "só espaços",
+        "args": [
+          "   "
+        ],
+        "saida": {
+          "erro": "vazio"
+        }
+      },
+      {
+        "caso": "espaço duro, quebra e tab",
+        "args": [
+          " \n\t"
+        ],
+        "saida": {
+          "erro": "vazio"
+        }
+      },
+      {
+        "caso": "BOM nas pontas sai",
+        "args": [
+          "﻿abc﻿"
+        ],
+        "saida": {
+          "texto": "abc"
+        }
+      },
+      {
+        "caso": "espaço de largura zero fica",
+        "args": [
+          "​"
+        ],
+        "saida": {
+          "texto": "​"
+        }
+      },
+      {
+        "caso": "500 letras",
+        "args": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "saida": {
+          "texto": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      {
+        "caso": "501 letras",
+        "args": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "saida": {
+          "erro": "afazer",
+          "mensagem": "Use até 500 caracteres."
+        }
+      },
+      {
+        "caso": "500 depois de aparar",
+        "args": [
+          " aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "
+        ],
+        "saida": {
+          "texto": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      {
+        "caso": "250 emojis são 500 unidades",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        ],
+        "saida": {
+          "texto": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        }
+      },
+      {
+        "caso": "250 emojis e uma letra",
+        "args": [
+          "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a"
+        ],
+        "saida": {
+          "erro": "afazer",
+          "mensagem": "Use até 500 caracteres."
+        }
+      }
+    ],
+    "dados.afazeresComNovo": [
+      {
+        "caso": "no começo da lista, pendente",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "Comprar areia",
+          "n1"
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "texto": "Comprar areia",
+            "feito": false
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "lista vazia",
+        "args": [
+          [],
+          "Primeiro",
+          "n1"
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "texto": "Primeiro",
+            "feito": false
+          }
+        ]
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null,
+          "Primeiro",
+          "n1"
+        ],
+        "saida": [
+          {
+            "id": "n1",
+            "texto": "Primeiro",
+            "feito": false
+          }
+        ]
+      }
+    ],
+    "dados.afazeresAlternado": [
+      {
+        "caso": "marcar o do meio leva ao começo, com o campo desconhecido",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a3"
+        ],
+        "saida": [
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": true,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "desmarcar o último leva ao começo",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a4"
+        ],
+        "saida": [
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": false
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          }
+        ]
+      },
+      {
+        "caso": "marcar o primeiro",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a1"
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": true
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "id que sumiu",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "zz"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null,
+          "a1"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "id repetido troca o primeiro",
+        "args": [
+          [
+            {
+              "id": "x",
+              "texto": "Um",
+              "feito": false
+            },
+            {
+              "id": "x",
+              "texto": "Dois",
+              "feito": true
+            },
+            {
+              "id": "y",
+              "texto": "Três",
+              "feito": false
+            }
+          ],
+          "x"
+        ],
+        "saida": [
+          {
+            "id": "x",
+            "texto": "Um",
+            "feito": true
+          },
+          {
+            "id": "x",
+            "texto": "Dois",
+            "feito": true
+          },
+          {
+            "id": "y",
+            "texto": "Três",
+            "feito": false
+          }
+        ]
+      }
+    ],
+    "dados.afazeresSem": [
+      {
+        "caso": "apagar o do meio",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "a2"
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "id que sumiu",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ],
+          "zz"
+        ],
+        "saida": null
+      },
+      {
+        "caso": "id repetido sai todo",
+        "args": [
+          [
+            {
+              "id": "x",
+              "texto": "Um",
+              "feito": false
+            },
+            {
+              "id": "x",
+              "texto": "Dois",
+              "feito": true
+            },
+            {
+              "id": "y",
+              "texto": "Três",
+              "feito": false
+            }
+          ],
+          "x"
+        ],
+        "saida": [
+          {
+            "id": "y",
+            "texto": "Três",
+            "feito": false
+          }
+        ]
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null,
+          "a1"
+        ],
+        "saida": null
+      }
+    ],
+    "calc.afazeresEmOrdem": [
+      {
+        "caso": "pendentes e depois feitos, cada grupo na ordem da lista",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "o recém-marcado fica no alto dos feitos",
+        "args": [
+          [
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": true,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": true,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          },
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "o desmarcado volta ao alto dos pendentes",
+        "args": [
+          [
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": false
+            },
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            }
+          ]
+        ],
+        "saida": [
+          {
+            "id": "a4",
+            "texto": "Medir janelas",
+            "feito": false
+          },
+          {
+            "id": "a1",
+            "texto": "Comprar tinta",
+            "feito": false
+          },
+          {
+            "id": "a3",
+            "texto": "Ligar eletricista",
+            "feito": false,
+            "prioridade": "alta"
+          },
+          {
+            "id": "a2",
+            "texto": "Pagar pedreiro",
+            "feito": true
+          }
+        ]
+      },
+      {
+        "caso": "lista vazia",
+        "args": [
+          []
+        ],
+        "saida": []
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null
+        ],
+        "saida": []
+      }
+    ],
+    "calc.contadorDeAfazeres": [
+      {
+        "caso": "dois pendentes",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": false
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": "(2 pendentes)"
+      },
+      {
+        "caso": "um pendente",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": true
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": false,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": "(1 pendente)"
+      },
+      {
+        "caso": "tudo feito",
+        "args": [
+          [
+            {
+              "id": "a1",
+              "texto": "Comprar tinta",
+              "feito": true
+            },
+            {
+              "id": "a2",
+              "texto": "Pagar pedreiro",
+              "feito": true
+            },
+            {
+              "id": "a3",
+              "texto": "Ligar eletricista",
+              "feito": true,
+              "prioridade": "alta"
+            },
+            {
+              "id": "a4",
+              "texto": "Medir janelas",
+              "feito": true
+            }
+          ]
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "lista vazia",
+        "args": [
+          []
+        ],
+        "saida": ""
+      },
+      {
+        "caso": "obra sem a chave afazeres",
+        "args": [
+          null
+        ],
+        "saida": ""
       }
     ],
     "push.hashEndpoint": [

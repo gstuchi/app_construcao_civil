@@ -29,6 +29,26 @@ public func totalCorrigido(_ obra: Obra, taxa: Double, hoje: String) -> Double {
     return obra.gastos.reduce(0) { $0 + corrigido($1.valor, de: $1.data, ate: fim, taxa: taxa) }
 }
 
+public struct ResumoDoTopico: Equatable, Sendable {
+    public let qtd: Int
+    /// Com as parcelas a vencer.
+    public let bruto: Double
+    /// Até a venda ou hoje.
+    public let corrigido: Double
+    /// Inteiro (o arredondamento da legenda do donut), guardado como Double; 0 na obra sem gasto.
+    public let pct: Double
+}
+
+/// `resumoTopico` do calc.js: o resumo da folha do tópico.
+public func resumoTopico(_ obra: Obra, topico: String, hoje: String, taxaMensal: Double) -> ResumoDoTopico {
+    let gs = obra.gastos.filter { $0.topico == topico }
+    let fim = fimCorrecao(obra, hoje: hoje)
+    let bruto = gs.reduce(0) { $0 + $1.valor }
+    let total = totalBruto(obra)
+    return ResumoDoTopico(qtd: gs.count, bruto: bruto, corrigido: gs.reduce(0) { $0 + corrigido($1.valor, de: $1.data, ate: fim, taxa: taxaMensal) },
+                          pct: total > 0 ? arredondarJS(bruto / total * 100) : 0)
+}
+
 public struct LucroVenda: Equatable, Sendable {
     public let bruto: Double
     public let vsBanco: Double

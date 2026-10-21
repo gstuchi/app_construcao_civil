@@ -73,3 +73,98 @@ public func orcamentoObra(_ obra: Obra) -> ResumoOrcamento? {
     return ResumoOrcamento(modo: "total", geral: itemOrcamento(nil, gasto: totalBruto(obra), previsto: total),
                            topicos: [], fora: [], foraTotal: 0)
 }
+
+/* Os textos do cartão e da lista por tópico, como o calc.js os escreve (moravam no app.js orcamentoHtml). */
+
+public extension NivelOrcamento {
+    /// `ORC_PILULA` do calc.js: a pílula do cartão.
+    var pilula: String {
+        switch self {
+        case .ok: return "dentro do previsto"
+        case .perto: return "perto do limite"
+        case .passou: return "passou do previsto"
+        }
+    }
+}
+
+/// `larguraBarraOrc` do calc.js: a barra em %, de 0 a 100 (no "passou", ela para no previsto).
+public func larguraBarraOrc(_ pct: Double) -> Double { max(0, min(100, pct)) }
+
+public struct FraseDoOrcamento: Equatable, Sendable {
+    public let texto: String
+    /// No "passou": a frase vai na cor do alerta.
+    public let alerta: Bool
+}
+
+/// `fraseTopicoOrc` do calc.js: quanto passou, quanto falta ou que chegou (meio centavo de sobra já é "chegou"); nada
+/// no "dentro do previsto".
+public func fraseTopicoOrc(_ t: ItemOrcamento) -> FraseDoOrcamento? {
+    switch t.nivel {
+    case .passou: return FraseDoOrcamento(texto: "Passou \(moedaCurtaSemZero(-t.sobra)) do previsto", alerta: true)
+    case .perto:
+        let pct = numeroJS(t.pct)
+        let texto = t.sobra > 0.005 ? "Faltam \(moedaCurtaSemZero(t.sobra)) — \(pct)%" : "Chegou ao previsto — \(pct)%"
+        return FraseDoOrcamento(texto: texto, alerta: false)
+    case .ok: return nil
+    }
+}
+
+public struct RodapeDoOrcamento: Equatable, Sendable {
+    /// "{pct}%", antes do "usado".
+    public let usado: String
+    /// "sobra" ou "passou".
+    public let rotulo: String
+    /// O valor sem sinal.
+    public let valor: String
+}
+
+/// `rodapeOrc` do calc.js: "{pct}% usado" e "sobra" ou "passou" com o valor sem sinal.
+public func rodapeOrc(_ r: ItemOrcamento) -> RodapeDoOrcamento {
+    RodapeDoOrcamento(usado: "\(numeroJS(r.pct))%", rotulo: r.nivel == .passou ? "passou" : "sobra", valor: moeda(abs(r.sobra)))
+}
+
+public struct LinhaDoTopicoOrc: Equatable, Sendable {
+    public let gasto: String
+    /// Sem o "R$".
+    public let previsto: String
+}
+
+/// `linhaTopicoOrc` do calc.js: "{gasto} / {previsto}", o previsto sem o "R$" (com o espaço comum ou o duro do `money`).
+public func linhaTopicoOrc(_ t: ItemOrcamento) -> LinhaDoTopicoOrc {
+    var previsto = moedaCurtaSemZero(t.previsto)
+    for prefixo in ["R$ ", "R$\u{00A0}"] where previsto.hasPrefix(prefixo) {
+        previsto.removeFirst(prefixo.count)
+        break
+    }
+    return LinhaDoTopicoOrc(gasto: moedaCurtaSemZero(t.gasto), previsto: previsto)
+}
+
+public struct PecasDoOrcamento: Equatable, Sendable {
+    /// O cartão (e o lápis que edita), com orçamento válido.
+    public let cartao: Bool
+    /// A lista "Por tópico", só no modo por tópico.
+    public let porTopico: Bool
+    /// "Definir orçamento", sem orçamento e fora da vendida.
+    public let definir: Bool
+    /// Os tópicos previstos que abrem o detalhe (os que têm gasto, até de valor zero), na ordem da lista.
+    public let tocaveis: [String]
+}
+
+/// `pecasOrcamento` do calc.js: quais peças do orçamento a obra mostra.
+public func pecasOrcamento(_ obra: Obra) -> PecasDoOrcamento {
+    let orc = orcamentoObra(obra)
+    let comGasto = Set(obra.gastos.map(\.topico))
+    return PecasDoOrcamento(cartao: orc != nil, porTopico: orc?.modo == "topicos", definir: orc == nil && obra.fase != .vendida,
+                            tocaveis: (orc?.topicos ?? []).compactMap(\.id).filter { comGasto.contains($0) })
+}
+
+/// `somaTopicosOrc` do calc.js: o total ao vivo da folha soma só o que é positivo em cada linha, na ordem da folha.
+public func somaTopicosOrc(_ numeros: [Double]) -> Double { numeros.reduce(0) { $0 + max(0, $1) } }
+
+/// `totalPreenchidoOrc` do calc.js: trocar para "Só o total" com o campo vazio preenche com a soma dos tópicos, se ela passar de
+/// zero (o previsto por tópico não some sem o número à vista); campo com texto fica como está.
+public func totalPreenchidoOrc(_ campo: String, _ numeros: [Double]) -> String {
+    if !campo.isEmpty { return campo }
+    let soma = somaTopicosOrc(numeros)
+    return soma > 0 ? numParaCampo(soma) : ""
+}

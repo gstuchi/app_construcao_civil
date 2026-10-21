@@ -23,10 +23,10 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
   await ctx.addInitScript(({tema,skin})=>{
     sessionStorage.setItem('splashVista','1');
     localStorage.setItem('mo_tema',tema); if(skin==='azul') localStorage.setItem('mo_skin','azul');
-    window.errosOrc=[];
+    window.errosOrc=[]; window.salvos=[];
     addEventListener('error',e=>errosOrc.push(e.message));
     addEventListener('securitypolicyviolation',e=>errosOrc.push(e.violatedDirective));
-    window.CLOUD={user:()=>({uid:'teste'}),onAuth:cb=>cb({uid:'teste'}),watchDados:()=>()=>{},saveDados:()=>Promise.resolve(),estado:()=>'ocioso'};
+    window.CLOUD={user:()=>({uid:'teste'}),onAuth:cb=>cb({uid:'teste'}),watchDados:()=>()=>{},saveDados:d=>{salvos.push(JSON.parse(JSON.stringify(d)));return Promise.resolve();},estado:()=>'ocioso'};
   },{tema,skin});
   const page=await ctx.newPage();
   await page.goto('http://localhost:8123');
@@ -64,10 +64,13 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     assert.deepEqual(nomes,['Fundação','Terreno','Estrutura','Elétrica','Acabamento','Fora do orçamento']);
     const item=nome=>page.locator('.orc-topicos .orc-item').filter({has:page.locator('.orc-nome',{hasText:nome})});
     assert.equal((await item('Fundação').locator('.orc-frase').textContent()).trim(),'Passou R$ 8 mil do previsto');
+    assert.equal((await item('Fundação').locator('.orc-val').textContent()).trim(),'R$ 98 mil / 90 mil');
     assert.equal(await item('Fundação').locator('.orc-frase.alerta').count(),1);
     assert.equal(await item('Fundação').locator('.orc-barra.alerta').count(),1);
     assert.equal((await item('Estrutura').locator('.orc-frase').textContent()).trim(),'Faltam R$ 19 mil — 92%');
+    assert.equal(await item('Estrutura').locator('.orc-frase.alerta').count(),0,'perto não vai na cor do alerta');
     assert.equal((await item('Terreno').locator('.orc-frase').textContent()).trim(),'Chegou ao previsto — 100%');
+    assert.equal(await item('Terreno').locator('.orc-frase.alerta').count(),0);
     assert.equal(await item('Elétrica').locator('.orc-frase').count(),0);
     assert.equal(await item('Elétrica').locator('.orc-barra.alerta').count(),0);
     assert.match(await item('Fora do orçamento').textContent(),/R\$ 12 mil[\s\S]*Encanamento/);
@@ -77,11 +80,31 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     // tocar no tópico abre a folha do tópico que já existe
     await item('Fundação').click();
     assert.match(await page.locator('#sheet').textContent(),/Fundação/);
+    // o resumo do tópico: bruto, corrigido até hoje e o % da obra arredondado (98 mil de 624 mil = 15,7%)
+    assert.equal((await page.locator('#sheet .top-resumo .sub').textContent()).trim(),'1 gasto · 16% da obra');
+    assert.equal((await page.locator('#sheet .top-resumo b').textContent()).replace(/\s/g,' '),'R$ 98.000,00');
+    assert.equal(await page.locator('#sheet .top-resumo .corr').textContent(),
+      await page.evaluate(()=>`corrigido: ${OBRA_CALC.money(OBRA_CALC.corrigido(98000,'2026-03-01',OBRA_CALC.dataLocalISO(),1))}`));
     await page.evaluate(()=>closeSheet());
+    // tópico que saiu da lista, com dois gastos e a taxa de Ajustes (2%): plural, % da obra e corrigido pela taxa
+    await page.evaluate(()=>{
+      db.config.taxaMensal=2;
+      db.obras.push({id:'t',nome:'Tópico sumido',dataInicio:'2026-01-01',gastos:[
+        {id:'t1',topico:'c_sumiu',valor:500,data:'2026-02-01',descricao:'x',pagamento:'pix'},
+        {id:'t2',topico:'c_sumiu',valor:500,data:'2026-04-01',descricao:'x',pagamento:'pix'},
+        {id:'t3',topico:'pintura',valor:200,data:'2026-03-01',descricao:'x',pagamento:'pix'}]});
+      sheetTopico('t','c_sumiu');
+    });
+    assert.equal((await page.locator('#sheet .top-resumo .sub').textContent()).trim(),'2 gastos · 83% da obra');
+    assert.equal(await page.locator('#sheet .top-resumo .corr').textContent(),
+      await page.evaluate(()=>{const h=OBRA_CALC.dataLocalISO();
+        return `corrigido: ${OBRA_CALC.money(OBRA_CALC.corrigido(500,'2026-02-01',h,2)+OBRA_CALC.corrigido(500,'2026-04-01',h,2))}`;}));
+    await page.evaluate(()=>{closeSheet();db.obras.pop();db.config.taxaMensal=1;});
 
     // Obra com orçamento total estourado
     await page.evaluate(()=>openObra('b'));
     assert.equal((await page.locator('#oOrc .orc-pill').textContent()).trim(),'passou do previsto');
+    assert.equal(await page.locator('#oOrc .orc-barra i').evaluate(i=>i.style.width),'100%','no passou a barra para no previsto');
     assert.match((await page.locator('#oOrc .orc-rodape').textContent()).replace(/\s+/g,' '),/104% usado passou R\$\s40\.000,00/);
     assert.equal(await page.locator('.orc-topicos').count(),0);
 
@@ -89,6 +112,16 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     await page.evaluate(()=>openObra('c'));
     assert.equal(await page.locator('#oOrc').count(),0);
     assert.equal(await page.locator('#oOrcDefinir').count(),1);
+    // Vendida sem orçamento não oferece "Definir orçamento"
+    await page.evaluate(()=>{const c=obraById('c');c.fase='vendida';c.venda={valor:1000000,data:'2026-03-01'};openObra('c');});
+    assert.equal(await page.locator('#oOrcDefinir').count(),0);
+    // Por tópico: só o previsto com gasto abre a folha do tópico; o sem gasto fica na lista, sem toque
+    await page.evaluate(()=>{const c=obraById('c');c.fase='construcao';delete c.venda;c.orcamento={modo:'topicos',topicos:{terreno:900000,pintura:5000,eletrica:1000}};c.gastos.push({id:'gzero',topico:'eletrica',valor:0,data:'2026-03-01',descricao:'x',pagamento:'pix'});openObra('c');});
+    assert.equal(await page.locator('.orc-item-conteudo[data-top="terreno"]').count(),1);
+    assert.equal(await page.locator('.orc-item-conteudo[data-top="pintura"]').count(),0);
+    assert.equal(await page.locator('.orc-item-conteudo[data-top="eletrica"]').count(),1,'gasto de valor zero ainda abre');
+    assert.equal(await page.locator('.orc-topicos .orc-item',{hasText:'Pintura'}).count(),1);
+    await page.evaluate(()=>{const c=obraById('c');delete c.orcamento;c.gastos.pop();openObra('c');});
 
     // Folha: definir só o total numa obra sem orçamento
     await page.locator('#oOrcDefinir').click();
@@ -117,6 +150,7 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     await campo('eletrica').fill('');
     assert.equal(await somaTxt(),'R$ 710.000,00');
     await campo('c_portao').fill('5.000,50');
+    assert.equal(await somaTxt(),'R$ 715.000,50','a soma ao vivo leva o último campo da folha');
     for(const fonte of await page.locator('#sheet input').evaluateAll(els=>els.map(e=>parseFloat(getComputedStyle(e).fontSize))))
       assert.ok(fonte>=16,'campo com fonte < 16px dá zoom no iOS');
     await page.locator('#cSave').click();
@@ -125,14 +159,24 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
 
     // Trocar pra "Só o total" e salvar vazio tira o orçamento
     await page.locator('#oOrcEditar').click();
+    await campo('fundacao').fill('200000');
     await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
     assert.equal(await page.locator('#orcTotal').isVisible(),true);
-    // trocar de modo não pode apagar o previsto por tópico sem o construtor ver o número
-    assert.equal(await page.locator('#orcTotal').inputValue(),'715.000,50');
+    // trocar de modo não pode apagar o previsto por tópico sem o construtor ver o número: a soma da hora da troca
+    assert.equal(await page.locator('#orcTotal').inputValue(),'815.000,50');
     await page.locator('#orcTotal').fill('');
     await page.locator('#cSave').click();
     assert.equal(await page.evaluate(()=>'orcamento' in obraById('a')),false);
     assert.equal(await page.locator('#oOrcDefinir').count(),1);
+
+    // Total já preenchido não muda ao voltar para "Só o total"
+    await page.evaluate(()=>openObra('b'));
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#sheet .seg button',{hasText:'Por tópico'}).click();
+    await page.locator('#orcTopWrap input[data-top="fundacao"]').fill('5000');
+    await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
+    assert.equal(await page.locator('#orcTotal').inputValue(),'1.008.000,00');
+    await page.evaluate(()=>closeSheet());
 
     // Tirar orçamento pede confirmação
     await page.evaluate(()=>openObra('b'));
@@ -141,6 +185,26 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     await page.locator('dialog[open] button',{hasText:'Tirar orçamento'}).click();
     await page.waitForFunction(()=>!('orcamento' in obraById('b')));
     assert.equal(await page.locator('#oOrc').count(),0);
+    assert.equal(await page.evaluate(()=>'orcamento' in salvos.at(-1).obras.find(o=>o.id==='b')),false,'Tirar chega ao documento');
+
+    // O que a folha não mostra fica (achado 7): o campo desconhecido e o previsto de tópico sem linha na folha
+    await page.evaluate(()=>{obraById('a').orcamento={modo:'topicos',topicos:{fundacao:90000,c_apagado:1000},nota:'do site'};openObra('a');});
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#orcTopWrap input[data-top="fundacao"]').fill('95000');
+    // com a folha aberta, outro aparelho troca o documento: vale o orçamento do momento do Salvar
+    await page.evaluate(()=>{db=normaliza(JSON.parse(JSON.stringify(db)));obraById('a').orcamento.nota='do outro aparelho';});
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>obraById('a').orcamento),
+      {modo:'topicos',topicos:{fundacao:95000,c_apagado:1000},nota:'do outro aparelho'});
+    assert.deepEqual(await page.evaluate(()=>salvos.at(-1).obras.find(o=>o.id==='a').orcamento),
+      {modo:'topicos',topicos:{fundacao:95000,c_apagado:1000},nota:'do outro aparelho'},'o documento leva o que a tela mostra');
+    // no "Só o total" o desconhecido fica e os tópicos saem
+    await page.locator('#oOrcEditar').click();
+    await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
+    await page.locator('#orcTotal').fill('500000');
+    await page.locator('#cSave').click();
+    assert.deepEqual(await page.evaluate(()=>obraById('a').orcamento),{nota:'do outro aparelho',modo:'total',total:500000});
+    assert.deepEqual(await page.evaluate(()=>salvos.at(-1).obras.find(o=>o.id==='a').orcamento),{nota:'do outro aparelho',modo:'total',total:500000});
 
     // Nova obra com orçamento total
     await page.evaluate(()=>formNovaObra());

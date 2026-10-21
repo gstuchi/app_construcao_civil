@@ -156,6 +156,16 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
     // topo no Pro Max (faixa que o laudo deixa de fora, porque ali o texto é borrado); no escuro, o próprio Alerta.
     const alerta = bloco.match(/\bAlerta: \['(#\w+)', '#\w+'\]/)[1];
     assert.match(bloco, new RegExp(`\\bAlertaEtiqueta: \\['${alerta}', '#7A5410'\\]`), `AlertaEtiqueta da pele ${pele}`);
+    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705 (o Alerta do site dava
+    // 3,79–4,15:1 sobre a aurora clara); no escuro, #FFD98A (o Alerta ficava em 3,12:1 no alto da tela Orçamento rolada, na
+    // maior letra).
+    assert.match(bloco, /\bAlertaNoVidro: \['#FFD98A', '#6F4705'\]/, `AlertaNoVidro da pele ${pele}`);
+    // Decisão 6 da etapa 3: no Fosco escuro, o texto secundário é o do Transparente (o do Fosco ficava abaixo de 4,5:1 em
+    // dois pontos claros da aurora); no claro, o do Fosco fica.
+    const secundario = nome => bloco.match(new RegExp(`\\b${nome}: \\['(#\\w+)', '(#\\w+)'\\]`)).slice(1);
+    const [foscoEscuro, foscoClaro] = secundario('SecundarioFosco'), [transparenteEscuro, transparenteClaro] = secundario('SecundarioTransparente');
+    assert.equal(foscoEscuro, transparenteEscuro, `SecundarioFosco no escuro da pele ${pele}: o do Transparente`);
+    assert.notEqual(foscoClaro, transparenteClaro, `SecundarioFosco no claro da pele ${pele}: o do Fosco`);
   }
   const pecas = ler('app-ios/Custta/Telas/PecasDaObra.swift');
   assert.match(pecas.slice(pecas.indexOf('struct LinhaFina')), /^[^}]*paleta\.cor\(\.linhaNoVidro\)/, 'a linha fina sobre o vidro usa o LinhaNoVidro');

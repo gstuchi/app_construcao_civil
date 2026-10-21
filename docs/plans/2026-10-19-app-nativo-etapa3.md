@@ -5531,6 +5531,7 @@ A obra sem orçamento ganha "Definir orçamento" nas ações da fase (fora da ve
 - **Desvio da decisão 2, com o porquê.** A decisão manda a âncora no meio da faixa calculada, nunca `.center`, porque no protótipo de medida as teclas ficavam por cima da lista. Aqui o alto (segmentado e total) e a faixa das teclas moram fora da `ScrollView`, num `VStack`: a área da rolagem é a própria faixa, e o `.center` dela é o meio da faixa, sem conta à parte; as linhas também não passam por baixo das teclas, e a folha é translúcida. A varredura do › nas 71 linhas (padrão e maior letra) prova a linha inteira à vista em cada passo, também ao abrir. Na letra de acessibilidade, o alto vira o primeiro filho da lista e o "Salvar" sai enquanto as teclas estão abertas, como manda a decisão.
 - **Textos novos**, no padrão das folhas da etapa 2 (não estão no site nem no mockup): "Você mudou este orçamento." / "Descartar alterações" (editar) e "Você já preencheu este orçamento." / "Descartar orçamento" (definir), com "Continuar editando"; e "O orçamento continua aqui; nada foi salvo ainda." (antes de ver os dados).
 - **Exceções ao mockup, por recomendação (19/10), aprovadas pelo Giovani em 21/10:** a barra só com o "Pronto" no "Só o total" na maior letra, e os dígitos e o apagar pelo teclado físico (`onKeyPress` na linha ativa). O teste de tela digita pelo teclado físico; o apagar não, porque o `typeKey` do XCUITest não entrega nenhum apagar ao app (nem `XCUIKeyboardKey.delete`, nem `"\u{8}"`, nem `.forwardDelete`), enquanto um ⌫ de verdade, pelo teclado do Mac no simulador, chega como `.delete` e apaga; a ligação do apagar fica presa por guarda Node.
+- **O setter do segmentado é um fecho literal.** `Binding(get: { rascunho.modo }, set: { trocarModo($0) })`, e não `set: trocarModo`: com a referência ao método, o Swift 6.3.3 da CI (Xcode 26.6) cai ao gerar o thunk `@isolated(any)` do setter na compilação Release (`llvm::report_fatal_error`, "While emitting IR SIL function … reabstraction thunk helper … RascunhoDoOrcamento.Modo"); o Swift 6.4 do Mac compila as duas formas, e só a CI acha.
 - **A linha ativa na troca de letra.** Ao trocar o tamanho da letra com as teclas abertas, as linhas mudam de altura e a rolagem ficava onde estava, com a linha ativa fora da vista (a auditoria de tipo dinâmico achou: ela começa na letra pequena); o `onChange(of: tamanho)` a devolve ao meio da faixa.
 
 **Files:**
@@ -6457,7 +6458,7 @@ private struct CorpoDaFolhaDoOrcamento: View {
     private var cabecalho: some View {
         VStack(spacing: 12) {
             SegmentadoDaFolha(opcoes: [(RascunhoDoOrcamento.Modo.total, "Só o total", nil), (.topicos, "Por tópico", nil)],
-                              escolhida: Binding(get: { rascunho.modo }, set: trocarModo), identificador: "modoDoOrcamento",
+                              escolhida: Binding(get: { rascunho.modo }, set: { trocarModo($0) }), identificador: "modoDoOrcamento",
                               larguraToda: true)
             if rascunho.modo == .topicos { TotalAoVivo(soma: rascunho.soma, comValor: rascunho.comValor) }
         }

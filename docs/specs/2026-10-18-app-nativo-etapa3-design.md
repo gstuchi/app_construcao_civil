@@ -204,7 +204,7 @@ Recomendação, que passa pelo conselho (é a ordem do trabalho): **fatias que j
 | 0 (site) | As dez regras do `app.js` no `calc.js` e no `dados.js`, com vetores, cópia em Swift e leitores; a correção do filtro de mês preso; os três alinhamentos; uma subida do `CACHE`. | — |
 | 1 | Orçamento (a parte 1 sem o detalhe do tópico): a linha nos indicadores com os três níveis e o aviso dos tópicos; a tela Orçamento; a folha com as teclas encaixadas; definir, editar e tirar; a obra vendida; o token âmbar sobre o vidro; a decisão 6; a correção do "A vencer" na letra máxima, se o app tiver o defeito. Conferência cruzada do orçamento. | sim |
 | 2 | Detalhe do tópico e A pagar, com a volta à folha de origem: a seta no indicador; as duas folhas; a edição empurrada; apagar à vista e parcela de dentro da folha; o puxar que pergunta; o arrastar dentro da folha; a folha do tópico que desce sem gasto. As linhas da tela Orçamento passam a abrir o detalhe. | sim |
-| 3 | Busca e filtro por mês; afazeres (linha, tela, adicionar, marcar, apagar e ordem); os quatro combos e a letra máxima conferidos em todas as telas da etapa; o checklist do aparelho da etapa 3. Conferência cruzada completa. | sim |
+| 3 | Busca e filtro por mês; afazeres (linha, tela, adicionar, marcar, apagar e ordem); os dois temas e a letra máxima conferidos em todas as telas da etapa; o checklist do aparelho da etapa 3. Conferência cruzada completa. | sim |
 
 - **Por que esse corte:** o PR 1 traz a primeira mutação nova (orçamento) e as teclas encaixadas; o PR 2 traz o mecanismo da volta, que nasce no detalhe do tópico e serve ao A pagar, e só usa mutações que já existem; o PR 3 traz a segunda mutação nova (afazeres) e o filtro da lista.
 - No build do PR 1, as linhas de tópico da tela Orçamento aparecem sem chevron e sem toque; o detalhe chega no PR 2, como o + da etapa 2 chegou um PR depois da tela da obra.
@@ -231,7 +231,7 @@ Os mesmos portões da etapa 2, estendidos:
    - buscar com acento e sem, escolher o mês, o mês que fica sem gasto, "Limpar a busca", "Ver todos os meses";
    - adicionar vários afazeres seguidos, marcar, desmarcar, abrir "Feitos", apagar arrastando;
    - uma mudança vinda de outro aparelho durante a digitação de um afazer e com a busca aberta (achado 3).
-4. **Leitura sobre o vidro e acessibilidade:** o laudo de leitura (portão na CI) e as auditorias cobrem as telas novas nos quatro combos e na letra máxima, e as telas de entrada no escuro depois da decisão 6.
+4. **Leitura sobre o vidro e acessibilidade:** o laudo de leitura (portão na CI) e as auditorias cobrem as telas novas nos dois temas (claro e escuro; a pele azul saiu do site e do app em 21/10, no #81) e na letra máxima, e as telas de entrada no escuro depois da decisão 6.
 5. **Conferência visual:** simulador lado a lado com os prints do mockup, tela a tela.
 6. **Conferência cruzada** contra os emuladores (`npm run test:app-ios:cruzado`):
    - orçamento: definir por total, por tópico, trocar de modo e tirar; o campo desconhecido e o tópico fora da lista guardados;

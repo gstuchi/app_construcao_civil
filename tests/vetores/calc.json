@@ -3192,6 +3192,42 @@
           "corrigido": 1.0951305573693542,
           "pct": 13
         }
+      },
+      {
+        "caso": "a base do % conta a parcela a vencer de outro tópico",
+        "args": [
+          {
+            "id": "v",
+            "dataInicio": "2026-01-01",
+            "gastos": [
+              {
+                "id": "v1",
+                "valor": 50,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "v2",
+                "valor": 50,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-12-01",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          "pintura",
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "qtd": 1,
+          "bruto": 50,
+          "corrigido": 54.75652786846771,
+          "pct": 50
+        }
       }
     ],
     "calc.lucroVenda": [
@@ -10780,6 +10816,230 @@
         "saida": []
       },
       {
+        "caso": "BOM no começo sai, como no trim do JS",
+        "args": [
+          [
+            {
+              "id": "g01",
+              "valor": 98000,
+              "topico": "fundacao",
+              "descricao": "Sapatas e baldrame",
+              "data": "2025-03-20",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g02",
+              "valor": 231000,
+              "topico": "estrutura",
+              "descricao": "Laje do térreo",
+              "data": "2025-06-02",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g03",
+              "valor": 12000.5,
+              "topico": "hidraulica",
+              "descricao": "Tubos e conexões",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g04",
+              "valor": 3000,
+              "topico": "pintura",
+              "descricao": "Tinta acrílica",
+              "data": "2025-08-15",
+              "pagamento": "pix"
+            },
+            {
+              "id": "g05a",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 1,
+                "de": 3
+              },
+              "valor": 1033.34,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-09-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05b",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 2,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-10-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            },
+            {
+              "id": "g05c",
+              "grupoId": "gr1",
+              "parcela": {
+                "n": 3,
+                "de": 3
+              },
+              "valor": 1033.33,
+              "topico": "eletrica",
+              "descricao": "Fios",
+              "data": "2026-11-25",
+              "pagamento": "cartao",
+              "jurosCartao": {
+                "taxaMensal": 0,
+                "valorCompra": 3100,
+                "nParcelas": 3,
+                "totalCompra": 3100,
+                "jurosCompra": 0
+              }
+            }
+          ],
+          {
+            "terreno": {
+              "id": "terreno",
+              "nm": "Terreno",
+              "ic": "mapa"
+            },
+            "projeto": {
+              "id": "projeto",
+              "nm": "Documentação",
+              "ic": "documento"
+            },
+            "matbasicos": {
+              "id": "matbasicos",
+              "nm": "Materiais básicos",
+              "ic": "tijolos"
+            },
+            "fundacao": {
+              "id": "fundacao",
+              "nm": "Fundação",
+              "ic": "pa"
+            },
+            "ferragem": {
+              "id": "ferragem",
+              "nm": "Ferragem",
+              "ic": "vergalhao"
+            },
+            "estrutura": {
+              "id": "estrutura",
+              "nm": "Estrutura",
+              "ic": "guindaste"
+            },
+            "alvenaria": {
+              "id": "alvenaria",
+              "nm": "Alvenaria",
+              "ic": "tijolos"
+            },
+            "telhado": {
+              "id": "telhado",
+              "nm": "Telhado",
+              "ic": "casa"
+            },
+            "eletrica": {
+              "id": "eletrica",
+              "nm": "Elétrica",
+              "ic": "raio"
+            },
+            "hidraulica": {
+              "id": "hidraulica",
+              "nm": "Encanamento",
+              "ic": "gota"
+            },
+            "esquadrias": {
+              "id": "esquadrias",
+              "nm": "Esq. de alumínio",
+              "ic": "porta"
+            },
+            "revest": {
+              "id": "revest",
+              "nm": "Cerâmica",
+              "ic": "ladrilho"
+            },
+            "pintura": {
+              "id": "pintura",
+              "nm": "Pintura",
+              "ic": "rolo"
+            },
+            "acabamento": {
+              "id": "acabamento",
+              "nm": "Acabamento",
+              "ic": "rolo"
+            },
+            "piscina": {
+              "id": "piscina",
+              "nm": "Piscina",
+              "ic": "piscina"
+            },
+            "paisagismo": {
+              "id": "paisagismo",
+              "nm": "Jardim",
+              "ic": "arvore"
+            },
+            "maoobra": {
+              "id": "maoobra",
+              "nm": "Mão de obra",
+              "ic": "capacete"
+            },
+            "aluguelmaq": {
+              "id": "aluguelmaq",
+              "nm": "Aluguel de máquina",
+              "ic": "engrenagem"
+            },
+            "matextra": {
+              "id": "matextra",
+              "nm": "Materiais extra",
+              "ic": "caixa"
+            },
+            "extras": {
+              "id": "extras",
+              "nm": "Extras",
+              "ic": "mais"
+            },
+            "outros": {
+              "id": "outros",
+              "nm": "Outros",
+              "ic": "caixa"
+            },
+            "c_mgf1abcd": {
+              "id": "c_mgf1abcd",
+              "nm": "Automação",
+              "ic": "etiqueta"
+            }
+          },
+          {
+            "texto": "﻿tinta"
+          }
+        ],
+        "saida": [
+          {
+            "id": "g04",
+            "valor": 3000,
+            "topico": "pintura",
+            "descricao": "Tinta acrílica",
+            "data": "2025-08-15",
+            "pagamento": "pix"
+          }
+        ]
+      },
+      {
         "caso": "acento solto antes do espaço sai antes de aparar",
         "args": [
           [
@@ -10958,6 +11218,15 @@
         "saida": "7"
       },
       {
+        "caso": "sem filtro, com milhar: o total sem ponto",
+        "args": [
+          1234,
+          1234,
+          null
+        ],
+        "saida": "1234"
+      },
+      {
         "caso": "com busca: achados/total",
         "args": [
           7,
@@ -11012,6 +11281,28 @@
           7,
           {
             "texto": "́"
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "acento solto, espaço e acento solto: o espaço sobra e é aparado",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "́ ́"
+          }
+        ],
+        "saida": "7"
+      },
+      {
+        "caso": "busca só de BOM não filtra",
+        "args": [
+          7,
+          7,
+          {
+            "texto": "﻿"
           }
         ],
         "saida": "7"
@@ -11813,6 +12104,52 @@
           },
           {
             "mes": "2025-03",
+            "qtd": 1
+          }
+        ]
+      },
+      {
+        "caso": "mês com três gastos: conta os três, também com dia e tópico repetidos",
+        "args": [
+          [
+            {
+              "id": "m0",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "",
+              "data": "2026-05-03"
+            },
+            {
+              "id": "m1",
+              "valor": 1,
+              "topico": "pintura",
+              "descricao": "",
+              "data": "2026-05-03"
+            },
+            {
+              "id": "m2",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "",
+              "data": "2026-05-20"
+            },
+            {
+              "id": "m3",
+              "valor": 1,
+              "topico": "outros",
+              "descricao": "",
+              "data": "2026-04-30"
+            }
+          ],
+          ""
+        ],
+        "saida": [
+          {
+            "mes": "2026-05",
+            "qtd": 3
+          },
+          {
+            "mes": "2026-04",
             "qtd": 1
           }
         ]
@@ -18909,6 +19246,55 @@
         }
       },
       {
+        "caso": "a ordem é a da lista, não a dos gastos",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "estrutura",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "fundacao",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": [],
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000
+              }
+            }
+          }
+        ],
+        "saida": {
+          "cartao": true,
+          "porTopico": true,
+          "definir": false,
+          "tocaveis": [
+            "fundacao",
+            "estrutura"
+          ]
+        }
+      },
+      {
         "caso": "por tópico: só os previstos com gasto abrem, na ordem da lista",
         "args": [
           {
@@ -19172,6 +19558,17 @@
           ]
         ],
         "saida": 0.30000000000000004
+      },
+      {
+        "caso": "de cima para baixo: 0,1 + 0,2 + 0,3 não fecha em 0,6",
+        "args": [
+          [
+            0.1,
+            0.2,
+            0.3
+          ]
+        ],
+        "saida": 0.6000000000000001
       }
     ],
     "calc.totalPreenchidoOrc": [
@@ -19204,6 +19601,17 @@
           ]
         ],
         "saida": ""
+      },
+      {
+        "caso": "linha negativa não desconta do que preenche",
+        "args": [
+          "",
+          [
+            100,
+            -30
+          ]
+        ],
+        "saida": "100,00"
       },
       {
         "caso": "soma abaixo de meio centavo ainda preenche",
@@ -25303,6 +25711,26 @@
         "saida": null
       },
       {
+        "caso": "total zero tira, e leva o campo desconhecido junto",
+        "args": [
+          {
+            "modo": "total",
+            "total": 1000,
+            "nota": "do site"
+          },
+          "total",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
         "caso": "total guarda o campo desconhecido e larga os tópicos",
         "args": [
           {
@@ -25416,6 +25844,28 @@
         "saida": null
       },
       {
+        "caso": "por tópico tudo vazio tira, e leva o campo desconhecido junto",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "fundacao": 90000
+            },
+            "nota": "do site"
+          },
+          "topicos",
+          0,
+          {
+            "terreno": 0,
+            "fundacao": 0,
+            "estrutura": 0,
+            "pintura": 0,
+            "c_portao": 0
+          }
+        ],
+        "saida": null
+      },
+      {
         "caso": "por tópico guarda o tópico fora da folha e o campo desconhecido",
         "args": [
           {
@@ -25469,6 +25919,227 @@
           "modo": "topicos",
           "topicos": {
             "estrutura": 250000
+          }
+        }
+      },
+      {
+        "caso": "por tópico não corta em 100",
+        "args": [
+          {
+            "modo": "topicos",
+            "topicos": {
+              "c_fora0": 1000,
+              "c_fora1": 1001,
+              "c_fora2": 1002,
+              "c_fora3": 1003,
+              "c_fora4": 1004,
+              "c_fora5": 1005,
+              "c_fora6": 1006,
+              "c_fora7": 1007,
+              "c_fora8": 1008,
+              "c_fora9": 1009,
+              "c_fora10": 1010,
+              "c_fora11": 1011,
+              "c_fora12": 1012,
+              "c_fora13": 1013,
+              "c_fora14": 1014,
+              "c_fora15": 1015,
+              "c_fora16": 1016,
+              "c_fora17": 1017,
+              "c_fora18": 1018,
+              "c_fora19": 1019,
+              "c_fora20": 1020,
+              "c_fora21": 1021,
+              "c_fora22": 1022,
+              "c_fora23": 1023,
+              "c_fora24": 1024,
+              "c_fora25": 1025,
+              "c_fora26": 1026,
+              "c_fora27": 1027,
+              "c_fora28": 1028,
+              "c_fora29": 1029
+            }
+          },
+          "topicos",
+          0,
+          {
+            "c_folha0": 1000,
+            "c_folha1": 1001,
+            "c_folha2": 1002,
+            "c_folha3": 1003,
+            "c_folha4": 1004,
+            "c_folha5": 1005,
+            "c_folha6": 1006,
+            "c_folha7": 1007,
+            "c_folha8": 1008,
+            "c_folha9": 1009,
+            "c_folha10": 1010,
+            "c_folha11": 1011,
+            "c_folha12": 1012,
+            "c_folha13": 1013,
+            "c_folha14": 1014,
+            "c_folha15": 1015,
+            "c_folha16": 1016,
+            "c_folha17": 1017,
+            "c_folha18": 1018,
+            "c_folha19": 1019,
+            "c_folha20": 1020,
+            "c_folha21": 1021,
+            "c_folha22": 1022,
+            "c_folha23": 1023,
+            "c_folha24": 1024,
+            "c_folha25": 1025,
+            "c_folha26": 1026,
+            "c_folha27": 1027,
+            "c_folha28": 1028,
+            "c_folha29": 1029,
+            "c_folha30": 1030,
+            "c_folha31": 1031,
+            "c_folha32": 1032,
+            "c_folha33": 1033,
+            "c_folha34": 1034,
+            "c_folha35": 1035,
+            "c_folha36": 1036,
+            "c_folha37": 1037,
+            "c_folha38": 1038,
+            "c_folha39": 1039,
+            "c_folha40": 1040,
+            "c_folha41": 1041,
+            "c_folha42": 1042,
+            "c_folha43": 1043,
+            "c_folha44": 1044,
+            "c_folha45": 1045,
+            "c_folha46": 1046,
+            "c_folha47": 1047,
+            "c_folha48": 1048,
+            "c_folha49": 1049,
+            "c_folha50": 1050,
+            "c_folha51": 1051,
+            "c_folha52": 1052,
+            "c_folha53": 1053,
+            "c_folha54": 1054,
+            "c_folha55": 1055,
+            "c_folha56": 1056,
+            "c_folha57": 1057,
+            "c_folha58": 1058,
+            "c_folha59": 1059,
+            "c_folha60": 1060,
+            "c_folha61": 1061,
+            "c_folha62": 1062,
+            "c_folha63": 1063,
+            "c_folha64": 1064,
+            "c_folha65": 1065,
+            "c_folha66": 1066,
+            "c_folha67": 1067,
+            "c_folha68": 1068,
+            "c_folha69": 1069,
+            "c_folha70": 1070
+          }
+        ],
+        "saida": {
+          "modo": "topicos",
+          "topicos": {
+            "c_folha0": 1000,
+            "c_folha1": 1001,
+            "c_folha2": 1002,
+            "c_folha3": 1003,
+            "c_folha4": 1004,
+            "c_folha5": 1005,
+            "c_folha6": 1006,
+            "c_folha7": 1007,
+            "c_folha8": 1008,
+            "c_folha9": 1009,
+            "c_folha10": 1010,
+            "c_folha11": 1011,
+            "c_folha12": 1012,
+            "c_folha13": 1013,
+            "c_folha14": 1014,
+            "c_folha15": 1015,
+            "c_folha16": 1016,
+            "c_folha17": 1017,
+            "c_folha18": 1018,
+            "c_folha19": 1019,
+            "c_folha20": 1020,
+            "c_folha21": 1021,
+            "c_folha22": 1022,
+            "c_folha23": 1023,
+            "c_folha24": 1024,
+            "c_folha25": 1025,
+            "c_folha26": 1026,
+            "c_folha27": 1027,
+            "c_folha28": 1028,
+            "c_folha29": 1029,
+            "c_folha30": 1030,
+            "c_folha31": 1031,
+            "c_folha32": 1032,
+            "c_folha33": 1033,
+            "c_folha34": 1034,
+            "c_folha35": 1035,
+            "c_folha36": 1036,
+            "c_folha37": 1037,
+            "c_folha38": 1038,
+            "c_folha39": 1039,
+            "c_folha40": 1040,
+            "c_folha41": 1041,
+            "c_folha42": 1042,
+            "c_folha43": 1043,
+            "c_folha44": 1044,
+            "c_folha45": 1045,
+            "c_folha46": 1046,
+            "c_folha47": 1047,
+            "c_folha48": 1048,
+            "c_folha49": 1049,
+            "c_folha50": 1050,
+            "c_folha51": 1051,
+            "c_folha52": 1052,
+            "c_folha53": 1053,
+            "c_folha54": 1054,
+            "c_folha55": 1055,
+            "c_folha56": 1056,
+            "c_folha57": 1057,
+            "c_folha58": 1058,
+            "c_folha59": 1059,
+            "c_folha60": 1060,
+            "c_folha61": 1061,
+            "c_folha62": 1062,
+            "c_folha63": 1063,
+            "c_folha64": 1064,
+            "c_folha65": 1065,
+            "c_folha66": 1066,
+            "c_folha67": 1067,
+            "c_folha68": 1068,
+            "c_folha69": 1069,
+            "c_folha70": 1070,
+            "c_fora0": 1000,
+            "c_fora1": 1001,
+            "c_fora2": 1002,
+            "c_fora3": 1003,
+            "c_fora4": 1004,
+            "c_fora5": 1005,
+            "c_fora6": 1006,
+            "c_fora7": 1007,
+            "c_fora8": 1008,
+            "c_fora9": 1009,
+            "c_fora10": 1010,
+            "c_fora11": 1011,
+            "c_fora12": 1012,
+            "c_fora13": 1013,
+            "c_fora14": 1014,
+            "c_fora15": 1015,
+            "c_fora16": 1016,
+            "c_fora17": 1017,
+            "c_fora18": 1018,
+            "c_fora19": 1019,
+            "c_fora20": 1020,
+            "c_fora21": 1021,
+            "c_fora22": 1022,
+            "c_fora23": 1023,
+            "c_fora24": 1024,
+            "c_fora25": 1025,
+            "c_fora26": 1026,
+            "c_fora27": 1027,
+            "c_fora28": 1028,
+            "c_fora29": 1029
           }
         }
       },

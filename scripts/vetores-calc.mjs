@@ -198,6 +198,9 @@ resumoTop('tópico próprio', O4, 'c_mgf1abcd', HOJE, 1);
 resumoTop('meio ponto arredonda para cima, como o donut', { id: 'r', dataInicio: '2026-01-01', gastos: [
   { id: 'r1', valor: 1, topico: 'pintura', descricao: '', data: '2026-01-01', pagamento: 'pix' },
   { id: 'r2', valor: 7, topico: 'eletrica', descricao: '', data: '2026-01-01', pagamento: 'pix' }] }, 'pintura', HOJE, 1);
+resumoTop('a base do % conta a parcela a vencer de outro tópico', { id: 'v', dataInicio: '2026-01-01', gastos: [
+  { id: 'v1', valor: 50, topico: 'pintura', descricao: '', data: '2026-01-01', pagamento: 'pix' },
+  { id: 'v2', valor: 50, topico: 'eletrica', descricao: '', data: '2026-12-01', pagamento: 'pix' }] }, 'pintura', HOJE, 1);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);
@@ -286,6 +289,7 @@ filtra('texto aparado', O1.gastos, TOPICOS_MAPA, { texto: '  tinta  ' });
 filtra('tab e quebra nas pontas', O1.gastos, TOPICOS_MAPA, { texto: '\ttinta\n' });
 filtra('só espaços não filtra', O1.gastos, TOPICOS_MAPA, { texto: '   ' });
 filtra('espaço duplo no meio não vira um', O1.gastos, TOPICOS_MAPA, { texto: 'e  c' });
+filtra('BOM no começo sai, como no trim do JS', O1.gastos, TOPICOS_MAPA, { texto: '\ufefftinta' });
 filtra('acento solto antes do espaço sai antes de aparar', [{ id: 'k1', valor: 1, topico: 'outros', descricao: 'Conexões', data: '2026-01-01' }],
   TOPICOS_MAPA, { texto: '\u0301 conexoes' });
 /* O contador da pílula "Lançamentos" (app.js renderGastosFiltrados). */
@@ -294,11 +298,14 @@ contadorLanc('sem gasto', 0, 0, null);
 contadorLanc('sem gasto, com busca', 0, 0, { texto: 'tinta' });
 contadorLanc('sem filtro: o total', 7, 7, null);
 contadorLanc('sem filtro vale o total, nunca os achados', 7, 5, null);
+contadorLanc('sem filtro, com milhar: o total sem ponto', 1234, 1234, null);
 contadorLanc('com busca: achados/total', 7, 1, { texto: 'tinta', mes: '' });
 contadorLanc('busca só de espaços não filtra', 7, 7, { texto: '   ', mes: '' });
 contadorLanc('só o mês', 7, 0, { texto: '', mes: '2025-08' });
 contadorLanc('busca e mês', 7, 2, { texto: 'tinta', mes: '2025-08' });
 contadorLanc('busca só de acento solto não filtra', 7, 7, { texto: '\u0301' });
+contadorLanc('acento solto, espaço e acento solto: o espaço sobra e é aparado', 7, 7, { texto: '\u0301 \u0301' });
+contadorLanc('busca só de BOM não filtra', 7, 7, { texto: '\ufeff' });
 contadorLanc('milhares sem ponto', 1234, 1000, { texto: 'a' });
 /* Os meses do filtro (app.js renderObra), com quantos gastos cada um tem. O mês escolhido nunca some da lista. */
 const mesesFiltro = calc('mesesDoFiltro');
@@ -310,6 +317,11 @@ mesesFiltro('mês escolhido sem gasto, o mais antigo', O1.gastos, '2024-12');
 mesesFiltro('sem gasto e sem mês', [], '');
 mesesFiltro('sem gasto, com o mês escolhido', [], '2026-03');
 mesesFiltro('sem o argumento do mês', O1.gastos);
+mesesFiltro('mês com três gastos: conta os três, também com dia e tópico repetidos', [
+  { id: 'm0', valor: 1, topico: 'outros', descricao: '', data: '2026-05-03' },
+  { id: 'm1', valor: 1, topico: 'pintura', descricao: '', data: '2026-05-03' },
+  { id: 'm2', valor: 1, topico: 'outros', descricao: '', data: '2026-05-20' },
+  { id: 'm3', valor: 1, topico: 'outros', descricao: '', data: '2026-04-30' }], '');
 
 /* ---------- descrição do gasto: sugestões e repetido ---------- */
 const normDesc = calc('normalizaDescricao');
@@ -500,6 +512,7 @@ pecas('sem orçamento, em construção', O3);
 pecas('sem orçamento, pronta', { ...O4, orcamento: undefined });
 pecas('sem orçamento, vendida: sem o Definir', { ...O2, orcamento: undefined });
 pecas('total na vendida', O2);
+pecas('a ordem é a da lista, não a dos gastos', comOrcamento({ modo: 'topicos', topicos: { fundacao: 90000, estrutura: 250000 } }, [g('estrutura', 231000), g('fundacao', 98000)]));
 pecas('por tópico: só os previstos com gasto abrem, na ordem da lista', O1);
 pecas('gasto de valor zero ainda abre', comOrcamento({ modo: 'topicos', topicos: { pintura: 1000, eletrica: 500 } }, [g('pintura', 0)]));
 pecas('orçamento inválido conta como sem', comOrcamento({ modo: 'total', total: 0 }, [g('pintura', 10)]));
@@ -510,10 +523,12 @@ soma('soma na ordem da folha', [180000, 100000, 250000, 180000, 5000.5]);
 soma('negativo e zero não contam', [-3, 100, 0]);
 soma('negativo grande não desconta', [1e6, -1e6]);
 soma('centavos em ponto flutuante', [0.1, 0.2]);
+soma('de cima para baixo: 0,1 + 0,2 + 0,3 não fecha em 0,6', [0.1, 0.2, 0.3]);
 const preenchido = calc('totalPreenchidoOrc');
 preenchido('campo vazio ganha a soma', '', [90000, 0, 5000.5]);
 preenchido('campo vazio e folha vazia', '', []);
 preenchido('soma só de negativos não preenche', '', [-5]);
+preenchido('linha negativa não desconta do que preenche', '', [100, -30]);
 preenchido('soma abaixo de meio centavo ainda preenche', '', [0.004]);
 preenchido('campo com valor fica', '1.008.000,00', [5000]);
 preenchido('campo com zero digitado fica', '0', [5000]);
@@ -712,6 +727,7 @@ gravado('só o total, sem orçamento antes', undefined, 'total', 500000, FOLHA);
 gravado('total zero tira', { modo: 'total', total: 1000 }, 'total', 0, FOLHA);
 gravado('total negativo tira', { modo: 'total', total: 1000 }, 'total', -5, FOLHA);
 gravado('total ilegível tira', { modo: 'total', total: 1000 }, 'total', NaN, FOLHA);
+gravado('total zero tira, e leva o campo desconhecido junto', { modo: 'total', total: 1000, nota: 'do site' }, 'total', 0, FOLHA);
 gravado('total guarda o campo desconhecido e larga os tópicos', { modo: 'topicos', topicos: { fundacao: 90000, c_apagado: 1000 }, nota: 'do site', versao: 2 },
   'total', 1250000.5, FOLHA);
 gravado('total ignora os valores da folha', undefined, 'total', 1000, { ...FOLHA, terreno: 5 });
@@ -719,9 +735,13 @@ gravado('por tópico: só os valores acima de zero', undefined, 'topicos', 0,
   { ...FOLHA, terreno: 180000, fundacao: 100000, estrutura: -3, c_portao: 5000.5, pintura: NaN });
 gravado('por tópico ignora o total', undefined, 'topicos', 999, { ...FOLHA, terreno: 5 });
 gravado('por tópico tudo vazio tira, mesmo com tópico fora da folha', { modo: 'topicos', topicos: { c_apagado: 1000 } }, 'topicos', 0, FOLHA);
+gravado('por tópico tudo vazio tira, e leva o campo desconhecido junto', { modo: 'topicos', topicos: { fundacao: 90000 }, nota: 'do site' }, 'topicos', 0, FOLHA);
 gravado('por tópico guarda o tópico fora da folha e o campo desconhecido', { modo: 'topicos', topicos: { fundacao: 90000, c_apagado: 1000 }, nota: 'do site' },
   'topicos', 0, { ...FOLHA, fundacao: 95000 });
 gravado('tópico da folha zerado não volta do antigo', { modo: 'topicos', topicos: { fundacao: 90000, estrutura: 250000 } }, 'topicos', 0, { ...FOLHA, estrutura: 250000 });
+/* A leitura corta em 100 tópicos (MAX_TOPICOS_ORC); a gravação não: os 71 da folha cheia e os 30 de fora ficam, 101 no total. */
+const topicosDe = (n, prefixo) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`${prefixo}${i}`, 1000 + i]));
+gravado('por tópico não corta em 100', { modo: 'topicos', topicos: topicosDe(30, 'c_fora') }, 'topicos', 0, topicosDe(71, 'c_folha'));
 gravado('do total para por tópico: o total sai, o desconhecido fica', { modo: 'total', total: 700000, nota: 'x' }, 'topicos', 0, { ...FOLHA, terreno: 1000 });
 gravado('antigo que não é objeto conta como sem orçamento', 'lixo', 'topicos', 0, { ...FOLHA, pintura: 3000 });
 gravado('antigo lista conta como sem orçamento', [1, 2], 'total', 10, FOLHA);

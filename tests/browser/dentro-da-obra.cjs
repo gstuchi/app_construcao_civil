@@ -59,6 +59,21 @@ const OBRA_FILTRO={id:'f',nome:'Sobrado Centro',dataInicio:'2026-01-10',afazeres
     assert.equal(await page.evaluate(()=>obraById('o').afazeres.length),4);
     assert.equal(await page.evaluate(()=>salvos.length),gravacoes);
     assert.equal(await page.locator('.toast').count(),0,'campo vazio não avisa');
+    // Campo vazio, pelo +: nada grava e o foco volta ao campo (o clique no botão o tirava de lá)
+    await page.locator('#afzInput').fill('');
+    await page.locator('#afzAdd').click();
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'afzInput');
+    assert.equal(await page.evaluate(()=>salvos.length),gravacoes);
+    // 501 unidades: o maxlength corta o teclado, então o valor vai direto. Avisa, não grava e deixa o texto no campo
+    await page.evaluate(()=>{document.getElementById('afzInput').value='a'.repeat(501);});
+    await page.locator('#afzAdd').click();
+    assert.equal(await page.locator('.toast').filter({hasText:'Use até 500 caracteres.'}).count(),1);
+    assert.equal(await page.evaluate(()=>obraById('o').afazeres.length),4);
+    assert.equal(await page.evaluate(()=>salvos.length),gravacoes);
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'afzInput');
+    assert.equal((await page.locator('#afzInput').inputValue()).length,501);
+    await page.locator('#afzInput').fill('');
+    await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));
 
     // Marcar pelo círculo: vai para o alto dos feitos, com o campo desconhecido
     await linha('Ligar eletricista').locator('.afz-check').click();
@@ -119,6 +134,10 @@ const OBRA_FILTRO={id:'f',nome:'Sobrado Centro',dataInicio:'2026-01-10',afazeres
     await page.locator('#fBusca').fill('  tomadas  ');
     assert.equal(await lancamentos(),'1/2');
     assert.equal(await linhasDaLista(),1);
+    // o campo guarda o que foi digitado: redesenhar a tela não come o espaço (o aparar mora no calc.js, não no estado)
+    await page.evaluate(()=>renderAll());
+    assert.equal(await page.locator('#fBusca').inputValue(),'  tomadas  ');
+    assert.equal(await lancamentos(),'1/2');
     await page.locator('#fBusca').fill('   ');
     assert.equal(await lancamentos(),'2');
     assert.equal(await linhasDaLista(),2);

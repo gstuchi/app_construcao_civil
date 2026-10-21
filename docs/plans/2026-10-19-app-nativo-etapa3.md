@@ -33,7 +33,7 @@
 
 ## Decisões
 
-Do Giovani, em 18/10 ("sim nas três"), e do protótipo do PR 0. As decisões dos PRs do app, inclusive as do conselho de 19/10, estão em "Decisões do conselho", antes do PR 1.
+Do Giovani, em 18/10 ("sim nas três") e 21/10 (a pele azul), e do protótipo do PR 0. As decisões dos PRs do app, inclusive as do conselho de 19/10, estão em "Decisões do conselho", antes do PR 1.
 
 | Decisão | Escolha | Por quê |
 | --- | --- | --- |
@@ -45,6 +45,7 @@ Do Giovani, em 18/10 ("sim nas três"), e do protótipo do PR 0. As decisões do
 | Afazer apagado em outro aparelho | Apagar de novo não grava nada | Antes, gravava o mesmo documento outra vez; a lista se redesenha igual |
 | O texto "N gasto(s) · P% da obra" do resumo do tópico | Fica no `app.js`; o app escreve o dele, com teste próprio | O resumo (os números) é a regra; uma 11ª regra só de texto não foi pedida |
 | Mês escolhido sem gasto | Entra na lista de meses com zero, no site e no app | O conserto do achado 1: o filtro que vale nunca some do seletor |
+| A pele azul | Sai do site e do app (#81): o Custta fica só com a esmeralda, no claro e no escuro. Os PRs do app nascem sem o azul, com testes, laudos, auditorias e cenas nos dois temas | Decisão do Giovani em 21/10, mesclada antes do PR 1 do app; as fatias do PR 1 foram refeitas sobre a main com ela |
 
 ## Como entregar
 

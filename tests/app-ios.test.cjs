@@ -137,13 +137,15 @@ test('cores só por tokens: nenhuma cor solta no código do app', () => {
   for(const f of arquivosSwift('app-ios/Custta')) assert.doesNotMatch(ler(f), solta, `${f}: use paleta.cor(.token)`);
 });
 
-test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da Paleta', () => {
+test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da Paleta', async () => {
   execFileSync(process.execPath, ['scripts/cores-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
   const paleta = ler('app-ios/Custta/Identidade/Paleta.swift');
   const enumToken = paleta.slice(paleta.indexOf('enum Token'), paleta.indexOf('}', paleta.indexOf('enum Token')));
   const tokens = [...enumToken.matchAll(/case \w+ = "(\w+)"/g)].map(m => m[1]).sort();
   const tabela = ler('scripts/cores-app-ios.mjs');
-  for(const pele of ['Esmeralda', 'Azul']){
+  // Uma pele só desde 21/10/2026: a Azul saiu do site e do app.
+  assert.deepEqual(Object.keys((await import(join(RAIZ, 'scripts/cores-app-ios.mjs'))).CORES), ['Esmeralda'], 'só a pele Esmeralda');
+  for(const pele of ['Esmeralda']){
     const bloco = tabela.slice(tabela.indexOf(`${pele}: {`), tabela.indexOf('}', tabela.indexOf(`${pele}: {`)));
     assert.deepEqual([...bloco.matchAll(/^\s+(\w+): \['/gm)].map(m => m[1]).sort(), tokens, `tokens da pele ${pele}`);
     // A linha fina dentro dos cartões de vidro: branco 9% no escuro, como o mockup (o Linha sólido, mais escuro que o vidro,
@@ -164,10 +166,10 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
   }
 });
 
-test('aurora nas mesmas cores do site, nos quatro combos', async () => {
+test('aurora nas mesmas cores do site, no escuro e no claro', async () => {
   const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
   const css = ler('styles.css');
-  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'], Azul: ['html[data-skin="azul"]{', 'html[data-skin="azul"][data-theme="light"]{'] };
+  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'] };
   const hex = rgb => '#' + rgb.split(',').map(n => Number(n).toString(16).padStart(2, '0').toUpperCase()).join('');
   for(const [pele, [escuro, claro]] of Object.entries(combos)){
     for(const [lado, seletor] of [[0, escuro], [1, claro]]){
@@ -178,10 +180,10 @@ test('aurora nas mesmas cores do site, nos quatro combos', async () => {
   }
 });
 
-test('cores de base iguais às do site, nos quatro combos', async () => {
+test('cores de base iguais às do site, no escuro e no claro', async () => {
   const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
   const css = ler('styles.css');
-  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'], Azul: ['html[data-skin="azul"]{', 'html[data-skin="azul"][data-theme="light"]{'] };
+  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'] };
   const site = { Fundo: 'bg', Superficie: 'surface-solid', Linha: 'line', Texto: 'text', TextoSecundario: 'muted', Marca: 'brand',
     Destaque: 'accent', Positivo: 'profit', Alerta: 'warn', Negativo: 'red', SobreMarca: 'btn-ink' };
   const hex = v => '#' + (v.length === 4 ? [...v.slice(1)].map(c => c + c).join('') : v.slice(1)).toUpperCase();

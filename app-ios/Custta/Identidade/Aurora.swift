@@ -12,11 +12,8 @@ enum Aurora {
     static func intensidade(tela: TelaDoVidro, pele: Pele, escuro: Bool) -> Double {
         switch (escuro, tela, pele) {
         case (false, _, .esmeralda): return 0.55
-        case (false, _, .azul): return 0.52
         case (true, .entrada, .esmeralda): return 0.92
-        case (true, .entrada, .azul): return 1
         case (true, .app, .esmeralda): return 0.48
-        case (true, .app, .azul): return 0.52
         }
     }
 

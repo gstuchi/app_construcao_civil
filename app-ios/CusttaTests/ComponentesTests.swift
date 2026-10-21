@@ -47,11 +47,11 @@ struct ComponentesTests {
 }
 
 /* A etiqueta "novo" entra no título da linha como imagem, colada à última palavra (mockup). O ImageRenderer não herda
-   nada da tela: a imagem tem de sair na escala da tela, na Marca do esquema de cor e da pele, e crescer com a letra. */
+   nada da tela: a imagem tem de sair na escala da tela, na Marca do esquema de cor, e crescer com a letra. */
 @MainActor
 struct EtiquetaNovoTests {
-    private func imagem(_ esquema: ColorScheme, pele: Pele = .esmeralda, tamanho: DynamicTypeSize = .large) throws -> UIImage {
-        try #require(EtiquetaNovo.imagem(paleta: Paleta(pele: pele), esquema: esquema, tamanho: tamanho, escala: 3))
+    private func imagem(_ esquema: ColorScheme, tamanho: DynamicTypeSize = .large) throws -> UIImage {
+        try #require(EtiquetaNovo.imagem(paleta: Paleta(), esquema: esquema, tamanho: tamanho, escala: 3))
     }
 
     /// RGBA do fundo da cápsula, 4 pt depois do começo dela (a imagem tem 4 pt de folga antes), na meia altura.
@@ -65,11 +65,10 @@ struct EtiquetaNovoTests {
         return rgba
     }
 
-    @Test func naEscalaDaTelaENaMarcaDoEsquemaEDaPele() throws {
+    @Test func naEscalaDaTelaENaMarcaDoEsquema() throws {
         #expect(try imagem(.dark).scale == 3)
         #expect(fundo(try imagem(.dark)) == [0x14, 0xB3, 0x9A, 0xFF], "Esmeralda/Marca do escuro")
         #expect(fundo(try imagem(.light)) == [0x0B, 0x7A, 0x68, 0xFF], "Esmeralda/Marca do claro")
-        #expect(fundo(try imagem(.dark, pele: .azul)) == [0x5B, 0x8C, 0xFF, 0xFF], "Azul/Marca do escuro")
     }
 
     @Test func cresceComALetra() throws {

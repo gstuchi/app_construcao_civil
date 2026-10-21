@@ -40,7 +40,7 @@ test('barra de navegação iOS: voltar, título pequeno e título grande', ()=>{
 
 test('barras translúcidas com material por tema', ()=>{
   const css = ler('styles.css');
-  const blocos = ['  :root{', '  html[data-theme="light"]{', '  html[data-skin="azul"]{', '  html[data-skin="azul"][data-theme="light"]{'];
+  const blocos = ['  :root{', '  html[data-theme="light"]{'];
   for(const b of blocos){
     const i = css.indexOf(b); assert.ok(i >= 0, `bloco ${b} sumiu`);
     const corpo = css.slice(i, css.indexOf('}', i));

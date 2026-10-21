@@ -1332,20 +1332,6 @@ function aplicaTema(claro){
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
 }
 
-/* ===== SKIN (cor do app: esmeralda/azul) — mesma mecânica do tema ===== */
-const SKIN_KEY = 'mo_skin';
-const skinAtual = () => document.documentElement.getAttribute('data-skin') || 'esmeralda';
-function aplicaSkin(skin){
-  if(skin === 'azul') document.documentElement.setAttribute('data-skin','azul');
-  else document.documentElement.removeAttribute('data-skin');
-  try{ localStorage.setItem(SKIN_KEY, skin); }catch(e){ registraErro('skin', e && e.message); }
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-  if(window.__globeDraw) window.__globeDraw(); // com prefers-reduced-motion o globo é estático — força a cor nova
-  OBRA_NATIVO.barraStatus(temaClaro());
-  renderAll();
-}
-
 /* ===== NOTIFICAÇÕES PUSH — inscrição por aparelho, resumo diário via cron ===== */
 const NOTIF_NOTA_PADRAO = 'Afazeres pendentes, parcelas do mês e lembrete de lançar gastos. '
   + 'Chega mesmo com o app fechado. Vale neste aparelho.';
@@ -1469,15 +1455,6 @@ function renderAjustes(){
     tg.setAttribute('aria-label', claro ? 'Modo escuro' : 'Modo claro');
     tg.querySelector('.bola').innerHTML = ICON(claro ? 'sol' : 'lua');
     tg.onclick = () => aplicaTema(!temaClaro());
-  }
-
-  const bEsm = $('#skinEsm'), bAzul = $('#skinAzul');
-  if(bEsm && bAzul){
-    const azul = skinAtual() === 'azul';
-    bEsm.classList.toggle('on', !azul);
-    bAzul.classList.toggle('on', azul);
-    bEsm.onclick  = () => aplicaSkin('esmeralda'); // aplicaSkin → renderAll → volta aqui e marca o chip
-    bAzul.onclick = () => aplicaSkin('azul');
   }
 
   const tgN = $('#ajNotif');

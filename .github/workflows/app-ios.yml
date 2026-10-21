@@ -232,7 +232,7 @@ jobs:
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3NaMaiorLetra \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
             -only-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
-            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosQuatroCombos \
+            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -277,7 +277,7 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/auditoria.xcresult" \
             -only-testing:CusttaUITests/AuditoriaUITests \
             -skip-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosQuatroCombos \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
             CODE_SIGNING_ALLOWED=NO
 

@@ -1,7 +1,7 @@
 /* Cores do app nativo por token (spec, seção 8: "cores só por tokens"). A tabela abaixo é a
    fonte e o script grava os color sets do catálogo app-ios/Custta/Assets.xcassets: um por token
-   e pele, com variante clara e escura, mais a cor de destaque do sistema e o fundo da abertura.
-   Valores: os do styles.css do site nos quatro combos (escuro e claro, esmeralda e azul) e os do
+   da pele Esmeralda, com variante clara e escura, mais a cor de destaque do sistema e o fundo da abertura.
+   Valores: os do styles.css do site no escuro e no claro e os do
    mockup aprovado da etapa 1 (~/Documents/custta-mockups/nativo/etapa1/final.html: tons de texto
    sobre o vidro, contorno do "Aumentar contraste", tintas do vidro e aurora). Mudança de cor é
    aqui, nunca no catálogo à mão. tests/app-ios.test.cjs roda --conferir.
@@ -14,8 +14,8 @@ import { fileURLToPath } from 'node:url';
 
 const CATALOGO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../app-ios/Custta/Assets.xcassets');
 
-/* token: [escuro, claro], por pele; '#RRGGBB' ou '#RRGGBBAA'. Origem no styles.css (:root,
-   [data-theme="light"], [data-skin="azul"] e os dois juntos) e no final.html. */
+/* token: [escuro, claro], por pele; '#RRGGBB' ou '#RRGGBBAA'. Origem no styles.css (:root e
+   [data-theme="light"]) e no final.html. A pele Azul saiu em 21/10/2026: o Custta só tem a Esmeralda. */
 export const CORES = {
   Esmeralda: {
     Fundo: ['#04100C', '#EDF5F1'],                  // --bg
@@ -74,9 +74,8 @@ export const CORES = {
     GloboHalo: ['#14B39A', '#14B39A'],
     GloboAro: ['#3AD17E', '#3AD17E'],
     // O lucro e o prejuízo da obra vendida sobre o vidro (etapa 2): o Positivo e o Negativo do site ficavam entre 2,4 e
-    // 4,2:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel nos quatro combos. O prejuízo do
-    // escuro esmeralda é mais claro que o do azul: com o #FFC4CE dos dois, a nota da venda ficava em 4,25:1 onde a aurora
-    // do esmeralda é mais clara (T35); com o #FFD2D9, 4,68 (pior pixel 4,61, o mesmo do lucro).
+    // 4,2:1 com a aurora atrás (laudo de leitura); estes passam de 4,5:1 no pior pixel. O prejuízo do escuro é o #FFD2D9:
+    // com o #FFC4CE, a nota da venda ficava em 4,25:1 onde a aurora é mais clara (T35); com ele, 4,68 (pior pixel 4,61).
     PositivoNoVidro: ['#8CF0BC', '#084A27'],
     NegativoNoVidro: ['#FFD2D9', '#8A1538'],
     // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
@@ -93,71 +92,6 @@ export const CORES = {
     SobreApagar: ['#FFFFFF', '#FFFFFF'],
     SobreAlerta: ['#1F1503', '#FFFFFF'],            // "Salvar mesmo assim", sobre o Alerta
     Aceso: ['#14B39A38', '#0B7A6824'],              // --aceso: a linha nova, por 2 s
-  },
-  Azul: {
-    Fundo: ['#070C18', '#EEF2F9'],
-    Superficie: ['#111A2E', '#FFFFFF'],
-    Linha: ['#243250', '#CDD8E8'],
-    LinhaNoVidro: ['#FFFFFF17', '#CDD8E8'],
-    Texto: ['#EEF4FB', '#16233C'],
-    TextoSecundario: ['#A3B4CA', '#556685'],
-    TextoTerciario: ['#6E82A0', '#617594'],
-    Marca: ['#5B8CFF', '#3560CF'],
-    Destaque: ['#A78BFA', '#6D4FC9'],
-    Positivo: ['#4ADE80', '#0E7A41'],
-    PositivoFundo: ['#0C2B1C', '#D7F2E2'],
-    Alerta: ['#FBBF24', '#8A5A06'],
-    AlertaFundo: ['#33280F', '#F8ECC9'],
-    AlertaEtiqueta: ['#FBBF24', '#7A5410'],
-    Informacao: ['#60A5FA', '#2A63C4'],
-    InformacaoFundo: ['#122238', '#DCE9FA'],
-    Negativo: ['#FB7185', '#C22E55'],
-    SobreMarca: ['#070C18', '#FFFFFF'],
-    Tinta: ['#3B6CF0', '#3560CF'],
-    SobreTinta: ['#FFFFFF', '#FFFFFF'],
-    Campo: ['#182338', '#E7EDF7'],
-    CampoBorda: ['#243250', '#CDD8E8'],
-    FantasmaFundo: ['#16244A', '#DDE7FB'],
-    FantasmaTexto: ['#A8C2FF', '#2B4FB0'],
-    SecundarioFosco: ['#C4D1E3', '#36445F'],
-    SecundarioTransparente: ['#DCE4F0', '#26324A'],
-    SecundarioSolido: ['#A3B4CA', '#556685'],
-    LinkNoVidro: ['#A8C2FF', '#223F92'],
-    ErroNoVidro: ['#FFA3B3', '#A3153F'],
-    Contorno: ['#EEF4FB8C', '#16233C73'],
-    TintaConteudo: ['#080C1C', '#FFFFFF'],
-    TintaCartao: ['#0E1628', '#FBFCFF'],
-    TintaNavegacao: ['#0A1020', '#F7F9FD'],
-    Aurora1: ['#3B6CF0', '#3B6CF0'],
-    Aurora2: ['#6E96FF', '#608CFF'],
-    Aurora3: ['#6E32C8', '#8C5ADC'],
-    Aurora4: ['#78D2FF', '#96D2FF'],
-    RealceLogo: ['#D4E0FF', '#3560CF'],
-    SombraDoTexto: ['#00000059', '#00000000'],
-    EscurecidoSobOAlerta: ['#0000006B', '#00000000'],
-    Escurecido: ['#000000B2', '#00000033'],
-    GoogleFundo: ['#131314', '#FFFFFF'],
-    GoogleBorda: ['#8E918F', '#747775'],
-    GoogleTexto: ['#E3E3E3', '#1F1F1F'],
-    GloboTerra: ['#608CFF', '#608CFF'],
-    GloboBrilho: ['#A0C4FF', '#A0C4FF'],
-    GloboOceano: ['#4E72E0', '#4E72E0'],
-    GloboHalo: ['#3A64F5', '#3A64F5'],
-    GloboAro: ['#648CFF', '#648CFF'],
-    PositivoNoVidro: ['#86EFAC', '#084A27'],
-    NegativoNoVidro: ['#FFC4CE', '#8A1538'],
-    Folha: ['#0E1628E6', '#F4F9F6F0'],              // no claro, o mockup usa o mesmo das duas peles
-    LinhaDaFolha: ['#1A2640', '#FFFFFF'],
-    SeparadorDaFolha: ['#FFFFFF14', '#142B2317'],
-    Tecla: ['#1F2D4A', '#FFFFFF'],
-    TeclaTocada: ['#2A3B60', '#E7EDF7'],
-    SegmentadoFundo: ['#FFFFFF14', '#142B2312'],
-    SegmentadoEscolhido: ['#34477A', '#FFFFFF'],
-    SombraDoSegmentado: ['#0000002E', '#0000002E'],
-    Apagar: ['#C42B3A', '#C22E55'],
-    SobreApagar: ['#FFFFFF', '#FFFFFF'],
-    SobreAlerta: ['#1F1503', '#FFFFFF'],
-    Aceso: ['#5B8CFF38', '#3560CF24'],
   },
 };
 

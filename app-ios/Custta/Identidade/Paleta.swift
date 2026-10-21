@@ -1,12 +1,12 @@
 import SwiftUI
 
-/* Cores só por tokens (spec, seção 8): cada token existe no Assets.xcassets para as duas peles
-   (Esmeralda e Azul), com variante clara e escura, gerado por scripts/cores-app-ios.mjs.
+/* Cores só por tokens (spec, seção 8): cada token existe no Assets.xcassets, com variante clara e escura,
+   gerado por scripts/cores-app-ios.mjs.
    Nenhuma cor solta nas telas (componentes RGB ou cor nomeada do sistema): tests/app-ios.test.cjs confere. */
 
+/// A pele do catálogo ("Esmeralda/Marca"). Desde 21/10/2026 o Custta só tem a Esmeralda (a Azul saiu do site e do app).
 enum Pele: String, CaseIterable, Sendable {
     case esmeralda = "Esmeralda"
-    case azul = "Azul"
 }
 
 enum Token: String, CaseIterable, Sendable {
@@ -100,13 +100,11 @@ extension EnvironmentValues {
     @Entry var paleta = Paleta()
 }
 
-/// Aparência deste aparelho: escuro, esmeralda e vidro Transparente por padrão. A tela de Ajustes da
-/// etapa 5 grava as três chaves; os testes de tela passam `-custta.tema claro -custta.pele azul -custta.vidro fosco`.
+/// Aparência deste aparelho: escuro e vidro Transparente por padrão. A tela de Ajustes da
+/// etapa 5 grava as duas chaves; os testes de tela passam `-custta.tema claro -custta.vidro fosco`.
 enum Aparencia {
     static let chaveTema = "custta.tema"
-    static let chavePele = "custta.pele"
     static let chaveVidro = "custta.vidro"
     static func esquema(_ tema: String) -> ColorScheme { tema == "claro" ? .light : .dark }
-    static func pele(_ valor: String) -> Pele { valor == "azul" ? .azul : .esmeralda }
     static func vidro(_ valor: String) -> EscolhaDeVidro { valor == "fosco" ? .fosco : .transparente }
 }

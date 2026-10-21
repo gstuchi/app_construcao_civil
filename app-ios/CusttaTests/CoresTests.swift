@@ -3,7 +3,7 @@ import UIKit
 import SwiftUI
 @testable import Custta
 
-/* Cores só por tokens: cada token existe nas duas peles, com variante clara e escura; os de fundo e de
+/* Cores só por tokens: cada token existe na pele Esmeralda, com variante clara e escura; os de fundo e de
    texto mudam entre claro e escuro. */
 @MainActor
 struct CoresTests {
@@ -25,10 +25,9 @@ struct CoresTests {
         }
     }
 
-    @Test func aparenciaPadraoEscuraEsmeraldaTransparente() {
+    @Test func aparenciaPadraoEscuraTransparente() {
         #expect(Aparencia.esquema("qualquer") == .dark)
         #expect(Aparencia.esquema("claro") == .light)
-        #expect(Aparencia.pele("azul") == .azul && Aparencia.pele("") == .esmeralda)
         #expect(Aparencia.vidro("fosco") == .fosco && Aparencia.vidro("") == .transparente)
     }
 }

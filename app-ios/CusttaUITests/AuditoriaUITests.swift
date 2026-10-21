@@ -3,7 +3,7 @@ import UIKit
 
 /* Requisitos verificáveis do spec, seção 8, com a cara do PWA: no maior tamanho de letra de
    acessibilidade nada corta, todo controle tem rótulo e alvo de 44 pt; o contraste das cores passa nos
-   quatro combos e sobre a aurora parada (no quadro inicial e nos extremos da deriva). Não crescem com a
+   dois temas e sobre a aurora parada (no quadro inicial e nos extremos da deriva). Não crescem com a
    letra, por decisão do mockup, a cápsula de abas, o botão do Google e o título pequeno da barra da obra
    (para perto de 22 pt): os três mostram o Visualizador de Conteúdo Grande, e a auditoria de tipo dinâmico
    os deixa de fora.
@@ -18,7 +18,7 @@ final class AuditoriaUITests: XCTestCase {
     /// Fundo parado: aurora no quadro inicial, globo no ângulo de partida, logo pronto.
     private let parado = ["-custta.reduzirMovimento", "YES"]
     private let solido = ["-custta.reduzirTransparencia", "YES"]
-    private let quatroCombos = [("escuro", "esmeralda"), ("claro", "esmeralda"), ("escuro", "azul"), ("claro", "azul")]
+    private let temas = ["escuro", "claro"]
     /// A borda de rolagem (`BordaDeRolagem`): o véu do fundo cobre 140 pt no alto, depois de rolar, e embaixo,
     /// nas telas com a cápsula de abas (88% e 80% com "Reduzir transparência").
     private let borda: CGFloat = 140
@@ -137,10 +137,10 @@ final class AuditoriaUITests: XCTestCase {
         }
     }
 
-    /// A folha do gasto (valor e cartão) e a linha aberta com o "Apagar", nos quatro combos, com superfícies sólidas.
-    @MainActor func testContrasteDaFolhaNosQuatroCombos() throws {
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + solido + parado
+    /// A folha do gasto (valor e cartão) e a linha aberta com o "Apagar", no escuro e no claro, com superfícies sólidas.
+    @MainActor func testContrasteDaFolhaNosDoisTemas() throws {
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + solido + parado
             for (passo, espera) in [("valor", "visorDoValor"), ("cartao", "resumoDoCartao")] {
                 let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: combo + ["-custta.folha", passo])
                 XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), passo)
@@ -248,16 +248,16 @@ final class AuditoriaUITests: XCTestCase {
         entrar.terminate()
     }
 
-    @MainActor func testContrasteNosQuatroCombos() throws {
-        for (tema, pele) in quatroCombos {
-            try contraste(["-custta.tema", tema, "-custta.pele", pele] + solido + parado)
+    @MainActor func testContrasteNosDoisTemas() throws {
+        for tema in temas {
+            try contraste(["-custta.tema", tema] + solido + parado)
         }
     }
 
-    /// A tela da obra (etapa 2), no topo e com a lista rolada, nos quatro combos, com superfícies sólidas.
-    @MainActor func testContrasteDaObraNosQuatroCombos() throws {
-        for (tema, pele) in quatroCombos {
-            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + solido + parado)
+    /// A tela da obra (etapa 2), no topo e com a lista rolada, no escuro e no claro, com superfícies sólidas.
+    @MainActor func testContrasteDaObraNosDoisTemas() throws {
+        for tema in temas {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: ["-custta.tema", tema] + solido + parado)
             XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
             try auditar(app, [.contrast])
             rolar(app)
@@ -300,10 +300,10 @@ final class AuditoriaUITests: XCTestCase {
         }
     }
 
-    /// As mesmas telas nos quatro combos, com superfícies sólidas.
-    @MainActor func testContrasteDaParte3NosQuatroCombos() throws {
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + solido + parado
+    /// As mesmas telas no escuro e no claro, com superfícies sólidas.
+    @MainActor func testContrasteDaParte3NosDoisTemas() throws {
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + solido + parado
             var app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", argumentos: combo + ["-custta.rolagem", "250"])
             XCTAssertTrue(app.buttons["acao-voltarConstrucao"].waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1)
@@ -327,20 +327,18 @@ final class AuditoriaUITests: XCTestCase {
     /// A deriva move os brilhos da aurora: o título e a dica da entrada são medidos também com a aurora
     /// congelada nos quadros de 13 s e 26 s (os extremos da deriva), no escuro, onde ela é mais clara.
     @MainActor func testContrasteDoTituloComAAuroraEmMovimento() throws {
-        for pele in ["esmeralda", "azul"] {
-            for quadro in ["13", "26"] {
-                let app = abrirApp(argumentos: ["-custta.pele", pele, "-custta.quadroDaAurora", quadro] + solido + parado)
-                XCTAssertTrue(app.textFields["email"].waitForExistence(timeout: 10))
-                try auditar(app, [.contrast])
-                app.terminate()
-            }
+        for quadro in ["13", "26"] {
+            let app = abrirApp(argumentos: ["-custta.quadroDaAurora", quadro] + solido + parado)
+            XCTAssertTrue(app.textFields["email"].waitForExistence(timeout: 10))
+            try auditar(app, [.contrast])
+            app.terminate()
         }
     }
 
     /// Na maior letra o layout muda e o texto cai em outra parte da aurora: as cores de novo, com sólido.
     @MainActor func testContrasteNaMaiorLetra() throws {
-        for (tema, pele) in [("escuro", "esmeralda"), ("claro", "azul")] {
-            try contraste(["-custta.tema", tema, "-custta.pele", pele] + maiorLetra + solido + parado)
+        for tema in temas {
+            try contraste(["-custta.tema", tema] + maiorLetra + solido + parado)
         }
     }
 }

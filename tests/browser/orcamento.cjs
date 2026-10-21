@@ -16,18 +16,18 @@ const OBRAS=[
 const contraste=(a,b)=>{const lum=c=>{const [r,g,bb]=c.map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);});return 0.2126*r+0.7152*g+0.0722*bb;};
   const [l1,l2]=[lum(a),lum(b)].sort((x,y)=>y-x);return (l1+0.05)/(l2+0.05);};
 
-async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
+async function abrir(browser,{tema='escuro',width=393}={}){
   const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width,height:852}});
   await ctx.route('**/cloud.js',r=>r.fulfill({contentType:'text/javascript',body:''}));
   await ctx.route('https://**/*',r=>r.abort());
-  await ctx.addInitScript(({tema,skin})=>{
+  await ctx.addInitScript(({tema})=>{
     sessionStorage.setItem('splashVista','1');
-    localStorage.setItem('mo_tema',tema); if(skin==='azul') localStorage.setItem('mo_skin','azul');
+    localStorage.setItem('mo_tema',tema);
     window.errosOrc=[]; window.salvos=[];
     addEventListener('error',e=>errosOrc.push(e.message));
     addEventListener('securitypolicyviolation',e=>errosOrc.push(e.violatedDirective));
     window.CLOUD={user:()=>({uid:'teste'}),onAuth:cb=>cb({uid:'teste'}),watchDados:()=>()=>{},saveDados:d=>{salvos.push(JSON.parse(JSON.stringify(d)));return Promise.resolve();},estado:()=>'ocioso'};
-  },{tema,skin});
+  },{tema});
   const page=await ctx.newPage();
   await page.goto('http://localhost:8123');
   await page.evaluate(obras=>{document.getElementById('auth')?.classList.add('hidden');document.body.classList.remove('locked');
@@ -275,9 +275,9 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
     assert.deepEqual(await page.evaluate(()=>errosOrc),[]);
     await ctx.close();
 
-    // Contraste do texto novo nos 4 combos tema × skin
-    for(const tema of ['escuro','claro']) for(const skin of ['esmeralda','azul']){
-      const {ctx,page}=await abrir(browser,{tema,skin});
+    // Contraste do texto novo no escuro e no claro
+    for(const tema of ['escuro','claro']){
+      const {ctx,page}=await abrir(browser,{tema});
       await page.evaluate(()=>openObra('a'));
       const medidas=await page.evaluate(()=>['.orc-frase.alerta','#oOrc .orc-pill','#oOrc .orc-rodape','.orc-val','.orc-fora .orc-frase'].map(sel=>{
         const el=document.querySelector(sel); const cs=getComputedStyle(el);
@@ -291,10 +291,10 @@ async function abrir(browser,{tema='escuro',skin='esmeralda',width=393}={}){
         const f=m.fundo.match(/[\d.]+/g).map(Number); const a=f[3]===undefined?1:f[3];
         const fundo=[0,1,2].map(i=>f[i]*a+base[i]*(1-a));
         const c=contraste(rgb(m.cor),fundo);
-        assert.ok(c>=4.5,`${tema}/${skin} ${m.sel}: contraste ${c.toFixed(2)}`);
+        assert.ok(c>=4.5,`${tema} ${m.sel}: contraste ${c.toFixed(2)}`);
       }
       await ctx.close();
     }
-    console.log('ok - orçamento: card, lista por tópico, início, 5 larguras, 2 temas e contraste nos 4 combos');
+    console.log('ok - orçamento: card, lista por tópico, início, 5 larguras, 2 temas e contraste nos dois');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

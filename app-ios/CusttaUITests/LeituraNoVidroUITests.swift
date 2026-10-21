@@ -17,7 +17,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     /// da deriva inteira, que também cobre o quadro em que ela para com Reduzir movimento.
     private let piorMomento = ["-custta.reduzirMovimento", "YES", "-custta.auroraPiorCaso", "YES", "-custta.semSimbolos", "YES"]
     private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-    private let quatroCombos = [("escuro", "esmeralda"), ("claro", "esmeralda"), ("escuro", "azul"), ("claro", "azul")]
+    private let temas = ["escuro", "claro"]
     private static let portao = 4.5
     /// A barra de status fica de fora: a hora muda entre os dois prints.
     private static let barraDeStatus: CGFloat = 70
@@ -164,20 +164,20 @@ final class LeituraNoVidroUITests: XCTestCase {
     }
 
     /// Entrar (Fosco), Obras (Transparente, com o aviso de e-mail) e os rótulos da cápsula de abas sobre a
-    /// lista rolada, nos quatro combos.
-    @MainActor func testLeituraNosQuatroCombos() {
+    /// lista rolada, no escuro e no claro.
+    @MainActor func testLeituraNosDoisTemas() {
         var cenas: [Cena] = []
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
             cenas += [
-                Cena(nome: "entrar, \(tema), \(pele)", conta: "nenhuma", argumentos: combo, espera: "email", escopo: "tudo"),
-                Cena(nome: "obras, \(tema), \(pele)", conta: "senha-nao-confirmada", argumentos: combo,
+                Cena(nome: "entrar, \(tema)", conta: "nenhuma", argumentos: combo, espera: "email", escopo: "tudo"),
+                Cena(nome: "obras, \(tema)", conta: "senha-nao-confirmada", argumentos: combo,
                      espera: "avisoEmail", escopo: "tudo"),
             ]
             // Os rótulos da cápsula com o conteúdo passando atrás deles: a lista em várias rolagens, porque o pior
             // ponto muda com os dados e o combo (no fim da lista, 260 pt, já não passa nada atrás dos rótulos).
             cenas += Self.rolagens.map { rolagem in
-                Cena(nome: "abas sobre a lista em \(rolagem) pt, \(tema), \(pele)", conta: "senha-nao-confirmada",
+                Cena(nome: "abas sobre a lista em \(rolagem) pt, \(tema)", conta: "senha-nao-confirmada",
                      argumentos: combo + ["-custta.rolagem", "\(rolagem)"], espera: "avisoEmail", escopo: "navegacao")
             }
         }
@@ -187,7 +187,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     /// Na maior letra o texto cai em outra parte da aurora; com "Aumentar contraste", o vidro é o Fosco com
     /// contorno. Os dois no escuro, onde a aurora é mais clara que o texto.
     @MainActor func testLeituraNaMaiorLetraEComAumentarContraste() {
-        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
         let contraste = escuro + ["-custta.aumentarContraste", "YES"]
         cobrar([
             Cena(nome: "obras na maior letra", conta: "senha-nao-confirmada", argumentos: escuro + maiorLetra,
@@ -199,14 +199,13 @@ final class LeituraNoVidroUITests: XCTestCase {
     }
 
     /// Ajustes: o título grande (do sistema, com o halo da barra) e a versão, texto solto sobre a aurora, nos
-    /// dois escuros, com "Aumentar contraste" e na maior letra. No Pro Max, a versão fica em 4,42:1 no escuro
+    /// escuro, com "Aumentar contraste" e na maior letra. No Pro Max, a versão fica em 4,42:1 no escuro
     /// esmeralda (revisão final do PR 2).
     @MainActor func testLeituraEmAjustes() {
-        let esmeralda = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
-        let azul = ["-custta.tema", "escuro", "-custta.pele", "azul"] + piorMomento
-        let cenas: [(String, [String])] = [("escuro, esmeralda", esmeralda), ("escuro, azul", azul),
-                                           ("com Aumentar contraste", esmeralda + ["-custta.aumentarContraste", "YES"]),
-                                           ("na maior letra", esmeralda + maiorLetra)]
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
+        let cenas: [(String, [String])] = [("escuro", escuro),
+                                           ("com Aumentar contraste", escuro + ["-custta.aumentarContraste", "YES"]),
+                                           ("na maior letra", escuro + maiorLetra)]
         cobrar(cenas.map { nome, argumentos in
             Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
                  aba: "ajustes")
@@ -215,15 +214,15 @@ final class LeituraNoVidroUITests: XCTestCase {
 }
 
 extension LeituraNoVidroUITests {
-    /// O "Cancelar" do "Sair da conta?" nos quatro combos, no tint do alerta (Texto). O texto do alerta
+    /// O "Cancelar" do "Sair da conta?" no escuro e no claro, no tint do alerta (Texto). O texto do alerta
     /// é do sistema e o app não o apaga: o rótulo é medido contra a própria cápsula (`medirRotulo`). Exceção:
     /// o "Sair" não é medido. É destrutivo, e o vermelho do sistema não segue o tint (2,2 a 3,0:1 no iOS 27); fica
     /// o padrão da Apple (decisão de 11/10).
     @MainActor func testLeituraDoAlertaDeSair() {
         var falhas: [String] = []
-        for (tema, pele) in quatroCombos {
-            let nome = "alerta Sair da conta?, \(tema), \(pele)"
-            let app = abrirApp(conta: "senha", argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
+        for tema in temas {
+            let nome = "alerta Sair da conta?, \(tema)"
+            let app = abrirApp(conta: "senha", argumentos: ["-custta.tema", tema] + piorMomento)
             app.abrirAba("ajustes")
             XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(nome): Ajustes não abriu")
             app.buttons["sair"].tap()
@@ -247,7 +246,7 @@ extension LeituraNoVidroUITests {
         XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portao):1 no alerta:\n" + falhas.joined(separator: "\n"))
     }
 
-    /// O "Finalizar saída" nos quatro combos, nos três estados do mockup: o título e o botão do alerta (no tint Texto,
+    /// O "Finalizar saída" no escuro e no claro, nos três estados do mockup: o título e o botão do alerta (no tint Texto,
     /// como o do "Sair da conta?"), aberto e depois de falhar de novo, e o "Limpando…" da pílula, medidos contra o fundo
     /// em volta (`medirRotulo`). Os prints dos três estados ficam no resultado para conferir com o mockup. Exceção
     /// nomeada (decisão do Giovani, 12/10): a mensagem do alerta não é medida. Ela sai na cor secundária do sistema
@@ -281,12 +280,12 @@ extension LeituraNoVidroUITests {
                                palavra.nota, palavra.minimo))
             if palavra.nota < Self.portao { falhas.append(String(format: "%@: %@ em %.2f:1", nome, rotulo, palavra.nota)) }
         }
-        for (tema, pele) in quatroCombos {
+        for tema in temas {
             let app = abrirApp(conta: "nenhuma", limpeza: "abertura",
-                               argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento + (letraGrande ? maiorLetra : []))
+                               argumentos: ["-custta.tema", tema] + piorMomento + (letraGrande ? maiorLetra : []))
             let alerta = app.alerts[FinalizarSaidaUITests.titulo], botao = alerta.buttons[FinalizarSaidaUITests.botao]
             for estado in ["aberto", "tentando", "falhou de novo"] {
-                let nome = "finalizar saída\(letraGrande ? " na maior letra" : ""), \(estado), \(tema), \(pele)"
+                let nome = "finalizar saída\(letraGrande ? " na maior letra" : ""), \(estado), \(tema)"
                 if estado == "tentando" {
                     botao.tap()
                     // O alerta fecha, a ação roda e a pílula vem meio segundo depois: no simulador da CI, o teste só a acha
@@ -317,20 +316,20 @@ extension LeituraNoVidroUITests {
     }
 
     /// A tela da obra (etapa 2): o topo (título, fase, indicadores) e a lista rolada (o "A vencer" e os cartões dos meses),
-    /// nos quatro combos; mais a maior letra e o Aumentar contraste, no escuro esmeralda. A vendida fica no
+    /// no escuro e no claro; mais a maior letra e o Aumentar contraste, no escuro esmeralda. A vendida fica no
     /// testLeituraDaObraVendida (lucro e prejuízo).
     @MainActor func testLeituraDaObra() {
         var cenas: [Cena] = []
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
             cenas += [
-                Cena(nome: "obra, topo, \(tema), \(pele)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
+                Cena(nome: "obra, topo, \(tema)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
                      dados: "vitrine", abrir: "obra:v1"),
-                Cena(nome: "obra, lista, \(tema), \(pele)", conta: "senha", argumentos: combo + ["-custta.rolagem", "640"],
+                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "640"],
                      espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
             ]
         }
-        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
         cenas += [
             Cena(nome: "obra na maior letra", conta: "senha", argumentos: escuro + maiorLetra, espera: "tituloDaObra", escopo: "tudo",
                  dados: "vitrine", abrir: "obra:v1"),
@@ -340,18 +339,18 @@ extension LeituraNoVidroUITests {
         cobrar(cenas)
     }
 
-    /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste, nas duas peles: o pior
+    /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste: o pior
     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, seis rolagens; na
     /// CI, duas.
     @MainActor func testLeituraDaObraRolando() {
         let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [400, 900] : [200, 400, 640, 900, 1200, 1500]
         var cenas: [Cena] = []
-        for (pele, contraste) in [("esmeralda", false), ("azul", false), ("esmeralda", true), ("azul", true)] {
+        for contraste in [false, true] {
             for y in rolagens {
-                let argumentos = ["-custta.tema", "escuro", "-custta.pele", pele, "-custta.rolagem", "\(y)"] + piorMomento
+                let argumentos = ["-custta.tema", "escuro", "-custta.rolagem", "\(y)"] + piorMomento
                     + (contraste ? ["-custta.aumentarContraste", "YES"] : [])
                 // Espera o título pequeno da barra: rolada, a lista já soltou o título grande da árvore.
-                cenas.append(Cena(nome: "obra rolando \(y), escuro, \(pele)\(contraste ? ", Aumentar contraste" : "")", conta: "senha",
+                cenas.append(Cena(nome: "obra rolando \(y), escuro\(contraste ? ", Aumentar contraste" : "")", conta: "senha",
                                   argumentos: argumentos, espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine",
                                   abrir: "obra:v1", rolada: true))
             }
@@ -360,7 +359,7 @@ extension LeituraNoVidroUITests {
     }
 
     /// A folha do gasto (PR 2 da etapa 2): o teclado de valor, os detalhes no Pix e no cartão (o resumo e a ajuda ficam
-    /// direto na Folha), a lista de tópicos, a edição de uma parcela e o "Salvar mesmo assim" âmbar, nos quatro combos;
+    /// direto na Folha), a lista de tópicos, a edição de uma parcela e o "Salvar mesmo assim" âmbar, no escuro e no claro;
     /// na maior letra e com Aumentar contraste; e a linha arrastada com o "Apagar" na lista da obra.
     @MainActor func testLeituraDaFolhaDoGasto() {
         func folha(_ nome: String, _ passo: String, _ argumentos: [String], espera: String) -> Cena {
@@ -368,21 +367,21 @@ extension LeituraNoVidroUITests {
                  dados: "vitrine", abrir: "obra:v1")
         }
         var cenas: [Cena] = []
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
             cenas += [
-                folha("folha, valor, \(tema), \(pele)", "valor", combo, espera: "visorDoValor"),
-                folha("folha, detalhes, \(tema), \(pele)", "detalhes", combo, espera: "linhaTopico"),
-                folha("folha, cartão, \(tema), \(pele)", "cartao", combo, espera: "resumoDoCartao"),
-                folha("folha, tópicos, \(tema), \(pele)", "topicos", combo, espera: "topico-terreno"),
-                folha("folha, parcela, \(tema), \(pele)", "editar:g031", combo, espera: "avisoParcela"),
-                folha("folha, repetido, \(tema), \(pele)", "repetido", combo, espera: "avisoRepetido"),
-                Cena(nome: "obra, linha aberta, \(tema), \(pele)", conta: "senha",
+                folha("folha, valor, \(tema)", "valor", combo, espera: "visorDoValor"),
+                folha("folha, detalhes, \(tema)", "detalhes", combo, espera: "linhaTopico"),
+                folha("folha, cartão, \(tema)", "cartao", combo, espera: "resumoDoCartao"),
+                folha("folha, tópicos, \(tema)", "topicos", combo, espera: "topico-terreno"),
+                folha("folha, parcela, \(tema)", "editar:g031", combo, espera: "avisoParcela"),
+                folha("folha, repetido, \(tema)", "repetido", combo, espera: "avisoRepetido"),
+                Cena(nome: "obra, linha aberta, \(tema)", conta: "senha",
                      argumentos: combo + ["-custta.rolagem", "640", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
                      escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
             ]
         }
-        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
         let contraste = escuro + ["-custta.aumentarContraste", "YES"]
         cenas += [
             folha("folha, valor, na maior letra", "valor", escuro + maiorLetra, espera: "visorDoValor"),
@@ -396,22 +395,22 @@ extension LeituraNoVidroUITests {
 
 extension LeituraNoVidroUITests {
     /// A parte 3 da etapa 2: as ações da fase (a sólida da marca e a de vidro), a lista vazia, as folhas da obra e da venda
-    /// e a do gasto lançado de dentro de uma vendida, nos quatro combos; mais a maior letra no escuro esmeralda.
+    /// e a do gasto lançado de dentro de uma vendida, no escuro e no claro; mais a maior letra no escuro esmeralda.
     @MainActor func testLeituraDaParte3() {
         var cenas: [Cena] = []
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
             cenas += [
-                Cena(nome: "obra pronta, ações da fase, \(tema), \(pele)", conta: "senha", argumentos: combo + ["-custta.rolagem", "250"],
+                Cena(nome: "obra pronta, ações da fase, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "250"],
                      espera: "acao-voltarConstrucao", escopo: "tudo", dados: "vitrine", abrir: "obra:v2", rolada: true),
-                Cena(nome: "lista vazia, \(tema), \(pele)", conta: "senha", argumentos: combo, espera: "obrasVazio", escopo: "tudo", dados: "vazio"),
-                Cena(nome: "folha da obra nova, \(tema), \(pele)", conta: "senha", argumentos: combo + ["-custta.folha", "preenchida"],
+                Cena(nome: "lista vazia, \(tema)", conta: "senha", argumentos: combo, espera: "obrasVazio", escopo: "tudo", dados: "vazio"),
+                Cena(nome: "folha da obra nova, \(tema)", conta: "senha", argumentos: combo + ["-custta.folha", "preenchida"],
                      espera: "nomeDaObra", escopo: "tudo", dados: "vitrine", folha: "novaObra"),
-                Cena(nome: "folha da venda, data, \(tema), \(pele)", conta: "senha", argumentos: combo + ["-custta.folha", "detalhes"],
+                Cena(nome: "folha da venda, data, \(tema)", conta: "senha", argumentos: combo + ["-custta.folha", "detalhes"],
                      espera: "confirmarVenda", escopo: "tudo", dados: "vitrine", abrir: "obra:v2", folha: "venda:v2"),
             ]
         }
-        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
         cenas += [
             Cena(nome: "folha do gasto numa vendida", conta: "senha", argumentos: escuro + ["-custta.folha", "detalhes"],
                  espera: "linhaObra", escopo: "tudo", dados: "vitrine", abrir: "obra:v3", folha: "gastoDeVendida:v3"),
@@ -422,16 +421,16 @@ extension LeituraNoVidroUITests {
     }
 
     /// A obra vendida: o lucro (PositivoNoVidro) e o prejuízo (NegativoNoVidro) sobre o vidro e o "Desfazer venda" de vidro,
-    /// nos quatro combos. Com o Positivo e o Negativo do site, o lucro ficava em 3,66:1 no escuro esmeralda e 2,76:1 no
+    /// no escuro e no claro. Com o Positivo e o Negativo do site, o lucro ficava em 3,66:1 no escuro esmeralda e 2,76:1 no
     /// claro azul.
     @MainActor func testLeituraDaObraVendida() {
         var cenas: [Cena] = []
-        for (tema, pele) in quatroCombos {
-            let combo = ["-custta.tema", tema, "-custta.pele", pele] + piorMomento + ["-custta.rolagem", "400"]
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento + ["-custta.rolagem", "400"]
             cenas += [
-                Cena(nome: "obra vendida com lucro, \(tema), \(pele)", conta: "senha", argumentos: combo, espera: "acao-desfazerVenda",
+                Cena(nome: "obra vendida com lucro, \(tema)", conta: "senha", argumentos: combo, espera: "acao-desfazerVenda",
                      escopo: "tudo", dados: "vitrine", abrir: "obra:v3", rolada: true),
-                Cena(nome: "obra vendida com prejuízo, \(tema), \(pele)", conta: "senha", argumentos: combo, espera: "acao-desfazerVenda",
+                Cena(nome: "obra vendida com prejuízo, \(tema)", conta: "senha", argumentos: combo, espera: "acao-desfazerVenda",
                      escopo: "tudo", dados: "prejuizo", abrir: "obra:v3", rolada: true),
             ]
         }
@@ -439,7 +438,7 @@ extension LeituraNoVidroUITests {
     }
 
     @MainActor func testLeituraDaParte3NaMaiorLetra() {
-        let escuro = ["-custta.tema", "escuro", "-custta.pele", "esmeralda"] + piorMomento + maiorLetra
+        let escuro = ["-custta.tema", "escuro"] + piorMomento + maiorLetra
         cobrar([
             // Espera o lápis da barra: rolada a 1100 pt em 300 ms, o título sai da pilha preguiçosa antes da espera achar.
             Cena(nome: "obra pronta, ações da fase, na maior letra", conta: "senha", argumentos: escuro + ["-custta.rolagem", "1100"],
@@ -452,19 +451,19 @@ extension LeituraNoVidroUITests {
         ])
     }
 
-    /// O "Não salvou" (uma vez, quando o erro não passa sozinho), nos quatro combos: "OK" e "Tentar de novo" no tint do alerta
+    /// O "Não salvou" (uma vez, quando o erro não passa sozinho), no escuro e no claro: "OK" e "Tentar de novo" no tint do alerta
     /// (Texto), medidos contra a própria cápsula, como o "Cancelar" do "Sair da conta?".
     @MainActor func testLeituraDoAlertaDeNaoSalvou() {
         var falhas: [String] = []
-        for (tema, pele) in quatroCombos {
+        for tema in temas {
             let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", gravacao: "recusa",
-                               argumentos: ["-custta.tema", tema, "-custta.pele", pele] + piorMomento)
+                               argumentos: ["-custta.tema", tema] + piorMomento)
             let pronta = app.buttons["acao-marcarPronta"]
             XCTAssertTrue(pronta.waitForExistence(timeout: 10))
             app.rolarAte(pronta)
             pronta.tap()
             let alerta = app.alerts["Não salvou na nuvem"]
-            XCTAssertTrue(alerta.waitForExistence(timeout: 8), "\(tema), \(pele): o alerta não abriu")
+            XCTAssertTrue(alerta.waitForExistence(timeout: 8), "\(tema): o alerta não abriu")
             Thread.sleep(forTimeInterval: 2)
             let foto = XCUIScreen.main.screenshot()
             let imagem = foto.image.cgImage!
@@ -472,7 +471,7 @@ extension LeituraNoVidroUITests {
             let botoes = ["OK", "Tentar de novo"].map { ($0, alerta.buttons[$0].frame) }
             app.terminate()
             for (rotulo, quadro) in botoes {
-                let nome = "alerta Não salvou, \(rotulo), \(tema), \(pele)"
+                let nome = "alerta Não salvou, \(rotulo), \(tema)"
                 guard let palavra = LaudoDeContraste.medirRotulo(Retrato(imagem), quadro: quadro, escala: escala) else {
                     XCTFail("\(nome): o rótulo não foi achado"); continue
                 }

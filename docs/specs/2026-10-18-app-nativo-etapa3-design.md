@@ -31,7 +31,7 @@ As decisões levam o número do `LEIA-ME.md` de cada parte. Todas as sugestões 
 - Com orçamento, por total ou por tópico, a linha mostra o nível do site: "dentro do previsto", "perto do limite" ou "passou do previsto".
 - Perto e passou em âmbar, nunca vermelho. No "passou", a barra para no previsto, com uma fresta, e o excesso vem listrado: a diferença está na forma, não só na cor.
 - No modo por tópico, a linha traz o pior aviso dos tópicos ("2 tópicos passaram do previsto" ou, sem nenhum, "N perto do limite") e o que está fora.
-- **Token novo** de âmbar para texto sobre o vidro do conteúdo (`--amber-v` no mockup): `#6F4705` no claro e o âmbar de sempre no escuro. O âmbar do site dava 3,79–4,15:1 sobre a aurora clara; o novo dá 5,21–5,71:1. Não é o `AlertaEtiqueta` da etapa 2 (`#7A5410` no claro esmeralda).
+- **Token novo** de âmbar para texto sobre o vidro do conteúdo (`--amber-v` no mockup): `#6F4705` no claro e `#FFD98A` no escuro. O âmbar do site dava 3,79–4,15:1 sobre a aurora clara; o novo dá 5,21–5,71:1. No escuro, o âmbar de sempre dava 3,12:1 no alto da tela Orçamento rolada, na maior letra (achado do laudo do protótipo); o Giovani decidiu em 21/10 mudar a cor e manter a regra de 4,5:1 do laudo. Não é o `AlertaEtiqueta` da etapa 2 (`#7A5410` no claro esmeralda).
 
 **Tela "Orçamento".**
 - Empurrada pela linha, no caminho de Obras, com título grande e o lápis na barra (o mesmo círculo da obra).

@@ -139,7 +139,7 @@ struct RegrasDaFolhaBordasTests {
     }
 }
 
-/* As da etapa 3 (o orçamento). Cada uma opera nas pontas (a primeira e a última obra de três) e confere a árvore
+/* As da etapa 3 (orçamento e afazeres). Cada uma opera nas pontas (a primeira e a última obra de três) e confere a árvore
    inteira: a da obra mudada menos a chave da ação e a das outras obras, para pegar a obra errada e a chave que vaza. */
 struct MutacoesDaEtapa3Tests {
     func estado() -> Estado {
@@ -213,5 +213,64 @@ struct MutacoesDaEtapa3Tests {
     @Test func orcamentoDeObraQueSumiuNaoGrava() {
         #expect(estado().salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: "sumiu") == nil)
         #expect(estado().tirandoOrcamento(daObra: "sumiu") == nil)
+    }
+
+    @Test func adicionarAfazerNoComecoDaUltimaObra() throws {
+        let antes = estado()
+        let e = try #require(antes.adicionandoAfazer("Comprar disjuntor de 40 A", id: "n1", naObra: "o3"))
+        #expect(e.obras[2].arvore["afazeres"] == .lista([
+            .objeto(["id": .texto("n1"), "texto": .texto("Comprar disjuntor de 40 A"), "feito": .booleano(false)]),
+            .objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(true)]),
+        ]))
+        #expect(resto(e, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
+        let primeira = try #require(antes.adicionandoAfazer("Ver o reboco", id: "n2", naObra: "o1"))
+        #expect(primeira.obras[0].afazeres.map(\.id) == ["n2", "p1", "p2", "f1"])
+        #expect(resto(primeira, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
+        #expect(antes.adicionandoAfazer("x", id: "n3", naObra: "sumiu") == nil)
+    }
+
+    @Test func obraSemAChaveDosAfazeresGanhaAChaveComoNoSite() throws {
+        // A obra nova do site não traz `afazeres`; o primeiro afazer cria a lista (`oo.afazeres = []`), e apagar o último
+        // deixa `afazeres: []` no documento, como o site grava.
+        let criada = try #require(estado().criandoObra(["id": .texto("o4"), "nome": .texto("Nova"), "dataInicio": .texto("2026-10-01"),
+                                                         "fase": .texto("construcao"), "gastos": .lista([])]))
+        #expect(criada.obras[3].arvore["afazeres"] == nil)
+        let com = try #require(criada.adicionandoAfazer("Murar", id: "m", naObra: "o4"))
+        #expect(com.obras[3].arvore["afazeres"] == .lista([.objeto(["id": .texto("m"), "texto": .texto("Murar"), "feito": .booleano(false)])]))
+        let sem = try #require(com.apagandoAfazer("m", daObra: "o4"))
+        #expect(sem.obras[3].arvore["afazeres"] == .lista([]))
+        #expect(resto(sem, obra: 3, sem: "afazeres") == resto(criada, obra: 3, sem: "afazeres"))
+    }
+
+    @Test func marcarEDesmarcarLevamAoComecoNaObraCerta() throws {
+        let antes = estado()
+        let marcado = try #require(antes.alternandoAfazer("p2", naObra: "o1"))
+        #expect(marcado.obras[0].arvore["afazeres"] == .lista([
+            .objeto(["id": .texto("p2"), "texto": .texto("Ligar pro pedreiro"), "feito": .booleano(true)]),
+            .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
+            .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
+        ]))
+        #expect(resto(marcado, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
+        let desmarcado = try #require(marcado.alternandoAfazer("f1", naObra: "o1"))
+        #expect(desmarcado.obras[0].afazeres.map(\.id) == ["f1", "p2", "p1"] && desmarcado.obras[0].afazeres.map(\.feito) == [false, true, false])
+        let ultima = try #require(antes.alternandoAfazer("q1", naObra: "o3"))
+        #expect(ultima.obras[2].arvore["afazeres"] == .lista([.objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(false)])]))
+        #expect(resto(ultima, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
+        #expect(antes.alternandoAfazer("x", naObra: "o1") == nil, "o afazer sumiu desta obra (o x é de outra)")
+        #expect(antes.alternandoAfazer("p1", naObra: "sumiu") == nil)
+    }
+
+    @Test func apagarAfazerNaObraCerta() throws {
+        let antes = estado()
+        let e = try #require(antes.apagandoAfazer("p2", daObra: "o1"))
+        #expect(e.obras[0].arvore["afazeres"] == .lista([
+            .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
+            .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
+        ]))
+        #expect(resto(e, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
+        let ultima = try #require(antes.apagandoAfazer("q1", daObra: "o3"))
+        #expect(ultima.obras[2].arvore["afazeres"] == .lista([]))
+        #expect(resto(ultima, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
+        #expect(antes.apagandoAfazer("x", daObra: "o3") == nil && antes.apagandoAfazer("q1", daObra: "sumiu") == nil)
     }
 }

@@ -214,4 +214,21 @@ struct MutacoesDaEtapa3Tests {
         #expect(estado().salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: "sumiu") == nil)
         #expect(estado().tirandoOrcamento(daObra: "sumiu") == nil)
     }
+
+    @Test func definirETirarNaObraSemOrcamento() throws {
+        // O "Definir orçamento" (a obra ainda sem a chave) e o "Tirar" que outro aparelho já fez: nil só quando a obra sumiu.
+        var antes = estado()
+        antes.obras[0].orcamento = nil
+        antes.obras[2].orcamento = nil
+        let porTopico = try #require(antes.salvandoOrcamento(modo: "topicos", total: 0, valores: ["pintura": 120, "eletrica": 0],
+                                                             naObra: "o1"))
+        #expect(porTopico.obras[0].orcamento == .objeto(["modo": .texto("topicos"), "topicos": .objeto(["pintura": .numero(120)])]))
+        #expect(resto(porTopico, obra: 0, sem: "orcamento") == resto(antes, obra: 0, sem: "orcamento"))
+        let porTotal = try #require(antes.salvandoOrcamento(modo: "total", total: 500, valores: [:], naObra: "o3"))
+        #expect(porTotal.obras[2].orcamento == .objeto(["modo": .texto("total"), "total": .numero(500)]))
+        #expect(resto(porTotal, obra: 2, sem: "orcamento") == resto(antes, obra: 2, sem: "orcamento"))
+        let tirado = try #require(antes.tirandoOrcamento(daObra: "o3"))
+        #expect(tirado.obras[2].arvore["orcamento"] == nil)
+        #expect(resto(tirado, obra: 2, sem: "orcamento") == resto(antes, obra: 2, sem: "orcamento"))
+    }
 }

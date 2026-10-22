@@ -56,6 +56,13 @@ struct DentroDaObraTests {
         #expect(usadoDoPrevisto(r.geral) == "106% usado de R$\u{00A0}180.000,00")
     }
 
+    @Test func oQueEstaForaSomaOsTopicosSemPrevisto() throws {
+        // Dois tópicos sem previsto: a linha e o cartão mostram a soma (foraTotal), não o maior nem o último.
+        let r = try resumo(["pintura": 20_000], [("pintura", 1_000), ("projeto", 8_000), ("terreno", 4_000)])
+        #expect(foraNaLinha(r) == "R$ 12 mil fora do orçamento")
+        #expect(fraseDoForaNoCartao(r) == "Os R$\u{00A0}12.000,00 fora do orçamento não entram nesta conta.")
+    }
+
     @Test func cartaoDaTelaOrcamento() throws {
         let r = try resumo(["estrutura": 100_000, "fundacao": 50_000, "pintura": 20_000, "eletrica": 10_000], [("estrutura", 1_000)])
         #expect(tituloDoCartao(r) == "Orçamento por tópico")

@@ -100,6 +100,21 @@ extension XCUIApplication {
         campo.typeText(texto)
     }
 
+    /// Depois de entrar com e-mail e senha, o iOS 27 do simulador oferece guardar a senha numa folha de outro processo
+    /// ("Save Password?", com "Not Now" e "Save"), por cima do meio da tela: o toque seguinte cai nela e não chega ao app (a
+    /// conferência cruzada não abria a obra). Quando ela aparece (até 5 s), "Not Now" a fecha; no iOS 26 ela pode não
+    /// aparecer. O toque se repete até a folha sair, como no `recusarSenhaForte`.
+    func recusarGuardarSenha() {
+        let agoraNao = buttons.matching(NSPredicate(format: "label IN %@", ["Not Now", "Agora Não", "Agora não"])).firstMatch
+        guard agoraNao.waitForExistence(timeout: 5) else { return }
+        for _ in 1...3 {
+            guard agoraNao.exists else { break }
+            agoraNao.tap()
+            _ = agoraNao.waitForNonExistence(timeout: 1.5)
+        }
+        XCTAssertFalse(agoraNao.exists, "a oferta de guardar a senha não fechou")
+    }
+
     /// O iOS 27 do simulador oferece uma senha forte ao focar um campo de senha nova (.newPassword), mesmo com o
     /// app sem domínio associado: a folha "Use Strong Password?" toma o lugar do teclado e engole a digitação.
     /// Quando ela aparece (até 2 s), é fechada; no iOS 26 da CI ela pode não aparecer. A folha é de outro processo,

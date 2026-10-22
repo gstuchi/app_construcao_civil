@@ -4,20 +4,23 @@
    O "site" aqui é o SDK JavaScript do Firebase gravando como o cloud.js grava (documento
    inteiro com _atualizado do servidor), com as regras de verdade do site (dados.js, calc.js).
    O app é o build Debug no simulador:
-     1. o site cria a conta e grava a v1 (obra com orçamento, obra vendida com orçamento por
+     1. o site cria a conta e grava a v1 (obra com orçamento e afazeres, obra vendida com orçamento por
         tópico estourado, obra com compra parcelada no cartão com juros e campos que só o site conhece);
      2. CruzadoUITests entra pelo formulário e confere o total e o orçamento que o calc.js calculou;
-     3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos;
+     3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos, e os afazeres que o site
+        anotou e marcou na v2, na linha da obra e na tela Afazeres, na ordem que o site mostra;
      4. CruzadoTests segue os roteiros abaixo pelas regras das telas do app: o dos gastos (lançar no Pix e no
         cartão parcelado com juros, editar um gasto do site e uma parcela, apagar um gasto da obra vendida e a
         compra toda), o da obra (criar três, editar, marcar como pronta, vender, desfazer a venda da obra vendida
         do site e apagar a terceira criada), o do orçamento (definir por total, passar para por tópico, editar
         por tópico guardando o tópico fora da lista e o campo que só o site conhece, trocar para o total, tirar e
-        salvar vazio) e o das folhas de origem (o A pagar e o detalhe do tópico: apagar só uma parcela de uma compra
-        que fica, levar o único gasto de um tópico para outro e passar uma parcela para depois dos 30 dias), gravando
-        cada passo pelo Sincronizador; antes do orçamento e a cada passo dele e das folhas, pede a este roteiro (POST
-        no auxiliar) que confira o documento daquele momento contra o que o site gravaria até ali, e cada um desses
-        passos parte do documento relido, como a pessoa abre a folha depois do eco da gravação;
+        salvar vazio), o das folhas de origem (o A pagar e o detalhe do tópico: apagar só uma parcela de uma compra
+        que fica, levar o único gasto de um tópico para outro e passar uma parcela para depois dos 30 dias) e o dos
+        afazeres (adicionar com espaços em volta, adicionar, marcar, desmarcar e apagar na obra do site, e um afazer
+        que entra e sai na obra que não tinha nenhum), gravando cada passo pelo Sincronizador; antes do orçamento e
+        dos afazeres e a cada passo deles e das folhas, pede a este roteiro (POST no auxiliar) que confira o
+        documento daquele momento contra o que o site gravaria até ali, e cada um desses passos parte do documento
+        relido, como a pessoa abre a folha ou a tela depois do eco da gravação;
      5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou), que é
         exatamente o que o site gravaria com as mesmas respostas (dados.js, com os mesmos ids), sem perder os
         campos que só o site conhece nem pôr o que a leitura acrescentaria (no documento antes do orçamento,
@@ -58,7 +61,8 @@ const v1 = {
   obras: [
     { id: 'c1', nome: 'Casa do teste cruzado', dataInicio: '2026-01-10', fase: 'construcao', campoSoDoSite: { versao: 7 },
       valorEstimadoVenda: 600000, orcamento: { modo: 'total', total: 50000 },
-      gastos: [{ id: 'x1', valor: 12345.67, topico: 'fundacao', descricao: 'Sapatas', data: '2026-02-01', pagamento: 'pix', notaSoDoSite: 'fica' }] },
+      gastos: [{ id: 'x1', valor: 12345.67, topico: 'fundacao', descricao: 'Sapatas', data: '2026-02-01', pagamento: 'pix', notaSoDoSite: 'fica' }],
+      afazeres: [{ id: 's1', texto: 'Ligar pro arquiteto', feito: false, notaSoDoSite: 'fica' }, { id: 's2', texto: 'Pagar o ART', feito: true, quem: 'site' }] },
     /* O orçamento por tópico com um tópico fora da lista da folha (um tópico próprio apagado) e um campo que só o site
        conhece: o app guarda os dois, e o site de antes do PR 0 da etapa 3 perdia (achado 7). */
     { id: 'c2', nome: 'Sobrado vendido', dataInicio: '2025-03-01', fase: 'vendida', venda: { valor: 480000, data: '2025-12-20' },
@@ -74,6 +78,8 @@ const v1 = {
 };
 const v2 = structuredClone(v1);
 v2.obras[0].gastos.push({ id: 'x2', valor: 40000, topico: 'estrutura', descricao: 'Laje', data: '2026-03-01', pagamento: 'pix' });
+// Na v2, o site anota um afazer e marca outro (dados.js), e o teste de tela os vê na linha da obra e na tela Afazeres.
+v2.obras[0].afazeres = D.afazeresAlternado(D.afazeresComNovo(v1.obras[0].afazeres, 'Comprar luvas', 's3'), 's1');
 /* O roteiro de gastos do app (etapa 2): cada passo é o que a pessoa responde na folha do gasto. Os ids dos gastos
    novos vêm daqui, para o site montar o mesmo resultado com as regras dele. */
 const HOJE = '2026-04-01';
@@ -129,15 +135,31 @@ const roteiroDasFolhas = [
   // A 1/3 do Quadro de luz vence a 9 dias de HOJE (está no A pagar) e passa para 8/5, depois dos 30 dias: sai da lista.
   { acao: 'editar', obra: 'c1', gasto: 'app3', mudar: { data: '2026-05-08' } },
 ];
+/* O roteiro dos afazeres (etapa 3, PR 3), depois do orçamento e das folhas inteiros: o que a pessoa faz na tela Afazeres.
+   Cada passo é conferido no documento, como no orçamento: o afazer apagado no 5º passo e o da c2, que entra e sai, só
+   provam alguma coisa no passo deles. O texto do 1º vem com espaços, que saem (conferirAfazer). A c2 não tinha afazer: a
+   lista dela fica vazia no fim. */
+const roteiroDosAfazeres = [
+  { acao: 'adicionar', obra: 'c1', texto: '  Comprar disjuntor de 40 A  ', id: 'appf1' },
+  { acao: 'adicionar', obra: 'c1', texto: 'Ver o reboco', id: 'appf2' },
+  { acao: 'marcar', obra: 'c1', afazer: 's3' },
+  { acao: 'desmarcar', obra: 'c1', afazer: 's2' },
+  { acao: 'apagar', obra: 'c1', afazer: 'appf1' },
+  { acao: 'adicionar', obra: 'c2', texto: 'Entregar as chaves', id: 'appf3' },
+  { acao: 'apagar', obra: 'c2', afazer: 'appf3' },
+];
 /** As linhas da folha do orçamento do site (o topicos() do app.js): os fixos e depois os próprios, cada uma com o valor dado
     ou vazia (0), como o "Salvar" lê. */
 const valoresDaFolha = (db, dados = {}) => Object.fromEntries([...C.TOPICOS.map(t => t.id), ...db.config.topicosCustom.map(t => t.id)]
   .map(id => [id, dados[id] || 0]));
 
 /** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js; do roteiro do
-    orçamento, os `passosDoOrcamento` primeiros, e do das folhas, que vem depois do orçamento inteiro, os
-    `passosDasFolhas` primeiros (0 na conferência de um passo do orçamento), cada um a partir do documento relido. */
-function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDasFolhas = roteiroDasFolhas.length){
+    orçamento, os `passosDoOrcamento` primeiros, do das folhas, que vem depois do orçamento inteiro, os `passosDasFolhas`
+    primeiros (0 na conferência de um passo do orçamento), e do dos afazeres, que vem depois das folhas inteiras, os
+    `passosDosAfazeres` primeiros (0 na conferência de um passo do orçamento ou das folhas), cada um a partir do documento
+    relido. */
+function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDasFolhas = roteiroDasFolhas.length,
+  passosDosAfazeres = roteiroDosAfazeres.length){
   let db = D.normaliza(structuredClone(blob));
   const fila = [...ids], novoId = () => fila.shift();
   for(const p of roteiro){
@@ -181,6 +203,19 @@ function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDa
     const entrada = { valor: g.valor, topico: g.topico, descricao: g.descricao, data: g.data, pagamento: g.pagamento, parcelas: 1, juros: 0, ...p.mudar };
     o.gastos[i] = D.gastoEditado(g, entrada, D.conferirGasto(entrada, g, HOJE));
   }
+  /* Os afazeres: o adicionar, o alternar e o apagar do dados.js, como a tela do site os chama; cada passo parte do documento
+     relido, como no orçamento. */
+  for(const p of roteiroDosAfazeres.slice(0, passosDosAfazeres)){
+    db = D.normaliza(db);
+    const o = db.obras.find(x => x.id === p.obra);
+    if(p.acao === 'adicionar'){
+      const c = D.conferirAfazer(p.texto);
+      assert.ok(c.texto, `o afazer ${p.id} passa no conferirAfazer`);
+      o.afazeres = D.afazeresComNovo(o.afazeres, c.texto, p.id);
+    }
+    else if(p.acao === 'apagar') o.afazeres = D.afazeresSem(o.afazeres, p.afazer);
+    else o.afazeres = D.afazeresAlternado(o.afazeres, p.afazer);
+  }
   return db;
 }
 
@@ -192,27 +227,38 @@ const textoOrcamento = o => {
   return orc.nivel === 'passou' ? `${orc.pct}% · passou ${C.moneyCurto(-orc.sobra)}` : `${orc.pct}% do orçamento`;
 };
 const esperado = blob => D.normaliza(blob).obras.map(o => ({ id: o.id, nome: o.nome, total: C.money(C.totalBruto(o)), orcamento: textoOrcamento(o) }));
+/* O que a tela dos afazeres do site mostra (calc.js afazeresEmOrdem: pendentes e depois feitos, cada grupo na ordem da
+   lista) e a linha da obra no app ("N pendentes" e o primeiro pendente), para o teste de tela conferir a v2. */
+const vistaDosAfazeres = blob => {
+  const o = D.normaliza(blob).obras.find(x => x.id === 'c1');
+  const ordem = C.afazeresEmOrdem(o.afazeres), pendentes = ordem.filter(a => !a.feito).map(a => a.texto);
+  return { obra: 'c1', linha: `${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}, ${pendentes[0]}`, pendentes,
+    feitos: ordem.filter(a => a.feito).map(a => a.texto) };
+};
 
 await gravarComoOSite(v1);
 
 let siteMudou = false;
-/* Depois de cada passo do orçamento e das folhas, o app pede a conferência do documento daquele momento: 200 quando é o que o
-   site gravaria com as respostas até ali, 409 com as duas versões do que o passo mudou quando não é. Antes do primeiro passo do
-   orçamento (o passo 0), pede que este roteiro guarde o documento dos roteiros do gasto e da obra, gravados em seguida, sem
-   leitura no meio: é nele que se confere que o app não grava o que a leitura acrescenta. */
+/* Depois de cada passo do orçamento, das folhas e dos afazeres, o app pede a conferência do documento daquele momento: 200
+   quando é o que o site gravaria com as respostas até ali, 409 com as duas versões do que o passo mudou quando não é. Antes do
+   primeiro passo do orçamento (o passo 0), pede que este roteiro guarde o documento dos roteiros do gasto e da obra, gravados
+   em seguida, sem leitura no meio: é nele que se confere que o app não grava o que a leitura acrescenta. Antes do primeiro
+   dos afazeres (o passo 0 deles), o do orçamento e das folhas inteiros. */
 const conferidos = [];
-let antesDoOrcamento;
+let antesDoOrcamento, antesDosAfazeres;
 const auxiliar = createServer(async (req, res) => {
   if(req.method === 'POST' && req.url === '/site/mudar'){ await gravarComoOSite(v2); siteMudou = true; res.end('ok'); return; }
-  const passo = /^\/app\/(orcamento|folhas)\/(\d+)$/.exec(req.url);
+  const passo = /^\/app\/(orcamento|folhas|afazeres)\/(\d+)$/.exec(req.url);
   if(req.method === 'POST' && passo){
     const qual = passo[1], n = Number(passo[2]);
     const doc = (await getDocFromServer(documento)).data();
     delete doc._atualizado;
     conferidos.push(`${qual}/${n}`);
     if(qual === 'orcamento' && n === 0){ antesDoOrcamento = doc; res.end('ok'); return; }
-    const doSite = qual === 'orcamento' ? comoOSite(v2, n, 0) : comoOSite(v2, roteiroDoOrcamento.length, n);
-    const p = (qual === 'orcamento' ? roteiroDoOrcamento : roteiroDasFolhas)[n - 1], obra = p.obra;
+    if(qual === 'afazeres' && n === 0){ antesDosAfazeres = doc; res.end('ok'); return; }
+    const doSite = qual === 'orcamento' ? comoOSite(v2, n, 0, 0) : qual === 'folhas' ? comoOSite(v2, roteiroDoOrcamento.length, n, 0)
+      : comoOSite(v2, roteiroDoOrcamento.length, roteiroDasFolhas.length, n);
+    const p = { orcamento: roteiroDoOrcamento, folhas: roteiroDasFolhas, afazeres: roteiroDosAfazeres }[qual][n - 1], obra = p.obra;
     if(C.canon(doc) === C.canon(doSite)){ res.end('ok'); return; }
     res.statusCode = 409;
     /* A diferença pode estar fora do que o passo mudou (um passo anterior que ficou diferente, ou o que a leitura acrescenta
@@ -223,6 +269,11 @@ const auxiliar = createServer(async (req, res) => {
     if(qual === 'orcamento'){
       const daObra = d => JSON.stringify(d.obras.find(o => o.id === obra)?.orcamento ?? null);
       res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}; ${obras}`);
+      return;
+    }
+    if(qual === 'afazeres'){
+      const dosAfazeres = d => JSON.stringify(d.obras.find(o => o.id === obra)?.afazeres ?? null);
+      res.end(`passo ${n} dos afazeres (${obra}): o app gravou ${dosAfazeres(doc)}, o site gravaria ${dosAfazeres(doSite)}; ${obras}`);
       return;
     }
     // Nas folhas, os gastos da obra do passo que diferem (o que saiu de um lado só aparece como null do outro).
@@ -240,7 +291,8 @@ await new Promise(r => auxiliar.listen(8124, '127.0.0.1', r));
 const env = { CUSTTA_CRUZADO: '1', CUSTTA_EMULADORES: '1', CUSTTA_EMAIL: email, CUSTTA_SENHA: senha,
   CUSTTA_ESPERADO_V1: JSON.stringify(esperado(v1)), CUSTTA_ESPERADO_V2: JSON.stringify(esperado(v2)),
   CUSTTA_ROTEIRO: JSON.stringify(roteiro), CUSTTA_IDS: ids.join(','), CUSTTA_ROTEIRO_OBRA: JSON.stringify(roteiroDaObra), CUSTTA_HOJE: HOJE,
-  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento), CUSTTA_ROTEIRO_FOLHAS: JSON.stringify(roteiroDasFolhas) };
+  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento), CUSTTA_ROTEIRO_FOLHAS: JSON.stringify(roteiroDasFolhas),
+  CUSTTA_ROTEIRO_AFAZERES: JSON.stringify(roteiroDosAfazeres), CUSTTA_ESPERADO_AFAZERES: JSON.stringify(vistaDosAfazeres(v2)) };
 let antesDoApp;
 try{
   await testarNoSimulador(['CusttaUITests/CruzadoUITests'], env);
@@ -248,14 +300,17 @@ try{
   antesDoApp = (await getDocFromServer(documento)).data()._atualizado;
   await testarNoSimulador(['CusttaTests/CruzadoTests'], env);
 }finally{ auxiliar.close(); }
-assert.deepEqual(conferidos, ['orcamento/0', ...roteiroDoOrcamento.map((_, i) => `orcamento/${i + 1}`), ...roteiroDasFolhas.map((_, i) => `folhas/${i + 1}`)],
-  'o app pediu a conferência do documento antes do orçamento, de cada passo dele e de cada passo das folhas, na ordem');
+assert.deepEqual(conferidos, ['orcamento/0', ...roteiroDoOrcamento.map((_, i) => `orcamento/${i + 1}`), ...roteiroDasFolhas.map((_, i) => `folhas/${i + 1}`),
+  'afazeres/0', ...roteiroDosAfazeres.map((_, i) => `afazeres/${i + 1}`)],
+  'o app pediu a conferência do documento antes do orçamento, de cada passo dele e de cada passo das folhas, e antes dos afazeres e de cada passo deles, na ordem');
 
 const final = (await getDocFromServer(documento)).data();
 assert.ok(final._atualizado instanceof Timestamp, 'a gravação do app leva _atualizado do servidor');
 assert.ok(final._atualizado.toMillis() > antesDoApp.toMillis(), 'o documento não foi regravado depois do teste do app: ele foi pulado ou não gravou');
 delete final._atualizado;
-assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
+assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0, 0, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
+assert.equal(C.canon(antesDosAfazeres), C.canon(comoOSite(v2, roteiroDoOrcamento.length, roteiroDasFolhas.length, 0)),
+  'antes dos afazeres, o documento do orçamento e das folhas inteiros: nada gravado entre os roteiros');
 const v3 = comoOSite(v2);
 assert.equal(C.canon(final), C.canon(v3), 'o app gravou o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
 const porId = id => final.obras.find(o => o.id === id);
@@ -302,6 +357,15 @@ assert.deepEqual([c1.gastos.find(g => g.id === 'app1').topico, c1.gastos.some(g 
   'a Tinta foi para Acabamento, e a Pintura ficou sem gasto');
 assert.equal(C.money(C.totalBruto(D.normaliza(final).obras.find(o => o.id === 'c1'))), C.money(12000 + 40000 + 999.99 + cartao.parcelas[0].valor + cartao.parcelas[1].valor),
   'o site soma o que o app gravou, sem a 3/3');
+// Os afazeres (etapa 3, PR 3): o fim do roteiro, na ordem que o site mostra (o que cada passo gravou, a conferência dele provou).
+assert.deepEqual(C.afazeresEmOrdem(c1.afazeres).map(a => a.id), ['s2', 'appf2', 's3', 's1'],
+  'na ordem que o site mostra: o desmarcado no alto dos pendentes, o marcado no alto dos feitos');
+assert.equal(c1.afazeres.find(a => a.id === 'appf2').texto, 'Ver o reboco');
+assert.ok(!c1.afazeres.some(a => a.id === 'appf1'), 'o apagado saiu');
+assert.equal(c1.afazeres.find(a => a.id === 's1').notaSoDoSite, 'fica', 'campo de afazer que só o site conhece');
+assert.deepEqual(c1.afazeres.find(a => a.id === 's2'), { id: 's2', texto: 'Pagar o ART', feito: false, quem: 'site' },
+  'o afazer desmarcado no app guarda o campo que só o site conhece');
+assert.deepEqual(c2.afazeres, [], 'o afazer da c2 entrou e saiu no app, e a lista ficou vazia, como o site grava');
 await terminate(db);
-console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra, do orçamento e das folhas de origem gravaram o que o site gravaria, passo a passo no orçamento e nas folhas, sem perder nada');
+console.log('ok - site e app na mesma conta: totais, orçamentos e afazeres iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra, do orçamento, das folhas de origem e dos afazeres gravaram o que o site gravaria, passo a passo no orçamento, nas folhas e nos afazeres, sem perder nada');
 process.exit(0);

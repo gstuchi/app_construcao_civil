@@ -190,7 +190,11 @@ const auxiliar = createServer(async (req, res) => {
     if(!igual){
       res.statusCode = 409;
       const daObra = d => JSON.stringify(d.obras.find(o => o.id === obra)?.orcamento ?? null);
-      res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}`);
+      /* A diferença pode estar fora do orçamento da obra do passo (um passo anterior que ficou diferente, ou o que a leitura
+         acrescenta nas outras obras): as obras que diferem vão junto, senão a mensagem mostraria dois orçamentos iguais. */
+      const daId = (d, id) => C.canon(d.obras.find(o => o.id === id) ?? null);
+      const diferem = [...new Set([...doc.obras, ...doSite.obras].map(o => o.id))].filter(id => daId(doc, id) !== daId(doSite, id));
+      res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}; obras diferentes: ${diferem.join(', ') || 'nenhuma (a diferença está fora das obras)'}`);
       return;
     }
     res.end('ok');

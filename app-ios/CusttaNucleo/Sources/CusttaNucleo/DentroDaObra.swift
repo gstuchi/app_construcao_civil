@@ -1,7 +1,7 @@
 import Foundation
 
 /* Regras das telas da etapa 3 (dentro da obra) que o site não tem: o mockup aprovado em 18/10 as acrescenta ao que vem do
-   app.js. Os números saem das regras com vetor (orcamentoObra, aPagar, resumoTopico); o que está aqui é
+   app.js. Os números saem das regras com vetor (orcamentoObra, aPagar, resumoTopico, afazeresEmOrdem); o que está aqui é
    texto e agrupamento, com teste próprio (DentroDaObraTests). */
 
 /* ---------- orçamento: a linha nos indicadores e o cartão da tela Orçamento ---------- */
@@ -106,6 +106,43 @@ public func aPagarDaObra(_ obra: Obra, hoje: String) -> APagarDaObra {
                         depoisQtd: depois.count, depoisTotal: total, ponte: ponte)
 }
 
+/* ---------- busca e filtro por mês ---------- */
+
+/// "Soma dos achados: R$ …", embaixo do filtro. O rótulo e o valor vêm separados: na maior letra o valor vai para a
+/// própria linha e encolhe para caber, como todo dinheiro dentro de uma frase (mockup da etapa 3).
+public struct SomaDosAchados: Equatable, Sendable {
+    public let rotulo: String
+    public let valor: String
+    /// A frase inteira, para o VoiceOver.
+    public var falado: String { "\(rotulo) \(valor)" }
+}
+
+/// A soma da lista filtrada; nil sem filtro (a lista é a obra inteira) ou sem achado.
+public func somaDosAchados(_ achados: [Gasto], filtrando: Bool) -> SomaDosAchados? {
+    guard filtrando, !achados.isEmpty else { return nil }
+    return SomaDosAchados(rotulo: "Soma dos achados:", valor: moeda(achados.reduce(0) { $0 + $1.valor }))
+}
+
+/// A lista vazia com filtro.
+public enum VazioDaBusca: Equatable, Sendable {
+    /// O mês escolhido ficou sem gasto (o filtro continua à vista): "Nenhum gasto em março de 2026." e "Ver todos os meses".
+    case mesSemGasto(titulo: String, botao: String)
+    /// "Nada encontrado com esse filtro.", onde a busca olha e o botão que limpa o que filtra.
+    case nadaEncontrado(titulo: String, frase: String, botao: String)
+}
+
+/// O vazio da lista filtrada da obra (texto como digitado; ele é aparado aqui, como na busca).
+public func vazioDaBusca(_ gastos: [Gasto], texto: String, mes: String) -> VazioDaBusca {
+    if !mes.isEmpty && !gastos.contains(where: { $0.data.prefix(7) == mes }) {
+        let titulo = tituloDoMes(mes)
+        return .mesSemGasto(titulo: "Nenhum gasto em \(titulo.prefix(1).lowercased() + titulo.dropFirst()).", botao: "Ver todos os meses")
+    }
+    let busca = !aparadoJS(texto).isEmpty
+    let botao = busca && !mes.isEmpty ? "Limpar busca e mês" : !mes.isEmpty ? "Limpar o mês" : "Limpar a busca"
+    return .nadaEncontrado(titulo: "Nada encontrado com esse filtro.", frase: "A busca olha a descrição e o tópico, com ou sem acento.",
+                           botao: botao)
+}
+
 /* ---------- detalhe do tópico ---------- */
 
 /// A linha do orçamento dentro do detalhe do tópico.
@@ -147,4 +184,25 @@ public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMens
                            corrigido: "corrigido: " + moeda(r.corrigido), orcamento: orcamento,
                            aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
                            pagos: ordenados.filter { !menorJS(hoje, $0.data) })
+}
+
+/* ---------- afazeres ---------- */
+
+/// A linha dos afazeres na tela da obra, nos três estados.
+public enum LinhaDosAfazeres: Equatable, Sendable {
+    /// "3 pendentes" e o primeiro pendente (até duas linhas).
+    case pendentes(etiqueta: String, primeiro: String)
+    /// "tudo feito" e "4 feitos".
+    case tudoFeito(etiqueta: String, feitos: String)
+    /// Sem afazer: a frase do site.
+    case vazia(frase: String)
+}
+
+public func linhaDosAfazeres(_ afazeres: [Afazer]) -> LinhaDosAfazeres {
+    let pendentes = afazeresEmOrdem(afazeres).filter { !$0.feito }
+    if let primeiro = pendentes.first {
+        return .pendentes(etiqueta: "\(pendentes.count) pendente\(pendentes.count > 1 ? "s" : "")", primeiro: primeiro.texto)
+    }
+    if afazeres.isEmpty { return .vazia(frase: "Anote o que falta na obra.") }
+    return .tudoFeito(etiqueta: "tudo feito", feitos: "\(afazeres.count) feito\(afazeres.count > 1 ? "s" : "")")
 }

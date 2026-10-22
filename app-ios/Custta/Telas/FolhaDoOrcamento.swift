@@ -409,7 +409,8 @@ private struct CorpoDaFolhaDoOrcamento: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 4)
-        .padding(.bottom, tamanho.isAccessibilitySize ? 16 : 0)
+        // No "Só o total" não há o Total ao vivo: os 10 com os 8 do alto da lista dão os 18 do mockup até a linha do total.
+        .padding(.bottom, tamanho.isAccessibilitySize ? 16 : (rascunho.modo == .total ? 10 : 0))
     }
 
     private func trocarModo(_ modo: RascunhoDoOrcamento.Modo) {

@@ -115,6 +115,26 @@ extension OrcamentoUITests {
         XCTAssertTrue(app.elemento("cartaoDoOrcamento").label.contains("Orçamento por tópico"), "nada foi gravado")
     }
 
+    /// O alto da folha nas medidas do mockup (conferência do Verniz): no "Só o total", 18 pt do trilho do segmentado até a linha
+    /// do total; no "Por tópico", 12 até o Total ao vivo; e 18 de novo ao voltar, porque o vão segue o modo da folha, e não o da
+    /// abertura. O trilho tem 3 pt em volta dos botões.
+    func testOAltoDaFolhaTemOsVaosDoMockupNosDoisModos() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "orcamento:v1")
+        editarPeloLapis(app)
+        let soTotal = app.buttons["modoDoOrcamento-Só o total"]
+        XCTAssertTrue(soTotal.isSelected, "abre no modo salvo")
+        func vao(ate identificador: String) -> CGFloat {
+            let peca = app.elemento(identificador)
+            XCTAssertTrue(peca.waitForExistence(timeout: 5), identificador)
+            return peca.frame.minY - (soTotal.frame.maxY + 3)
+        }
+        XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total")
+        app.buttons["modoDoOrcamento-Por tópico"].tap()
+        XCTAssertEqual(vao(ate: "totalDoOrcamento"), 12, accuracy: 0.5, "Por tópico")
+        soTotal.tap()
+        XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total, de volta")
+    }
+
     /// "Tirar orçamento" pergunta com o texto do site; tirar leva a tela Orçamento de volta para a obra, sem a linha e com o
     /// "Definir" de volta.
     func testTirarOrcamentoPerguntaEVoltaParaAObra() {

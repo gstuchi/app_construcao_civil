@@ -168,6 +168,10 @@ struct LinhaDoOrcamento: View {
             if comSeta {
                 Image(systemName: "chevron.right")
                     .font(.body.weight(.semibold))
+                    // Na maior letra o chevron para no AX2 e ocupa só os 18 pt dele (18 × 30 do mockup): a coluna de texto fica com os
+                    // 306 pt e "80% usado de" cabe numa linha (o símbolo sozinho reserva ~6 pt além do traço).
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                    .frame(width: tamanho.isAccessibilitySize ? 18 : nil)
                     .foregroundStyle(paleta.cor(vidro.secundario))
                     .accessibilityHidden(true)
                     .foraDoLaudo()

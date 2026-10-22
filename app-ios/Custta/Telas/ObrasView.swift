@@ -4,6 +4,15 @@ import CusttaNucleo
 /// Para onde se vai dentro de Obras (o caminho do NavigationStack, que mora no PrincipalView).
 enum RotaDeObras: Hashable, Sendable {
     case obra(String)
+    /// A tela Orçamento da obra (etapa 3), empurrada pela linha do orçamento.
+    case orcamento(String)
+
+    /// A obra da tela: a própria, ou a dona do orçamento.
+    var obraId: String {
+        switch self {
+        case .obra(let id), .orcamento(let id): return id
+        }
+    }
 }
 
 /* Obras: aviso de e-mail não confirmado, "N obras", um cartão de vidro por obra (fase, meses, orçamento e total
@@ -80,6 +89,7 @@ struct ObrasView: View {
             .navigationDestination(for: RotaDeObras.self) { rota in
                 switch rota {
                 case .obra(let id): ObraView(id: id, caminho: $caminho)
+                case .orcamento(let id): OrcamentoView(id: id, caminho: $caminho)
                 }
             }
         }

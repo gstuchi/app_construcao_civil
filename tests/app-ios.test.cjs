@@ -494,6 +494,14 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
   assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
 });
 
+test('tela Orçamento: o gasto lançado pelo + dela não rola a obra por baixo', () => {
+  // Nenhum teste de tela vê isso: a obra por baixo da tela Orçamento não está à vista, e o foco do VoiceOver não chega ao
+  // XCUITest. Sem a condição, a lista escondida rolaria até o gasto novo e o foco do VoiceOver iria para uma linha fora da tela.
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  assert.match(t, /\.onChange\(of: folhas\.destaque\) \{ _, d in if let d, caminho\.last == \.obra\(obra\.id\) \{ mostrar\(d/,
+    'a obra só mostra o gasto salvo quando está no topo do caminho');
+});
+
 test('ações da fase: gravação recusada avisa, como o apagar e as folhas', () => {
   // Nenhum teste de tela recusa a gravação no mudar: sem o alerta, a ação recusada não faria nada ao toque.
   const t = ler('app-ios/Custta/Telas/ObraView.swift');

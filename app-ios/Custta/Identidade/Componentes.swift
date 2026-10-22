@@ -377,6 +377,34 @@ extension View {
     func bordaDeRolagem(abas: Bool) -> some View { modifier(BordaDeRolagem(abas: abas)) }
 }
 
+#if DEBUG
+/// Laudo de leitura e conferência visual: a tela parada numa rolagem dada (`-custta.rolagem`, em pt; o mesmo gancho de
+/// Obras). No iOS 26, quando a tela abre já com os dados (sem o carregando), a lista às vezes volta sozinha ao topo uns 2 s
+/// depois de rolada: o laudo comparou um print rolado com outro no topo (CenaNaoDeterministica na CI, em 15/10 e 17/10). Até
+/// alguém arrastar, a rolagem que sai da pedida volta.
+struct RolagemFixaDoTeste: ViewModifier {
+    @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
+    @State private var posicao = ScrollPosition(edge: .top)
+    /// A rolagem fixa foi pedida e ninguém arrastou a lista depois: o gancho a segura.
+    @State private var segurando = false
+
+    func body(content: Content) -> some View {
+        content
+            .scrollPosition($posicao)
+            .task {
+                guard rolagemFixa >= 0 else { return }
+                try? await Task.sleep(for: .milliseconds(300))
+                posicao.scrollTo(y: rolagemFixa)
+                segurando = true
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+                if segurando, abs(y - rolagemFixa) > 0.5 { posicao.scrollTo(y: rolagemFixa) }
+            }
+            .onScrollPhaseChange { _, fase in if fase == .interacting { segurando = false } }
+    }
+}
+#endif
+
 extension View {
     /// Símbolo que não é texto (as setas). O laudo de leitura mede palavras: o apagador de texto apagava também o traço
     /// fino do símbolo, que virava uma "palavra" de nota errada. Em Debug, com `-custta.semSimbolos`, o símbolo some dos

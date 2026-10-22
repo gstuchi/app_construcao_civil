@@ -148,10 +148,11 @@ struct AvisoDoOrcamento: View {
 }
 
 /// A linha do orçamento nos indicadores: "Orçamento" e o nível do site, quanto sobra (ou passou), a barra, "{pct}% usado de
-/// {previsto}" e, por tópico, o pior aviso dos tópicos e o que está fora. Um elemento só para o VoiceOver, como as outras
-/// linhas dos indicadores.
+/// {previsto}" e, por tópico, o pior aviso dos tópicos e o que está fora; com a seta, ela abre a tela Orçamento (a linha
+/// inteira é o botão). Um elemento só para o VoiceOver, como as outras linhas dos indicadores.
 struct LinhaDoOrcamento: View {
     let resumo: ResumoOrcamento
+    var comSeta = false
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
@@ -159,6 +160,23 @@ struct LinhaDoOrcamento: View {
     var body: some View {
         let geral = resumo.geral
         let rodape = rodapeOrc(geral)
+        HStack(spacing: 4) {
+            conteudo(geral, rodape)
+            if comSeta {
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(paleta.cor(vidro.secundario))
+                    .accessibilityHidden(true)
+                    .foraDoLaudo()
+            }
+        }
+        .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("indicadorOrcamento")
+    }
+
+    private func conteudo(_ geral: ItemOrcamento, _ rodape: RodapeDoOrcamento) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline) { rotulo; Spacer(minLength: 8); etiqueta(geral.nivel) }
@@ -183,9 +201,6 @@ struct LinhaDoOrcamento: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("indicadorOrcamento")
     }
 
     private var rotulo: some View {

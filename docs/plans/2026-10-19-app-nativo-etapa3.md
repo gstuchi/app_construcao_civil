@@ -7066,30 +7066,34 @@ git commit -m "feat: folha do orçamento da obra" -m "A obra sem orçamento ganh
 
 ### Task 19: Leituras e auditorias do orçamento num job próprio
 
-O job `laudo-etapa3` nasce no PR 1 (decisão 3: sem esperar um job passar de ~50 min), num simulador próprio, em paralelo com os outros: as leituras sobre o vidro e as auditorias de acessibilidade das telas do orçamento, com a varredura curta, o artefato quando reprova e teto de 60 min. Nos dois temas, a linha na obra, a tela Orçamento no alto, rolada e no modo total, e a folha com as teclas encaixadas, por tópico e no "Definir"; na maior letra, as mesmas telas, e com Aumentar contraste, a tela Orçamento. O `laudo` e o `auditoria` pulam essas quatro, e a guarda dos jobs passa a contar o job novo. Nas leituras e auditorias dos PRs 2 e 3, as cenas da etapa entram nele.
+O job `laudo-etapa3` nasce no PR 1 (decisão 3: sem esperar um job passar de ~50 min), num simulador próprio, em paralelo com os outros: as leituras sobre o vidro e as auditorias de acessibilidade das telas do orçamento, com a varredura curta, o artefato quando reprova e teto de 60 min. Nos dois temas, a linha na obra, a tela Orçamento no alto, rolada e no modo total, e a folha com as teclas encaixadas, por tópico e no "Definir"; na maior letra, as mesmas telas, e com Aumentar contraste, a tela Orçamento. O `laudo` e o `auditoria` pulam essas quatro, e a guarda dos jobs passa a contar o job novo. Nas leituras e auditorias dos PRs 2 e 3, as cenas da etapa entram nele. Os testes de tela da etapa também ganham job próprio, o `app-etapa3`: o preparo do `app`, sem o build Release e sem o "resolver de novo", com teto de 60 min. Com o `OrcamentoUITests` (20,8 min na CI), o `app` chegou a 74,6 dos 75 min (run 39693700450) e, com o PR 2 por cima, foi cortado no teto (run 39710458060). O `app` pula a suíte e fica em ~53 min. Numa VM lenta levou 67 (run 39799242127), e o teto dele passa a 90. O `app-etapa3` fica em ~32. A guarda cobra que cada suíte de tela pulada no `app` rode em outro job, e num só. Nos dois jobs, o resultado sobe também quando o job é cortado no teto. Nos PRs 2 e 3, as suítes de tela da etapa entram no `app-etapa3`.
 
 - **As cenas da etapa 2 mudam de lugar.** A linha do orçamento da vitrine (modo total, dentro do previsto) tem 118 pt, e tudo o que vem depois dos indicadores desceu isso: a 640 pt, as cenas "obra, lista", "obra com Aumentar contraste" e "obra, linha aberta" (e a auditoria da linha aberta) mostravam outro pedaço da tela; a 758, o mesmo pedaço da etapa 2.
 - **O que fica fora das auditorias.** A barra das teclas encaixadas fica fora da de tipo dinâmico, como o título da folha (para no xxxLarge, com o Visualizador de Conteúdo Grande); o que a lista tem embaixo das teclas fica fora da de contraste, porque a faixa o esconde. Com a folha aberta, a de contraste mede a partir da barra da folha (a que contém `tituloDaFolha`), e não da primeira barra da árvore, que é a da tela por trás dela: os itens da barra da folha entram, e o que fica logo abaixo dela também, porque a folha não tem a borda de rolagem das telas.
 - **O fim do modo total é ponto cego da auditoria de tipo dinâmico.** Ela começa na letra pequena: na cena rolada perto do fim da lista longa (a 3000 pt), a lista encolhe para cima da rolagem e a tela fica vazia, com e sem o gancho de rolagem (os achados vêm sem elemento, e os prints deles são a tela vazia). A cena fica a 2200 (o gasto por tópico, com as mesmas linhas do fim), e a dica, a única peça que só o fim tem, ganha guarda Node: cresce com a letra e quebra linha, sem altura fixa.
 - **Os ajustes que a regressão e o Pro Max pediram.** (1) O que a lista da folha do orçamento tem acima do topo dela fica fora da de contraste: no Pro Max, com a faixa mais alta, linhas roladas para cima ficavam entre a barra e o total, atrás do cabeçalho. (2) A folga entre os dois prints do laudo passa de 1 px para 1 pt: a barra do cartão da tela Orçamento na maior letra, no Pro Max, virava "palavra" (dois valores que encolhem em cima). O teste do medidor da etapa 2 vai junto (`testBordaQueMudaAteUmPontoNaoMudaACena`, antes `…UmPixel…`): na escala 3, até 3 px é a mesma cena; com 4, a cena mudou (a CI do iOS 26 achou o teste velho). (3) A varredura da obra (`testLeituraDaObraRolando`) desce 118 pt (318…1618; a curta da CI, 518/1018), como as cenas da lista: a 640 e a 1200 a borda cortava uma palavra. (4) A tela Orçamento rolada na maior letra fica a 1637 pt: a 1500, no Pro Max, a barra da Estrutura ficava 6 pt abaixo da borda, sob o texto borrado pelo véu; a 1637 a borda cai no vão entre a Estrutura e a Fundação nos dois iPhones, e de 1615 a 1660 nenhum pixel muda longe das letras. (5) Na cena "obra com orçamento por tópico, na maior letra", o triângulo do aviso fica fora do laudo (`foraDoLaudo("iconeDoAviso")`, ligado por `-custta.foraDoLaudo`, só em Debug): o print sem texto o desenha 0,26 px mais baixo e a diferença virava "palavra" a 1,33; as palavras da linha seguem medidas. Desenhar os dois prints pelo mesmo `TextRenderer` resolveria a classe inteira, mas mexe no laudo de todas as cenas: fica como ideia, fora deste PR.
-- **O total ao vivo na auditoria do iOS 26.** Na fronteira da letra de acessibilidade o total da folha muda de lugar (nela, rola dentro da lista; abaixo, fica fixo em cima), e a auditoria de tipo dinâmico, que troca o tamanho da letra, perde os três textos dele no iOS 26: "partially unsupported" e "Text clipped" em "Total", na soma e em "N de M tópicos com valor", com o print da CI mostrando os três grandes e inteiros (o segmentado, que muda de lugar junto, tem identificador em cada botão e passa; o cartão da tela Orçamento, com a mesma soma encolhida, também). Ficam fora só ali: no iOS 26, na letra de acessibilidade, dentro do quadro de `totalDoOrcamento`. A prova no lugar é o `OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar`: os três crescem mais de 1,5× em relação à letra padrão, a soma aparece inteira e nada corta.
+- **O total ao vivo na auditoria do iOS 26.** Na fronteira da letra de acessibilidade o total da folha muda de lugar (nela, rola dentro da lista; abaixo, fica fixo em cima). No iOS 26, a auditoria de tipo dinâmico acha "partially unsupported" e "Text clipped" em "Total", na soma e em "N de M tópicos com valor", com o print da CI mostrando os três grandes e inteiros (o segmentado, que muda de lugar junto, tem identificador em cada botão e passa; o cartão da tela Orçamento, com a mesma soma encolhida, também). Ficam fora só ali: no iOS 26, na letra de acessibilidade, pelo identificador de cada texto (`totalDoOrcamento-rotulo`, `-soma` e `-comValor`). O VoiceOver segue lendo o total num elemento só, com o mesmo rótulo. O quadro do total não serve: no iOS 26 a letra vai e volta em volta de cada auditoria (a padrão enquanto o `auditar` lê os quadros, a AX5 dentro dela), e na auditoria de depois do swipe os três vinham fora do quadro lido antes (run 39710458060). A prova no lugar é o `OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar`: acha os três pelo identificador nas duas letras, os três crescem mais de 1,5× em relação à letra padrão, a soma aparece inteira e nada corta.
+- **A volta pela borda no iOS 26.** Na CI do iOS 26, o arrasto sintetizado da borda às vezes não volta. Reprovou uma vez na tela Orçamento (run 39710458060) e uma vez na edição dentro da folha do A pagar (PR 2, run 39799242127), sempre na segunda entrada na tela: voltar pelo botão, entrar de novo, arrastar. A linha do tempo é a mesma das rodadas em que passa, e não há código do app no caminho; a borda do Orçamento passou 6 vezes no run seguinte. O `voltarPelaBorda(saindo:)` dá uma segunda tentativa só lá: se o que sai continua à vista 2 s depois, anexa o print, escreve "borda | 2ª tentativa (iOS 26)" no log e arrasta de novo, uma vez. No iOS 27, o teste segue estrito.
 - **O que o laudo achou na primeira rodada:** o âmbar do escuro a 3,12 (Tarefa 14), uma palavra cortada pelo véu do topo (4,41; a cena foi para 606 pt), as linhas escondidas embaixo das teclas na de contraste (agora fora) e prints que mudavam longe das letras nas cenas da folha na maior letra (texto borrado pela barra da folha; cenas roladas).
 
 **Files:**
 - Test (criar): `app-ios/CusttaTests/OrcamentoEm375Tests.swift`
 - Modify: `.github/workflows/app-ios.yml`
 - Modify: `app-ios/Custta/Identidade/Componentes.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoOrcamento.swift`
 - Modify: `app-ios/Custta/Telas/PecasDoOrcamento.swift`
+- Test (alterar): `app-ios/CusttaUITests/Abrir.swift`
 - Test (alterar): `app-ios/CusttaUITests/AuditoriaUITests.swift`
 - Test (alterar): `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`
 - Test (alterar): `app-ios/CusttaUITests/LaudoDeContraste.swift`
 - Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/OrcamentoUITests.swift`
 - Test (alterar): `tests/app-ios.test.cjs`
 - Test (alterar): `tests/workflow.test.cjs`
 
 **Interfaces:**
 - Consumes: as telas e os identificadores das Tarefas 15 a 18; `-custta.rolagem` na tela Orçamento (Tarefa 16) e `-custta.folha` (Tarefa 18).
-- Produces: o job `laudo-etapa3`; `View.foraDoLaudo(_:)` com nome (a exceção de uma cena, só em Debug); `LeituraNoVidroUITests/testLeituraDoOrcamento` e `…/testLeituraDoOrcamentoNaMaiorLetra`, `AuditoriaUITests/testOrcamentoNoMaiorTamanho` e `…/testContrasteDoOrcamentoNosDoisTemas`.
+- Produces: os jobs `laudo-etapa3` e `app-etapa3`; os identificadores dos três textos do total (`totalDoOrcamento-rotulo`, `-soma` e `-comValor`); `View.foraDoLaudo(_:)` com nome (a exceção de uma cena, só em Debug); `LeituraNoVidroUITests/testLeituraDoOrcamento` e `…/testLeituraDoOrcamentoNaMaiorLetra`, `AuditoriaUITests/testOrcamentoNoMaiorTamanho` e `…/testContrasteDoOrcamentoNosDoisTemas`.
 
 - [ ] **Step 1: Escrever os testes**
 
@@ -7139,12 +7143,48 @@ struct OrcamentoEm375Tests {
 }
 ```
 
+Em `app-ios/CusttaUITests/Abrir.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/Abrir.swift
++++ b/app-ios/CusttaUITests/Abrir.swift
+@@ -41,10 +41,25 @@ extension XCUIApplication {
+         }
+     }
+ 
+-    /// Volta pelo gesto da borda esquerda, como o polegar (o XCUITest não tem "voltar" do sistema).
+-    func voltarPelaBorda() {
++    /// Volta pelo gesto da borda esquerda, como o polegar (o XCUITest não tem "voltar" do sistema). No iOS 26 da CI, o arrasto
++    /// sintetizado às vezes não volta depois de voltar pelo botão e entrar de novo, sem alerta e com o voltar à vista (runs
++    /// 39710458060 e 39799242127). Lá, se `saindo` não some em 2 s, ele se repete uma vez, com um print e uma linha no log;
++    /// no iOS 27 nada muda.
++    func voltarPelaBorda(saindo: XCUIElement? = nil) {
+         let borda = coordinate(withNormalizedOffset: CGVector(dx: 0.0, dy: 0.5))
+-        borda.press(forDuration: 0.05, thenDragTo: coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
++        let fim = coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
++        borda.press(forDuration: 0.05, thenDragTo: fim)
++        let ios27 = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
++        guard let saindo, !ProcessInfo.processInfo.isOperatingSystemAtLeast(ios27), !saindo.waitForNonExistence(timeout: 2) else {
++            return
++        }
++        let tentativa = "borda | 2ª tentativa (iOS 26)"
++        let foto = XCTAttachment(screenshot: screenshot())
++        foto.name = tentativa
++        foto.lifetime = .keepAlways
++        XCTContext.runActivity(named: tentativa) { $0.add(foto) }
++        Swift.print(tentativa)
++        borda.press(forDuration: 0.05, thenDragTo: fim)
+     }
+ 
+     /// Toca nas duas pontas da linha de um botão (x = 30 e a largura da tela − 30, na altura do meio dele), longe do
+```
+
 Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
 
 ```diff
 --- a/app-ios/CusttaUITests/AuditoriaUITests.swift
 +++ b/app-ios/CusttaUITests/AuditoriaUITests.swift
-@@ -32,26 +32,53 @@ final class AuditoriaUITests: XCTestCase {
+@@ -32,26 +32,52 @@ final class AuditoriaUITests: XCTestCase {
          let folha = app.elemento("tituloDaFolha").exists
          let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
          let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
@@ -7166,13 +7206,12 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
 +        let topoDaLista = lista.exists ? lista.frame.minY : -.infinity
 +        let daLista = lista.exists ? lista.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
 +        // O total ao vivo da folha do orçamento ("Total", a soma e "N de M tópicos com valor") muda de lugar na fronteira da
-+        // letra de acessibilidade: nela, rola dentro da lista; abaixo dela, fica fixo em cima da lista. A auditoria de tipo
-+        // dinâmico troca o tamanho da letra e, no iOS 26, perde os três textos, que não têm identificador (o segmentado muda
-+        // de lugar junto e tem um por botão): achou "partially unsupported" e "Text clipped" nos três, com o print da CI
-+        // mostrando os três grandes e inteiros (run 39693700450). Só ali, só na letra de acessibilidade e só no iOS 26; a
-+        // prova de que crescem e não cortam é o OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar.
-+        let total = app.elemento("totalDoOrcamento")
-+        let quadroDoTotal = total.exists ? total.frame.insetBy(dx: -0.5, dy: -0.5) : .null
++        // letra de acessibilidade: nela, rola dentro da lista; abaixo dela, fica fixo em cima da lista. No iOS 26, a auditoria
++        // acha "partially unsupported" e "Text clipped" nos três, com o print da CI mostrando os três grandes e inteiros. Lá,
++        // a letra vai e volta em cada auditoria: a padrão enquanto este auditar lê os quadros, a AX5 dentro dela. O quadro do
++        // total lido aqui não é onde ela acha os textos (run 39710458060, depois do swipe): a exceção é pelo identificador
++        // de cada texto, como as outras. Só ali, só na letra de acessibilidade e só no iOS 26; a prova de que crescem e não
++        // cortam é o OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar.
 +        let totalMudaDeLugar = app.launchArguments.contains { $0.hasPrefix("UICTContentSizeCategoryAccessibility") }
 +            && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
          try app.performAccessibilityAudit(for: tipos) { achado in
@@ -7181,7 +7220,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
                  return false
              }
              let fora: Bool
-+            let noTotal = totalMudaDeLugar && quadroDoTotal.contains(elemento.frame)
++            let noTotal = totalMudaDeLugar && elemento.identifier.hasPrefix("totalDoOrcamento-")
              switch achado.auditType {
 +            case .dynamicType where noTotal && achado.compactDescription.contains("partially"), .textClipped where noTotal:
 +                fora = true
@@ -7201,7 +7240,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
                      || abas.contains { $0.contains(centro) }
              case .contrast:
                  if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
-@@ -61,7 +88,9 @@ final class AuditoriaUITests: XCTestCase {
+@@ -61,7 +87,9 @@ final class AuditoriaUITests: XCTestCase {
                  else if elemento.label == "—" { fora = true }
                  else {
                      let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
@@ -7212,7 +7251,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
                  }
              default:
                  fora = false
-@@ -138,6 +167,7 @@ final class AuditoriaUITests: XCTestCase {
+@@ -138,6 +166,7 @@ final class AuditoriaUITests: XCTestCase {
      }
  
      /// A folha do gasto (valor e cartão) e a linha aberta com o "Apagar", no escuro e no claro, com superfícies sólidas.
@@ -7220,7 +7259,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
      @MainActor func testContrasteDaFolhaNosDoisTemas() throws {
          for tema in temas {
              let combo = ["-custta.tema", tema] + solido + parado
-@@ -148,7 +178,7 @@ final class AuditoriaUITests: XCTestCase {
+@@ -148,7 +177,7 @@ final class AuditoriaUITests: XCTestCase {
                  app.terminate()
              }
              let lista = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
@@ -7229,7 +7268,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
              XCTAssertTrue(lista.buttons["apagar-g027"].waitForExistence(timeout: 10))
              try auditar(lista, [.contrast])
              lista.terminate()
-@@ -342,3 +372,63 @@ final class AuditoriaUITests: XCTestCase {
+@@ -342,3 +371,63 @@ final class AuditoriaUITests: XCTestCase {
          }
      }
  }
@@ -7306,19 +7345,22 @@ Em `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`:
  import notify
  
  /* A folha "Orçamento da obra" (etapa 3, PR 1): definir por total e por tópico (com ‹ › e "Pronto"), trocar de modo com o
-@@ -278,6 +279,54 @@ extension OrcamentoUITests {
+@@ -278,6 +279,64 @@ extension OrcamentoUITests {
          }
      }
  
 +    /// Na maior letra, o total ao vivo da folha (o "Total", a soma e "N de M tópicos com valor") cresce e nada nele corta. No
-+    /// iOS 26, a auditoria de tipo dinâmico perde esses três textos quando eles mudam de lugar (dentro da lista na letra de
-+    /// acessibilidade, fixos em cima dela abaixo disso) e a AuditoriaUITests os deixa de fora: esta é a prova no lugar dela.
++    /// iOS 26, as auditorias de tipo dinâmico e de texto cortado acusam esses três textos (que mudam de lugar: dentro da lista
++    /// na letra de acessibilidade, fixos em cima dela abaixo disso), e a AuditoriaUITests os deixa de fora pelo identificador:
++    /// esta é a prova no lugar dela, e acha cada texto pelo mesmo identificador, nas duas letras.
 +    /// Cada texto fica mais alto que na letra padrão (a soma, que encolhe para caber na largura, também); a soma tem a
 +    /// proporção da letra padrão (inteira, sem "…": cortada, ela ficaria mais estreita para a altura); os três ficam um
 +    /// embaixo do outro, dentro do cartão, cada um com a largura e a altura que o texto pede na fonte da maior letra.
 +    func testNaMaiorLetraOTotalCresceSemCortar() throws {
 +        let rotulo = "Total", soma = "R$\u{a0}1.019.847,85", comValor = "14 de 22 tópicos com valor"
++        let porIdentificador = ["totalDoOrcamento-rotulo": rotulo, "totalDoOrcamento-soma": soma, "totalDoOrcamento-comValor": comValor]
 +        func medir(_ argumentos: [String]) throws -> (cartao: CGRect, textos: [String: CGRect]) {
++            let letra = argumentos.isEmpty ? "padrão" : "maior letra"
 +            let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
 +                               argumentos: ["-custta.folha", "topicos"] + argumentos)
 +            defer { app.terminate() }
@@ -7326,8 +7368,15 @@ Em `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`:
 +            XCTAssertTrue(total.waitForExistence(timeout: 10))
 +            Thread.sleep(forTimeInterval: 1)
 +            var textos: [String: CGRect] = [:]
-+            for texto in total.staticTexts.allElementsBoundByIndex { textos[texto.label] = texto.frame }
-+            Swift.print("total | \(argumentos.isEmpty ? "padrão" : "maior letra") | \(total.frame) | \(textos)")
++            for (id, texto) in porIdentificador {
++                let elemento = total.staticTexts.matching(identifier: id).firstMatch
++                XCTAssertTrue(elemento.exists, "\(id) na letra \(letra)")
++                guard elemento.exists else { continue }
++                XCTAssertEqual(elemento.identifier, id, "\(id) na letra \(letra)")
++                XCTAssertEqual(elemento.label, texto, "\(id) na letra \(letra)")
++                textos[texto] = elemento.frame
++            }
++            Swift.print("total | \(letra) | \(total.frame) | \(total.label) | \(textos)")
 +            return (total.frame, textos)
 +        }
 +        let padrao = try medir([]), grande = try medir(maiorLetra)
@@ -7591,6 +7640,22 @@ Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
          }
 ```
 
+Em `app-ios/CusttaUITests/OrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/OrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/OrcamentoUITests.swift
+@@ -79,7 +79,7 @@ extension OrcamentoUITests {
+         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5), "o círculo volta para a obra")
+         linha.tap()
+         XCTAssertTrue(titulo.waitForExistence(timeout: 5))
+-        app.voltarPelaBorda()
++        app.voltarPelaBorda(saindo: titulo)
+         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5), "a borda volta para a obra")
+     }
+ 
+```
+
 Em `tests/app-ios.test.cjs`:
 
 ```diff
@@ -7624,12 +7689,12 @@ Em `tests/workflow.test.cjs`:
 ```diff
 --- a/tests/workflow.test.cjs
 +++ b/tests/workflow.test.cjs
-@@ -228,49 +228,54 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
+@@ -228,49 +228,76 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
  assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
  assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
  assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
 -assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 5, 'build, testes, os dois laudos e auditoria sem assinatura');
-+assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 6, 'build, testes, os três laudos e auditoria sem assinatura');
++assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 7, 'build, testes, os testes da etapa 3, os três laudos e auditoria sem assinatura');
  assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
  assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
 -assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 5, 'build, testes, os dois laudos e auditoria com os pacotes travados');
@@ -7637,7 +7702,7 @@ Em `tests/workflow.test.cjs`:
 -// laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2) e o auditoria rodam as leituras que o laudo
 -// pula, e o auditoria também as auditorias, menos as da parte 3, que rodam no laudo-parte3, para cada job caber no teto
 -// com folga.
-+assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 6, 'build, testes, os três laudos e auditoria com os pacotes travados');
++assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 7, 'build, testes, os testes da etapa 3, os três laudos e auditoria com os pacotes travados');
 +// O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3 e auditoria, em paralelo: o app pula
 +// os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 (as da etapa 3) e o
 +// auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos as da parte 3 e as da etapa 3,
@@ -7645,7 +7710,7 @@ Em `tests/workflow.test.cjs`:
  // Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
  const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
  const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
-+const jobEtapa3 = jobAppIos('laudo-etapa3');
++const jobEtapa3 = jobAppIos('laudo-etapa3'), jobAppEtapa3 = jobAppIos('app-etapa3');
  assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
    'o job app pula o laudo e as auditorias');
  assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
@@ -7690,9 +7755,31 @@ Em `tests/workflow.test.cjs`:
 -assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobLaudo + jobParte3 + jobAuditoria), 'o app, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
 -assert.ok(!/continue-on-error/.test(jobApp + jobLaudo + jobParte3 + jobAuditoria), 'o app, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
 -for(const job of ['nucleo', 'app', 'laudo', 'laudo-parte3', 'auditoria'])
-+assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
-+assert.ok(!/continue-on-error/.test(jobApp + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
-+for(const job of ['nucleo', 'app', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
++// Os testes de tela da etapa 3 rodam no app-etapa3, em paralelo com o app, que passou do teto de 75 min com eles. Cada suíte
++// de tela que o app pula (inteira) roda noutro job, uma vez só: as leituras e as auditorias nos laudos e no auditoria (teste
++// por teste, acima), e as outras, inteiras, no app-etapa3, que só roda o que o app pula. Pega a suíte que sai do app e não
++// entra em nenhum job, e a que entra no app-etapa3 sem sair do app (roda nos dois).
++const suitesInteiras = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/(\\w+)(?![\\w/])`, 'g'))].map(m => m[1]);
++const suitesQueRodam = job => [...job.matchAll(/-only-testing:CusttaUITests\/(\w+)/g)].map(m => m[1]);
++assert.ok(!/-skip-testing:CusttaUITests\/\w+\//.test(jobApp), 'o app pula suítes de tela inteiras');
++assert.ok(!/-(?:only|skip)-testing:CusttaUITests\/\w+\//.test(jobAppEtapa3), 'o app-etapa3 roda suítes de tela inteiras');
++assert.ok(suitesInteiras(jobAppEtapa3, 'only').length > 0, 'o app-etapa3 roda só as suítes da etapa 3 (sem -only-testing, rodaria todas)');
++const puladasNoApp = suitesInteiras(jobApp, 'skip');
++const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobAuditoria].flatMap(suitesQueRodam))];
++assert.deepStrictEqual([...nosLaudos, ...suitesInteiras(jobAppEtapa3, 'only')].sort(), [...puladasNoApp].sort(),
++  'a suíte de tela que o app pula roda nos laudos, no auditoria ou no app-etapa3, uma vez só, e o app-etapa3 roda só o que o app pula');
++const telas = readdirSync(join(__dirname, '..', 'app-ios', 'CusttaUITests')).filter(f => f.endsWith('.swift'))
++  .map(f => readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', f), 'utf8')).join('\n');
++for(const suite of puladasNoApp)
++  assert.match(telas, new RegExp(`\\bclass ${suite}\\b`), `o app-ios.yml divide ${suite}, que não existe no CusttaUITests`);
++assert.match(jobAppEtapa3, /\n    runs-on: macos-26\n/, 'o job app-etapa3 roda no macOS 26 fixo');
++// O resultado sobe também quando o job é cancelado: o run 39710458060 foi cortado no teto e ficou sem xcresult.
++for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', jobAppEtapa3, 'testes-etapa3']])
++  assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${resultado}\\.xcresult"[\\s\\S]*\\n\\s+if: failure\\(\\) \\|\\| cancelled\\(\\)\\n[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${resultado}\\.xcresult`),
++    `o job ${nome} guarda o próprio resultado quando reprova e quando é cortado no teto`);
++assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
++assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
++for(const job of ['nucleo', 'app', 'app-etapa3', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
    assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
  const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
  const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
@@ -7701,7 +7788,7 @@ Em `tests/workflow.test.cjs`:
 - [ ] **Step 2: Ver falhar**
 
 Run: `node --test tests/workflow.test.cjs 2>&1 | grep -m1 AssertionError`
-Expected: `AssertionError [ERR_ASSERTION]: build, testes, os três laudos e auditoria sem assinatura` (5 jobs em vez de 6). As cenas e o teste de 375 pt são medidas novas, sem vermelho contra a Tarefa 18; a força delas está no próprio laudo.
+Expected: `AssertionError [ERR_ASSERTION]: build, testes, os testes da etapa 3, os três laudos e auditoria sem assinatura` (5 em vez de 7). As cenas e o teste de 375 pt são medidas novas, sem vermelho contra a Tarefa 18; a força delas está no próprio laudo.
 
 - [ ] **Step 3: Implementar**
 
@@ -7710,13 +7797,15 @@ Em `.github/workflows/app-ios.yml`:
 ```diff
 --- a/.github/workflows/app-ios.yml
 +++ b/.github/workflows/app-ios.yml
-@@ -5,9 +5,10 @@ name: app-ios
+@@ -5,9 +5,12 @@ name: app-ios
  #   dados.js, push.js, cadastro.js ou o gerador mudam;
  # - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
  #   unidade e de tela no simulador com os serviços falsos;
 -# - laudo, laudo-parte3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade, cada
 -#   um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
 -#   os dois num job só chegavam a 75 min com a folha do gasto, e a parte 3 da etapa 2 levava o laudo ao teto).
++# - app-etapa3: os testes de tela da etapa 3, num simulador próprio, em paralelo com o app (com eles, o app passou do
++#   teto de 75 min);
 +# - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
 +#   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
 +#   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da
@@ -7724,7 +7813,96 @@ Em `.github/workflows/app-ios.yml`:
  # Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
  # (npm run test:app-ios:emuladores e npm run test:app-ios:cruzado): precisam de Java, dos
  # emuladores e da assinatura de simulador para o keychain do Firebase Auth.
-@@ -184,6 +185,8 @@ jobs:
+@@ -66,8 +69,10 @@ jobs:
+ 
+   app:
+     runs-on: macos-26
+-    # Sem o laudo e as auditorias (jobs laudo e auditoria), o job fica perto de 30 min; o teto é o de 12/10, com folga para a VM lenta.
+-    timeout-minutes: 75
++    # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
++    # (job app-etapa3): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa lenta, 67 min, com 48,9 de testes
++    # de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90.
++    timeout-minutes: 90
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+@@ -112,7 +117,8 @@ jobs:
+             build
+ 
+       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
+-      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria.
++      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
++      # testes de tela da etapa 3, no app-etapa3.
+       - name: Testes de unidade e de tela no simulador
+         run: |
+           set -o pipefail
+@@ -129,17 +135,62 @@ jobs:
+             -resultBundlePath "$RUNNER_TEMP/testes.xcresult" \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests \
+             -skip-testing:CusttaUITests/AuditoriaUITests \
++            -skip-testing:CusttaUITests/OrcamentoUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+-      # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato.
+-      - name: Resultado dos testes quando reprovam
+-        if: failure()
++      # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
++      # 39710458060 foi cortado no teto e ficou sem xcresult.
++      - name: Resultado dos testes quando reprovam ou o job é cortado
++        if: failure() || cancelled()
+         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+         with:
+           name: testes-app-ios
+           path: ${{ runner.temp }}/testes.xcresult
+           retention-days: 7
+ 
++  app-etapa3:
++    runs-on: macos-26
++    # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
++    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests: 20,8 min de testes + ~11 de
++    # preparo ≈ 32 min. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do job, e ele se divide se passar de ~50.
++    timeout-minutes: 60
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
++        with:
++          node-version: 22
++
++      - name: Versão do Xcode
++        run: xcodebuild -version
++
++      # Os mesmos serviços falsos do job app, que pula estas suítes.
++      - name: Testes de tela da etapa 3 no simulador
++        run: |
++          set -o pipefail
++          DESTINO="$(node scripts/simulador-ios.mjs)"
++          echo "Simulador: $DESTINO"
++          xcodebuild test \
++            -project app-ios/Custta.xcodeproj \
++            -scheme Custta \
++            -destination "$DESTINO" \
++            -derivedDataPath app-ios/build \
++            -skipMacroValidation \
++            -skipPackagePluginValidation \
++            -onlyUsePackageVersionsFromResolvedFile \
++            -resultBundlePath "$RUNNER_TEMP/testes-etapa3.xcresult" \
++            -only-testing:CusttaUITests/OrcamentoUITests \
++            CODE_SIGNING_ALLOWED=NO
++
++      # Tela reprovada: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run 39710458060
++      # foi cortado no teto e ficou sem xcresult.
++      - name: Resultado dos testes da etapa 3 quando reprovam ou o job é cortado
++        if: failure() || cancelled()
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
++        with:
++          name: testes-etapa3-app-ios
++          path: ${{ runner.temp }}/testes-etapa3.xcresult
++          retention-days: 7
++
+   laudo:
+     runs-on: macos-26
+     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
+@@ -184,6 +235,8 @@ jobs:
              -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraVendida \
              -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3NaMaiorLetra \
              -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
@@ -7733,7 +7911,7 @@ Em `.github/workflows/app-ios.yml`:
              CODE_SIGNING_ALLOWED=NO
  
        # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-@@ -244,10 +247,57 @@ jobs:
+@@ -244,10 +297,57 @@ jobs:
            path: ${{ runner.temp }}/laudo-parte3.xcresult
            retention-days: 7
  
@@ -7793,7 +7971,7 @@ Em `.github/workflows/app-ios.yml`:
      timeout-minutes: 60
      steps:
        - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-@@ -278,6 +328,8 @@ jobs:
+@@ -278,6 +378,8 @@ jobs:
              -only-testing:CusttaUITests/AuditoriaUITests \
              -skip-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
              -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
@@ -7837,6 +8015,32 @@ Em `app-ios/Custta/Identidade/Componentes.swift`:
          #endif
 ```
 
+Em `app-ios/Custta/Telas/FolhaDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoOrcamento.swift
++++ b/app-ios/Custta/Telas/FolhaDoOrcamento.swift
+@@ -573,13 +573,18 @@ private struct TotalAoVivo: View {
+     var body: some View {
+         let layout = tamanho.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                                                  : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
++        // Os identificadores vão também em cada texto: o VoiceOver lê o total como um elemento só, mas a auditoria do Xcode
++        // olha cada texto (e a exceção dela no iOS 26 é por identificador).
+         layout {
+             Text("Total").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.secundarioTransparente))
++                .accessibilityIdentifier("totalDoOrcamento-rotulo")
+             if !tamanho.isAccessibilitySize { Spacer(minLength: 0) }
+             VStack(alignment: tamanho.isAccessibilitySize ? .leading : .trailing, spacing: 0) {
+                 ValorEmDinheiro(texto: moeda(soma), fonte: .title3.weight(.bold))
++                    .accessibilityIdentifier("totalDoOrcamento-soma")
+                 Text(comValor).font(.footnote).foregroundStyle(paleta.cor(.secundarioTransparente))
+                     .fixedSize(horizontal: false, vertical: true)
++                    .accessibilityIdentifier("totalDoOrcamento-comValor")
+             }
+         }
+         .padding(.horizontal, 16)
+```
+
 Em `app-ios/Custta/Telas/PecasDoOrcamento.swift`:
 
 ```diff
@@ -7867,15 +8071,18 @@ Expected: `ℹ pass 51`, `ℹ fail 0`; sem aviso; `testLeituraDoOrcamento` com 1
 ```bash
 git add .github/workflows/app-ios.yml \
   app-ios/Custta/Identidade/Componentes.swift \
+  app-ios/Custta/Telas/FolhaDoOrcamento.swift \
   app-ios/Custta/Telas/PecasDoOrcamento.swift \
   app-ios/CusttaTests/OrcamentoEm375Tests.swift \
+  app-ios/CusttaUITests/Abrir.swift \
   app-ios/CusttaUITests/AuditoriaUITests.swift \
   app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift \
   app-ios/CusttaUITests/LaudoDeContraste.swift \
   app-ios/CusttaUITests/LeituraNoVidroUITests.swift \
+  app-ios/CusttaUITests/OrcamentoUITests.swift \
   tests/app-ios.test.cjs \
   tests/workflow.test.cjs
-git commit -m "ci: leituras e auditorias do orçamento num job próprio" -m "O app nativo ganha o job laudo-etapa3, que nasce no PR 1 da etapa 3 (decisão 3 do conselho, sem esperar um job passar de ~50 min): as leituras sobre o vidro e as auditorias de acessibilidade das telas do orçamento, num simulador próprio, em paralelo com os outros. No escuro e no claro, a linha na obra, a tela Orçamento no alto, rolada e no modo total, e a folha com as teclas encaixadas, por tópico e no \"Definir\"; na maior letra, as mesmas telas, e com Aumentar contraste, a tela Orçamento. O laudo e o auditoria pulam essas leituras e auditorias, e a guarda dos jobs passa a contar o job novo. A barra das teclas encaixadas fica fora da auditoria de tipo dinâmico, como o título da folha (para no xxxLarge, com o Visualizador de Conteúdo Grande), e o que a lista tem embaixo das teclas ou em cima do cabeçalho fixo da folha (o segmentado e o total) fica fora da de contraste, porque está fora da vista (no Pro Max, com a faixa mais alta, as linhas roladas para cima ficam entre a barra e o total). No iOS 26, na letra de acessibilidade, as auditorias de tipo dinâmico e de texto cortado deixam de fora o total ao vivo da folha (o \"Total\", a soma e \"N de M tópicos com valor\"): ele muda de lugar na fronteira dessa letra (nela, rola com a lista; abaixo dela, fica fixo em cima da lista), e a auditoria, que troca o tamanho da letra, perde os três textos, que não têm identificador. No lugar, um teste de tela mostra que, na maior letra, os três crescem, a soma aparece inteira e nada corta. Com a folha aberta, a de contraste mede a partir da barra da folha, e não da primeira barra da árvore, que é a da tela por trás dela: os itens da barra da folha entram, e o que fica logo abaixo dela também, porque a folha não tem a borda de rolagem das telas. No modo total, a auditoria na maior letra fica no meio do gasto por tópico, e não no fim: ali, enquanto ela diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, e os achados saem sem elemento; a dica, que só o fim tem, ganha uma guarda de código (cresce com a letra, quebra linha e não tem altura fixa). As cenas da lista da obra da etapa 2 descem de 640 para 758 pt, e a varredura da obra rolando, de 200…1500 para 318…1618, a altura da linha do orçamento da vitrine, para medir o mesmo pedaço da tela de antes (a 640 e a 1200, a borda cortava uma palavra). O laudo casa cada pixel com os de até 1 pt em cima e embaixo no print sem texto, e não só 1 px: com mais de um valor que encolhe em cima, como na tela Orçamento na maior letra no Pro Max, o que vem embaixo muda mais de 1 px com o texto apagado. O teste do medidor cobra o limite novo: até 1 pt é a mesma cena; 1 px além, outra. Na maior letra, a tela Orçamento rolada passa de 1500 para 1637 pt, com a borda de cima no vão entre dois tópicos nos dois iPhones: a 1500, no Pro Max, a barra de um tópico ficava logo abaixo da borda, com texto borrado pelo véu em cima, e o alto dela mudava entre os dois prints. A tabela de exceções do laudo ganha uma entrada, só para a obra com orçamento na maior letra e só para o triângulo do aviso: no Pro Max, o print sem texto desenha o triângulo uma fração de pixel mais baixo, e as bordas dele viravam letra com ele mesmo de fundo; a frase do aviso continua medida. Para isso, o foraDoLaudo do app ganha um nome que uma cena liga, só em Debug. Num iPhone de 375 pt, que nenhum simulador do laudo tem, um teste de unidade confere que nenhuma peça do orçamento passa da largura na maior letra, com e sem negrito."
+git commit -m "ci: leituras e auditorias do orçamento num job próprio" -m "O app nativo ganha o job laudo-etapa3, que nasce no PR 1 da etapa 3 (decisão 3 do conselho, sem esperar um job passar de ~50 min): as leituras sobre o vidro e as auditorias de acessibilidade das telas do orçamento, num simulador próprio, em paralelo com os outros. No escuro e no claro, a linha na obra, a tela Orçamento no alto, rolada e no modo total, e a folha com as teclas encaixadas, por tópico e no \"Definir\"; na maior letra, as mesmas telas, e com Aumentar contraste, a tela Orçamento. O laudo e o auditoria pulam essas leituras e auditorias, e a guarda dos jobs passa a contar o job novo. Os testes de tela do orçamento (o OrcamentoUITests) saem do job app e rodam no job novo app-etapa3, em paralelo, com o mesmo preparo e sem o build Release: com eles, o app passava do teto de 75 min, e só eles levavam 20,8 min. Sem eles, o app leva ~53 min numa VM normal e chegou a 67 numa lenta (run 39799242127): o teto dele passa a 90. Nos dois jobs, o resultado dos testes sobe também quando o job é cancelado, para um corte no teto deixar o xcresult, e a guarda dos jobs confere que cada suíte de tela que o app pula roda em outro job, uma vez só. No iOS 26 da CI, o arrasto sintetizado da borda às vezes não volta depois de voltar pelo botão e entrar de novo (a tela Orçamento, no run 39710458060): lá, se o que a tela leva embora não some em 2 s, o arrasto se repete uma vez, com um print e uma linha no log; no iOS 27, o teste segue estrito. A barra das teclas encaixadas fica fora da auditoria de tipo dinâmico, como o título da folha (para no xxxLarge, com o Visualizador de Conteúdo Grande), e o que a lista tem embaixo das teclas ou em cima do cabeçalho fixo da folha (o segmentado e o total) fica fora da de contraste, porque está fora da vista (no Pro Max, com a faixa mais alta, as linhas roladas para cima ficam entre a barra e o total). No iOS 26, na letra de acessibilidade, as auditorias de tipo dinâmico e de texto cortado deixam de fora o total ao vivo da folha (o \"Total\", a soma e \"N de M tópicos com valor\"), pelo identificador que cada um dos três textos ganha: ele muda de lugar na fronteira dessa letra (nela, rola com a lista; abaixo dela, fica fixo em cima da lista), e lá a auditoria acusa os três grandes e inteiros. Pelo quadro do total não dava: no iOS 26, a letra vai à padrão enquanto o teste lê os quadros e volta à AX5 dentro da auditoria. O VoiceOver continua lendo o total como um elemento só, com o mesmo rótulo. No lugar, um teste de tela acha os três pelo mesmo identificador, nas duas letras, e mostra que, na maior letra, eles crescem, a soma aparece inteira e nada corta. Com a folha aberta, a de contraste mede a partir da barra da folha, e não da primeira barra da árvore, que é a da tela por trás dela: os itens da barra da folha entram, e o que fica logo abaixo dela também, porque a folha não tem a borda de rolagem das telas. No modo total, a auditoria na maior letra fica no meio do gasto por tópico, e não no fim: ali, enquanto ela diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, e os achados saem sem elemento; a dica, que só o fim tem, ganha uma guarda de código (cresce com a letra, quebra linha e não tem altura fixa). As cenas da lista da obra da etapa 2 descem de 640 para 758 pt, e a varredura da obra rolando, de 200…1500 para 318…1618, a altura da linha do orçamento da vitrine, para medir o mesmo pedaço da tela de antes (a 640 e a 1200, a borda cortava uma palavra). O laudo casa cada pixel com os de até 1 pt em cima e embaixo no print sem texto, e não só 1 px: com mais de um valor que encolhe em cima, como na tela Orçamento na maior letra no Pro Max, o que vem embaixo muda mais de 1 px com o texto apagado. O teste do medidor cobra o limite novo: até 1 pt é a mesma cena; 1 px além, outra. Na maior letra, a tela Orçamento rolada passa de 1500 para 1637 pt, com a borda de cima no vão entre dois tópicos nos dois iPhones: a 1500, no Pro Max, a barra de um tópico ficava logo abaixo da borda, com texto borrado pelo véu em cima, e o alto dela mudava entre os dois prints. A tabela de exceções do laudo ganha uma entrada, só para a obra com orçamento na maior letra e só para o triângulo do aviso: no Pro Max, o print sem texto desenha o triângulo uma fração de pixel mais baixo, e as bordas dele viravam letra com ele mesmo de fundo; a frase do aviso continua medida. Para isso, o foraDoLaudo do app ganha um nome que uma cena liga, só em Debug. Num iPhone de 375 pt, que nenhum simulador do laudo tem, um teste de unidade confere que nenhuma peça do orçamento passa da largura na maior letra, com e sem negrito."
 ```
 
 ### Task 20: Conferência cruzada do orçamento
@@ -8240,4 +8447,4 @@ git add docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
 git commit -m "docs: checklist do aparelho da etapa 3 do app nativo" -m "O checklist que o Giovani roda no iPhone a cada build da etapa 3, na conta de sempre, no estilo do da etapa 2: antes do primeiro build, a cópia dos dados e o PR 0 do site no ar; e os itens do PR 1, o orçamento. Na obra, o \"Definir orçamento\" e a linha nos três níveis; a tela Orçamento, com o cartão, o \"Por tópico\", o que está fora e o modo total; a folha, com as teclas encaixadas, a troca de modo, o tirar e o salvar vazio, o teto, o toque duplo, o modo avião e a mudança vinda do site com a folha aberta; a maior letra; e a acessibilidade de cada tela, com VoiceOver, Controle por Voz e Controle Assistivo, mais o âmbar sobre o vidro, no escuro e no claro, e o secundário mais claro das telas de entrada no escuro."
 ```
 
-**Ponto de controle do PR 1:** CI verde (`nucleo`, `app`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim do PR, o núcleo com 219 testes, o `CusttaTests` com 144 em 26 suítes e o `OrcamentoUITests` com 28); no Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` verdes, e as leituras e auditorias do orçamento também no Pro Max; o Verniz confere as telas novas lado a lado com o mockup (parte 1, seções 1 a 3), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 1" do checklist na conta de sempre. Na CI do iOS 26, antes das correções (run 39693700450), passaram a cena da tela Orçamento a 2200 pt na maior letra, a linha ativa que volta ao meio na troca de letra, os itens da barra da folha na auditoria de contraste e a rolagem da folha sem Reduzir movimento; reprovaram o teste do medidor da etapa 2 e o total ao vivo na auditoria (Tarefa 19) e a linha ativa ao abrir a folha na maior letra (Tarefa 18), corrigidos nelas. Só o iOS 26 prova, e o Mac não tem: a conferência da linha ativa na lista preguiçosa e a exceção do total, que só roda lá. O âmbar do escuro e as cinco exceções ao mockup foram decididos pelo Giovani em 21/10 (Decisões do conselho).
+**Ponto de controle do PR 1:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim do PR, o núcleo com 219 testes, o `CusttaTests` com 144 em 26 suítes e o `OrcamentoUITests` com 28); no Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` verdes, e as leituras e auditorias do orçamento também no Pro Max; o Verniz confere as telas novas lado a lado com o mockup (parte 1, seções 1 a 3), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 1" do checklist na conta de sempre. Na CI do iOS 26, antes das correções (run 39693700450), passaram a cena da tela Orçamento a 2200 pt na maior letra, a linha ativa que volta ao meio na troca de letra, os itens da barra da folha na auditoria de contraste e a rolagem da folha sem Reduzir movimento; reprovaram o teste do medidor da etapa 2 e o total ao vivo na auditoria (Tarefa 19) e a linha ativa ao abrir a folha na maior letra (Tarefa 18), corrigidos nelas. Na segunda rodada (run 39710458060, com o PR 2 por cima), as duas leituras do orçamento passaram. Três coisas reprovaram: a exceção do total pelo quadro, na auditoria de depois do swipe; o `app`, cortado no teto; e uma vez a borda da tela Orçamento. A exceção passou a ser pelo identificador, nasceu o `app-etapa3` e a borda ganhou a segunda tentativa no iOS 26 (Tarefa 19), tudo verde no run 39813469497. Só o iOS 26 prova, e o Mac não tem: a conferência da linha ativa na lista preguiçosa, a exceção do total e a segunda tentativa da borda, que só rodam lá. O âmbar do escuro e as cinco exceções ao mockup foram decididos pelo Giovani em 21/10 (Decisões do conselho).

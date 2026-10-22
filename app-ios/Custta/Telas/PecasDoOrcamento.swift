@@ -133,7 +133,9 @@ struct AvisoDoOrcamento: View {
     @ScaledMetric(relativeTo: .subheadline) private var letra: CGFloat = 15
 
     var body: some View {
-        let lado = tamanho.isAccessibilitySize ? letra * 0.8 : letra * 16 / 15
+        // Em ponto inteiro, que cai na grade de pixels em 2x e 3x: fracionário, o texto ao lado recebia uma largura fora da grade,
+        // arredondava para cima e o aviso passava 1 pixel da largura.
+        let lado = (tamanho.isAccessibilitySize ? letra * 0.8 : letra * 16 / 15).rounded()
         HStack(alignment: .top, spacing: 6) {
             Image(decorative: "Icones/alerta")
                 .resizable()

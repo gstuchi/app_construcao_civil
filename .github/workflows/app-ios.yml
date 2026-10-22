@@ -193,6 +193,34 @@ jobs:
           path: ${{ runner.temp }}/testes-etapa3.xcresult
           retention-days: 7
 
+      # Só na prova (fora das fatias): a volta pela borda da tela Orçamento, que reprovou uma vez no iOS 26 (run 39710458060,
+      # OrcamentoUITests.swift:83) e passou em 39693700450 com o mesmo código, repetida até cinco vezes, com o resultado.
+      - name: Diagnóstico da borda (só na prova)
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          xcodebuild test-without-building \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -resultBundlePath "$RUNNER_TEMP/borda.xcresult" \
+            -only-testing:CusttaUITests/OrcamentoUITests/testLinhaAbreATelaOrcamentoQueVoltaPeloCirculoEPelaBorda \
+            -test-iterations 5 \
+            -run-tests-until-failure \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Resultado do diagnóstico da borda
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: borda-app-ios
+          path: ${{ runner.temp }}/borda.xcresult
+          retention-days: 7
+
   laudo:
     runs-on: macos-26
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias

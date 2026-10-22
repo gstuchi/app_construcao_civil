@@ -70,7 +70,7 @@ struct ObraView: View {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
-                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje))
+                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra))
                     AcoesDaFaseView(fase: obra.fase) { agir($0, obra: obra) }
                         .padding(.top, 2)
                         .padding(.bottom, 14)

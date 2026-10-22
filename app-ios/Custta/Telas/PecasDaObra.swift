@@ -74,10 +74,12 @@ struct EtiquetaDoIndicador: View {
     }
 }
 
-/// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com Corrigido, A pagar (a folha e a seta são
-/// da etapa 3) e Venda. Os textos e as contas são os do site (indicadoresDaObra).
+/// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
+/// só com orçamento), Corrigido, A pagar (a folha e a seta são da etapa 3) e Venda. Os textos e as contas são os do site
+/// (indicadoresDaObra, orcamentoObra).
 struct IndicadoresDaObraView: View {
     let indicadores: IndicadoresDaObra
+    var orcamento: ResumoOrcamento? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
@@ -88,6 +90,10 @@ struct IndicadoresDaObraView: View {
         VStack(spacing: 10) {
             heroi
             VStack(spacing: 0) {
+                if let orcamento {
+                    LinhaDoOrcamento(resumo: orcamento)
+                    LinhaFina().padding(.leading, 18)
+                }
                 linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
                       identificador: "indicadorCorrigido")
                 LinhaFina().padding(.leading, 18)

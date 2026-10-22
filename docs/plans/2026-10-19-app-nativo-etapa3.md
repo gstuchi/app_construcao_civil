@@ -5533,6 +5533,7 @@ A obra sem orçamento ganha "Definir orçamento" nas ações da fase (fora da ve
 - **Exceções ao mockup, por recomendação (19/10), aprovadas pelo Giovani em 21/10:** a barra só com o "Pronto" no "Só o total" na maior letra, e os dígitos e o apagar pelo teclado físico (`onKeyPress` na linha ativa). O teste de tela digita pelo teclado físico; o apagar não, porque o `typeKey` do XCUITest não entrega nenhum apagar ao app (nem `XCUIKeyboardKey.delete`, nem `"\u{8}"`, nem `.forwardDelete`), enquanto um ⌫ de verdade, pelo teclado do Mac no simulador, chega como `.delete` e apaga; a ligação do apagar fica presa por guarda Node.
 - **O setter do segmentado é um fecho literal.** `Binding(get: { rascunho.modo }, set: { trocarModo($0) })`, e não `set: trocarModo`: com a referência ao método, o Swift 6.3.3 da CI (Xcode 26.6) cai ao gerar o thunk `@isolated(any)` do setter na compilação Release (`llvm::report_fatal_error`, "While emitting IR SIL function … reabstraction thunk helper … RascunhoDoOrcamento.Modo"); o Swift 6.4 do Mac compila as duas formas, e só a CI acha.
 - **A linha ativa na troca de letra.** Ao trocar o tamanho da letra com as teclas abertas, as linhas mudam de altura e a rolagem ficava onde estava, com a linha ativa fora da vista (a auditoria de tipo dinâmico achou: ela começa na letra pequena); o `onChange(of: tamanho)` a devolve ao meio da faixa.
+- **A lista segura a linha ativa no meio.** Na lista preguiçosa, as linhas que ela ainda não criou têm altura estimada: o `scrollTo` pode parar longe, e a lista ainda anda quando as linhas de verdade chegam. No iOS 26, na maior letra, a folha aberta com as teclas na Elétrica deixava a linha fora da vista (CI, run 39693700450: os dois prints do laudo pararam em lugares diferentes). A folha mede o meio da linha ativa (só ela, no espaço da rolagem) e, a cada mudança da rolagem ou da linha, confere onde ela ficou e rola de novo, sem animar, até 6 vezes; quem rola a lista (o dedo, o VoiceOver) leva a rolagem, e a folha para de segurar. O Mac (iOS 27) não reproduz: lá, a prova é por mutação (com o primeiro `scrollTo` três linhas abaixo, o teste novo passa com a conferência e, sem ela, a Elétrica fica a −276 pt); no iOS 26, a CI.
 
 **Files:**
 - Create: `app-ios/Custta/Telas/FolhaDoOrcamento.swift`
@@ -5905,6 +5906,35 @@ extension OrcamentoUITests {
         XCTAssertGreaterThanOrEqual(linha.frame.minY, lista.frame.minY - 0.5, alvo)
         XCTAssertLessThanOrEqual(linha.frame.maxY, teclas.frame.minY + 0.5, "\(alvo): inteira acima das teclas")
         XCTAssertEqual(linha.frame.midY, (lista.frame.minY + teclas.frame.minY) / 2, accuracy: 2, "\(alvo): no meio da faixa")
+    }
+
+    /// Na maior letra, a folha aberta com as teclas numa linha longe do alto (a Elétrica, a 9ª) a mostra no meio da faixa à
+    /// vista, entre a barra da folha e as teclas (2 pt de tolerância, a das outras rolagens), com e sem Reduzir movimento. Na
+    /// lista preguiçosa, as linhas que ela ainda não criou têm altura estimada: no iOS 26, o primeiro `scrollTo` deixava a
+    /// Elétrica fora da vista, e a folha agora confere onde ela ficou e rola de novo. Depois, quem rola a lista não é puxado de
+    /// volta.
+    func testNaMaiorLetraAFolhaAbreComALinhaAtivaNoMeio() {
+        for reduzir in [true, false] {
+            let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
+                               argumentos: maiorLetra + ["-custta.folha", "teclas:eletrica"]
+                                   + (reduzir ? ["-custta.reduzirMovimento", "YES"] : []))
+            let modo = reduzir ? "com Reduzir movimento" : "com animação"
+            XCTAssertTrue(app.buttons["barraDasTeclas-pronto"].waitForExistence(timeout: 10), modo)
+            Thread.sleep(forTimeInterval: 1)
+            let linha = app.elemento("linhaOrc-eletrica"), lista = app.elemento("listaDoOrcamento")
+            let teclas = app.elemento("tecladoEncaixado")
+            let barra = app.navigationBars.containing(.any, identifier: "tituloDaFolha").firstMatch
+            let faixa = (max(lista.frame.minY, barra.frame.maxY), teclas.frame.minY), meio = (faixa.0 + faixa.1) / 2
+            XCTAssertTrue(linha.exists, "\(modo): a Elétrica na lista")
+            XCTAssertGreaterThanOrEqual(linha.frame.minY, faixa.0 - 0.5, "\(modo): abaixo da barra")
+            XCTAssertLessThanOrEqual(linha.frame.maxY, faixa.1 + 0.5, "\(modo): acima das teclas")
+            XCTAssertEqual(linha.frame.midY, meio, accuracy: 2, "\(modo): no meio da faixa")
+            // Rolada para o alto, a lista fica onde o dedo a deixou: a Elétrica longe do meio ou fora da lista preguiçosa.
+            lista.swipeDown()
+            Thread.sleep(forTimeInterval: 1.5)
+            XCTAssertTrue(!linha.exists || abs(linha.frame.midY - meio) > 40, "\(modo): a lista não volta para a Elétrica")
+            app.terminate()
+        }
     }
 
     /// A linha ativa fica inteira à vista entre o alto da lista e as teclas a cada ›, nas 71 linhas (os 21 fixos e os 50
@@ -6297,13 +6327,27 @@ private struct FolhaDoOrcamentoAberta: View {
     }
 }
 
-/// A rolagem que espera as teclas abrirem: guardada fora do estado observado, para a geometria mudar sem refazer a folha.
+/// A rolagem até a linha ativa: guardada fora do estado observado, para a geometria mudar sem refazer a folha.
 @MainActor
 private final class MedidasDaFolhaDoOrcamento {
-    /// A linha que espera a lista encolher para rolar até ela: ao abrir as teclas, a faixa delas ainda não tem altura.
+    /// A linha que espera a lista encolher para rolar até ela: ao tocar numa linha, a faixa das teclas ainda não tem altura.
     var pendente: CampoDoOrcamento?
+    /// A linha que a lista segura no meio da faixa à vista até alguém rolar. Na lista preguiçosa, as linhas que ela ainda não
+    /// criou têm altura estimada: o `scrollTo` pode parar longe e, quando as linhas de verdade chegam, a lista ainda anda (no
+    /// iOS 26, na maior letra, a folha aberta com as teclas deixava a Elétrica fora da vista). A cada mudança da rolagem ou da
+    /// linha, a folha confere onde ela ficou e, fora do lugar, rola de novo.
+    var alvo: CampoDoOrcamento?
+    /// Quantas vezes a conferência já rolou até o alvo (no máximo 6), e se há uma conferência marcada.
+    var tentativas = 0
+    var marcada = false
+    /// A rolagem animada que a própria folha pediu, até parar: enquanto anda, nada se confere; outra animação (a do VoiceOver)
+    /// é de quem rolou.
+    var animando = false
+    /// O meio da linha ativa no espaço da rolagem (só ela é medida) e a geometria da rolagem.
+    var meio: (campo: CampoDoOrcamento, y: CGFloat)?
+    var geometria: ScrollGeometry?
 
-    init(pendente: CampoDoOrcamento?) { self.pendente = pendente }
+    init(alvo: CampoDoOrcamento?) { self.alvo = alvo }
 }
 
 private struct CorpoDaFolhaDoOrcamento: View {
@@ -6324,8 +6368,8 @@ private struct CorpoDaFolhaDoOrcamento: View {
     init(rascunho: RascunhoDoOrcamento, ativo: Binding<CampoDoOrcamento?>) {
         self.rascunho = rascunho
         _ativo = ativo
-        // Aberta já com as teclas ("Definir orçamento"): a linha ativa espera a lista ganhar a altura final.
-        _medidas = State(initialValue: MedidasDaFolhaDoOrcamento(pendente: ativo.wrappedValue))
+        // Aberta já com as teclas ("Definir orçamento"): a lista segura a linha ativa no meio desde a primeira medida.
+        _medidas = State(initialValue: MedidasDaFolhaDoOrcamento(alvo: ativo.wrappedValue))
     }
 
     var body: some View {
@@ -6336,7 +6380,7 @@ private struct CorpoDaFolhaDoOrcamento: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         if grande { cabecalho }
-                        if rascunho.modo == .topicos { linhasDosTopicos } else { linhaDoTotal }
+                        if rascunho.modo == .topicos { linhasDosTopicos(leitor) } else { linhaDoTotal(leitor) }
                         if rascunho.tinhaOrcamento {
                             GrupoDaFolha {
                                 // A linha inteira do grupo recebe o toque (o .f-lin.destr do mockup), não só o texto.
@@ -6366,22 +6410,39 @@ private struct CorpoDaFolhaDoOrcamento: View {
                     medidas.pendente = nil
                     rolar(ate: pendente, leitor)
                 }
+                // A cada mudança da rolagem (as linhas que a lista preguiçosa cria, a faixa que muda), a linha que a lista segura
+                // é conferida.
+                .onScrollGeometryChange(for: ScrollGeometry.self) { $0 } action: { _, geometria in
+                    medidas.geometria = geometria
+                    conferir(leitor)
+                }
+                // Quem rola a lista (o dedo, o VoiceOver) leva a rolagem: a folha para de segurar a linha e não puxa ninguém de
+                // volta. A rolagem animada da própria folha é conferida quando para.
+                .onScrollPhaseChange { _, fase in
+                    switch fase {
+                    case .idle:
+                        if medidas.animando {
+                            medidas.animando = false
+                            conferir(leitor)
+                        }
+                    case .animating:
+                        if !medidas.animando { medidas.alvo = nil }
+                    default:
+                        medidas.alvo = nil
+                    }
+                }
                 // A letra mudou com as teclas abertas (pela Central de Controle, por exemplo): as linhas mudam de altura e a rolagem
                 // fica onde estava, com a linha ativa longe da vista; ela volta ao meio da faixa.
                 .onChange(of: tamanho) { if let ativo { rolar(ate: ativo, leitor) } }
                 .onChange(of: ativo) { antes, agora in
-                    guard let agora else { return }
+                    guard let agora else {
+                        medidas.alvo = nil
+                        return
+                    }
                     foco = agora
                     anunciar(agora)
                     // Com as teclas já abertas (‹ ›), a lista não muda de altura: rola já.
                     if antes != nil { rolar(ate: agora, leitor) }
-                }
-                // Aberta com as teclas: se a lista já nasceu na altura final, nenhuma mudança de altura a avisa.
-                .task {
-                    try? await Task.sleep(for: .milliseconds(150))
-                    guard let pendente = medidas.pendente, ativo == pendente else { return }
-                    medidas.pendente = nil
-                    rolar(ate: pendente, leitor)
                 }
             }
             if let campo = ativo {
@@ -6477,13 +6538,14 @@ private struct CorpoDaFolhaDoOrcamento: View {
 
     /// Os tópicos, filhos diretos da lista preguiçosa (até 71 linhas): cada uma desenha o seu pedaço do grupo, e uma tecla
     /// refaz só a linha ativa (as outras são iguais à vez anterior).
-    @ViewBuilder private var linhasDosTopicos: some View {
+    @ViewBuilder private func linhasDosTopicos(_ leitor: ScrollViewProxy) -> some View {
         let ultimo = rascunho.topicos.count - 1
         ForEach(Array(rascunho.topicos.enumerated()), id: \.element.id) { i, t in
             let campo = CampoDoOrcamento.topico(t.id)
             LinhaDoTopicoNaFolha(topico: t, centavos: rascunho.valores[t.id] ?? 0, ativa: ativo == campo,
                                  proprio: !topicosPadrao.contains { $0.id == t.id }, primeira: i == 0, ultima: i == ultimo)
                 .equatable()
+                .background { if ativo == campo { medida(campo, leitor) } }
                 .onTapGesture { abrir(campo) }
                 .accessibilityAction { abrir(campo) }
                 .accessibilityActions {
@@ -6500,7 +6562,7 @@ private struct CorpoDaFolhaDoOrcamento: View {
     }
 
     /// "Orçamento total", a linha de 60 pt do valor, e as frases do modo.
-    @ViewBuilder private var linhaDoTotal: some View {
+    @ViewBuilder private func linhaDoTotal(_ leitor: ScrollViewProxy) -> some View {
         GrupoDaFolha {
             LinhaDoTotalNaFolha(centavos: rascunho.total, ativa: ativo == .total)
                 .onTapGesture { abrir(.total) }
@@ -6508,6 +6570,7 @@ private struct CorpoDaFolhaDoOrcamento: View {
                 .accessibilityActions { if ativo == .total { Button("Pronto") { ativo = nil } } }
                 .accessibilityFocused($foco, equals: .total)
         }
+        .background { if ativo == .total { medida(.total, leitor) } }
         .id(CampoDoOrcamento.total)
         VStack(spacing: 8) {
             if let nota = rascunho.nota { NotaDaFolha(texto: nota, cor: .alerta, identificador: "notaDaSoma") }
@@ -6538,12 +6601,52 @@ private struct CorpoDaFolhaDoOrcamento: View {
         AccessibilityNotification.Announcement("\(nome), \(valor > 0 ? moeda(centavosParaReais(valor)) : "sem valor")").post()
     }
 
-    /// Põe a linha ativa no meio da faixa à vista. A lista fica entre o alto (o segmentado e o total, ou a barra) e as
-    /// teclas, que moram fora dela: o meio da rolagem é o meio da faixa (no protótipo de 19/10, com as teclas por cima da
-    /// lista, a âncora mínima deixava a linha embaixo delas e o meio da rolagem errava na letra grande).
+    /// Põe a linha ativa no meio da faixa à vista e a segura ali até alguém rolar. A lista fica entre o alto (o segmentado e o
+    /// total, ou a barra) e as teclas, que moram fora dela: o meio da rolagem é o meio da faixa (no protótipo de 19/10, com as
+    /// teclas por cima da lista, a âncora mínima deixava a linha embaixo delas e o meio da rolagem errava na letra grande). Já
+    /// no lugar, não rola (uma animação que não anda não avisaria que parou).
     private func rolar(ate campo: CampoDoOrcamento, _ leitor: ScrollViewProxy) {
+        medidas.alvo = campo
+        medidas.tentativas = 0
+        guard !estaNoLugar(campo) else { return }
+        medidas.animando = !opcoes.reduzirMovimento
         if opcoes.reduzirMovimento { leitor.scrollTo(campo, anchor: .center) }
         else { withAnimation(.easeOut(duration: 0.25)) { leitor.scrollTo(campo, anchor: .center) } }
+    }
+
+    /// Confere a linha que a lista segura: fora do lugar, rola de novo até ela, sem animar (até 6 vezes). A rolagem e a linha
+    /// avisam em separado, e uma mudança só (a folha subindo, as teclas abrindo) dá vários avisos: a conferência fica para a
+    /// vez seguinte da fila principal, com as medidas da mudança inteira.
+    private func conferir(_ leitor: ScrollViewProxy) {
+        guard medidas.alvo != nil, !medidas.marcada else { return }
+        medidas.marcada = true
+        Task { @MainActor in
+            medidas.marcada = false
+            guard let alvo = medidas.alvo, alvo == ativo, !medidas.animando, let g = medidas.geometria, g.containerSize.height > 0,
+                  !estaNoLugar(alvo), medidas.tentativas < 6 else { return }
+            medidas.tentativas += 1
+            leitor.scrollTo(alvo, anchor: .center)
+        }
+    }
+
+    /// A linha está onde o `scrollTo` a põe: com o meio no meio da faixa à vista, que é a moldura da rolagem (na letra grande,
+    /// o que a lista tem por baixo da barra da folha fica fora dela, na margem de cima), ou, nas pontas da lista, o mais perto
+    /// dele que a rolagem chega.
+    private func estaNoLugar(_ campo: CampoDoOrcamento) -> Bool {
+        guard let meio = medidas.meio, meio.campo == campo, let g = medidas.geometria else { return false }
+        let centro = g.containerSize.height / 2, rolado = g.contentOffset.y + g.contentInsets.top
+        return abs(meio.y - centro) <= 1 || (meio.y < centro && rolado <= 0.5)
+            || (meio.y > centro && rolado >= g.contentSize.height - g.containerSize.height - 0.5)
+    }
+
+    /// Mede o meio da linha ativa no espaço da rolagem: é por ele que a conferência sabe onde a linha ficou.
+    private func medida(_ campo: CampoDoOrcamento, _ leitor: ScrollViewProxy) -> some View {
+        Color.clear
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .scrollView).midY } action: { y in
+                medidas.meio = (campo, y)
+                conferir(leitor)
+            }
+            .onDisappear { if medidas.meio?.campo == campo { medidas.meio = nil } }
     }
 
     // MARK: - Gravar
@@ -6940,7 +7043,7 @@ node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaTests 2>&1 | grep -E "Test run with|Executed|TEST EXECUTE" | tail -4
 ```
-Expected: `ℹ pass 49`, `ℹ fail 0`; sem aviso; `OrcamentoUITests` 26 de 26 (os 11 da tela e os 15 da folha); `✔ Test run with 142 tests in 25 suites passed`; `** TEST EXECUTE SUCCEEDED **`.
+Expected: `ℹ pass 49`, `ℹ fail 0`; sem aviso; `OrcamentoUITests` 27 de 27 (os 11 da tela e os 16 da folha); `✔ Test run with 142 tests in 25 suites passed`; `** TEST EXECUTE SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
@@ -6958,7 +7061,7 @@ git add app-ios/Custta/Assets.xcassets/Icones/alvo.imageset/Contents.json \
   app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift \
   scripts/icones-app-ios.mjs \
   tests/app-ios.test.cjs
-git commit -m "feat: folha do orçamento da obra" -m "A obra sem orçamento ganha \"Definir orçamento\" nas ações da fase (fora da vendida, como no site), e a tela Orçamento ganha o lápis na barra; os dois abrem a folha \"Orçamento da obra\" do mockup aprovado da etapa 3. Ela abre no modo salvo; no \"Definir\", em \"Só o total\", com as teclas já abertas e o \"Salvar\" apagado até ter valor. Por tópico, vêm os 21 tópicos fixos e depois os próprios, uma linha cada, com o total ao vivo: tocar numa linha abre as teclas encaixadas nela, ‹ › andam pelas linhas, \"Pronto\" fecha, e a linha ativa fica sempre inteira entre o alto da lista e as teclas, também quando a letra muda. Trocar para \"Só o total\" com o total vazio preenche com a soma dos tópicos e diz isso. Trocar de modo não grava; o \"Salvar\" grava o modo ativo pelo núcleo, guardando o que a folha não mostra. \"Tirar orçamento\" e o \"Salvar\" com tudo vazio fazem a pergunta do site; ao tirar, a tela Orçamento volta para a obra antes de a folha descer. Na letra de acessibilidade, o segmentado e o total rolam com a lista e o \"Salvar\" sai enquanto as teclas estão abertas. O VoiceOver ouve a linha a cada troca e tem as ações da linha ativa, e o teclado físico digita na linha ativa."
+git commit -m "feat: folha do orçamento da obra" -m "A obra sem orçamento ganha \"Definir orçamento\" nas ações da fase (fora da vendida, como no site), e a tela Orçamento ganha o lápis na barra; os dois abrem a folha \"Orçamento da obra\" do mockup aprovado da etapa 3. Ela abre no modo salvo; no \"Definir\", em \"Só o total\", com as teclas já abertas e o \"Salvar\" apagado até ter valor. Por tópico, vêm os 21 tópicos fixos e depois os próprios, uma linha cada, com o total ao vivo: tocar numa linha abre as teclas encaixadas nela, ‹ › andam pelas linhas, \"Pronto\" fecha, e a linha ativa fica sempre inteira entre o alto da lista e as teclas, também quando a letra muda. A folha confere onde a linha ativa ficou e, fora do meio da faixa, rola de novo até ela, até alguém rolar a lista: na letra de acessibilidade, a lista preguiçosa estima a altura das linhas que ainda não criou, e no iOS 26 a folha aberta com as teclas numa linha longe do alto a deixava fora da vista. Trocar para \"Só o total\" com o total vazio preenche com a soma dos tópicos e diz isso. Trocar de modo não grava; o \"Salvar\" grava o modo ativo pelo núcleo, guardando o que a folha não mostra. \"Tirar orçamento\" e o \"Salvar\" com tudo vazio fazem a pergunta do site; ao tirar, a tela Orçamento volta para a obra antes de a folha descer. Na letra de acessibilidade, o segmentado e o total rolam com a lista e o \"Salvar\" sai enquanto as teclas estão abertas. O VoiceOver ouve a linha a cada troca e tem as ações da linha ativa, e o teclado físico digita na linha ativa."
 ```
 
 ### Task 19: Leituras e auditorias do orçamento num job próprio
@@ -6968,7 +7071,8 @@ O job `laudo-etapa3` nasce no PR 1 (decisão 3: sem esperar um job passar de ~50
 - **As cenas da etapa 2 mudam de lugar.** A linha do orçamento da vitrine (modo total, dentro do previsto) tem 118 pt, e tudo o que vem depois dos indicadores desceu isso: a 640 pt, as cenas "obra, lista", "obra com Aumentar contraste" e "obra, linha aberta" (e a auditoria da linha aberta) mostravam outro pedaço da tela; a 758, o mesmo pedaço da etapa 2.
 - **O que fica fora das auditorias.** A barra das teclas encaixadas fica fora da de tipo dinâmico, como o título da folha (para no xxxLarge, com o Visualizador de Conteúdo Grande); o que a lista tem embaixo das teclas fica fora da de contraste, porque a faixa o esconde. Com a folha aberta, a de contraste mede a partir da barra da folha (a que contém `tituloDaFolha`), e não da primeira barra da árvore, que é a da tela por trás dela: os itens da barra da folha entram, e o que fica logo abaixo dela também, porque a folha não tem a borda de rolagem das telas.
 - **O fim do modo total é ponto cego da auditoria de tipo dinâmico.** Ela começa na letra pequena: na cena rolada perto do fim da lista longa (a 3000 pt), a lista encolhe para cima da rolagem e a tela fica vazia, com e sem o gancho de rolagem (os achados vêm sem elemento, e os prints deles são a tela vazia). A cena fica a 2200 (o gasto por tópico, com as mesmas linhas do fim), e a dica, a única peça que só o fim tem, ganha guarda Node: cresce com a letra e quebra linha, sem altura fixa.
-- **Os ajustes que a regressão e o Pro Max pediram.** (1) O que a lista da folha do orçamento tem acima do topo dela fica fora da de contraste: no Pro Max, com a faixa mais alta, linhas roladas para cima ficavam entre a barra e o total, atrás do cabeçalho. (2) A folga entre os dois prints do laudo passa de 1 px para 1 pt: a barra do cartão da tela Orçamento na maior letra, no Pro Max, virava "palavra" (dois valores que encolhem em cima). (3) A varredura da obra (`testLeituraDaObraRolando`) desce 118 pt (318…1618; a curta da CI, 518/1018), como as cenas da lista: a 640 e a 1200 a borda cortava uma palavra. (4) A tela Orçamento rolada na maior letra fica a 1637 pt: a 1500, no Pro Max, a barra da Estrutura ficava 6 pt abaixo da borda, sob o texto borrado pelo véu; a 1637 a borda cai no vão entre a Estrutura e a Fundação nos dois iPhones, e de 1615 a 1660 nenhum pixel muda longe das letras. (5) Na cena "obra com orçamento por tópico, na maior letra", o triângulo do aviso fica fora do laudo (`foraDoLaudo("iconeDoAviso")`, ligado por `-custta.foraDoLaudo`, só em Debug): o print sem texto o desenha 0,26 px mais baixo e a diferença virava "palavra" a 1,33; as palavras da linha seguem medidas. Desenhar os dois prints pelo mesmo `TextRenderer` resolveria a classe inteira, mas mexe no laudo de todas as cenas: fica como ideia, fora deste PR.
+- **Os ajustes que a regressão e o Pro Max pediram.** (1) O que a lista da folha do orçamento tem acima do topo dela fica fora da de contraste: no Pro Max, com a faixa mais alta, linhas roladas para cima ficavam entre a barra e o total, atrás do cabeçalho. (2) A folga entre os dois prints do laudo passa de 1 px para 1 pt: a barra do cartão da tela Orçamento na maior letra, no Pro Max, virava "palavra" (dois valores que encolhem em cima). O teste do medidor da etapa 2 vai junto (`testBordaQueMudaAteUmPontoNaoMudaACena`, antes `…UmPixel…`): na escala 3, até 3 px é a mesma cena; com 4, a cena mudou (a CI do iOS 26 achou o teste velho). (3) A varredura da obra (`testLeituraDaObraRolando`) desce 118 pt (318…1618; a curta da CI, 518/1018), como as cenas da lista: a 640 e a 1200 a borda cortava uma palavra. (4) A tela Orçamento rolada na maior letra fica a 1637 pt: a 1500, no Pro Max, a barra da Estrutura ficava 6 pt abaixo da borda, sob o texto borrado pelo véu; a 1637 a borda cai no vão entre a Estrutura e a Fundação nos dois iPhones, e de 1615 a 1660 nenhum pixel muda longe das letras. (5) Na cena "obra com orçamento por tópico, na maior letra", o triângulo do aviso fica fora do laudo (`foraDoLaudo("iconeDoAviso")`, ligado por `-custta.foraDoLaudo`, só em Debug): o print sem texto o desenha 0,26 px mais baixo e a diferença virava "palavra" a 1,33; as palavras da linha seguem medidas. Desenhar os dois prints pelo mesmo `TextRenderer` resolveria a classe inteira, mas mexe no laudo de todas as cenas: fica como ideia, fora deste PR.
+- **O total ao vivo na auditoria do iOS 26.** Na fronteira da letra de acessibilidade o total da folha muda de lugar (nela, rola dentro da lista; abaixo, fica fixo em cima), e a auditoria de tipo dinâmico, que troca o tamanho da letra, perde os três textos dele no iOS 26: "partially unsupported" e "Text clipped" em "Total", na soma e em "N de M tópicos com valor", com o print da CI mostrando os três grandes e inteiros (o segmentado, que muda de lugar junto, tem identificador em cada botão e passa; o cartão da tela Orçamento, com a mesma soma encolhida, também). Ficam fora só ali: no iOS 26, na letra de acessibilidade, dentro do quadro de `totalDoOrcamento`. A prova no lugar é o `OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar`: os três crescem mais de 1,5× em relação à letra padrão, a soma aparece inteira e nada corta.
 - **O que o laudo achou na primeira rodada:** o âmbar do escuro a 3,12 (Tarefa 14), uma palavra cortada pelo véu do topo (4,41; a cena foi para 606 pt), as linhas escondidas embaixo das teclas na de contraste (agora fora) e prints que mudavam longe das letras nas cenas da folha na maior letra (texto borrado pela barra da folha; cenas roladas).
 
 **Files:**
@@ -6977,6 +7081,7 @@ O job `laudo-etapa3` nasce no PR 1 (decisão 3: sem esperar um job passar de ~50
 - Modify: `app-ios/Custta/Identidade/Componentes.swift`
 - Modify: `app-ios/Custta/Telas/PecasDoOrcamento.swift`
 - Test (alterar): `app-ios/CusttaUITests/AuditoriaUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`
 - Test (alterar): `app-ios/CusttaUITests/LaudoDeContraste.swift`
 - Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
 - Test (alterar): `tests/app-ios.test.cjs`
@@ -7039,7 +7144,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
 ```diff
 --- a/app-ios/CusttaUITests/AuditoriaUITests.swift
 +++ b/app-ios/CusttaUITests/AuditoriaUITests.swift
-@@ -32,9 +32,21 @@ final class AuditoriaUITests: XCTestCase {
+@@ -32,26 +32,53 @@ final class AuditoriaUITests: XCTestCase {
          let folha = app.elemento("tituloDaFolha").exists
          let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
          let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
@@ -7060,10 +7165,28 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
 +        let lista = app.elemento("listaDoOrcamento")
 +        let topoDaLista = lista.exists ? lista.frame.minY : -.infinity
 +        let daLista = lista.exists ? lista.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
++        // O total ao vivo da folha do orçamento ("Total", a soma e "N de M tópicos com valor") muda de lugar na fronteira da
++        // letra de acessibilidade: nela, rola dentro da lista; abaixo dela, fica fixo em cima da lista. A auditoria de tipo
++        // dinâmico troca o tamanho da letra e, no iOS 26, perde os três textos, que não têm identificador (o segmentado muda
++        // de lugar junto e tem um por botão): achou "partially unsupported" e "Text clipped" nos três, com o print da CI
++        // mostrando os três grandes e inteiros (run 39693700450). Só ali, só na letra de acessibilidade e só no iOS 26; a
++        // prova de que crescem e não cortam é o OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar.
++        let total = app.elemento("totalDoOrcamento")
++        let quadroDoTotal = total.exists ? total.frame.insetBy(dx: -0.5, dy: -0.5) : .null
++        let totalMudaDeLugar = app.launchArguments.contains { $0.hasPrefix("UICTContentSizeCategoryAccessibility") }
++            && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
          try app.performAccessibilityAudit(for: tipos) { achado in
              guard let elemento = achado.element else {
                  Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
-@@ -47,11 +59,13 @@ final class AuditoriaUITests: XCTestCase {
+                 return false
+             }
+             let fora: Bool
++            let noTotal = totalMudaDeLugar && quadroDoTotal.contains(elemento.frame)
+             switch achado.auditType {
++            case .dynamicType where noTotal && achado.compactDescription.contains("partially"), .textClipped where noTotal:
++                fora = true
+             case .dynamicType:
+                 // Os títulos das barras param perto de 22 pt, como os do sistema (mockup da etapa 2), com o Visualizador de
                  // Conteúdo Grande: o pequeno da obra e o das folhas (na maior letra o nome da obra sai da barra da folha e
                  // fica no valor do título, para o VoiceOver). Pelo identificador, e não pela barra inteira: o que passa por
                  // baixo dela continua na auditoria de tipo dinâmico. Na folha do gasto, as teclas e o "Apagar" do arrastar
@@ -7078,7 +7201,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
                      || abas.contains { $0.contains(centro) }
              case .contrast:
                  if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
-@@ -61,7 +75,9 @@ final class AuditoriaUITests: XCTestCase {
+@@ -61,7 +88,9 @@ final class AuditoriaUITests: XCTestCase {
                  else if elemento.label == "—" { fora = true }
                  else {
                      let sobABarra = elemento.frame.minY < topoDoConteudo && !daBarra.contains(elemento.frame)
@@ -7089,7 +7212,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
                  }
              default:
                  fora = false
-@@ -138,6 +154,7 @@ final class AuditoriaUITests: XCTestCase {
+@@ -138,6 +167,7 @@ final class AuditoriaUITests: XCTestCase {
      }
  
      /// A folha do gasto (valor e cartão) e a linha aberta com o "Apagar", no escuro e no claro, com superfícies sólidas.
@@ -7097,7 +7220,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
      @MainActor func testContrasteDaFolhaNosDoisTemas() throws {
          for tema in temas {
              let combo = ["-custta.tema", tema] + solido + parado
-@@ -148,7 +165,7 @@ final class AuditoriaUITests: XCTestCase {
+@@ -148,7 +178,7 @@ final class AuditoriaUITests: XCTestCase {
                  app.terminate()
              }
              let lista = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
@@ -7106,7 +7229,7 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
              XCTAssertTrue(lista.buttons["apagar-g027"].waitForExistence(timeout: 10))
              try auditar(lista, [.contrast])
              lista.terminate()
-@@ -342,3 +359,63 @@ final class AuditoriaUITests: XCTestCase {
+@@ -342,3 +372,63 @@ final class AuditoriaUITests: XCTestCase {
          }
      }
  }
@@ -7170,6 +7293,74 @@ Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
 +        }
 +    }
 +}
+```
+
+Em `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
+@@ -1,4 +1,5 @@
+ import XCTest
++import UIKit
+ import notify
+ 
+ /* A folha "Orçamento da obra" (etapa 3, PR 1): definir por total e por tópico (com ‹ › e "Pronto"), trocar de modo com o
+@@ -278,6 +279,54 @@ extension OrcamentoUITests {
+         }
+     }
+ 
++    /// Na maior letra, o total ao vivo da folha (o "Total", a soma e "N de M tópicos com valor") cresce e nada nele corta. No
++    /// iOS 26, a auditoria de tipo dinâmico perde esses três textos quando eles mudam de lugar (dentro da lista na letra de
++    /// acessibilidade, fixos em cima dela abaixo disso) e a AuditoriaUITests os deixa de fora: esta é a prova no lugar dela.
++    /// Cada texto fica mais alto que na letra padrão (a soma, que encolhe para caber na largura, também); a soma tem a
++    /// proporção da letra padrão (inteira, sem "…": cortada, ela ficaria mais estreita para a altura); os três ficam um
++    /// embaixo do outro, dentro do cartão, cada um com a largura e a altura que o texto pede na fonte da maior letra.
++    func testNaMaiorLetraOTotalCresceSemCortar() throws {
++        let rotulo = "Total", soma = "R$\u{a0}1.019.847,85", comValor = "14 de 22 tópicos com valor"
++        func medir(_ argumentos: [String]) throws -> (cartao: CGRect, textos: [String: CGRect]) {
++            let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
++                               argumentos: ["-custta.folha", "topicos"] + argumentos)
++            defer { app.terminate() }
++            let total = app.elemento("totalDoOrcamento")
++            XCTAssertTrue(total.waitForExistence(timeout: 10))
++            Thread.sleep(forTimeInterval: 1)
++            var textos: [String: CGRect] = [:]
++            for texto in total.staticTexts.allElementsBoundByIndex { textos[texto.label] = texto.frame }
++            Swift.print("total | \(argumentos.isEmpty ? "padrão" : "maior letra") | \(total.frame) | \(textos)")
++            return (total.frame, textos)
++        }
++        let padrao = try medir([]), grande = try medir(maiorLetra)
++        for nome in [rotulo, soma, comValor] {
++            let antes = try XCTUnwrap(padrao.textos[nome], "\(nome) na letra padrão")
++            let depois = try XCTUnwrap(grande.textos[nome], "\(nome) na maior letra")
++            XCTAssertGreaterThan(depois.height, antes.height * 1.5, "\(nome): cresce com a letra")
++            XCTAssertTrue(grande.cartao.insetBy(dx: -0.5, dy: -0.5).contains(depois), "\(nome): dentro do cartão")
++        }
++        let r = try XCTUnwrap(grande.textos[rotulo]), s = try XCTUnwrap(grande.textos[soma]), c = try XCTUnwrap(grande.textos[comValor])
++        XCTAssertLessThanOrEqual(r.maxY, s.minY + 0.5, "a soma embaixo do \"Total\"")
++        XCTAssertLessThanOrEqual(s.maxY, c.minY + 0.5, "\"N de M tópicos com valor\" embaixo da soma")
++        let somaPadrao = try XCTUnwrap(padrao.textos[soma])
++        XCTAssertGreaterThanOrEqual(s.width / s.height, somaPadrao.width / somaPadrao.height * 0.97, "a soma inteira")
++        // O "Total" numa linha e a frase em quantas linhas pedir, na fonte da maior letra e na largura de cada um.
++        let ax5 = UITraitCollection(preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge)
++        func precisa(_ texto: String, _ estilo: UIFont.TextStyle, _ peso: UIFont.Weight, largura: CGFloat) -> CGSize {
++            let descritor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: estilo, compatibleWith: ax5)
++                .addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: peso]])
++            return (texto as NSString).boundingRect(with: CGSize(width: largura, height: .greatestFiniteMagnitude),
++                                                     options: [.usesLineFragmentOrigin, .usesFontLeading],
++                                                     attributes: [.font: UIFont(descriptor: descritor, size: 0)], context: nil).size
++        }
++        let pedeORotulo = precisa(rotulo, .subheadline, .semibold, largura: .greatestFiniteMagnitude)
++        XCTAssertGreaterThanOrEqual(r.width, pedeORotulo.width - 2, "o \"Total\" inteiro")
++        XCTAssertGreaterThanOrEqual(r.height, pedeORotulo.height - 2, "o \"Total\" inteiro")
++        XCTAssertGreaterThanOrEqual(c.height, precisa(comValor, .footnote, .regular, largura: c.width).height - 2,
++                                    "\"N de M tópicos com valor\" com todas as linhas")
++    }
++
+     /// A linha ativa fica inteira à vista entre o alto da lista e as teclas a cada ›, nas 71 linhas (os 21 fixos e os 50
+     /// próprios, o limite das rules), também ao abrir; longe das pontas da lista, no meio da faixa (decisão 2).
+     private func varrer(letraGrande: Bool) {
 ```
 
 Em `app-ios/CusttaUITests/LaudoDeContraste.swift`:
@@ -7367,6 +7558,37 @@ Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
  /* O medidor com imagens sintéticas: sem abrir o app. */
  final class LaudoDeContrasteTests: XCTestCase {
      private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),
+@@ -553,19 +631,23 @@ final class LaudoDeContrasteTests: XCTestCase {
+         }
+     }
+ 
+-    /// O que muda 1 px entre os prints longe das letras (o valor que encolhe na maior letra empurra o que vem embaixo)
+-    /// é a mesma cena: o separador não muda a cena e a borda forte não vira palavra. Com 2 px, a cena mudou.
+-    func testBordaQueMudaUmPixelNaoMudaACena() throws {
++    /// O que muda até 1 pt entre os prints longe das letras (o valor que encolhe na maior letra empurra o que vem embaixo
++    /// 1 px, e na tela Orçamento há mais de um valor em cima) é a mesma cena: o separador não muda a cena e a borda forte
++    /// não vira palavra. Na escala 3, a folga é de 3 px; com 4 px, a cena mudou.
++    func testBordaQueMudaAteUmPontoNaoMudaACena() throws {
+         let separador: (UInt8, UInt8, UInt8) = (0x26, 0x40, 0x38), borda: (UInt8, UInt8, UInt8) = (0x80, 0x90, 0x88)
+         func retratos(_ desce: CGFloat, _ cor: (UInt8, UInt8, UInt8)) -> (Retrato, Retrato) {
+             (retrato(200, 120, fundo: fundo, pintar: letras.map { ($0, branco) } + [(CGRect(x: 100, y: 100, width: 90, height: 1), cor)]),
+              retrato(200, 120, fundo: fundo, pintar: [(CGRect(x: 100, y: 100 + desce, width: 90, height: 1), cor)]))
+         }
+-        for cor in [separador, borda] {
+-            let (normal, semTexto) = retratos(1, cor)
+-            XCTAssertEqual(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).count, 1, "só as três letras")
++        for desce in 1...3 {
++            for cor in [separador, borda] {
++                let (normal, semTexto) = retratos(CGFloat(desce), cor)
++                XCTAssertEqual(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3).count, 1,
++                               "\(desce) px: só as três letras")
++            }
+         }
+-        let (normal, semTexto) = retratos(2, separador)
++        let (normal, semTexto) = retratos(4, separador)
+         XCTAssertThrowsError(try LaudoDeContraste.medir(normal: normal, semTexto: semTexto, escala: 3)) { erro in
+             XCTAssertTrue(erro is LaudoDeContraste.CenaNaoDeterministica)
+         }
 ```
 
 Em `tests/app-ios.test.cjs`:
@@ -7636,9 +7858,9 @@ Run:
 ```bash
 node --test tests/app-ios.test.cjs tests/workflow.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
-xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaTests/OrcamentoEm375Tests 2>&1 | grep -E "Test run with|Executed|TEST EXECUTE" | tail -4
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaTests/OrcamentoEm375Tests -only-testing:CusttaUITests/LaudoDeContrasteTests -only-testing:CusttaUITests/OrcamentoUITests/testNaMaiorLetraOTotalCresceSemCortar 2>&1 | grep -E "Test run with|Executed|TEST EXECUTE" | tail -4
 ```
-Expected: `ℹ pass 51`, `ℹ fail 0`; sem aviso; `testLeituraDoOrcamento` com 12 cenas e 0 palavra abaixo de 4,5 (pior 4,56, o chip verde do claro), `testLeituraDoOrcamentoNaMaiorLetra` com 6 cenas (pior 5,28), as duas auditorias sem reprova (fora, os de sempre: a cápsula, os títulos das barras e o "Pronto"); `OrcamentoEm375Tests` 2 de 2; `** TEST EXECUTE SUCCEEDED **`. No Pro Max, as mesmas quatro (ver o ponto de controle).
+Expected: `ℹ pass 51`, `ℹ fail 0`; sem aviso; `testLeituraDoOrcamento` com 12 cenas e 0 palavra abaixo de 4,5 (pior 4,56, o chip verde do claro), `testLeituraDoOrcamentoNaMaiorLetra` com 6 cenas (pior 5,28), as duas auditorias sem reprova (fora, os de sempre: a cápsula, os títulos das barras e o "Pronto"; no iOS 26, também os três textos do total ao vivo na maior letra); `OrcamentoEm375Tests` 2 de 2; `LaudoDeContrasteTests` 5 de 5; o `testNaMaiorLetraOTotalCresceSemCortar` passa; `** TEST EXECUTE SUCCEEDED **`. No Pro Max, as mesmas quatro (ver o ponto de controle).
 
 - [ ] **Step 5: Commit**
 
@@ -7648,11 +7870,12 @@ git add .github/workflows/app-ios.yml \
   app-ios/Custta/Telas/PecasDoOrcamento.swift \
   app-ios/CusttaTests/OrcamentoEm375Tests.swift \
   app-ios/CusttaUITests/AuditoriaUITests.swift \
+  app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift \
   app-ios/CusttaUITests/LaudoDeContraste.swift \
   app-ios/CusttaUITests/LeituraNoVidroUITests.swift \
   tests/app-ios.test.cjs \
   tests/workflow.test.cjs
-git commit -m "ci: leituras e auditorias do orçamento num job próprio" -m "O app nativo ganha o job laudo-etapa3, que nasce no PR 1 da etapa 3 (decisão 3 do conselho, sem esperar um job passar de ~50 min): as leituras sobre o vidro e as auditorias de acessibilidade das telas do orçamento, num simulador próprio, em paralelo com os outros. No escuro e no claro, a linha na obra, a tela Orçamento no alto, rolada e no modo total, e a folha com as teclas encaixadas, por tópico e no \"Definir\"; na maior letra, as mesmas telas, e com Aumentar contraste, a tela Orçamento. O laudo e o auditoria pulam essas leituras e auditorias, e a guarda dos jobs passa a contar o job novo. A barra das teclas encaixadas fica fora da auditoria de tipo dinâmico, como o título da folha (para no xxxLarge, com o Visualizador de Conteúdo Grande), e o que a lista tem embaixo das teclas ou em cima do cabeçalho fixo da folha (o segmentado e o total) fica fora da de contraste, porque está fora da vista (no Pro Max, com a faixa mais alta, as linhas roladas para cima ficam entre a barra e o total). Com a folha aberta, a de contraste mede a partir da barra da folha, e não da primeira barra da árvore, que é a da tela por trás dela: os itens da barra da folha entram, e o que fica logo abaixo dela também, porque a folha não tem a borda de rolagem das telas. No modo total, a auditoria na maior letra fica no meio do gasto por tópico, e não no fim: ali, enquanto ela diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, e os achados saem sem elemento; a dica, que só o fim tem, ganha uma guarda de código (cresce com a letra, quebra linha e não tem altura fixa). As cenas da lista da obra da etapa 2 descem de 640 para 758 pt, e a varredura da obra rolando, de 200…1500 para 318…1618, a altura da linha do orçamento da vitrine, para medir o mesmo pedaço da tela de antes (a 640 e a 1200, a borda cortava uma palavra). O laudo casa cada pixel com os de até 1 pt em cima e embaixo no print sem texto, e não só 1 px: com mais de um valor que encolhe em cima, como na tela Orçamento na maior letra no Pro Max, o que vem embaixo muda mais de 1 px com o texto apagado. Na maior letra, a tela Orçamento rolada passa de 1500 para 1637 pt, com a borda de cima no vão entre dois tópicos nos dois iPhones: a 1500, no Pro Max, a barra de um tópico ficava logo abaixo da borda, com texto borrado pelo véu em cima, e o alto dela mudava entre os dois prints. A tabela de exceções do laudo ganha uma entrada, só para a obra com orçamento na maior letra e só para o triângulo do aviso: no Pro Max, o print sem texto desenha o triângulo uma fração de pixel mais baixo, e as bordas dele viravam letra com ele mesmo de fundo; a frase do aviso continua medida. Para isso, o foraDoLaudo do app ganha um nome que uma cena liga, só em Debug. Num iPhone de 375 pt, que nenhum simulador do laudo tem, um teste de unidade confere que nenhuma peça do orçamento passa da largura na maior letra, com e sem negrito."
+git commit -m "ci: leituras e auditorias do orçamento num job próprio" -m "O app nativo ganha o job laudo-etapa3, que nasce no PR 1 da etapa 3 (decisão 3 do conselho, sem esperar um job passar de ~50 min): as leituras sobre o vidro e as auditorias de acessibilidade das telas do orçamento, num simulador próprio, em paralelo com os outros. No escuro e no claro, a linha na obra, a tela Orçamento no alto, rolada e no modo total, e a folha com as teclas encaixadas, por tópico e no \"Definir\"; na maior letra, as mesmas telas, e com Aumentar contraste, a tela Orçamento. O laudo e o auditoria pulam essas leituras e auditorias, e a guarda dos jobs passa a contar o job novo. A barra das teclas encaixadas fica fora da auditoria de tipo dinâmico, como o título da folha (para no xxxLarge, com o Visualizador de Conteúdo Grande), e o que a lista tem embaixo das teclas ou em cima do cabeçalho fixo da folha (o segmentado e o total) fica fora da de contraste, porque está fora da vista (no Pro Max, com a faixa mais alta, as linhas roladas para cima ficam entre a barra e o total). No iOS 26, na letra de acessibilidade, as auditorias de tipo dinâmico e de texto cortado deixam de fora o total ao vivo da folha (o \"Total\", a soma e \"N de M tópicos com valor\"): ele muda de lugar na fronteira dessa letra (nela, rola com a lista; abaixo dela, fica fixo em cima da lista), e a auditoria, que troca o tamanho da letra, perde os três textos, que não têm identificador. No lugar, um teste de tela mostra que, na maior letra, os três crescem, a soma aparece inteira e nada corta. Com a folha aberta, a de contraste mede a partir da barra da folha, e não da primeira barra da árvore, que é a da tela por trás dela: os itens da barra da folha entram, e o que fica logo abaixo dela também, porque a folha não tem a borda de rolagem das telas. No modo total, a auditoria na maior letra fica no meio do gasto por tópico, e não no fim: ali, enquanto ela diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, e os achados saem sem elemento; a dica, que só o fim tem, ganha uma guarda de código (cresce com a letra, quebra linha e não tem altura fixa). As cenas da lista da obra da etapa 2 descem de 640 para 758 pt, e a varredura da obra rolando, de 200…1500 para 318…1618, a altura da linha do orçamento da vitrine, para medir o mesmo pedaço da tela de antes (a 640 e a 1200, a borda cortava uma palavra). O laudo casa cada pixel com os de até 1 pt em cima e embaixo no print sem texto, e não só 1 px: com mais de um valor que encolhe em cima, como na tela Orçamento na maior letra no Pro Max, o que vem embaixo muda mais de 1 px com o texto apagado. O teste do medidor cobra o limite novo: até 1 pt é a mesma cena; 1 px além, outra. Na maior letra, a tela Orçamento rolada passa de 1500 para 1637 pt, com a borda de cima no vão entre dois tópicos nos dois iPhones: a 1500, no Pro Max, a barra de um tópico ficava logo abaixo da borda, com texto borrado pelo véu em cima, e o alto dela mudava entre os dois prints. A tabela de exceções do laudo ganha uma entrada, só para a obra com orçamento na maior letra e só para o triângulo do aviso: no Pro Max, o print sem texto desenha o triângulo uma fração de pixel mais baixo, e as bordas dele viravam letra com ele mesmo de fundo; a frase do aviso continua medida. Para isso, o foraDoLaudo do app ganha um nome que uma cena liga, só em Debug. Num iPhone de 375 pt, que nenhum simulador do laudo tem, um teste de unidade confere que nenhuma peça do orçamento passa da largura na maior letra, com e sem negrito."
 ```
 
 ### Task 20: Conferência cruzada do orçamento
@@ -8017,4 +8240,4 @@ git add docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
 git commit -m "docs: checklist do aparelho da etapa 3 do app nativo" -m "O checklist que o Giovani roda no iPhone a cada build da etapa 3, na conta de sempre, no estilo do da etapa 2: antes do primeiro build, a cópia dos dados e o PR 0 do site no ar; e os itens do PR 1, o orçamento. Na obra, o \"Definir orçamento\" e a linha nos três níveis; a tela Orçamento, com o cartão, o \"Por tópico\", o que está fora e o modo total; a folha, com as teclas encaixadas, a troca de modo, o tirar e o salvar vazio, o teto, o toque duplo, o modo avião e a mudança vinda do site com a folha aberta; a maior letra; e a acessibilidade de cada tela, com VoiceOver, Controle por Voz e Controle Assistivo, mais o âmbar sobre o vidro, no escuro e no claro, e o secundário mais claro das telas de entrada no escuro."
 ```
 
-**Ponto de controle do PR 1:** CI verde (`nucleo`, `app`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim do PR, o núcleo com 219 testes, o `CusttaTests` com 144 em 26 suítes e o `OrcamentoUITests` com 26); no Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` verdes, e as leituras e auditorias do orçamento também no Pro Max; o Verniz confere as telas novas lado a lado com o mockup (parte 1, seções 1 a 3), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 1" do checklist na conta de sempre. O que só o iOS 26 prova, e o Mac não tem: a cena da tela Orçamento a 2200 pt na maior letra (a folga até o fim, ~1500 pt no iOS 27), a linha ativa que volta ao meio na troca de letra e as cenas da folha, os itens da barra da folha que agora entram na auditoria de contraste, e a rolagem da folha sem Reduzir movimento (o teste novo confere lá o estado final). O âmbar do escuro e as cinco exceções ao mockup foram decididos pelo Giovani em 21/10 (Decisões do conselho).
+**Ponto de controle do PR 1:** CI verde (`nucleo`, `app`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim do PR, o núcleo com 219 testes, o `CusttaTests` com 144 em 26 suítes e o `OrcamentoUITests` com 28); no Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` verdes, e as leituras e auditorias do orçamento também no Pro Max; o Verniz confere as telas novas lado a lado com o mockup (parte 1, seções 1 a 3), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 1" do checklist na conta de sempre. Na CI do iOS 26, antes das correções (run 39693700450), passaram a cena da tela Orçamento a 2200 pt na maior letra, a linha ativa que volta ao meio na troca de letra, os itens da barra da folha na auditoria de contraste e a rolagem da folha sem Reduzir movimento; reprovaram o teste do medidor da etapa 2 e o total ao vivo na auditoria (Tarefa 19) e a linha ativa ao abrir a folha na maior letra (Tarefa 18), corrigidos nelas. Só o iOS 26 prova, e o Mac não tem: a conferência da linha ativa na lista preguiçosa e a exceção do total, que só roda lá. O âmbar do escuro e as cinco exceções ao mockup foram decididos pelo Giovani em 21/10 (Decisões do conselho).

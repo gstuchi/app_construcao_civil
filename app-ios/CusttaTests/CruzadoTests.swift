@@ -7,12 +7,13 @@ import CusttaNucleo
 /* Metade app da conferência cruzada (tests/app-ios/cruzado.mjs): entra na conta que o "site" criou, carrega o
    documento e segue os roteiros do site pelas mesmas regras das telas: o dos gastos (lançar no Pix e no cartão
    parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda), o da obra (criar, editar, marcar como
-   pronta, vender, desfazer a venda e apagar), o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar) e
+   pronta, vender, desfazer a venda e apagar), o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar),
    o das folhas de origem (a edição empurrada no A pagar e no detalhe do tópico pelo rascunho do gasto, e o apagar de um
-   gasto só). O núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador,
-   como um toque em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O
-   roteiro confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada
-   do site se perdeu; no orçamento, antes e a cada passo, e nas folhas, a cada passo, pelo auxiliar do roteiro. */
+   gasto só) e o dos afazeres (adicionar pelo conferirAfazer, marcar, desmarcar e apagar, como a tela Afazeres). O núcleo
+   confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador, como um toque em
+   "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O roteiro
+   confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada do site
+   se perdeu; no orçamento e nos afazeres, antes e a cada passo, e nas folhas, a cada passo, pelo auxiliar do roteiro. */
 @MainActor
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["CUSTTA_CRUZADO"] == "1"))
 struct CruzadoTests {
@@ -88,8 +89,7 @@ struct CruzadoTests {
         // chegar o eco da gravação anterior: o estado já é o documento relido, que a leitura normaliza como a do site.
         let roteiroDoOrcamento = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_ORCAMENTO"]).utf8))
         for (i, passo) in try #require(roteiroDoOrcamento.comoLista).enumerated() {
-            for _ in 0..<200 where !mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) { try await Task.sleep(for: .milliseconds(50)) }
-            try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do passo \(i + 1) do orçamento não chegou")
+            try await esperarOEco(s, antesDo: "passo \(i + 1) do orçamento")
             let p = try #require(passo.comoObjeto)
             let obraId = try #require(p["obra"]?.comoTexto)
             let obra = try #require(s.estado.obras.first { $0.id == obraId }, "a obra \(obraId) do roteiro")
@@ -136,11 +136,49 @@ struct CruzadoTests {
             try await s.aplicar(try #require(novo, "o passo \(i + 1) das folhas achou o gasto")).confirmada()
             try await pedirConferencia(i + 1, de: "folhas")
         }
+        // Os afazeres (etapa 3, PR 3), depois do orçamento e das folhas inteiros e do mesmo jeito: cada passo como a tela
+        // Afazeres grava (o texto pelo conferirAfazer, o círculo que marca e desmarca, o arrastar que apaga), a partir do
+        // documento relido, e o roteiro confere o documento logo depois de o servidor confirmar; antes do primeiro, guarda o
+        // documento (o passo 0).
+        try await pedirConferencia(0, de: "afazeres")
+        let roteiroDosAfazeres = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_AFAZERES"]).utf8))
+        for (i, passo) in try #require(roteiroDosAfazeres.comoLista).enumerated() {
+            try await esperarOEco(s, antesDo: "passo \(i + 1) dos afazeres")
+            let p = try #require(passo.comoObjeto)
+            let acao = try #require(p["acao"]?.comoTexto), obraId = try #require(p["obra"]?.comoTexto)
+            let novo: Estado?
+            switch acao {
+            case "adicionar":
+                guard case .ok(let texto) = conferirAfazer(try #require(p["texto"]?.comoTexto)) else {
+                    Issue.record("o afazer do passo \(i + 1) não passou no conferirAfazer"); return
+                }
+                novo = s.estado.adicionandoAfazer(texto, id: try #require(p["id"]?.comoTexto), naObra: obraId)
+            case "marcar", "desmarcar":
+                let id = try #require(p["afazer"]?.comoTexto)
+                let afazer = try #require(s.estado.obras.first(where: { $0.id == obraId })?.afazeres.first(where: { $0.id == id }), "o afazer \(id)")
+                try #require(afazer.feito == (acao == "desmarcar"), "\(acao) \(id): o afazer no estado de antes")
+                novo = s.estado.alternandoAfazer(id, naObra: obraId)
+            default:
+                novo = s.estado.apagandoAfazer(try #require(p["afazer"]?.comoTexto), daObra: obraId)
+            }
+            try await s.aplicar(try #require(novo, "o passo \(i + 1) dos afazeres achou o que mudar")).confirmada()
+            try await pedirConferencia(i + 1, de: "afazeres")
+        }
         s.parar()
     }
 
-    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0), ou o do passo n
-    /// das folhas.
+    /// Espera o eco da gravação anterior: a pessoa abre a folha ou a tela depois de ele chegar, e o estado já é o documento
+    /// relido, que a leitura normaliza como a do site.
+    private func esperarOEco(_ s: Sincronizador, antesDo passo: String) async throws {
+        for _ in 0..<200 {
+            guard !mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) else { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do \(passo) não chegou")
+    }
+
+    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0), o do passo n
+    /// das folhas, e o do passo n dos afazeres, ou o de antes deles (0).
     private func pedirConferencia(_ n: Int, de roteiro: String = "orcamento") async throws {
         var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/\(roteiro)/\(n)")))
         pedido.httpMethod = "POST"

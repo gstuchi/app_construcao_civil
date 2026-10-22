@@ -131,6 +131,11 @@ extension OrcamentoUITests {
         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total")
         app.buttons["modoDoOrcamento-Por tópico"].tap()
         XCTAssertEqual(vao(ate: "totalDoOrcamento"), 12, accuracy: 0.5, "Por tópico")
+        // E sem os 10 do "Só o total" embaixo do Total ao vivo: dele até a primeira linha, só os 8 do alto da lista.
+        let primeira = app.elemento("linhaOrc-terreno")
+        XCTAssertTrue(primeira.waitForExistence(timeout: 5), "linhaOrc-terreno")
+        XCTAssertEqual(primeira.frame.minY - app.elemento("totalDoOrcamento").frame.maxY, 8, accuracy: 0.5,
+                       "Por tópico: do Total ao vivo à primeira linha")
         soTotal.tap()
         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total, de volta")
     }

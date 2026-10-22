@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 import notify
 
 /* A folha "Orçamento da obra" (etapa 3, PR 1): definir por total e por tópico (com ‹ › e "Pronto"), trocar de modo com o
@@ -276,6 +277,64 @@ extension OrcamentoUITests {
             XCTAssertTrue(!linha.exists || abs(linha.frame.midY - meio) > 40, "\(modo): a lista não volta para a Elétrica")
             app.terminate()
         }
+    }
+
+    /// Na maior letra, o total ao vivo da folha (o "Total", a soma e "N de M tópicos com valor") cresce e nada nele corta. No
+    /// iOS 26, as auditorias de tipo dinâmico e de texto cortado acusam esses três textos (que mudam de lugar: dentro da lista
+    /// na letra de acessibilidade, fixos em cima dela abaixo disso), e a AuditoriaUITests os deixa de fora pelo identificador:
+    /// esta é a prova no lugar dela, e acha cada texto pelo mesmo identificador, nas duas letras.
+    /// Cada texto fica mais alto que na letra padrão (a soma, que encolhe para caber na largura, também); a soma tem a
+    /// proporção da letra padrão (inteira, sem "…": cortada, ela ficaria mais estreita para a altura); os três ficam um
+    /// embaixo do outro, dentro do cartão, cada um com a largura e a altura que o texto pede na fonte da maior letra.
+    func testNaMaiorLetraOTotalCresceSemCortar() throws {
+        let rotulo = "Total", soma = "R$\u{a0}1.019.847,85", comValor = "14 de 22 tópicos com valor"
+        let porIdentificador = ["totalDoOrcamento-rotulo": rotulo, "totalDoOrcamento-soma": soma, "totalDoOrcamento-comValor": comValor]
+        func medir(_ argumentos: [String]) throws -> (cartao: CGRect, textos: [String: CGRect]) {
+            let letra = argumentos.isEmpty ? "padrão" : "maior letra"
+            let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
+                               argumentos: ["-custta.folha", "topicos"] + argumentos)
+            defer { app.terminate() }
+            let total = app.elemento("totalDoOrcamento")
+            XCTAssertTrue(total.waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1)
+            var textos: [String: CGRect] = [:]
+            for (id, texto) in porIdentificador {
+                let elemento = total.staticTexts.matching(identifier: id).firstMatch
+                XCTAssertTrue(elemento.exists, "\(id) na letra \(letra)")
+                guard elemento.exists else { continue }
+                XCTAssertEqual(elemento.identifier, id, "\(id) na letra \(letra)")
+                XCTAssertEqual(elemento.label, texto, "\(id) na letra \(letra)")
+                textos[texto] = elemento.frame
+            }
+            Swift.print("total | \(letra) | \(total.frame) | \(total.label) | \(textos)")
+            return (total.frame, textos)
+        }
+        let padrao = try medir([]), grande = try medir(maiorLetra)
+        for nome in [rotulo, soma, comValor] {
+            let antes = try XCTUnwrap(padrao.textos[nome], "\(nome) na letra padrão")
+            let depois = try XCTUnwrap(grande.textos[nome], "\(nome) na maior letra")
+            XCTAssertGreaterThan(depois.height, antes.height * 1.5, "\(nome): cresce com a letra")
+            XCTAssertTrue(grande.cartao.insetBy(dx: -0.5, dy: -0.5).contains(depois), "\(nome): dentro do cartão")
+        }
+        let r = try XCTUnwrap(grande.textos[rotulo]), s = try XCTUnwrap(grande.textos[soma]), c = try XCTUnwrap(grande.textos[comValor])
+        XCTAssertLessThanOrEqual(r.maxY, s.minY + 0.5, "a soma embaixo do \"Total\"")
+        XCTAssertLessThanOrEqual(s.maxY, c.minY + 0.5, "\"N de M tópicos com valor\" embaixo da soma")
+        let somaPadrao = try XCTUnwrap(padrao.textos[soma])
+        XCTAssertGreaterThanOrEqual(s.width / s.height, somaPadrao.width / somaPadrao.height * 0.97, "a soma inteira")
+        // O "Total" numa linha e a frase em quantas linhas pedir, na fonte da maior letra e na largura de cada um.
+        let ax5 = UITraitCollection(preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge)
+        func precisa(_ texto: String, _ estilo: UIFont.TextStyle, _ peso: UIFont.Weight, largura: CGFloat) -> CGSize {
+            let descritor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: estilo, compatibleWith: ax5)
+                .addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: peso]])
+            return (texto as NSString).boundingRect(with: CGSize(width: largura, height: .greatestFiniteMagnitude),
+                                                     options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                                     attributes: [.font: UIFont(descriptor: descritor, size: 0)], context: nil).size
+        }
+        let pedeORotulo = precisa(rotulo, .subheadline, .semibold, largura: .greatestFiniteMagnitude)
+        XCTAssertGreaterThanOrEqual(r.width, pedeORotulo.width - 2, "o \"Total\" inteiro")
+        XCTAssertGreaterThanOrEqual(r.height, pedeORotulo.height - 2, "o \"Total\" inteiro")
+        XCTAssertGreaterThanOrEqual(c.height, precisa(comValor, .footnote, .regular, largura: c.width).height - 2,
+                                    "\"N de M tópicos com valor\" com todas as linhas")
     }
 
     /// A linha ativa fica inteira à vista entre o alto da lista e as teclas a cada ›, nas 71 linhas (os 21 fixos e os 50

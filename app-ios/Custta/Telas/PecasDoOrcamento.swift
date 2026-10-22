@@ -139,6 +139,7 @@ struct AvisoDoOrcamento: View {
                 .resizable()
                 .frame(width: lado, height: lado)
                 .padding(.top, tamanho.isAccessibilitySize ? letra * 0.15 : 2)
+                .foraDoLaudo("iconeDoAviso")
             Text(texto)
                 .font(.subheadline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)

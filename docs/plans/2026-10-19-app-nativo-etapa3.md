@@ -7787,8 +7787,8 @@ Em `tests/workflow.test.cjs`:
 
 - [ ] **Step 2: Ver falhar**
 
-Run: `node --test tests/workflow.test.cjs 2>&1 | grep -m1 AssertionError`
-Expected: `AssertionError [ERR_ASSERTION]: build, testes, os testes da etapa 3, os três laudos e auditoria sem assinatura` (5 em vez de 7). As cenas e o teste de 375 pt são medidas novas, sem vermelho contra a Tarefa 18; a força delas está no próprio laudo.
+Run: `node --test tests/workflow.test.cjs 2>&1 | grep -m1 '^AssertionError'`
+Expected: `AssertionError [ERR_ASSERTION]: build, testes, os testes da etapa 3, os três laudos e auditoria sem assinatura` (5 em vez de 7). O `^` pula a linha `throw new AssertionError(obj);` que o Node imprime antes. As cenas e o teste de 375 pt são medidas novas, sem vermelho contra a Tarefa 18; a força delas está no próprio laudo.
 
 - [ ] **Step 3: Implementar**
 
@@ -8341,7 +8341,7 @@ Em `tests/app-ios/cruzado.mjs`:
 Com o `cruzado.mjs` novo e o `CruzadoTests.swift` de antes (o app ainda não pede a conferência de cada passo):
 
 Run: `CUSTTA_SIMULADOR=<udid> npm run test:app-ios:cruzado 2>&1 | grep -m1 AssertionError`
-Expected: `AssertionError [ERR_ASSERTION]: o app pediu a conferência de cada passo do orçamento, na ordem`.
+Expected: `AssertionError [ERR_ASSERTION]: o app pediu a conferência do documento antes do orçamento e de cada passo dele, na ordem`.
 
 - [ ] **Step 3: Ver passar**
 

@@ -3,22 +3,15 @@ import CusttaNucleo
 
 /* O teclado de valor (teclado.js, mockup da etapa 2, parte 2): centavos entram pela direita, "00" e apagar, teto de
    R$ 99.999.999,99 (a tecla que passaria do teto é ignorada). As teclas vêm na ordem do telefone, 1 2 3 em cima
-   (sugestão aprovada; o site usa a da calculadora). Serve ao gasto, à venda, ao valor estimado e ao orçamento: quem usa
-   dá o rótulo do botão ("Avançar", "Pronto") e o que fazer com o valor. O botão fica desabilitado no zero, como no site;
-   nos valores opcionais da obra (valor estimado e orçamento), zero vale: é como apagar o valor. */
+   (sugestão aprovada; o site usa a da calculadora). Serve ao gasto, à venda e ao valor estimado e ao orçamento da obra
+   nova: quem usa dá o rótulo do botão ("Avançar", "Pronto") e o que fazer com o valor. O botão fica desabilitado no zero,
+   como no site; nos valores opcionais da obra (valor estimado e orçamento), zero vale: é como apagar o valor. As teclas
+   são a GradeDeTeclas, a mesma das teclas encaixadas da folha do orçamento (etapa 3). */
 struct TecladoDeValor: View {
     @Binding var centavos: Int
     let acao: String
     var permiteZero = false
     let confirmar: () -> Void
-    @Environment(\.paleta) private var paleta
-
-    private static let linhas: [[TeclaDeValor]] = [
-        [.digito(1), .digito(2), .digito(3)],
-        [.digito(4), .digito(5), .digito(6)],
-        [.digito(7), .digito(8), .digito(9)],
-        [.duploZero, .digito(0), .apagar],
-    ]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,18 +19,7 @@ struct TecladoDeValor: View {
             VisorDoValor(centavos: centavos)
             Spacer(minLength: 12)
             Spacer(minLength: 0)
-            Grid(horizontalSpacing: 10, verticalSpacing: 10) {
-                ForEach(Self.linhas.indices, id: \.self) { i in
-                    GridRow {
-                        ForEach(Self.linhas[i], id: \.nome) { tecla in
-                            // A letra das teclas cresce até o AX2 (mockup): o limite fica por fora, para a medida de dentro
-                            // (@ScaledMetric) já ler o tamanho limitado.
-                            TeclaDoValor(tecla: tecla) { tocar(tecla) }
-                                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-                        }
-                    }
-                }
-            }
+            GradeDeTeclas(centavos: $centavos, tamanho: .padrao)
             Button(acao, action: confirmar)
                 .buttonStyle(BotaoDaFolha())
                 .disabled(centavos == 0 && !permiteZero)
@@ -47,12 +29,57 @@ struct TecladoDeValor: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 0)
     }
+}
+
+/// O tamanho das teclas: o do TecladoDeValor, que ocupa a folha, e o das teclas encaixadas embaixo da folha do orçamento
+/// (mockup da etapa 3, `.kv`). As duas crescem com a letra até o AX2.
+enum TamanhoDasTeclas: Sendable {
+    /// Teclas de 62 pt (até 72 na letra grande), raio 20, 10 de vão, letra de 30.
+    case padrao
+    /// Teclas de 50 pt (até 64 na letra grande), raio 17, 8 de vão, letra de 27.
+    case encaixado
+
+    var altura: CGFloat { self == .padrao ? 62 : 50 }
+    var alturaMaxima: CGFloat { self == .padrao ? 72 : 64 }
+    var raio: CGFloat { self == .padrao ? 20 : 17 }
+    var vao: CGFloat { self == .padrao ? 10 : 8 }
+    var letra: CGFloat { self == .padrao ? 30 : 27 }
+    var simbolo: CGFloat { self == .padrao ? 26 : 24 }
+}
+
+/// As doze teclas do teclado de valor e o que cada uma faz com os centavos: a regra do núcleo (o teto e a tecla ignorada) e
+/// o valor novo falado pelo VoiceOver a cada tecla. Serve ao TecladoDeValor e ao TecladoEncaixado.
+struct GradeDeTeclas: View {
+    @Binding var centavos: Int
+    let tamanho: TamanhoDasTeclas
+
+    static let linhas: [[TeclaDeValor]] = [
+        [.digito(1), .digito(2), .digito(3)],
+        [.digito(4), .digito(5), .digito(6)],
+        [.digito(7), .digito(8), .digito(9)],
+        [.duploZero, .digito(0), .apagar],
+    ]
+
+    var body: some View {
+        Grid(horizontalSpacing: tamanho.vao, verticalSpacing: tamanho.vao) {
+            ForEach(Self.linhas.indices, id: \.self) { i in
+                GridRow {
+                    ForEach(Self.linhas[i], id: \.nome) { tecla in
+                        // A letra das teclas cresce até o AX2 (mockup): o limite fica por fora, para a medida de dentro
+                        // (@ScaledMetric) já ler o tamanho limitado.
+                        TeclaDoValor(tecla: tecla, tamanho: tamanho) { tocar(tecla) }
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                    }
+                }
+            }
+        }
+    }
 
     private func tocar(_ tecla: TeclaDeValor) {
         let novo = aplicarTecla(centavos, tecla)
         guard novo != centavos else { return }
         centavos = novo
-        // VoiceOver: o visor é um elemento só; a cada tecla, o valor novo é falado.
+        // VoiceOver: o valor (o visor ou a linha) é um elemento só; a cada tecla, o valor novo é falado.
         AccessibilityNotification.Announcement(fmtCentavos(novo)).post()
     }
 }
@@ -85,16 +112,27 @@ struct VisorDoValor: View {
     }
 }
 
-/// Uma tecla: 62 pt de altura, raio 20, na cor Tecla; encolhe e acende no toque. A letra (30) e a altura crescem com o
-/// tamanho de letra, como o .title; quem usa limita no AX2 (mockup). Com a letra fixa, o limite não faria nada. A altura
-/// para em 72, a do mockup na AX5: as quatro fileiras cabem com o visor e o botão.
+/// Uma tecla: 62 pt de altura, raio 20, na cor Tecla (encaixada, 50 e raio 17); encolhe e acende no toque. A letra (30;
+/// encaixada, 27) e a altura crescem com o tamanho de letra, como o .title; quem usa limita no AX2 (mockup). Com a letra
+/// fixa, o limite não faria nada. A altura para em 72 (encaixada, 64), a do mockup na AX5: as quatro fileiras cabem com o
+/// visor e o botão (encaixada, com a barra e um pedaço da lista à vista).
 struct TeclaDoValor: View {
     let tecla: TeclaDeValor
+    let tamanho: TamanhoDasTeclas
     let tocar: () -> Void
     @Environment(\.paleta) private var paleta
-    @ScaledMetric(relativeTo: .title) private var letra: CGFloat = 30
-    @ScaledMetric(relativeTo: .title) private var simbolo: CGFloat = 26
-    @ScaledMetric(relativeTo: .title) private var altura: CGFloat = 62
+    @ScaledMetric private var letra: CGFloat
+    @ScaledMetric private var simbolo: CGFloat
+    @ScaledMetric private var altura: CGFloat
+
+    init(tecla: TeclaDeValor, tamanho: TamanhoDasTeclas = .padrao, tocar: @escaping () -> Void) {
+        self.tecla = tecla
+        self.tamanho = tamanho
+        self.tocar = tocar
+        _letra = ScaledMetric(wrappedValue: tamanho.letra, relativeTo: .title)
+        _simbolo = ScaledMetric(wrappedValue: tamanho.simbolo, relativeTo: .title)
+        _altura = ScaledMetric(wrappedValue: tamanho.altura, relativeTo: .title)
+    }
 
     var body: some View {
         Button(action: tocar) {
@@ -106,9 +144,9 @@ struct TeclaDoValor: View {
                 }
             }
             .font(.system(size: letra, weight: .medium))
-            .frame(maxWidth: .infinity, minHeight: min(altura, 72))
+            .frame(maxWidth: .infinity, minHeight: min(altura, tamanho.alturaMaxima))
         }
-        .buttonStyle(EstiloDaTecla())
+        .buttonStyle(EstiloDaTecla(raio: tamanho.raio))
         .accessibilityLabel(rotulo)
         .accessibilityIdentifier("tecla-\(tecla.nome)")
     }
@@ -123,13 +161,14 @@ struct TeclaDoValor: View {
 }
 
 private struct EstiloDaTecla: ButtonStyle {
+    let raio: CGFloat
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(paleta.cor(.texto))
-            .background(paleta.cor(configuration.isPressed ? .teclaTocada : .tecla), in: .rect(cornerRadius: 20, style: .continuous))
+            .background(paleta.cor(configuration.isPressed ? .teclaTocada : .tecla), in: .rect(cornerRadius: raio, style: .continuous))
             .scaleEffect(configuration.isPressed && !opcoes.reduzirMovimento ? 0.96 : 1)
             .animation(configuration.isPressed ? .easeOut(duration: 0.1) : .spring(duration: 0.3), value: configuration.isPressed)
     }

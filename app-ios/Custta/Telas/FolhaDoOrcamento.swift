@@ -283,7 +283,7 @@ private struct CorpoDaFolhaDoOrcamento: View {
                             .padding(.top, 28)
                         }
                     }
-                    .padding(.top, grande ? 4 : 8)
+                    .padding(.top, grande ? 4 : (rascunho.modo == .topicos ? 6 : 8))
                     .padding(.bottom, 24)
                 }
                 .scrollIndicators(.hidden)
@@ -409,8 +409,9 @@ private struct CorpoDaFolhaDoOrcamento: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 4)
-        // No "Só o total" não há o Total ao vivo: os 10 com os 8 do alto da lista dão os 18 do mockup até a linha do total.
-        .padding(.bottom, tamanho.isAccessibilitySize ? 16 : (rascunho.modo == .total ? 10 : 0))
+        // No "Só o total" não há o Total ao vivo: os 10 com os 8 do alto da lista dão os 18 do mockup até a linha do total. No
+        // "Por tópico", a lista é cortada 6 abaixo do Total, e os 6 do alto dela dão os 12 do mockup até a primeira linha.
+        .padding(.bottom, tamanho.isAccessibilitySize ? 16 : (rascunho.modo == .total ? 10 : 6))
     }
 
     private func trocarModo(_ modo: RascunhoDoOrcamento.Modo) {
@@ -590,7 +591,8 @@ private struct TotalAoVivo: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Os 64 pt do mockup: a entrelinha do SF, mais baixa que a do CSS, deixaria o cartão com 59,7.
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
         .background(paleta.cor(.linhaDaFolha), in: .rect(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.updatesFrequently)

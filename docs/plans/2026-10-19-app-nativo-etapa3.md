@@ -8448,3 +8448,3421 @@ git commit -m "docs: checklist do aparelho da etapa 3 do app nativo" -m "O check
 ```
 
 **Ponto de controle do PR 1:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim do PR, o núcleo com 219 testes, o `CusttaTests` com 144 em 26 suítes e o `OrcamentoUITests` com 28); no Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` verdes, e as leituras e auditorias do orçamento também no Pro Max; o Verniz confere as telas novas lado a lado com o mockup (parte 1, seções 1 a 3), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 1" do checklist na conta de sempre. Na CI do iOS 26, antes das correções (run 39693700450), passaram a cena da tela Orçamento a 2200 pt na maior letra, a linha ativa que volta ao meio na troca de letra, os itens da barra da folha na auditoria de contraste e a rolagem da folha sem Reduzir movimento; reprovaram o teste do medidor da etapa 2 e o total ao vivo na auditoria (Tarefa 19) e a linha ativa ao abrir a folha na maior letra (Tarefa 18), corrigidos nelas. Na segunda rodada (run 39710458060, com o PR 2 por cima), as duas leituras do orçamento passaram. Três coisas reprovaram: a exceção do total pelo quadro, na auditoria de depois do swipe; o `app`, cortado no teto; e uma vez a borda da tela Orçamento. A exceção passou a ser pelo identificador, nasceu o `app-etapa3` e a borda ganhou a segunda tentativa no iOS 26 (Tarefa 19), tudo verde no run 39813469497. Só o iOS 26 prova, e o Mac não tem: a conferência da linha ativa na lista preguiçosa, a exceção do total e a segunda tentativa da borda, que só rodam lá. O âmbar do escuro e as cinco exceções ao mockup foram decididos pelo Giovani em 21/10 (Decisões do conselho).
+
+## PR 2 (app): o A pagar e o detalhe do tópico
+
+A parte 2 do mockup, gravando de verdade, em duas fases no mesmo PR. A fase 1, nesta seção, é o A pagar: a seta no indicador "A pagar · 30 dias" abre a folha dele, com os vencimentos por mês; tocar num vencimento empurra a edição da etapa 2 dentro da própria folha, e "Salvar" volta à origem, na mesma rolagem e com a linha acesa; e o apagar, pela edição e arrastando, sem fechar a folha. Entram junto os ajustes da conferência do Verniz no PR 1 (a folha e a linha do orçamento nas medidas do mockup). A fase 2 (o detalhe do tópico, as linhas da tela Orçamento que o abrem, o laudo, a conferência cruzada e a parte "PR 2" do checklist) vem nas tarefas seguintes desta seção; o merge, o TestFlight e o checklist no aparelho ficam para o fim dela.
+
+O PR nasce da `origin/main` de 22/10 (`57efc67`, o merge do #83). As fatias foram refeitas sobre ela e conferidas uma a uma: o "ver falhar" de cada tarefa é o dos testes dela sobre o commit anterior, nesta base.
+
+- **A API das folhas muda (Tarefa 24) sem conflito de texto.** O `folhaDoApp(perguntar:)` passa a receber uma função, e o `passoDaFolha(raiz:)` vira `passoDaFolha(escape:)`. Uma folha nova que venha de outro PR com a API antiga só quebra na compilação; e uma folha nova que grava entra na guarda Node "folhas que gravam" no formato `[assinatura, guarda]`.
+- **Uma mudança visível na etapa 2, pelo mockup.** O "Continuar editando" da pergunta do puxar, em todas as folhas, sai da Marca (2,5:1 na cápsula do alerta) e vai para a cor do texto, num fundo vazio, como os outros alertas do app e a pergunta da origem no mockup.
+- **Nenhum texto novo.** O gasto apagado em outro aparelho com a edição aberta anuncia "Gasto apagado", o texto da etapa 2.
+- **Os filtros do ver falhar e do ver passar.** O Swift 6.4 do Mac escreve cada erro duas vezes, a linha `arquivo:L:C: error:` e o desenho do trecho (no núcleo, com cor): o "ver falhar" conta só as linhas, por mensagem. O "ver passar" lê cada suíte de tela e o `✔ Test run with` do `CusttaTests`, que roda antes delas, e não só o fim do log. "Sem aviso" é sem aviso de compilador: os `Metadata extraction skipped` do AppIntents saem no filtro e não contam.
+- **O que só o aparelho prova** (fica no checklist da fase 2): o foco do VoiceOver na volta (a linha, a vizinha, o cartão do vazio), o anúncio "O gasto saiu desta lista." e o Z da edição. O XCUITest não manda escape nem lê o foco.
+
+### Task 22: Regras das telas do A pagar e do detalhe do tópico no núcleo
+
+O que o mockup aprovado acrescenta ao site no A pagar e no detalhe do tópico entra no núcleo com teste próprio (`DentroDaObraTests`); os números saem das regras com vetor (o `aPagar` da etapa 2 e o `resumoTopico` do PR 0). A folha do A pagar mostra os mesmos vencimentos e o mesmo total do indicador, agrupados por mês com o `porMes` da lista da obra (que deixa de ser `private`), e diz o que fica depois dos 30 dias: "Depois de 11/11/26, mais 10 gastos a vencer (R$ 52.250,00), no "A vencer" da obra.", ou nada, quando não há. O detalhe do tópico tem a linha "6 gastos · 12% da obra" (o mesmo "% da obra" do modo total, Tarefa 12), o "corrigido: R$ …", a linha do orçamento do tópico (nenhuma fora do modo por tópico; o previsto, com a barra e a frase do site; ou "Sem valor no orçamento: não entra na comparação.") e os gastos em duas listas: os a vencer, do próximo para o mais distante, e os pagos, do mais novo para o mais antigo, por data e id, como o site. O núcleo do PR 2 vai inteiro aqui, também o do detalhe, que as telas só usam na fase 2 (decisão 3: uma mutação nova por build).
+
+**Files:**
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`
+
+**Interfaces:**
+- Consumes: `aPagar(_:hoje:)`, `somarDias`, `dataCurta`, `menorJS`, `moeda`, `ordenadoEstavel`, `MesDeGastos`, `orcamentoObra`, `ItemOrcamento` e `textoDaParteDaObra` (já existem); do PR 0, `resumoTopico` e `ResumoDoTopico`.
+- Produces: `APagarDaObra` (`total`, `qtd`, `meses`, `depoisQtd`, `depoisTotal`, `ponte`) e `aPagarDaObra(_:hoje:)`; `OrcamentoDoTopico` (`.nenhum`, `.previsto(ItemOrcamento)`, `.semValor`) e `semValorNoOrcamento`; `DetalheDoTopico` (`resumo`, `linha`, `corrigido`, `orcamento`, `aVencer`, `pagos`) e `detalheDoTopico(_:topico:hoje:taxaMensal:)`; `porMes(_:)` passa a `internal`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+@@ -2,7 +2,8 @@ import Testing
+ @testable import CusttaNucleo
+ 
+ /* As regras da etapa 3 que o site não tem (mockup aprovado em 18/10): o aviso dos tópicos e o que está fora, o cartão da
+-   tela Orçamento e o gasto por tópico no modo total. Valores de mil para cima, para separar moeda de moedaCurta. */
++   tela Orçamento, o gasto por tópico no modo total, o A pagar por mês com o que vem depois e o detalhe do tópico. Valores
++   de mil para cima, para separar moeda de moedaCurta. */
+ struct DentroDaObraTests {
+     static let hoje = "2026-10-12"
+ 
+@@ -100,6 +101,60 @@ struct DentroDaObraTests {
+         #expect(linhas.map(\.pct) == [24, 19, 19, 19, 19], "o empate é do bruto, não do % arredondado")
+     }
+ 
++    @Test func aPagarPorMesComOQueVemDepois() {
++        let o = obra([gasto("g2", "2026-10-20", 2_000.25), gasto("g0", "2026-10-12", 500), gasto("g1", "2026-10-13", 1_500),
++                      gasto("g5", "2026-12-05", 6_000), gasto("g3", "2026-11-11", 3_000), gasto("g4", "2026-11-12", 4_000),
++                      gasto("g6", "2026-09-01", 700)])
++        let a = aPagarDaObra(o, hoje: Self.hoje)
++        #expect(a.total == 6_500.25 && a.qtd == 3, "de amanhã até hoje + 30, o dia 11/11 incluído")
++        #expect(a.meses.map(\.id) == ["2026-10", "2026-11"] && a.meses.map(\.titulo) == ["Outubro de 2026", "Novembro de 2026"])
++        #expect(a.meses.map { $0.gastos.map(\.id) } == [["g1", "g2"], ["g3"]], "dentro do mês, por data")
++        #expect(a.meses.map(\.total) == [3_500.25, 3_000])
++        #expect(a.depoisQtd == 2 && a.depoisTotal == 10_000)
++        #expect(a.ponte == "Depois de 11/11/26, mais 2 gastos a vencer (R$\u{00A0}10.000,00), no \"A vencer\" da obra.")
++        let um = aPagarDaObra(obra([gasto("g1", "2026-10-13", 1_500), gasto("g4", "2026-11-12", 4_000)]), hoje: Self.hoje)
++        #expect(um.ponte == "Depois de 11/11/26, mais 1 gasto a vencer (R$\u{00A0}4.000,00), no \"A vencer\" da obra.")
++        let nada = aPagarDaObra(obra([gasto("g1", "2026-10-13", 1_500)]), hoje: Self.hoje)
++        #expect(nada.ponte == nil && nada.depoisQtd == 0)
++        let soDepois = aPagarDaObra(obra([gasto("g4", "2026-11-12", 4_000)]), hoje: Self.hoje)
++        #expect(soDepois.qtd == 0 && soDepois.meses.isEmpty && soDepois.ponte != nil, "vazia nos 30 dias, a frase ainda diz o que vem")
++    }
++
++    @Test func detalheDoTopicoComAVencerEPagos() throws {
++        let gastos = [gasto("r2", "2026-11-20", 615, topico: "revest"), gasto("r0", "2026-10-05", 800, topico: "revest"),
++                      gasto("r1", "2026-10-20", 615, topico: "revest"), gasto("x1", "2026-09-01", 1_385, topico: "pintura"),
++                      gasto("r3", "2026-10-05", 1_200, topico: "revest"), gasto("r4", Self.hoje, 385, topico: "revest"),
++                      gasto("d1", "2026-08-01", 2_000, topico: "projeto")]
++        let o = obra(gastos, orcamento: porTopico(["revest": 5_000, "pintura": 1_000]))
++        let d = detalheDoTopico(o, topico: "revest", hoje: Self.hoje, taxaMensal: 1)
++        #expect(d.aVencer.map(\.id) == ["r1", "r2"], "o próximo primeiro; o de hoje já é pago")
++        #expect(d.pagos.map(\.id) == ["r4", "r3", "r0"], "o mais novo primeiro; na mesma data, pelo id")
++        #expect(d.linha == "5 gastos · 52% da obra")
++        let r = resumoTopico(o, topico: "revest", hoje: Self.hoje, taxaMensal: 1)
++        #expect(d.resumo == r && d.corrigido == "corrigido: " + moeda(r.corrigido))
++        let item = try #require(orcamentoObra(o)?.topicos.first { $0.id == "revest" })
++        #expect(d.orcamento == .previsto(item) && item.previsto == 5_000)
++        #expect(detalheDoTopico(o, topico: "projeto", hoje: Self.hoje, taxaMensal: 1).orcamento == .semValor)
++        #expect(semValorNoOrcamento == "Sem valor no orçamento: não entra na comparação.")
++        let soUm = detalheDoTopico(o, topico: "projeto", hoje: Self.hoje, taxaMensal: 1)
++        #expect(soUm.linha == "1 gasto · 29% da obra" && soUm.aVencer.isEmpty && soUm.pagos.map(\.id) == ["d1"])
++        let total = obra(gastos, orcamento: .objeto(["modo": .texto("total"), "total": .numero(9_000)]))
++        #expect(detalheDoTopico(total, topico: "revest", hoje: Self.hoje, taxaMensal: 1).orcamento == .nenhum)
++        #expect(detalheDoTopico(obra(gastos), topico: "revest", hoje: Self.hoje, taxaMensal: 1).orcamento == .nenhum)
++    }
++
++    @Test func corrigidoDoDetalheVaiAteAVenda() {
++        let gastos = [gasto("r1", "2025-01-10", 10_000, topico: "revest")]
++        let vendida = obra(gastos, extra: ["fase": .texto("vendida"), "venda": .objeto(["valor": .numero(900_000), "data": .texto("2025-07-10")])])
++        let d = detalheDoTopico(vendida, topico: "revest", hoje: Self.hoje, taxaMensal: 1)
++        #expect(d.corrigido == "corrigido: " + moeda(corrigido(10_000, de: "2025-01-10", ate: "2025-07-10", taxa: 1)))
++        #expect(d.corrigido != "corrigido: " + moeda(corrigido(10_000, de: "2025-01-10", ate: Self.hoje, taxa: 1)))
++    }
++
++    func afazer(_ id: String, _ texto: String, feito: Bool) -> Afazer {
++        Afazer(campos: ["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
++    }
++
+     @Test func topicosComValorNaFolha() {
+         #expect(topicosComValor(["terreno": 10, "projeto": 0, "pintura": 5, "eletrica": -3], de: 23) == "2 de 23 tópicos com valor")
+         #expect(topicosComValor([:], de: 21) == "0 de 21 tópicos com valor")
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter DentroDaObraTests 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6`
+Expected: não compila: `cannot find 'detalheDoTopico' in scope`, `cannot find 'aPagarDaObra' in scope` e `cannot find 'semValorNoOrcamento' in scope`; o resto é cascata da inferência (`cannot infer key path type from context; consider explicitly specifying a root type` e `cannot infer contextual base in reference to member 'previsto'`). São 19 erros, todos no `DentroDaObraTests.swift`.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
+@@ -1,7 +1,7 @@
+ import Foundation
+ 
+ /* Regras das telas da etapa 3 (dentro da obra) que o site não tem: o mockup aprovado em 18/10 as acrescenta ao que vem do
+-   app.js. Os números saem das regras com vetor (orcamentoObra, resumoTopico); o que está aqui é
++   app.js. Os números saem das regras com vetor (orcamentoObra, aPagar, resumoTopico); o que está aqui é
+    texto e agrupamento, com teste próprio (DentroDaObraTests). */
+ 
+ /* ---------- orçamento: a linha nos indicadores e o cartão da tela Orçamento ---------- */
+@@ -79,3 +79,72 @@ public let dicaDoModoTotal = "Para comparar tópico a tópico, toque no lápis e
+ public func topicosComValor(_ valores: [String: Double], de total: Int) -> String {
+     "\(valores.values.filter { $0 > 0 }.count) de \(total) tópicos com valor"
+ }
++
++/* ---------- A pagar · 30 dias ---------- */
++
++/// A folha "A pagar · 30 dias" de uma obra: os vencimentos do indicador por mês e o que vem depois dos 30 dias.
++public struct APagarDaObra: Equatable, Sendable {
++    public let total: Double
++    public let qtd: Int
++    /// Por mês, do mais próximo ao mais distante; dentro do mês, a ordem do `aPagar` (por data).
++    public let meses: [MesDeGastos]
++    /// Os gastos a vencer depois de hoje + 30 dias: estão no "A vencer" da obra, não na folha.
++    public let depoisQtd: Int
++    public let depoisTotal: Double
++    /// "Depois de 11/11/26, mais 10 gastos a vencer (R$ 52.250,00), no "A vencer" da obra."; nil sem nada depois.
++    public let ponte: String?
++}
++
++public func aPagarDaObra(_ obra: Obra, hoje: String) -> APagarDaObra {
++    let vencimentos = aPagar([obra], hoje: hoje)
++    let limite = somarDias(hoje, 30)
++    let depois = obra.gastos.filter { menorJS(limite, $0.data) }
++    let total = depois.reduce(0) { $0 + $1.valor }
++    let ponte = depois.isEmpty ? nil
++        : "Depois de \(dataCurta(limite)), mais \(depois.count) gasto\(depois.count == 1 ? "" : "s") a vencer (\(moeda(total))), no \"A vencer\" da obra."
++    return APagarDaObra(total: vencimentos.total, qtd: vencimentos.qtd, meses: porMes(vencimentos.itens.map(\.gasto)),
++                        depoisQtd: depois.count, depoisTotal: total, ponte: ponte)
++}
++
++/* ---------- detalhe do tópico ---------- */
++
++/// A linha do orçamento dentro do detalhe do tópico.
++public enum OrcamentoDoTopico: Equatable, Sendable {
++    /// A obra não tem orçamento por tópico (sem orçamento, ou só o total): nada no lugar da barra.
++    case nenhum
++    /// O tópico tem previsto: "No orçamento", o valor, a barra e a frase do site (ou "{pct}% usado").
++    case previsto(ItemOrcamento)
++    /// Por tópico, mas sem valor para este: `semValorNoOrcamento` no lugar da barra.
++    case semValor
++}
++
++public let semValorNoOrcamento = "Sem valor no orçamento: não entra na comparação."
++
++/// A folha do detalhe do tópico.
++public struct DetalheDoTopico: Equatable, Sendable {
++    public let resumo: ResumoDoTopico
++    /// "6 gastos · 12% da obra".
++    public let linha: String
++    /// "corrigido: R$ …".
++    public let corrigido: String
++    public let orcamento: OrcamentoDoTopico
++    /// Os de data depois de hoje, o próximo primeiro (como o "A vencer" da obra).
++    public let aVencer: [Gasto]
++    /// Os outros, do mais novo para o mais antigo (data e id, como o site).
++    public let pagos: [Gasto]
++}
++
++public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMensal: Double) -> DetalheDoTopico {
++    let r = resumoTopico(obra, topico: topico, hoje: hoje, taxaMensal: taxaMensal)
++    let ordenados = ordenadoEstavel(obra.gastos.filter { $0.topico == topico }) { menorJS($1.data + $1.id, $0.data + $0.id) }
++    let orcamento: OrcamentoDoTopico
++    if let o = orcamentoObra(obra), o.modo == "topicos" {
++        orcamento = o.topicos.first { $0.id == topico }.map(OrcamentoDoTopico.previsto) ?? .semValor
++    } else {
++        orcamento = .nenhum
++    }
++    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(textoDaParteDaObra(r.pct))",
++                           corrigido: "corrigido: " + moeda(r.corrigido), orcamento: orcamento,
++                           aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
++                           pagos: ordenados.filter { !menorJS(hoje, $0.data) })
++}
+```
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift
+@@ -63,7 +63,7 @@ public struct ListaDaObra: Equatable, Sendable {
+     public let meses: [MesDeGastos]
+ }
+ 
+-private func porMes(_ gastos: [Gasto]) -> [MesDeGastos] {
++func porMes(_ gastos: [Gasto]) -> [MesDeGastos] {
+     var ordem: [String] = []
+     var grupos: [String: [Gasto]] = [:]
+     for g in gastos {
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | tail -2`
+Expected: `✔ Test run with 224 tests in 37 suites passed` (os 3 novos de `DentroDaObraTests`: `aPagarPorMesComOQueVemDepois`, `detalheDoTopicoComAVencerEPagos` e `corrigidoDoDetalheVaiAteAVenda`).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift \
+  app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift \
+  app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+git commit -m "feat: regras das telas do A pagar e do detalhe do tópico no núcleo" -m "As regras que o mockup aprovado da etapa 3 acrescenta ao site para o A pagar e o detalhe do tópico entram no núcleo com teste próprio: a folha do A pagar por mês, com o que vem depois dos 30 dias, e o detalhe do tópico, com a linha do orçamento, o A vencer e os pagos. Os números saem das regras com vetor; o agrupamento por mês da lista da obra passa a servir também à folha do A pagar."
+```
+
+### Task 23: Folha do A pagar pela seta do indicador
+
+A linha "A pagar · 30 dias" dos indicadores da obra vira um botão inteiro, com a seta das linhas tocáveis, e abre a folha "A pagar · 30 dias" (parte 2, seção 1 do mockup). Num grupo sólido, o total e o "{N} vencimentos · a partir de amanhã" do núcleo; depois, os vencimentos por mês, com a linha de gasto da etapa 2 sem a etiqueta "a vencer"; no fim, a frase do que fica depois dos 30 dias. Vazia, "Nenhum gasto previsto para esse período.", e a frase do fim aparece também assim, se houver algo depois (o spec: "no fim, uma frase diz quanto vem depois dos 30 dias"). Fecham o × e o puxar (o "Fechar" do site sai), e ela só fecha sozinha se a obra sumir. Com uma linha da lista da obra arrastada aberta, o toque na seta só fecha a linha.
+
+- **As peças da lista são filhas diretas da `LazyVStack`.** O cabeçalho do mês e cada gasto são peças soltas, com o fundo do grupo desenhado por peça (`FundoDoGrupo(cima:baixo:)`): a pilha preguiçosa só fatia filhos diretos, e o detalhe do tópico, que usa a mesma lista na fase 2, passa de cem gastos numa obra grande. Uma guarda Node fixa isso.
+- **O secundário da folha.** Dentro da folha (`EnvironmentValues.dentroDaFolha`), o cabeçalho do mês e a linha de gasto usam o secundário da folha, e não o do vidro.
+- **O × se chama "Fechar".** É o `Button(role: .close)`; o teste confere que só o `fecharFolha` tem esse nome.
+- **A suíte nova roda no `app-etapa3`.** O `FolhasDeOrigemUITests` entra no `-only-testing` do `app-etapa3` e no `-skip-testing` do `app`: com ela, o `app` chegaria ao teto de 90 min numa VM lenta (no run 39799242127, ela levou 23,0 min, e o `app` sem ela, 67). No run 39813469497 (iOS 26, o PR 1 e esta fase), o `app` levou 42 min com as mesmas suítes, e o `app-etapa3`, 58,8 numa VM lenta (≈ 51 no 39799242127): cada job pega a sua VM, e o teto do `app-etapa3` vai pela mais lenta, de 60 a 90, como o do `app`. Ele não cresce mais: as suítes de tela do PR 3 vão para um job novo.
+
+**Files:**
+- Create: `app-ios/Custta/Telas/FolhaDoAPagar.swift`
+- Test (criar): `app-ios/CusttaTests/FolhasDeOrigemTests.swift`
+- Test (criar): `app-ios/CusttaUITests/FolhasDeOrigemUITests.swift`
+- Modify: `.github/workflows/app-ios.yml`
+- Modify: `app-ios/Custta/Estado/Folhas.swift`
+- Modify: `app-ios/Custta/Identidade/PecasDaFolha.swift`
+- Modify: `app-ios/Custta/Telas/ObraView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
+- Modify: `app-ios/Custta/Telas/PrincipalView.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `aPagarDaObra(_:hoje:)` (Tarefa 22), `textoVencimentos(_:)`, `linhaDeGasto`, `mapaDeTopicos`, `moeda` e `dataLocalISO` (núcleo); `GrupoDaFolha`, `SeparadorDaFolha`, `NotaDaFolha`, `ValorEmDinheiro`, `CabecalhoDoMes`, `LinhaDeGastoView`, `passoDaFolha` e `folhaDoApp` (app).
+- Produces: `Folhas.Qual.aPagar(obraId:)` e o gancho `CUSTTA_FOLHA=aPagar:<id>`; `FolhaDoAPagar(obraId:)`; `PecaDaOrigem` (`tipo`: `.mes(MesDeGastos)` ou `.gasto(Gasto)`; `primeiro`, `ultimo`, `id`) e `pecasDaOrigem(_:)`; `FundoDoGrupo(cima:baixo:)`; `IndicadoresDaObraView(indicadores:orcamento:rotaDoOrcamento:abrirAPagar:)`, com o fecho por último; `EnvironmentValues.dentroDaFolha`; identificadores `indicadorAPagar` (agora botão), `resumoDoAPagar`, `aPagarVazio` e `ponteDoAPagar`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Criar `app-ios/CusttaTests/FolhasDeOrigemTests.swift`:
+
+```swift
+import Foundation
+import Testing
+@testable import Custta
+import CusttaNucleo
+
+/* A lógica das folhas de origem da etapa 3 (o A pagar): as peças da lista, filhas diretas da LazyVStack, com o lugar de
+   cada uma no grupo do mês (o fundo do grupo é desenhado por peça). */
+@MainActor
+struct FolhasDeOrigemTests {
+    func gasto(_ id: String, _ data: String, _ valor: Double = 100) -> ValorJSON {
+        .objeto(["id": .texto(id), "valor": .numero(valor), "topico": .texto("outros"), "descricao": .texto(""), "data": .texto(data),
+                 "pagamento": .texto("pix")])
+    }
+
+    func obra(_ gastos: [ValorJSON]) -> Obra {
+        Obra(arvore: ["id": .texto("o1"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+                      "gastos": .lista(gastos)])
+    }
+
+    @Test func pecasDoAPagarPorMesComOLugarNoGrupo() {
+        // Hoje 12/10/26: três vencimentos em outubro e novembro, um hoje (fica fora) e um depois dos 30 dias (fica fora).
+        let o = obra([gasto("c", "2026-11-06"), gasto("hoje", "2026-10-12"), gasto("a", "2026-10-15"), gasto("b", "2026-11-05"),
+                      gasto("depois", "2026-11-12")])
+        let pecas = pecasDaOrigem(aPagarDaObra(o, hoje: "2026-10-12").meses)
+        #expect(pecas.map(\.id) == ["mes-2026-10", "a", "mes-2026-11", "b", "c"])
+        #expect(pecas.map(\.primeiro) == [false, true, false, true, false], "o primeiro gasto do grupo vem sem a linha fina em cima")
+        #expect(pecas.map(\.ultimo) == [false, true, false, false, true], "o último gasto do grupo leva os cantos de baixo")
+    }
+
+    @Test func pecasSemVencimentoNenhuma() {
+        #expect(pecasDaOrigem(aPagarDaObra(obra([gasto("p", "2026-10-01")]), hoje: "2026-10-12").meses).isEmpty)
+    }
+}
+```
+
+Criar `app-ios/CusttaUITests/FolhasDeOrigemUITests.swift`:
+
+```swift
+import XCTest
+import notify
+
+/* As folhas de origem da etapa 3 (PR 2), na obra da vitrine (46 lançamentos, 3 vencimentos em 30 dias, contados de hoje):
+   a seta do indicador abre a folha "A pagar · 30 dias" com o resumo, os vencimentos por mês e a frase do que vem depois;
+   a obra sem vencimentos abre a folha vazia, que fecha só pelo × e pelo puxar; a obra apagada em outro aparelho fecha a
+   folha. */
+@MainActor
+final class FolhasDeOrigemUITests: XCTestCase {
+    /// A obra aberta (v1, a Casa Alphaville do mockup, por padrão).
+    private func abrirObra(_ obra: String = "v1", argumentos: [String] = [], gravacao: String? = nil,
+                           extra: [String: String] = [:]) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)", gravacao: gravacao, argumentos: argumentos, extra: extra)
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        return app
+    }
+
+    /// A seta do indicador "A pagar · 30 dias": rola até ele e toca; a folha abre com o resumo.
+    private func abrirAPagar(_ app: XCUIApplication) {
+        let indicador = app.elemento("indicadorAPagar")
+        XCTAssertTrue(indicador.waitForExistence(timeout: 5))
+        app.rolarAte(indicador)
+        indicador.tap()
+        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForExistence(timeout: 5), "a seta abre a folha do A pagar")
+    }
+
+    /// O elemento da folha (o que recebe o toque), e não o da obra por trás dela.
+    private func naFolha(_ app: XCUIApplication, _ id: String) -> XCUIElement? {
+        app.descendants(matching: .any).matching(identifier: id).allElementsBoundByIndex.first { $0.exists && $0.isHittable }
+    }
+
+    private func puxarFolha(_ app: XCUIApplication) {
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92)),
+                   withVelocity: .fast, thenHoldForDuration: 0)
+    }
+
+    /// AAAA-MM de hoje + `dias`, no fuso do aparelho (o do app).
+    private func mes(daquiA dias: Int) -> String {
+        let dia = Calendar(identifier: .gregorian).date(byAdding: .day, value: dias, to: .now) ?? .now
+        let c = Calendar(identifier: .gregorian).dateComponents([.year, .month], from: dia)
+        return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
+    }
+
+    func testASetaDoIndicadorAbreAFolhaDoAPagar() {
+        let app = abrirObra()
+        let indicador = app.elemento("indicadorAPagar")
+        XCTAssertTrue(indicador.waitForExistence(timeout: 5))
+        XCTAssertTrue(indicador.label.hasPrefix("A pagar · 30 dias"), indicador.label)
+        XCTAssertTrue(indicador.label.contains("Parcelas e gastos futuros"), indicador.label)
+        XCTAssertTrue(indicador.elementType == .button, "a linha inteira é o botão: \(indicador.elementType.rawValue)")
+        abrirAPagar(app)
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("A pagar · 30 dias"), app.elemento("tituloDaFolha").label)
+        let resumo = app.elemento("resumoDoAPagar")
+        XCTAssertTrue(resumo.label.contains("R$\u{a0}13.250,00"), resumo.label)
+        XCTAssertTrue(resumo.label.contains("3 vencimentos · a partir de amanhã"), resumo.label)
+        // Os três vencimentos do indicador, o próximo primeiro (a ordem do aPagar), com a linha da etapa 2.
+        let ids = ["g039", "g032", "g045"]
+        let linhas = ids.compactMap { naFolha(app, "gasto-\($0)") }
+        XCTAssertEqual(linhas.count, 3, "os três vencimentos na folha")
+        if linhas.count == 3 {
+            XCTAssertLessThan(linhas[0].frame.minY, linhas[1].frame.minY)
+            XCTAssertLessThan(linhas[1].frame.minY, linhas[2].frame.minY)
+            XCTAssertTrue(linhas[2].label.hasPrefix("Tinta acrílica, parcela 2 de 3. Pintura, Cartão, "), linhas[2].label)
+            XCTAssertEqual(linhas[2].value as? String, "R$\u{a0}2.300,00")
+        }
+        // Agrupados por mês: o cabeçalho do mês do 2º vencimento, com o total dele (o do 3º, se for o mesmo mês).
+        let mesDoSegundo = mes(daquiA: 24)
+        let total = mes(daquiA: 25) == mesDoSegundo ? "R$\u{a0}8.450,00" : "R$\u{a0}6.150,00"
+        let cabecalho = naFolha(app, "mes-\(mesDoSegundo)")
+        XCTAssertNotNil(cabecalho, "o cabeçalho do mês")
+        XCTAssertTrue(cabecalho?.label.contains(total) == true, cabecalho?.label ?? "")
+        if let cabecalho, linhas.count == 3 { XCTAssertLessThan(cabecalho.frame.maxY, linhas[1].frame.minY + 1) }
+        // A frase do fim: o que vem depois dos 30 dias está no "A vencer" da obra.
+        let ponte = app.elemento("ponteDoAPagar")
+        XCTAssertTrue(ponte.exists)
+        XCTAssertTrue(ponte.label.hasPrefix("Depois de "), ponte.label)
+        XCTAssertTrue(ponte.label.hasSuffix("mais 10 gastos a vencer (R$\u{a0}52.250,00), no \"A vencer\" da obra."), ponte.label)
+        let fechar = app.buttons.matching(NSPredicate(format: "label == 'Fechar'")).allElementsBoundByIndex
+        XCTAssertEqual(fechar.map(\.identifier), ["fecharFolha"], "só o × se chama Fechar: o botão \"Fechar\" do site sai")
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForNonExistence(timeout: 5), "o × fecha")
+    }
+
+    func testObraSemVencimentosAbreAFolhaVazia() {
+        let app = abrirObra("v2")
+        abrirAPagar(app)
+        let resumo = app.elemento("resumoDoAPagar")
+        XCTAssertTrue(resumo.label.contains("R$\u{a0}0,00"), resumo.label)
+        XCTAssertTrue(resumo.label.contains("0 vencimentos · a partir de amanhã"), resumo.label)
+        let vazio = app.elemento("aPagarVazio")
+        XCTAssertTrue(vazio.exists)
+        XCTAssertEqual(vazio.label, "Nenhum gasto previsto para esse período.")
+        XCTAssertFalse(app.elemento("ponteDoAPagar").exists, "nada depois dos 30 dias: sem a frase")
+        sleep(1)
+        XCTAssertTrue(resumo.exists, "vazia, a folha fica aberta")
+        puxarFolha(app)
+        XCTAssertTrue(resumo.waitForNonExistence(timeout: 5), "puxar fecha, sem perguntar")
+    }
+
+    func testAFolhaFechaQuandoOutroAparelhoApagaAObra() {
+        let app = abrirObra(extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
+        abrirAPagar(app)
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(app.buttons["fecharFolha"].waitForNonExistence(timeout: 10), "a obra sumiu: a folha fecha")
+        XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "e a obra volta para a lista")
+    }
+}
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -753,6 +753,23 @@ test('gasto lançado de dentro de uma vendida: a obra troca por trás da folha,
+     'a troca da obra e, no turno seguinte, o fechar da folha');
+ });
+ 
++test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça', () => {
++  // A LazyVStack só fatia filhos diretos: com o grupo do mês num VStack (o GrupoDaFolha), o grupo inteiro seria uma peça
++  // só, criada de uma vez com todas as linhas (o detalhe do tópico, com a mesma lista, passa de cem gastos). Nenhum teste
++  // de tela vê isso: a tela fica igual.
++  const t = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
++  const pecas = t.indexOf('ForEach(pecasDaOrigem(');
++  assert.ok(pecas > 0, 'as peças da lista num ForEach');
++  let nivel = 0, abre = -1;
++  for(let i = pecas - 1; i >= 0 && abre < 0; i--){
++    if(t[i] === '}') nivel++;
++    else if(t[i] === '{'){ if(nivel === 0) abre = i; else nivel--; }
++  }
++  assert.match(t.slice(0, abre), /LazyVStack\([^)]*\)\s*$/, 'o ForEach das peças direto dentro da LazyVStack');
++  const corpo = t.slice(pecas, t.indexOf('\n                    }\n', pecas));
++  assert.equal(corpo.match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
++});
++
+ test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
+   const s = JSON.parse(ler('package.json')).scripts;
+   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected: reprova `✖ folha do A pagar: as peças da lista são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça`, com o `ENOENT` do `FolhaDoAPagar.swift` (`ℹ pass 51`, `ℹ fail 1`); o `CusttaTests` não compila: `cannot find 'pecasDaOrigem' in scope` (o resto é cascata da inferência, `cannot infer key path type from context`). Só com os testes de tela no lugar, os 3 de `FolhasDeOrigemUITests` reprovam com `XCTAssertTrue failed`: `a linha inteira é o botão: 48` no `testASetaDoIndicadorAbreAFolhaDoAPagar` (48 é o tipo `.other`: a linha ainda não é botão) e `a seta abre a folha do A pagar` nos outros dois.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -136,6 +136,7 @@ jobs:
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests \
+             -skip-testing:CusttaUITests/AuditoriaUITests \
+             -skip-testing:CusttaUITests/OrcamentoUITests \
++            -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
+@@ -151,9 +152,12 @@ jobs:
+   app-etapa3:
+     runs-on: macos-26
+     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
+-    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests: 20,8 min de testes + ~11 de
+-    # preparo ≈ 32 min. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do job, e ele se divide se passar de ~50.
+-    timeout-minutes: 60
++    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
++    # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
++    # lenta (≈ 51 no run 39799242127). O app, com as mesmas suítes, levou 42 min num run e 67 no outro: cada job pega a
++    # sua VM. O teto vai pela mais lenta: 90, como o do app. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do
++    # job; este não cresce mais, e as suítes de tela do PR 3 vão para um job novo.
++    timeout-minutes: 90
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+@@ -179,6 +183,7 @@ jobs:
+             -onlyUsePackageVersionsFromResolvedFile \
+             -resultBundlePath "$RUNNER_TEMP/testes-etapa3.xcresult" \
+             -only-testing:CusttaUITests/OrcamentoUITests \
++            -only-testing:CusttaUITests/FolhasDeOrigemUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Tela reprovada: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run 39710458060
+```
+
+Em `app-ios/Custta/Estado/Folhas.swift`:
+
+```diff
+--- a/app-ios/Custta/Estado/Folhas.swift
++++ b/app-ios/Custta/Estado/Folhas.swift
+@@ -17,6 +17,8 @@ final class Folhas {
+         case venda(obraId: String)
+         /// "Orçamento da obra" (etapa 3): o "Definir orçamento" da obra e o lápis da tela Orçamento.
+         case orcamento(obraId: String)
++        /// A seta do indicador "A pagar · 30 dias": os vencimentos da obra por mês (etapa 3).
++        case aPagar(obraId: String)
+ 
+         var id: Self { self }
+     }
+```
+
+Em `app-ios/Custta/Identidade/PecasDaFolha.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/PecasDaFolha.swift
++++ b/app-ios/Custta/Identidade/PecasDaFolha.swift
+@@ -15,6 +15,10 @@ private struct SetaNaPonta: PreferenceKey {
+ extension EnvironmentValues {
+     /// Dentro do valor de uma `LinhaDaFolhaComRotulo` na letra grande: a `SetaDaLinha` não segue o valor.
+     @Entry var setaNaPonta = false
++    /// Peças da lista da obra postas numa folha (a do A pagar, etapa 3), sobre o fundo sólido do grupo: o secundário é o da
++    /// folha (o --texto2-v do mockup, o SecundarioTransparente), e não o do vidro, e o cabeçalho do mês fica nas medidas do
++    /// grupo da folha.
++    @Entry var dentroDaFolha = false
+ }
+ 
+ /// Um grupo de linhas: o fundo sólido e o recorte no raio do grupo.
+```
+
+Criar `app-ios/Custta/Telas/FolhaDoAPagar.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* A folha "A pagar · 30 dias" (mockup da etapa 3, parte 2, seção 1; o sheetAPagar do site), aberta pela seta do indicador:
+   o mesmo total e os mesmos vencimentos do indicador, a partir de amanhã, num grupo de resumo; os vencimentos por mês,
+   como no "A vencer", com a linha de gasto da etapa 2 e sem a etiqueta "a vencer" em cada linha (aqui tudo vence); no fim,
+   a frase do que vem depois dos 30 dias, que está no "A vencer" da obra. Vazia, abre com "Nenhum gasto previsto para esse
+   período." e não fecha quando fica vazia (site); fecham o × e o puxar (o "Fechar" do site sai). Dentro da folha tudo é
+   sólido. */
+struct FolhaDoAPagar: View {
+    let obraId: String
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(Folhas.self) private var folhas
+
+    private var obra: Obra? { modelo.sincronizador.estado.obras.first { $0.id == obraId } }
+
+    var body: some View {
+        NavigationStack {
+            ListaDoAPagar(obraId: obraId)
+                .passoDaFolha("A pagar · 30 dias", subtitulo: obra?.nome, fechar: .esquerda, raiz: true)
+        }
+        .folhaDoApp(perguntar: false, pergunta: "", descartar: "") { folhas.fechar() }
+        // A obra apagada em outro aparelho com a folha aberta: não há o que mostrar; a folha fecha.
+        .onChange(of: obra == nil) { _, sumiu in if sumiu { folhas.fechar() } }
+    }
+}
+
+/// O resumo, os vencimentos por mês e a frase do fim. As peças da lista (cabeçalho de mês e gasto) são filhas diretas da
+/// LazyVStack, com o fundo do grupo desenhado por peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria
+/// uma peça só (o detalhe do tópico, com a mesma lista, passa de cem gastos).
+private struct ListaDoAPagar: View {
+    let obraId: String
+    @Environment(ModeloApp.self) private var modelo
+
+    var body: some View {
+        let estado = modelo.sincronizador.estado
+        if let obra = estado.obras.first(where: { $0.id == obraId }) {
+            let aPagar = aPagarDaObra(obra, hoje: dataLocalISO(.now, fuso: .current))
+            let topicos = mapaDeTopicos(estado.config.topicosProprios)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ResumoDoAPagar(total: aPagar.total, qtd: aPagar.qtd)
+                    if aPagar.meses.isEmpty {
+                        VazioDoAPagar().padding(.top, 20)
+                    }
+                    ForEach(pecasDaOrigem(aPagar.meses)) { peca in
+                        switch peca.tipo {
+                        case .mes(let mes):
+                            CabecalhoDoMes(mes: mes)
+                                .modifier(FundoDoGrupo(cima: true, baixo: false))
+                                .padding(.top, 20)
+                        case .gasto(let gasto):
+                            LinhaDeGastoView(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos))
+                                .overlay(alignment: .top) { if !peca.primeiro { SeparadorDaFolha(recuo: 67) } }
+                                .modifier(FundoDoGrupo(cima: false, baixo: peca.ultimo))
+                        }
+                    }
+                    if let ponte = aPagar.ponte {
+                        NotaDaFolha(texto: ponte, identificador: "ponteDoAPagar").padding(.top, 14)
+                    }
+                }
+                .padding(.top, 4)
+                .padding(.bottom, 48)
+            }
+            .environment(\.dentroDaFolha, true)
+        } else {
+            Color.clear
+        }
+    }
+}
+
+/// O total e "{N} vencimentos · a partir de amanhã" (o texto do site, também no zero), num grupo sólido: o valor em 28
+/// bold, como o resumo do detalhe do tópico (mockup).
+private struct ResumoDoAPagar: View {
+    let total: Double
+    let qtd: Int
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        GrupoDaFolha {
+            VStack(alignment: .leading, spacing: 2) {
+                ValorEmDinheiro(texto: moeda(total), fonte: .title.weight(.bold))
+                Text(textoVencimentos(qtd))
+                    .font(.subheadline)
+                    .foregroundStyle(paleta.cor(.secundarioTransparente))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(EdgeInsets(top: 16, leading: 16, bottom: 14, trailing: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("resumoDoAPagar")
+        }
+    }
+}
+
+/// "Nenhum gasto previsto para esse período." (o texto do site), com o calendário no quadrado de raio 14; o ícone sai na
+/// letra grande, como no cartão de estado da lista.
+private struct VazioDoAPagar: View {
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        GrupoDaFolha {
+            VStack(spacing: 10) {
+                if !tamanho.isAccessibilitySize {
+                    Image(decorative: "Icones/calendario")
+                        .resizable().frame(width: 26, height: 26)
+                        .foregroundStyle(paleta.cor(.linkNoVidro))
+                        .frame(width: 48, height: 48)
+                        .background(paleta.cor(.tecla), in: .rect(cornerRadius: 14, style: .continuous))
+                }
+                Text("Nenhum gasto previsto para esse período.")
+                    .font(.subheadline)
+                    .foregroundStyle(paleta.cor(.secundarioTransparente))
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 26)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("aPagarVazio")
+        }
+    }
+}
+
+/// Uma peça da lista de uma folha de origem, filha direta da LazyVStack: o cabeçalho de um mês ou um gasto, com o lugar
+/// dele no grupo do mês.
+struct PecaDaOrigem: Identifiable, Equatable {
+    enum Tipo: Equatable {
+        case mes(MesDeGastos)
+        case gasto(Gasto)
+    }
+
+    let tipo: Tipo
+    /// O primeiro gasto do grupo: sem a linha fina em cima.
+    let primeiro: Bool
+    /// O último gasto do grupo: com os cantos de baixo do grupo.
+    let ultimo: Bool
+
+    var id: String {
+        switch tipo {
+        case .mes(let mes): "mes-\(mes.id)"
+        case .gasto(let gasto): gasto.id
+        }
+    }
+}
+
+/// As peças da lista, na ordem: cada mês, o cabeçalho e os gastos dele.
+func pecasDaOrigem(_ meses: [MesDeGastos]) -> [PecaDaOrigem] {
+    meses.flatMap { mes in
+        [PecaDaOrigem(tipo: .mes(mes), primeiro: false, ultimo: false)]
+            + mes.gastos.enumerated().map { i, g in
+                PecaDaOrigem(tipo: .gasto(g), primeiro: i == 0, ultimo: i == mes.gastos.count - 1)
+            }
+    }
+}
+
+/// O fundo sólido do grupo, desenhado por peça (as peças são filhas diretas da LazyVStack): os cantos de cima no
+/// cabeçalho, os de baixo no último gasto, e o recorte nos mesmos cantos.
+struct FundoDoGrupo: ViewModifier {
+    let cima: Bool
+    let baixo: Bool
+    @Environment(\.paleta) private var paleta
+
+    func body(content: Content) -> some View {
+        let forma = UnevenRoundedRectangle(topLeadingRadius: cima ? 24 : 0, bottomLeadingRadius: baixo ? 24 : 0,
+                                           bottomTrailingRadius: baixo ? 24 : 0, topTrailingRadius: cima ? 24 : 0, style: .continuous)
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(paleta.cor(.linhaDaFolha), in: forma)
+            .clipShape(forma)
+            .padding(.horizontal, 16)
+    }
+}
+```
+
+Em `app-ios/Custta/Telas/ObraView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObraView.swift
++++ b/app-ios/Custta/Telas/ObraView.swift
+@@ -66,7 +66,11 @@ struct ObraView: View {
+                     TituloDaObra(nome: obra.nome)
+                     PilulaDaFase(obra: obra, hoje: hoje)
+                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
+-                                          rotaDoOrcamento: .orcamento(obra.id))
++                                          rotaDoOrcamento: .orcamento(obra.id)) {
++                        // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
++                        if linhaAberta != nil { fecharLinha(); return }
++                        folhas.aberta = .aPagar(obraId: obra.id)
++                    }
+                     AcoesDaFaseView(fase: obra.fase,
+                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
+                         agir($0, obra: obra)
+```
+
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -76,13 +76,15 @@ struct EtiquetaDoIndicador: View {
+ }
+ 
+ /// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
+-/// só com orçamento), Corrigido, A pagar (a folha e a seta são da etapa 3) e Venda. Os textos e as contas são os do site
+-/// (indicadoresDaObra, orcamentoObra).
++/// só com orçamento), Corrigido, A pagar (a linha inteira abre a folha dele, etapa 3) e Venda. Os textos e as contas são
++/// os do site (indicadoresDaObra, orcamentoObra).
+ struct IndicadoresDaObraView: View {
+     let indicadores: IndicadoresDaObra
+     var orcamento: ResumoOrcamento? = nil
+     /// Para onde a linha do orçamento leva (a tela Orçamento da obra).
+     var rotaDoOrcamento: RotaDeObras? = nil
++    /// A seta do "A pagar · 30 dias": a folha dele.
++    let abrirAPagar: () -> Void
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
+ 
+@@ -107,10 +109,7 @@ struct IndicadoresDaObraView: View {
+                 linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
+                       identificador: "indicadorCorrigido")
+                 LinhaFina().padding(.leading, 18)
+-                // Sem a seta e sem o "Ver" até a etapa 3, que traz a folha do A pagar: a seta prometeria navegação (regra
+-                // do Giovani de 08/10 para a seta das obras).
+-                linha(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
+-                      nota: "Parcelas e gastos futuros", identificador: "indicadorAPagar")
++                aPagar
+                 LinhaFina().padding(.leading, 18)
+                 venda
+             }
+@@ -118,6 +117,26 @@ struct IndicadoresDaObraView: View {
+         }
+     }
+ 
++    /// O "A pagar · 30 dias": a linha inteira é o botão da folha dele, com a seta das linhas tocáveis no meio da altura
++    /// (o .k-chev do mockup), a mesma do "A vencer". Embaixo, "Parcelas e gastos futuros", como antes.
++    private var aPagar: some View {
++        Button(action: abrirAPagar) {
++            HStack(spacing: 4) {
++                miolo(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
++                      nota: "Parcelas e gastos futuros", corDaNota: nil)
++                Image(systemName: "chevron.right")
++                    .font(.body.weight(.semibold))
++                    .foregroundStyle(paleta.cor(vidro.secundario))
++                    .accessibilityHidden(true)
++                    .foraDoLaudo()
++            }
++            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
++            .contentShape(.rect)
++        }
++        .buttonStyle(.plain)
++        .accessibilityIdentifier("indicadorAPagar")
++    }
++
+     private var heroi: some View {
+         VStack(alignment: .leading, spacing: 6) {
+             ViewThatFits(in: .horizontal) {
+@@ -161,9 +180,17 @@ struct IndicadoresDaObraView: View {
+         Text(texto).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
+     }
+ 
+-
+     private func linha(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
+                        identificador: String, corDaNota: Token? = nil) -> some View {
++        miolo(rotulo: texto, etiqueta: etiqueta, valor: valor, nota: nota, corDaNota: corDaNota)
++            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
++            .accessibilityElement(children: .combine)
++            .accessibilityIdentifier(identificador)
++    }
++
++    /// O rótulo com a etiqueta, o valor e a nota de uma linha do cartão.
++    private func miolo(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
++                       corDaNota: Token?) -> some View {
+         VStack(alignment: .leading, spacing: 4) {
+             ViewThatFits(in: .horizontal) {
+                 HStack(alignment: .firstTextBaseline) {
+@@ -182,9 +209,6 @@ struct IndicadoresDaObraView: View {
+                 .fixedSize(horizontal: false, vertical: true)
+         }
+         .frame(maxWidth: .infinity, alignment: .leading)
+-        .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+-        .accessibilityElement(children: .combine)
+-        .accessibilityIdentifier(identificador)
+     }
+ }
+ 
+@@ -224,6 +248,7 @@ struct CabecalhoDoMes: View {
+     let mes: MesDeGastos
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
++    @Environment(\.dentroDaFolha) private var naFolha
+ 
+     var body: some View {
+         ViewThatFits(in: .horizontal) {
+@@ -231,16 +256,19 @@ struct CabecalhoDoMes: View {
+             VStack(alignment: .leading, spacing: 2) { titulo; total }
+         }
+         .font(.footnote.weight(.semibold))
+-        .foregroundStyle(paleta.cor(vidro.secundario))
+-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 6, trailing: 18))
++        .foregroundStyle(paleta.cor(secundario))
++        // Na folha, o .f-grupo .mes-cab do mockup: 16 dos lados, como as linhas da folha, e 2 embaixo.
++        .padding(naFolha ? EdgeInsets(top: 12, leading: 16, bottom: 2, trailing: 16) : EdgeInsets(top: 12, leading: 18, bottom: 6, trailing: 18))
+         .accessibilityElement(children: .combine)
+         .accessibilityAddTraits(.isHeader)
+         .accessibilityIdentifier("mes-\(mes.id)")
+     }
+ 
++    /// O secundário do vidro; na folha, o da folha.
++    private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
+     private var titulo: some View { Text(mes.titulo) }
+     private var total: some View {
+-        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: vidro.secundario)
++        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: secundario)
+     }
+ }
+ 
+@@ -302,6 +330,7 @@ struct LinhaDeGastoView: View {
+     @Environment(\.dynamicTypeSize) private var tamanho
+     @Environment(\.colorScheme) private var esquema
+     @Environment(\.displayScale) private var escala
++    @Environment(\.dentroDaFolha) private var naFolha
+ 
+     var body: some View {
+         Group {
+@@ -373,12 +402,15 @@ struct LinhaDeGastoView: View {
+         }
+         partes.append(Text(linha.data))
+         let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
+-        return junto.font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
++        return junto.font(.footnote).foregroundStyle(paleta.cor(secundario))
+     }
+ 
+     private func detalhe(_ texto: String) -> some View {
+-        Text(texto).font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
++        Text(texto).font(.footnote).foregroundStyle(paleta.cor(secundario))
+     }
++
++    /// O secundário do vidro; na folha, o da folha (o .f-grupo do mockup troca o --texto2 pelo --texto2-v).
++    private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
+ }
+ 
+ /// A etiqueta "novo" da linha que acabou de ser lançada (some com o destaque, em ~2 s).
+```
+
+Em `app-ios/Custta/Telas/PrincipalView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -44,6 +44,7 @@ struct PrincipalView: View {
+                 case .editarObra(let obraId): FolhaDaObra(obraId: obraId)
+                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
+                 case .orcamento(let obraId): FolhaDoOrcamento(obraId: obraId)
++                case .aPagar(let obraId): FolhaDoAPagar(obraId: obraId)
+                 }
+             }
+             .environment(folhas)
+@@ -123,7 +124,7 @@ extension PrincipalView {
+ 
+     #if DEBUG
+     /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
+-    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
++    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`, `aPagar:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
+     /// `-custta.folha editar:<gasto>`, a edição.
+     private func abrirFolhaDoGancho() async {
+@@ -142,6 +143,7 @@ extension PrincipalView {
+             case "gastoDeVendida": folhas.aberta = .gastoDeVendida(vendidaId: id)
+             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
+             case "orcamento": folhas.aberta = .orcamento(obraId: id)
++            case "aPagar": folhas.aberta = .aPagar(obraId: id)
+             default: break
+             }
+         } else if let passo, let obraId = caminhoDeObras.last?.obraId {
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected: `ℹ pass 52`, `ℹ fail 0`; sem aviso; `✔ Test run with 148 tests in 29 suites passed` (os 2 de `FolhasDeOrigemTests`, suíte nova); `FolhasDeOrigemUITests` 3 de 3 e `ObraUITests` 7 de 7; `** TEST EXECUTE SUCCEEDED **`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/Custta/Estado/Folhas.swift \
+  app-ios/Custta/Identidade/PecasDaFolha.swift \
+  app-ios/Custta/Telas/FolhaDoAPagar.swift \
+  app-ios/Custta/Telas/ObraView.swift \
+  app-ios/Custta/Telas/PecasDaObra.swift \
+  app-ios/Custta/Telas/PrincipalView.swift \
+  app-ios/CusttaTests/FolhasDeOrigemTests.swift \
+  app-ios/CusttaUITests/FolhasDeOrigemUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "feat: folha do A pagar pela seta do indicador" -m "A linha \"A pagar · 30 dias\" dos indicadores da obra passa a ser um botão inteiro, com a seta das linhas tocáveis, e abre a folha \"A pagar · 30 dias\" (o Folhas.Qual ganha o .aPagar), como no mockup aprovado da etapa 3 (parte 2, seção 1). A folha mostra num grupo sólido o total e o \"{N} vencimentos · a partir de amanhã\" do núcleo; os vencimentos vêm por mês, com a linha de gasto da etapa 2 e sem a etiqueta \"a vencer\", e no fim vem a frase do que fica depois dos 30 dias. Vazia, abre com \"Nenhum gasto previsto para esse período.\". Fecham o × e o puxar (o \"Fechar\" do site sai), e ela só fecha sozinha se a obra sumir." -m "As peças da lista (o cabeçalho do mês e cada gasto) são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça: a pilha só fatia filhos diretos, e o detalhe do tópico, que vai usar a mesma lista, passa de cem gastos. Uma guarda em Node fixa isso. Dentro da folha, o cabeçalho do mês e a linha de gasto usam o secundário da folha, e não o do vidro." -m "A suíte nova, FolhasDeOrigemUITests, roda no job app-etapa3, com os testes de tela da etapa 3, e o app a pula: com ela, o app chegaria ao teto de 90 min numa VM lenta (no run 39799242127, ela levou 23,0 min, e o app sem ela, 67). No run 39813469497, o app levou 42 min com as mesmas suítes, e o app-etapa3, 58,8 numa VM lenta (≈ 51 no 39799242127): cada job pega a sua VM, e o teto do app-etapa3 vai pela mais lenta, de 60 a 90, como o do app. Ele não cresce mais: as suítes de tela do PR 3 vão para um job novo."
+```
+
+### Task 24: Edição empurrada na folha do A pagar, com a volta à origem
+
+Tocar num vencimento empurra a edição da etapa 2 no `NavigationStack` da própria folha (decisão 1 do conselho de 19/10): sem o ×, com o voltar e "A pagar" embaixo do título. "Salvar" volta à origem, que ficou montada embaixo: a mesma rolagem, o total novo e a linha acesa por 2 s, sem a etiqueta "novo". Se a data nova levou a linha para fora da vista, a lista rola o mínimo até ela. Com mudança, o voltar pergunta antes de descartar ("Você mudou este gasto. As mudanças ainda não foram salvas.", "Descartar mudanças" / "Continuar editando"); descartar no puxar fecha tudo, e no voltar volta à origem. O gasto apagado em outro aparelho com a edição aberta volta à origem em vez de fechar a folha. O toque duplo no "Salvar" grava uma vez, com a guarda da edição no topo do caminho.
+
+- **A saída da edição é uma política no environment** (`SaidaDaEdicao`). A `.folha` é a folha do gasto de sempre, que desce; a `.origem` volta para a folha de origem, cujo estado (o caminho, o rascunho da edição, as linhas acesas e a última volta) mora num `OrigemDaEdicao` dela. O `didSet` do caminho, na raiz, solta o rascunho e publica a volta.
+- **O voltar com mudança.** O voltar do sistema sai por modificador e entram um chevron próprio, no mesmo círculo de vidro da barra, e uma borda que pergunta: um `UIScreenEdgePanGestureRecognizer` que cancela o toque de baixo. O chevron lê o título da origem ("A pagar · 30 dias", o mesmo rótulo do voltar do sistema, `BackButton`; no Controle por Voz, também "Voltar" e "A pagar") e usa `.fontWeight(.semibold)`, para sair com a espessura do do sistema (9 px na mesma caixa de 10,67 × 18,67 pt). A troca entre os dois não pisca: num vídeo do simulador, o chevron está em todos os 181 quadros das duas trocas; o único círculo vazio (~150 ms) é o empurrar do sistema, igual em todo passo empurrado de folha.
+- **O Z do VoiceOver tem uma ação fixa por passo.** O `passoDaFolha` troca o `raiz:` pelo `escape:` (`EscapeDoPasso`); uma ação de escape montada com `if` ainda trata o Z, então cada passo diz a sua.
+- **A trava do puxar continua fora da pilha,** lida pelo próprio `FolhaDoApp`, que ganha a mensagem do alerta: `folhaDoApp(perguntar: () -> Bool, …, mensagem:)`. As outras folhas passam para a forma nova, também a do orçamento do PR 1 (`folhaDoApp(perguntar: { rascunho.temOQuePerder }, …)` e `passoDaFolha(…, escape: .fechar)`), e a pergunta do puxar vai para o fundo vazio, com os botões na cor do texto.
+- **O foco do VoiceOver na volta sai de uma função pura** (`focoNaOrigem`): a linha salva, a que abriu a edição ou a vizinha, com "O gasto saiu desta lista." quando ela saiu dos 30 dias.
+- **O "Não salvou" ganha uma cópia dentro da folha de origem** (`alertaDeNaoSalvou(quando:)`, o mesmo da raiz), que só aparece sem outro alerta à vista; o `pausaOFundo` conta também os alertas dela (`AlertasNaFolha`).
+- **Na maior letra,** o resumo sai da parte que a `LazyVStack` criou quando a lista rola até o fim: o "voltou ao A pagar" dos testes confere o × da folha, e não o resumo.
+- **A volta pela borda no iOS 26.** O `testSemMudancaOVoltarDoSistemaEABordaVoltam` volta por `voltarPelaBorda(saindo: app.buttons["salvarGasto"])`, com a segunda tentativa do PR 1 (Tarefa 19), porque o arrasto sintetizado da borda às vezes não volta na CI do iOS 26 (run 39799242127). O `testComMudancaABordaPerguntaSemTocarNoBotaoDeBaixo` arrasta por conta própria, porque com mudança a borda pergunta.
+
+**Files:**
+- Create: `app-ios/Custta/Telas/FolhaDeOrigem.swift`
+- Modify: `app-ios/Custta/Identidade/Movimento.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDaObra.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDaVenda.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoAPagar.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoGasto.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoOrcamento.swift`
+- Modify: `app-ios/Custta/Telas/FolhaEmPassos.swift`
+- Modify: `app-ios/Custta/Telas/ObraView.swift`
+- Modify: `app-ios/Custta/Telas/PrincipalView.swift`
+- Test (alterar): `app-ios/CusttaTests/FolhasDeOrigemTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/FolhasDeOrigemUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `RascunhoDoGasto`, `PassoDosDetalhes`, `PassoDoValor`, `ListaDeTopicos`, `PerguntaDeApagar`, `Folhas`, `ModeloApp.gravar`, `editandoGasto` e `LinhaDeGastoView` (etapa 2); `PonteDeFechamento` e o `pausaOFundo` (etapa 1); `FolhaDoAPagar` e `pecasDaOrigem` (Tarefa 23).
+- Produces: `PassoDaOrigem` (`.editar(String)`, `.valor`, `.topicos`); `@Observable OrigemDaEdicao(titulo:nome:)`, com `caminho`, `edicao`, `acesos`, `vezDoAceso`, `volta` (`Volta`: `motivo` `.salvou`, `.voltou` ou `.sumiu`; `ordem`; `vez`), `temOQuePerder`, `editando(_:)`, `abrir(_:ordem:)`, `passosDaEdicao`, `voltarDoPasso(_:)`, `salvou(_:)`, `voltar()` e `sumiu(_:)`; `SaidaDaEdicao` (`.folha`, `.origem(OrigemDaEdicao)`), com `aberta(_:gastoId:)` e `EnvironmentValues.saidaDaEdicao`; `@Observable AlertasNaFolha` e `EnvironmentValues.alertasNaFolha`; `focoNaOrigem(_:antes:depois:) -> FocoNaOrigem` (`alvo`, `anuncio`); `EscapeDoPasso`; `View.alertaDeNaoSalvou(quando:)`; `PassoDoValor`, `PassoDosDetalhes` e `ListaDeTopicos` deixam de ser `private`. Identificador `voltarDaEdicao` (o chevron próprio).
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/FolhasDeOrigemTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/FolhasDeOrigemTests.swift
++++ b/app-ios/CusttaTests/FolhasDeOrigemTests.swift
+@@ -4,9 +4,109 @@ import Testing
+ import CusttaNucleo
+ 
+ /* A lógica das folhas de origem da etapa 3 (o A pagar): as peças da lista, filhas diretas da LazyVStack, com o lugar de
+-   cada uma no grupo do mês (o fundo do grupo é desenhado por peça). */
++   cada uma no grupo do mês (o fundo do grupo é desenhado por peça); a volta da edição empurrada (o caminho, o rascunho
++   que sai na raiz, a volta por qualquer caminho, a guarda do toque duplo); e para onde o VoiceOver vai quando a edição
++   volta. */
+ @MainActor
+ struct FolhasDeOrigemTests {
++    /// A obra com três vencimentos e o rascunho da edição do primeiro.
++    func edicao() -> (Obra, RascunhoDoGasto) {
++        let o = obra([gasto("a", "2026-10-15"), gasto("b", "2026-11-05"), gasto("c", "2026-11-06")])
++        return (o, RascunhoDoGasto(obra: o, editado: o.gastos[0], todas: [o], proprios: [], hoje: "2026-10-12"))
++    }
++
++    @Test func aEdicaoEntraNaPilhaEOVoltarDoSistemaSoltaORascunho() {
++        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++        let (_, r) = edicao()
++        origem.abrir(r, ordem: ["a", "b", "c"])
++        #expect(origem.caminho == [.editar("a")])
++        #expect(origem.editando("a"))
++        #expect(!origem.temOQuePerder)
++        r.descricao = "outra"
++        #expect(origem.temOQuePerder, "a edição mudou: o puxar e o voltar perguntam")
++        origem.caminho = []                              // o voltar do sistema (ou a borda), pela pilha
++        #expect(origem.volta?.motivo == .voltou("a"))
++        #expect(origem.volta?.ordem == ["a", "b", "c"])
++        #expect(origem.edicao == nil, "na raiz, o rascunho sai")
++        #expect(!origem.temOQuePerder, "e o puxar da lista fecha sem perguntar")
++    }
++
++    @Test func salvarVoltaUmaVezComALinhaAcesa() {
++        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++        origem.abrir(edicao().1, ordem: ["a", "b", "c"])
++        origem.salvou(["a"])
++        #expect(origem.caminho.isEmpty)
++        #expect(origem.acesos == ["a"])
++        #expect(origem.volta?.motivo == .salvou("a"))
++        #expect(origem.volta?.vez == 1)
++        #expect(!origem.editando("a"), "o segundo toque de um toque duplo já não grava")
++        origem.salvou(["a"])
++        origem.voltar()
++        #expect(origem.volta?.vez == 1, "voltar de novo não faz nada (removeLast num caminho vazio derrubaria o app)")
++        #expect(origem.caminho.isEmpty)
++    }
++
++    @Test func oValorEOsTopicosEmCimaDaEdicaoNaoPerdemNada() {
++        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++        let (_, r) = edicao()
++        origem.abrir(r, ordem: ["a"])
++        origem.passosDaEdicao.append(.valor)
++        #expect(origem.caminho == [.editar("a"), .valor])
++        r.centavos = 12_345
++        origem.voltarDoPasso(.valor)
++        origem.voltarDoPasso(.valor)
++        #expect(origem.caminho == [.editar("a")], "o segundo Pronto não volta além da edição")
++        #expect(origem.edicao === r && r.centavos == 12_345, "voltar do valor não perde nada")
++        origem.passosDaEdicao.append(.topicos)
++        origem.voltarDoPasso(.valor)
++        #expect(origem.caminho == [.editar("a"), .topicos], "só volta do passo que está no topo")
++        #expect(origem.volta == nil, "nada voltou à raiz")
++    }
++
++    @Test func oGastoQueSumiuVoltaComOMotivo() {
++        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++        origem.abrir(edicao().1, ordem: ["a", "b"])
++        origem.sumiu("a")
++        #expect(origem.volta?.motivo == .sumiu("a"))
++        #expect(origem.caminho.isEmpty)
++        origem.abrir(edicao().1, ordem: ["a", "b"])
++        origem.voltar()
++        #expect(origem.volta?.motivo == .voltou("a"), "o motivo de uma volta não fica para a seguinte")
++        #expect(origem.volta?.vez == 2)
++    }
++
++    @Test func aEdicaoGravaSoAbertaNaFolhaOuNoTopoDaOrigem() {
++        let folhas = Folhas()
++        #expect(!SaidaDaEdicao.folha.aberta(folhas, gastoId: "a"), "a folha descendo")
++        folhas.aberta = .editarGasto(obraId: "o1", gastoId: "a")
++        #expect(SaidaDaEdicao.folha.aberta(folhas, gastoId: "a"))
++        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++        origem.abrir(edicao().1, ordem: ["a"])
++        #expect(SaidaDaEdicao.origem(origem).aberta(folhas, gastoId: "a"))
++        origem.passosDaEdicao.append(.valor)
++        #expect(!SaidaDaEdicao.origem(origem).aberta(folhas, gastoId: "a"), "com o valor em cima, a edição não está no topo")
++        origem.voltarDoPasso(.valor)
++        origem.salvou(["a"])
++        #expect(!SaidaDaEdicao.origem(origem).aberta(folhas, gastoId: "a"), "voltando: o segundo toque não grava")
++    }
++
++    @Test func focoDoVoiceOverNaVoltaDaEdicao() {
++        let antes = ["a", "b", "c"]
++        #expect(focoNaOrigem(.salvou("b"), antes: antes, depois: ["a", "c", "b"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: nil),
++                "a linha salva, mesmo em outro lugar")
++        #expect(focoNaOrigem(.salvou("b"), antes: antes, depois: ["a", "c"])
++                == FocoNaOrigem(alvo: .gasto("c"), anuncio: "O gasto saiu desta lista."), "saiu da lista: a próxima")
++        #expect(focoNaOrigem(.salvou("c"), antes: antes, depois: ["a", "b"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: "O gasto saiu desta lista."),
++                "a última saiu: a anterior")
++        #expect(focoNaOrigem(.salvou("a"), antes: ["a"], depois: []) == FocoNaOrigem(alvo: .vazio, anuncio: "O gasto saiu desta lista."),
++                "a lista ficou vazia: o cartão do vazio")
++        #expect(focoNaOrigem(.voltou("b"), antes: antes, depois: antes) == FocoNaOrigem(alvo: .gasto("b"), anuncio: nil),
++                "sem salvar: a linha que abriu a edição")
++        #expect(focoNaOrigem(.sumiu("a"), antes: antes, depois: ["b", "c"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: "Gasto apagado"),
++                "apagado em outro aparelho: a vizinha")
++        #expect(focoNaOrigem(.salvou("b"), antes: ["a", "b", "c", "d"], depois: ["a", "d"]) == FocoNaOrigem(alvo: .gasto("d"), anuncio: "O gasto saiu desta lista."),
++                "a vizinha é a próxima que ficou, pulando a que também saiu")
++    }
+     func gasto(_ id: String, _ data: String, _ valor: Double = 100) -> ValorJSON {
+         .objeto(["id": .texto(id), "valor": .numero(valor), "topico": .texto("outros"), "descricao": .texto(""), "data": .texto(data),
+                  "pagamento": .texto("pix")])
+```
+
+Em `app-ios/CusttaUITests/FolhasDeOrigemUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/FolhasDeOrigemUITests.swift
++++ b/app-ios/CusttaUITests/FolhasDeOrigemUITests.swift
+@@ -4,9 +4,14 @@ import notify
+ /* As folhas de origem da etapa 3 (PR 2), na obra da vitrine (46 lançamentos, 3 vencimentos em 30 dias, contados de hoje):
+    a seta do indicador abre a folha "A pagar · 30 dias" com o resumo, os vencimentos por mês e a frase do que vem depois;
+    a obra sem vencimentos abre a folha vazia, que fecha só pelo × e pelo puxar; a obra apagada em outro aparelho fecha a
+-   folha. */
++   folha. A volta à folha de origem: tocar num vencimento empurra a edição na mesma folha; "Salvar" volta na mesma rolagem
++   com os números novos (e, na maior letra, a linha que foi para o fim da lista fica à vista); sem mudança, o voltar do
++   sistema e a borda voltam; com mudança, o chevron, a borda e o puxar perguntam, a borda sem tocar no botão de baixo e sem
++   atrapalhar a rolagem; o toque duplo no "Salvar"; o "Carregando" e o "Não salvou" com a origem aberta; o gasto apagado em
++   outro aparelho com a edição aberta. */
+ @MainActor
+ final class FolhasDeOrigemUITests: XCTestCase {
++    private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+     /// A obra aberta (v1, a Casa Alphaville do mockup, por padrão).
+     private func abrirObra(_ obra: String = "v1", argumentos: [String] = [], gravacao: String? = nil,
+                            extra: [String: String] = [:]) -> XCUIApplication {
+@@ -35,6 +40,59 @@ final class FolhasDeOrigemUITests: XCTestCase {
+                    withVelocity: .fast, thenHoldForDuration: 0)
+     }
+ 
++    /// Rola a lista da folha (o meio da tela) até o elemento estar inteiro à vista, com o arrasto terminando parado.
++    private func rolarNaFolha(_ app: XCUIApplication, ate id: String, tentativas: Int = 12) -> XCUIElement? {
++        for _ in 0..<tentativas {
++            if let e = naFolha(app, id), e.frame.minY > 100, e.frame.maxY < app.frame.maxY - 40 { return e }
++            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
++                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)),
++                       withVelocity: .slow, thenHoldForDuration: 0.3)
++        }
++        return naFolha(app, id)
++    }
++
++    /// Toca num vencimento da folha: a edição entra na mesma folha.
++    private func editar(_ app: XCUIApplication, _ id: String) {
++        guard let linha = rolarNaFolha(app, ate: "gasto-\(id)") else { return XCTFail("a linha \(id) na folha") }
++        linha.tap()
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5), "a edição de \(id) entrou na folha")
++    }
++
++    /// Muda a descrição (" x" no fim) e fecha o teclado.
++    private func mudarDescricao(_ app: XCUIApplication) {
++        let campo = app.textFields["descricao"]
++        XCTAssertTrue(campo.waitForExistence(timeout: 5))
++        for _ in 0..<5 where !app.keyboards.firstMatch.exists { campo.tap(); sleep(1) }
++        campo.typeText(" x")
++        campo.typeText("\n")
++        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 3), "o teclado fecha")
++    }
++
++    /// O valor no teclado de valor: apaga e digita `teclas`; "Pronto" volta à edição.
++    private func mudarValor(_ app: XCUIApplication, _ teclas: String) {
++        app.elemento("linhaValor").tap()
++        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
++        for _ in 0..<8 { app.buttons["tecla-del"].tap() }
++        for t in teclas { app.buttons["tecla-\(t)"].tap() }
++        app.buttons["confirmarValor"].tap()
++        XCTAssertTrue(app.elemento("linhaValor").waitForExistence(timeout: 5))
++    }
++
++    /// Os alertas à vista, pelo título.
++    private func alertas(_ app: XCUIApplication) -> [String] { app.alerts.allElementsBoundByIndex.map(\.label) }
++
++    /// Volta na mesma folha: a edição sai e a raiz do A pagar fica, com o × da folha (o resumo, lá no alto, pode estar
++    /// fora da parte da lista que a LazyVStack criou).
++    private func voltouAoAPagar(_ app: XCUIApplication, _ porque: String) {
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5), porque)
++        XCTAssertTrue(app.buttons["fecharFolha"].waitForExistence(timeout: 3), "a folha do A pagar continua aberta")
++    }
++
++    /// O voltar do sistema da edição: tem o nome da folha de origem (medido em 20/10).
++    private func voltarDoSistema(_ app: XCUIApplication) -> XCUIElement? {
++        app.navigationBars.buttons.matching(identifier: "BackButton").allElementsBoundByIndex.first(where: \.isHittable)
++    }
++
+     /// AAAA-MM de hoje + `dias`, no fuso do aparelho (o do app).
+     private func mes(daquiA dias: Int) -> String {
+         let dia = Calendar(identifier: .gregorian).date(byAdding: .day, value: dias, to: .now) ?? .now
+@@ -105,4 +163,235 @@ final class FolhasDeOrigemUITests: XCTestCase {
+         XCTAssertTrue(app.buttons["fecharFolha"].waitForNonExistence(timeout: 10), "a obra sumiu: a folha fecha")
+         XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "e a obra volta para a lista")
+     }
++
++    // MARK: A volta à folha de origem
++
++    /// O quadro do mockup: a Tinta acrílica (2/3) de R$ 2.300,00 para R$ 2.450,00; o total vai a R$ 13.400,00.
++    func testEditarDoAPagarEmpurraAEdicaoESalvarVolta() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        let titulo = app.elemento("tituloDaFolha")
++        XCTAssertTrue(titulo.label.hasPrefix("Editar gasto"), titulo.label)
++        XCTAssertTrue(titulo.label.hasSuffix("A pagar"), "a origem embaixo do título: \(titulo.label)")
++        XCTAssertFalse(app.buttons["fecharFolha"].exists, "sem o ×: o voltar fica no lugar dele")
++        XCTAssertFalse(app.buttons["voltarDaEdicao"].exists, "sem mudança, o voltar é o do sistema")
++        mudarValor(app, "245000")
++        XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}2.450,00")
++        app.buttons["salvarGasto"].tap()
++        voltouAoAPagar(app, "Salvar volta ao A pagar")
++        let resumo = app.elemento("resumoDoAPagar")
++        XCTAssertTrue(resumo.label.contains("R$\u{a0}13.400,00") && resumo.label.contains("3 vencimentos"), resumo.label)
++        XCTAssertEqual(naFolha(app, "gasto-g045")?.value as? String, "R$\u{a0}2.450,00", "a linha com o valor novo")
++        XCTAssertTrue(app.buttons["fecharFolha"].exists, "e o × da folha de volta")
++    }
++
++    /// Na maior letra a lista passa da tela: o "Salvar" volta com a linha no mesmo lugar.
++    func testNaMaiorLetraSalvarVoltaNaMesmaRolagem() {
++        let app = abrirObra(argumentos: Self.maiorLetra)
++        abrirAPagar(app)
++        guard let linha = rolarNaFolha(app, ate: "gasto-g045") else { return XCTFail("a Tinta acrílica na folha") }
++        let antes = linha.frame.minY
++        linha.tap()
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5))
++        mudarValor(app, "245000")
++        app.buttons["salvarGasto"].tap()
++        voltouAoAPagar(app, "Salvar volta ao A pagar")
++        sleep(1)
++        let depois = naFolha(app, "gasto-g045")
++        XCTAssertEqual(depois?.value as? String, "R$\u{a0}2.450,00")
++        XCTAssertEqual(depois?.frame.minY ?? -1, antes, accuracy: 1, "a lista volta na mesma rolagem")
++    }
++
++    /// Na maior letra, o primeiro vencimento com a data trocada para o fim dos 30 dias vai para o fim da lista, fora da vista:
++    /// a lista rola o mínimo até ele.
++    func testNaMaiorLetraALinhaQueVaiParaOFimFicaAVista() {
++        let app = abrirObra(argumentos: Self.maiorLetra + ["-custta.dataDaEdicao", "29"])
++        abrirAPagar(app)
++        editar(app, "g039")
++        app.buttons["salvarGasto"].tap()
++        voltouAoAPagar(app, "Salvar volta ao A pagar")
++        sleep(1)
++        guard let linha = app.descendants(matching: .any).matching(identifier: "gasto-g039").allElementsBoundByIndex.first(where: \.exists)
++        else { return XCTFail("a linha continua no A pagar") }
++        XCTAssertTrue(app.frame.contains(linha.frame), "a linha que foi para o fim está inteira à vista: \(linha.frame)")
++        if let tinta = naFolha(app, "gasto-g045") { XCTAssertLessThan(tinta.frame.minY, linha.frame.minY, "e agora vem depois da Tinta acrílica") }
++    }
++
++    func testComMudancaOChevronPerguntaEDescartarVolta() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        XCTAssertEqual(voltarDoSistema(app)?.label, "A pagar · 30 dias")
++        mudarDescricao(app)
++        let chevron = app.buttons["voltarDaEdicao"]
++        XCTAssertTrue(chevron.waitForExistence(timeout: 3), "com mudança, o chevron próprio")
++        XCTAssertEqual(chevron.label, "A pagar · 30 dias", "com o rótulo do voltar do sistema")
++        XCTAssertNil(voltarDoSistema(app), "no lugar do voltar do sistema")
++        chevron.tap()
++        let alerta = app.alerts["Você mudou este gasto."]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "o chevron pergunta")
++        XCTAssertTrue(alerta.staticTexts["As mudanças ainda não foram salvas."].exists)
++        alerta.buttons["Continuar editando"].tap()
++        XCTAssertTrue(alerta.waitForNonExistence(timeout: 3))
++        XCTAssertTrue(app.buttons["salvarGasto"].exists, "continua na edição")
++        chevron.tap()
++        app.alerts["Você mudou este gasto."].buttons["Descartar mudanças"].tap()
++        voltouAoAPagar(app, "Descartar mudanças volta ao A pagar")
++        XCTAssertTrue(naFolha(app, "gasto-g045")?.label.hasPrefix("Tinta acrílica, parcela 2 de 3.") == true, "nada foi gravado")
++    }
++
++    /// Sem mudança, o voltar do sistema volta (e a borda, com ele).
++    func testSemMudancaOVoltarDoSistemaEABordaVoltam() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        XCTAssertFalse(app.buttons["voltarDaEdicao"].exists)
++        let voltar = voltarDoSistema(app)
++        XCTAssertEqual(voltar?.label, "A pagar · 30 dias", "o voltar do sistema, com o nome da origem")
++        voltar?.tap()
++        voltouAoAPagar(app, "o voltar do sistema volta ao A pagar")
++        editar(app, "g045")
++        app.voltarPelaBorda(saindo: app.buttons["salvarGasto"])
++        voltouAoAPagar(app, "a borda volta ao A pagar")
++    }
++
++    /// Com mudança, o arrasto da borda que passa por cima do "Apagar gasto" pergunta e não toca no botão: com o voltar do
++    /// sistema escondido, sem a borda que pergunta, ele virava toque no botão (medido em 19/10).
++    func testComMudancaABordaPerguntaSemTocarNoBotaoDeBaixo() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        mudarDescricao(app)
++        let apagar = app.buttons["apagarGasto"]
++        XCTAssertTrue(apagar.isHittable, "o Apagar gasto à vista")
++        let y = apagar.frame.midY
++        let origem = app.coordinate(withNormalizedOffset: .zero)
++        origem.withOffset(CGVector(dx: 0, dy: y))
++            .press(forDuration: 0.05, thenDragTo: origem.withOffset(CGVector(dx: app.frame.width * 0.85, dy: y)))
++        let alerta = app.alerts["Você mudou este gasto."]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "a borda pergunta: \(alertas(app))")
++        XCTAssertEqual(alertas(app), ["Você mudou este gasto."], "e não toca no botão de baixo")
++        alerta.buttons["Continuar editando"].tap()
++        XCTAssertTrue(alerta.waitForNonExistence(timeout: 3))
++        XCTAssertTrue(app.buttons["salvarGasto"].exists, "continua na edição")
++        // Descartar pela borda volta ao A pagar, como o chevron.
++        origem.withOffset(CGVector(dx: 0, dy: 300)).press(forDuration: 0.05, thenDragTo: origem.withOffset(CGVector(dx: app.frame.width * 0.85, dy: 300)))
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
++        alerta.buttons["Descartar mudanças"].tap()
++        voltouAoAPagar(app, "Descartar mudanças pela borda volta ao A pagar")
++    }
++
++    /// Com mudança (e a borda que pergunta ligada), a rolagem segue: o arrasto vertical rola, no meio e perto da borda.
++    func testComMudancaARolagemSegue() {
++        let app = abrirObra(argumentos: Self.maiorLetra)
++        abrirAPagar(app)
++        editar(app, "g045")
++        mudarValor(app, "245000")
++        XCTAssertTrue(app.buttons["voltarDaEdicao"].waitForExistence(timeout: 3), "com mudança")
++        let valor = app.elemento("linhaValor")
++        let antes = valor.frame.minY
++        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
++            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)), withVelocity: .slow, thenHoldForDuration: 0.3)
++        let meio = valor.frame.minY
++        XCTAssertLessThan(meio, antes - 50, "o arrasto no meio rola")
++        let borda = app.coordinate(withNormalizedOffset: .zero)
++        borda.withOffset(CGVector(dx: 6, dy: app.frame.height * 0.7))
++            .press(forDuration: 0.05, thenDragTo: borda.withOffset(CGVector(dx: 6, dy: app.frame.height * 0.45)), withVelocity: .slow, thenHoldForDuration: 0.3)
++        XCTAssertLessThan(valor.frame.minY, meio - 50, "o arrasto vertical perto da borda também rola")
++        XCTAssertEqual(alertas(app), [], "e nada pergunta")
++    }
++
++    func testPuxarComMudancaPerguntaEDescartarFechaTudo() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        mudarDescricao(app)
++        puxarFolha(app)
++        let alerta = app.alerts["Você mudou este gasto."]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 4), "puxar com mudança pergunta")
++        XCTAssertTrue(alerta.staticTexts["As mudanças ainda não foram salvas."].exists)
++        alerta.buttons["Descartar mudanças"].tap()
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
++        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForNonExistence(timeout: 5), "fecha a folha inteira, com o A pagar")
++        XCTAssertTrue(app.elemento("tituloDaObra").isHittable, "e mostra a obra")
++    }
++
++    func testPuxarSemMudancaFechaTudo() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        puxarFolha(app)
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
++        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForNonExistence(timeout: 5), "fecha a folha inteira, sem perguntar")
++        XCTAssertEqual(alertas(app), [])
++    }
++
++    /// O segundo toque de um toque duplo chega com a edição já voltando: grava uma vez e não derruba o app.
++    func testToqueDuploNoSalvarDaEdicaoVoltaUmaVez() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        mudarValor(app, "245000")
++        app.buttons["salvarGasto"].doubleTap()
++        voltouAoAPagar(app, "Salvar volta ao A pagar")
++        sleep(1)
++        XCTAssertEqual(app.state, .runningForeground)
++        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("R$\u{a0}13.400,00"), app.elemento("resumoDoAPagar").label)
++        XCTAssertFalse(app.buttons["salvarGasto"].exists, "volta uma vez só, para a lista")
++    }
++
++    func testCarregandoNaEdicaoAvisaEFica() {
++        let app = abrirObra(argumentos: ["-custta.recusarGravacao", "nao-carregado"])
++        abrirAPagar(app)
++        editar(app, "g045")
++        mudarValor(app, "245000")
++        app.buttons["salvarGasto"].tap()
++        let alerta = app.alerts["Carregando suas obras, tente em instantes."]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
++        XCTAssertTrue(alerta.staticTexts["O gasto continua aqui; nada foi salvo ainda."].exists)
++        alerta.buttons["OK"].tap()
++        XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}2.450,00", "o gasto continua na edição")
++        XCTAssertTrue(app.buttons["salvarGasto"].exists)
++    }
++
++    /// O "Não salvou" de um gasto salvo na edição aparece com a folha de origem aberta (a da raiz espera a folha fechar), e
++    /// só sem outro alerta à vista: no iOS 27, um alerta toma o lugar do outro.
++    func testNaoSalvouAvisaDentroDaFolhaDeOrigemSemTomarOLugarDeOutroAlerta() {
++        let app = abrirObra(gravacao: "recusa", extra: ["CUSTTA_GRAVACAO_ESPERA": "aviso"])
++        abrirAPagar(app)
++        editar(app, "g045")
++        mudarValor(app, "245000")
++        app.buttons["salvarGasto"].tap()
++        voltouAoAPagar(app, "Salvar volta ao A pagar")
++        // Outro alerta à vista quando a recusa chega: a pergunta do chevron, numa edição aberta de novo.
++        editar(app, "g032")
++        mudarDescricao(app)
++        app.buttons["voltarDaEdicao"].tap()
++        let pergunta = app.alerts["Você mudou este gasto."]
++        XCTAssertTrue(pergunta.waitForExistence(timeout: 3))
++        notify_post("br.com.custta.falso.responderGravacao")
++        sleep(2)
++        XCTAssertEqual(alertas(app), ["Você mudou este gasto."], "o Não salvou espera a pergunta fechar")
++        pergunta.buttons["Descartar mudanças"].tap()
++        voltouAoAPagar(app, "Descartar mudanças volta ao A pagar")
++        let naoSalvou = app.alerts["Não salvou na nuvem"]
++        XCTAssertTrue(naoSalvou.waitForExistence(timeout: 5), "o Não salvou aparece dentro da folha de origem: \(alertas(app))")
++        naoSalvou.buttons["OK"].tap()
++        XCTAssertTrue(naoSalvou.waitForNonExistence(timeout: 3))
++        XCTAssertTrue(app.elemento("resumoDoAPagar").exists, "e a folha continua aberta")
++        app.buttons["fecharFolha"].tap()
++        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForNonExistence(timeout: 5))
++        XCTAssertFalse(naoSalvou.waitForExistence(timeout: 2), "uma vez só: a cópia da raiz não repete")
++    }
++
++    func testGastoApagadoEmOutroAparelhoVoltaAOrigem() {
++        let app = abrirObra(extra: ["CUSTTA_APAGAR_REMOTO": "v1/g045@0"])
++        abrirAPagar(app)
++        editar(app, "g045")
++        notify_post("br.com.custta.falso.apagarRemoto")
++        voltouAoAPagar(app, "o gasto sumiu: a edição volta ao A pagar, em vez de fechar a folha")
++        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("2 vencimentos"), app.elemento("resumoDoAPagar").label)
++        XCTAssertNil(naFolha(app, "gasto-g045"))
++    }
+ }
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -606,18 +606,47 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo',
+   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
+   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
+   // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
++  // A edição empurrada numa folha de origem (etapa 3) não fecha a folha: a guarda dela é a edição ainda no topo do caminho.
+   const acoes = {
+-    'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
+-    'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
+-    'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
+-    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': 'private func salvar() {',
++    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
++    'app-ios/Custta/Telas/FolhaDaVenda.swift': ['private func confirmar(inicio: String, hoje: String) {', /guard folhas\.aberta != nil else \{ return \}/],
++    'app-ios/Custta/Telas/FolhaDaObra.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
++    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
+   };
+-  for(const [f, assinatura] of Object.entries(acoes)){
++  for(const [f, [assinatura, guarda]] of Object.entries(acoes)){
+     const t = ler(f);
+     assert.equal(t.split(assinatura).length, 2, `${f}: ${assinatura}`);
+-    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), /^\n(?:\s*\/\/[^\n]*\n)*\s*guard folhas\.aberta != nil else \{ return \}\n/,
++    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), new RegExp(String.raw`^\n(?:\s*\/\/[^\n]*\n)*\s*` + guarda.source + String.raw`\n`),
+                  `${f}: a guarda do toque duplo na primeira linha da ação`);
+   }
++  const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
++  assert.match(origem, /case \.folha: folhas\.aberta != nil\n\s*case \.origem\(let origem\): origem\.editando\(gastoId\)/,
++               'a guarda da edição: a folha aberta ou, na origem, a edição no topo do caminho');
++  assert.match(origem, /func editando\(_ gastoId: String\?\) -> Bool \{\n\s*guard let gastoId else \{ return false \}\n\s*return caminho\.last == \.editar\(gastoId\)/);
++});
++
++test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo', () => {
++  // Nenhum teste de tela vê isso. A trava do puxar lida no corpo de quem monta a pilha refaria a lista da origem a cada tecla
++  // da descrição; dentro do passo ela não chega à folha (medido em 19/10), e o puxar descartaria a mudança. O voltar trocado
++  // por um `if` de estrutura recriaria o passo e derrubaria o foco do teclado na primeira tecla. E a ação de escape escolhida
++  // pelo rascunho trocaria o passo do mesmo jeito, ou engoliria o voltar do VoiceOver (revisão da T22).
++  const passos = ler('app-ios/Custta/Telas/FolhaEmPassos.swift');
++  assert.match(passos, /func folhaDoApp\(perguntar: @escaping \(\) -> Bool,/, 'o folhaDoApp recebe uma função, e não o valor');
++  assert.match(passos, /let temOQuePerder = perguntar\(\)[\s\S]*?\.interactiveDismissDisabled\(temOQuePerder\)/, 'lida no corpo do próprio FolhaDoApp');
++  for(const f of arquivosSwift('app-ios/Custta').filter(f => !f.endsWith('FolhaEmPassos.swift')))
++    assert.doesNotMatch(ler(f), /\.interactiveDismissDisabled\(/, `${f}: a trava do puxar só no FolhaDoApp, fora da pilha`);
++  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
++  assert.match(aPagar, /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
++               'o folhaDoApp em volta da pilha da origem, com a mudança lida por ele');
++  const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
++  assert.match(origem, /\.navigationBarBackButtonHidden\(sujo\)\n\s*\.toolbar \{\n\s*if sujo \{\n\s*ToolbarItem\(placement: \.topBarLeading\)/,
++               'o voltar do sistema sai por modificador, e o chevron entra pela barra');
++  assert.equal(origem.match(/if sujo/g)?.length, 1, 'nenhum outro `if sujo`: a estrutura do passo não muda com a mudança');
++  assert.match(origem, /\.gesture\(BordaQuePergunta\(ativa: sujo\)/, 'a borda que pergunta, ligada só com mudança');
++  const gasto = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
++  assert.match(gasto, /private var escape: EscapeDoPasso \{\n\s*if case \.origem\(let origem\) = saida \{\n\s*return \.proprio \{ if rascunho\.temOQuePerder \{ perguntandoAVolta = true \} else \{ origem\.voltar\(\) \} \}\n\s*\}\n\s*return raiz \? \.fechar : \.sistema\n\s*\}/,
++               'o Z da edição: fixo pela saída e pela raiz; o rascunho só decide dentro da ação');
++  assert.match(gasto, /\.passoDaFolha\(rascunho\.editado == nil \? "Novo gasto" : "Editar gasto", subtitulo: subtitulo, fechar: lado, escape: escape\)/);
+ });
+ 
+ test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da folha atrás do botão de baixo', () => {
+@@ -758,7 +787,7 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
+   // só, criada de uma vez com todas as linhas (o detalhe do tópico, com a mesma lista, passa de cem gastos). Nenhum teste
+   // de tela vê isso: a tela fica igual.
+   const t = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
+-  const pecas = t.indexOf('ForEach(pecasDaOrigem(');
++  const pecas = t.search(/ForEach\(pecas(?:DaOrigem\([^)]*\))?\) \{/);
+   assert.ok(pecas > 0, 'as peças da lista num ForEach');
+   let nivel = 0, abre = -1;
+   for(let i = pecas - 1; i >= 0 && abre < 0; i--){
+@@ -766,8 +795,9 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
+     else if(t[i] === '{'){ if(nivel === 0) abre = i; else nivel--; }
+   }
+   assert.match(t.slice(0, abre), /LazyVStack\([^)]*\)\s*$/, 'o ForEach das peças direto dentro da LazyVStack');
+-  const corpo = t.slice(pecas, t.indexOf('\n                    }\n', pecas));
+-  assert.equal(corpo.match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
++  let fim = t.indexOf('{', pecas) + 1;
++  for(let n = 1; n > 0 && fim < t.length; fim++) n += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
++  assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
+ });
+ 
+ test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected: reprovam `✖ folhas que gravam: o segundo toque de um toque duplo não grava de novo` e `✖ volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo` (`ℹ pass 51`, `ℹ fail 2`), com `AssertionError [ERR_ASSERTION]: app-ios/Custta/Telas/FolhaDoGasto.swift: a guarda do toque duplo na primeira linha da ação` e `AssertionError [ERR_ASSERTION]: o folhaDoApp recebe uma função, e não o valor`; o `CusttaTests` não compila: `cannot find 'FocoNaOrigem' in scope`, `cannot find 'focoNaOrigem' in scope`, `cannot find 'SaidaDaEdicao' in scope` e `cannot find 'OrigemDaEdicao' in scope` (o resto é cascata da inferência, como `type 'Any' has no member 'editar'`). Só com os testes de tela no lugar, os 13 novos de `FolhasDeOrigemUITests` reprovam onde a edição devia entrar na folha: `XCTAssertTrue failed - a edição de g045 entrou na folha` (g039 no `testNaMaiorLetraALinhaQueVaiParaOFimFicaAVista`, e sem mensagem no `testNaMaiorLetraSalvarVoltaNaMesmaRolagem`).
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Identidade/Movimento.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Movimento.swift
++++ b/app-ios/Custta/Identidade/Movimento.swift
+@@ -152,7 +152,8 @@ extension View {
+     /// A tela avisa o fundo quando rola (ScrollView ou List).
+     func pausaOFundoAoRolar() -> some View { modifier(AvisaRolagem()) }
+ 
+-    /// Segura o fundo enquanto `ativo` (um alerta do sistema por cima).
++    /// Segura o fundo enquanto `ativo` (um alerta do sistema por cima). Dentro de uma folha de origem, conta também o
++    /// alerta à vista nela: o "Não salvou" de dentro da folha espera.
+     func pausaOFundo(enquanto ativo: Bool) -> some View { modifier(SeguraOFundo(ativo: ativo)) }
+ 
+     /// Pouca Energia e calor do aparelho. Os avisos do sistema chegam numa fila qualquer: passam para a
+@@ -178,11 +179,19 @@ private struct AvisaRolagem: ViewModifier {
+ private struct SeguraOFundo: ViewModifier {
+     let ativo: Bool
+     @Environment(\.pausasDoFundo) private var pausas
++    @Environment(\.alertasNaFolha) private var alertas
+ 
+     func body(content: Content) -> some View {
+         content
+-            .onChange(of: ativo) { _, novo in pausas?.cobrir(novo) }
+-            .onDisappear { if ativo { pausas?.cobrir(false) } }
++            .onChange(of: ativo) { _, novo in
++                pausas?.cobrir(novo)
++                alertas?.mudou(novo)
++            }
++            .onDisappear {
++                guard ativo else { return }
++                pausas?.cobrir(false)
++                alertas?.mudou(false)
++            }
+     }
+ }
+ 
+```
+
+Em `app-ios/Custta/Telas/FolhaDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDaObra.swift
++++ b/app-ios/Custta/Telas/FolhaDaObra.swift
+@@ -123,7 +123,7 @@ private struct FolhaDaObraAberta: View {
+                     }
+                 }
+         }
+-        .folhaDoApp(perguntar: rascunho.temOQuePerder,
++        .folhaDoApp(perguntar: { rascunho.temOQuePerder },
+                     pergunta: rascunho.nova ? "Você já preencheu esta obra." : "Você mudou esta obra.",
+                     descartar: rascunho.nova ? "Descartar obra" : "Descartar alterações") {
+             folhas.fechar()
+@@ -280,7 +280,7 @@ private struct FormularioDaObra: View {
+                         .accessibilityHidden(true)
+                 }
+         }
+-        .passoDaFolha(rascunho.nova ? "Nova obra" : "Editar obra", subtitulo: subtitulo, fechar: .esquerda, raiz: true)
++        .passoDaFolha(rascunho.nova ? "Nova obra" : "Editar obra", subtitulo: subtitulo, fechar: .esquerda, escape: .fechar)
+         // Obra nova: o cursor no nome e o teclado aberto (sugestão aprovada; o site só faz isso no computador).
+         .onAppear {
+             guard !abriu else { return }
+```
+
+Em `app-ios/Custta/Telas/FolhaDaVenda.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDaVenda.swift
++++ b/app-ios/Custta/Telas/FolhaDaVenda.swift
+@@ -35,12 +35,12 @@ struct FolhaDaVenda: View {
+                 rascunho.passouDoValor = true
+                 caminho = [.data]
+             }
+-            .passoDaFolha("Valor da venda", subtitulo: obra?.nome, fechar: .esquerda, raiz: true)
++            .passoDaFolha("Valor da venda", subtitulo: obra?.nome, fechar: .esquerda, escape: .fechar)
+             .navigationDestination(for: PassoDaVenda.self) { _ in
+                 PassoDaDataDaVenda(rascunho: rascunho, caminho: $caminho, obraId: obraId)
+             }
+         }
+-        .folhaDoApp(perguntar: rascunho.passouDoValor, pergunta: "Você já preencheu esta venda.", descartar: "Descartar venda") {
++        .folhaDoApp(perguntar: { rascunho.passouDoValor }, pergunta: "Você já preencheu esta venda.", descartar: "Descartar venda") {
+             folhas.fechar()
+         }
+         // A obra sumiu ou outro aparelho mudou a fase com a folha aberta: não há o que vender; a folha fecha.
+```
+
+Criar `app-ios/Custta/Telas/FolhaDeOrigem.swift`:
+
+```swift
+import SwiftUI
+import UIKit
+import CusttaNucleo
+
+/* A volta à folha de origem (etapa 3; decisão 1 do conselho de 19/10). Editar um gasto de dentro de uma folha (o A pagar;
+   o detalhe do tópico vem depois) empurra a edição da etapa 2 no NavigationStack da própria folha, sem o ×, com o voltar e
+   o nome da origem no subtítulo. "Salvar" e o voltar voltam à origem, que fica montada embaixo: a mesma rolagem, os
+   números novos e, no "Salvar", a linha acesa. Puxar fecha a folha inteira e, com mudança, pergunta antes. Continua uma folha por vez: o `Folhas` é só a folha sobre as abas, e o estado da volta mora na folha de origem
+   (`OrigemDaEdicao`). */
+
+/// Um passo empurrado na folha de origem: a edição de um gasto e, em cima dela, o teclado do valor e a lista de tópicos.
+enum PassoDaOrigem: Hashable {
+    case editar(String)
+    case valor
+    case topicos
+
+    init?(passo: PassoDoGasto) {
+        switch passo {
+        case .valor: self = .valor
+        case .topicos: self = .topicos
+        case .detalhes, .obras: return nil
+        }
+    }
+
+    var passoDoGasto: PassoDoGasto? {
+        switch self {
+        case .valor: .valor
+        case .topicos: .topicos
+        case .editar: nil
+        }
+    }
+}
+
+/// O que a folha de origem guarda da edição empurrada dentro dela, e o que a lista faz quando a edição volta.
+@MainActor @Observable
+final class OrigemDaEdicao {
+    /// Quanto dura o voltar do NavigationStack: o foco do VoiceOver e o anúncio contam do fim dele.
+    static let fimDoVoltar = Duration.milliseconds(500)
+
+    /// O título da folha de origem ("A pagar · 30 dias"): o voltar do sistema da edição se chama assim, e o chevron próprio
+    /// também (medido no simulador em 20/10).
+    let titulo: String
+    /// O nome curto da origem, no subtítulo da edição ("A pagar"): diz para onde ela volta.
+    let nome: String
+
+    init(titulo: String, nome: String) {
+        self.titulo = titulo
+        self.nome = nome
+    }
+
+    /// Como a edição voltou, para a lista: rolar até a linha e apagar a luz, mover o foco.
+    struct Volta: Equatable {
+        enum Motivo: Equatable {
+            /// "Salvar": a linha volta acesa.
+            case salvou(String)
+            /// O voltar sem salvar: o do sistema, sem mudança; o chevron, a borda ou o Z, descartando.
+            case voltou(String)
+            /// O gasto sumiu com a edição aberta (apagado em outro aparelho).
+            case sumiu(String)
+        }
+
+        let motivo: Motivo
+        /// A ordem das linhas quando a edição abriu: a vizinha de uma linha que saiu da lista vem dela.
+        let ordem: [String]
+        let vez: Int
+    }
+
+    /// O caminho da pilha. A volta à raiz, por qualquer caminho (o voltar do sistema também), solta a edição e avisa a lista.
+    var caminho: [PassoDaOrigem] = [] {
+        didSet {
+            guard caminho.isEmpty, case .editar(let id)? = oldValue.first else { return }
+            let motivo = motivoDaVolta ?? .voltou(id)
+            motivoDaVolta = nil
+            edicao = nil
+            vezes += 1
+            volta = Volta(motivo: motivo, ordem: ordemAoAbrir, vez: vezes)
+        }
+    }
+    /// O rascunho da edição: criado ao empurrar e solto quando o caminho volta à raiz (voltar do valor ou dos tópicos não
+    /// perde nada).
+    private(set) var edicao: RascunhoDoGasto?
+    /// As linhas acesas depois de salvar (2 s), e quantas vezes acenderam: a luz de um "Salvar" não apaga a do seguinte.
+    var acesos: Set<String> = []
+    @ObservationIgnored private(set) var vezDoAceso = 0
+    /// A última volta da edição.
+    private(set) var volta: Volta?
+    @ObservationIgnored private var motivoDaVolta: Volta.Motivo?
+    @ObservationIgnored private var ordemAoAbrir: [String] = []
+    @ObservationIgnored private var vezes = 0
+
+    /// A edição mudou alguma coisa: o puxar e o voltar perguntam antes de descartar.
+    var temOQuePerder: Bool { edicao?.temOQuePerder ?? false }
+
+    /// A edição deste gasto está no topo do caminho, e o "Salvar" pode gravar: o segundo toque de um toque duplo chega com
+    /// ela já voltando.
+    func editando(_ gastoId: String?) -> Bool {
+        guard let gastoId else { return false }
+        return caminho.last == .editar(gastoId)
+    }
+
+    /// Empurra a edição de um gasto da lista; `ordem` são as linhas na ordem da tela.
+    func abrir(_ rascunho: RascunhoDoGasto, ordem: [String]) {
+        guard caminho.isEmpty, let id = rascunho.editado?.id else { return }
+        edicao = rascunho
+        ordemAoAbrir = ordem
+        caminho = [.editar(id)]
+    }
+
+    /// Os passos em cima da edição (o valor e os tópicos), no caminho do PassoDosDetalhes.
+    var passosDaEdicao: [PassoDoGasto] {
+        get { caminho.dropFirst().compactMap(\.passoDoGasto) }
+        set {
+            guard case .editar(let id)? = caminho.first else { return }
+            caminho = [.editar(id)] + newValue.compactMap(PassoDaOrigem.init(passo:))
+        }
+    }
+
+    /// "Pronto" no valor, o tópico escolhido: volta à edição. O segundo toque não volta além dela (e `removeLast` num
+    /// caminho vazio derrubaria o app).
+    func voltarDoPasso(_ passo: PassoDaOrigem) {
+        if caminho.count > 1, caminho.last == passo { caminho.removeLast() }
+    }
+
+    /// "Salvar" gravou: a edição volta e a linha fica acesa.
+    func salvou(_ ids: [String]) {
+        guard case .editar(let id)? = caminho.first else { return }
+        acesos = Set(ids)
+        vezDoAceso += 1
+        sair(.salvou(id))
+    }
+
+    /// "Descartar mudanças" (no chevron, na borda ou no Z) ou o Z sem mudança: volta sem salvar.
+    func voltar() {
+        guard case .editar(let id)? = caminho.first else { return }
+        sair(.voltou(id))
+    }
+
+    /// O gasto da edição sumiu (apagado em outro aparelho): volta, em vez de fechar a folha.
+    func sumiu(_ gastoId: String) { sair(.sumiu(gastoId)) }
+
+    /// Volta à raiz pelo motivo dado; com o caminho já na raiz, nada (o segundo toque, a volta repetida).
+    private func sair(_ motivo: Volta.Motivo) {
+        guard !caminho.isEmpty else { return }
+        motivoDaVolta = motivo
+        caminho = []
+    }
+}
+
+/// Para onde a edição de um gasto vai quando termina. `.folha`: a folha do gasto da etapa 2, que desce, e a obra acende ou
+/// apaga a linha, como sempre. `.origem`: a edição está empurrada numa folha de origem e volta para ela.
+enum SaidaDaEdicao: Sendable {
+    case folha
+    case origem(OrigemDaEdicao)
+
+    /// A edição ainda está à vista e pode gravar: a folha aberta; na origem, a edição no topo do caminho.
+    @MainActor func aberta(_ folhas: Folhas, gastoId: String?) -> Bool {
+        switch self {
+        case .folha: folhas.aberta != nil
+        case .origem(let origem): origem.editando(gastoId)
+        }
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var saidaDaEdicao = SaidaDaEdicao.folha
+    /// Os alertas à vista dentro de uma folha de origem.
+    @Entry var alertasNaFolha: AlertasNaFolha? = nil
+}
+
+/// Os alertas à vista dentro de uma folha de origem (cada `.pausaOFundo(enquanto:)` de dentro dela conta um). O "Não salvou"
+/// de dentro da folha só aparece sem nenhum outro à vista: no iOS 27, um alerta toma o lugar de outro.
+@MainActor @Observable
+final class AlertasNaFolha {
+    private(set) var abertos = 0
+    var nenhum: Bool { abertos == 0 }
+
+    func mudou(_ aberto: Bool) { abertos = max(0, abertos + (aberto ? 1 : -1)) }
+}
+
+/// O que aconteceu com uma linha da folha de origem, para o foco do VoiceOver.
+enum SaidaDaLinha: Equatable {
+    case salvou(String)
+    case voltou(String)
+    case sumiu(String)
+}
+
+/// Para onde o VoiceOver vai na lista da folha de origem, e o que ele ouve depois.
+struct FocoNaOrigem: Equatable {
+    let alvo: AlvoDoFoco
+    let anuncio: String?
+}
+
+/// "Salvar": a linha editada; se ela saiu da lista (no A pagar, a data passou dos 30 dias), a vizinha, com "O gasto saiu
+/// desta lista.". O voltar sem salvar: a linha que abriu a edição. O gasto apagado em outro aparelho: a vizinha, com o
+/// anúncio do apagar da etapa 2. A lista que ficou vazia: o cartão do vazio. A vizinha é a próxima linha que ficou, senão a
+/// anterior, na ordem de `antes` (a lista antes da mudança); `depois` é a lista de agora.
+func focoNaOrigem(_ saida: SaidaDaLinha, antes: [String], depois: [String]) -> FocoNaOrigem {
+    func vizinha(_ saem: Set<String>) -> AlvoDoFoco {
+        let ficam = Set(depois).subtracting(saem)
+        guard let i = antes.firstIndex(where: saem.contains) else { return depois.first(where: ficam.contains).map(AlvoDoFoco.gasto) ?? .vazio }
+        let v = antes[i...].first(where: ficam.contains) ?? antes[..<i].last(where: ficam.contains)
+        return v.map(AlvoDoFoco.gasto) ?? .vazio
+    }
+    switch saida {
+    case .salvou(let id):
+        return depois.contains(id) ? FocoNaOrigem(alvo: .gasto(id), anuncio: nil)
+                                   : FocoNaOrigem(alvo: vizinha([id]), anuncio: "O gasto saiu desta lista.")
+    case .voltou(let id):
+        return FocoNaOrigem(alvo: depois.contains(id) ? .gasto(id) : vizinha([id]), anuncio: nil)
+    case .sumiu(let id):
+        return FocoNaOrigem(alvo: vizinha([id]), anuncio: "Gasto apagado")
+    }
+}
+
+/// Um passo empurrado na folha de origem. Cada um guarda o rascunho que recebeu ao entrar: quando o caminho volta à raiz, a
+/// origem solta o rascunho, e o passo que sai ainda está na tela, na animação do voltar.
+struct DestinoNaOrigem: View {
+    let passo: PassoDaOrigem
+    let origem: OrigemDaEdicao
+    @State private var rascunho: RascunhoDoGasto?
+    @Environment(ModeloApp.self) private var modelo
+
+    init(passo: PassoDaOrigem, origem: OrigemDaEdicao) {
+        self.passo = passo
+        self.origem = origem
+        _rascunho = State(initialValue: origem.edicao)
+    }
+
+    var body: some View {
+        if let rascunho {
+            switch passo {
+            case .editar(let id):
+                PassoDosDetalhes(rascunho: rascunho, caminho: Binding(get: { origem.passosDaEdicao }, set: { origem.passosDaEdicao = $0 }),
+                                 subtitulo: origem.nome, raiz: false)
+                    .environment(\.saidaDaEdicao, .origem(origem))
+                    // O gasto apagado em outro aparelho com a edição aberta: volta à origem, que move o foco e avisa.
+                    .onChange(of: existe(id, em: rascunho.obraId)) { _, agora in if !agora { origem.sumiu(id) } }
+            case .valor:
+                PassoDoValor(rascunho: rascunho, titulo: "Valor", subtitulo: origem.nome, acao: "Pronto", raiz: false) {
+                    origem.voltarDoPasso(.valor)
+                }
+            case .topicos:
+                ListaDeTopicos(rascunho: rascunho) { origem.voltarDoPasso(.topicos) }
+            }
+        }
+    }
+
+    private func existe(_ gastoId: String, em obraId: String) -> Bool {
+        modelo.sincronizador.estado.obras.first { $0.id == obraId }?.gastos.contains { $0.id == gastoId } ?? false
+    }
+}
+
+/// A volta da edição empurrada na folha de origem. Sem mudança, o voltar do sistema, com o gesto da borda. Com mudança, o
+/// voltar do sistema sai (ele e a borda descartariam calados: medido em 19/10) e entram o chevron próprio, no mesmo círculo
+/// de vidro da barra e com o mesmo rótulo, e a borda que pergunta; os dois, como o Z do VoiceOver, perguntam antes de
+/// descartar, e "Descartar mudanças" volta à origem. A troca é por modificador, nunca por um `if` de estrutura: trocar o ramo
+/// recriaria o passo e derrubaria o foco do teclado na primeira tecla.
+struct VoltaNaOrigem: ViewModifier {
+    let saida: SaidaDaEdicao
+    let sujo: Bool
+    @Binding var perguntando: Bool
+    @Environment(\.paleta) private var paleta
+
+    @ViewBuilder func body(content: Content) -> some View {
+        switch saida {
+        case .folha:
+            content
+        case .origem(let origem):
+            content
+                .navigationBarBackButtonHidden(sujo)
+                .toolbar {
+                    if sujo {
+                        ToolbarItem(placement: .topBarLeading) {
+                            // O chevron do voltar do sistema (a mesma cor e o mesmo peso, medidos por pixel), para a troca não
+                            // aparecer; o mesmo rótulo e, no Controle por Voz, também "Voltar" e o nome da origem.
+                            Button { perguntando = true } label: { Image(systemName: "chevron.backward").fontWeight(.semibold) }
+                                .tint(paleta.cor(.texto))
+                                .accessibilityLabel(origem.titulo)
+                                .accessibilityInputLabels(["Voltar", origem.nome])
+                                .accessibilityIdentifier("voltarDaEdicao")
+                        }
+                    }
+                }
+                .gesture(BordaQuePergunta(ativa: sujo) { perguntando = true })
+                .background {
+                    Color.clear
+                        .alert("Você mudou este gasto.", isPresented: $perguntando) {
+                            Button("Descartar mudanças", role: .destructive) { origem.voltar() }
+                            Button("Continuar editando", role: .cancel) {}
+                        } message: {
+                            Text("As mudanças ainda não foram salvas.")
+                        }
+                        .tint(paleta.cor(.texto))
+                }
+                .pausaOFundo(enquanto: perguntando)
+        }
+    }
+
+}
+
+/// A borda esquerda com mudança. Com o voltar do sistema escondido, o gesto da borda do sistema não faz nada, e o arrasto que
+/// passa por cima de um botão vira toque nele (medido em 19/10: abria "Apagar este gasto?"). Este pan da borda, ligado só com
+/// mudança, faz a pergunta do chevron; reconhecido, cancela o toque de baixo. Os outros gestos (a rolagem, os botões) esperam
+/// por ele só quando o dedo começa na borda: fora dela, ele falha no primeiro toque.
+struct BordaQuePergunta: UIGestureRecognizerRepresentable {
+    let ativa: Bool
+    let perguntar: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordenador { Coordenador() }
+
+    func makeUIGestureRecognizer(context: Context) -> UIScreenEdgePanGestureRecognizer {
+        let borda = UIScreenEdgePanGestureRecognizer()
+        borda.edges = .left
+        borda.delegate = context.coordinator
+        borda.isEnabled = ativa
+        return borda
+    }
+
+    func updateUIGestureRecognizer(_ recognizer: UIScreenEdgePanGestureRecognizer, context: Context) {
+        recognizer.isEnabled = ativa
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIScreenEdgePanGestureRecognizer, context: Context) {
+        if recognizer.state == .began { perguntar() }
+    }
+
+    @MainActor final class Coordenador: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldBeRequiredToFailBy outro: UIGestureRecognizer) -> Bool { true }
+    }
+}
+```
+
+Em `app-ios/Custta/Telas/FolhaDoAPagar.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoAPagar.swift
++++ b/app-ios/Custta/Telas/FolhaDoAPagar.swift
+@@ -5,21 +5,32 @@ import CusttaNucleo
+    o mesmo total e os mesmos vencimentos do indicador, a partir de amanhã, num grupo de resumo; os vencimentos por mês,
+    como no "A vencer", com a linha de gasto da etapa 2 e sem a etiqueta "a vencer" em cada linha (aqui tudo vence); no fim,
+    a frase do que vem depois dos 30 dias, que está no "A vencer" da obra. Vazia, abre com "Nenhum gasto previsto para esse
+-   período." e não fecha quando fica vazia (site); fecham o × e o puxar (o "Fechar" do site sai). Dentro da folha tudo é
+-   sólido. */
++   período." e não fecha quando fica vazia (site); fecham o × e o puxar (o "Fechar" do site sai). Tocar num vencimento
++   empurra a edição na mesma folha (a volta à folha de origem, FolhaDeOrigem.swift). Dentro da folha tudo é sólido. */
+ struct FolhaDoAPagar: View {
+     let obraId: String
+     @Environment(ModeloApp.self) private var modelo
+     @Environment(Folhas.self) private var folhas
++    @State private var origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++    @State private var alertas = AlertasNaFolha()
+ 
+     private var obra: Obra? { modelo.sincronizador.estado.obras.first { $0.id == obraId } }
+ 
+     var body: some View {
+-        NavigationStack {
+-            ListaDoAPagar(obraId: obraId)
+-                .passoDaFolha("A pagar · 30 dias", subtitulo: obra?.nome, fechar: .esquerda, raiz: true)
++        NavigationStack(path: $origem.caminho) {
++            ListaDoAPagar(obraId: obraId, origem: origem)
++                .passoDaFolha(origem.titulo, subtitulo: obra?.nome, fechar: .esquerda, escape: .fechar)
++                .navigationDestination(for: PassoDaOrigem.self) { passo in
++                    DestinoNaOrigem(passo: passo, origem: origem)
++                }
+         }
+-        .folhaDoApp(perguntar: false, pergunta: "", descartar: "") { folhas.fechar() }
++        // O "Não salvou" de uma edição salva aqui: a folha de origem não desce, e o da raiz só aparece com a folha fechada.
++        .alertaDeNaoSalvou(quando: alertas.nenhum)
++        // A trava do puxar fica fora da pilha: dentro do passo, ela não chega à folha (medido em 19/10). Quem lê a mudança é
++        // o próprio FolhaDoApp, e não este corpo, para cada tecla da descrição não refazer a lista.
++        .folhaDoApp(perguntar: { origem.temOQuePerder }, pergunta: "Você mudou este gasto.",
++                    mensagem: "As mudanças ainda não foram salvas.", descartar: "Descartar mudanças") { folhas.fechar() }
++        .environment(\.alertasNaFolha, alertas)
+         // A obra apagada em outro aparelho com a folha aberta: não há o que mostrar; a folha fecha.
+         .onChange(of: obra == nil) { _, sumiu in if sumiu { folhas.fechar() } }
+     }
+@@ -30,43 +41,115 @@ struct FolhaDoAPagar: View {
+ /// uma peça só (o detalhe do tópico, com a mesma lista, passa de cem gastos).
+ private struct ListaDoAPagar: View {
+     let obraId: String
++    let origem: OrigemDaEdicao
+     @Environment(ModeloApp.self) private var modelo
++    @Environment(\.opcoes) private var opcoes
++    /// Para onde o VoiceOver vai quando a edição volta.
++    @AccessibilityFocusState private var foco: AlvoDoFoco?
+ 
+     var body: some View {
+         let estado = modelo.sincronizador.estado
+         if let obra = estado.obras.first(where: { $0.id == obraId }) {
+             let aPagar = aPagarDaObra(obra, hoje: dataLocalISO(.now, fuso: .current))
+             let topicos = mapaDeTopicos(estado.config.topicosProprios)
+-            ScrollView {
+-                LazyVStack(alignment: .leading, spacing: 0) {
+-                    ResumoDoAPagar(total: aPagar.total, qtd: aPagar.qtd)
+-                    if aPagar.meses.isEmpty {
+-                        VazioDoAPagar().padding(.top, 20)
+-                    }
+-                    ForEach(pecasDaOrigem(aPagar.meses)) { peca in
+-                        switch peca.tipo {
+-                        case .mes(let mes):
+-                            CabecalhoDoMes(mes: mes)
+-                                .modifier(FundoDoGrupo(cima: true, baixo: false))
++            let pecas = pecasDaOrigem(aPagar.meses)
++            let ordem = aPagar.meses.flatMap(\.gastos).map(\.id)
++            ScrollViewReader { leitor in
++                ScrollView {
++                    LazyVStack(alignment: .leading, spacing: 0) {
++                        ResumoDoAPagar(total: aPagar.total, qtd: aPagar.qtd)
++                        if aPagar.meses.isEmpty {
++                            VazioDoAPagar()
++                                .accessibilityFocused($foco, equals: .vazio)
+                                 .padding(.top, 20)
+-                        case .gasto(let gasto):
+-                            LinhaDeGastoView(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos))
+-                                .overlay(alignment: .top) { if !peca.primeiro { SeparadorDaFolha(recuo: 67) } }
+-                                .modifier(FundoDoGrupo(cima: false, baixo: peca.ultimo))
++                        }
++                        ForEach(pecas) { peca in
++                            switch peca.tipo {
++                            case .mes(let mes):
++                                CabecalhoDoMes(mes: mes)
++                                    .modifier(FundoDoGrupo(cima: true, baixo: false))
++                                    .padding(.top, 20)
++                            case .gasto(let gasto):
++                                linha(gasto, linhaDeGasto(gasto, topicos: topicos)) { editar(gasto, obra: obra, ordem: ordem) }
++                                    .overlay(alignment: .top) { if !peca.primeiro { SeparadorDaFolha(recuo: 67) } }
++                                    .modifier(FundoDoGrupo(cima: false, baixo: peca.ultimo))
++                            }
++                        }
++                        if let ponte = aPagar.ponte {
++                            NotaDaFolha(texto: ponte, identificador: "ponteDoAPagar").padding(.top, 14)
+                         }
+                     }
+-                    if let ponte = aPagar.ponte {
+-                        NotaDaFolha(texto: ponte, identificador: "ponteDoAPagar").padding(.top, 14)
+-                    }
++                    .padding(.top, 4)
++                    .padding(.bottom, 48)
+                 }
+-                .padding(.top, 4)
+-                .padding(.bottom, 48)
++                .onChange(of: origem.volta) { _, volta in if let volta { voltou(volta, depois: ordem, leitor: leitor) } }
+             }
+             .environment(\.dentroDaFolha, true)
+         } else {
+             Color.clear
+         }
+     }
++
++    /// Uma linha de gasto: tocar empurra a edição; acesa por 2 s depois de salvar, sem a etiqueta "novo" (que é de gasto
++    /// lançado). Para o VoiceOver é um botão; o Controle por Voz chama pelo título.
++    private func linha(_ gasto: Gasto, _ l: LinhaDeGasto, editar: @escaping () -> Void) -> some View {
++        LinhaDeGastoView(gasto: gasto, linha: l, acesa: origem.acesos.contains(gasto.id))
++            .onTapGesture(perform: editar)
++            .accessibilityAddTraits(.isButton)
++            .accessibilityAction { editar() }
++            .accessibilityInputLabels([l.titulo])
++            .accessibilityFocused($foco, equals: .gasto(gasto.id))
++    }
++
++    private func editar(_ gasto: Gasto, obra: Obra, ordem: [String]) {
++        let estado = modelo.sincronizador.estado
++        let rascunho = RascunhoDoGasto(obra: obra, editado: gasto, todas: estado.obras, proprios: estado.config.topicosProprios,
++                                       hoje: dataLocalISO(.now, fuso: .current))
++        #if DEBUG
++        // Teste de tela: a data da edição trocada para daqui a N dias (`-custta.dataDaEdicao N`), sem passar pelo calendário.
++        if let dias = Int(UserDefaults.standard.string(forKey: "custta.dataDaEdicao") ?? ""),
++           let dia = Calendar(identifier: .gregorian).date(byAdding: .day, value: dias, to: .now) {
++            rascunho.data = dataLocalISO(dia, fuso: .current)
++        }
++        #endif
++        origem.abrir(rascunho, ordem: ordem)
++    }
++
++    /// A edição voltou. No "Salvar", a linha fica onde está se continua à vista (a data nova pode tê-la mudado de lugar; se
++    /// saiu da vista, a lista rola o mínimo até ela) e apaga a luz em 2 s. O VoiceOver vai para onde o `focoNaOrigem` diz,
++    /// quando o voltar termina, e ouve depois o que aconteceu.
++    private func voltou(_ volta: OrigemDaEdicao.Volta, depois: [String], leitor: ScrollViewProxy) {
++        let saida: SaidaDaLinha
++        switch volta.motivo {
++        case .salvou(let id):
++            saida = .salvou(id)
++            if depois.contains(id) {
++                Task { @MainActor in
++                    withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(id) }
++                }
++            }
++            let vez = origem.vezDoAceso
++            Task { @MainActor in
++                try? await Task.sleep(for: .seconds(2))
++                guard origem.vezDoAceso == vez else { return }
++                withAnimation(.easeOut(duration: 0.4)) { origem.acesos = [] }
++            }
++        case .voltou(let id):
++            saida = .voltou(id)
++        case .sumiu(let id):
++            saida = .sumiu(id)
++        }
++        let destino = focoNaOrigem(saida, antes: volta.ordem, depois: depois)
++        Task { @MainActor in
++            try? await Task.sleep(for: OrigemDaEdicao.fimDoVoltar)
++            foco = destino.alvo
++            guard let anuncio = destino.anuncio else { return }
++            try? await Task.sleep(for: .milliseconds(700))
++            var aviso = AttributedString(anuncio)
++            aviso.accessibilitySpeechAnnouncementPriority = .low
++            AccessibilityNotification.Announcement(aviso).post()
++        }
++    }
+ }
+ 
+ /// O total e "{N} vencimentos · a partir de amanhã" (o texto do site, também no zero), num grupo sólido: o valor em 28
+```
+
+Em `app-ios/Custta/Telas/FolhaDoGasto.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoGasto.swift
++++ b/app-ios/Custta/Telas/FolhaDoGasto.swift
+@@ -243,14 +243,14 @@ private struct FolhaDoGastoAberta: View {
+                 }
+             }
+         }
+-        .folhaDoApp(perguntar: rascunho.temOQuePerder, pergunta: "Você já preencheu este gasto.", descartar: "Descartar gasto") {
++        .folhaDoApp(perguntar: { rascunho.temOQuePerder }, pergunta: "Você já preencheu este gasto.", descartar: "Descartar gasto") {
+             folhas.fechar()
+         }
+     }
+ }
+ 
+ /// O passo do valor: o teclado de valor ocupando a folha.
+-private struct PassoDoValor: View {
++struct PassoDoValor: View {
+     @Bindable var rascunho: RascunhoDoGasto
+     let titulo: String
+     let subtitulo: String?
+@@ -260,12 +260,14 @@ private struct PassoDoValor: View {
+ 
+     var body: some View {
+         TecladoDeValor(centavos: $rascunho.centavos, acao: acao, confirmar: confirmar)
+-            .passoDaFolha(titulo, subtitulo: subtitulo, fechar: raiz ? .esquerda : nil, raiz: raiz)
++            .passoDaFolha(titulo, subtitulo: subtitulo, fechar: raiz ? .esquerda : nil, escape: raiz ? .fechar : .sistema)
+     }
+ }
+ 
+-/// Os detalhes: valor, tópico, pagamento (com o cartão), descrição e data; "Salvar" fixo embaixo.
+-private struct PassoDosDetalhes: View {
++/// Os detalhes: valor, tópico, pagamento (com o cartão), descrição e data; "Salvar" fixo embaixo. É também a edição
++/// empurrada numa folha de origem (`saidaDaEdicao` .origem): sem o ×, com o voltar e o nome da origem no subtítulo, e as
++/// saídas voltando para ela.
++struct PassoDosDetalhes: View {
+     @Bindable var rascunho: RascunhoDoGasto
+     @Binding var caminho: [PassoDoGasto]
+     let subtitulo: String?
+@@ -281,6 +283,9 @@ private struct PassoDosDetalhes: View {
+     @State private var naoCarregado = false
+     @State private var apagando = false
+     @State private var sugestaoEscolhida: String?
++    /// O chevron, a borda ou o Z com mudança, na edição empurrada numa folha de origem: "Você mudou este gasto.".
++    @State private var perguntandoAVolta = false
++    @Environment(\.saidaDaEdicao) private var saida
+ 
+     enum Campo: Hashable { case juros, descricao }
+ 
+@@ -359,18 +364,34 @@ private struct PassoDosDetalhes: View {
+                 withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.25)) { leitor.scrollTo("descricao", anchor: .top) }
+             }
+         }
+-        .passoDaFolha(rascunho.editado == nil ? "Novo gasto" : "Editar gasto", subtitulo: subtitulo,
+-                      fechar: raiz ? .esquerda : .direita, raiz: raiz)
++        .passoDaFolha(rascunho.editado == nil ? "Novo gasto" : "Editar gasto", subtitulo: subtitulo, fechar: lado, escape: escape)
++        .modifier(VoltaNaOrigem(saida: saida, sujo: rascunho.temOQuePerder, perguntando: $perguntandoAVolta))
+         .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) {
+             Button("OK", role: .cancel) {}
+         } message: {
+             Text("O gasto continua aqui; nada foi salvo ainda.")
+         }
++        .pausaOFundo(enquanto: naoCarregado)
+         .modifier(PerguntaDeApagar(apresentada: $apagando, obraId: rascunho.obraId, gasto: rascunho.editado) { pedido in
+             folhas.fechar { folhas.apagar(pedido) }
+         })
+     }
+ 
++    /// Na folha de origem não há ×: o voltar fica à esquerda, no lugar dele.
++    private var lado: LadoDoFechar? {
++        if case .origem = saida { return nil }
++        return raiz ? .esquerda : .direita
++    }
++
++    /// O Z do VoiceOver, fixo por passo: na edição empurrada numa folha de origem, a mesma volta do chevron (com mudança,
++    /// pergunta; sem, volta).
++    private var escape: EscapeDoPasso {
++        if case .origem(let origem) = saida {
++            return .proprio { if rascunho.temOQuePerder { perguntandoAVolta = true } else { origem.voltar() } }
++        }
++        return raiz ? .fechar : .sistema
++    }
++
+     private var avisoDeRepetido: Bool {
+         guard let a = rascunho.assinaturaAvisada, case .success(let c) = conferirGasto(rascunho.entrada, editado: rascunho.editado,
+                                                                                         hoje: dataLocalISO(.now, fuso: .current)) else { return false }
+@@ -555,8 +576,9 @@ private struct PassoDosDetalhes: View {
+     }
+ 
+     private func salvar() {
+-        // A folha já está descendo (o primeiro toque gravou): o segundo toque de um toque duplo não lança de novo.
+-        guard folhas.aberta != nil else { return }
++        // O primeiro toque já gravou, e a folha está descendo (ou a edição voltando à folha de origem): o segundo toque de
++        // um toque duplo não lança de novo.
++        guard saida.aberta(folhas, gastoId: rascunho.editado?.id) else { return }
+         foco = nil
+         let entrada = rascunho.entrada
+         switch conferirGasto(entrada, editado: rascunho.editado, hoje: dataLocalISO(.now, fuso: .current)) {
+@@ -603,6 +625,8 @@ private struct PassoDosDetalhes: View {
+         switch resultado {
+         case .gravou:
+             let ids = novos.map(\.id)
++            // Na folha de origem, a edição volta para ela, que acende a linha (sem a etiqueta "novo", de gasto lançado).
++            if case .origem(let origem) = saida { origem.salvou(ids); return }
+             let novo = rascunho.editado == nil
+             if rascunho.vendida != nil {
+                 // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, sem
+@@ -615,7 +639,10 @@ private struct PassoDosDetalhes: View {
+             folhas.fechar { folhas.destacar(ids, novo: novo) }
+         case .naoCarregado:
+             naoCarregado = true
+-        case .sumiu, .semConta:
++        case .sumiu:
++            // O gasto sumiu com a edição aberta: na origem, a edição volta para ela; na folha, ela desce.
++            if case .origem(let origem) = saida, let id = rascunho.editado?.id { origem.sumiu(id) } else { folhas.fechar() }
++        case .semConta:
+             folhas.fechar()
+         }
+     }
+@@ -716,7 +743,7 @@ struct CampoDeData: View {
+ }
+ 
+ /// A lista de tópicos dentro da folha: "Usados nesta obra" no alto (três) e "Todos"; tocar escolhe e volta.
+-private struct ListaDeTopicos: View {
++struct ListaDeTopicos: View {
+     @Bindable var rascunho: RascunhoDoGasto
+     let voltar: () -> Void
+     @Environment(\.paleta) private var paleta
+```
+
+Em `app-ios/Custta/Telas/FolhaDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoOrcamento.swift
++++ b/app-ios/Custta/Telas/FolhaDoOrcamento.swift
+@@ -201,9 +201,9 @@ private struct FolhaDoOrcamentoAberta: View {
+     var body: some View {
+         NavigationStack {
+             CorpoDaFolhaDoOrcamento(rascunho: rascunho, ativo: $ativo)
+-                .passoDaFolha("Orçamento da obra", subtitulo: nomeDaObra, fechar: .esquerda, raiz: true)
++                .passoDaFolha("Orçamento da obra", subtitulo: nomeDaObra, fechar: .esquerda, escape: .fechar)
+         }
+-        .folhaDoApp(perguntar: rascunho.temOQuePerder,
++        .folhaDoApp(perguntar: { rascunho.temOQuePerder },
+                     pergunta: rascunho.tinhaOrcamento ? "Você mudou este orçamento." : "Você já preencheu este orçamento.",
+                     descartar: rascunho.tinhaOrcamento ? "Descartar alterações" : "Descartar orçamento") {
+             folhas.fechar()
+```
+
+Em `app-ios/Custta/Telas/FolhaEmPassos.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaEmPassos.swift
++++ b/app-ios/Custta/Telas/FolhaEmPassos.swift
+@@ -20,24 +20,39 @@ extension EnvironmentValues {
+ 
+ extension View {
+     /// Em volta do NavigationStack da folha: a Folha de fundo, a pergunta antes de descartar e a ponte do puxar para baixo.
+-    /// `perguntar` diz se há o que perder; `pergunta` e `descartar` são os textos do alerta ("Você já preencheu este
+-    /// gasto." / "Descartar gasto"); `fechar` fecha de fato.
+-    func folhaDoApp(perguntar: Bool, pergunta: String, descartar: String, fechar: @escaping () -> Void) -> some View {
+-        modifier(FolhaDoApp(perguntar: perguntar, pergunta: pergunta, descartar: descartar, fechar: fechar))
++    /// `perguntar` diz se há o que perder, lido no corpo deste modificador (na folha de origem, lido no corpo de quem monta a
++    /// pilha, cada tecla da edição refaria a lista); `pergunta`, `mensagem` e `descartar` são os textos do alerta ("Você já
++    /// preencheu este gasto." / "Descartar gasto"); `fechar` fecha de fato.
++    func folhaDoApp(perguntar: @escaping () -> Bool, pergunta: String, mensagem: String? = nil, descartar: String,
++                    fechar: @escaping () -> Void) -> some View {
++        modifier(FolhaDoApp(perguntar: perguntar, pergunta: pergunta, mensagem: mensagem, descartar: descartar, fechar: fechar))
+     }
+ 
+     /// Um passo da folha: o título na barra, o × no lado dado (nil: sem ×, como a lista de tópicos), o fundo transparente
+-    /// para a Folha aparecer. Na raiz, o escapar do VoiceOver fecha (pedindo antes).
+-    func passoDaFolha(_ titulo: String, subtitulo: String? = nil, fechar lado: LadoDoFechar?, raiz: Bool = false) -> some View {
+-        modifier(PassoDaFolha(titulo: titulo, subtitulo: subtitulo, lado: lado, raiz: raiz))
++    /// para a Folha aparecer, e o que o escapar do VoiceOver faz nele.
++    func passoDaFolha(_ titulo: String, subtitulo: String? = nil, fechar lado: LadoDoFechar?, escape: EscapeDoPasso = .sistema) -> some View {
++        modifier(PassoDaFolha(titulo: titulo, subtitulo: subtitulo, lado: lado, escape: escape))
+     }
+ }
+ 
+ enum LadoDoFechar { case esquerda, direita }
+ 
++/// O que o gesto de escapar do VoiceOver (Z com dois dedos) faz num passo. É fixo por passo, nunca escolhido pelo rascunho:
++/// trocar a ação recriaria o passo (o foco do teclado cai na primeira tecla), e uma ação de escape, mesmo vazia, engole o
++/// voltar do NavigationStack (revisão da T22).
++enum EscapeDoPasso {
++    /// A raiz da folha: fecha, perguntando antes se houver o que perder.
++    case fechar
++    /// Um passo de dentro: nenhuma ação própria, e o escape sobe até o voltar do NavigationStack.
++    case sistema
++    /// A edição empurrada numa folha de origem: ela decide (com mudança, pergunta; sem, volta).
++    case proprio(() -> Void)
++}
++
+ private struct FolhaDoApp: ViewModifier {
+-    let perguntar: Bool
++    let perguntar: () -> Bool
+     let pergunta: String
++    let mensagem: String?
+     let descartar: String
+     let fechar: () -> Void
+     @State private var confirmando = false
+@@ -48,19 +63,29 @@ private struct FolhaDoApp: ViewModifier {
+     #endif
+ 
+     func body(content: Content) -> some View {
+-        let pedido = PedidoDeFechar { if perguntar { confirmando = true } else { fechar() } }
++        let temOQuePerder = perguntar()
++        let pedido = PedidoDeFechar { if perguntar() { confirmando = true } else { fechar() } }
+         content
+             #if DEBUG
+             // Laudo de leitura: o apagador de texto da raiz não chega dentro da .sheet.
+             .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
+             #endif
+             .environment(\.pedirParaFechar, pedido)
+-            .interactiveDismissDisabled(perguntar)
+-            .background { PonteDeFechamento { if perguntar { confirmando = true } } }
+-            .alert(pergunta, isPresented: $confirmando) {
+-                Button(descartar, role: .destructive, action: fechar)
+-                Button("Continuar editando", role: .cancel) {}
++            .interactiveDismissDisabled(temOQuePerder)
++            .background { PonteDeFechamento { if perguntar() { confirmando = true } } }
++            // Num fundo vazio, com os botões na cor do texto, como os outros alertas do app (a Marca na cápsula do alerta
++            // fica em 2,5:1).
++            .background {
++                Color.clear
++                    .alert(pergunta, isPresented: $confirmando) {
++                        Button(descartar, role: .destructive, action: fechar)
++                        Button("Continuar editando", role: .cancel) {}
++                    } message: {
++                        if let mensagem { Text(mensagem) }
++                    }
++                    .tint(paleta.cor(.texto))
+             }
++            .pausaOFundo(enquanto: confirmando)
+             .presentationDragIndicator(.visible)
+             .presentationBackground {
+                 // A Folha (vidro denso do mockup): a cor do token sobre o desfoque do que fica atrás. Com "Reduzir
+@@ -78,7 +103,7 @@ private struct PassoDaFolha: ViewModifier {
+     let titulo: String
+     let subtitulo: String?
+     let lado: LadoDoFechar?
+-    let raiz: Bool
++    let escape: EscapeDoPasso
+     @Environment(\.pedirParaFechar) private var pedirParaFechar
+     @Environment(\.paleta) private var paleta
+     @Environment(\.dynamicTypeSize) private var tamanho
+@@ -100,9 +125,13 @@ private struct PassoDaFolha: ViewModifier {
+                     }
+                 }
+             }
+-        // Só na raiz: num passo de dentro, a ação de escape (mesmo vazia) engole o escape do VoiceOver, e o Z deixa de
++        // Num passo de dentro, nenhuma ação: a de escape (mesmo vazia) engoliria o escape do VoiceOver, e o Z deixaria de
+         // voltar ao passo anterior pelo NavigationStack.
+-        if raiz { passo.accessibilityAction(.escape) { pedirParaFechar() } } else { passo }
++        switch escape {
++        case .fechar: passo.accessibilityAction(.escape) { pedirParaFechar() }
++        case .sistema: passo
++        case .proprio(let acao): passo.accessibilityAction(.escape, acao)
++        }
+     }
+ }
+ 
+```
+
+Em `app-ios/Custta/Telas/ObraView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObraView.swift
++++ b/app-ios/Custta/Telas/ObraView.swift
+@@ -225,10 +225,12 @@ func vizinhoDepoisDeApagar(_ saem: Set<String>, ordem: [String]) -> String? {
+     return ordem[i...].first { !saem.contains($0) } ?? ordem[..<i].last { !saem.contains($0) }
+ }
+ 
+-/// Para onde o VoiceOver vai na lista da obra.
++/// Para onde o VoiceOver vai na lista da obra e na de uma folha de origem.
+ enum AlvoDoFoco: Hashable {
+     case gasto(String)
+     case lancamentos
++    /// O cartão do vazio de uma folha de origem (o A pagar sem nenhum vencimento).
++    case vazio
+ }
+ 
+ /// O que as linhas da lista fazem, passado do ObraView aos cartões.
+```
+
+Em `app-ios/Custta/Telas/PrincipalView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -213,9 +213,29 @@ private struct AvisosDoPrincipal: ViewModifier {
+                     }
+                     .tint(paleta.cor(.texto))
+             }
++            .alertaDeNaoSalvou(quando: !folhaAberta)
++            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
++    }
++}
++
++extension View {
++    /// O "Não salvou" (uma vez por erro, com "Tentar de novo"), quando `mostrar` deixa: na raiz, só com a folha fechada;
++    /// numa folha de origem, que não desce no "Salvar", dentro dela e sem outro alerta à vista.
++    func alertaDeNaoSalvou(quando mostrar: Bool) -> some View { modifier(AlertaDeNaoSalvou(mostrar: mostrar)) }
++}
++
++/// O alerta do "Não salvou" num fundo vazio, com os botões na cor do texto, como o "Sair da conta?".
++private struct AlertaDeNaoSalvou: ViewModifier {
++    let mostrar: Bool
++    @Environment(ModeloApp.self) private var modelo
++    @Environment(\.paleta) private var paleta
++
++    func body(content: Content) -> some View {
++        let gravacao = modelo.alertaDeGravacao
++        content
+             .background {
+                 Color.clear
+-                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && !folhaAberta },
++                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && mostrar },
+                                                                          set: { if !$0 { modelo.fecharAlertaDeGravacao() } })) {
+                         Button("OK", role: .cancel) {}
+                         Button("Tentar de novo") { modelo.tentarDeNovo() }
+@@ -224,7 +244,6 @@ private struct AvisosDoPrincipal: ViewModifier {
+                     }
+                     .tint(paleta.cor(.texto))
+             }
+-            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
+     }
+ }
+ 
+```
+
+- [ ] **Step 4: Ver passar**
+
+A forma nova da `folhaDoApp` e do `passoDaFolha` passa por todas as folhas: as suítes delas rodam aqui.
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/GastoUITests -only-testing:CusttaUITests/FolhaDaObraUITests -only-testing:CusttaUITests/FasesUITests -only-testing:CusttaUITests/EstadosUITests -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected: `ℹ pass 53`, `ℹ fail 0`; sem aviso; `✔ Test run with 154 tests in 29 suites passed` (`FolhasDeOrigemTests` com 8); `FolhasDeOrigemUITests` 16 de 16 (os 3 da Tarefa 23 e os 13 novos), `GastoUITests` 24 de 24, `FolhaDaObraUITests` 15 de 15, `FasesUITests` 9 de 9, `EstadosUITests` 13 de 13 e `OrcamentoUITests` 29 de 29; `** TEST EXECUTE SUCCEEDED **`. São ~31 min no Mac.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/Movimento.swift \
+  app-ios/Custta/Telas/FolhaDaObra.swift \
+  app-ios/Custta/Telas/FolhaDaVenda.swift \
+  app-ios/Custta/Telas/FolhaDeOrigem.swift \
+  app-ios/Custta/Telas/FolhaDoAPagar.swift \
+  app-ios/Custta/Telas/FolhaDoGasto.swift \
+  app-ios/Custta/Telas/FolhaDoOrcamento.swift \
+  app-ios/Custta/Telas/FolhaEmPassos.swift \
+  app-ios/Custta/Telas/ObraView.swift \
+  app-ios/Custta/Telas/PrincipalView.swift \
+  app-ios/CusttaTests/FolhasDeOrigemTests.swift \
+  app-ios/CusttaUITests/FolhasDeOrigemUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "feat: edição empurrada na folha do A pagar, com a volta à origem" -m "Tocar num vencimento da folha do A pagar empurra a edição da etapa 2 no NavigationStack da própria folha (decisão 1 do conselho de 19/10), sem o ×, com o voltar e \"A pagar\" embaixo do título. \"Salvar\" volta à origem, que ficou montada embaixo: a mesma rolagem, o total novo e a linha acesa por 2 s, sem a etiqueta \"novo\". Se a data nova levou a linha para fora da vista, a lista rola o mínimo até ela." -m "A saída da edição virou uma política no environment (SaidaDaEdicao). A .folha é a folha do gasto de sempre, que desce; a .origem volta para a folha de origem, cujo estado (o caminho, o rascunho da edição, as linhas acesas e a última volta) mora num OrigemDaEdicao dela. Com mudança, o voltar do sistema sai por modificador e entram um chevron próprio, no mesmo círculo da barra, e uma borda que pergunta (um UIScreenEdgePanGestureRecognizer que cancela o toque de baixo). O Z do VoiceOver tem uma ação fixa por passo: o passoDaFolha troca o raiz pelo escape. A trava do puxar continua fora da pilha, lida pelo próprio FolhaDoApp, que ganhou a mensagem do alerta; descartar no puxar fecha tudo, e no voltar volta à origem." -m "O foco do VoiceOver na volta sai de uma função pura: a linha salva, a que abriu a edição ou a vizinha, com \"O gasto saiu desta lista.\". O gasto apagado em outro aparelho volta à origem em vez de fechar a folha. O \"Não salvou\" ganha uma cópia dentro da folha de origem, que só aparece sem outro alerta à vista. O toque duplo no \"Salvar\" grava uma vez, com a guarda da edição no topo do caminho."
+```
+
+### Task 25: Apagar de dentro da folha do A pagar, pela edição e arrastando
+
+"Apagar gasto" na edição empurrada pergunta com os textos da etapa 2 ("Apagar este gasto?", com o nome e o valor; na parcela, "só esta parcela", "a compra toda" ou "Cancelar"). Confirmado, a edição volta à origem e, no turno seguinte ao voltar, a origem apaga a linha com a animação da lista da obra: a linha sai pela esquerda, as de baixo sobem e o total muda junto. No mesmo turno, a transação do apagar se misturaria à do voltar da pilha. As linhas da folha passam a ser as da lista da obra, com o arrastar para apagar (o botão de 80 pt e a ação "Apagar" no rotor): a pergunta é a mesma, e a folha continua aberta, mesmo quando sai o último vencimento (site). Depois de apagar, o VoiceOver vai para a vizinha, ou para o cartão do vazio, e ouve "Gasto apagado" ou "Compra apagada", nos tempos da lista da obra (vindo da edição, contados do fim do voltar). O "Carregando" do site também avisa dentro da folha.
+
+- **A linha aberta fica na Tecla, dentro da folha,** como no mockup, e fecha no toque fora, na rolagem e no toque noutra linha.
+- **Abaixo da linha aberta, a linha fina da de baixo continua** (a peça é da linha de baixo). No mockup ela some, por um acaso do seletor do CSS (`.gasto.recuo+.gasto.recuo` não casa depois do `.swipe`).
+- **Os falsos ganham a vitrine com um vencimento à vista** (`CUSTTA_DADOS=avista`: a caçamba de entulho no Pix, R$ 650,00, daqui a 2 dias), para o apagar à vista da folha.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/MontarFalso.swift`
+- Modify: `app-ios/Custta/Falsos/VitrineDaObra.swift`
+- Modify: `app-ios/Custta/Identidade/PecasDaFolha.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDeOrigem.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoAPagar.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoGasto.swift`
+- Modify: `app-ios/Custta/Telas/LinhaArrastavel.swift`
+- Test (alterar): `app-ios/CusttaTests/FolhasDeOrigemTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/FolhasDeOrigemUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `LinhaDaLista`, `AcoesDaLista`, `LinhaArrastavel`, `PerguntaDeApagar`, `apagandoGasto`, `apagandoCompra`, `textoDeApagarGasto` e `textoDeApagarParcela` (etapa 2); `OrigemDaEdicao` e `SaidaDaLinha` (Tarefa 24).
+- Produces: `OrigemDaEdicao.apagou(_ pedido: Folhas.PedidoDeApagar)` e `linhaAberta`; `Volta.Motivo.apagou`; `SaidaDaLinha.apagou(Set<String>, compra:)`; `DadosDeExemplo.vitrineComVencimentoAVista(hoje:)` e `CUSTTA_DADOS=avista`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/FolhasDeOrigemTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/FolhasDeOrigemTests.swift
++++ b/app-ios/CusttaTests/FolhasDeOrigemTests.swift
+@@ -5,8 +5,8 @@ import CusttaNucleo
+ 
+ /* A lógica das folhas de origem da etapa 3 (o A pagar): as peças da lista, filhas diretas da LazyVStack, com o lugar de
+    cada uma no grupo do mês (o fundo do grupo é desenhado por peça); a volta da edição empurrada (o caminho, o rascunho
+-   que sai na raiz, a volta por qualquer caminho, a guarda do toque duplo); e para onde o VoiceOver vai quando a edição
+-   volta. */
++   que sai na raiz, a volta por qualquer caminho, a guarda do toque duplo, o apagar); e para onde o VoiceOver vai quando a
++   edição volta ou uma linha sai. */
+ @MainActor
+ struct FolhasDeOrigemTests {
+     /// A obra com três vencimentos e o rascunho da edição do primeiro.
+@@ -90,6 +90,27 @@ struct FolhasDeOrigemTests {
+         #expect(!SaidaDaEdicao.origem(origem).aberta(folhas, gastoId: "a"), "voltando: o segundo toque não grava")
+     }
+ 
++    @Test func apagarDaEdicaoVoltaComOPedido() {
++        let origem = OrigemDaEdicao(titulo: "A pagar · 30 dias", nome: "A pagar")
++        origem.abrir(edicao().1, ordem: ["a", "b"])
++        let pedido = Folhas.PedidoDeApagar(obraId: "o1", gastoId: "a", grupoId: nil)
++        origem.apagou(pedido)
++        #expect(origem.volta?.motivo == .apagou(pedido), "a lista apaga a linha, à vista")
++        #expect(origem.caminho.isEmpty)
++        #expect(origem.edicao == nil)
++    }
++
++    @Test func focoDoVoiceOverDepoisDeApagar() {
++        let antes = ["a", "b", "c"]
++        #expect(focoNaOrigem(.apagou(["b"], compra: false), antes: antes, depois: ["a", "c"]) == FocoNaOrigem(alvo: .gasto("c"), anuncio: "Gasto apagado"))
++        #expect(focoNaOrigem(.apagou(["c"], compra: false), antes: antes, depois: ["a", "b"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: "Gasto apagado"),
++                "a última: a anterior")
++        #expect(focoNaOrigem(.apagou(["b", "fora"], compra: true), antes: antes, depois: ["a", "c"])
++                == FocoNaOrigem(alvo: .gasto("c"), anuncio: "Compra apagada"), "a compra toda, com parcelas fora da lista")
++        #expect(focoNaOrigem(.apagou(["a"], compra: false), antes: ["a"], depois: []) == FocoNaOrigem(alvo: .vazio, anuncio: "Gasto apagado"),
++                "o A pagar que fica vazio: o cartão do vazio")
++    }
++
+     @Test func focoDoVoiceOverNaVoltaDaEdicao() {
+         let antes = ["a", "b", "c"]
+         #expect(focoNaOrigem(.salvou("b"), antes: antes, depois: ["a", "c", "b"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: nil),
+```
+
+Em `app-ios/CusttaUITests/FolhasDeOrigemUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/FolhasDeOrigemUITests.swift
++++ b/app-ios/CusttaUITests/FolhasDeOrigemUITests.swift
+@@ -8,7 +8,8 @@ import notify
+    com os números novos (e, na maior letra, a linha que foi para o fim da lista fica à vista); sem mudança, o voltar do
+    sistema e a borda voltam; com mudança, o chevron, a borda e o puxar perguntam, a borda sem tocar no botão de baixo e sem
+    atrapalhar a rolagem; o toque duplo no "Salvar"; o "Carregando" e o "Não salvou" com a origem aberta; o gasto apagado em
+-   outro aparelho com a edição aberta. */
++   outro aparelho com a edição aberta. Apagar de dentro da folha: da edição (à vista e parcela, com as três saídas) e
++   arrastando a linha, com a folha aberta, mesmo vazia. */
+ @MainActor
+ final class FolhasDeOrigemUITests: XCTestCase {
+     private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+@@ -394,4 +395,149 @@ final class FolhasDeOrigemUITests: XCTestCase {
+         XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("2 vencimentos"), app.elemento("resumoDoAPagar").label)
+         XCTAssertNil(naFolha(app, "gasto-g045"))
+     }
++
++    // MARK: Apagar de dentro da folha
++
++    /// Arrasta a linha da folha para a esquerda e toca no "Apagar" dela.
++    private func arrastarEApagar(_ app: XCUIApplication, _ id: String) {
++        guard let linha = rolarNaFolha(app, ate: "gasto-\(id)") else { return XCTFail("a linha \(id) na folha") }
++        linha.swipeLeft()
++        let apagar = app.buttons["apagar-\(id)"]
++        XCTAssertTrue(apagar.waitForExistence(timeout: 3), "arrastar para a esquerda mostra Apagar, com a folha aberta")
++        apagar.tap()
++    }
++
++    /// Gasto à vista (o Pix agendado da vitrine com vencimento à vista): "Apagar gasto" na edição pergunta com o nome e o
++    /// valor; "Apagar" volta ao A pagar e a linha sai lá.
++    func testApagarAVistaDaEdicaoVoltaEApagaNaOrigem() {
++        let app = abrirApp(conta: "senha", dados: "avista", abrir: "obra:v1")
++        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
++        abrirAPagar(app)
++        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("4 vencimentos"), app.elemento("resumoDoAPagar").label)
++        editar(app, "g047")
++        app.buttons["apagarGasto"].tap()
++        let alerta = app.alerts["Apagar este gasto?"]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
++        XCTAssertTrue(alerta.staticTexts["Caçamba de entulho · R$\u{a0}650,00. Não dá para desfazer."].exists)
++        alerta.buttons["Apagar"].tap()
++        voltouAoAPagar(app, "Apagar volta ao A pagar")
++        XCTAssertTrue(app.elemento("gasto-g047").waitForNonExistence(timeout: 5), "e a linha sai, na origem")
++        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("3 vencimentos"), app.elemento("resumoDoAPagar").label)
++    }
++
++    /// Parcela: as três saídas do alerta da etapa 2. "Só esta parcela" volta e apaga a parcela (o quadro do mockup: o mês de
++    /// outubro sai inteiro); "Cancelar" fica na edição.
++    func testApagarSoEstaParcelaDaEdicao() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g039")
++        app.buttons["apagarGasto"].tap()
++        let alerta = app.alerts["Janelas e portas de alumínio (2/6)"]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
++        XCTAssertTrue(alerta.staticTexts["Esta parcela faz parte de uma compra em 6x no cartão."].exists)
++        XCTAssertTrue(alerta.buttons["Apagar a compra toda (6 parcelas)"].exists)
++        alerta.buttons["Cancelar"].tap()
++        XCTAssertTrue(alerta.waitForNonExistence(timeout: 3))
++        XCTAssertTrue(app.buttons["salvarGasto"].exists, "Cancelar fica na edição")
++        app.buttons["apagarGasto"].tap()
++        app.alerts["Janelas e portas de alumínio (2/6)"].buttons["Apagar só esta parcela"].tap()
++        voltouAoAPagar(app, "Apagar só esta parcela volta ao A pagar")
++        XCTAssertTrue(app.elemento("gasto-g039").waitForNonExistence(timeout: 5))
++        let resumo = app.elemento("resumoDoAPagar")
++        XCTAssertTrue(resumo.label.contains("R$\u{a0}8.450,00") && resumo.label.contains("2 vencimentos"), resumo.label)
++        XCTAssertTrue(app.elemento("ponteDoAPagar").label.contains("mais 10 gastos"), "as outras parcelas da compra ficam")
++    }
++
++    func testApagarACompraTodaDaEdicao() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        editar(app, "g045")
++        app.buttons["apagarGasto"].tap()
++        let alerta = app.alerts["Tinta acrílica (2/3)"]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
++        alerta.buttons["Apagar a compra toda (3 parcelas)"].tap()
++        voltouAoAPagar(app, "Apagar a compra toda volta ao A pagar")
++        XCTAssertTrue(app.elemento("gasto-g045").waitForNonExistence(timeout: 5))
++        let resumo = app.elemento("resumoDoAPagar")
++        XCTAssertTrue(resumo.label.contains("R$\u{a0}10.950,00") && resumo.label.contains("2 vencimentos"), resumo.label)
++        XCTAssertTrue(app.elemento("ponteDoAPagar").label.contains("mais 9 gastos a vencer (R$\u{a0}49.950,00)"),
++                      "a parcela de depois dos 30 dias também sai: \(app.elemento("ponteDoAPagar").label)")
++    }
++
++    /// Arrastar para apagar dentro da folha: a pergunta da parcela, e a folha continua aberta.
++    func testArrastarParaApagarDentroDaFolha() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        arrastarEApagar(app, "g032")
++        let alerta = app.alerts["Porcelanato 60×60 (5/10)"]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "a pergunta da parcela: \(alertas(app))")
++        alerta.buttons["Apagar só esta parcela"].tap()
++        XCTAssertTrue(app.elemento("gasto-g032").waitForNonExistence(timeout: 5))
++        let resumo = app.elemento("resumoDoAPagar")
++        XCTAssertTrue(resumo.label.contains("2 vencimentos") && resumo.label.contains("R$\u{a0}7.100,00"), resumo.label)
++        XCTAssertTrue(app.buttons["fecharFolha"].exists, "a folha continua aberta")
++    }
++
++    /// A linha aberta fecha como na lista da obra: tocando fora dela, rolando, e tocando noutra linha, que só fecha (o toque
++    /// seguinte edita).
++    func testLinhaAbertaFechaTocandoForaRolandoEEmOutraLinha() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        let apagar = app.buttons["apagar-g032"]
++        naFolha(app, "gasto-g032")?.swipeLeft()
++        XCTAssertTrue(apagar.waitForExistence(timeout: 3))
++        app.elemento("resumoDoAPagar").tap()
++        XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "tocar fora fecha a linha")
++        naFolha(app, "gasto-g032")?.swipeLeft()
++        XCTAssertTrue(apagar.waitForExistence(timeout: 3))
++        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
++            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)), withVelocity: .slow, thenHoldForDuration: 0.2)
++        XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "rolar fecha a linha")
++        naFolha(app, "gasto-g032")?.swipeLeft()
++        XCTAssertTrue(apagar.waitForExistence(timeout: 3))
++        naFolha(app, "gasto-g045")?.tap()
++        XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "tocar noutra linha fecha a aberta")
++        XCTAssertFalse(app.buttons["salvarGasto"].waitForExistence(timeout: 2), "e não abre a edição")
++        naFolha(app, "gasto-g045")?.tap()
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5), "o toque seguinte edita")
++    }
++
++    func testCancelarNoArrastarFechaALinhaENaoApaga() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        arrastarEApagar(app, "g045")
++        app.alerts["Tinta acrílica (2/3)"].buttons["Cancelar"].tap()
++        XCTAssertTrue(app.buttons["apagar-g045"].waitForNonExistence(timeout: 3), "cancelar fecha a linha")
++        XCTAssertNotNil(naFolha(app, "gasto-g045"))
++        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("3 vencimentos"))
++    }
++
++    /// Sem vencimento nenhum, a folha do A pagar fica aberta, com o cartão do vazio (site).
++    func testApagarOUltimoVencimentoDeixaAFolhaAbertaEVazia() {
++        let app = abrirObra()
++        abrirAPagar(app)
++        for (id, titulo) in [("g039", "Janelas e portas de alumínio (2/6)"), ("g032", "Porcelanato 60×60 (5/10)"), ("g045", "Tinta acrílica (2/3)")] {
++            arrastarEApagar(app, id)
++            let alerta = app.alerts[titulo]
++            XCTAssertTrue(alerta.waitForExistence(timeout: 3), titulo)
++            alerta.buttons["Apagar só esta parcela"].tap()
++            XCTAssertTrue(app.elemento("gasto-\(id)").waitForNonExistence(timeout: 5))
++        }
++        XCTAssertTrue(app.elemento("aPagarVazio").waitForExistence(timeout: 3), "o cartão do vazio")
++        XCTAssertTrue(app.elemento("resumoDoAPagar").label.contains("0 vencimentos"))
++        sleep(1)
++        XCTAssertTrue(app.buttons["fecharFolha"].exists, "a folha não fecha quando fica vazia")
++    }
++
++    func testCarregandoNoArrastarAvisaNaFolhaENaoApaga() {
++        let app = abrirObra(argumentos: ["-custta.recusarGravacao", "nao-carregado"])
++        abrirAPagar(app)
++        arrastarEApagar(app, "g045")
++        app.alerts["Tinta acrílica (2/3)"].buttons["Apagar só esta parcela"].tap()
++        let alerta = app.alerts["Carregando suas obras, tente em instantes."]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "o alerta do site, dentro da folha: \(alertas(app))")
++        alerta.buttons["OK"].tap()
++        XCTAssertNotNil(naFolha(app, "gasto-g045"), "nada foi apagado")
++        XCTAssertTrue(app.buttons["fecharFolha"].exists)
++    }
+ }
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -800,6 +800,20 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
+   assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
+ });
+ 
++test('apagar na folha de origem: a linha sai no turno seguinte ao voltar, e a linha aberta fica na Tecla', () => {
++  // Nenhum teste de tela vê isso. No mesmo turno do voltar da pilha, a transação do apagar (com a mola) se misturaria à do
++  // voltar, como a troca de obra sem animação fazia a folha sumir de uma vez (T34). E, dentro da folha, a linha arrastada
++  // aberta fica na Tecla (o .folha .gasto.puxada do mockup), e não na Linha da folha, que é o fundo do grupo.
++  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
++  assert.match(aPagar, /case \.apagou\(let pedido\):\n\s*Task \{ @MainActor in apagar\(pedido, antes: volta\.ordem, depoisDoVoltar: true\) \}\n\s*return\n/,
++               'o apagar vindo da edição, no turno seguinte ao voltar');
++  assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
++               /if case \.origem\(let origem\) = saida \{ origem\.apagou\(pedido\) \} else \{ folhas\.fechar \{ folhas\.apagar\(pedido\) \} \}/,
++               'na origem, a edição volta e a origem apaga; na folha do gasto, ela desce e a obra apaga');
++  assert.match(ler('app-ios/Custta/Telas/LinhaArrastavel.swift'), /\.background\(x < 0 \? paleta\.cor\(naFolha \? \.tecla : \.linhaDaFolha\) : \.clear\)/,
++               'a linha aberta na Tecla dentro da folha');
++});
++
+ test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
+   const s = JSON.parse(ler('package.json')).scripts;
+   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected: reprova `✖ apagar na folha de origem: a linha sai no turno seguinte ao voltar, e a linha aberta fica na Tecla` (`ℹ pass 53`, `ℹ fail 1`), com `AssertionError [ERR_ASSERTION]: o apagar vindo da edição, no turno seguinte ao voltar`; o `CusttaTests` não compila: `type 'SaidaDaLinha' has no member 'apagou'`, `value of type 'OrigemDaEdicao' has no member 'apagou'` e `type 'OrigemDaEdicao.Volta.Motivo?' has no member 'apagou'`. Só com os testes de tela no lugar, os 8 novos reprovam com `XCTAssertTrue failed`: os da edição com `a folha do A pagar continua aberta` (a edição fecha a folha inteira) e `R$ 13.250,00, 3 vencimentos · a partir de amanhã` (sem o vencimento à vista); os de arrastar com `arrastar para a esquerda mostra Apagar, com a folha aberta`; e o da linha aberta, sem o `apagar-g032` depois do arrasto.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Falsos/MontarFalso.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/MontarFalso.swift
++++ b/app-ios/Custta/Falsos/MontarFalso.swift
+@@ -8,7 +8,8 @@ import CusttaNucleo
+                   google-sem-perfil, google-perfil-concorrente)
+    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto) |
+                   prejuizo (a vitrine com a vendida no prejuízo) | porTopico, perto, passou, semOrcamento, muitosTopicos (os
+-                  orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift)
++                  orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift) | avista (a vitrine com um
++                  vencimento à vista no A pagar)
+    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
+    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
+                   não responde: "Carregando suas obras…")
+@@ -38,6 +39,7 @@ extension Composicao {
+         case "limite": DadosDeExemplo.noTeto()
+         case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
+         case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
++        case "avista": DadosDeExemplo.vitrineComVencimentoAVista()
+         default: DadosDeExemplo.vitrine()
+         }
+         // CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>: outro aparelho apaga um gasto com o app aberto; sem o gasto
+```
+
+Em `app-ios/Custta/Falsos/VitrineDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDaObra.swift
++++ b/app-ios/Custta/Falsos/VitrineDaObra.swift
+@@ -92,6 +92,21 @@ extension DadosDeExemplo {
+         return .objeto(raiz)
+     }
+ 
++    /// A vitrine com um vencimento à vista no A pagar (`CUSTTA_DADOS=avista`): a caçamba de entulho no Pix, agendada para
++    /// daqui a 2 dias, antes das três parcelas do mockup. O apagar à vista de dentro da folha do A pagar ("Apagar este
++    /// gasto?", com o nome e o valor).
++    static func vitrineComVencimentoAVista(hoje: Date = .now) -> ValorJSON {
++        guard case .objeto(var raiz) = vitrine(hoje: hoje), case .lista(var obras) = raiz["obras"], case .objeto(var alphaville) = obras[0],
++              case .lista(var gastos) = alphaville["gastos"] else { return vitrine(hoje: hoje) }
++        let dia = Calendar(identifier: .gregorian).date(byAdding: .day, value: 2, to: hoje) ?? hoje
++        gastos.append(.objeto(["id": .texto("g047"), "valor": .numero(650), "topico": .texto("outros"), "descricao": .texto("Caçamba de entulho"),
++                               "data": .texto(dataLocalISO(dia, fuso: .current)), "pagamento": .texto("pix")]))
++        alphaville["gastos"] = .lista(gastos)
++        obras[0] = .objeto(alphaville)
++        raiz["obras"] = .lista(obras)
++        return .objeto(raiz)
++    }
++
+     /// O teto das rules: 300 obras ("Obra 1" a "Obra 300"), para o aviso de "Nova obra".
+     static func noTeto() -> ValorJSON {
+         .objeto([
+```
+
+Em `app-ios/Custta/Identidade/PecasDaFolha.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/PecasDaFolha.swift
++++ b/app-ios/Custta/Identidade/PecasDaFolha.swift
+@@ -16,8 +16,8 @@ extension EnvironmentValues {
+     /// Dentro do valor de uma `LinhaDaFolhaComRotulo` na letra grande: a `SetaDaLinha` não segue o valor.
+     @Entry var setaNaPonta = false
+     /// Peças da lista da obra postas numa folha (a do A pagar, etapa 3), sobre o fundo sólido do grupo: o secundário é o da
+-    /// folha (o --texto2-v do mockup, o SecundarioTransparente), e não o do vidro, e o cabeçalho do mês fica nas medidas do
+-    /// grupo da folha.
++    /// folha (o --texto2-v do mockup, o SecundarioTransparente), e não o do vidro, o cabeçalho do mês fica nas medidas do
++    /// grupo da folha e a linha arrastada aberta fica na Tecla.
+     @Entry var dentroDaFolha = false
+ }
+ 
+```
+
+Em `app-ios/Custta/Telas/FolhaDeOrigem.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDeOrigem.swift
++++ b/app-ios/Custta/Telas/FolhaDeOrigem.swift
+@@ -4,8 +4,9 @@ import CusttaNucleo
+ 
+ /* A volta à folha de origem (etapa 3; decisão 1 do conselho de 19/10). Editar um gasto de dentro de uma folha (o A pagar;
+    o detalhe do tópico vem depois) empurra a edição da etapa 2 no NavigationStack da própria folha, sem o ×, com o voltar e
+-   o nome da origem no subtítulo. "Salvar" e o voltar voltam à origem, que fica montada embaixo: a mesma rolagem, os
+-   números novos e, no "Salvar", a linha acesa. Puxar fecha a folha inteira e, com mudança, pergunta antes. Continua uma folha por vez: o `Folhas` é só a folha sobre as abas, e o estado da volta mora na folha de origem
++   o nome da origem no subtítulo. "Salvar", o voltar e as saídas do apagar voltam à origem, que fica montada embaixo: a
++   mesma rolagem, os números novos e, no "Salvar", a linha acesa; no apagar, a linha sai lá, à vista. Puxar fecha a folha
++   inteira e, com mudança, pergunta antes. Continua uma folha por vez: o `Folhas` é só a folha sobre as abas, e o estado da volta mora na folha de origem
+    (`OrigemDaEdicao`). */
+ 
+ /// Um passo empurrado na folha de origem: a edição de um gasto e, em cima dela, o teclado do valor e a lista de tópicos.
+@@ -48,7 +49,7 @@ final class OrigemDaEdicao {
+         self.nome = nome
+     }
+ 
+-    /// Como a edição voltou, para a lista: rolar até a linha e apagar a luz, mover o foco.
++    /// Como a edição voltou, para a lista: rolar até a linha e apagar a luz, apagar a linha, mover o foco.
+     struct Volta: Equatable {
+         enum Motivo: Equatable {
+             /// "Salvar": a linha volta acesa.
+@@ -57,6 +58,8 @@ final class OrigemDaEdicao {
+             case voltou(String)
+             /// O gasto sumiu com a edição aberta (apagado em outro aparelho).
+             case sumiu(String)
++            /// "Apagar" confirmado dentro da edição: a lista apaga no turno seguinte, com a animação da etapa 2.
++            case apagou(Folhas.PedidoDeApagar)
+         }
+ 
+         let motivo: Motivo
+@@ -82,6 +85,8 @@ final class OrigemDaEdicao {
+     /// As linhas acesas depois de salvar (2 s), e quantas vezes acenderam: a luz de um "Salvar" não apaga a do seguinte.
+     var acesos: Set<String> = []
+     @ObservationIgnored private(set) var vezDoAceso = 0
++    /// A linha arrastada que mostra "Apagar" (uma por vez).
++    var linhaAberta: String?
+     /// A última volta da edição.
+     private(set) var volta: Volta?
+     @ObservationIgnored private var motivoDaVolta: Volta.Motivo?
+@@ -135,6 +140,9 @@ final class OrigemDaEdicao {
+         sair(.voltou(id))
+     }
+ 
++    /// "Apagar" confirmado na edição (só esta parcela, a compra toda ou o gasto à vista): volta, e a lista apaga a linha.
++    func apagou(_ pedido: Folhas.PedidoDeApagar) { sair(.apagou(pedido)) }
++
+     /// O gasto da edição sumiu (apagado em outro aparelho): volta, em vez de fechar a folha.
+     func sumiu(_ gastoId: String) { sair(.sumiu(gastoId)) }
+ 
+@@ -182,6 +190,7 @@ enum SaidaDaLinha: Equatable {
+     case salvou(String)
+     case voltou(String)
+     case sumiu(String)
++    case apagou(Set<String>, compra: Bool)
+ }
+ 
+ /// Para onde o VoiceOver vai na lista da folha de origem, e o que ele ouve depois.
+@@ -191,8 +200,8 @@ struct FocoNaOrigem: Equatable {
+ }
+ 
+ /// "Salvar": a linha editada; se ela saiu da lista (no A pagar, a data passou dos 30 dias), a vizinha, com "O gasto saiu
+-/// desta lista.". O voltar sem salvar: a linha que abriu a edição. O gasto apagado em outro aparelho: a vizinha, com o
+-/// anúncio do apagar da etapa 2. A lista que ficou vazia: o cartão do vazio. A vizinha é a próxima linha que ficou, senão a
++/// desta lista.". O voltar sem salvar: a linha que abriu a edição. Apagar, e o gasto apagado em outro aparelho: a vizinha,
++/// com o anúncio do apagar da etapa 2. A lista que ficou vazia: o cartão do vazio. A vizinha é a próxima linha que ficou, senão a
+ /// anterior, na ordem de `antes` (a lista antes da mudança); `depois` é a lista de agora.
+ func focoNaOrigem(_ saida: SaidaDaLinha, antes: [String], depois: [String]) -> FocoNaOrigem {
+     func vizinha(_ saem: Set<String>) -> AlvoDoFoco {
+@@ -209,6 +218,8 @@ func focoNaOrigem(_ saida: SaidaDaLinha, antes: [String], depois: [String]) -> F
+         return FocoNaOrigem(alvo: depois.contains(id) ? .gasto(id) : vizinha([id]), anuncio: nil)
+     case .sumiu(let id):
+         return FocoNaOrigem(alvo: vizinha([id]), anuncio: "Gasto apagado")
++    case .apagou(let saem, let compra):
++        return FocoNaOrigem(alvo: vizinha(saem), anuncio: compra ? "Compra apagada" : "Gasto apagado")
+     }
+ }
+ 
+```
+
+Em `app-ios/Custta/Telas/FolhaDoAPagar.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoAPagar.swift
++++ b/app-ios/Custta/Telas/FolhaDoAPagar.swift
+@@ -38,14 +38,19 @@ struct FolhaDoAPagar: View {
+ 
+ /// O resumo, os vencimentos por mês e a frase do fim. As peças da lista (cabeçalho de mês e gasto) são filhas diretas da
+ /// LazyVStack, com o fundo do grupo desenhado por peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria
+-/// uma peça só (o detalhe do tópico, com a mesma lista, passa de cem gastos).
++/// uma peça só (o detalhe do tópico, com a mesma lista, passa de cem gastos). Arrastar uma linha para a esquerda mostra
++/// "Apagar", como na lista da obra; a folha fica aberta.
+ private struct ListaDoAPagar: View {
+     let obraId: String
+-    let origem: OrigemDaEdicao
++    @Bindable var origem: OrigemDaEdicao
+     @Environment(ModeloApp.self) private var modelo
+     @Environment(\.opcoes) private var opcoes
+-    /// Para onde o VoiceOver vai quando a edição volta.
++    /// Para onde o VoiceOver vai quando a edição volta ou uma linha sai.
+     @AccessibilityFocusState private var foco: AlvoDoFoco?
++    /// "Apagar" tocado na linha: o gasto da pergunta. Fica depois que o alerta fecha, para ele não trocar de texto saindo.
++    @State private var alvoDoApagar: Gasto?
++    @State private var perguntando = false
++    @State private var naoCarregado = false
+ 
+     var body: some View {
+         let estado = modelo.sincronizador.estado
+@@ -54,6 +59,15 @@ private struct ListaDoAPagar: View {
+             let topicos = mapaDeTopicos(estado.config.topicosProprios)
+             let pecas = pecasDaOrigem(aPagar.meses)
+             let ordem = aPagar.meses.flatMap(\.gastos).map(\.id)
++            let acoes = AcoesDaLista(aberta: $origem.linhaAberta, acesos: origem.acesos, novos: false, foco: $foco,
++                                     tocar: { gasto in
++                                         if origem.linhaAberta != nil { fecharLinha(); return }
++                                         editar(gasto, obra: obra, ordem: ordem)
++                                     },
++                                     apagar: { gasto in
++                                         alvoDoApagar = gasto
++                                         perguntando = true
++                                     })
+             ScrollViewReader { leitor in
+                 ScrollView {
+                     LazyVStack(alignment: .leading, spacing: 0) {
+@@ -70,7 +84,7 @@ private struct ListaDoAPagar: View {
+                                     .modifier(FundoDoGrupo(cima: true, baixo: false))
+                                     .padding(.top, 20)
+                             case .gasto(let gasto):
+-                                linha(gasto, linhaDeGasto(gasto, topicos: topicos)) { editar(gasto, obra: obra, ordem: ordem) }
++                                LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: acoes)
+                                     .overlay(alignment: .top) { if !peca.primeiro { SeparadorDaFolha(recuo: 67) } }
+                                     .modifier(FundoDoGrupo(cima: false, baixo: peca.ultimo))
+                             }
+@@ -81,26 +95,25 @@ private struct ListaDoAPagar: View {
+                     }
+                     .padding(.top, 4)
+                     .padding(.bottom, 48)
++                    // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
++                    .contentShape(.rect)
++                    .onTapGesture { if origem.linhaAberta != nil { fecharLinha() } }
+                 }
++                .onScrollPhaseChange { _, fase in if fase != .idle, origem.linhaAberta != nil { fecharLinha() } }
+                 .onChange(of: origem.volta) { _, volta in if let volta { voltou(volta, depois: ordem, leitor: leitor) } }
+             }
+             .environment(\.dentroDaFolha, true)
++            .modifier(PerguntaDeApagar(apresentada: $perguntando, obraId: obra.id, gasto: alvoDoApagar) { pedido in
++                apagar(pedido, antes: ordem, depoisDoVoltar: false)
++            })
++            .onChange(of: perguntando) { _, agora in if !agora { fecharLinha() } }
++            .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) { Button("OK", role: .cancel) {} }
++            .pausaOFundo(enquanto: naoCarregado)
+         } else {
+             Color.clear
+         }
+     }
+ 
+-    /// Uma linha de gasto: tocar empurra a edição; acesa por 2 s depois de salvar, sem a etiqueta "novo" (que é de gasto
+-    /// lançado). Para o VoiceOver é um botão; o Controle por Voz chama pelo título.
+-    private func linha(_ gasto: Gasto, _ l: LinhaDeGasto, editar: @escaping () -> Void) -> some View {
+-        LinhaDeGastoView(gasto: gasto, linha: l, acesa: origem.acesos.contains(gasto.id))
+-            .onTapGesture(perform: editar)
+-            .accessibilityAddTraits(.isButton)
+-            .accessibilityAction { editar() }
+-            .accessibilityInputLabels([l.titulo])
+-            .accessibilityFocused($foco, equals: .gasto(gasto.id))
+-    }
+-
+     private func editar(_ gasto: Gasto, obra: Obra, ordem: [String]) {
+         let estado = modelo.sincronizador.estado
+         let rascunho = RascunhoDoGasto(obra: obra, editado: gasto, todas: estado.obras, proprios: estado.config.topicosProprios,
+@@ -115,9 +128,15 @@ private struct ListaDoAPagar: View {
+         origem.abrir(rascunho, ordem: ordem)
+     }
+ 
++    private func fecharLinha() {
++        guard origem.linhaAberta != nil else { return }
++        if opcoes.reduzirMovimento { origem.linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { origem.linhaAberta = nil } }
++    }
++
+     /// A edição voltou. No "Salvar", a linha fica onde está se continua à vista (a data nova pode tê-la mudado de lugar; se
+-    /// saiu da vista, a lista rola o mínimo até ela) e apaga a luz em 2 s. O VoiceOver vai para onde o `focoNaOrigem` diz,
+-    /// quando o voltar termina, e ouve depois o que aconteceu.
++    /// saiu da vista, a lista rola o mínimo até ela) e apaga a luz em 2 s. No "Apagar", a linha sai no turno seguinte ao
++    /// voltar, com a animação dela (no mesmo turno, as transações do voltar e do apagar se misturariam). O VoiceOver vai para
++    /// onde o `focoNaOrigem` diz, quando o voltar termina, e ouve depois o que aconteceu.
+     private func voltou(_ volta: OrigemDaEdicao.Volta, depois: [String], leitor: ScrollViewProxy) {
+         let saida: SaidaDaLinha
+         switch volta.motivo {
+@@ -138,6 +157,9 @@ private struct ListaDoAPagar: View {
+             saida = .voltou(id)
+         case .sumiu(let id):
+             saida = .sumiu(id)
++        case .apagou(let pedido):
++            Task { @MainActor in apagar(pedido, antes: volta.ordem, depoisDoVoltar: true) }
++            return
+         }
+         let destino = focoNaOrigem(saida, antes: volta.ordem, depois: depois)
+         Task { @MainActor in
+@@ -145,11 +167,42 @@ private struct ListaDoAPagar: View {
+             foco = destino.alvo
+             guard let anuncio = destino.anuncio else { return }
+             try? await Task.sleep(for: .milliseconds(700))
+-            var aviso = AttributedString(anuncio)
+-            aviso.accessibilitySpeechAnnouncementPriority = .low
+-            AccessibilityNotification.Announcement(aviso).post()
++            anunciar(anuncio)
++        }
++    }
++
++    /// Apaga um gasto (ou a compra toda) com a animação da lista da obra: a linha sai pela esquerda, as de baixo sobem e os
++    /// totais mudam na mesma transação; a folha fica aberta, mesmo vazia (site). O VoiceOver vai depois para a vizinha (ou
++    /// para o cartão do vazio) e ouve o que aconteceu, nos tempos da lista da obra; vindo da edição, contados do fim do
++    /// voltar. `antes` é a ordem das linhas antes de apagar.
++    private func apagar(_ p: Folhas.PedidoDeApagar, antes: [String], depoisDoVoltar: Bool) {
++        guard let obra = modelo.sincronizador.estado.obras.first(where: { $0.id == p.obraId }) else { return }
++        let saem: Set<String> = p.grupoId.map { g in Set(obra.gastos.filter { $0.grupoId == g }.map(\.id)) } ?? [p.gastoId]
++        // A linha sai aberta, com o "Apagar": fechar antes, fora da transação, a fazia voltar num quadro e só então sair.
++        let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
++            origem.linhaAberta = nil
++            return modelo.gravar { e in p.grupoId.map { e.apagandoCompra($0, daObra: p.obraId) } ?? e.apagandoGasto(p.gastoId, daObra: p.obraId) }
++        }
++        if resultado == .naoCarregado { naoCarregado = true; return }
++        guard resultado == .gravou else { return }
++        let depois = modelo.sincronizador.estado.obras.first { $0.id == p.obraId }
++            .map { aPagarDaObra($0, hoje: dataLocalISO(.now, fuso: .current)).meses.flatMap(\.gastos).map(\.id) } ?? []
++        let destino = focoNaOrigem(.apagou(saem, compra: saem.count > 1), antes: antes, depois: depois)
++        Task { @MainActor in
++            if depoisDoVoltar { try? await Task.sleep(for: OrigemDaEdicao.fimDoVoltar) }
++            try? await Task.sleep(for: .milliseconds(500))
++            foco = destino.alvo
++            guard let anuncio = destino.anuncio else { return }
++            try? await Task.sleep(for: .milliseconds(700))
++            anunciar(anuncio)
+         }
+     }
++
++    private func anunciar(_ texto: String) {
++        var aviso = AttributedString(texto)
++        aviso.accessibilitySpeechAnnouncementPriority = .low
++        AccessibilityNotification.Announcement(aviso).post()
++    }
+ }
+ 
+ /// O total e "{N} vencimentos · a partir de amanhã" (o texto do site, também no zero), num grupo sólido: o valor em 28
+```
+
+Em `app-ios/Custta/Telas/FolhaDoGasto.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoGasto.swift
++++ b/app-ios/Custta/Telas/FolhaDoGasto.swift
+@@ -373,7 +373,8 @@ struct PassoDosDetalhes: View {
+         }
+         .pausaOFundo(enquanto: naoCarregado)
+         .modifier(PerguntaDeApagar(apresentada: $apagando, obraId: rascunho.obraId, gasto: rascunho.editado) { pedido in
+-            folhas.fechar { folhas.apagar(pedido) }
++            // Na folha de origem, a edição volta e a origem apaga a linha, à vista; na folha do gasto, ela desce e a obra apaga.
++            if case .origem(let origem) = saida { origem.apagou(pedido) } else { folhas.fechar { folhas.apagar(pedido) } }
+         })
+     }
+ 
+```
+
+Em `app-ios/Custta/Telas/LinhaArrastavel.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/LinhaArrastavel.swift
++++ b/app-ios/Custta/Telas/LinhaArrastavel.swift
+@@ -19,6 +19,7 @@ struct LinhaArrastavel<Conteudo: View>: View {
+     @State private var passou = false
+     @Environment(\.paleta) private var paleta
+     @Environment(\.opcoes) private var opcoes
++    @Environment(\.dentroDaFolha) private var naFolha
+     /// O botão cresce com a letra até o tamanho AX2 (mockup: "Apagar" de 13 pt num botão de 80).
+     @ScaledMetric(relativeTo: .footnote) private var larguraDoBotao: CGFloat = 80
+ 
+@@ -50,7 +51,9 @@ struct LinhaArrastavel<Conteudo: View>: View {
+                 .accessibilityIdentifier("apagar-\(id)")
+             }
+             conteudo()
+-                .background(x < 0 ? paleta.cor(.linhaDaFolha) : .clear)
++                // A linha aberta, sólida por cima do botão: na Linha da folha sobre o vidro; dentro da folha, na Tecla (o
++                // .folha .gasto.puxada do mockup), que se separa do fundo do grupo.
++                .background(x < 0 ? paleta.cor(naFolha ? .tecla : .linhaDaFolha) : .clear)
+                 .offset(x: x)
+                 .accessibilityAction(named: "Apagar", apagar)
+         }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/GastoUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected: `ℹ pass 54`, `ℹ fail 0`; sem aviso; `✔ Test run with 156 tests in 29 suites passed` (`FolhasDeOrigemTests` com 10); `FolhasDeOrigemUITests` 24 de 24 (os 8 novos) e `GastoUITests` 24 de 24; `** TEST EXECUTE SUCCEEDED **`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/MontarFalso.swift \
+  app-ios/Custta/Falsos/VitrineDaObra.swift \
+  app-ios/Custta/Identidade/PecasDaFolha.swift \
+  app-ios/Custta/Telas/FolhaDeOrigem.swift \
+  app-ios/Custta/Telas/FolhaDoAPagar.swift \
+  app-ios/Custta/Telas/FolhaDoGasto.swift \
+  app-ios/Custta/Telas/LinhaArrastavel.swift \
+  app-ios/CusttaTests/FolhasDeOrigemTests.swift \
+  app-ios/CusttaUITests/FolhasDeOrigemUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "feat: apagar de dentro da folha do A pagar, pela edição e arrastando" -m "\"Apagar gasto\" na edição empurrada na folha do A pagar pergunta com os textos da etapa 2 (\"Apagar este gasto?\", com o nome e o valor; na parcela, \"só esta parcela\", \"a compra toda\" ou \"Cancelar\"). Confirmado, a edição volta à origem e, no turno seguinte ao voltar, a origem apaga a linha com a animação da lista da obra: a linha sai pela esquerda, as de baixo sobem e o total muda junto. No mesmo turno, a transação do apagar se misturaria à do voltar da pilha." -m "As linhas da folha passam a ser as da lista da obra, com o arrastar para apagar próprio (o botão de 80 pt e a ação \"Apagar\" no rotor): a pergunta é a mesma, e a folha continua aberta, mesmo quando sai o último vencimento (site). Dentro da folha, a linha aberta fica na Tecla, como no mockup. Depois de apagar, o VoiceOver vai para a vizinha, ou para o cartão do vazio, e ouve \"Gasto apagado\" ou \"Compra apagada\", nos tempos da lista da obra (vindo da edição, contados do fim do voltar). O \"Carregando\" do site também avisa dentro da folha." -m "Os falsos ganham a vitrine com um vencimento à vista (CUSTTA_DADOS=avista), para o apagar à vista da folha."
+```
+
+### Task 26: Folha e linha do orçamento nas medidas do mockup
+
+Três ajustes da conferência do Verniz no PR 1, medidos no app pela régua dele (quadros da árvore e pixel) e no mockup pelo DOM, no 18 Pro, na letra padrão. Na maior letra nada muda: o alto da folha rola com a lista, e o Total já passa de 64.
+
+| medida | antes | mockup | depois |
+| --- | --- | --- | --- |
+| "Só o total": da linha de cima das teclas encaixadas à tecla 1 | 6 | 11,9 | 12 |
+| linha do orçamento na obra: largura da barra | 310,7 | 315,1 | 315,0 |
+| linha do orçamento na obra: vão da barra ao chevron | ~7 | 3,9 | 4 (o quadro de 9 do `.k-chev`) |
+| "Por tópico": altura do Total ao vivo | 59,7 | 64 | 64 |
+| "Por tópico": do Total ao corte da lista | 0 | 6 | 6 |
+| "Por tópico": do Total à primeira linha | 8 | 12,1 | 12 |
+
+- **As mudanças.** No `TecladoEncaixado`, o alto das teclas sem a barra passa a 12 (`nome == nil && !grande ? 12 : 6`). O chevron da `LinhaDoOrcamento` ganha o quadro de 9 do mockup fora da maior letra (`? 18 : 9`; a guarda Node do chevron do #83 passa a cobrar os dois). O `TotalAoVivo` ganha `minHeight: 64`; o cabeçalho do "Por tópico", 6 pt embaixo (o corte), e o alto da lista, 6 em vez de 8 (a primeira linha a 12 do Total).
+- **O efeito a olhar.** A primeira linha da folha "Por tópico" desce 8,3 pt (257,7 → 266): o alto da folha do app já fica 8 pt abaixo do do mockup (o segmentado em 136, contra 128), e antes o Total mais baixo e o vão menor compensavam por acaso. O chevron desenha ~1 pt fora do quadro de 9.
+- **O alvo do toque numa linha de baixo.** Com a lista 8,3 pt mais baixa, o meio da linha que o `tocarUmaLinhaDeBaixo` escolhia (a Hidráulica) caía a 5 pt do "Salvar", e o "Salvar" pega o toque até 7 pt acima do quadro dele: a folha fechava e as teclas não abriam. A sonda mostrou que já era assim antes do ajuste: a 776 o toque é da linha; a 777, a folha fecha. O teste passa a escolher a última linha que acaba antes da faixa do "Salvar" (`frame.maxY < salvarOrcamento.frame.minY - 14`): a Elétrica, com o meio 59 pt acima do botão, longe da margem de toque, que o iOS 26 da CI pode ter diferente.
+- **O teste das teclas encaixadas acompanha.** O `TecladoEncaixadoTests` (Tarefa 17) somava o alto de 6 no "Só o total" da letra padrão: com o de 12, a faixa tem 12 + as teclas + 12 + o "Salvar" = 304 pt, e não 298. Por isso o Step 4 roda também o `CusttaTests`; sem ele, só a CI pegou (run 40004450489).
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/TecladoEncaixado.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoOrcamento.swift`
+- Modify: `app-ios/Custta/Telas/PecasDoOrcamento.swift`
+- Test (alterar): `app-ios/CusttaTests/TecladoEncaixadoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/OrcamentoUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `TecladoEncaixado` (Tarefa 17), `LinhaDoOrcamento` (Tarefa 15) e `TotalAoVivo` (Tarefa 18).
+- Produces: nada novo.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/TecladoEncaixadoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/TecladoEncaixadoTests.swift
++++ b/app-ios/CusttaTests/TecladoEncaixadoTests.swift
+@@ -22,11 +22,12 @@ struct TecladoEncaixadoTests {
+     }
+ 
+     /// Padrão: 6 + a barra de 44 + 6 + as teclas (4 de 50 e 3 vãos de 8) + 12 + o "Salvar" de 56 = 348. Sem as setas ("Só o
+-    /// total"), sem a barra: 298. Na letra grande: 6 + a barra de 56 + 6 + as teclas (4 de 64 e 3 vãos de 8) = 348, sem o
+-    /// "Salvar"; e a barra aparece também no "Só o total", com o "Pronto".
++    /// total"), sem a barra: 12 + as teclas + 12 + o "Salvar" = 304 (o alto de 12, no lugar do 6, é o do mockup). Na letra
++    /// grande: 6 + a barra de 56 + 6 + as teclas (4 de 64 e 3 vãos de 8) = 348, sem o "Salvar"; e a barra aparece também no
++    /// "Só o total", com o "Pronto".
+     @Test(arguments: [CGFloat(402), 375]) func alturasDoMockup(largura: CGFloat) {
+         #expect(altura("Elétrica · 9 de 71", largura: largura, .large) == 348)
+-        #expect(altura(nil, largura: largura, .large) == 298)
++        #expect(altura(nil, largura: largura, .large) == 304)
+         #expect(altura("Elétrica · 9 de 71", largura: largura, .accessibility5) == 348)
+         #expect(altura(nil, largura: largura, .accessibility5) == 348)
+         #expect(altura("Elétrica · 9 de 71", largura: largura, .large, negrito: true) == 348)
+```
+
+Em `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
+@@ -52,6 +52,8 @@ extension OrcamentoUITests {
+         XCTAssertTrue(app.buttons["modoDoOrcamento-Só o total"].isSelected)
+         XCTAssertTrue(app.buttons["tecla-1"].exists, "as teclas já abertas")
+         XCTAssertFalse(app.buttons["barraDasTeclas-pronto"].exists, "no \"Só o total\", sem a barra")
++        XCTAssertEqual(app.buttons["tecla-1"].frame.minY - app.elemento("tecladoEncaixado").frame.minY, 12, accuracy: 0.5,
++                       "no \"Só o total\", da linha de cima das teclas encaixadas às teclas")
+         XCTAssertFalse(app.buttons["tirarOrcamento"].exists, "sem orçamento, nada a tirar")
+         let salvar = app.buttons["salvarOrcamento"]
+         XCTAssertFalse(salvar.isEnabled, "o \"Salvar\" apagado até ter valor")
+@@ -131,11 +133,14 @@ extension OrcamentoUITests {
+         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total")
+         app.buttons["modoDoOrcamento-Por tópico"].tap()
+         XCTAssertEqual(vao(ate: "totalDoOrcamento"), 12, accuracy: 0.5, "Por tópico")
+-        // E sem os 10 do "Só o total" embaixo do Total ao vivo: dele até a primeira linha, só os 8 do alto da lista.
++        // O Total ao vivo com os 64 pt do mockup; a lista é cortada 6 abaixo dele, e a primeira linha vem 6 depois do corte.
++        let total = app.elemento("totalDoOrcamento").frame
++        XCTAssertEqual(total.height, 64, accuracy: 0.5, "Por tópico: a altura do Total ao vivo")
++        XCTAssertEqual(app.elemento("listaDoOrcamento").frame.minY - total.maxY, 6, accuracy: 0.5,
++                       "Por tópico: do Total ao vivo ao corte da lista")
+         let primeira = app.elemento("linhaOrc-terreno")
+         XCTAssertTrue(primeira.waitForExistence(timeout: 5), "linhaOrc-terreno")
+-        XCTAssertEqual(primeira.frame.minY - app.elemento("totalDoOrcamento").frame.maxY, 8, accuracy: 0.5,
+-                       "Por tópico: do Total ao vivo à primeira linha")
++        XCTAssertEqual(primeira.frame.minY - total.maxY, 12, accuracy: 0.5, "Por tópico: do Total ao vivo à primeira linha")
+         soTotal.tap()
+         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total, de volta")
+     }
+@@ -263,8 +268,10 @@ extension OrcamentoUITests {
+         XCTAssertTrue(app.elemento("linhaOrc-terreno").waitForExistence(timeout: 10))
+         let lista = app.elemento("listaDoOrcamento")
+         // A última linha inteira à vista antes de as teclas abrirem: depois, ela ficaria embaixo delas.
++        // A lista passa por baixo do "Salvar", que pega o toque até 7 pt acima do botão: a linha acaba antes da faixa dele.
++        let faixaDoSalvar = app.buttons["salvarOrcamento"].frame.minY - 14
+         let ids = ["terreno", "projeto", "matbasicos", "fundacao", "ferragem", "estrutura", "alvenaria", "telhado", "eletrica", "hidraulica"]
+-        let alvo = try XCTUnwrap(ids.last { app.elemento("linhaOrc-\($0)").exists && app.elemento("linhaOrc-\($0)").frame.maxY < lista.frame.maxY - 1 })
++        let alvo = try XCTUnwrap(ids.last { app.elemento("linhaOrc-\($0)").exists && app.elemento("linhaOrc-\($0)").frame.maxY < faixaDoSalvar })
+         let linha = app.elemento("linhaOrc-\(alvo)")
+         linha.tap()
+         let teclas = app.elemento("tecladoEncaixado")
+```
+
+Em `app-ios/CusttaUITests/OrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/OrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/OrcamentoUITests.swift
+@@ -49,6 +49,36 @@ final class OrcamentoUITests: XCTestCase {
+         XCTAssertEqual(orcamento.minY - total.maxY, 10, accuracy: 1, "a primeira linha do grupo, logo abaixo do Total gasto")
+         XCTAssertLessThanOrEqual(orcamento.maxY, corrigido.minY, "antes do Corrigido")
+         XCTAssertEqual(orcamento.minX + 18, corrigido.minX, accuracy: 0.5, "no mesmo grupo")
++        // Na letra padrão, o chevron no quadro de 9 pt do mockup: a barra com os 315,1 pt dele.
++        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 315.1, accuracy: 0.5, "a largura da barra")
++    }
++
++    /// A largura da barra da linha do orçamento, por pixel (o VoiceOver junta a linha num elemento só): a corrida mais longa
++    /// de pixels que se afastam do fundo do vidro (lido 8 pt dentro da linha, na mesma linha de pixel), a partir dos 18 pt do
++    /// texto e sem chegar à borda do cartão. Em pontos.
++    private func larguraDaBarra(_ elemento: XCUIElement) -> CGFloat {
++        guard let cg = elemento.screenshot().image.cgImage else { return 0 }
++        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / elemento.frame.width)
++        var px = [UInt8](repeating: 0, count: l * a * 4)
++        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
++            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
++                                    space: CGColorSpaceCreateDeviceRGB(),
++                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
++            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
++            return true
++        }
++        guard desenhou else { return 0 }
++        let (inicio, fundo, teto) = (Int(18 * e), Int(8 * e), Int((elemento.frame.width - 20) * e))
++        func longe(_ x: Int, _ y: Int) -> Bool {
++            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[(y * l + fundo) * 4 + $0])) > 12 }
++        }
++        var maior = 0
++        for y in 0..<a {
++            var n = 0
++            while inicio + n < l, longe(inicio + n, y) { n += 1 }
++            if n > maior, inicio + n < teto { maior = n }
++        }
++        return CGFloat(maior) / e
+     }
+ 
+     func testSemOrcamentoNenhumaLinha() {
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -493,7 +493,7 @@ test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura f
+   assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
+ });
+ 
+-test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt do mockup', () => {
++test('linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
+   // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
+   // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
+   // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+@@ -501,8 +501,8 @@ test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt
+   const inicio = t.indexOf('struct LinhaDoOrcamento');
+   assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
+   const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : nil\)\n/,
+-    'o chevron para no AX2 e, na letra de acessibilidade, ocupa 18 pt');
++  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
++    'o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+ });
+ 
+ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests/testDefinirPorTotal -only-testing:CusttaUITests/OrcamentoUITests/testALinhaVemLogoAbaixoDoTotalGasto -only-testing:CusttaUITests/OrcamentoUITests/testOAltoDaFolhaTemOsVaosDoMockupNosDoisModos 2>&1 | grep -E "error: -\[|Executed" | sed 's/.*error: //' | head -4
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/TecladoEncaixadoTests 2>&1 | grep -E "recorded an issue|↳|Test run with"
+```
+Expected: reprova `✖ linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão` (`ℹ pass 53`, `ℹ fail 1`), com `AssertionError [ERR_ASSERTION]: o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão`; compila (`** TEST BUILD SUCCEEDED **`: nada novo na API). Os 3 testes de tela reprovam com `XCTAssertEqualWithAccuracy failed`, cada um na primeira medida: `("310.6666666666667") is not equal to ("315.1") +/- ("0.5") - a largura da barra` no `testALinhaVemLogoAbaixoDoTotalGasto`, `("6.0") is not equal to ("12.0") +/- ("0.5") - no "Só o total", da linha de cima das teclas encaixadas às teclas` no `testDefinirPorTotal` e `("59.66666666666666") is not equal to ("64.0") +/- ("0.5") - Por tópico: a altura do Total ao vivo` no `testOAltoDaFolhaTemOsVaosDoMockupNosDoisModos` (`Executed 3 tests, with 3 failures`). O `TecladoEncaixadoTests` reprova nas duas larguras (402 e 375) com `Expectation failed: altura(nil, largura: largura, .large) == 304`, `↳ altura(nil, largura: largura, .large) → 298.0` (`✘ Test run with 2 tests in 1 suite failed … with 2 issues.`).
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Identidade/TecladoEncaixado.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/TecladoEncaixado.swift
++++ b/app-ios/Custta/Identidade/TecladoEncaixado.swift
+@@ -38,7 +38,8 @@ struct TecladoEncaixado: View {
+             }
+         }
+         .padding(.horizontal, 16)
+-        .padding(.top, 6)
++        // Sem a barra ("Só o total" fora da letra grande), as teclas ficam a 12 da linha de cima, como no mockup.
++        .padding(.top, nome == nil && !grande ? 12 : 6)
+         .padding(.bottom, 0)
+         .background {
+             paleta.cor(.folha).ignoresSafeArea(edges: .bottom).accessibilityHidden(true)
+```
+
+Em `app-ios/Custta/Telas/FolhaDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoOrcamento.swift
++++ b/app-ios/Custta/Telas/FolhaDoOrcamento.swift
+@@ -283,7 +283,7 @@ private struct CorpoDaFolhaDoOrcamento: View {
+                             .padding(.top, 28)
+                         }
+                     }
+-                    .padding(.top, grande ? 4 : 8)
++                    .padding(.top, grande ? 4 : (rascunho.modo == .topicos ? 6 : 8))
+                     .padding(.bottom, 24)
+                 }
+                 .scrollIndicators(.hidden)
+@@ -409,8 +409,9 @@ private struct CorpoDaFolhaDoOrcamento: View {
+         }
+         .padding(.horizontal, 16)
+         .padding(.top, 4)
+-        // No "Só o total" não há o Total ao vivo: os 10 com os 8 do alto da lista dão os 18 do mockup até a linha do total.
+-        .padding(.bottom, tamanho.isAccessibilitySize ? 16 : (rascunho.modo == .total ? 10 : 0))
++        // No "Só o total" não há o Total ao vivo: os 10 com os 8 do alto da lista dão os 18 do mockup até a linha do total. No
++        // "Por tópico", a lista é cortada 6 abaixo do Total, e os 6 do alto dela dão os 12 do mockup até a primeira linha.
++        .padding(.bottom, tamanho.isAccessibilitySize ? 16 : (rascunho.modo == .total ? 10 : 6))
+     }
+ 
+     private func trocarModo(_ modo: RascunhoDoOrcamento.Modo) {
+@@ -590,7 +591,8 @@ private struct TotalAoVivo: View {
+         }
+         .padding(.horizontal, 16)
+         .padding(.vertical, 10)
+-        .frame(maxWidth: .infinity, alignment: .leading)
++        // Os 64 pt do mockup: a entrelinha do SF, mais baixa que a do CSS, deixaria o cartão com 59,7.
++        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+         .background(paleta.cor(.linhaDaFolha), in: .rect(cornerRadius: 18, style: .continuous))
+         .accessibilityElement(children: .combine)
+         .accessibilityAddTraits(.updatesFrequently)
+```
+
+Em `app-ios/Custta/Telas/PecasDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDoOrcamento.swift
++++ b/app-ios/Custta/Telas/PecasDoOrcamento.swift
+@@ -169,9 +169,10 @@ struct LinhaDoOrcamento: View {
+                 Image(systemName: "chevron.right")
+                     .font(.body.weight(.semibold))
+                     // Na maior letra o chevron para no AX2 e ocupa só os 18 pt dele (18 × 30 do mockup): a coluna de texto fica com os
+-                    // 306 pt e "80% usado de" cabe numa linha (o símbolo sozinho reserva ~6 pt além do traço).
++                    // 306 pt e "80% usado de" cabe numa linha (o símbolo sozinho reserva ~6 pt além do traço). Na letra padrão, os 9 pt
++                    // do mockup (9 × 15): a barra fica com os 315 dele.
+                     .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+-                    .frame(width: tamanho.isAccessibilitySize ? 18 : nil)
++                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
+                     .foregroundStyle(paleta.cor(vidro.secundario))
+                     .accessibilityHidden(true)
+                     .foraDoLaudo()
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected: `ℹ pass 54`, `ℹ fail 0`; sem aviso; `✔ Test run with 156 tests in 29 suites passed`; `OrcamentoUITests` 29 de 29 (com os 2 `testTocarUmaLinhaDeBaixo…` no alvo novo), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2; `** TEST EXECUTE SUCCEEDED **`. São ~19 min no Mac.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/TecladoEncaixado.swift \
+  app-ios/Custta/Telas/FolhaDoOrcamento.swift \
+  app-ios/Custta/Telas/PecasDoOrcamento.swift \
+  app-ios/CusttaTests/TecladoEncaixadoTests.swift \
+  app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift \
+  app-ios/CusttaUITests/OrcamentoUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "fix: folha e linha do orçamento nas medidas do mockup" -m "Três sugestões da conferência do Verniz no PR 1 (3, 4 e 5), na letra padrão. No \"Só o total\", as teclas encaixadas ficam a 12 pt da linha de cima delas, como no mockup, e não mais a 6: a linha sobe de 542 para 536 e as teclas continuam em 548. No \"Por tópico\", a barra das setas segue a 6 pt da linha." -m "Na linha do orçamento da obra, o chevron ocupa os 9 pt do quadro do mockup (9 × 15), e não a largura do símbolo: a barra vai de 310,7 para 315 pt (315,1 no mockup), e o vão entre a barra e o quadro do chevron fica nos 4 pt do HStack." -m "Na folha \"Por tópico\", o Total ao vivo passa de 59,7 para os 64 pt do mockup (a entrelinha do SF é mais baixa que a do CSS). A lista, que era cortada rente ao Total, passa a ser cortada 6 pt abaixo dele, e a primeira linha vem 12 pt abaixo do Total, como no mockup (eram 8)." -m "Na letra de acessibilidade nada muda. Os testes da folha e da linha conferem as três medidas, a da barra por pixel, e a guarda do chevron passa a exigir também os 9 pt da letra padrão. O TecladoEncaixadoTests passa a esperar 304 no \"Só o total\" da letra padrão, com o alto de 12 do mockup. Com a lista 8,3 pt mais baixa, o teste de tocar uma linha de baixo passa a escolher a última linha que acaba antes da faixa do \"Salvar\", porque o meio da que ele escolhia caía a 5 pt do botão, e o \"Salvar\" pega o toque até 7 pt acima dele."
+```
+
+**Ponto de controle da fase 1 do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim da fase, o núcleo com 224 testes, o `CusttaTests` com 156 em 29 suítes e, no `app-etapa3`, o `FolhasDeOrigemUITests` com 24 e o `OrcamentoUITests` com 29). No Mac, além das suítes das tarefas, as telas da etapa 2 que a fase toca: `GastoUITests` (24), `FolhaDaObraUITests` (15), `FasesUITests` (9), `ObraUITests` (7) e `EstadosUITests` (13); as auditorias `testObraNoMaiorTamanho`, `testContrasteDaObraNosDoisTemas`, `testFolhaDoGastoNoMaiorTamanho`, `testContrasteDaFolhaNosDoisTemas`, `testParte3NoMaiorTamanho` e `testContrasteDaParte3NosDoisTemas`; e as leituras `testLeituraDaObra`, `testLeituraDaObraRolando`, `testLeituraDaObraVendida`, `testLeituraDaFolhaDoGasto`, `testLeituraDaParte3`, `testLeituraDaParte3NaMaiorLetra` e `testLeituraDoAlertaDeNaoSalvou`. Um "Audit failed to complete in time" (−56) numa auditoria é o tempo da máquina, com outros simuladores rodando: roda-se de novo só ela. A fase 1 não tem leitura nem auditoria própria; as do A pagar e do detalhe do tópico entram no `laudo-etapa3` na fase 2. As tarefas 22 a 25 já rodaram na CI do iOS 26 sobre as fatias do PR 1, com os mesmos patches (run 39813469497, verde 7/7, com o `app` em 42 min e o `app-etapa3` em 58,8, os dois com teto de 90). Elas provaram o que o Mac não tem: os alertas presos no passo empurrado e o "Não salvou" de dentro da folha; a trava do puxar fora da pilha; o voltar escondido, o chevron próprio e a borda que pergunta, sem acionar o botão de baixo nem atrapalhar a rolagem; o rótulo do voltar do sistema ("A pagar · 30 dias", `BackButton`); a rolagem mínima da lista preguiçosa até a linha que mudou de lugar; e o arrastar dentro da folha. No run de antes (39799242127), a volta pela borda falhou uma vez na edição do A pagar e ganhou a segunda tentativa do PR 1 (Tarefa 24). Na base nova, a fase rodou no run 40004450489 (iOS 26, com a Tarefa 26 ainda sem o teste das teclas encaixadas): o `nucleo`, o `app-etapa3` (com o `OrcamentoUITests` e o `FolhasDeOrigemUITests`), o `laudo` e o `laudo-etapa3` passaram; o `app` reprovou só o `TecladoEncaixadoTests` (o 304 da Tarefa 26); o `laudo-parte3` caiu no `testContrasteDaParte3NosDoisTemas` por tempo, com a folha "Nova obra" já aberta e cada busca do `nomeDaObra` levando de 9 a 31 s, e passou na segunda tentativa; e o `auditoria` nem começou, porque o download dos binários do Firebase (`dl.google.com`) estourou o tempo. Nesses dois casos, roda-se de novo só o job. O Verniz confere a folha do A pagar, a edição empurrada e o apagar lado a lado com o mockup (parte 2, seção 1), nos dois temas e na maior letra.

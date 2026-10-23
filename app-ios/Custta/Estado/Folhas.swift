@@ -15,6 +15,8 @@ final class Folhas {
         case novaObra
         case editarObra(obraId: String)
         case venda(obraId: String)
+        /// "Orçamento da obra" (etapa 3): o "Definir orçamento" da obra e o lápis da tela Orçamento.
+        case orcamento(obraId: String)
 
         var id: Self { self }
     }
@@ -45,6 +47,8 @@ final class Folhas {
         case trocar(String)
         /// Volta à lista e só então apaga a obra, para a linha sair com a animação à vista.
         case apagar(String)
+        /// O orçamento saiu (tirado na folha): a tela Orçamento, por trás da folha, volta para a obra.
+        case sairDoOrcamento(String)
     }
 
     struct PedidoDeNavegacao: Equatable {

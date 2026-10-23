@@ -7,10 +7,11 @@ import CusttaNucleo
 /* Metade app da conferência cruzada (tests/app-ios/cruzado.mjs): entra na conta que o "site" criou, carrega o
    documento e segue os roteiros do site pelas mesmas regras das telas: o dos gastos (lançar no Pix e no cartão
    parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda) e o da obra (criar, editar, marcar como
-   pronta, vender, desfazer a venda e apagar). O núcleo confere e monta cada mudança, o estado muda pelas mutações e
-   cada passo grava pelo Sincronizador, como um toque em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do
-   roteiro, para o site montar o mesmo resultado. O roteiro confere depois, com o SDK JavaScript, que o documento é o
-   que o site gravaria com as mesmas respostas e que nada do site se perdeu. */
+   pronta, vender, desfazer a venda e apagar) e o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar). O
+   núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador, como um toque
+   em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O roteiro
+   confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada do site
+   se perdeu; no orçamento, antes e a cada passo, pelo auxiliar do roteiro. */
 @MainActor
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["CUSTTA_CRUZADO"] == "1"))
 struct CruzadoTests {
@@ -79,7 +80,41 @@ struct CruzadoTests {
             ultima = try s.aplicar(try #require(novo, "o passo \(acao) da obra achou o que mudar"))
         }
         try await #require(ultima).confirmada()
+        // Os roteiros do gasto e da obra gravaram em seguida, sem leitura no meio: o roteiro guarda esse documento (o passo 0).
+        try await pedirConferencia(0)
+        // O orçamento (etapa 3): cada passo como a folha grava (o rascunho dela, montado do orçamento do momento, com o modo e as
+        // linhas do passo), e o roteiro confere o documento logo depois de o servidor confirmar. A pessoa abre a folha depois de
+        // chegar o eco da gravação anterior: o estado já é o documento relido, que a leitura normaliza como a do site.
+        let roteiroDoOrcamento = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_ORCAMENTO"]).utf8))
+        for (i, passo) in try #require(roteiroDoOrcamento.comoLista).enumerated() {
+            for _ in 0..<200 where !mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) { try await Task.sleep(for: .milliseconds(50)) }
+            try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do passo \(i + 1) do orçamento não chegou")
+            let p = try #require(passo.comoObjeto)
+            let obraId = try #require(p["obra"]?.comoTexto)
+            let obra = try #require(s.estado.obras.first { $0.id == obraId }, "a obra \(obraId) do roteiro")
+            let novo: Estado?
+            if p["acao"]?.comoTexto == "tirar" {
+                novo = s.estado.tirandoOrcamento(daObra: obraId)
+            } else {
+                let r = RascunhoDoOrcamento(obra: obra, topicos: topicosDoFormulario(s.estado.config.topicosProprios))
+                r.trocarModo(p["modo"]?.comoTexto == "topicos" ? .topicos : .total)
+                r.total = reaisParaCentavos(p["total"]?.comoNumero ?? 0)
+                for t in r.topicos { r.definir(.topico(t.id), reaisParaCentavos(p["valores"]?.comoObjeto?[t.id]?.comoNumero ?? 0)) }
+                let g = r.gravacao
+                novo = s.estado.salvandoOrcamento(modo: g.modo, total: g.total, valores: g.valores, naObra: obraId)
+            }
+            try await s.aplicar(try #require(novo, "o passo \(i + 1) do orçamento achou a obra")).confirmada()
+            try await pedirConferencia(i + 1)
+        }
         s.parar()
+    }
+
+    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0).
+    private func pedirConferencia(_ n: Int) async throws {
+        var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/orcamento/\(n)")))
+        pedido.httpMethod = "POST"
+        let (corpo, resposta) = try await URLSession.shared.data(for: pedido)
+        #expect((resposta as? HTTPURLResponse)?.statusCode == 200, "\(String(decoding: corpo, as: UTF8.self))")
     }
 
     private func camposDoRoteiro(_ passo: [String: ValorJSON]) throws -> CamposDaObra {

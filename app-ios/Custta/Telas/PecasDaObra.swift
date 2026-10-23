@@ -11,6 +11,7 @@ import CusttaNucleo
 /// rolagem e a pílula da fase 8 pt abaixo (2 a menos que o espaço da pilha).
 struct TituloDaObra: View {
     let nome: String
+    var identificador = "tituloDaObra"
     @Environment(\.paleta) private var paleta
 
     var body: some View {
@@ -18,7 +19,7 @@ struct TituloDaObra: View {
             .font(.largeTitle.weight(.bold))
             .foregroundStyle(paleta.cor(.texto))
             .accessibilityAddTraits(.isHeader)
-            .accessibilityIdentifier("tituloDaObra")    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
+            .accessibilityIdentifier(identificador)    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
             .frame(maxWidth: .infinity, alignment: .leading)
             .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra, noClaro: HaloDoTitulo.naObraNoClaro) }
             .padding(EdgeInsets(top: -6, leading: 0, bottom: -2, trailing: 0))
@@ -74,10 +75,14 @@ struct EtiquetaDoIndicador: View {
     }
 }
 
-/// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com Corrigido, A pagar (a folha e a seta são
-/// da etapa 3) e Venda. Os textos e as contas são os do site (indicadoresDaObra).
+/// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
+/// só com orçamento), Corrigido, A pagar (a folha e a seta são da etapa 3) e Venda. Os textos e as contas são os do site
+/// (indicadoresDaObra, orcamentoObra).
 struct IndicadoresDaObraView: View {
     let indicadores: IndicadoresDaObra
+    var orcamento: ResumoOrcamento? = nil
+    /// Para onde a linha do orçamento leva (a tela Orçamento da obra).
+    var rotaDoOrcamento: RotaDeObras? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
@@ -88,6 +93,17 @@ struct IndicadoresDaObraView: View {
         VStack(spacing: 10) {
             heroi
             VStack(spacing: 0) {
+                if let orcamento {
+                    if let rotaDoOrcamento {
+                        NavigationLink(value: rotaDoOrcamento) { LinhaDoOrcamento(resumo: orcamento, comSeta: true) }
+                            .buttonStyle(.plain)
+                            // O Controle por Voz chama pelo nome da linha ("Tocar Orçamento"), não pelo rótulo inteiro.
+                            .accessibilityInputLabels(["Orçamento"])
+                    } else {
+                        LinhaDoOrcamento(resumo: orcamento)
+                    }
+                    LinhaFina().padding(.leading, 18)
+                }
                 linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
                       identificador: "indicadorCorrigido")
                 LinhaFina().padding(.leading, 18)
@@ -175,12 +191,22 @@ struct IndicadoresDaObraView: View {
 /// "Lançamentos 46": a pílula de vidro antes da lista, nas medidas do mockup (subheadline, o número em peso médio).
 struct PilulaDeLancamentos: View {
     let quantidade: Int
+
+    var body: some View { PilulaDaLista(titulo: "Lançamentos", quantidade: quantidade, identificador: "lancamentos") }
+}
+
+/// A pílula de vidro antes de uma lista ("Lançamentos 46"; na tela Orçamento, "Por tópico 14" e "Gasto por tópico 14"): o
+/// título em subheadline semibold e o número em peso médio, no secundário.
+struct PilulaDaLista: View {
+    let titulo: String
+    let quantidade: Int
+    let identificador: String
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
 
     var body: some View {
         HStack(spacing: 4) {                             // um espaço de texto, como no mockup
-            Text("Lançamentos").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+            Text(titulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
             Text("\(quantidade)").font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
         }
         .padding(.horizontal, 14)
@@ -188,7 +214,7 @@ struct PilulaDeLancamentos: View {
         .superficie(.conteudo, em: .capsule)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
-        .accessibilityIdentifier("lancamentos")
+        .accessibilityIdentifier(identificador)
     }
 }
 
@@ -406,9 +432,11 @@ struct CartaoDaLista<Conteudo: View>: View {
 
 /// As ações da fase, logo abaixo dos indicadores (mockup da etapa 2, parte 3): o próximo passo numa pílula sólida da marca
 /// ("Marcar como pronta", "Registrar venda"); voltar numa pílula de vidro ("Voltar pra construção", "Desfazer venda").
-/// Pílulas de 52 pt que crescem com a letra, 10 entre elas, ícone de 20 e o texto em .body semibold.
+/// Pílulas de 52 pt que crescem com a letra, 10 entre elas, ícone de 20 e o texto em .body semibold. Sem orçamento e fora da
+/// vendida (o `pecasOrcamento` do site), "Definir orçamento" vem depois delas, em vidro (mockup da etapa 3).
 struct AcoesDaFaseView: View {
     let fase: Fase
+    var definirOrcamento: (() -> Void)? = nil
     let agir: (AcaoDaFase) -> Void
     @ScaledMetric(relativeTo: .body) private var icone: CGFloat = 20
 
@@ -424,6 +452,17 @@ struct AcoesDaFaseView: View {
                 }
                 .buttonStyle(PilulaDaAcao(principal: acao.principal))
                 .accessibilityIdentifier("acao-\(acao.rawValue)")
+            }
+            if let definirOrcamento {
+                Button(action: definirOrcamento) {
+                    Label {
+                        Text("Definir orçamento").multilineTextAlignment(.center)
+                    } icon: {
+                        Image(decorative: "Icones/alvo").resizable().frame(width: min(icone, 34), height: min(icone, 34))
+                    }
+                }
+                .buttonStyle(PilulaDaAcao(principal: false))
+                .accessibilityIdentifier("definirOrcamento")
             }
         }
     }
@@ -456,8 +495,11 @@ struct PilulaDaAcao: ButtonStyle {
     }
 }
 
-/// O lápis da barra da obra: círculo de vidro com o ícone do site, como o sair do topo; abre "Editar obra".
+/// O lápis da barra da obra: círculo de vidro com o ícone do site, como o sair do topo; abre "Editar obra" (na tela
+/// Orçamento, "Editar orçamento").
 struct BotaoDeEditarObra: View {
+    var rotulo = "Editar obra"
+    var identificador = "editarObra"
     let editar: () -> Void
     @Environment(\.paleta) private var paleta
 
@@ -471,7 +513,7 @@ struct BotaoDeEditarObra: View {
                 .superficie(.navegacao, em: .circle)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Editar obra")
-        .accessibilityIdentifier("editarObra")
+        .accessibilityLabel(rotulo)
+        .accessibilityIdentifier(identificador)
     }
 }

@@ -102,3 +102,24 @@ public func parcelasDaCompra(_ gasto: Gasto, naObra obra: Obra) -> Int {
     guard let grupo = gasto.grupoId else { return 1 }
     return obra.gastos.filter { $0.grupoId == grupo }.count
 }
+
+/* As da etapa 3 (app.js formOrcamento): o "Salvar" e o "Tirar orçamento" da folha do orçamento, pela regra do
+   dados.js. Também partem do estado do momento: o que outro aparelho mudou dentro do orçamento com a tela aberta fica. */
+public extension Estado {
+    /// "Salvar" da folha do orçamento: o `orcamentoGravado` sobre o orçamento que está no estado agora; o nil dele tira a
+    /// chave, como o `delete` do site.
+    func salvandoOrcamento(modo: String, total: Double, valores: [String: Double], naObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId) else { return nil }
+        var e = self
+        e.obras[i].orcamento = orcamentoGravado(obras[i].orcamento, modo: modo, total: total, valores: valores)
+        return e
+    }
+
+    /// "Tirar orçamento": a chave sai.
+    func tirandoOrcamento(daObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId) else { return nil }
+        var e = self
+        e.obras[i].orcamento = nil
+        return e
+    }
+}

@@ -41,10 +41,25 @@ extension XCUIApplication {
         }
     }
 
-    /// Volta pelo gesto da borda esquerda, como o polegar (o XCUITest não tem "voltar" do sistema).
-    func voltarPelaBorda() {
+    /// Volta pelo gesto da borda esquerda, como o polegar (o XCUITest não tem "voltar" do sistema). No iOS 26 da CI, o arrasto
+    /// sintetizado às vezes não volta depois de voltar pelo botão e entrar de novo, sem alerta e com o voltar à vista (runs
+    /// 39710458060 e 39799242127). Lá, se `saindo` não some em 2 s, ele se repete uma vez, com um print e uma linha no log;
+    /// no iOS 27 nada muda.
+    func voltarPelaBorda(saindo: XCUIElement? = nil) {
         let borda = coordinate(withNormalizedOffset: CGVector(dx: 0.0, dy: 0.5))
-        borda.press(forDuration: 0.05, thenDragTo: coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
+        let fim = coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
+        borda.press(forDuration: 0.05, thenDragTo: fim)
+        let ios27 = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+        guard let saindo, !ProcessInfo.processInfo.isOperatingSystemAtLeast(ios27), !saindo.waitForNonExistence(timeout: 2) else {
+            return
+        }
+        let tentativa = "borda | 2ª tentativa (iOS 26)"
+        let foto = XCTAttachment(screenshot: screenshot())
+        foto.name = tentativa
+        foto.lifetime = .keepAlways
+        XCTContext.runActivity(named: tentativa) { $0.add(foto) }
+        Swift.print(tentativa)
+        borda.press(forDuration: 0.05, thenDragTo: fim)
     }
 
     /// Toca nas duas pontas da linha de um botão (x = 30 e a largura da tela − 30, na altura do meio dele), longe do

@@ -5,9 +5,12 @@ name: app-ios
 #   dados.js, push.js, cadastro.js ou o gerador mudam;
 # - app: compila o app em Release sem assinatura (o caminho do TestFlight) e roda os testes de
 #   unidade e de tela no simulador com os serviços falsos;
-# - laudo, laudo-parte3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade, cada
-#   um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
-#   os dois num job só chegavam a 75 min com a folha do gasto, e a parte 3 da etapa 2 levava o laudo ao teto).
+# - app-etapa3: os testes de tela da etapa 3, num simulador próprio, em paralelo com o app (com eles, o app passou do
+#   teto de 75 min);
+# - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
+#   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
+#   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da
+#   etapa 3 moram no laudo-etapa3 desde a primeira).
 # Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
 # (npm run test:app-ios:emuladores e npm run test:app-ios:cruzado): precisam de Java, dos
 # emuladores e da assinatura de simulador para o keychain do Firebase Auth.
@@ -66,8 +69,10 @@ jobs:
 
   app:
     runs-on: macos-26
-    # Sem o laudo e as auditorias (jobs laudo e auditoria), o job fica perto de 30 min; o teto é o de 12/10, com folga para a VM lenta.
-    timeout-minutes: 75
+    # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
+    # (job app-etapa3): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa lenta, 67 min, com 48,9 de testes
+    # de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -112,7 +117,8 @@ jobs:
             build
 
       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
-      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria.
+      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
+      # testes de tela da etapa 3, no app-etapa3.
       - name: Testes de unidade e de tela no simulador
         run: |
           set -o pipefail
@@ -129,15 +135,60 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/testes.xcresult" \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests \
             -skip-testing:CusttaUITests/AuditoriaUITests \
+            -skip-testing:CusttaUITests/OrcamentoUITests \
             CODE_SIGNING_ALLOWED=NO
 
-      # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato.
-      - name: Resultado dos testes quando reprovam
-        if: failure()
+      # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
+      # 39710458060 foi cortado no teto e ficou sem xcresult.
+      - name: Resultado dos testes quando reprovam ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: testes-app-ios
           path: ${{ runner.temp }}/testes.xcresult
+          retention-days: 7
+
+  app-etapa3:
+    runs-on: macos-26
+    # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
+    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests: 20,8 min de testes + ~11 de
+    # preparo ≈ 32 min. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do job, e ele se divide se passar de ~50.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # Os mesmos serviços falsos do job app, que pula estas suítes.
+      - name: Testes de tela da etapa 3 no simulador
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/testes-etapa3.xcresult" \
+            -only-testing:CusttaUITests/OrcamentoUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Tela reprovada: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run 39710458060
+      # foi cortado no teto e ficou sem xcresult.
+      - name: Resultado dos testes da etapa 3 quando reprovam ou o job é cortado
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testes-etapa3-app-ios
+          path: ${{ runner.temp }}/testes-etapa3.xcresult
           retention-days: 7
 
   laudo:
@@ -184,6 +235,8 @@ jobs:
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraVendida \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3NaMaiorLetra \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -244,10 +297,57 @@ jobs:
           path: ${{ runner.temp }}/laudo-parte3.xcresult
           retention-days: 7
 
+  laudo-etapa3:
+    runs-on: macos-26
+    # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
+    # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
+    # encaixadas, no escuro, no claro e na maior letra. Cada PR da etapa anota aqui o tempo do job.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # A mesma varredura curta do job laudo: uma leitura troca de job sem mudar o que mede.
+      - name: Laudo de leitura e auditorias da etapa 3 no simulador
+        env:
+          TEST_RUNNER_CUSTTA_VARREDURA: curta
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/laudo-etapa3.xcresult" \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+            -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
+            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+      - name: Resultado do laudo da etapa 3 quando reprova
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: laudo-etapa3-app-ios
+          path: ${{ runner.temp }}/laudo-etapa3.xcresult
+          retention-days: 7
+
   auditoria:
     runs-on: macos-26
-    # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3) e a leitura da folha do gasto; a conta do
-    # tempo está no job laudo.
+    # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3) e a leitura
+    # da folha do gasto; a conta do tempo está no job laudo.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -278,6 +378,8 @@ jobs:
             -only-testing:CusttaUITests/AuditoriaUITests \
             -skip-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
             CODE_SIGNING_ALLOWED=NO
 

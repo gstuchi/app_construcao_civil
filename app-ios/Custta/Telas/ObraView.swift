@@ -31,13 +31,8 @@ struct ObraView: View {
     /// ela se refaz, e não a tela inteira (lista, indicadores e cartões).
     @State private var barra = BarraDaObra()
     #if DEBUG
-    /// Laudo de leitura e conferência visual: a tela parada numa rolagem dada, em pt (o mesmo gancho de Obras).
-    @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
     /// Laudo e conferência visual: a linha que abre mostrando "Apagar" (`-custta.linhaAberta g027`).
     @AppStorage("custta.linhaAberta") private var linhaDeTeste = ""
-    @State private var posicao = ScrollPosition(edge: .top)
-    /// A rolagem fixa foi pedida e ninguém arrastou a lista depois: o gancho a segura.
-    @State private var segurandoARolagem = false
     #endif
 
     var body: some View {
@@ -70,8 +65,12 @@ struct ObraView: View {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
-                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje))
-                    AcoesDaFaseView(fase: obra.fase) { agir($0, obra: obra) }
+                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
+                                          rotaDoOrcamento: .orcamento(obra.id))
+                    AcoesDaFaseView(fase: obra.fase,
+                                    definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
+                        agir($0, obra: obra)
+                    }
                         .padding(.top, 2)
                         .padding(.bottom, 14)
                     PilulaDeLancamentos(quantidade: obra.gastos.count)
@@ -97,7 +96,8 @@ struct ObraView: View {
                 .contentShape(.rect)
                 .onTapGesture { if linhaAberta != nil { fecharLinha() } }
             }
-            .onChange(of: folhas.destaque) { _, d in if let d { mostrar(d, lista: lista, leitor: leitor) } }
+            // Só com a obra à vista: o gasto lançado pelo + da tela Orçamento não rola nem leva o foco aqui, por baixo dela.
+            .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
         }
         .scrollIndicators(.hidden)
         .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
@@ -120,26 +120,10 @@ struct ObraView: View {
                 .tint(paleta.cor(.texto))
         }
         .pausaOFundo(enquanto: desfazendo)
-        // O título pequeno entra na barra quando o grande sai de baixo dela (como o título grande do sistema).
-        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 44 } action: { _, saiu in
-            withAnimation(.easeOut(duration: 0.2)) { barra.tituloVisivel = saiu }
-        }
+        .tituloPequenoAoRolar(barra)
         #if DEBUG
-        .scrollPosition($posicao)
-        .task {
-            if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste }
-            guard rolagemFixa >= 0 else { return }
-            try? await Task.sleep(for: .milliseconds(300))
-            posicao.scrollTo(y: rolagemFixa)
-            segurandoARolagem = true
-        }
-        // No iOS 26, quando a obra abre já com os dados (sem o carregando), a lista às vezes volta sozinha ao topo uns 2 s
-        // depois de rolada: o laudo comparou um print rolado com outro no topo (CenaNaoDeterministica na CI, em 15/10 e
-        // 17/10). Até alguém arrastar, a rolagem que sai da pedida volta.
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
-            if segurandoARolagem, abs(y - rolagemFixa) > 0.5 { posicao.scrollTo(y: rolagemFixa) }
-        }
-        .onScrollPhaseChange { _, fase in if fase == .interacting { segurandoARolagem = false } }
+        .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
+        .modifier(RolagemFixaDoTeste())
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)
@@ -278,6 +262,16 @@ struct LinhaDaLista: View {
 @MainActor @Observable
 final class BarraDaObra {
     var tituloVisivel = false
+}
+
+extension View {
+    /// O título pequeno entra na barra quando o grande sai de baixo dela, como o título grande do sistema (a obra e a tela
+    /// Orçamento). Só esmaece, sem movimento: fica igual com Reduzir movimento.
+    func tituloPequenoAoRolar(_ barra: BarraDaObra) -> some View {
+        onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 44 } action: { _, saiu in
+            withAnimation(.easeOut(duration: 0.2)) { barra.tituloVisivel = saiu }
+        }
+    }
 }
 
 /// O título pequeno só existe depois que o grande sai de baixo da barra, e sai enquanto a pílula de sincronização aparece

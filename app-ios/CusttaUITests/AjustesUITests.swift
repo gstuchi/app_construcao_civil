@@ -79,4 +79,49 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons["aba-ajustes"].frame.maxY + 4, base - 22, accuracy: 1)
     }
+    /// Ajustes › Aparência (a escolha do vidro, adiantada da etapa 5 para o TestFlight): tocar Fosco grava a escolha deste
+    /// aparelho e o app passa ao Fosco na hora, e o "N obras" de Obras deixa a pílula de vidro e vira texto solto
+    /// (`VidroTokens.contagemEmPilula`); a escolha fica ao reabrir; o Transparente volta do mesmo jeito. Cada abertura
+    /// com os falsos começa no Transparente; `CUSTTA_APARENCIA=manter` guarda a escolha da abertura anterior.
+    @MainActor func testEscolhaDoVidroGravaValeNoAppEFicaAoReabrir() {
+        var app = abrirAjustes()
+        let transparente = app.buttons["vidro-transparente"], fosco = app.buttons["vidro-fosco"]
+        XCTAssertTrue(transparente.waitForExistence(timeout: 5))
+        XCTAssertEqual(transparente.label, "Transparente")
+        XCTAssertEqual(fosco.label, "Fosco")
+        XCTAssertTrue(transparente.isSelected, "o padrão é o Transparente")
+        XCTAssertFalse(fosco.isSelected)
+        XCTAssertTrue(app.staticTexts["Transparente mostra mais a aurora atrás dos cartões. Fosco deixa os cartões mais firmes. Vale só neste aparelho."].exists)
+        fosco.tap()
+        XCTAssertTrue(fosco.isSelected)
+        XCTAssertFalse(transparente.isSelected)
+        app.abrirAba("obras")
+        XCTAssertFalse(contagemEmPilula(app), "no Fosco, o \"4 obras\" é texto solto")
+
+        app.terminate()
+        app = abrirApp(conta: "senha", extra: ["CUSTTA_APARENCIA": "manter"])
+        XCTAssertFalse(contagemEmPilula(app), "o Fosco ficou ao reabrir")
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["vidro-fosco"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["vidro-fosco"].isSelected)
+        app.buttons["vidro-transparente"].tap()
+        XCTAssertTrue(app.buttons["vidro-transparente"].isSelected)
+        app.abrirAba("obras")
+        XCTAssertTrue(contagemEmPilula(app), "de volta ao Transparente, a pílula")
+
+        app.terminate()
+        app = abrirApp(conta: "senha", extra: ["CUSTTA_APARENCIA": "manter"])
+        XCTAssertTrue(contagemEmPilula(app), "o Transparente ficou ao reabrir")
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["vidro-transparente"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["vidro-transparente"].isSelected)
+    }
+
+    /// O "4 obras" na pílula de vidro (Transparente) tem 6 pt de recuo em cima e embaixo; solto (Fosco), só o texto.
+    @MainActor private func contagemEmPilula(_ app: XCUIApplication) -> Bool {
+        let contagem = app.staticTexts["4 obras"]
+        XCTAssertTrue(contagem.waitForExistence(timeout: 10), "a contagem de Obras")
+        return contagem.frame.height > 24      // 30 pt na pílula, 18 solto (letra padrão)
+    }
 }
+

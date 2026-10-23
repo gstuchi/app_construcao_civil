@@ -11907,4 +11907,225 @@ git add app-ios/Custta/Identidade/TecladoEncaixado.swift \
 git commit -m "fix: folha e linha do orçamento nas medidas do mockup" -m "Três sugestões da conferência do Verniz no PR 1 (3, 4 e 5), na letra padrão. No \"Só o total\", as teclas encaixadas ficam a 12 pt da linha de cima delas, como no mockup, e não mais a 6: a linha sobe de 542 para 536 e as teclas continuam em 548. No \"Por tópico\", a barra das setas segue a 6 pt da linha." -m "Na linha do orçamento da obra, o chevron ocupa os 9 pt do quadro do mockup (9 × 15), e não a largura do símbolo: a barra vai de 310,7 para 315 pt (315,1 no mockup), e o vão entre a barra e o quadro do chevron fica nos 4 pt do HStack. O chevron da linha do A pagar, no mesmo cartão, passa a ser o do Orçamento (o mesmo .k-chev do mockup): parado no AX2, com 18 pt na letra de acessibilidade e 9 na padrão, cobrado por uma guarda irmã da do Orçamento." -m "Na folha \"Por tópico\", o Total ao vivo passa de 59,7 para os 64 pt do mockup (a entrelinha do SF é mais baixa que a do CSS). A lista, que era cortada rente ao Total, passa a ser cortada 6 pt abaixo dele, e a primeira linha vem 12 pt abaixo do Total, como no mockup (eram 8)." -m "Na letra de acessibilidade, só o chevron do A pagar muda. Os testes da folha e da linha conferem as três medidas, a da barra por pixel, e a guarda do chevron passa a exigir também os 9 pt da letra padrão. O TecladoEncaixadoTests passa a esperar 304 no \"Só o total\" da letra padrão, com o alto de 12 do mockup. Com a lista 8,3 pt mais baixa, o teste de tocar uma linha de baixo passa a escolher a última linha que acaba antes da faixa do \"Salvar\", porque o meio da que ele escolhia caía a 5 pt do botão, e o \"Salvar\" pega o toque até 7 pt acima dele."
 ```
 
-**Ponto de controle da fase 1 do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim da fase, o núcleo com 224 testes, o `CusttaTests` com 156 em 29 suítes e, no `app-etapa3`, o `FolhasDeOrigemUITests` com 24 e o `OrcamentoUITests` com 29). No Mac, além das suítes das tarefas, as telas da etapa 2 que a fase toca: `GastoUITests` (24), `FolhaDaObraUITests` (15), `FasesUITests` (9), `ObraUITests` (7) e `EstadosUITests` (13); as auditorias `testObraNoMaiorTamanho`, `testContrasteDaObraNosDoisTemas`, `testFolhaDoGastoNoMaiorTamanho`, `testContrasteDaFolhaNosDoisTemas`, `testParte3NoMaiorTamanho` e `testContrasteDaParte3NosDoisTemas`; e as leituras `testLeituraDaObra`, `testLeituraDaObraRolando`, `testLeituraDaObraVendida`, `testLeituraDaFolhaDoGasto`, `testLeituraDaParte3`, `testLeituraDaParte3NaMaiorLetra` e `testLeituraDoAlertaDeNaoSalvou`. Um "Audit failed to complete in time" (−56) numa auditoria é o tempo da máquina, com outros simuladores rodando: roda-se de novo só ela. A fase 1 não tem leitura nem auditoria própria; as do A pagar e do detalhe do tópico entram no `laudo-etapa3` na fase 2. As tarefas 22 a 25 já rodaram na CI do iOS 26 sobre as fatias do PR 1, com os mesmos patches (run 39813469497, verde 7/7, com o `app` em 42 min e o `app-etapa3` em 58,8, os dois com teto de 90). Elas provaram o que o Mac não tem: os alertas presos no passo empurrado e o "Não salvou" de dentro da folha; a trava do puxar fora da pilha; o voltar escondido, o chevron próprio e a borda que pergunta, sem acionar o botão de baixo nem atrapalhar a rolagem; o rótulo do voltar do sistema ("A pagar · 30 dias", `BackButton`); a rolagem mínima da lista preguiçosa até a linha que mudou de lugar; e o arrastar dentro da folha. No run de antes (39799242127), a volta pela borda falhou uma vez na edição do A pagar e ganhou a segunda tentativa do PR 1 (Tarefa 24). Na base nova, a fase rodou no run 40004450489 (iOS 26, com a Tarefa 26 ainda sem o teste das teclas encaixadas): o `nucleo`, o `app-etapa3` (com o `OrcamentoUITests` e o `FolhasDeOrigemUITests`), o `laudo` e o `laudo-etapa3` passaram; o `app` reprovou só o `TecladoEncaixadoTests` (o 304 da Tarefa 26); o `laudo-parte3` caiu no `testContrasteDaParte3NosDoisTemas` por tempo, com a folha "Nova obra" já aberta e cada busca do `nomeDaObra` levando de 9 a 31 s, e passou na segunda tentativa; e o `auditoria` nem começou, porque o download dos binários do Firebase (`dl.google.com`) estourou o tempo. Nesses dois casos, roda-se de novo só o job. O Verniz confere a folha do A pagar, a edição empurrada e o apagar lado a lado com o mockup (parte 2, seção 1), nos dois temas e na maior letra.
+### Task 27: O cursor do valor como no mockup
+
+O cursor da folha do orçamento, no "Só o total" e na linha do tópico ativa, fica nas medidas do mockup renderizado. Elas foram conferidas por pixel no Chromium a 1× e no app (18 Pro, escuro, letra padrão).
+
+No mockup, o `.caret` é item do `.d`, que é flex com `gap: 8px` e `align-items: center`. Por isso:
+- ele fica 10 pt depois do texto: o gap e a `margin-left` de 2;
+- ele fica centrado no valor, porque o `vertical-align: -.2em` não vale num item flex;
+- o em dele é o 17 da `.f-lin` nas duas linhas.
+
+| medida (pt, tinta) | mockup a 1× | antes | depois |
+| --- | --- | --- | --- |
+| folga até o último dígito, "Só o total" | 11,0 | 3,0 | 11,0 |
+| folga até o último dígito, linha do tópico | 10,0 | 3,0 | 10,0 |
+| largura × altura | 2 × 19 (19,55 no DOM) | 2 × 20 | 2 × 19,67 |
+| meio do cursor − meio do último "0", "Só o total" | −0,5 | +1,83 | 0,0 |
+| meio do cursor − meio do último "0", linha do tópico | +0,5 | 0,0 | −0,17 |
+
+- **O vão.** `HStack(spacing: 10)` no "Só o total" e `HStack(spacing: 9)` na linha do tópico. No mockup, o respiro do último "0" é de 1 pt no total e de 0 na linha do tópico, onde a letra −0,024em da `.f-lin` vem também depois do último dígito. No app, é de 1 pt nas duas.
+- **A altura e o alinhamento.** O `CursorDaLinha` passa a ter `17 * 1.15` (`@ScaledMetric`) e sai da linha de base, sem a guia de 0,8. Os dois `HStack` centram, como no mockup.
+- **A medida é por tinta, nos testes que já abrem a folha** (`conferirCursor` e `cursorDoValor`; nenhum teste novo). Ela confere:
+  - a folga, ±0,5;
+  - a largura, 2 ±0,5;
+  - a altura, 1,15 × 17 ±1;
+  - o meio, ±1.
+  O cursor pisca, então o teste tira até 8 prints, até achar um com ele aceso.
+- **Na linha do tópico, a medida é na Documentação, em 10.000,00.** Esse valor tem a largura do "R$ 30.000,00" do mockup. No Terreno, 320.000,00 dá 10,33, a 0,17 da borda da tolerância.
+- **Na maior letra, o cursor cresce com a letra e não corta:** 55 pt na AX5, ~1,04 da letra, porque o `@ScaledMetric` do body cresce 2,81× e a letra 3,12×.
+
+**Files:**
+- Modify: `app-ios/Custta/Telas/FolhaDoOrcamento.swift`
+- Test (alterar): `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`
+
+**Interfaces:**
+- Consumes: `CursorDaLinha`, `LinhaDoTotalNaFolha` e `ValorDaLinhaDoOrcamento` (Tarefa 18).
+- Produces: nada novo.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
+@@ -23,6 +23,64 @@ extension OrcamentoUITests {
+         for t in teclas { app.buttons["tecla-\(t)"].tap() }
+     }
+ 
++    /// O cursor da linha ativa contra o `.caret` do mockup (parte1.html no Chromium a 1×, medido por tinta em 23/10): a folga
++    /// até o último dígito, 2 pt de largura, 1,15 do em de 17 da linha de altura (o em do `.caret` é o da `.f-lin`, também no
++    /// "Só o total") e o meio dele contra o meio da tinta do último dígito (o `align-items:center` do `.d`). Ele pisca:
++    /// tenta até achar um print com ele aceso.
++    private func conferirCursor(_ linha: XCUIElement, borda: CGFloat, folga: CGFloat, meio: CGFloat, _ onde: String) {
++        var medida = cursorDoValor(linha, borda: borda), prints = 1
++        while medida == nil, prints < 8 {
++            medida = cursorDoValor(linha, borda: borda)
++            prints += 1
++        }
++        guard let medida else { return XCTFail("\(onde): o cursor não apareceu em \(prints) prints") }
++        XCTAssertEqual(medida.folga, folga, accuracy: 0.5, "\(onde): a folga de tinta do cursor ao último dígito \(medida)")
++        XCTAssertEqual(medida.largura, 2, accuracy: 0.5, "\(onde): a largura do cursor \(medida)")
++        XCTAssertEqual(medida.altura, 1.15 * 17, accuracy: 1, "\(onde): a altura do cursor \(medida)")
++        XCTAssertEqual(medida.meio, meio, accuracy: 1, "\(onde): o meio do cursor contra o do último dígito \(medida)")
++    }
++
++    /// O cursor do valor na linha, por pixel (a linha é um elemento só para o VoiceOver), como a `larguraDaBarra`: tinta é o
++    /// pixel a mais de 64, em algum canal, do fundo lido 8 pt depois do fim do conteúdo (`borda` pt antes da direita do
++    /// elemento), no meio da altura, e só conta 6 pt dentro do alto e da base. Da direita: o cursor (a corrida de colunas de
++    /// tinta), o vão e o último dígito. Com o cursor apagado, a corrida da direita é o "0", larga: nil. Em pontos.
++    private func cursorDoValor(_ linha: XCUIElement, borda: CGFloat)
++        -> (folga: CGFloat, largura: CGFloat, altura: CGFloat, meio: CGFloat)? {
++        guard let cg = linha.screenshot().image.cgImage else { return nil }
++        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / linha.frame.width)
++        var px = [UInt8](repeating: 0, count: l * a * 4)
++        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
++            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
++                                    space: CGColorSpaceCreateDeviceRGB(),
++                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
++            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
++            return true
++        }
++        guard desenhou else { return nil }
++        let fim = Int((linha.frame.width - borda) * e), fundo = ((a / 2) * l + fim + Int(8 * e)) * 4
++        let faixa = Int(6 * e)..<(a - Int(6 * e))
++        func tinta(_ x: Int, _ y: Int) -> Bool {
++            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[fundo + $0])) > 64 }
++        }
++        func coluna(_ x: Int) -> Bool { faixa.contains { tinta(x, $0) } }
++        var x = fim + Int(4 * e)
++        while x > 0, !coluna(x) { x -= 1 }
++        let direita = x
++        while x > 0, coluna(x) { x -= 1 }
++        let esquerda = x + 1
++        while x > 0, !coluna(x) { x -= 1 }
++        let digito = x
++        while x > 0, coluna(x) { x -= 1 }
++        guard CGFloat(direita - esquerda + 1) / e < 4 else { return nil }
++        func linhas(_ colunas: ClosedRange<Int>) -> ClosedRange<Int> {
++            let comTinta = faixa.filter { y in colunas.contains { tinta($0, y) } }
++            return (comTinta.first ?? 0)...(comTinta.last ?? 0)
++        }
++        let cursor = linhas((esquerda + direita) / 2...(esquerda + direita) / 2), zero = linhas((x + 1)...digito)
++        return (CGFloat(esquerda - digito - 1) / e, CGFloat(direita - esquerda + 1) / e, CGFloat(cursor.count) / e,
++                CGFloat(cursor.lowerBound + cursor.upperBound - zero.lowerBound - zero.upperBound) / 2 / e)
++    }
++
+     /// A tela Orçamento da obra e o lápis dela.
+     private func editarPeloLapis(_ app: XCUIApplication) {
+         let lapis = app.buttons["editarOrcamento"]
+@@ -59,6 +117,7 @@ extension OrcamentoUITests {
+         XCTAssertFalse(salvar.isEnabled, "o \"Salvar\" apagado até ter valor")
+         digitar(app, "120000000")
+         XCTAssertEqual(app.elemento("linhaOrcamentoTotal").value as? String, "R$\u{a0}1.200.000,00")
++        conferirCursor(app.elemento("linhaOrcamentoTotal"), borda: 16, folga: 11, meio: -0.5, "no \"Só o total\"")
+         XCTAssertTrue(salvar.isEnabled)
+         salvar.tap()
+         XCTAssertTrue(salvar.waitForNonExistence(timeout: 5), "a folha desce")
+@@ -84,6 +143,8 @@ extension OrcamentoUITests {
+         app.buttons["barraDasTeclas-proximo"].tap()
+         XCTAssertEqual(nome.label, "Documentação · 2 de 21")
+         digitar(app, "1000000")
++        // "R$ 10.000,00" tem a largura do "R$ 30.000,00" da Elétrica do mockup (algarismos tabulares).
++        conferirCursor(app.elemento("linhaOrc-projeto"), borda: 32, folga: 10, meio: 0.5, "na linha do tópico")
+         app.buttons["barraDasTeclas-anterior"].tap()
+         XCTAssertEqual(nome.label, "Terreno · 1 de 21")
+         app.buttons["barraDasTeclas-anterior"].tap()
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests/testDefinirPorTotal -only-testing:CusttaUITests/OrcamentoUITests/testDefinirPorTopicoComAsSetas 2>&1 | grep -E "error: -\[|Executed" | sed 's/.*error: //' | head -3
+```
+Expected: compila (`** TEST BUILD SUCCEEDED **`). Os 2 reprovam em `FolhaDoOrcamentoUITests.swift:37` com `XCTAssertEqualWithAccuracy failed` (`Executed 2 tests, with 2 failures`):
+- no `testDefinirPorTopicoComAsSetas`: `("3.0") is not equal to ("10.0") +/- ("0.5") - na linha do tópico: a folga de tinta do cursor ao último dígito (folga: 3.0, largura: 2.0, altura: 20.0, meio: 0.0)`;
+- no `testDefinirPorTotal`: `("3.0") is not equal to ("11.0") +/- ("0.5") - no "Só o total": a folga de tinta do cursor ao último dígito (folga: 3.0, largura: 2.0, altura: 20.0, meio: 1.8333333333333333)`.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Telas/FolhaDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoOrcamento.swift
++++ b/app-ios/Custta/Telas/FolhaDoOrcamento.swift
+@@ -675,7 +675,9 @@ private struct ValorDaLinhaDoOrcamento: View {
+     @Environment(\.paleta) private var paleta
+ 
+     var body: some View {
+-        HStack(alignment: .firstTextBaseline, spacing: 2) {
++        // 10 pt de tinta do último dígito ao cursor, como no mockup (o gap de 8 do `.d`, a margem de 2 do `.caret` e o respiro
++        // do dígito, que a letra -0,024em da linha encurta): 1 pt menos que no "Só o total".
++        HStack(spacing: 9) {
+             if centavos > 0 || ativa {
+                 ValorEmDinheiro(texto: moeda(centavosParaReais(centavos)), fonte: .body.weight(ativa ? .semibold : .regular),
+                                 cor: ativa ? .linkNoVidro : .texto)
+@@ -696,7 +698,9 @@ private struct LinhaDoTotalNaFolha: View {
+ 
+     var body: some View {
+         LinhaDaFolhaComRotulo(rotulo: "Orçamento total", altura: 60) {
+-            HStack(alignment: .firstTextBaseline, spacing: 2) {
++            // 11 pt de tinta do último dígito ao cursor, como no mockup: o gap de 8 do `.d`, a margem de 2 do `.caret` e o
++            // respiro do dígito.
++            HStack(spacing: 10) {
+                 ValorEmDinheiro(texto: fmtCentavos(centavos), fonte: .title2.weight(.bold), cor: ativa ? .linkNoVidro : .texto,
+                                 prefixo: .callout.weight(.semibold))
+                 if ativa { CursorDaLinha() }
+@@ -712,12 +716,13 @@ private struct LinhaDoTotalNaFolha: View {
+     }
+ }
+ 
+-/// O cursor da linha ativa: 2 pt na cor do link, da altura da letra, piscando a 2 Hz (pelo relógio, sem animação); parado
+-/// com Reduzir movimento.
++/// O cursor da linha ativa, o `.caret` do mockup: 2 pt na cor do link, centrado no valor (o `align-items:center` do `.d`),
++/// piscando a 2 Hz (pelo relógio, sem animação); parado com Reduzir movimento.
+ private struct CursorDaLinha: View {
+     @Environment(\.paleta) private var paleta
+     @Environment(\.opcoes) private var opcoes
+-    @ScaledMetric(relativeTo: .body) private var altura: CGFloat = 20
++    // O 1,15em do `.caret` no em de 17 da linha (a `.f-lin`), também no "Só o total", onde o valor tem 22.
++    @ScaledMetric(relativeTo: .body) private var altura: CGFloat = 17 * 1.15
+ 
+     var body: some View {
+         Group {
+@@ -734,6 +739,5 @@ private struct CursorDaLinha: View {
+ 
+     private func barra(visivel: Bool) -> some View {
+         RoundedRectangle(cornerRadius: 1).fill(paleta.cor(.linkNoVidro)).frame(width: 2, height: altura).opacity(visivel ? 1 : 0)
+-            .alignmentGuide(.firstTextBaseline) { $0.height * 0.8 }
+     }
+ }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected:
+- `ℹ pass 55`, `ℹ fail 0`;
+- sem aviso;
+- `✔ Test run with 156 tests in 29 suites passed`;
+- `OrcamentoUITests` 29 de 29, `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2;
+- `** TEST EXECUTE SUCCEEDED **`.
+
+Na maior letra, um print confere que o cursor cresce e não corta.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Telas/FolhaDoOrcamento.swift \
+  app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift
+git commit -m "fix: folga do cursor do valor como no mockup" -m "O cursor do valor na folha do orçamento, na linha do tópico ativa e no \"Só o total\", ficava a 3 pt de tinta do último dígito, quase encostado, e no \"Só o total\" descia 1,8 pt abaixo do meio do número. A meta sai do CSS do mockup, medido por pixel no Chromium a 1× (parte1.html): o \`.caret\` é um item do \`.d\`, que é flex com \`gap: 8px\` e \`align-items: center\`, e soma a margem de 2 dele. A tinta do cursor fica a 11 pt do último dígito no \"Só o total\" e a 10 pt na linha do tópico (a letra -0,024em da linha encurta o respiro do dígito), tem 2 pt de largura, 1,15em de altura no em de 17 da linha (19,5 pt, também no \"Só o total\", onde o valor tem 22) e fica centrada no valor." -m "Os dois HStack passam a ter 10 e 9 pt de espaço, alinhados ao centro, e o cursor perde a guia da linha de base e fica com 17 × 1,15 pt de altura, que cresce com a letra. No 18 Pro, escuro e letra padrão, a folga de 3 pt foi para 11 no \"Só o total\" e 10 na linha do tópico, a largura seguiu 2, a altura foi de 20 para 19,7, e o meio do cursor contra o do último dígito foi de +1,8 para 0 no \"Só o total\" (-0,5 no mockup) e ficou em 0 na linha do tópico (+0,5 no mockup)." -m "O testDefinirPorTotal e o testDefinirPorTopicoComAsSetas medem o cursor por tinta, como a largura da barra da linha do orçamento, e tiram outro print enquanto ele está apagado, porque pisca. Só a folha do orçamento usa a peça: o CursorDaLinha é privado dela."
+```
+
+**Ponto de controle da fase 1 do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim da fase, o núcleo com 224 testes, o `CusttaTests` com 156 em 29 suítes e, no `app-etapa3`, o `FolhasDeOrigemUITests` com 24 e o `OrcamentoUITests` com 29). No Mac, além das suítes das tarefas, as telas da etapa 2 que a fase toca: `GastoUITests` (24), `FolhaDaObraUITests` (15), `FasesUITests` (9), `ObraUITests` (7) e `EstadosUITests` (13); as auditorias `testObraNoMaiorTamanho`, `testContrasteDaObraNosDoisTemas`, `testFolhaDoGastoNoMaiorTamanho`, `testContrasteDaFolhaNosDoisTemas`, `testParte3NoMaiorTamanho` e `testContrasteDaParte3NosDoisTemas`; e as leituras `testLeituraDaObra`, `testLeituraDaObraRolando`, `testLeituraDaObraVendida`, `testLeituraDaFolhaDoGasto`, `testLeituraDaParte3`, `testLeituraDaParte3NaMaiorLetra` e `testLeituraDoAlertaDeNaoSalvou`. Um "Audit failed to complete in time" (−56) numa auditoria é o tempo da máquina, com outros simuladores rodando: roda-se de novo só ela. A fase 1 não tem leitura nem auditoria própria; as do A pagar e do detalhe do tópico entram no `laudo-etapa3` na fase 2. As tarefas 22 a 25 já rodaram na CI do iOS 26 sobre as fatias do PR 1, com os mesmos patches (run 39813469497, verde 7/7, com o `app` em 42 min e o `app-etapa3` em 58,8, os dois com teto de 90). Elas provaram o que o Mac não tem: os alertas presos no passo empurrado e o "Não salvou" de dentro da folha; a trava do puxar fora da pilha; o voltar escondido, o chevron próprio e a borda que pergunta, sem acionar o botão de baixo nem atrapalhar a rolagem; o rótulo do voltar do sistema ("A pagar · 30 dias", `BackButton`); a rolagem mínima da lista preguiçosa até a linha que mudou de lugar; e o arrastar dentro da folha. No run de antes (39799242127), a volta pela borda falhou uma vez na edição do A pagar e ganhou a segunda tentativa do PR 1 (Tarefa 24). Na base nova, a fase rodou no run 40004450489 (iOS 26, com a Tarefa 26 ainda sem o teste das teclas encaixadas): o `nucleo`, o `app-etapa3` (com o `OrcamentoUITests` e o `FolhasDeOrigemUITests`), o `laudo` e o `laudo-etapa3` passaram; o `app` reprovou só o `TecladoEncaixadoTests` (o 304 da Tarefa 26); o `laudo-parte3` caiu no `testContrasteDaParte3NosDoisTemas` por tempo, com a folha "Nova obra" já aberta e cada busca do `nomeDaObra` levando de 9 a 31 s, e passou na segunda tentativa; e o `auditoria` nem começou, porque o download dos binários do Firebase (`dl.google.com`) estourou o tempo. Nesses dois casos, roda-se de novo só o job. Com a Tarefa 27 por cima (run 40028239612, com a 26 ainda sem o chevron do A pagar), foi verde 7/7, e o cursor confere por pixel também no iOS 26. No meio, o run 40019534025, com o mesmo código da 26, reprovou no `app-etapa3` dois testes de rolagem na maior letra, que passaram nos outros dois runs:
+- a varredura das 71 linhas, com todas centradas como se as teclas não estivessem lá;
+- o `testNaMaiorLetraALinhaQueVaiParaOFimFicaAVista`.
+Os dois estão em diagnóstico; por ora, roda-se de novo o job. O Verniz confere a folha do A pagar, a edição empurrada e o apagar lado a lado com o mockup (parte 2, seção 1), nos dois temas e na maior letra.

@@ -22,11 +22,12 @@ struct TecladoEncaixadoTests {
     }
 
     /// Padrão: 6 + a barra de 44 + 6 + as teclas (4 de 50 e 3 vãos de 8) + 12 + o "Salvar" de 56 = 348. Sem as setas ("Só o
-    /// total"), sem a barra: 298. Na letra grande: 6 + a barra de 56 + 6 + as teclas (4 de 64 e 3 vãos de 8) = 348, sem o
-    /// "Salvar"; e a barra aparece também no "Só o total", com o "Pronto".
+    /// total"), sem a barra: 12 + as teclas + 12 + o "Salvar" = 304 (o alto de 12, no lugar do 6, é o do mockup). Na letra
+    /// grande: 6 + a barra de 56 + 6 + as teclas (4 de 64 e 3 vãos de 8) = 348, sem o "Salvar"; e a barra aparece também no
+    /// "Só o total", com o "Pronto".
     @Test(arguments: [CGFloat(402), 375]) func alturasDoMockup(largura: CGFloat) {
         #expect(altura("Elétrica · 9 de 71", largura: largura, .large) == 348)
-        #expect(altura(nil, largura: largura, .large) == 298)
+        #expect(altura(nil, largura: largura, .large) == 304)
         #expect(altura("Elétrica · 9 de 71", largura: largura, .accessibility5) == 348)
         #expect(altura(nil, largura: largura, .accessibility5) == 348)
         #expect(altura("Elétrica · 9 de 71", largura: largura, .large, negrito: true) == 348)

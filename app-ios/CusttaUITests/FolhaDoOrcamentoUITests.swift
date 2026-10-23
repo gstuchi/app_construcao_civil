@@ -52,6 +52,8 @@ extension OrcamentoUITests {
         XCTAssertTrue(app.buttons["modoDoOrcamento-Só o total"].isSelected)
         XCTAssertTrue(app.buttons["tecla-1"].exists, "as teclas já abertas")
         XCTAssertFalse(app.buttons["barraDasTeclas-pronto"].exists, "no \"Só o total\", sem a barra")
+        XCTAssertEqual(app.buttons["tecla-1"].frame.minY - app.elemento("tecladoEncaixado").frame.minY, 12, accuracy: 0.5,
+                       "no \"Só o total\", da linha de cima das teclas encaixadas às teclas")
         XCTAssertFalse(app.buttons["tirarOrcamento"].exists, "sem orçamento, nada a tirar")
         let salvar = app.buttons["salvarOrcamento"]
         XCTAssertFalse(salvar.isEnabled, "o \"Salvar\" apagado até ter valor")
@@ -131,11 +133,14 @@ extension OrcamentoUITests {
         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total")
         app.buttons["modoDoOrcamento-Por tópico"].tap()
         XCTAssertEqual(vao(ate: "totalDoOrcamento"), 12, accuracy: 0.5, "Por tópico")
-        // E sem os 10 do "Só o total" embaixo do Total ao vivo: dele até a primeira linha, só os 8 do alto da lista.
+        // O Total ao vivo com os 64 pt do mockup; a lista é cortada 6 abaixo dele, e a primeira linha vem 6 depois do corte.
+        let total = app.elemento("totalDoOrcamento").frame
+        XCTAssertEqual(total.height, 64, accuracy: 0.5, "Por tópico: a altura do Total ao vivo")
+        XCTAssertEqual(app.elemento("listaDoOrcamento").frame.minY - total.maxY, 6, accuracy: 0.5,
+                       "Por tópico: do Total ao vivo ao corte da lista")
         let primeira = app.elemento("linhaOrc-terreno")
         XCTAssertTrue(primeira.waitForExistence(timeout: 5), "linhaOrc-terreno")
-        XCTAssertEqual(primeira.frame.minY - app.elemento("totalDoOrcamento").frame.maxY, 8, accuracy: 0.5,
-                       "Por tópico: do Total ao vivo à primeira linha")
+        XCTAssertEqual(primeira.frame.minY - total.maxY, 12, accuracy: 0.5, "Por tópico: do Total ao vivo à primeira linha")
         soTotal.tap()
         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total, de volta")
     }

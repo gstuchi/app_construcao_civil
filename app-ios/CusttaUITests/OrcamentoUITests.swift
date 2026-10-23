@@ -49,6 +49,36 @@ final class OrcamentoUITests: XCTestCase {
         XCTAssertEqual(orcamento.minY - total.maxY, 10, accuracy: 1, "a primeira linha do grupo, logo abaixo do Total gasto")
         XCTAssertLessThanOrEqual(orcamento.maxY, corrigido.minY, "antes do Corrigido")
         XCTAssertEqual(orcamento.minX + 18, corrigido.minX, accuracy: 0.5, "no mesmo grupo")
+        // Na letra padrão, o chevron no quadro de 9 pt do mockup: a barra com os 315,1 pt dele.
+        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 315.1, accuracy: 0.5, "a largura da barra")
+    }
+
+    /// A largura da barra da linha do orçamento, por pixel (o VoiceOver junta a linha num elemento só): a corrida mais longa
+    /// de pixels que se afastam do fundo do vidro (lido 8 pt dentro da linha, na mesma linha de pixel), a partir dos 18 pt do
+    /// texto e sem chegar à borda do cartão. Em pontos.
+    private func larguraDaBarra(_ elemento: XCUIElement) -> CGFloat {
+        guard let cg = elemento.screenshot().image.cgImage else { return 0 }
+        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / elemento.frame.width)
+        var px = [UInt8](repeating: 0, count: l * a * 4)
+        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
+            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
+            return true
+        }
+        guard desenhou else { return 0 }
+        let (inicio, fundo, teto) = (Int(18 * e), Int(8 * e), Int((elemento.frame.width - 20) * e))
+        func longe(_ x: Int, _ y: Int) -> Bool {
+            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[(y * l + fundo) * 4 + $0])) > 12 }
+        }
+        var maior = 0
+        for y in 0..<a {
+            var n = 0
+            while inicio + n < l, longe(inicio + n, y) { n += 1 }
+            if n > maior, inicio + n < teto { maior = n }
+        }
+        return CGFloat(maior) / e
     }
 
     func testSemOrcamentoNenhumaLinha() {

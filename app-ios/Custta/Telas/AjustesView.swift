@@ -1,8 +1,8 @@
 import SwiftUI
 
-/* Ajustes: a escolha do vidro (Ajustes › Aparência, adiantada da etapa 5 para o Giovani comparar as duas doses pelo
-   TestFlight), a conta (nome, e-mail, confirmação pendente e sair) e a versão. O resto da Aparência (tema), notificações,
-   exportar, trocar senha e apagar conta chegam na etapa 5. */
+/* Ajustes: o tema e o vidro (Ajustes › Aparência, adiantada da etapa 5 para o Giovani comparar as duas doses pelo
+   TestFlight), a conta (nome, e-mail, confirmação pendente e sair) e a versão. Notificações, exportar, trocar senha e
+   apagar conta chegam na etapa 5; a cor saiu com a pele azul (21/10). */
 struct AjustesView: View {
     @Environment(ModeloApp.self) private var modelo
     @Environment(\.paleta) private var paleta
@@ -107,14 +107,16 @@ struct AjustesView: View {
     }
 }
 
-/// Ajustes › Aparência, só o vidro (mockup aprovado, etapa 1, "Aparência · Transparente (padrão)" e "Aparência · Fosco
-/// escolhido"): dois cartões lado a lado, cada um com a miniatura da dose e o nome com o círculo; o escolhido leva o
-/// anel e o círculo marcado. A escolha vale só neste aparelho (`Aparencia.chaveVidro`, lida pela RaizView). Com
+/// Ajustes › Aparência, o tema e o vidro (mockup aprovado, etapa 1, "Aparência · Transparente (padrão)" e "Aparência ·
+/// Fosco escolhido"; sem a cor, que saiu com a pele azul). O tema é o segmentado das folhas. O vidro: dois cartões lado a lado, cada um com a miniatura da dose e o nome com o círculo; o escolhido leva o
+/// anel e o círculo marcado. As duas escolhas valem só neste aparelho (`Aparencia.chaveTema` e `chaveVidro`, lidas pela RaizView). Com
 /// "Reduzir transparência" no iPhone, as opções ficam esmaecidas e desligadas e o aviso diz por quê; com "Aumentar
 /// contraste", o aviso diz que o Fosco com contorno vale por cima da escolha.
 struct PainelDeAparencia: View {
     @AppStorage(Aparencia.chaveVidro) private var escolha = "transparente"
+    @AppStorage(Aparencia.chaveTema) private var tema = "escuro"
     @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
     @Environment(\.vidro) private var vidro
     @Environment(\.opcoes) private var opcoes
     /// O círculo do nome (20 pt no mockup) e o ícone do aviso (18 pt) crescem com a letra, em ponto inteiro (um irmão
@@ -129,9 +131,11 @@ struct PainelDeAparencia: View {
                 .foregroundStyle(paleta.cor(.texto))
                 .accessibilityAddTraits(.isHeader)
                 .padding(.bottom, 14)
+            linhaDoTema
             Text("Vidro")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(paleta.cor(.texto))
+                .padding(.top, 14)
                 .padding(.bottom, 8)
             // O círculo ao lado do nome; na maior letra, quando um dos nomes não cabe ao lado dele, em cima, nas duas opções
             // (o "Transparente" não se parte no meio da palavra).
@@ -146,6 +150,28 @@ struct PainelDeAparencia: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .superficie(.conteudo, em: .rect(cornerRadius: 24))
         .sensoryFeedback(.selection, trigger: escolha)
+    }
+
+    /// "Tema" à esquerda e o segmentado "Escuro | Claro" à direita, numa linha de 48 pt (o `.ap-linha` do mockup); na letra
+    /// grande, o segmentado embaixo do rótulo, na largura toda, com as opções uma em cima da outra.
+    @ViewBuilder private var linhaDoTema: some View {
+        let rotulo = Text("Tema").font(.body).foregroundStyle(paleta.cor(.texto))
+        let segmentado = SegmentadoDaFolha(opcoes: [("escuro", "Escuro", nil), ("claro", "Claro", nil)],
+                                           escolhida: Binding(get: { tema == "claro" ? "claro" : "escuro" }, set: { tema = $0 }),
+                                           identificador: "tema", larguraToda: tamanho.isAccessibilitySize)
+        if tamanho.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                rotulo
+                segmentado
+            }
+        } else {
+            HStack(spacing: 12) {
+                rotulo
+                Spacer(minLength: 0)
+                segmentado
+            }
+            .frame(minHeight: 48)
+        }
     }
 
     private func opcoesDoVidro(marcaAoLado: Bool) -> some View {

@@ -105,8 +105,8 @@ extension EnvironmentValues {
     @Entry var paleta = Paleta()
 }
 
-/// Aparência deste aparelho: escuro e vidro Transparente por padrão. Ajustes › Aparência grava a do vidro (o tema chega
-/// na etapa 5); os testes de tela passam `-custta.tema claro -custta.vidro fosco`.
+/// Aparência deste aparelho: escuro e vidro Transparente por padrão. Ajustes › Aparência grava as duas chaves; os testes
+/// de tela passam `-custta.tema claro -custta.vidro fosco`.
 enum Aparencia {
     static let chaveTema = "custta.tema"
     static let chaveVidro = "custta.vidro"

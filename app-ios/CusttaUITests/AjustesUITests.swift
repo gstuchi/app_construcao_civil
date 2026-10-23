@@ -117,6 +117,57 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["vidro-transparente"].isSelected)
     }
 
+    /// Ajustes › Aparência, o tema: o segmentado "Escuro | Claro" troca o esquema do app na hora (o fundo da tela passa do
+    /// verde quase preto ao claro) e a escolha fica ao reabrir; o Escuro volta do mesmo jeito.
+    @MainActor func testEscolhaDoTemaTrocaNaHoraEFicaAoReabrir() {
+        var app = abrirApp(conta: "senha", argumentos: ["-custta.reduzirMovimento", "YES"])
+        app.abrirAba("ajustes")
+        let escuro = app.buttons["tema-Escuro"], claro = app.buttons["tema-Claro"]
+        XCTAssertTrue(escuro.waitForExistence(timeout: 5))
+        XCTAssertTrue(escuro.isSelected, "o padrão é o Escuro")
+        XCTAssertFalse(claro.isSelected)
+        XCTAssertLessThan(brilhoDoFundo(app), 0.3, "escuro")
+        claro.tap()
+        XCTAssertTrue(claro.isSelected)
+        XCTAssertGreaterThan(brilhoDoFundo(app), 0.6, "o Claro vale na hora")
+
+        app.terminate()
+        app = abrirApp(conta: "senha", argumentos: ["-custta.reduzirMovimento", "YES"], extra: ["CUSTTA_APARENCIA": "manter"])
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["tema-Claro"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tema-Claro"].isSelected, "o Claro ficou ao reabrir")
+        XCTAssertGreaterThan(brilhoDoFundo(app), 0.6)
+        app.buttons["tema-Escuro"].tap()
+        XCTAssertTrue(app.buttons["tema-Escuro"].isSelected)
+        XCTAssertLessThan(brilhoDoFundo(app), 0.3, "de volta ao Escuro")
+
+        app.terminate()
+        app = abrirApp(conta: "senha", argumentos: ["-custta.reduzirMovimento", "YES"], extra: ["CUSTTA_APARENCIA": "manter"])
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["tema-Escuro"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tema-Escuro"].isSelected, "o Escuro ficou ao reabrir")
+        XCTAssertLessThan(brilhoDoFundo(app), 0.3)
+    }
+
+    /// Brilho médio (0 a 1) da margem esquerda da tela (os 10 pt antes dos painéis), da metade da tela até a cápsula de
+    /// abas, onde só há o fundo: o Fundo do tema (#04100C no escuro, #EDF5F1 no claro) com a aurora por cima.
+    @MainActor private func brilhoDoFundo(_ app: XCUIApplication) -> Double {
+        Thread.sleep(forTimeInterval: 1)                               // a troca de esquema assenta
+        let print = Retrato(app.screenshot().image.cgImage!)
+        let escala = Double(print.largura) / Double(app.frame.width)
+        let topo = Int(app.frame.height / 2 * escala)
+        let base = Int((app.buttons["aba-obras"].frame.minY - 12) * escala)
+        let largura = Int(10 * escala)
+        var soma = 0.0
+        for y in topo..<base {
+            for x in 0..<largura {
+                let i = (y * print.largura + x) * 4
+                soma += (Double(print.rgba[i]) + Double(print.rgba[i + 1]) + Double(print.rgba[i + 2])) / (3 * 255)
+            }
+        }
+        return soma / Double((base - topo) * largura)    // medido: 0,085 no escuro e 0,889 no claro
+    }
+
     /// O "4 obras" na pílula de vidro (Transparente) tem 6 pt de recuo em cima e embaixo; solto (Fosco), só o texto.
     @MainActor private func contagemEmPilula(_ app: XCUIApplication) -> Bool {
         let contagem = app.staticTexts["4 obras"]

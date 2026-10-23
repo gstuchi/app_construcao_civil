@@ -112,13 +112,22 @@ public func aPagarDaObra(_ obra: Obra, hoje: String) -> APagarDaObra {
 public enum OrcamentoDoTopico: Equatable, Sendable {
     /// A obra não tem orçamento por tópico (sem orçamento, ou só o total): nada no lugar da barra.
     case nenhum
-    /// O tópico tem previsto: "No orçamento", o valor, a barra e a frase do site (ou "{pct}% usado").
+    /// O tópico tem previsto: `rotuloNoOrcamento`, o valor, a barra e `fraseDoOrcamentoNoDetalhe`.
     case previsto(ItemOrcamento)
     /// Por tópico, mas sem valor para este: `semValorNoOrcamento` no lugar da barra.
     case semValor
 }
 
 public let semValorNoOrcamento = "Sem valor no orçamento: não entra na comparação."
+
+/// Antes do previsto, em moeda cheia.
+public let rotuloNoOrcamento = "No orçamento"
+
+/// A frase embaixo da barra: a do site ("Passou R$ 6,2 mil do previsto", no alerta; "Faltam R$ 3,3 mil — 96%"; "Chegou ao
+/// previsto — 100%") ou, no nível ok, que o site deixa sem frase, "{pct}% usado".
+public func fraseDoOrcamentoNoDetalhe(_ item: ItemOrcamento) -> FraseDoOrcamento {
+    fraseTopicoOrc(item) ?? FraseDoOrcamento(texto: rodapeOrc(item).usado + " usado", alerta: false)
+}
 
 /// A folha do detalhe do tópico.
 public struct DetalheDoTopico: Equatable, Sendable {

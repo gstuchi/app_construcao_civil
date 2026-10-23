@@ -493,7 +493,7 @@ test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura f
   assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
 });
 
-test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt do mockup', () => {
+test('linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
   // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
   // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
   // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
@@ -501,8 +501,20 @@ test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt
   const inicio = t.indexOf('struct LinhaDoOrcamento');
   assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
   const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : nil\)\n/,
-    'o chevron para no AX2 e, na letra de acessibilidade, ocupa 18 pt');
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+    'o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+});
+
+test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
+  // Os dois chevrons do cartão dos indicadores são o mesmo .k-chev do mockup. Sem o teto, o do A pagar sai com ~27 × 46 pt
+  // na AX5, contra os 17 × 29 do Orçamento. E nenhum teste de tela vê o símbolo, que fica fora da árvore de acessibilidade
+  // (accessibilityHidden) e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/PecasDaObra.swift');
+  const inicio = t.indexOf('private var aPagar: some View');
+  assert.ok(inicio >= 0, 'a linha do A pagar');
+  const linha = t.slice(inicio, t.indexOf('\n    }\n', inicio));
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+    'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
 });
 
 test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {

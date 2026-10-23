@@ -38,7 +38,8 @@ struct TecladoEncaixado: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 6)
+        // Sem a barra ("Só o total" fora da letra grande), as teclas ficam a 12 da linha de cima, como no mockup.
+        .padding(.top, nome == nil && !grande ? 12 : 6)
         .padding(.bottom, 0)
         .background {
             paleta.cor(.folha).ignoresSafeArea(edges: .bottom).accessibilityHidden(true)

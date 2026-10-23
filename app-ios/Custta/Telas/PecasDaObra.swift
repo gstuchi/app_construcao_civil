@@ -87,6 +87,7 @@ struct IndicadoresDaObraView: View {
     let abrirAPagar: () -> Void
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     /// "N lançamentos" na marca; "sem gastos" neutra, como o chip cinza do mockup.
     private var corDoTotal: EtiquetaDoIndicador.Cor { indicadores.etiquetaDoTotal == "sem gastos" ? .neutro : .marca }
@@ -126,6 +127,9 @@ struct IndicadoresDaObraView: View {
                       nota: "Parcelas e gastos futuros", corDaNota: nil)
                 Image(systemName: "chevron.right")
                     .font(.body.weight(.semibold))
+                    // O mesmo chevron da linha do Orçamento, no mesmo cartão.
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
                     .foregroundStyle(paleta.cor(vidro.secundario))
                     .accessibilityHidden(true)
                     .foraDoLaudo()

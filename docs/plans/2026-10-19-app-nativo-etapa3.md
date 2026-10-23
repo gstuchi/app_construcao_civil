@@ -11583,7 +11583,7 @@ git commit -m "feat: apagar de dentro da folha do A pagar, pela edição e arras
 
 ### Task 26: Folha e linha do orçamento nas medidas do mockup
 
-Três ajustes da conferência do Verniz no PR 1, medidos no app pela régua dele (quadros da árvore e pixel) e no mockup pelo DOM, no 18 Pro, na letra padrão. Na maior letra nada muda: o alto da folha rola com a lista, e o Total já passa de 64.
+Três ajustes da conferência do Verniz no PR 1, medidos no app pela régua dele (quadros da árvore e pixel) e no mockup pelo DOM, no 18 Pro, na letra padrão. Com eles vai o chevron do A pagar, que fica igual ao do Orçamento (achado da Lupa na Tarefa 23). Na maior letra, a folha e a linha do orçamento não mudam, porque o alto da folha rola com a lista e o Total já passa de 64; só o chevron do A pagar muda.
 
 | medida | antes | mockup | depois |
 | --- | --- | --- | --- |
@@ -11593,8 +11593,10 @@ Três ajustes da conferência do Verniz no PR 1, medidos no app pela régua dele
 | "Por tópico": altura do Total ao vivo | 59,7 | 64 | 64 |
 | "Por tópico": do Total ao corte da lista | 0 | 6 | 6 |
 | "Por tópico": do Total à primeira linha | 8 | 12,1 | 12 |
+| linha do A pagar na obra: chevron na AX5 (pt, por pixel) | 27,0 × 46,3 | o mesmo `.k-chev` do Orçamento | 16,7 × 29,0 (o do Orçamento: 17,0 × 29,0) |
 
 - **As mudanças.** No `TecladoEncaixado`, o alto das teclas sem a barra passa a 12 (`nome == nil && !grande ? 12 : 6`). O chevron da `LinhaDoOrcamento` ganha o quadro de 9 do mockup fora da maior letra (`? 18 : 9`; a guarda Node do chevron do #83 passa a cobrar os dois). O `TotalAoVivo` ganha `minHeight: 64`; o cabeçalho do "Por tópico", 6 pt embaixo (o corte), e o alto da lista, 6 em vez de 8 (a primeira linha a 12 do Total).
+- **O chevron do A pagar é o do Orçamento.** No mockup, as duas linhas do cartão dos indicadores desenham a mesma peça, o `<span class="chev k-chev">` do `kChev` (a linha do A pagar tem `link: true`). No `IndicadoresDaObraView`, o chevron do A pagar ganha os mesmos dois modificadores do da `LinhaDoOrcamento`: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão. Uma guarda Node irmã da do Orçamento fixa isso, porque nenhum teste de tela vê o símbolo. Na letra padrão, a etiqueta do A pagar anda 4,3 pt e o chevron 2,3 pt para a direita, até o x do do Orçamento. Na AX5, o valor fica com 297,7 pt de largura (eram 278,7), e a nota perde uma linha.
 - **O efeito a olhar.** A primeira linha da folha "Por tópico" desce 8,3 pt (257,7 → 266): o alto da folha do app já fica 8 pt abaixo do do mockup (o segmentado em 136, contra 128), e antes o Total mais baixo e o vão menor compensavam por acaso. O chevron desenha ~1 pt fora do quadro de 9.
 - **O alvo do toque numa linha de baixo.** Com a lista 8,3 pt mais baixa, o meio da linha que o `tocarUmaLinhaDeBaixo` escolhia (a Hidráulica) caía a 5 pt do "Salvar", e o "Salvar" pega o toque até 7 pt acima do quadro dele: a folha fechava e as teclas não abriam. A sonda mostrou que já era assim antes do ajuste: a 776 o toque é da linha; a 777, a folha fecha. O teste passa a escolher a última linha que acaba antes da faixa do "Salvar" (`frame.maxY < salvarOrcamento.frame.minY - 14`): a Elétrica, com o meio 59 pt acima do botão, longe da margem de toque, que o iOS 26 da CI pode ter diferente.
 - **O teste das teclas encaixadas acompanha.** O `TecladoEncaixadoTests` (Tarefa 17) somava o alto de 6 no "Só o total" da letra padrão: com o de 12, a faixa tem 12 + as teclas + 12 + o "Salvar" = 304 pt, e não 298. Por isso o Step 4 roda também o `CusttaTests`; sem ele, só a CI pegou (run 40004450489).
@@ -11602,6 +11604,7 @@ Três ajustes da conferência do Verniz no PR 1, medidos no app pela régua dele
 **Files:**
 - Modify: `app-ios/Custta/Identidade/TecladoEncaixado.swift`
 - Modify: `app-ios/Custta/Telas/FolhaDoOrcamento.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
 - Modify: `app-ios/Custta/Telas/PecasDoOrcamento.swift`
 - Test (alterar): `app-ios/CusttaTests/TecladoEncaixadoTests.swift`
 - Test (alterar): `app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift`
@@ -11741,7 +11744,7 @@ Em `tests/app-ios.test.cjs`:
    // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
    // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
    // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
-@@ -501,8 +501,8 @@ test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt
+@@ -501,8 +501,20 @@ test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt
    const inicio = t.indexOf('struct LinhaDoOrcamento');
    assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
    const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
@@ -11749,6 +11752,18 @@ Em `tests/app-ios.test.cjs`:
 -    'o chevron para no AX2 e, na letra de acessibilidade, ocupa 18 pt');
 +  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
 +    'o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
++});
++
++test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
++  // Os dois chevrons do cartão dos indicadores são o mesmo .k-chev do mockup. Sem o teto, o do A pagar sai com ~27 × 46 pt
++  // na AX5, contra os 17 × 29 do Orçamento. E nenhum teste de tela vê o símbolo, que fica fora da árvore de acessibilidade
++  // (accessibilityHidden) e do laudo (foraDoLaudo).
++  const t = ler('app-ios/Custta/Telas/PecasDaObra.swift');
++  const inicio = t.indexOf('private var aPagar: some View');
++  assert.ok(inicio >= 0, 'a linha do A pagar');
++  const linha = t.slice(inicio, t.indexOf('\n    }\n', inicio));
++  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
++    'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
  });
  
  test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
@@ -11763,7 +11778,7 @@ xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tai
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests/testDefinirPorTotal -only-testing:CusttaUITests/OrcamentoUITests/testALinhaVemLogoAbaixoDoTotalGasto -only-testing:CusttaUITests/OrcamentoUITests/testOAltoDaFolhaTemOsVaosDoMockupNosDoisModos 2>&1 | grep -E "error: -\[|Executed" | sed 's/.*error: //' | head -4
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/TecladoEncaixadoTests 2>&1 | grep -E "recorded an issue|↳|Test run with"
 ```
-Expected: reprova `✖ linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão` (`ℹ pass 53`, `ℹ fail 1`), com `AssertionError [ERR_ASSERTION]: o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão`; compila (`** TEST BUILD SUCCEEDED **`: nada novo na API). Os 3 testes de tela reprovam com `XCTAssertEqualWithAccuracy failed`, cada um na primeira medida: `("310.6666666666667") is not equal to ("315.1") +/- ("0.5") - a largura da barra` no `testALinhaVemLogoAbaixoDoTotalGasto`, `("6.0") is not equal to ("12.0") +/- ("0.5") - no "Só o total", da linha de cima das teclas encaixadas às teclas` no `testDefinirPorTotal` e `("59.66666666666666") is not equal to ("64.0") +/- ("0.5") - Por tópico: a altura do Total ao vivo` no `testOAltoDaFolhaTemOsVaosDoMockupNosDoisModos` (`Executed 3 tests, with 3 failures`). O `TecladoEncaixadoTests` reprova nas duas larguras (402 e 375) com `Expectation failed: altura(nil, largura: largura, .large) == 304`, `↳ altura(nil, largura: largura, .large) → 298.0` (`✘ Test run with 2 tests in 1 suite failed … with 2 issues.`).
+Expected: reprovam `✖ linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão` e `✖ linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão` (`ℹ pass 53`, `ℹ fail 2`), com `AssertionError [ERR_ASSERTION]: o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão` e `AssertionError [ERR_ASSERTION]: o chevron do A pagar é o do Orçamento: …`; compila (`** TEST BUILD SUCCEEDED **`: nada novo na API). Os 3 testes de tela reprovam com `XCTAssertEqualWithAccuracy failed`, cada um na primeira medida: `("310.6666666666667") is not equal to ("315.1") +/- ("0.5") - a largura da barra` no `testALinhaVemLogoAbaixoDoTotalGasto`, `("6.0") is not equal to ("12.0") +/- ("0.5") - no "Só o total", da linha de cima das teclas encaixadas às teclas` no `testDefinirPorTotal` e `("59.66666666666666") is not equal to ("64.0") +/- ("0.5") - Por tópico: a altura do Total ao vivo` no `testOAltoDaFolhaTemOsVaosDoMockupNosDoisModos` (`Executed 3 tests, with 3 failures`). O `TecladoEncaixadoTests` reprova nas duas larguras (402 e 375) com `Expectation failed: altura(nil, largura: largura, .large) == 304`, `↳ altura(nil, largura: largura, .large) → 298.0` (`✘ Test run with 2 tests in 1 suite failed … with 2 issues.`).
 
 - [ ] **Step 3: Implementar**
 
@@ -11822,6 +11837,31 @@ Em `app-ios/Custta/Telas/FolhaDoOrcamento.swift`:
          .accessibilityAddTraits(.updatesFrequently)
 ```
 
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -87,6 +87,7 @@ struct IndicadoresDaObraView: View {
+     let abrirAPagar: () -> Void
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
++    @Environment(\.dynamicTypeSize) private var tamanho
+ 
+     /// "N lançamentos" na marca; "sem gastos" neutra, como o chip cinza do mockup.
+     private var corDoTotal: EtiquetaDoIndicador.Cor { indicadores.etiquetaDoTotal == "sem gastos" ? .neutro : .marca }
+@@ -126,6 +127,9 @@ struct IndicadoresDaObraView: View {
+                       nota: "Parcelas e gastos futuros", corDaNota: nil)
+                 Image(systemName: "chevron.right")
+                     .font(.body.weight(.semibold))
++                    // O mesmo chevron da linha do Orçamento, no mesmo cartão.
++                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
++                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
+                     .foregroundStyle(paleta.cor(vidro.secundario))
+                     .accessibilityHidden(true)
+                     .foraDoLaudo()
+```
+
 Em `app-ios/Custta/Telas/PecasDoOrcamento.swift`:
 
 ```diff
@@ -11849,20 +11889,22 @@ Run:
 node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/AuditoriaUITests/testObraNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaObraNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObra -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraRolando 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
 ```
-Expected: `ℹ pass 54`, `ℹ fail 0`; sem aviso; `✔ Test run with 156 tests in 29 suites passed`; `OrcamentoUITests` 29 de 29 (com os 2 `testTocarUmaLinhaDeBaixo…` no alvo novo), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2; `** TEST EXECUTE SUCCEEDED **`. São ~19 min no Mac.
+Expected: `ℹ pass 55`, `ℹ fail 0`; sem aviso. Na primeira rodada, `✔ Test run with 156 tests in 29 suites passed`, `OrcamentoUITests` 29 de 29 (com os 2 `testTocarUmaLinhaDeBaixo…` no alvo novo), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2. Na segunda, a do chevron do A pagar: `ObraUITests` 7 de 7, `FolhasDeOrigemUITests` 24 de 24, `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2. `** TEST EXECUTE SUCCEEDED **` nas duas, ~19 min cada no Mac.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add app-ios/Custta/Identidade/TecladoEncaixado.swift \
   app-ios/Custta/Telas/FolhaDoOrcamento.swift \
+  app-ios/Custta/Telas/PecasDaObra.swift \
   app-ios/Custta/Telas/PecasDoOrcamento.swift \
   app-ios/CusttaTests/TecladoEncaixadoTests.swift \
   app-ios/CusttaUITests/FolhaDoOrcamentoUITests.swift \
   app-ios/CusttaUITests/OrcamentoUITests.swift \
   tests/app-ios.test.cjs
-git commit -m "fix: folha e linha do orçamento nas medidas do mockup" -m "Três sugestões da conferência do Verniz no PR 1 (3, 4 e 5), na letra padrão. No \"Só o total\", as teclas encaixadas ficam a 12 pt da linha de cima delas, como no mockup, e não mais a 6: a linha sobe de 542 para 536 e as teclas continuam em 548. No \"Por tópico\", a barra das setas segue a 6 pt da linha." -m "Na linha do orçamento da obra, o chevron ocupa os 9 pt do quadro do mockup (9 × 15), e não a largura do símbolo: a barra vai de 310,7 para 315 pt (315,1 no mockup), e o vão entre a barra e o quadro do chevron fica nos 4 pt do HStack." -m "Na folha \"Por tópico\", o Total ao vivo passa de 59,7 para os 64 pt do mockup (a entrelinha do SF é mais baixa que a do CSS). A lista, que era cortada rente ao Total, passa a ser cortada 6 pt abaixo dele, e a primeira linha vem 12 pt abaixo do Total, como no mockup (eram 8)." -m "Na letra de acessibilidade nada muda. Os testes da folha e da linha conferem as três medidas, a da barra por pixel, e a guarda do chevron passa a exigir também os 9 pt da letra padrão. O TecladoEncaixadoTests passa a esperar 304 no \"Só o total\" da letra padrão, com o alto de 12 do mockup. Com a lista 8,3 pt mais baixa, o teste de tocar uma linha de baixo passa a escolher a última linha que acaba antes da faixa do \"Salvar\", porque o meio da que ele escolhia caía a 5 pt do botão, e o \"Salvar\" pega o toque até 7 pt acima dele."
+git commit -m "fix: folha e linha do orçamento nas medidas do mockup" -m "Três sugestões da conferência do Verniz no PR 1 (3, 4 e 5), na letra padrão. No \"Só o total\", as teclas encaixadas ficam a 12 pt da linha de cima delas, como no mockup, e não mais a 6: a linha sobe de 542 para 536 e as teclas continuam em 548. No \"Por tópico\", a barra das setas segue a 6 pt da linha." -m "Na linha do orçamento da obra, o chevron ocupa os 9 pt do quadro do mockup (9 × 15), e não a largura do símbolo: a barra vai de 310,7 para 315 pt (315,1 no mockup), e o vão entre a barra e o quadro do chevron fica nos 4 pt do HStack. O chevron da linha do A pagar, no mesmo cartão, passa a ser o do Orçamento (o mesmo .k-chev do mockup): parado no AX2, com 18 pt na letra de acessibilidade e 9 na padrão, cobrado por uma guarda irmã da do Orçamento." -m "Na folha \"Por tópico\", o Total ao vivo passa de 59,7 para os 64 pt do mockup (a entrelinha do SF é mais baixa que a do CSS). A lista, que era cortada rente ao Total, passa a ser cortada 6 pt abaixo dele, e a primeira linha vem 12 pt abaixo do Total, como no mockup (eram 8)." -m "Na letra de acessibilidade, só o chevron do A pagar muda. Os testes da folha e da linha conferem as três medidas, a da barra por pixel, e a guarda do chevron passa a exigir também os 9 pt da letra padrão. O TecladoEncaixadoTests passa a esperar 304 no \"Só o total\" da letra padrão, com o alto de 12 do mockup. Com a lista 8,3 pt mais baixa, o teste de tocar uma linha de baixo passa a escolher a última linha que acaba antes da faixa do \"Salvar\", porque o meio da que ele escolhia caía a 5 pt do botão, e o \"Salvar\" pega o toque até 7 pt acima dele."
 ```
 
 **Ponto de controle da fase 1 do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim da fase, o núcleo com 224 testes, o `CusttaTests` com 156 em 29 suítes e, no `app-etapa3`, o `FolhasDeOrigemUITests` com 24 e o `OrcamentoUITests` com 29). No Mac, além das suítes das tarefas, as telas da etapa 2 que a fase toca: `GastoUITests` (24), `FolhaDaObraUITests` (15), `FasesUITests` (9), `ObraUITests` (7) e `EstadosUITests` (13); as auditorias `testObraNoMaiorTamanho`, `testContrasteDaObraNosDoisTemas`, `testFolhaDoGastoNoMaiorTamanho`, `testContrasteDaFolhaNosDoisTemas`, `testParte3NoMaiorTamanho` e `testContrasteDaParte3NosDoisTemas`; e as leituras `testLeituraDaObra`, `testLeituraDaObraRolando`, `testLeituraDaObraVendida`, `testLeituraDaFolhaDoGasto`, `testLeituraDaParte3`, `testLeituraDaParte3NaMaiorLetra` e `testLeituraDoAlertaDeNaoSalvou`. Um "Audit failed to complete in time" (−56) numa auditoria é o tempo da máquina, com outros simuladores rodando: roda-se de novo só ela. A fase 1 não tem leitura nem auditoria própria; as do A pagar e do detalhe do tópico entram no `laudo-etapa3` na fase 2. As tarefas 22 a 25 já rodaram na CI do iOS 26 sobre as fatias do PR 1, com os mesmos patches (run 39813469497, verde 7/7, com o `app` em 42 min e o `app-etapa3` em 58,8, os dois com teto de 90). Elas provaram o que o Mac não tem: os alertas presos no passo empurrado e o "Não salvou" de dentro da folha; a trava do puxar fora da pilha; o voltar escondido, o chevron próprio e a borda que pergunta, sem acionar o botão de baixo nem atrapalhar a rolagem; o rótulo do voltar do sistema ("A pagar · 30 dias", `BackButton`); a rolagem mínima da lista preguiçosa até a linha que mudou de lugar; e o arrastar dentro da folha. No run de antes (39799242127), a volta pela borda falhou uma vez na edição do A pagar e ganhou a segunda tentativa do PR 1 (Tarefa 24). Na base nova, a fase rodou no run 40004450489 (iOS 26, com a Tarefa 26 ainda sem o teste das teclas encaixadas): o `nucleo`, o `app-etapa3` (com o `OrcamentoUITests` e o `FolhasDeOrigemUITests`), o `laudo` e o `laudo-etapa3` passaram; o `app` reprovou só o `TecladoEncaixadoTests` (o 304 da Tarefa 26); o `laudo-parte3` caiu no `testContrasteDaParte3NosDoisTemas` por tempo, com a folha "Nova obra" já aberta e cada busca do `nomeDaObra` levando de 9 a 31 s, e passou na segunda tentativa; e o `auditoria` nem começou, porque o download dos binários do Firebase (`dl.google.com`) estourou o tempo. Nesses dois casos, roda-se de novo só o job. O Verniz confere a folha do A pagar, a edição empurrada e o apagar lado a lado com o mockup (parte 2, seção 1), nos dois temas e na maior letra.

@@ -63,3 +63,16 @@ O app grava na conta de sempre desde o fim da etapa 2, e cada gravação regrava
 - [ ] Controle Assistivo (varredura por item): na folha, a varredura passa pelas linhas, pela barra (‹, ›, Pronto), pelas teclas e pelo "Salvar"; dá para definir um orçamento por tópico e salvar só pela varredura.
 - [ ] No escuro e no claro, o aviso dos tópicos e o "Passou … do previsto" em âmbar se leem sobre o vidro (no claro, um âmbar mais escuro, `#6F4705`).
 - [ ] Nas telas de entrar e criar conta, no escuro: o texto secundário ficou um pouco mais claro (a decisão 6 da parte 2). Diga se incomoda.
+
+## Aparência em Ajustes: o tema e o vidro
+
+Adiantada da etapa 5 (23/10), para comparar as duas doses do vidro no iPhone. Vale só neste aparelho: o site não muda.
+
+- [ ] Ajustes: o painel "Aparência" fica acima da Conta, com "Tema" e o segmentado "Escuro | Claro", e embaixo "Vidro", com os dois cartões (Transparente, o padrão, com o anel e o círculo marcado) e a nota.
+- [ ] Toque em "Claro": o app inteiro troca na hora. Feche o app (deslize para cima na troca de apps) e abra de novo: continua claro. Volte ao Escuro.
+- [ ] Toque em "Fosco": os cartões e os painéis ficam mais firmes na hora, e o "N obras" de Obras deixa a pílula e vira texto solto. Feche e abra o app: continua no Fosco.
+- [ ] Compare as duas doses no escuro e no claro, em Obras, na obra, na tela Orçamento, nas folhas e em Ajustes, e diga qual fica (ou se as duas ficam como escolha).
+- [ ] Com "Aumentar contraste" ligado no iPhone (Acessibilidade → Tela e Tamanho do Texto): o aviso "Com "Aumentar contraste" ligado no iPhone, o Custta usa o vidro fosco com contorno." no lugar da nota, e o vidro fosco com contorno nas duas escolhas.
+- [ ] Com "Reduzir transparência" ligado: o aviso "O iPhone está com "Reduzir transparência" ligado. Enquanto isso, o Custta usa cartões sólidos.", as miniaturas e os círculos esmaecidos, e os cartões do vidro não respondem ao toque. Desligue: a escolha de antes volta.
+- [ ] Texto Maior no máximo: o segmentado do tema desce para baixo de "Tema"; os dois cartões do vidro ficam um embaixo do outro, com o círculo em cima do nome; nada corta.
+- [ ] VoiceOver: "Tema", depois "Escuro, selecionado, 1 de 2" e "Claro, 2 de 2"; no vidro, "Transparente, selecionado, 1 de 2" e "Fosco, 2 de 2", cada um um botão; dois toques trocam.

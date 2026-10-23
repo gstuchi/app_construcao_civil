@@ -12129,3 +12129,201 @@ git commit -m "fix: folga do cursor do valor como no mockup" -m "O cursor do val
 - a varredura das 71 linhas, com todas centradas como se as teclas não estivessem lá;
 - o `testNaMaiorLetraALinhaQueVaiParaOFimFicaAVista`.
 Os dois estão em diagnóstico; por ora, roda-se de novo o job. O Verniz confere a folha do A pagar, a edição empurrada e o apagar lado a lado com o mockup (parte 2, seção 1), nos dois temas e na maior letra.
+
+**A fase 2: o detalhe do tópico.** Tocar num tópico da tela Orçamento abre a folha dele (o `folhaTopico` da parte 1 do mockup), com:
+- o resumo;
+- a linha do orçamento do tópico;
+- os gastos em "A vencer" e "Pagos";
+- a edição empurrada e o apagar da fase 1.
+
+A lista da folha de origem passa a ser uma só para as duas folhas (Tarefa 29). O spec põe o mecanismo da volta no detalhe e no A pagar (linha 211), e o conselho de 19/10 também. As tarefas entram aqui à medida que ficam provadas.
+
+### Task 28: A linha do gasto sem o tópico e a frase do orçamento do detalhe no núcleo
+
+O detalhe do tópico mostra os gastos de um tópico só. Por isso a linha de gasto sai sem o nome do tópico na linha de baixo e no rótulo do VoiceOver, já que o título da folha o diz; um gasto sem descrição continua com o nome do tópico no título. A linha do orçamento do tópico, no detalhe, começa com "No orçamento" e tem embaixo da barra:
+- a frase do site: "Passou R$ 6,2 mil do previsto", no alerta; "Faltam R$ 3,3 mil — 96%"; "Chegou ao previsto — 100%";
+- no nível ok, que o site deixa sem frase, "{pct}% usado", sem alerta.
+
+Tudo tem teste no núcleo, e o app não muda nesta tarefa.
+
+**Files:**
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/ObraNaTelaTests.swift`
+
+**Interfaces:**
+- Consumes: `linhaDeGasto(_:topicos:)` (etapa 2); `ItemOrcamento`, `FraseDoOrcamento`, `fraseTopicoOrc(_:)` e `rodapeOrc(_:)` (PR 0 e Tarefa 12).
+- Produces: `linhaDeGasto(_:topicos:comTopico:)`, com `comTopico: Bool = true`; `rotuloNoOrcamento` ("No orçamento"); `fraseDoOrcamentoNoDetalhe(_:) -> FraseDoOrcamento`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+@@ -151,6 +151,23 @@ struct DentroDaObraTests {
+         #expect(d.corrigido != "corrigido: " + moeda(corrigido(10_000, de: "2025-01-10", ate: Self.hoje, taxa: 1)))
+     }
+ 
++    /// A linha do orçamento do detalhe, com os números da Cerâmica do mockup (previsto R$ 80.000,00; os gastos somam
++    /// R$ 76.700,00): a frase do site ou, no nível ok, "{pct}% usado", nunca vazia (P1:2238; P1:2096-2100).
++    @Test func fraseDoOrcamentoNoDetalheComOsTextosDoMockup() throws {
++        func frase(_ valores: [Double]) throws -> FraseDoOrcamento {
++            let o = obra(valores.enumerated().map { gasto("r\($0.offset)", "2026-10-01", $0.element, topico: "revest") },
++                         orcamento: porTopico(["revest": 80_000, "pintura": 1_000]))
++            return fraseDoOrcamentoNoDetalhe(try #require(orcamentoObra(o)?.topicos.first { $0.id == "revest" }))
++        }
++        #expect(rotuloNoOrcamento == "No orçamento", "antes do previsto em moeda cheia (P1:2238)")
++        #expect(try frase([61_500, 15_200]) == FraseDoOrcamento(texto: "Faltam R$ 3,3 mil — 96%", alerta: false), "perto: a Cerâmica (P1:2326-2329)")
++        #expect(try frase([61_500, 15_800]) == FraseDoOrcamento(texto: "Faltam R$ 2,7 mil — 97%", alerta: false), "perto (P1:2337)")
++        #expect(try frase([61_500]) == FraseDoOrcamento(texto: "77% usado", alerta: false), "ok: sem o contrapiso de R$ 15.200,00 (P2:2651)")
++        #expect(try frase([80_000, 6_200]) == FraseDoOrcamento(texto: "Passou R$ 6,2 mil do previsto", alerta: true),
++                "passou, no âmbar e semibold (P1:2097)")
++        #expect(try frase([80_000]) == FraseDoOrcamento(texto: "Chegou ao previsto — 100%", alerta: false), "o previsto exato (P1:2096-2100)")
++    }
++
+     func afazer(_ id: String, _ texto: String, feito: Bool) -> Afazer {
+         Afazer(campos: ["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
+     }
+```
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/ObraNaTelaTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/ObraNaTelaTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/ObraNaTelaTests.swift
+@@ -77,6 +77,37 @@ struct ObraNaTelaTests {
+         #expect(semTopico.titulo == "Outros" && semTopico.icone == "etiqueta", "tópico vazio cai em Outros")
+     }
+ 
++    /// O detalhe do tópico mostra os gastos de um tópico só, e o título da folha já o diz: a linha tira o tópico da linha de
++    /// baixo e do VoiceOver ("Pix · 05/10/26", o `semTopico` do mockup) e deixa o resto como na lista da obra.
++    @Test func linhaDoGastoSemOTopico() {
++        let topicos = mapaDeTopicos([])
++        func linhas(_ g: ValorJSON) -> (padrao: LinhaDeGasto, com: LinhaDeGasto, sem: LinhaDeGasto) {
++            let gasto = Gasto(campos: g.comoObjeto!)
++            return (linhaDeGasto(gasto, topicos: topicos), linhaDeGasto(gasto, topicos: topicos, comTopico: true),
++                    linhaDeGasto(gasto, topicos: topicos, comTopico: false))
++        }
++        func semOTopico(_ l: LinhaDeGasto, rotulo: String) -> LinhaDeGasto {
++            LinhaDeGasto(titulo: l.titulo, topico: nil, pagamento: l.pagamento, data: l.data, valor: l.valor, rotulo: rotulo,
++                         valorFalado: l.valorFalado, icone: l.icone)
++        }
++        let cimento = linhas(gasto("a", "2026-10-10", 4980, descricao: "Cimento CP-II, 120 sacos"))
++        #expect(cimento.padrao == cimento.com && cimento.com.topico == "Materiais básicos", "o padrão é a linha de sempre")
++        #expect(cimento.sem == semOTopico(cimento.com, rotulo: "Cimento CP-II, 120 sacos. Pix, 10 de outubro de 2026"))
++        #expect(cimento.sem.titulo == "Cimento CP-II, 120 sacos" && cimento.sem.pagamento == "Pix" && cimento.sem.data == "10/10/26")
++        let semDescricao = linhas(gasto("b", "2026-10-06", 2300, topico: "pintura", pagamento: "cartao", parcela: (1, 3)))
++        #expect(semDescricao.padrao == semDescricao.com)
++        #expect(semDescricao.sem == semDescricao.com, "sem descrição, o título continua o tópico e a linha de baixo já vinha sem ele")
++        #expect(semDescricao.sem.titulo == "Pintura (1/3)" && semDescricao.sem.rotulo == "Pintura, parcela 1 de 3. Cartão, 6 de outubro de 2026")
++        let parcela = linhas(gasto("p", "2026-10-05", 6150, descricao: "Porcelanato 60×60", topico: "revest", pagamento: "cartao", parcela: (4, 10)))
++        #expect(parcela.padrao == parcela.com && parcela.com.topico == "Cerâmica")
++        #expect(parcela.sem == semOTopico(parcela.com, rotulo: "Porcelanato 60×60, parcela 4 de 10. Cartão, 5 de outubro de 2026"))
++        #expect(parcela.sem.titulo == "Porcelanato 60×60 (4/10)")
++        let boleto = linhas(gasto("c", "2026-10-06", 1_200, descricao: "Taxa da prefeitura", pagamento: "boleto"))
++        #expect(boleto.padrao == boleto.com && boleto.com.rotulo == "Taxa da prefeitura. Materiais básicos, 6 de outubro de 2026")
++        #expect(boleto.sem == semOTopico(boleto.com, rotulo: "Taxa da prefeitura. 6 de outubro de 2026"), "sem tópico e sem pagamento, só a data")
++        #expect(boleto.sem.pagamento == nil)
++    }
++
+     @Test func indicadoresComOsTextosDoSite() {
+         let comGastos = obra([gasto("a", "2026-09-30", 100), gasto("b", "2026-10-20", 50), gasto("c", "2026-12-20", 70)],
+                              extra: ["valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300)])
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter 'ObraNaTelaTests|DentroDaObraTests' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6`
+Expected: não compila: `extra argument 'comTopico' in call` (2, no `ObraNaTelaTests.swift`), `cannot find 'fraseDoOrcamentoNoDetalhe' in scope` e `cannot find 'rotuloNoOrcamento' in scope` (1 cada, no `DentroDaObraTests.swift`). O build para no primeiro arquivo que falha: uma rodada mostra só um dos dois grupos, e a seguinte pode mostrar o outro.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
+@@ -112,7 +112,7 @@ public func aPagarDaObra(_ obra: Obra, hoje: String) -> APagarDaObra {
+ public enum OrcamentoDoTopico: Equatable, Sendable {
+     /// A obra não tem orçamento por tópico (sem orçamento, ou só o total): nada no lugar da barra.
+     case nenhum
+-    /// O tópico tem previsto: "No orçamento", o valor, a barra e a frase do site (ou "{pct}% usado").
++    /// O tópico tem previsto: `rotuloNoOrcamento`, o valor, a barra e `fraseDoOrcamentoNoDetalhe`.
+     case previsto(ItemOrcamento)
+     /// Por tópico, mas sem valor para este: `semValorNoOrcamento` no lugar da barra.
+     case semValor
+@@ -120,6 +120,15 @@ public enum OrcamentoDoTopico: Equatable, Sendable {
+ 
+ public let semValorNoOrcamento = "Sem valor no orçamento: não entra na comparação."
+ 
++/// Antes do previsto, em moeda cheia.
++public let rotuloNoOrcamento = "No orçamento"
++
++/// A frase embaixo da barra: a do site ("Passou R$ 6,2 mil do previsto", no alerta; "Faltam R$ 3,3 mil — 96%"; "Chegou ao
++/// previsto — 100%") ou, no nível ok, que o site deixa sem frase, "{pct}% usado".
++public func fraseDoOrcamentoNoDetalhe(_ item: ItemOrcamento) -> FraseDoOrcamento {
++    fraseTopicoOrc(item) ?? FraseDoOrcamento(texto: rodapeOrc(item).usado + " usado", alerta: false)
++}
++
+ /// A folha do detalhe do tópico.
+ public struct DetalheDoTopico: Equatable, Sendable {
+     public let resumo: ResumoDoTopico
+```
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift
+@@ -92,7 +92,8 @@ public func listaDaObra(_ obra: Obra, hoje: String) -> ListaDaObra {
+ public struct LinhaDeGasto: Equatable, Sendable {
+     /// A descrição, ou o nome do tópico quando ela está vazia, com " (n/de)" na parcela.
+     public let titulo: String
+-    /// O nome do tópico na linha de baixo; nil quando o título já é o tópico (sem descrição).
++    /// O nome do tópico na linha de baixo; nil quando o título já é o tópico (sem descrição) e na lista de um tópico só
++    /// (`comTopico: false`).
+     public let topico: String?
+     /// "Pix", "Cartão" ou nil (outra forma de pagamento que o site gravou).
+     public let pagamento: String?
+@@ -108,16 +109,18 @@ public struct LinhaDeGasto: Equatable, Sendable {
+ }
+ 
+ /// A linha do gasto. O tópico que o app não conhece (apagado em Ajustes) aparece pelo id, com o ícone etiqueta, como
+-/// no site.
+-public func linhaDeGasto(_ g: Gasto, topicos: [String: Topico]) -> LinhaDeGasto {
++/// no site. Com `comTopico: false` (o detalhe do tópico, que só lista gastos dele e já o diz no título da folha), o tópico
++/// sai da linha de baixo e do VoiceOver, como o `semTopico` do mockup; sem descrição, o título continua o nome do tópico.
++public func linhaDeGasto(_ g: Gasto, topicos: [String: Topico], comTopico: Bool = true) -> LinhaDeGasto {
+     let topico = topicos[g.topico] ?? Topico(id: g.topico, nome: g.topico.isEmpty ? "Outros" : g.topico, icone: "etiqueta")
+     let descricao = g.descricao                      // o `g.descricao || t.nm` do site: só a descrição vazia cai no tópico
+     let parcela = g.parcela.map { " (\($0.n)/\($0.de))" } ?? ""
+     let titulo = (descricao.isEmpty ? topico.nome : descricao) + parcela
+     let pagamento: String? = g.pagamento == "pix" ? "Pix" : g.pagamento == "cartao" ? "Cartão" : nil
+     let tituloFalado = (descricao.isEmpty ? topico.nome : descricao) + (g.parcela.map { ", parcela \($0.n) de \($0.de)" } ?? "")
+-    let detalhes = [descricao.isEmpty ? nil : topico.nome, pagamento, dataPorExtenso(g.data)].compactMap { $0 }
+-    return LinhaDeGasto(titulo: titulo, topico: descricao.isEmpty ? nil : topico.nome, pagamento: pagamento,
++    let embaixo = comTopico && !descricao.isEmpty ? topico.nome : nil
++    let detalhes = [embaixo, pagamento, dataPorExtenso(g.data)].compactMap { $0 }
++    return LinhaDeGasto(titulo: titulo, topico: embaixo, pagamento: pagamento,
+                         data: dataCurta(g.data), valor: "\u{2212}" + moeda(g.valor),
+                         rotulo: tituloFalado + ". " + detalhes.joined(separator: ", "), valorFalado: moeda(g.valor),
+                         icone: topico.icone)
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | tail -1`
+Expected: `✔ Test run with 226 tests in 37 suites passed` (os 2 novos: `linhaDoGastoSemOTopico` no `ObraNaTelaTests` e `fraseDoOrcamentoNoDetalheComOsTextosDoMockup` no `DentroDaObraTests`). O app não muda: o build-for-testing passa sem aviso.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift \
+  app-ios/CusttaNucleo/Sources/CusttaNucleo/ObraNaTela.swift \
+  app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift \
+  app-ios/CusttaNucleo/Tests/CusttaNucleoTests/ObraNaTelaTests.swift
+git commit -m "feat: a linha do gasto sem o tópico e a frase do orçamento do detalhe no núcleo" -m "O detalhe do tópico, que entra na Tarefa 30, mostra os gastos de um tópico só, e o título da folha já diz qual é. Por isso a linha do gasto ganha o parâmetro comTopico, com padrão true, que deixa a linha de sempre. Com false, o tópico sai da linha de baixo e do rótulo do VoiceOver (\"Pix · 05/10/26\", como o semTopico do mockup). Sem descrição, o título continua sendo o nome do tópico. A struct da linha é pública, mas não tem init público, então o app não conseguia montar uma cópia sem o tópico. A regra fica no núcleo, com teste, e a lista da obra e a do A pagar não mudam." -m "A linha do orçamento do detalhe também passa a vir do núcleo, em vez de ser montada na tela. São duas peças: o rotuloNoOrcamento (\"No orçamento\") e a fraseDoOrcamentoNoDetalhe. Ela devolve a frase do site, que pode ser \"Passou … do previsto\" (no alerta), \"Faltam … — N%\" ou \"Chegou ao previsto — 100%\". No nível ok, em que o site não mostra frase, ela devolve \"{pct}% usado\". Os testes usam os números da Cerâmica do mockup, com previsto de R\$ 80.000,00, e citam de onde vem cada texto."
+```

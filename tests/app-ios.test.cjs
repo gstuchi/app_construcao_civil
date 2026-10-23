@@ -753,6 +753,23 @@ test('gasto lançado de dentro de uma vendida: a obra troca por trás da folha, 
     'a troca da obra e, no turno seguinte, o fechar da folha');
 });
 
+test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça', () => {
+  // A LazyVStack só fatia filhos diretos: com o grupo do mês num VStack (o GrupoDaFolha), o grupo inteiro seria uma peça
+  // só, criada de uma vez com todas as linhas (o detalhe do tópico, com a mesma lista, passa de cem gastos). Nenhum teste
+  // de tela vê isso: a tela fica igual.
+  const t = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
+  const pecas = t.indexOf('ForEach(pecasDaOrigem(');
+  assert.ok(pecas > 0, 'as peças da lista num ForEach');
+  let nivel = 0, abre = -1;
+  for(let i = pecas - 1; i >= 0 && abre < 0; i--){
+    if(t[i] === '}') nivel++;
+    else if(t[i] === '{'){ if(nivel === 0) abre = i; else nivel--; }
+  }
+  assert.match(t.slice(0, abre), /LazyVStack\([^)]*\)\s*$/, 'o ForEach das peças direto dentro da LazyVStack');
+  const corpo = t.slice(pecas, t.indexOf('\n                    }\n', pecas));
+  assert.equal(corpo.match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

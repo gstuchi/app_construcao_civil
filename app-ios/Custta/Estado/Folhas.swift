@@ -17,6 +17,8 @@ final class Folhas {
         case venda(obraId: String)
         /// "Orçamento da obra" (etapa 3): o "Definir orçamento" da obra e o lápis da tela Orçamento.
         case orcamento(obraId: String)
+        /// A seta do indicador "A pagar · 30 dias": os vencimentos da obra por mês (etapa 3).
+        case aPagar(obraId: String)
 
         var id: Self { self }
     }

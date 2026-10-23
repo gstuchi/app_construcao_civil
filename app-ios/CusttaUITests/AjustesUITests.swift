@@ -89,6 +89,8 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(transparente.waitForExistence(timeout: 5))
         XCTAssertEqual(transparente.label, "Transparente")
         XCTAssertEqual(fosco.label, "Fosco")
+        XCTAssertEqual(transparente.value as? String, "1 de 2", "a posição que o VoiceOver diz")
+        XCTAssertEqual(fosco.value as? String, "2 de 2")
         XCTAssertTrue(transparente.isSelected, "o padrão é o Transparente")
         XCTAssertFalse(fosco.isSelected)
         XCTAssertTrue(app.staticTexts["Transparente mostra mais a aurora atrás dos cartões. Fosco deixa os cartões mais firmes. Vale só neste aparelho."].exists)
@@ -115,6 +117,32 @@ final class AjustesUITests: XCTestCase {
         app.abrirAba("ajustes")
         XCTAssertTrue(app.buttons["vidro-transparente"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["vidro-transparente"].isSelected)
+    }
+
+    /// "Reduzir transparência" no iPhone: as duas doses do vidro ficam desligadas (a escolha não muda) e o aviso diz por quê,
+    /// no lugar da nota.
+    @MainActor func testReduzirTransparenciaDesligaAsDosesEDizPorQue() {
+        let app = abrirApp(conta: "senha", argumentos: ["-custta.reduzirTransparencia", "YES"])
+        app.abrirAba("ajustes")
+        let transparente = app.buttons["vidro-transparente"], fosco = app.buttons["vidro-fosco"]
+        XCTAssertTrue(fosco.waitForExistence(timeout: 5))
+        XCTAssertFalse(transparente.isEnabled, "com Reduzir transparência, as doses ficam desligadas")
+        XCTAssertFalse(fosco.isEnabled)
+        XCTAssertTrue(app.staticTexts["O iPhone está com \u{201C}Reduzir transparência\u{201D} ligado. Enquanto isso, o Custta usa cartões sólidos."].exists)
+        XCTAssertFalse(app.staticTexts["Transparente mostra mais a aurora atrás dos cartões. Fosco deixa os cartões mais firmes. Vale só neste aparelho."].exists,
+                       "o aviso toma o lugar da nota")
+        fosco.tap()
+        XCTAssertTrue(transparente.isSelected, "desligada, a dose não troca a escolha")
+    }
+
+    /// "Aumentar contraste" no iPhone: as doses seguem ligadas, e o aviso diz que o Fosco com contorno vale.
+    @MainActor func testAumentarContrasteDeixaAsDosesLigadasEAvisa() {
+        let app = abrirApp(conta: "senha", argumentos: ["-custta.aumentarContraste", "YES"])
+        app.abrirAba("ajustes")
+        let transparente = app.buttons["vidro-transparente"], fosco = app.buttons["vidro-fosco"]
+        XCTAssertTrue(fosco.waitForExistence(timeout: 5))
+        XCTAssertTrue(transparente.isEnabled && fosco.isEnabled, "com Aumentar contraste, as doses seguem ligadas")
+        XCTAssertTrue(app.staticTexts["Com \u{201C}Aumentar contraste\u{201D} ligado no iPhone, o Custta usa o vidro fosco com contorno."].exists)
     }
 
     /// Ajustes › Aparência, o tema: o segmentado "Escuro | Claro" troca o esquema do app na hora (o fundo da tela passa do

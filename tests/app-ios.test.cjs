@@ -800,6 +800,20 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
   assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
 });
 
+test('apagar na folha de origem: a linha sai no turno seguinte ao voltar, e a linha aberta fica na Tecla', () => {
+  // Nenhum teste de tela vê isso. No mesmo turno do voltar da pilha, a transação do apagar (com a mola) se misturaria à do
+  // voltar, como a troca de obra sem animação fazia a folha sumir de uma vez (T34). E, dentro da folha, a linha arrastada
+  // aberta fica na Tecla (o .folha .gasto.puxada do mockup), e não na Linha da folha, que é o fundo do grupo.
+  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
+  assert.match(aPagar, /case \.apagou\(let pedido\):\n\s*Task \{ @MainActor in apagar\(pedido, antes: volta\.ordem, depoisDoVoltar: true\) \}\n\s*return\n/,
+               'o apagar vindo da edição, no turno seguinte ao voltar');
+  assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
+               /if case \.origem\(let origem\) = saida \{ origem\.apagou\(pedido\) \} else \{ folhas\.fechar \{ folhas\.apagar\(pedido\) \} \}/,
+               'na origem, a edição volta e a origem apaga; na folha do gasto, ela desce e a obra apaga');
+  assert.match(ler('app-ios/Custta/Telas/LinhaArrastavel.swift'), /\.background\(x < 0 \? paleta\.cor\(naFolha \? \.tecla : \.linhaDaFolha\) : \.clear\)/,
+               'a linha aberta na Tecla dentro da folha');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

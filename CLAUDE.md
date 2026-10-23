@@ -62,12 +62,12 @@ Scripts clássicos com globais, carregados na ordem em que aparecem no `index.ht
 | [share.js](share.js) | `OBRA_SHARE` + `module.exports` | exportação JSON/CSV e o recorte `dadosDaObra` |
 | [teclado.js](teclado.js) | `TECLADO` | teclado numérico próprio para digitar valor |
 | [icons.js](icons.js) | `ICON` | SVGs inline (`data-ico`) |
-| [styles.css](styles.css) | — | **todo o CSS do app** (temas, skins, componentes); `privacidade.css` serve só `privacidade.html` |
+| [styles.css](styles.css) | — | **todo o CSS do app** (temas e componentes); `privacidade.css` serve só `privacidade.html` |
 | [index.html](index.html) | — | markup; sem CSS e sem JavaScript inline (exigência da CSP) |
 
 ### Estado e sincronização
 
-O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados — só preferências por aparelho (localStorage: `mo_tema`, `mo_skin`, `custta-estado`; sessionStorage: `splashVista`).
+O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados — só preferências por aparelho (localStorage: `mo_tema`, `custta-estado`; sessionStorage: `splashVista`).
 
 Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (entrega cada versão na hora à fila persistente do SDK e sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
 
@@ -104,12 +104,12 @@ App em SwiftUI que vai substituir o Capacitor (spec `docs/specs/2026-10-06-app-n
 
 ## UI
 
-- Todo o CSS vive em `styles.css`. Cores vêm de custom properties; tema (`data-theme="light"`) e skin (`data-skin="azul"`) são atributos no `<html>`, aplicados por `tema.js` antes do primeiro paint. Não hardcode cor fora das variáveis — quebra um dos quatro combos tema×skin.
+- Todo o CSS vive em `styles.css`. Cores vêm de custom properties; o tema (`data-theme="light"`) é atributo no `<html>`, aplicado por `tema.js` antes do primeiro paint. Pele só a esmeralda (a azul saiu em 21/10/2026, no site e no app): escuro e claro são as duas combinações conferidas. Não hardcode cor fora das variáveis — quebra um dos temas.
 - Views são `<section class="view" id="v-*">`; `showView(tab)` troca. Cada uma tem seu `render*()` em `app.js`.
 - **A navegação existe duplicada**: `aside.side` (desktop ≥900px) e `nav.tabs` (mobile), com os mesmos `data-tab`. Ao dirigir por browser, qualifique o seletor. Verifique mudanças visuais nos dois viewports.
 - Modais: `openSheet(html)` / `closeSheet()` (bottom sheet + backdrop); conta e confirmações usam `<dialog>` (`OBRA_CONTA.abrir`, `OBRA_CONFIRM.perguntar`). Feedback: `toast(msg, tipo)`.
 - Campos de dinheiro: `maskMoney(sel)` na entrada, `OBRA_CALC.parseNum` na leitura.
-- **Liquid Glass** (spec `docs/specs/2026-09-28-vidro-liquido-design.md`, ampliado por `docs/specs/2026-09-28-vidro-maximo-design.md`): vidro na camada de navegação — cápsula de abas e botão +, itens da barra, lateral do desktop, sheets, diálogos, toasts, tela de valor e cartão do login — e também no conteúdo (cards menos o de saldo, painéis, indicadores, grupo da lista de obras e pílulas de ação da obra), sobre a aurora nas cores do skin (`#aurora`). Nunca vidro dentro de vidro. O conteúdo usa `--vidro-conteudo` e `--vidro-filtro-conteudo`. Use os tokens `--vidro`, `--vidro-folha`, `--vidro-tinta`, `--vidro-luz`, `--vidro-brilho`, `--vidro-sombra` e `--vidro-filtro(-forte)`, definidos nos quatro combos; `--vidro-luz` é o brilho dentro do filtro — mantém rótulo legível com o vidro o mais transparente possível. `tests/vidro.test.cjs` barra vidro fora da lista. Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask`, `clip-path` ou `backdrop-filter` (vira raiz de fundo e o vidro deixa de ver a página).
+- **Liquid Glass** (spec `docs/specs/2026-09-28-vidro-liquido-design.md`, ampliado por `docs/specs/2026-09-28-vidro-maximo-design.md`): vidro na camada de navegação — cápsula de abas e botão +, itens da barra, lateral do desktop, sheets, diálogos, toasts, tela de valor e cartão do login — e também no conteúdo (cards menos o de saldo, painéis, indicadores, grupo da lista de obras e pílulas de ação da obra), sobre a aurora nas cores da marca (`#aurora`). Nunca vidro dentro de vidro. O conteúdo usa `--vidro-conteudo` e `--vidro-filtro-conteudo`. Use os tokens `--vidro`, `--vidro-folha`, `--vidro-tinta`, `--vidro-luz`, `--vidro-brilho`, `--vidro-sombra` e `--vidro-filtro(-forte)`, definidos nos dois temas; `--vidro-luz` é o brilho dentro do filtro — mantém rótulo legível com o vidro o mais transparente possível. `tests/vidro.test.cjs` barra vidro fora da lista. Nenhum ancestral de um vidro pode ter `opacity` < 1, `filter`, `mask`, `clip-path` ou `backdrop-filter` (vira raiz de fundo e o vidro deixa de ver a página).
 - **Molas**: transições usam `var(--mola-dur) var(--mola)` (padrão, sem quique) ou `--mola-quique` (só depois de gesto com impulso). Toque: encolhe na hora (`.1s ease-out`) e volta com `--mola`. As curvas saem de `node scripts/molas.mjs`; mudar os parâmetros exige colar a saída nova no `@supports` das molas (`tests/molas.test.mjs` confere).
 
 Um hook PostToolUse (`.claude/settings.local.json`) roda o detector da skill `impeccable` após cada Edit/Write em arquivo de UI e devolve achados como system reminder.

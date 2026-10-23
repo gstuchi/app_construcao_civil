@@ -137,13 +137,15 @@ test('cores só por tokens: nenhuma cor solta no código do app', () => {
   for(const f of arquivosSwift('app-ios/Custta')) assert.doesNotMatch(ler(f), solta, `${f}: use paleta.cor(.token)`);
 });
 
-test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da Paleta', () => {
+test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da Paleta', async () => {
   execFileSync(process.execPath, ['scripts/cores-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
   const paleta = ler('app-ios/Custta/Identidade/Paleta.swift');
   const enumToken = paleta.slice(paleta.indexOf('enum Token'), paleta.indexOf('}', paleta.indexOf('enum Token')));
   const tokens = [...enumToken.matchAll(/case \w+ = "(\w+)"/g)].map(m => m[1]).sort();
   const tabela = ler('scripts/cores-app-ios.mjs');
-  for(const pele of ['Esmeralda', 'Azul']){
+  // Uma pele só desde 21/10/2026: a Azul saiu do site e do app.
+  assert.deepEqual(Object.keys((await import(join(RAIZ, 'scripts/cores-app-ios.mjs'))).CORES), ['Esmeralda'], 'só a pele Esmeralda');
+  for(const pele of ['Esmeralda']){
     const bloco = tabela.slice(tabela.indexOf(`${pele}: {`), tabela.indexOf('}', tabela.indexOf(`${pele}: {`)));
     assert.deepEqual([...bloco.matchAll(/^\s+(\w+): \['/gm)].map(m => m[1]).sort(), tokens, `tokens da pele ${pele}`);
     // A linha fina dentro dos cartões de vidro: branco 9% no escuro, como o mockup (o Linha sólido, mais escuro que o vidro,
@@ -154,6 +156,16 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
     // topo no Pro Max (faixa que o laudo deixa de fora, porque ali o texto é borrado); no escuro, o próprio Alerta.
     const alerta = bloco.match(/\bAlerta: \['(#\w+)', '#\w+'\]/)[1];
     assert.match(bloco, new RegExp(`\\bAlertaEtiqueta: \\['${alerta}', '#7A5410'\\]`), `AlertaEtiqueta da pele ${pele}`);
+    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705 (o Alerta do site dava
+    // 3,79–4,15:1 sobre a aurora clara); no escuro, #FFD98A (o Alerta ficava em 3,12:1 no alto da tela Orçamento rolada, na
+    // maior letra).
+    assert.match(bloco, /\bAlertaNoVidro: \['#FFD98A', '#6F4705'\]/, `AlertaNoVidro da pele ${pele}`);
+    // Decisão 6 da etapa 3: no Fosco escuro, o texto secundário é o do Transparente (o do Fosco ficava abaixo de 4,5:1 em
+    // dois pontos claros da aurora); no claro, o do Fosco fica.
+    const secundario = nome => bloco.match(new RegExp(`\\b${nome}: \\['(#\\w+)', '(#\\w+)'\\]`)).slice(1);
+    const [foscoEscuro, foscoClaro] = secundario('SecundarioFosco'), [transparenteEscuro, transparenteClaro] = secundario('SecundarioTransparente');
+    assert.equal(foscoEscuro, transparenteEscuro, `SecundarioFosco no escuro da pele ${pele}: o do Transparente`);
+    assert.notEqual(foscoClaro, transparenteClaro, `SecundarioFosco no claro da pele ${pele}: o do Fosco`);
   }
   const pecas = ler('app-ios/Custta/Telas/PecasDaObra.swift');
   assert.match(pecas.slice(pecas.indexOf('struct LinhaFina')), /^[^}]*paleta\.cor\(\.linhaNoVidro\)/, 'a linha fina sobre o vidro usa o LinhaNoVidro');
@@ -164,10 +176,10 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
   }
 });
 
-test('aurora nas mesmas cores do site, nos quatro combos', async () => {
+test('aurora nas mesmas cores do site, no escuro e no claro', async () => {
   const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
   const css = ler('styles.css');
-  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'], Azul: ['html[data-skin="azul"]{', 'html[data-skin="azul"][data-theme="light"]{'] };
+  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'] };
   const hex = rgb => '#' + rgb.split(',').map(n => Number(n).toString(16).padStart(2, '0').toUpperCase()).join('');
   for(const [pele, [escuro, claro]] of Object.entries(combos)){
     for(const [lado, seletor] of [[0, escuro], [1, claro]]){
@@ -178,10 +190,10 @@ test('aurora nas mesmas cores do site, nos quatro combos', async () => {
   }
 });
 
-test('cores de base iguais às do site, nos quatro combos', async () => {
+test('cores de base iguais às do site, no escuro e no claro', async () => {
   const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
   const css = ler('styles.css');
-  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'], Azul: ['html[data-skin="azul"]{', 'html[data-skin="azul"][data-theme="light"]{'] };
+  const combos = { Esmeralda: [':root{', 'html[data-theme="light"]{'] };
   const site = { Fundo: 'bg', Superficie: 'surface-solid', Linha: 'line', Texto: 'text', TextoSecundario: 'muted', Marca: 'brand',
     Destaque: 'accent', Positivo: 'profit', Alerta: 'warn', Negativo: 'red', SobreMarca: 'btn-ink' };
   const hex = v => '#' + (v.length === 4 ? [...v.slice(1)].map(c => c + c).join('') : v.slice(1)).toUpperCase();
@@ -446,9 +458,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
-  // e os títulos da barra, o pequeno da obra e o da folha (cortam como o do sistema, em vez de empurrar os botões).
+  // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
+  // sistema, em vez de empurrar os botões).
   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
-    'TituloDaFolha']);
+    'TituloDaFolha', 'BarraDasTeclas']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
@@ -466,6 +479,32 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
                'o ValorEmDinheiro numa linha, encolhendo até a metade');
 });
 
+test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura fixa', () => {
+  // A auditoria não vê o fim da tela Orçamento no modo total na maior letra: ela diminui a letra, a lista longa encolhe para
+  // cima da rolagem e a tela fica vazia (achados sem elemento; a cena dela fica a 2200 pt). As linhas do fim são as mesmas
+  // da cena; só a dica não aparece em outro lugar. Que ela não corta, garante o código: letra do sistema, nenhum limite de
+  // linhas (guarda acima), quebra para baixo e nenhuma altura fixa.
+  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
+  const inicio = t.indexOf('struct DicaDoModoTotal');
+  assert.ok(inicio >= 0, 'a DicaDoModoTotal');
+  const dica = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(dica, /Text\(dicaDoModoTotal\)\n\s*\.font\(\.footnote\)/, 'a dica na letra do sistema, que cresce');
+  assert.match(dica, /\.fixedSize\(horizontal: false, vertical: true\)/, 'a dica quebra linha e cresce para baixo');
+  assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
+});
+
+test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt do mockup', () => {
+  // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
+  // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
+  // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/PecasDoOrcamento.swift');
+  const inicio = t.indexOf('struct LinhaDoOrcamento');
+  assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : nil\)\n/,
+    'o chevron para no AX2 e, na letra de acessibilidade, ocupa 18 pt');
+});
+
 test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
   // Nenhum teste de tela vê isso: eles tocam as teclas pelo identificador (a ordem não aparece), nenhum digita além do
   // teto, o anúncio do VoiceOver não chega ao XCUITest e a auditoria não mede o limite de tamanho das teclas.
@@ -478,8 +517,20 @@ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor
   assert.match(tocar, /let novo = aplicarTecla\(centavos, tecla\)\n\s*guard novo != centavos else \{ return \}\n\s*centavos = novo\n/, 'o teto e a tecla ignorada vêm do núcleo');
   assert.match(tocar, /AccessibilityNotification\.Announcement\(fmtCentavos\(novo\)\)\.post\(\)/, 'o VoiceOver ouve o valor novo a cada tecla');
   assert.match(t, /case \.duploZero: "zero zero"/);
-  assert.match(t, /TeclaDoValor\(tecla: tecla\) \{ tocar\(tecla\) \}\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)/, 'as teclas param no AX2');
+  assert.match(t, /TeclaDoValor\(tecla: tecla, tamanho: tamanho\) \{ tocar\(tecla\) \}\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)/, 'as teclas param no AX2');
+  // As teclas encaixadas da folha do orçamento (etapa 3) são a mesma grade: a ordem, o teto e o anúncio valem nos dois.
+  assert.match(t, /GradeDeTeclas\(centavos: \$centavos, tamanho: \.padrao\)/, 'o TecladoDeValor usa a grade');
+  assert.match(ler('app-ios/Custta/Identidade/TecladoEncaixado.swift'), /GradeDeTeclas\(centavos: \$centavos, tamanho: \.encaixado\)/,
+    'as teclas encaixadas usam a mesma grade');
   assert.match(t, /\.accessibilityElement\(children: \.ignore\)\n\s*\.accessibilityLabel\("Valor"\)/, 'o visor é um elemento só');
+});
+
+test('tela Orçamento: o gasto lançado pelo + dela não rola a obra por baixo', () => {
+  // Nenhum teste de tela vê isso: a obra por baixo da tela Orçamento não está à vista, e o foco do VoiceOver não chega ao
+  // XCUITest. Sem a condição, a lista escondida rolaria até o gasto novo e o foco do VoiceOver iria para uma linha fora da tela.
+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
+  assert.match(t, /\.onChange\(of: folhas\.destaque\) \{ _, d in if let d, caminho\.last == \.obra\(obra\.id\) \{ mostrar\(d/,
+    'a obra só mostra o gasto salvo quando está no topo do caminho');
 });
 
 test('ações da fase: gravação recusada avisa, como o apagar e as folhas', () => {
@@ -520,6 +571,37 @@ test('folha da obra e apagar obra: gravação recusada avisa, como as outras fol
   assert.match(apagar, /if resultado == \.naoCarregado \{ avisoDoMais = \.naoCarregado\(modelo\.mensagemDeNaoCarregado\) \}/);
 });
 
+test('folha do orçamento: gravação recusada avisa, e tirar o orçamento leva a tela Orçamento de volta antes de a folha descer', () => {
+  // A recusa de antes de ver os dados avisa dentro da folha, como nas outras. Tirar (pelo botão ou pelo "Salvar" vazio) volta
+  // a tela Orçamento para a obra com a folha ainda em cima, e a folha desce no turno seguinte: no mesmo turno, a navegação
+  // levaria junto a descida da folha (o achado da T34 com o gasto lançado de dentro de uma vendida). O "Tirar orçamento"
+  // confirmado não grava duas vezes.
+  const t = ler('app-ios/Custta/Telas/FolhaDoOrcamento.swift');
+  assert.equal(t.match(/case \.naoCarregado: naoCarregado = true/g)?.length, 1, 'antes de ver os dados, o alerta do site');
+  assert.match(t, /folhas\.navegar\(\.sairDoOrcamento\(rascunho\.obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar\(\) \}/,
+    'a tela Orçamento volta e, no turno seguinte, a folha desce');
+  assert.match(t.slice(t.indexOf('private func tirar() {')), /^private func tirar\(\) \{\n\s*guard folhas\.aberta != nil else \{ return \}\n/,
+    'a guarda do toque duplo também no tirar');
+  // Com Reduzir movimento, a lista vai até a linha ativa sem animar e o cursor fica parado (nenhum teste de tela vê a
+  // animação: o XCUITest espera a rolagem acabar).
+  assert.match(t, /if opcoes\.reduzirMovimento \{ leitor\.scrollTo\(campo, anchor: \.center\) \}\n\s*else \{ withAnimation/,
+    'a rolagem até a linha ativa sem animação com Reduzir movimento');
+  assert.match(t, /if opcoes\.reduzirMovimento \{\n\s*barra\(visivel: true\)/, 'o cursor parado com Reduzir movimento');
+});
+
+test('folha do orçamento: o teclado físico apaga como a tecla da tela, e a linha ativa volta ao meio quando a letra muda', () => {
+  // O ⌫ de um teclado de verdade chega à folha como .delete (U+0008) e o ⌦ como .deleteForward: os dois são a tecla de apagar
+  // da tela. Nenhum teste de tela prova isso: o typeKey do XCTest não entrega o apagar a uma view que não é campo de texto
+  // (os dígitos ele entrega, e o testTecladoFisicoDigitaNaLinhaAtiva os confere). Com a letra trocada e as teclas abertas,
+  // as linhas mudam de altura e a rolagem fica onde estava: sem voltar ao meio, a linha ativa sumia da vista (e, na auditoria
+  // de tipo dinâmico, os achados saíam sem elemento).
+  const t = ler('app-ios/Custta/Telas/FolhaDoOrcamento.swift');
+  assert.match(t, /\.onKeyPress\(keys: \[\.delete, \.deleteForward\], phases: \.down\) \{ _ in\n\s*tocar\(\.apagar, em: campo\)/,
+    'o apagar do teclado físico vai para a tecla de apagar');
+  assert.match(t, /\.onChange\(of: tamanho\) \{ if let ativo \{ rolar\(ate: ativo, leitor\) \} \}/,
+    'a linha ativa volta ao meio quando a letra muda');
+});
+
 test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {
   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
@@ -528,6 +610,7 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
     'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
     'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
     'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
+    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': 'private func salvar() {',
   };
   for(const [f, assinatura] of Object.entries(acoes)){
     const t = ler(f);

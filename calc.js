@@ -77,6 +77,16 @@
     const fim = fimCorrecao(obra, hojeISO);
     return obra.gastos.reduce((s, g) => s + corrigido(g.valor, g.data, fim, taxaPct), 0);
   }
+  /* Resumo da folha do tópico: quantos gastos, o bruto (com as parcelas a vencer), o corrigido até a venda ou hoje e o "% da
+     obra" com o arredondamento da legenda do donut (0 na obra sem gasto). */
+  function resumoTopico(obra, topicoId, hojeISO, taxaPct){
+    const gs = obra.gastos.filter(g => g.topico === topicoId);
+    const fim = fimCorrecao(obra, hojeISO);
+    const bruto = gs.reduce((s, g) => s + g.valor, 0);
+    const total = totalBruto(obra);
+    return { qtd: gs.length, bruto, corrigido: gs.reduce((s, g) => s + corrigido(g.valor, g.data, fim, taxaPct), 0),
+      pct: total > 0 ? Math.round(bruto / total * 100) : 0 };
+  }
   function lucroVenda(obra, taxaPct){
     if(!obra.venda) return null;
     return {
@@ -208,6 +218,9 @@
     return { total, qtd, itens };
   }
 
+  /* Subtítulo da folha do "A pagar" (zero também: a folha abre vazia). */
+  const textoVencimentos = qtd => `${qtd} vencimento${qtd === 1 ? '' : 's'} · a partir de amanhã`;
+
   /* Últimos n gastos de todas as obras (data desc, desempate por id). */
   function gastosRecentes(obras, n = 5){
     return obras
@@ -220,13 +233,13 @@
     return (valor > 0 && areaM2 > 0) ? valor / areaM2 : null;
   }
 
-  /* Busca dos lançamentos: texto (descrição OU nome do tópico, sem acento)
+  /* Busca dos lançamentos: texto aparado (descrição OU nome do tópico, sem acento)
      e/ou mês ('2026-06'). Filtros combinam em E. */
   function semAcento(s){
     return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
   function filtraGastos(gastos, topicosMap, f){
-    const texto = semAcento(f && f.texto);
+    const texto = semAcento(f && f.texto).trim();
     const mes = (f && f.mes) || '';
     return gastos.filter(g => {
       if(mes && g.data.slice(0, 7) !== mes) return false;
@@ -235,6 +248,22 @@
       return semAcento(g.descricao).includes(texto)
           || semAcento(top ? top.nm : g.topico).includes(texto);
     });
+  }
+
+  /* Contador da pílula "Lançamentos": nada sem gasto; o total; ou "achados/total" com busca ou mês (busca só de espaços não filtra). */
+  function contadorLancamentos(total, achados, filtro){
+    if(!total) return '';
+    const filtrando = semAcento(filtro && filtro.texto).trim() || (filtro && filtro.mes);
+    return filtrando ? `${achados}/${total}` : String(total);
+  }
+  /* Meses do filtro dos lançamentos: os que têm gasto, do mais novo ao mais antigo (com os futuros), e quantos gastos cada um
+     tem. O mês escolhido entra mesmo sem gasto (com zero): apagar o último gasto dele, ou mudar a data, não esconde o filtro que
+     continua valendo. */
+  function mesesDoFiltro(gastos, escolhido){
+    const qtd = Object.create(null);
+    (Array.isArray(gastos) ? gastos : []).forEach(g => { const m = g.data.slice(0, 7); qtd[m] = (qtd[m] || 0) + 1; });
+    if(escolhido && !(escolhido in qtd)) qtd[escolhido] = 0;
+    return Object.keys(qtd).sort().reverse().map(mes => ({ mes, qtd: qtd[mes] }));
   }
 
   /* ---- descrição do gasto: sugestões e repetido (formulário do gasto) ---- */
@@ -456,13 +485,57 @@
     const r = Math.round(m);
     return r + (r === 1 ? ' mês' : ' meses');
   }
+  /* ---- textos do orçamento (app.js orcamentoHtml): moravam no app.js; o app nativo confere a cópia pelos vetores ---- */
+  const ORC_PILULA = Object.freeze({ ok:'dentro do previsto', perto:'perto do limite', passou:'passou do previsto' });
+  /* Largura da barra em %: no "passou" ela para no previsto. */
+  const larguraBarraOrc = pct => Math.max(0, Math.min(100, pct));
+  /* Frase do tópico: quanto passou, quanto falta ou que chegou (meio centavo de sobra já é "chegou"); nada no "dentro". */
+  function fraseTopicoOrc(t){
+    if(t.nivel === 'passou') return { texto: `Passou ${moneyCurto(-t.sobra)} do previsto`, alerta: true };
+    if(t.nivel === 'perto') return { texto: t.sobra > 0.005 ? `Faltam ${moneyCurto(t.sobra)} — ${t.pct}%` : `Chegou ao previsto — ${t.pct}%`, alerta: false };
+    return null;
+  }
+  /* Rodapé do cartão: "{pct}% usado" e "sobra" ou "passou" com o valor sem sinal. */
+  function rodapeOrc(orc){
+    return { usado: `${orc.pct}%`, rotulo: orc.nivel === 'passou' ? 'passou' : 'sobra', valor: money(Math.abs(orc.sobra)) };
+  }
+  /* Linha do tópico: "{gasto} / {previsto}", o previsto sem o "R$". */
+  const semCifrao = s => s.replace(/^R\$\s/, '');
+  function linhaTopicoOrc(t){
+    return { gasto: moneyCurto(t.gasto), previsto: semCifrao(moneyCurto(t.previsto)) };
+  }
+  /* Folha do orçamento: o total ao vivo soma só o que é positivo em cada linha (numeros: o valor lido de cada linha, na ordem
+     da folha). Trocar para "Só o total" com o campo vazio preenche com essa soma, se ela passar de zero: o previsto por tópico
+     não some sem o número à vista. campo: o texto do total; devolve o texto que o campo fica. */
+  const somaTopicosOrc = numeros => numeros.reduce((s, v) => s + Math.max(0, v), 0);
+  function totalPreenchidoOrc(campo, numeros){
+    if(campo) return campo;
+    const soma = somaTopicosOrc(numeros);
+    return soma > 0 ? numParaCampo(soma) : '';
+  }
+  /* Afazeres na tela (app.js renderAfazeres): pendentes e depois feitos, cada grupo na ordem da lista; o contador dos pendentes.
+     Feito é só o true (a leitura normalizada já o deixa assim). */
+  const afazeresEmOrdem = lista => { const l = Array.isArray(lista) ? lista : []; return [...l.filter(a => a.feito !== true), ...l.filter(a => a.feito === true)]; };
+  function contadorDeAfazeres(lista){
+    const n = (Array.isArray(lista) ? lista : []).filter(a => a.feito !== true).length;
+    return n ? `(${n} pendente${n > 1 ? 's' : ''})` : '';
+  }
+  /* Peças do orçamento na obra: o cartão (e o "Editar") com orçamento válido; a lista "Por tópico" só no modo por tópico;
+     "Definir orçamento" sem orçamento e fora da vendida; e os tópicos previstos que abrem a folha do tópico, os que têm gasto
+     (qualquer gasto, até de valor zero), na ordem da lista. */
+  function pecasOrcamento(obra){
+    const orc = orcamentoObra(obra);
+    const comGasto = new Set((Array.isArray(obra.gastos) ? obra.gastos : []).map(g => g.topico));
+    return { cartao: !!orc, porTopico: !!orc && orc.modo === 'topicos', definir: !orc && obra.fase !== 'vendida',
+      tocaveis: orc ? orc.topicos.filter(t => comGasto.has(t.id)).map(t => t.id) : [] };
+  }
   /* stringify com chaves ordenadas — compara estados sem depender da ordem do Firestore */
   function canon(x){
     return JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v)
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, gastosRecentes, precoPorM2, filtraGastos, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

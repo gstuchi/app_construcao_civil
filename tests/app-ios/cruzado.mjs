@@ -10,11 +10,16 @@
      3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos;
      4. CruzadoTests segue os roteiros abaixo pelas regras das telas do app: o dos gastos (lançar no Pix e no
         cartão parcelado com juros, editar um gasto do site e uma parcela, apagar um gasto da obra vendida e a
-        compra toda) e o da obra (criar três, editar, marcar como pronta, vender, desfazer a venda da obra vendida
-        do site e apagar a terceira criada), gravando cada passo pelo Sincronizador;
+        compra toda), o da obra (criar três, editar, marcar como pronta, vender, desfazer a venda da obra vendida
+        do site e apagar a terceira criada) e o do orçamento (definir por total, passar para por tópico, editar
+        por tópico guardando o tópico fora da lista e o campo que só o site conhece, trocar para o total, tirar e
+        salvar vazio), gravando cada passo pelo Sincronizador; antes do orçamento e a cada passo dele, pede a este
+        roteiro (POST no auxiliar) que confira o documento daquele momento contra o que o site gravaria até ali, e
+        cada passo do orçamento parte do documento relido, como a pessoa abre a folha depois do eco da gravação;
      5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou), que é
         exatamente o que o site gravaria com as mesmas respostas (dados.js, com os mesmos ids), sem perder os
-        campos que só o site conhece nem pôr o que a leitura acrescentaria, e que o site soma o resultado.
+        campos que só o site conhece nem pôr o que a leitura acrescentaria (no documento antes do orçamento,
+        gravado sem leitura no meio), e que o site soma o resultado.
    Teste pulado não passa: sem o pedido de mudança ou sem a gravação do app, o roteiro falha. */
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -52,8 +57,10 @@ const v1 = {
     { id: 'c1', nome: 'Casa do teste cruzado', dataInicio: '2026-01-10', fase: 'construcao', campoSoDoSite: { versao: 7 },
       valorEstimadoVenda: 600000, orcamento: { modo: 'total', total: 50000 },
       gastos: [{ id: 'x1', valor: 12345.67, topico: 'fundacao', descricao: 'Sapatas', data: '2026-02-01', pagamento: 'pix', notaSoDoSite: 'fica' }] },
+    /* O orçamento por tópico com um tópico fora da lista da folha (um tópico próprio apagado) e um campo que só o site
+       conhece: o app guarda os dois, e o site de antes do PR 0 da etapa 3 perdia (achado 7). */
     { id: 'c2', nome: 'Sobrado vendido', dataInicio: '2025-03-01', fase: 'vendida', venda: { valor: 480000, data: '2025-12-20' },
-      orcamento: { modo: 'topicos', topicos: { estrutura: 100000, acabamento: 50000 } },
+      orcamento: { modo: 'topicos', topicos: { estrutura: 100000, acabamento: 50000, c_apagado: 7000 }, notaDoSite: 'fica' },
       gastos: [
         { id: 'y1', valor: 120000, topico: 'estrutura', descricao: 'Laje', data: '2025-04-10', pagamento: 'pix' },
         { id: 'y2', valor: 61000.5, topico: 'acabamento', descricao: 'Porcelanato', data: '2025-09-02', pagamento: 'pix' },
@@ -95,9 +102,27 @@ const roteiroDaObra = [
   { acao: 'desfazer', obra: 'c2' },
   { acao: 'apagarObra', obra: 'appo3' },
 ];
-/** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js. */
-function comoOSite(blob){
-  const db = D.normaliza(structuredClone(blob));
+/* O roteiro do orçamento (etapa 3): o que a pessoa responde na folha "Orçamento da obra" (o modo e as linhas com valor; a
+   linha que não está aqui vai vazia) e o "Tirar orçamento". A obra c3 começa sem orçamento; a c2, por tópico, com o tópico
+   fora da lista e o campo do site. Cada passo é conferido no documento: a c2 termina sem orçamento, e o que o passo 3 e o
+   4 guardaram só a conferência deles prova (um roteiro que só compara o fim deixaria passar a regra quebrada no meio). */
+const roteiroDoOrcamento = [
+  { acao: 'salvar', obra: 'c3', modo: 'total', total: 80000 },
+  { acao: 'salvar', obra: 'c3', modo: 'topicos', valores: { fundacao: 30000, eletrica: 5000.5 } },
+  { acao: 'salvar', obra: 'c2', modo: 'topicos', valores: { estrutura: 110000, outros: 3000 } },
+  { acao: 'salvar', obra: 'c2', modo: 'total', total: 120000 },
+  { acao: 'tirar', obra: 'c3' },
+  { acao: 'salvar', obra: 'c2', modo: 'total', total: 0 },
+];
+/** As linhas da folha do orçamento do site (o topicos() do app.js): os fixos e depois os próprios, cada uma com o valor dado
+    ou vazia (0), como o "Salvar" lê. */
+const valoresDaFolha = (db, dados = {}) => Object.fromEntries([...C.TOPICOS.map(t => t.id), ...db.config.topicosCustom.map(t => t.id)]
+  .map(id => [id, dados[id] || 0]));
+
+/** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js; do roteiro do
+    orçamento, os `passosDoOrcamento` primeiros, cada um a partir do documento relido. */
+function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length){
+  let db = D.normaliza(structuredClone(blob));
   const fila = [...ids], novoId = () => fila.shift();
   for(const p of roteiro){
     const o = db.obras.find(x => x.id === p.obra);
@@ -119,6 +144,16 @@ function comoOSite(blob){
     else if(p.acao === 'desfazer'){ delete o.venda; o.fase = 'pronta'; }
     else db.obras = db.obras.filter(x => x.id !== p.obra);
   }
+  /* O orçamento: o formOrcamento do app.js (orcamentoGravado do dados.js; vazio tira a chave) e o "Tirar orçamento". Cada passo
+     parte do documento relido: a pessoa abre a folha depois de chegar o eco da gravação anterior, e o site troca o db pelo
+     documento normalizado (bootCloud do app.js), como o app (Sincronizador.recebeu) e como um outro aparelho o lê; a leitura
+     põe afazeres e venda null nas obras que não têm (as criadas no app, a da venda desfeita). */
+  for(const p of roteiroDoOrcamento.slice(0, passosDoOrcamento)){
+    db = D.normaliza(db);
+    const o = db.obras.find(x => x.id === p.obra);
+    const novo = p.acao === 'tirar' ? null : D.orcamentoGravado(o.orcamento, p.modo, p.total || 0, valoresDaFolha(db, p.valores));
+    if(novo) o.orcamento = novo; else delete o.orcamento;
+  }
   return db;
 }
 
@@ -134,15 +169,45 @@ const esperado = blob => D.normaliza(blob).obras.map(o => ({ id: o.id, nome: o.n
 await gravarComoOSite(v1);
 
 let siteMudou = false;
+/* Depois de cada passo do orçamento, o app pede a conferência do documento daquele momento: 200 quando é o que o site gravaria
+   com as respostas até ali, 409 com as duas versões da obra quando não é. Antes do primeiro (o passo 0), pede que este roteiro
+   guarde o documento dos roteiros do gasto e da obra, gravados em seguida, sem leitura no meio: é nele que se confere que o app
+   não grava o que a leitura acrescenta. */
+const conferidos = [];
+let antesDoOrcamento;
 const auxiliar = createServer(async (req, res) => {
   if(req.method === 'POST' && req.url === '/site/mudar'){ await gravarComoOSite(v2); siteMudou = true; res.end('ok'); return; }
+  const passo = /^\/app\/orcamento\/(\d+)$/.exec(req.url);
+  if(req.method === 'POST' && passo){
+    const n = Number(passo[1]);
+    const doc = (await getDocFromServer(documento)).data();
+    delete doc._atualizado;
+    if(n === 0){ conferidos.push(n); antesDoOrcamento = doc; res.end('ok'); return; }
+    const doSite = comoOSite(v2, n);
+    const obra = roteiroDoOrcamento[n - 1].obra;
+    const igual = C.canon(doc) === C.canon(doSite);
+    conferidos.push(n);
+    if(!igual){
+      res.statusCode = 409;
+      const daObra = d => JSON.stringify(d.obras.find(o => o.id === obra)?.orcamento ?? null);
+      /* A diferença pode estar fora do orçamento da obra do passo (um passo anterior que ficou diferente, ou o que a leitura
+         acrescenta nas outras obras): as obras que diferem vão junto, senão a mensagem mostraria dois orçamentos iguais. */
+      const daId = (d, id) => C.canon(d.obras.find(o => o.id === id) ?? null);
+      const diferem = [...new Set([...doc.obras, ...doSite.obras].map(o => o.id))].filter(id => daId(doc, id) !== daId(doSite, id));
+      res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}; obras diferentes: ${diferem.join(', ') || 'nenhuma (a diferença está fora das obras)'}`);
+      return;
+    }
+    res.end('ok');
+    return;
+  }
   res.statusCode = 404; res.end();
 });
 await new Promise(r => auxiliar.listen(8124, '127.0.0.1', r));
 
 const env = { CUSTTA_CRUZADO: '1', CUSTTA_EMULADORES: '1', CUSTTA_EMAIL: email, CUSTTA_SENHA: senha,
   CUSTTA_ESPERADO_V1: JSON.stringify(esperado(v1)), CUSTTA_ESPERADO_V2: JSON.stringify(esperado(v2)),
-  CUSTTA_ROTEIRO: JSON.stringify(roteiro), CUSTTA_IDS: ids.join(','), CUSTTA_ROTEIRO_OBRA: JSON.stringify(roteiroDaObra), CUSTTA_HOJE: HOJE };
+  CUSTTA_ROTEIRO: JSON.stringify(roteiro), CUSTTA_IDS: ids.join(','), CUSTTA_ROTEIRO_OBRA: JSON.stringify(roteiroDaObra), CUSTTA_HOJE: HOJE,
+  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento) };
 let antesDoApp;
 try{
   await testarNoSimulador(['CusttaUITests/CruzadoUITests'], env);
@@ -150,11 +215,13 @@ try{
   antesDoApp = (await getDocFromServer(documento)).data()._atualizado;
   await testarNoSimulador(['CusttaTests/CruzadoTests'], env);
 }finally{ auxiliar.close(); }
+assert.deepEqual(conferidos, [0, ...roteiroDoOrcamento.map((_, i) => i + 1)], 'o app pediu a conferência do documento antes do orçamento e de cada passo dele, na ordem');
 
 const final = (await getDocFromServer(documento)).data();
 assert.ok(final._atualizado instanceof Timestamp, 'a gravação do app leva _atualizado do servidor');
 assert.ok(final._atualizado.toMillis() > antesDoApp.toMillis(), 'o documento não foi regravado depois do teste do app: ele foi pulado ou não gravou');
 delete final._atualizado;
+assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
 const v3 = comoOSite(v2);
 assert.equal(C.canon(final), C.canon(v3), 'o app gravou o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
 const porId = id => final.obras.find(o => o.id === id);
@@ -175,7 +242,8 @@ assert.deepEqual(compraDoApp[0].jurosCartao, { taxaMensal: 2.5, valorCompra: 300
   'as condições da compra, iguais nas parcelas');
 assert.equal(C.money(C.totalBruto(D.normaliza(final).obras.find(o => o.id === 'c1'))), C.money(12000 + 40000 + 999.99 + cartao.totalCompra), 'o site soma o que o app gravou');
 // A obra (etapa 2, parte 3).
-assert.ok(!('afazeres' in criada) && !('venda' in criada), 'a obra criada no app vai como o obraNova do site: sem afazeres e sem venda (a leitura acrescenta)');
+const antes = id => antesDoOrcamento.obras.find(o => o.id === id);
+assert.ok(!('afazeres' in antes('appo1')) && !('venda' in antes('appo1')), 'a obra criada no app vai como o obraNova do site: sem afazeres e sem venda (a leitura acrescenta)');
 assert.equal(criada.areaM2, 3.125, 'a área com três casas chega inteira');
 assert.deepEqual(criada.orcamento, { modo: 'total', total: 120000 }, 'o orçamento total da obra nova');
 assert.equal(criada.valorEstimadoVenda, 350000);
@@ -189,7 +257,9 @@ assert.deepEqual(c1.orcamento, { modo: 'total', total: 50000 }, 'editar a obra n
 assert.equal(c1.fase, 'vendida');
 assert.deepEqual(c1.venda, { valor: 650000, data: '2026-04-01' }, 'a venda como o site grava');
 assert.equal(c2.fase, 'pronta');
-assert.ok(!('venda' in c2), 'desfazer a venda tira a chave, como o delete do site');
+assert.ok(!('venda' in antes('c2')), 'desfazer a venda tira a chave, como o delete do site');
+// O orçamento (etapa 3): o fim do roteiro tira os dois (o que cada passo gravou, a conferência dele provou).
+assert.ok(!('orcamento' in c2) && !('orcamento' in c3), 'tirar e salvar vazio tiram a chave, como o delete do site');
 await terminate(db);
-console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e os roteiros do gasto e da obra gravaram o que o site gravaria, sem perder nada');
+console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra e do orçamento gravaram o que o site gravaria, passo a passo no orçamento, sem perder nada');
 process.exit(0);

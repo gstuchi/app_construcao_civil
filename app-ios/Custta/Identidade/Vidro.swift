@@ -95,7 +95,8 @@ struct VidroTokens: Equatable, Sendable {
 
     /// Texto secundário sobre a superfície (o --muted do site não fecha 4,5:1 sobre o vidro). Com Aumentar contraste, o do
     /// Transparente, mais forte que o do Fosco: sobre o mesmo fundo, o do Fosco dava 24% menos contraste, e ligar a opção
-    /// baixava a leitura (conselho de 13/10).
+    /// baixava a leitura (conselho de 13/10). No Fosco escuro, o SecundarioFosco já é o do Transparente (decisão 6 da etapa
+    /// 3, no catálogo: o do Fosco ficava em 4,24:1 sob o cartão do Orçamento); no claro, o do Fosco.
     var secundario: Token {
         if contorno && nivel != .solido { return .secundarioTransparente }
         switch nivel {

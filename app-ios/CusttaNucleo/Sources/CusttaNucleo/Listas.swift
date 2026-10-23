@@ -26,6 +26,9 @@ public func aPagar(_ obras: [Obra], hoje: String, dias: Int = 30) -> APagar {
     return APagar(total: total, qtd: qtd, itens: ordenadoEstavel(itens) { menorJS($0.gasto.data, $1.gasto.data) })
 }
 
+/// `textoVencimentos` do calc.js: o subtítulo da folha do "A pagar" ("0 vencimentos" também: a folha abre vazia).
+public func textoVencimentos(_ qtd: Int) -> String { "\(qtd) vencimento\(qtd == 1 ? "" : "s") · a partir de amanhã" }
+
 public struct GastoRecente: Equatable, Sendable {
     public let obraId: String
     public let obraNome: String
@@ -60,15 +63,37 @@ func contem(_ texto: String, _ trecho: String) -> Bool {
     return false
 }
 
+/// `contadorLancamentos` do calc.js: nada sem gasto; o total; ou "achados/total" com busca ou mês (busca só de espaços não filtra).
+public func contadorLancamentos(total: Int, achados: Int, filtro: FiltroGastos?) -> String {
+    if total == 0 { return "" }
+    let filtrando = !aparadoJS(semAcento(filtro?.texto)).isEmpty || !(filtro?.mes ?? "").isEmpty
+    return filtrando ? "\(achados)/\(total)" : "\(total)"
+}
+
+public struct MesDoFiltro: Equatable, Sendable {
+    /// AAAA-MM.
+    public let mes: String
+    public let qtd: Int
+}
+
+/// `mesesDoFiltro` do calc.js: os meses com gasto, do mais novo ao mais antigo (com os futuros), e quantos gastos cada um tem.
+/// O mês escolhido entra mesmo sem gasto (com zero): o filtro que continua valendo nunca some da lista.
+public func mesesDoFiltro(_ gastos: [Gasto], escolhido: String) -> [MesDoFiltro] {
+    var qtd: [String: Int] = [:]
+    for g in gastos { qtd[String(g.data.prefix(7)), default: 0] += 1 }
+    if !escolhido.isEmpty && qtd[escolhido] == nil { qtd[escolhido] = 0 }
+    return qtd.keys.sorted { menorJS($1, $0) }.map { MesDoFiltro(mes: $0, qtd: qtd[$0]!) }
+}
+
 public struct FiltroGastos: Equatable, Sendable {
     public var texto: String?
     public var mes: String?
     public init(texto: String? = nil, mes: String? = nil) { self.texto = texto; self.mes = mes }
 }
 
-/// `filtraGastos` do calc.js: texto na descrição ou no nome do tópico (sem acento) e mês AAAA-MM, em E.
+/// `filtraGastos` do calc.js: texto aparado na descrição ou no nome do tópico (sem acento) e mês AAAA-MM, em E.
 public func filtraGastos(_ gastos: [Gasto], topicos: [String: Topico], filtro: FiltroGastos?) -> [Gasto] {
-    let texto = semAcento(filtro?.texto)
+    let texto = aparadoJS(semAcento(filtro?.texto))
     let mes = filtro?.mes ?? ""
     return gastos.filter { g in
         if !mes.isEmpty && String(g.data.prefix(7)) != mes { return false }

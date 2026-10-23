@@ -21,6 +21,7 @@ const run=(file,args=[])=>new Promise((resolve,reject)=>{
     await run('tests/browser/login.cjs');
     await run('tests/browser/escrita.cjs');
     await run('tests/browser/orcamento.cjs');
+    await run('tests/browser/dentro-da-obra.cjs');
     await run('tests/browser/ios.cjs');
     await run('tests/browser/vidro.cjs');
     await run('tests/browser/contraste.cjs',[os.tmpdir()]);

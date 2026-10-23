@@ -75,12 +75,9 @@ struct MovimentoTests {
 struct FundoTests {
     @Test func intensidadeDaAuroraPorTela() {
         #expect(Aurora.intensidade(tela: .entrada, pele: .esmeralda, escuro: true) == 0.92)
-        #expect(Aurora.intensidade(tela: .entrada, pele: .azul, escuro: true) == 1)
         #expect(Aurora.intensidade(tela: .app, pele: .esmeralda, escuro: true) == 0.48)
-        #expect(Aurora.intensidade(tela: .app, pele: .azul, escuro: true) == 0.52)
         for tela in [TelaDoVidro.entrada, .app] {
             #expect(Aurora.intensidade(tela: tela, pele: .esmeralda, escuro: false) == 0.55)
-            #expect(Aurora.intensidade(tela: tela, pele: .azul, escuro: false) == 0.52)
         }
     }
 

@@ -6,7 +6,6 @@ import GoogleSignIn
 struct RaizView: View {
     @Environment(ModeloApp.self) private var modelo
     @AppStorage(Aparencia.chaveTema) private var tema = "escuro"
-    @AppStorage(Aparencia.chavePele) private var pele = "esmeralda"
     @AppStorage(Aparencia.chaveVidro) private var escolhaDeVidro = "transparente"
     @Environment(\.accessibilityReduceMotion) private var reduzirMovimento
     @Environment(\.accessibilityReduceTransparency) private var reduzirTransparencia
@@ -31,7 +30,7 @@ struct RaizView: View {
     #endif
 
     var body: some View {
-        let paleta = Paleta(pele: Aparencia.pele(pele))
+        let paleta = Paleta()
         let escuro = Aparencia.esquema(tema) == .dark
         let opcoes = opcoesDoAparelho
         let tela: TelaDoVidro = if case .principal = modelo.fase { .app } else { .entrada }

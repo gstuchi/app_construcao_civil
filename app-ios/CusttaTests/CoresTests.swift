@@ -3,7 +3,7 @@ import UIKit
 import SwiftUI
 @testable import Custta
 
-/* Cores só por tokens: cada token existe nas duas peles, com variante clara e escura; os de fundo e de
+/* Cores só por tokens: cada token existe na pele Esmeralda, com variante clara e escura; os de fundo e de
    texto mudam entre claro e escuro. */
 @MainActor
 struct CoresTests {
@@ -25,10 +25,27 @@ struct CoresTests {
         }
     }
 
-    @Test func aparenciaPadraoEscuraEsmeraldaTransparente() {
+    /// "#RRGGBB" da cor do catálogo no esquema dado.
+    private func hex(_ token: Token, _ estilo: UIUserInterfaceStyle) -> String {
+        guard let cor = UIColor(named: Paleta.nome(token, .esmeralda), in: .main, compatibleWith: nil)?
+            .resolvedColor(with: UITraitCollection(userInterfaceStyle: estilo)) else { return "" }
+        var (r, g, b, a): (CGFloat, CGFloat, CGFloat, CGFloat) = (0, 0, 0, 0)
+        cor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
+    }
+
+    /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705; no escuro, #FFD98A.
+    /// E a decisão 6: no Fosco escuro, o secundário é o do Transparente; no claro, o do Fosco fica.
+    @Test func ambarSobreOVidroESecundarioDoFoscoNoEscuro() {
+        #expect(hex(.alertaNoVidro, .light) == "#6F4705")
+        #expect(hex(.alertaNoVidro, .dark) == "#FFD98A")
+        #expect(hex(.secundarioFosco, .dark) == hex(.secundarioTransparente, .dark))
+        #expect(hex(.secundarioFosco, .light) != hex(.secundarioTransparente, .light))
+    }
+
+    @Test func aparenciaPadraoEscuraTransparente() {
         #expect(Aparencia.esquema("qualquer") == .dark)
         #expect(Aparencia.esquema("claro") == .light)
-        #expect(Aparencia.pele("azul") == .azul && Aparencia.pele("") == .esmeralda)
         #expect(Aparencia.vidro("fosco") == .fosco && Aparencia.vidro("") == .transparente)
     }
 }

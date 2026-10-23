@@ -64,7 +64,6 @@ const taxa = () => db.config.taxaMensal;
 /* ---------- helpers ---------- */
 /* Moeda, meses e canon moram no calc.js (puros; o app nativo confere a cópia dele pelos vetores). */
 const { money, moneyShort, moneyCurto, fmtMeses, canon } = OBRA_CALC;
-const semCifrao = s => s.replace(/^R\$\s/, '');
 const MESAB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const todayISO = () => OBRA_CALC.dataLocalISO();
 const fmtData = iso => { const [y,m,d] = iso.split('-'); return escapeHtml(`${d}/${m}/${y.slice(2)}`); };
@@ -271,41 +270,40 @@ function drawComp(arr, hoje){
 
 /* ===== ORÇAMENTO previsto × real =====
    Um número por vez: o card mostra gasto de previsto, barra e sobra; o detalhe
-   fica na lista por tópico. Verde-marca abaixo de 90%, âmbar daí pra cima. */
-const ORC_PILL = { ok:'dentro do previsto', perto:'perto do limite', passou:'passou do previsto' };
+   fica na lista por tópico. Verde-marca abaixo de 90%, âmbar daí pra cima.
+   Os textos e a largura da barra vêm do calc.js (o app nativo usa os mesmos). */
 function barraOrcHtml(pct, nivel, extra){
-  return `<div class="orc-barra${extra ? ' ' + extra : ''}${nivel === 'ok' ? '' : ' alerta'}" aria-hidden="true"><i data-pct="${Math.max(0, Math.min(100, pct))}"></i></div>`;
+  return `<div class="orc-barra${extra ? ' ' + extra : ''}${nivel === 'ok' ? '' : ' alerta'}" aria-hidden="true"><i data-pct="${OBRA_CALC.larguraBarraOrc(pct)}"></i></div>`;
 }
 /* largura via CSSOM: a CSP proíbe atributo style no HTML */
 function pintaBarrasOrc(escopo){
   escopo.querySelectorAll('.orc-barra i[data-pct]').forEach(i => { i.style.width = i.dataset.pct + '%'; });
 }
-function fraseTopicoOrc(t){
-  if(t.nivel === 'passou') return `<div class="orc-frase alerta">Passou ${moneyCurto(-t.sobra)} do previsto</div>`;
-  if(t.nivel === 'perto') return `<div class="orc-frase">${t.sobra > 0.005 ? `Faltam ${moneyCurto(t.sobra)} — ${t.pct}%` : `Chegou ao previsto — ${t.pct}%`}</div>`;
-  return '';
+function fraseTopicoHtml(t){
+  const f = OBRA_CALC.fraseTopicoOrc(t);
+  return f ? `<div class="orc-frase${f.alerta ? ' alerta' : ''}">${f.texto}</div>` : '';
 }
-function orcamentoHtml(o, orc){
-  const passou = orc.nivel === 'passou';
+function orcamentoHtml(o, orc, pecas){
+  const rodape = OBRA_CALC.rodapeOrc(orc);
   const card = `
     <div class="panel orc-card" id="oOrc">
       <div class="orc-topo"><span class="orc-rotulo">Orçamento</span>
-        <span class="orc-pill${orc.nivel === 'ok' ? '' : ' alerta'}">${ORC_PILL[orc.nivel]}</span></div>
+        <span class="orc-pill${orc.nivel === 'ok' ? '' : ' alerta'}">${OBRA_CALC.ORC_PILULA[orc.nivel]}</span></div>
       <div class="orc-num">${money(orc.gasto)} <small>de ${money(orc.previsto)}</small></div>
       ${barraOrcHtml(orc.pct, orc.nivel)}
-      <div class="orc-rodape"><span><b>${orc.pct}%</b> usado</span>
-        <span>${passou ? 'passou' : 'sobra'} <b>${money(Math.abs(orc.sobra))}</b></span></div>
+      <div class="orc-rodape"><span><b>${rodape.usado}</b> usado</span>
+        <span>${rodape.rotulo} <b>${rodape.valor}</b></span></div>
     </div>`;
   let lista = '';
-  if(orc.modo === 'topicos'){
-    const comGasto = new Set(o.gastos.map(g => g.topico));
+  if(pecas.porTopico){
     const linhas = orc.topicos.map(t => {
+      const valores = OBRA_CALC.linhaTopicoOrc(t);
       const miolo = `
         <div class="orc-linha"><span class="orc-nome">${escapeHtml(nomeTopico(t.id))}</span>
-          <span class="orc-val"><b>${moneyCurto(t.gasto)}</b> / ${semCifrao(moneyCurto(t.previsto))}</span></div>
-        ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoOrc(t)}`;
+          <span class="orc-val"><b>${valores.gasto}</b> / ${valores.previsto}</span></div>
+        ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoHtml(t)}`;
       // tópico com gasto vira botão de verdade (semântica de lista/botão corretas pra leitor de tela)
-      return comGasto.has(t.id)
+      return pecas.tocaveis.includes(t.id)
         ? `<li class="orc-item"><button type="button" class="orc-item-conteudo" data-top="${escapeHtml(t.id)}">${miolo}</button></li>`
         : `<li class="orc-item"><div class="orc-item-conteudo">${miolo}</div></li>`;
     }).join('');
@@ -329,6 +327,7 @@ function renderObra(){
   const corr  = OBRA_CALC.totalCorrigido(o, taxa(), hoje);
   const lucro = OBRA_CALC.lucroVenda(o, taxa());
   const orc = OBRA_CALC.orcamentoObra(o);
+  const pecasOrc = OBRA_CALC.pecasOrcamento(o);
 
   let head = `
     <div class="panel obra-head">
@@ -395,7 +394,7 @@ function renderObra(){
     <button class="btn primary" id="oVender">${ICON('acordo')} Registrar venda</button>
     <button class="btn ghost" id="oVoltarConstr">${ICON('voltar')} Voltar pra construção</button>`;
   if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">${ICON('voltar')} Desfazer venda</button>`;
-  if(!orc && o.fase !== 'vendida') acoes += `<button class="btn ghost" id="oOrcDefinir">${ICON('alvo')} Definir orçamento</button>`;
+  if(pecasOrc.definir) acoes += `<button class="btn ghost" id="oOrcDefinir">${ICON('alvo')} Definir orçamento</button>`;
   if(o.gastos.length) acoes += `
     <button class="btn ghost" id="oGraf">${ICON('calculadora')} Ver gráficos</button>
     <button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
@@ -427,7 +426,8 @@ function renderObra(){
     ${evoChartHtml(o)}
     ${mesChartHtml(o)}`;
 
-  const mesesComGasto = [...new Set(o.gastos.map(g=>g.data.slice(0,7)))].sort().reverse();
+  // o mês escolhido fica na lista mesmo sem gasto: o filtro que vale nunca some do <select>
+  const mesesDoFiltro = OBRA_CALC.mesesDoFiltro(o.gastos, filtroMes);
   // no celular a busca divide a linha com o mês: a dica curta do iOS cabe inteira (a longa era cortada)
   const dicaBusca = matchMedia('(max-width:899px)').matches ? 'Buscar' : 'Pesquisar gasto ou tópico';
   const lanc = `
@@ -436,13 +436,13 @@ function renderObra(){
         <label class="busca"><span class="busca-ic" aria-hidden="true">${ICON('lupa')}</span>
           <input id="fBusca" placeholder="${dicaBusca}" aria-label="Pesquisar gasto ou tópico" autocomplete="off" value="${escapeHtml(filtroTexto)}"></label>
         <select id="fMes"><option value="">Todos os meses</option>
-          ${mesesComGasto.map(m=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${escapeHtml(m.slice(2,4))}</option>`).join('')}
+          ${mesesDoFiltro.map(({mes:m})=>`<option value="${escapeHtml(m)}"${m===filtroMes?' selected':''}>${MESAB[+m.slice(5)-1]}/${escapeHtml(m.slice(2,4))}</option>`).join('')}
         </select>
       </div>
       <ul class="list" id="oGastos"></ul>
     </div>`;
 
-  $('#obraBody').innerHTML = head + (orc ? orcamentoHtml(o, orc) : '') + resumo + acoes + afazeres + graficos + lanc;
+  $('#obraBody').innerHTML = head + (pecasOrc.cartao ? orcamentoHtml(o, orc, pecasOrc) : '') + resumo + acoes + afazeres + graficos + lanc;
   fitNums($('#obraBody'));
   pintaBarrasOrc($('#obraBody'));
 
@@ -455,11 +455,11 @@ function renderObra(){
 
   renderAfazeres(o);
   const addAfazer = ()=>{
-    const inp = $('#afzInput'); const txt = inp.value.trim();
-    if(!txt){ inp.focus(); return; }
-    if(!textoValido(txt, 'afazer', inp)) return;
+    const inp = $('#afzInput'); const c = OBRA_DADOS.conferirAfazer(inp.value);
+    if(c.erro === 'vazio'){ inp.focus(); return; }
+    if(c.erro){ toast(c.mensagem, 'erro'); inp.focus(); return; }
     const oo = obraById(obraAberta); if(!oo) return;
-    (oo.afazeres || (oo.afazeres = [])).unshift({ id:uid(), texto:txt, feito:false });
+    oo.afazeres = OBRA_DADOS.afazeresComNovo(oo.afazeres, c.texto, uid());
     save(); inp.value = ''; renderAfazeres(oo); inp.focus();
   };
   $('#afzAdd').onclick = addAfazer;
@@ -487,20 +487,19 @@ function renderObra(){
 function renderAfazeres(o){
   const list = $('#oAfazeres'); if(!list) return;
   const items = o.afazeres || [];
-  const pend = items.filter(a=>!a.feito);
-  const done = items.filter(a=>a.feito);
-  $('#afzCount').textContent = pend.length ? `(${pend.length} pendente${pend.length>1?'s':''})` : '';
+  $('#afzCount').textContent = OBRA_CALC.contadorDeAfazeres(items);
   list.innerHTML = '';
   if(!items.length){ list.innerHTML = emptyBlock(ICON('check'),'Nenhum afazer.<br>Anote o que falta na obra.'); return; }
-  [...pend, ...done].forEach(a=>list.appendChild(afazerRow(o, a)));
+  OBRA_CALC.afazeresEmOrdem(items).forEach(a=>list.appendChild(afazerRow(o, a)));
 }
 
 function afazerRow(o, a){
   const li = el('li', a.feito ? 'afz-done' : '');
+  // marcar e desmarcar levam o afazer ao começo da lista (dados.js afazeresAlternado)
   const toggle = ()=>{
     const oo = obraById(o.id); if(!oo) return;
-    const aa = (oo.afazeres||[]).find(x=>x.id===a.id); if(!aa) return;
-    aa.feito = !aa.feito; save(); renderAfazeres(oo);
+    const nova = OBRA_DADOS.afazeresAlternado(oo.afazeres, a.id); if(!nova) return;
+    oo.afazeres = nova; save(); renderAfazeres(oo);
   };
   const check = el('button','afz-check', ICON('check'));
   check.setAttribute('aria-label', a.feito ? 'Desmarcar afazer' : 'Marcar feito');
@@ -512,7 +511,9 @@ function afazerRow(o, a){
   del.setAttribute('aria-label','Apagar afazer');
   del.onclick = ()=>{
     const oo = obraById(o.id); if(!oo) return;
-    oo.afazeres = (oo.afazeres||[]).filter(x=>x.id!==a.id); save(); renderAfazeres(oo);
+    const nova = OBRA_DADOS.afazeresSem(oo.afazeres, a.id);
+    if(nova){ oo.afazeres = nova; save(); }
+    renderAfazeres(oo);
   };
   li.append(check, main, del);
   return li;
@@ -707,9 +708,9 @@ function bindMesChart(o, suf = ''){
 function renderGastosFiltrados(o){
   if(!o) return;
   const list = $('#oGastos');
-  const filtrados = OBRA_CALC.filtraGastos(o.gastos, TOP_MAP(), { texto: filtroTexto, mes: filtroMes });
-  const filtrando = !!(filtroTexto || filtroMes);
-  $('#lanCount').textContent = o.gastos.length ? (filtrando ? `${filtrados.length}/${o.gastos.length}` : o.gastos.length) : '';
+  const filtro = { texto: filtroTexto, mes: filtroMes };
+  const filtrados = OBRA_CALC.filtraGastos(o.gastos, TOP_MAP(), filtro);
+  $('#lanCount').textContent = OBRA_CALC.contadorLancamentos(o.gastos.length, filtrados.length, filtro);
   list.innerHTML = '';
   if(!o.gastos.length){ list.innerHTML = emptyBlock(ICON('recibo'),'Nenhum gasto lançado.<br>Toque no + pra lançar o primeiro.'); return; }
   if(!filtrados.length){ list.innerHTML = emptyBlock(ICON('recibo'),'Nada encontrado com esse filtro.'); return; }
@@ -1106,15 +1107,15 @@ function renderGraficos(){
   ligarImprimir($('#grafPrint'));
 }
 
-/* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
-   Só leitura sobre db; editar/excluir sai daqui pelo próprio gastoRow. */
+/* Folha do "A pagar": os vencimentos dos próximos 30 dias (calc.js aPagar). Editar e
+   excluir saem daqui pelo próprio gastoRow e voltam para ela. */
 function sheetAPagar(obraId){
   const o = obraById(obraId);
   if(!o){ closeSheet(); return; }
   const venc = OBRA_CALC.aPagar([o], todayISO());
   openSheet(`<h3>A pagar · próximos 30 dias</h3>
     <div class="top-resumo"><b>${money(venc.total)}</b>
-      <div class="sub">${venc.qtd} vencimento${venc.qtd===1?'':'s'} · a partir de amanhã</div></div>
+      <div class="sub">${OBRA_CALC.textoVencimentos(venc.qtd)}</div></div>
     <ul class="list" id="aPagarGastos"></ul>
     ${venc.qtd?'': '<p class="muted-note">Nenhum gasto previsto para esse período.</p>'}
     <div class="sheet-actions"><button class="btn ghost" id="aPagarFechar">Fechar</button></div>`);
@@ -1122,6 +1123,8 @@ function sheetAPagar(obraId){
   $('#aPagarFechar').onclick = closeSheet;
 }
 
+/* Folha com só os gastos de um tópico — o "de onde saiu esse pedaço do donut".
+   Só leitura sobre db; editar/excluir sai daqui pelo próprio gastoRow. */
 function sheetTopico(obraId, topicoId){
   const o = obraById(obraId);
   if(!o) return;
@@ -1129,21 +1132,15 @@ function sheetTopico(obraId, topicoId){
   if(!gs.length){ closeSheet(); return; } // último gasto do tópico foi excluído
 
   const t = TOP_MAP()[topicoId] || {nm:topicoId, ic:'etiqueta'};
-  const hoje = todayISO();
-  const fim = (o.venda && o.venda.data) || hoje;
-  const tx = taxa();
-  const bruto = gs.reduce((s,g)=>s+g.valor, 0);
-  const corr  = gs.reduce((s,g)=>s+OBRA_CALC.corrigido(g.valor, g.data, fim, tx), 0);
-  const totalObra = OBRA_CALC.totalBruto(o);
-  // mesmo arredondamento da legenda do donut, senão o número muda ao abrir
-  const pct = totalObra > 0 ? Math.round(bruto/totalObra*100) : 0;
+  // o % usa o arredondamento da legenda do donut, senão o número muda ao abrir
+  const r = OBRA_CALC.resumoTopico(o, topicoId, todayISO(), taxa());
 
   openSheet(`
     <div class="top-head">${ICON(t.ic)}<h3>${escapeHtml(t.nm)}</h3></div>
     <div class="top-resumo">
-      <div class="sub">${gs.length} gasto${gs.length>1?'s':''} · ${pct}% da obra</div>
-      <b>${money(bruto)}</b>
-      <div class="corr">corrigido: ${money(corr)}</div>
+      <div class="sub">${r.qtd} gasto${r.qtd>1?'s':''} · ${r.pct}% da obra</div>
+      <b>${money(r.bruto)}</b>
+      <div class="corr">corrigido: ${money(r.corrigido)}</div>
     </div>
     <ul class="list" id="topGastos"></ul>
     <div class="sheet-actions"><button class="btn ghost" id="topFechar">Fechar</button></div>`);
@@ -1335,20 +1332,6 @@ function aplicaTema(claro){
   renderAll(); // gráficos leem cor via getComputedStyle — precisam redesenhar
 }
 
-/* ===== SKIN (cor do app: esmeralda/azul) — mesma mecânica do tema ===== */
-const SKIN_KEY = 'mo_skin';
-const skinAtual = () => document.documentElement.getAttribute('data-skin') || 'esmeralda';
-function aplicaSkin(skin){
-  if(skin === 'azul') document.documentElement.setAttribute('data-skin','azul');
-  else document.documentElement.removeAttribute('data-skin');
-  try{ localStorage.setItem(SKIN_KEY, skin); }catch(e){ registraErro('skin', e && e.message); }
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-  if(window.__globeDraw) window.__globeDraw(); // com prefers-reduced-motion o globo é estático — força a cor nova
-  OBRA_NATIVO.barraStatus(temaClaro());
-  renderAll();
-}
-
 /* ===== NOTIFICAÇÕES PUSH — inscrição por aparelho, resumo diário via cron ===== */
 const NOTIF_NOTA_PADRAO = 'Afazeres pendentes, parcelas do mês e lembrete de lançar gastos. '
   + 'Chega mesmo com o app fechado. Vale neste aparelho.';
@@ -1472,15 +1455,6 @@ function renderAjustes(){
     tg.setAttribute('aria-label', claro ? 'Modo escuro' : 'Modo claro');
     tg.querySelector('.bola').innerHTML = ICON(claro ? 'sol' : 'lua');
     tg.onclick = () => aplicaTema(!temaClaro());
-  }
-
-  const bEsm = $('#skinEsm'), bAzul = $('#skinAzul');
-  if(bEsm && bAzul){
-    const azul = skinAtual() === 'azul';
-    bEsm.classList.toggle('on', !azul);
-    bAzul.classList.toggle('on', azul);
-    bEsm.onclick  = () => aplicaSkin('esmeralda'); // aplicaSkin → renderAll → volta aqui e marca o chip
-    bAzul.onclick = () => aplicaSkin('azul');
   }
 
   const tgN = $('#ajNotif');
@@ -1690,7 +1664,8 @@ backdrop.onclick = e=>{ if(e.target===backdrop) closeSheet(); };
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && backdrop.classList.contains('show')) closeSheet(); });
 
 /* Folha do orçamento: só o total, ou valor por tópico (fixos e próprios).
-   Grava só o modo ativo; salvar tudo vazio tira o orçamento da obra. */
+   O que o Salvar grava vem do dados.js (orcamentoGravado): só o modo ativo, o que a folha
+   não mostra fica, e salvar tudo vazio tira o orçamento da obra. */
 function formOrcamento(obraId){
   const o = obraById(obraId);
   if(!o) return;
@@ -1719,9 +1694,9 @@ function formOrcamento(obraId){
       <button class="btn primary" id="cSave">Salvar</button>
     </div>`);
   const entradas = [...sheet.querySelectorAll('#orcTopWrap input[data-top]')];
-  const somaTopicos = () => entradas.reduce((s, i) => s + Math.max(0, parseNum(i.value)), 0);
+  const numerosDaFolha = () => entradas.map(i => parseNum(i.value));
   const pintaSoma = () => {
-    $('#orcSoma').textContent = money(somaTopicos());
+    $('#orcSoma').textContent = money(OBRA_CALC.somaTopicosOrc(numerosDaFolha()));
   };
   const aplicaModo = m => {
     modo = m;
@@ -1732,37 +1707,30 @@ function formOrcamento(obraId){
     });
     $('#orcTotalWrap').classList.toggle('hidden', m !== 'total');
     $('#orcTopWrap').classList.toggle('hidden', m !== 'topicos');
-    // trocar pra "só o total" com o campo vazio não pode apagar o previsto por tópico
-    // sem o construtor ver o número: pré-preenche com a soma atual (salvar ainda grava só o modo ativo).
-    if(m === 'total' && !$('#orcTotal').value){
-      const soma = somaTopicos();
-      if(soma > 0) $('#orcTotal').value = OBRA_CALC.numParaCampo(soma);
-    }
+    // "só o total" com o campo vazio ganha a soma dos tópicos (salvar ainda grava só o modo ativo)
+    if(m === 'total') $('#orcTotal').value = OBRA_CALC.totalPreenchidoOrc($('#orcTotal').value, numerosDaFolha());
   };
   sheet.querySelectorAll('.seg button').forEach(b => { b.onclick = () => aplicaModo(b.dataset.modo); });
   maskMoney('#orcTotal');
   entradas.forEach(i => { maskMoney(i); i.addEventListener('input', pintaSoma); });
   aplicaModo(modo);
   pintaSoma();
-  const aplica = novo => {
+  // relê a obra no toque: um snapshot com a folha aberta troca os objetos do db
+  const aplica = gravar => {
     const oo = obraById(obraId);
-    if(oo){ if(novo) oo.orcamento = novo; else delete oo.orcamento; save(); }
+    if(oo){ const novo = gravar(oo.orcamento); if(novo) oo.orcamento = novo; else delete oo.orcamento; save(); }
     closeSheet(); renderAll();
   };
   $('#cCancel').onclick = closeSheet;
   $('#cSave').onclick = () => {
-    if(modo === 'total'){
-      const total = parseNum($('#orcTotal').value);
-      aplica(total > 0 ? { modo:'total', total } : null);
-      return;
-    }
-    const tops = {};
-    entradas.forEach(i => { const v = parseNum(i.value); if(v > 0) tops[i.dataset.top] = v; });
-    aplica(Object.keys(tops).length ? { modo:'topicos', topicos:tops } : null);
+    const total = parseNum($('#orcTotal').value);
+    const valores = {};
+    entradas.forEach(i => { valores[i.dataset.top] = parseNum(i.value); });
+    aplica(antigo => OBRA_DADOS.orcamentoGravado(antigo, modo, total, valores));
   };
   const tirar = $('#orcTirar');
   if(tirar) tirar.onclick = async () => {
-    if(await OBRA_CONFIRM.perguntar('Tirar o orçamento desta obra? Os gastos continuam como estão.', { confirmar:'Tirar orçamento' })) aplica(null);
+    if(await OBRA_CONFIRM.perguntar('Tirar o orçamento desta obra? Os gastos continuam como estão.', { confirmar:'Tirar orçamento' })) aplica(() => null);
   };
 }
 

@@ -7,10 +7,10 @@ const { join } = require('node:path');
 const css = readFileSync(join(__dirname, '..', 'styles.css'), 'utf8');
 const semComentario = css.replace(/\/\*[\s\S]*?\*\//g, '');
 const regras = [...semComentario.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => ({ sel: m[1].trim(), decl: m[2] }));
-const BLOCOS = ['  :root{', '  html[data-theme="light"]{', '  html[data-skin="azul"]{', '  html[data-skin="azul"][data-theme="light"]{'];
+const BLOCOS = ['  :root{', '  html[data-theme="light"]{'];
 const corpoDoBloco = b => { const i = css.indexOf(b); assert.ok(i >= 0, `bloco ${b} sumiu`); return css.slice(i, css.indexOf('}', i)); };
 
-test('material de vidro definido nos quatro combos tema×cor', ()=>{
+test('material de vidro definido no escuro e no claro', ()=>{
   for(const b of BLOCOS){
     const corpo = corpoDoBloco(b);
     for(const t of ['--vidro', '--vidro-folha', '--vidro-luz', '--vidro-tinta', '--vidro-tinta-ink', '--vidro-brilho', '--vidro-sombra'])

@@ -21,6 +21,12 @@ struct ListasTests {
         }
     }
 
+    @Test func subtituloDaFolhaDoAPagar() {
+        for c in Vetores.casos("calc.textoVencimentos") {
+            confere(.texto(textoVencimentos(Int(c.args[0].numero))), c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func recentes() {
         for c in Vetores.casos("calc.gastosRecentes") {
             let r = c.args.count > 1 ? gastosRecentes(c.args[0].obras, n: Int(c.args[1].numero)) : gastosRecentes(c.args[0].obras)
@@ -31,6 +37,20 @@ struct ListasTests {
     @Test func textoSemAcento() {
         for c in Vetores.casos("calc.semAcento") {
             #expect(semAcento(c.arg(0)?.textoOuNil) == c.saida.comoTexto, "\(c.caso)")
+        }
+    }
+
+    @Test func mesesDoFiltroComOEscolhido() {
+        for c in Vetores.casos("calc.mesesDoFiltro") {
+            let r = mesesDoFiltro(c.args[0].gastos, escolhido: c.arg(1)?.comoTexto ?? "")
+            confere(.lista(r.map { .objeto(["mes": .texto($0.mes), "qtd": .numero(Double($0.qtd))]) }), c.saida, .exata, c.caso)
+        }
+    }
+
+    @Test func contadorDaPilula() {
+        for c in Vetores.casos("calc.contadorLancamentos") {
+            let f = c.args[2].comoObjeto.map { FiltroGastos(texto: $0["texto"]?.comoTexto, mes: $0["mes"]?.comoTexto) }
+            confere(.texto(contadorLancamentos(total: Int(c.args[0].numero), achados: Int(c.args[1].numero), filtro: f)), c.saida, .exata, c.caso)
         }
     }
 

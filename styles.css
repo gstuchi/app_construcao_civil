@@ -66,57 +66,6 @@
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(20,43,35,.10);
     --vidro-sombra:0 8px 26px rgba(20,43,35,.16);
   }
-  /* ===== Skin Azul (paleta original) — mesmo esqueleto de variáveis ===== */
-  html[data-skin="azul"]{
-    --bg:#070c18;
-    --surface:rgba(17,26,46,.92); --surface-solid:#111a2e; --surface-2:#182338;
-    --line:#243250; --line-strong:#3a56a0; --border:#243250;
-    --ink:#eef4fb; --text:#eef4fb; --muted:#a3b4ca; --faint:#6e82a0;
-    --brand:#5b8cff; --brand-600:#3f66d9; --brand-700:#2c4fb0; --brand-900:#16244a;
-    --brand-soft:#16244a; --accent:#a78bfa;
-    --profit:#4ade80; --warn:#fbbf24;
-    --green:#4ade80; --green-soft:#0c2b1c; --red:#fb7185; --red-soft:#33151f;
-    --amber:#fbbf24; --amber-soft:#33280f; --blue:#60a5fa; --blue-soft:#122238;
-    --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 28px rgba(2,8,24,.45);
-    --chart-1:#5b8cff; --chart-2:#22d3ee; --chart-3:#a78bfa; --chart-4:#f472b6;
-    --c1:#5b8cff; --c2:#22d3ee; --c3:#a78bfa; --c4:#f472b6; --c5:#fbbf24; --c6:#4ade80; --c7:#fb923c; --c8:#94a3b8;
-    --chart-rec:#2eae5e; --chart-gasto:#60a5fa; --chart-desp:#e0507f;
-    --brand-rgb:91,140,255; --accent-rgb:167,139,250;
-    --glow-1:rgba(37,72,180,.32); --glow-2:rgba(84,38,160,.22);
-    --realce-0:#D4E0FF;
-    --saldo-a:#2450c9; --saldo-b:#5b2fd1; --saldo-border:rgba(120,150,255,.35); --saldo-shadow:rgba(48,80,220,.35);
-    /* tinta escura: branco sobre o #5b8cff dá 3,2:1; esta dá 6,2:1 */
-    --btn-ink:#070c18; --chip-on-ink:#a8c2ff;
-    --side-bg:rgba(11,18,36,.78); --side-on-ink:#cfe0ff;
-    --vidro:rgba(10,16,32,.40); --vidro-folha:rgba(14,22,40,.72); --vidro-luz:.78;
-    --vidro-tinta:rgba(59,108,240,.85); --vidro-tinta-ink:#fff;
-    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 .5px rgba(255,255,255,.10);
-    --vidro-sombra:0 10px 30px rgba(0,0,0,.4);
-    --globe-land-rgb:96,140,255; --globe-hi-rgb:160,196,255; --globe-ocean-rgb:78,114,224;
-    --globe-halo-rgb:58,100,245; --globe-ring-rgb:100,140,255;
-  }
-  html[data-skin="azul"][data-theme="light"]{
-    --bg:#eef2f9;
-    --surface:rgba(255,255,255,.92); --surface-solid:#ffffff; --surface-2:#e7edf7;
-    --line:#cdd8e8; --line-strong:#9fb3d4; --border:#cdd8e8;
-    --ink:#16233c; --text:#16233c; --muted:#556685; --faint:#617594;
-    --brand:#3560cf; --brand-600:#2b4fb0; --brand-700:#223f92; --brand-900:#dde7fb;
-    --brand-soft:#dde7fb; --accent:#6d4fc9;
-    --profit:#0e7a41; --warn:#8a5a06;
-    --green:#0e7a41; --green-soft:#d7f2e2; --red:#c22e55; --red-soft:#fadde5;
-    --amber:#8a5a06; --amber-soft:#f8ecc9; --blue:#2a63c4; --blue-soft:#dce9fa;
-    --shadow:0 1px 2px rgba(23,43,77,.08),0 8px 24px rgba(23,43,77,.12);
-    --chart-1:#3560cf; --chart-2:#0d7f95; --chart-3:#6d4fc9; --chart-4:#c23d82;
-    --c1:#3560cf; --c2:#0d7f95; --c3:#6d4fc9; --c4:#c23d82; --c5:#8a5a06; --c6:#0e7a41; --c7:#b04e0c; --c8:#5c6b80;
-    --chart-rec:#187a44; --chart-gasto:#2a63c4; --chart-desp:#c22759;
-    --glow-1:rgba(91,140,255,.14); --glow-2:rgba(140,90,220,.09);
-    --btn-ink:#fff; --side-bg:rgba(255,255,255,.72);
-    /* rótulo inativo da cápsula (--text, iOS 26) ≥4,5:1 já no --vidro mais transparente (mín. 7,34 sobre o card de saldo) */
-    --vidro:rgba(247,249,253,.58); --vidro-folha:rgba(251,252,255,.80); --vidro-luz:1.1;
-    --vidro-tinta:rgba(53,96,207,.88); --vidro-tinta-ink:#fff;
-    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 .5px rgba(23,43,77,.10);
-    --vidro-sombra:0 8px 26px rgba(23,43,77,.16);
-  }
   /* Molas no padrão da Apple (scripts/molas.mjs): amortecimento 1 é o padrão, sem quique;
      a de quique (0,8) só entra depois de gesto com impulso. Recuo via @supports porque
      declaração de recuo não funciona através de var(): sem linear(), fica a curva suave. */
@@ -1089,7 +1038,7 @@ body .layout-45{font-size:30px}
   }
 
 /* gestos (gestos.js) */
-  /* branco sobre o --red do escuro (#fb7185) dá 2,7:1; o botão tem vermelho próprio: 5,5:1 nos quatro combos tema×skin */
+  /* branco sobre o --red do escuro (#fb7185) dá 2,7:1; o botão tem vermelho próprio: 5,5:1 nos dois temas */
   :root{--apagar:#c22e55}
   li.swipe{position:relative;overflow:hidden;touch-action:pan-y}
   li.swipe > *{transform:translateX(var(--dx,0px));transition:transform var(--mola-quique-dur) var(--mola-quique)}
@@ -1123,16 +1072,6 @@ body .layout-45{font-size:30px}
     --aurora-1:20,179,154; --aurora-2:58,209,126; --aurora-3:60,150,200; --aurora-4:150,240,210; --aurora-a:.55;
     --vidro-conteudo:rgba(255,255,255,.52); --vidro-luz-conteudo:1.06;
     --vidro-brilho:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(255,255,255,.35),inset 0 0 0 .5px rgba(20,43,35,.10);
-  }
-  html[data-skin="azul"]{
-    --aurora-1:59,108,240; --aurora-2:110,150,255; --aurora-3:110,50,200; --aurora-4:120,210,255; --aurora-a:1;
-    --vidro-conteudo:rgba(8,12,28,.42); --vidro-luz-conteudo:.62;
-    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,.30),inset 0 -1px 0 rgba(255,255,255,.05),inset 0 0 0 .5px rgba(255,255,255,.16);
-  }
-  html[data-skin="azul"][data-theme="light"]{
-    --aurora-1:59,108,240; --aurora-2:96,140,255; --aurora-3:140,90,220; --aurora-4:150,210,255; --aurora-a:.52;
-    --vidro-conteudo:rgba(255,255,255,.52); --vidro-luz-conteudo:1.06;
-    --vidro-brilho:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(255,255,255,.35),inset 0 0 0 .5px rgba(23,43,77,.10);
   }
   :root{--vidro-filtro-conteudo:saturate(170%) blur(28px) brightness(var(--vidro-luz-conteudo))}
 
@@ -1184,14 +1123,14 @@ body .layout-45{font-size:30px}
   }
 /* ===== Liquid Glass: recuos =====
    Sem backdrop-filter (WebKit muito antigo), com transparência reduzida (Ajustes › Acessibilidade)
-   ou com contraste aumentado, o vidro vira superfície sólida. Os quatro seletores repetem os
+   ou com contraste aumentado, o vidro vira superfície sólida. Os dois seletores repetem os
    dos blocos de tema para empatar a especificidade — vale o que vem por último. */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
+  :root,html[data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
 }
 @media (prefers-reduced-transparency: reduce){
-  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-filtro:none;--vidro-filtro-forte:none;--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
+  :root,html[data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-filtro:none;--vidro-filtro-forte:none;--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
 }
 @media (prefers-contrast: more){
-  :root,html[data-theme="light"],html[data-skin="azul"],html[data-skin="azul"][data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-luz:1;--vidro-brilho:inset 0 0 0 1px var(--line-strong);--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
+  :root,html[data-theme="light"]{--vidro:var(--surface-solid);--vidro-folha:var(--surface-solid);--vidro-luz:1;--vidro-brilho:inset 0 0 0 1px var(--line-strong);--vidro-conteudo:var(--surface-solid);--vidro-filtro-conteudo:none}
 }

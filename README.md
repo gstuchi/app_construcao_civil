@@ -72,7 +72,7 @@ camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 | Caminho | Responsabilidade |
 | --- | --- |
 | `index.html` | markup da página — sem CSS e sem JavaScript inline (exigência da CSP) |
-| `styles.css` | todo o CSS do app: temas, skins e componentes |
+| `styles.css` | todo o CSS do app: temas e componentes |
 | `app.js` | estado e render da interface |
 | `calc.js` | cálculos puros de obra (correção monetária, parcelas) — sem DOM |
 | `cloud.js`, `auth.js` | Firebase (Auth + Firestore) e a tela de login |

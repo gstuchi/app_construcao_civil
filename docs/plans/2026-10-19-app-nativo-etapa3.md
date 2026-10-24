@@ -15336,3 +15336,424 @@ git add .github/workflows/app-ios.yml \
   app-ios/CusttaUITests/LeituraNoVidroUITests.swift
 git commit -m "test: maior letra e auditorias das folhas de origem" -m "O laudo de leitura ganha as folhas de origem na maior letra e com Aumentar contraste, no escuro: o A pagar no topo, rolado e com a edição de um vencimento empurrada; o detalhe da Cerâmica no topo e rolado, a Estrutura com a frase do \"passou\" no Alerta e a edição com \"Cerâmica\"; e, com Aumentar contraste, o A pagar e a Cerâmica. As roladas param com a borda de cima num vão que serve aos dois iPhones, achado pela sonda: o A pagar a 248 pt, entre o resumo e o primeiro mês (um vão que não depende do dia), e a Cerâmica a 628, entre a frase do orçamento e o \"A vencer\". As nove cenas passam no 18 Pro e no Pro Max, sem exceção nova: os piores são o texto de uma peça sólida da edição à vista (6,00) e a frase do \"passou\" (6,26)." -m "As auditorias ganham as duas folhas na maior letra (no topo, depois de um arrasto e com a edição empurrada) e o contraste delas no escuro e no claro, com superfícies sólidas. Na maior letra, onde há um ViewThatFits à vista, a auditoria de corte deixa passar só o achado sem elemento: o cabeçalho do mês, em toda a lista do A pagar, e o \"No orçamento\", no topo do detalhe, escolhem a linha ou a coluna por ele, e o arranjo em linha que não coube dá \"Text clipped\" sem elemento, embora a tela mostre a coluna inteira; o corte com elemento segue reprovando, como o \"3 vencimentos · a partir de amanhã\" numa linha só. Com a coluna no lugar do ViewThatFits não sai achado nenhum, e nem identificador nem .contain dão um elemento a ele, então não há exceção por identificador; o corte por lineLimit segue com a guarda Node, e o detalhe rolado e as edições ficam sem a tolerância." -m "Os três testes rodam no job laudo-etapa3, que levou 38,7 min no run das Tarefas 31 a 33: com os 5,5 min deles no Mac, uns 11 na CI, o job fica perto de 50, e o laudo e o auditoria passam a pulá-los."
 ```
+
+### Task 35: As folhas de origem na conferência cruzada e com outro aparelho
+
+A conferência cruzada (Tarefa 20) ganha um roteiro das folhas de origem, depois do roteiro do orçamento: três passos na c1, cada um conferido no documento logo depois de o servidor confirmar, contra o que o site gravaria. O detalhe do tópico ganha o 9º teste: outro aparelho apaga o último gasto do tópico com a edição empurrada e o "Apagar este gasto?" aberto. Nenhum código do app muda, e o yml também não: o `app-etapa3-b` roda a classe inteira.
+
+- **Os três passos** usam a compra "Quadro de luz" (3 × R$ 1.050,41: `app3`, `app4` e `app5`) e a Tinta (`app1`), lançadas no roteiro:
+  1. **apagar só a `app5`,** a 3/3: a compra fica com a 1/3 e a 2/3, sem renumerar. Não é a `app4` porque ela é o alvo do "editar uma parcela" do roteiro do gasto, que ficaria sem prova;
+  2. **levar a Tinta para Acabamento:** ela é o único gasto da Pintura, que fica sem gasto;
+  3. **mudar a data da `app3`** (a 1/3, a 9 dias de `HOJE`, no A pagar) para 08/05, depois dos 30 dias.
+- **Por que estes passos:**
+  - nenhum alvo é apagado por um passo seguinte, e nenhum ponto de partida é igual ao resultado;
+  - nenhum passo de antes trocava tópico, mudava a data de uma parcela ou apagava uma parcela sozinha. Por isso as três mutações da tarefa viviam no cruzado.
+- **Como o app segue a folha:**
+  - a edição é o `RascunhoDoGasto` montado do gasto (como no `ListaDaOrigem.editar`), com o tópico ou a data do passo por cima, e o "Salvar" dela (`conferirGasto` e `editandoGasto`);
+  - o apagar é o `apagandoGasto`;
+  - no site, a edição é o formulário preenchido com o gasto e o `D.gastoEditado`, e o apagar filtra o id.
+- **A conferência de cada passo:**
+  - o app espera o documento relido, com teto de 10 s, e pede a conferência (`POST /app/folhas/<n>`) logo depois de o servidor confirmar;
+  - a conferência compara com o que o site gravaria até ali;
+  - quando reprova, o 409 das folhas mostra os gastos da obra do passo que diferem, com `null` no que saiu de um lado;
+  - o passo 0 e os seis do orçamento não mudam.
+- **O 9º teste do detalhe** (`testUltimoGastoApagadoEmOutroAparelhoComOAlertaAbertoDesceAFolha`):
+  - os Tijolos (`g012`), o único gasto da Alvenaria, com a edição empurrada e o "Apagar este gasto?" aberto;
+  - só então o teste solta o gatilho do `CUSTTA_APAGAR_REMOTO` (o `notify_post`), e outro aparelho apaga os Tijolos;
+  - a folha desce junto com o alerta, e nada é gravado: com o `CUSTTA_GRAVACAO=recusa`, uma gravação traria o "Não salvou na nuvem" depois da descida;
+  - ele cobre o caminho de outro aparelho do "desce sem gasto" (decisão 4), que a Tarefa 32 deixou fora dos testes de tela, e o risco dos alertas com a folha que desce sozinha.
+- **A saída do cruzado muda:** o `conferidos` passa a `orcamento/0…6, folhas/1…3`, e a linha final diz "… passo a passo no orçamento e nas folhas, sem perder nada". O "Ver passar" da Tarefa 20 vale até esta tarefa.
+- **Fica de fora:** quando a folha não desce (o A pagar, ou o detalhe com outros gastos), o "Apagar este gasto?" fica aberto depois que outro aparelho apaga o gasto. O "Apagar" dele não grava nada, mas a pergunta fica sobre um gasto que não existe. Foi visto só com a mutação do "desce" e não tem teste.
+- **O que só a CI do iOS 26 prova:** o 9º só foi visto no iOS 27. Se lá o alerta segurar a folha, é defeito do app. O cruzado roda só no Mac.
+
+**Files:**
+- Test (alterar): `app-ios/CusttaTests/CruzadoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`
+- Test (alterar): `tests/app-ios/cruzado.mjs`
+
+**Interfaces:**
+- Consumes:
+  - `RascunhoDoGasto(obra:editado:todas:proprios:hoje:)`, com `.topico`, `.data`, `.entrada` e `.editado` (etapa 2);
+  - `Estado.editandoGasto`, `apagandoGasto` e `conferirGasto` (núcleo);
+  - `D.gastoEditado`, `D.conferirGasto` e `D.normaliza` (o site);
+  - o gancho `CUSTTA_APAGAR_REMOTO` com o `notify_post`, o `CUSTTA_GRAVACAO=recusa` e o `desceu`/`editar` (Tarefa 32).
+- Produces: o `POST /app/folhas/<n>` do auxiliar do cruzado, a variável `CUSTTA_ROTEIRO_FOLHAS` (só do cruzado) e o `DetalheDoTopicoUITests/testUltimoGastoApagadoEmOutroAparelhoComOAlertaAbertoDesceAFolha`.
+
+- [ ] **Step 1: Escrever os passos e o teste**
+
+Em `app-ios/CusttaTests/CruzadoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/CruzadoTests.swift
++++ b/app-ios/CusttaTests/CruzadoTests.swift
+@@ -6,12 +6,13 @@ import CusttaNucleo
+ 
+ /* Metade app da conferência cruzada (tests/app-ios/cruzado.mjs): entra na conta que o "site" criou, carrega o
+    documento e segue os roteiros do site pelas mesmas regras das telas: o dos gastos (lançar no Pix e no cartão
+-   parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda) e o da obra (criar, editar, marcar como
+-   pronta, vender, desfazer a venda e apagar) e o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar). O
+-   núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador, como um toque
+-   em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O roteiro
+-   confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada do site
+-   se perdeu; no orçamento, antes e a cada passo, pelo auxiliar do roteiro. */
++   parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda), o da obra (criar, editar, marcar como
++   pronta, vender, desfazer a venda e apagar), o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar) e
++   o das folhas de origem (a edição empurrada no A pagar e no detalhe do tópico pelo rascunho do gasto, e o apagar de um
++   gasto só). O núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador,
++   como um toque em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O
++   roteiro confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada
++   do site se perdeu; no orçamento, antes e a cada passo, e nas folhas, a cada passo, pelo auxiliar do roteiro. */
+ @MainActor
+ @Suite(.enabled(if: ProcessInfo.processInfo.environment["CUSTTA_CRUZADO"] == "1"))
+ struct CruzadoTests {
+@@ -106,12 +107,42 @@ struct CruzadoTests {
+             try await s.aplicar(try #require(novo, "o passo \(i + 1) do orçamento achou a obra")).confirmada()
+             try await pedirConferencia(i + 1)
+         }
++        // As folhas de origem (etapa 3, PR 2): cada passo como o A pagar e o detalhe do tópico gravam, também a partir do
++        // documento relido. A edição empurrada é o rascunho do gasto (o da folha, montado do gasto), com o que o passo muda
++        // por cima, e o "Salvar" dela; o "Apagar" da linha, ou o "só esta parcela" da edição, tira um gasto só.
++        let roteiroDasFolhas = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_FOLHAS"]).utf8))
++        for (i, passo) in try #require(roteiroDasFolhas.comoLista).enumerated() {
++            for _ in 0..<200 {
++                if mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) { break }
++                try await Task.sleep(for: .milliseconds(50))
++            }
++            try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do passo \(i + 1) das folhas não chegou")
++            let p = try #require(passo.comoObjeto)
++            let obraId = try #require(p["obra"]?.comoTexto)
++            let obra = try #require(s.estado.obras.first { $0.id == obraId }, "a obra \(obraId) do roteiro")
++            let gasto = try #require(obra.gastos.first { $0.id == p["gasto"]?.comoTexto }, "o gasto do passo \(i + 1) das folhas")
++            let novo: Estado?
++            if p["acao"]?.comoTexto == "apagar" {
++                novo = s.estado.apagandoGasto(gasto.id, daObra: obraId)
++            } else {
++                let r = RascunhoDoGasto(obra: obra, editado: gasto, todas: s.estado.obras, proprios: s.estado.config.topicosProprios, hoje: hoje)
++                let mudar = try #require(p["mudar"]?.comoObjeto)
++                if let topico = mudar["topico"]?.comoTexto { r.topico = topico }
++                if let data = mudar["data"]?.comoTexto { r.data = data }
++                let entrada = r.entrada
++                let conferido = try conferirGasto(entrada, editado: r.editado, hoje: hoje).get()
++                novo = s.estado.editandoGasto(gasto.id, entrada, conferido, naObra: obraId)
++            }
++            try await s.aplicar(try #require(novo, "o passo \(i + 1) das folhas achou o gasto")).confirmada()
++            try await pedirConferencia(i + 1, de: "folhas")
++        }
+         s.parar()
+     }
+ 
+-    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0).
+-    private func pedirConferencia(_ n: Int) async throws {
+-        var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/orcamento/\(n)")))
++    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0), ou o do passo n
++    /// das folhas.
++    private func pedirConferencia(_ n: Int, de roteiro: String = "orcamento") async throws {
++        var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/\(roteiro)/\(n)")))
+         pedido.httpMethod = "POST"
+         let (corpo, resposta) = try await URLSession.shared.data(for: pedido)
+         #expect((resposta as? HTTPURLResponse)?.statusCode == 200, "\(String(decoding: corpo, as: UTF8.self))")
+```
+
+Em `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
++++ b/app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
+@@ -9,7 +9,8 @@ import notify
+    De dentro do detalhe: tocar num gasto empurra a edição, com o nome do tópico, e "Salvar" volta na mesma rolagem com os
+    números novos (também na maior letra, com as 126 linhas da Mão de obra do topicoLongo); o gasto que troca de tópico sai do
+    detalhe; "Apagar" da edição volta com os números novos. Sem gasto no tópico, a folha desce: trocando o tópico do último
+-   gasto, apagando a compra toda que era o tópico inteiro e arrastando o último; na recusa, ela fica. */
++   gasto, apagando a compra toda que era o tópico inteiro e arrastando o último; na recusa, ela fica; e quando outro aparelho
++   apaga o último gasto com a edição e o "Apagar este gasto?" abertos, ela desce com o alerta, sem gravar nada. */
+ @MainActor
+ final class DetalheDoTopicoUITests: XCTestCase {
+     private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+@@ -353,6 +354,25 @@ final class DetalheDoTopicoUITests: XCTestCase {
+         confere(app.elemento("resumoDoTopico"), contem: ["1 gasto · "])
+     }
+ 
++    /// Os Tijolos, o único gasto da Alvenaria, com a edição empurrada e o "Apagar este gasto?" aberto: outro aparelho os apaga
++    /// (o aviso do teste solta o snapshot sem eles). A folha desce com o alerta, e nada é gravado: toda gravação é recusada
++    /// aqui, e uma que saísse traria o "Não salvou na nuvem" depois da descida.
++    func testUltimoGastoApagadoEmOutroAparelhoComOAlertaAbertoDesceAFolha() {
++        let app = abrirDetalhe("alvenaria", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g012@0", "CUSTTA_GRAVACAO": "recusa"])
++        editar(app, "g012")
++        app.buttons["apagarGasto"].tap()
++        let alerta = app.alerts["Apagar este gasto?"]
++        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "a pergunta, com a edição empurrada")
++        notify_post("br.com.custta.falso.apagarRemoto")
++        XCTAssertTrue(alerta.waitForNonExistence(timeout: 10), "o alerta sai com a folha")
++        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5), "e a edição também")
++        // A edição não tem o ×: o do detalhe voltaria com ele se a folha ficasse, e a descida leva menos que isto.
++        sleep(2)
++        XCTAssertFalse(app.buttons["fecharFolha"].exists, "a folha desceu: o último gasto saiu em outro aparelho")
++        desceu(app, "o último gasto saiu em outro aparelho, com o alerta aberto", linha: "topicoOrc-alvenaria")
++        XCTAssertFalse(app.alerts["Não salvou na nuvem"].waitForExistence(timeout: 3), "nada foi gravado: \(app.alerts.allElementsBoundByIndex.map(\.label))")
++    }
++
+     /// Na maior letra, a Mão de obra do topicoLongo tem 126 linhas (20 diárias a vencer e 106 pagos): a terceira diária a
+     /// vencer, de R$ 350,00 para R$ 450,00, e "Salvar" volta com ela no mesmo lugar (o ×, e não o resumo, diz que o detalhe
+     /// ficou: o resumo sai da parte criada).
+```
+
+Em `tests/app-ios/cruzado.mjs`:
+
+```diff
+--- a/tests/app-ios/cruzado.mjs
++++ b/tests/app-ios/cruzado.mjs
+@@ -11,11 +11,13 @@
+      4. CruzadoTests segue os roteiros abaixo pelas regras das telas do app: o dos gastos (lançar no Pix e no
+         cartão parcelado com juros, editar um gasto do site e uma parcela, apagar um gasto da obra vendida e a
+         compra toda), o da obra (criar três, editar, marcar como pronta, vender, desfazer a venda da obra vendida
+-        do site e apagar a terceira criada) e o do orçamento (definir por total, passar para por tópico, editar
++        do site e apagar a terceira criada), o do orçamento (definir por total, passar para por tópico, editar
+         por tópico guardando o tópico fora da lista e o campo que só o site conhece, trocar para o total, tirar e
+-        salvar vazio), gravando cada passo pelo Sincronizador; antes do orçamento e a cada passo dele, pede a este
+-        roteiro (POST no auxiliar) que confira o documento daquele momento contra o que o site gravaria até ali, e
+-        cada passo do orçamento parte do documento relido, como a pessoa abre a folha depois do eco da gravação;
++        salvar vazio) e o das folhas de origem (o A pagar e o detalhe do tópico: apagar só uma parcela de uma compra
++        que fica, levar o único gasto de um tópico para outro e passar uma parcela para depois dos 30 dias), gravando
++        cada passo pelo Sincronizador; antes do orçamento e a cada passo dele e das folhas, pede a este roteiro (POST
++        no auxiliar) que confira o documento daquele momento contra o que o site gravaria até ali, e cada um desses
++        passos parte do documento relido, como a pessoa abre a folha depois do eco da gravação;
+      5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou), que é
+         exatamente o que o site gravaria com as mesmas respostas (dados.js, com os mesmos ids), sem perder os
+         campos que só o site conhece nem pôr o que a leitura acrescentaria (no documento antes do orçamento,
+@@ -114,14 +116,28 @@ const roteiroDoOrcamento = [
+   { acao: 'tirar', obra: 'c3' },
+   { acao: 'salvar', obra: 'c2', modo: 'total', total: 0 },
+ ];
++/* O roteiro das folhas de origem (etapa 3, PR 2): o que a pessoa faz no A pagar e no detalhe do tópico, que gravam pelas
++   mutações da obra. A edição empurrada na folha começa do gasto (o passo diz só o que a pessoa muda) e "Salvar" grava; o
++   "Apagar" da linha, ou o "só esta parcela" da edição, tira um gasto só. Vem depois do orçamento, e cada passo é conferido
++   no documento: nenhum alvo é apagado por um passo seguinte, e nenhum ponto de partida já é o resultado (a lição da Tarefa
++   25 da etapa 2). */
++const roteiroDasFolhas = [
++  // A 3/3 do Quadro de luz lançado no roteiro: a compra fica no documento, com a 1/3 e a 2/3 sem renumerar, como no site.
++  { acao: 'apagar', obra: 'c1', gasto: 'app5' },
++  // A Tinta, o único gasto da Pintura na c1, para Acabamento: a Pintura fica sem gasto (no detalhe, a folha desce).
++  { acao: 'editar', obra: 'c1', gasto: 'app1', mudar: { topico: 'acabamento' } },
++  // A 1/3 do Quadro de luz vence a 9 dias de HOJE (está no A pagar) e passa para 8/5, depois dos 30 dias: sai da lista.
++  { acao: 'editar', obra: 'c1', gasto: 'app3', mudar: { data: '2026-05-08' } },
++];
+ /** As linhas da folha do orçamento do site (o topicos() do app.js): os fixos e depois os próprios, cada uma com o valor dado
+     ou vazia (0), como o "Salvar" lê. */
+ const valoresDaFolha = (db, dados = {}) => Object.fromEntries([...C.TOPICOS.map(t => t.id), ...db.config.topicosCustom.map(t => t.id)]
+   .map(id => [id, dados[id] || 0]));
+ 
+ /** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js; do roteiro do
+-    orçamento, os `passosDoOrcamento` primeiros, cada um a partir do documento relido. */
+-function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length){
++    orçamento, os `passosDoOrcamento` primeiros, e do das folhas, que vem depois do orçamento inteiro, os
++    `passosDasFolhas` primeiros (0 na conferência de um passo do orçamento), cada um a partir do documento relido. */
++function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDasFolhas = roteiroDasFolhas.length){
+   let db = D.normaliza(structuredClone(blob));
+   const fila = [...ids], novoId = () => fila.shift();
+   for(const p of roteiro){
+@@ -154,6 +170,17 @@ function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length){
+     const novo = p.acao === 'tirar' ? null : D.orcamentoGravado(o.orcamento, p.modo, p.total || 0, valoresDaFolha(db, p.valores));
+     if(novo) o.orcamento = novo; else delete o.orcamento;
+   }
++  /* As folhas de origem: o "Excluir só esta parcela" (ou o "Excluir" de um gasto) do app.js tira só aquele id, e o formGasto
++     da edição abre com o gasto e grava a resposta do passo por cima (gastoEditado do dados.js); cada passo a partir do
++     documento relido. */
++  for(const p of roteiroDasFolhas.slice(0, passosDasFolhas)){
++    db = D.normaliza(db);
++    const o = db.obras.find(x => x.id === p.obra), i = o.gastos.findIndex(g => g.id === p.gasto), g = o.gastos[i];
++    assert.ok(g, `o gasto ${p.gasto} do roteiro das folhas`);
++    if(p.acao === 'apagar'){ o.gastos = o.gastos.filter(x => x.id !== p.gasto); continue; }
++    const entrada = { valor: g.valor, topico: g.topico, descricao: g.descricao, data: g.data, pagamento: g.pagamento, parcelas: 1, juros: 0, ...p.mudar };
++    o.gastos[i] = D.gastoEditado(g, entrada, D.conferirGasto(entrada, g, HOJE));
++  }
+   return db;
+ }
+ 
+@@ -169,35 +196,41 @@ const esperado = blob => D.normaliza(blob).obras.map(o => ({ id: o.id, nome: o.n
+ await gravarComoOSite(v1);
+ 
+ let siteMudou = false;
+-/* Depois de cada passo do orçamento, o app pede a conferência do documento daquele momento: 200 quando é o que o site gravaria
+-   com as respostas até ali, 409 com as duas versões da obra quando não é. Antes do primeiro (o passo 0), pede que este roteiro
+-   guarde o documento dos roteiros do gasto e da obra, gravados em seguida, sem leitura no meio: é nele que se confere que o app
+-   não grava o que a leitura acrescenta. */
++/* Depois de cada passo do orçamento e das folhas, o app pede a conferência do documento daquele momento: 200 quando é o que o
++   site gravaria com as respostas até ali, 409 com as duas versões do que o passo mudou quando não é. Antes do primeiro passo do
++   orçamento (o passo 0), pede que este roteiro guarde o documento dos roteiros do gasto e da obra, gravados em seguida, sem
++   leitura no meio: é nele que se confere que o app não grava o que a leitura acrescenta. */
+ const conferidos = [];
+ let antesDoOrcamento;
+ const auxiliar = createServer(async (req, res) => {
+   if(req.method === 'POST' && req.url === '/site/mudar'){ await gravarComoOSite(v2); siteMudou = true; res.end('ok'); return; }
+-  const passo = /^\/app\/orcamento\/(\d+)$/.exec(req.url);
++  const passo = /^\/app\/(orcamento|folhas)\/(\d+)$/.exec(req.url);
+   if(req.method === 'POST' && passo){
+-    const n = Number(passo[1]);
++    const qual = passo[1], n = Number(passo[2]);
+     const doc = (await getDocFromServer(documento)).data();
+     delete doc._atualizado;
+-    if(n === 0){ conferidos.push(n); antesDoOrcamento = doc; res.end('ok'); return; }
+-    const doSite = comoOSite(v2, n);
+-    const obra = roteiroDoOrcamento[n - 1].obra;
+-    const igual = C.canon(doc) === C.canon(doSite);
+-    conferidos.push(n);
+-    if(!igual){
+-      res.statusCode = 409;
++    conferidos.push(`${qual}/${n}`);
++    if(qual === 'orcamento' && n === 0){ antesDoOrcamento = doc; res.end('ok'); return; }
++    const doSite = qual === 'orcamento' ? comoOSite(v2, n, 0) : comoOSite(v2, roteiroDoOrcamento.length, n);
++    const p = (qual === 'orcamento' ? roteiroDoOrcamento : roteiroDasFolhas)[n - 1], obra = p.obra;
++    if(C.canon(doc) === C.canon(doSite)){ res.end('ok'); return; }
++    res.statusCode = 409;
++    /* A diferença pode estar fora do que o passo mudou (um passo anterior que ficou diferente, ou o que a leitura acrescenta
++       nas outras obras): as obras que diferem vão junto, senão a mensagem mostraria duas versões iguais. */
++    const daId = (d, id) => C.canon(d.obras.find(o => o.id === id) ?? null);
++    const diferem = [...new Set([...doc.obras, ...doSite.obras].map(o => o.id))].filter(id => daId(doc, id) !== daId(doSite, id));
++    const obras = `obras diferentes: ${diferem.join(', ') || 'nenhuma (a diferença está fora das obras)'}`;
++    if(qual === 'orcamento'){
+       const daObra = d => JSON.stringify(d.obras.find(o => o.id === obra)?.orcamento ?? null);
+-      /* A diferença pode estar fora do orçamento da obra do passo (um passo anterior que ficou diferente, ou o que a leitura
+-         acrescenta nas outras obras): as obras que diferem vão junto, senão a mensagem mostraria dois orçamentos iguais. */
+-      const daId = (d, id) => C.canon(d.obras.find(o => o.id === id) ?? null);
+-      const diferem = [...new Set([...doc.obras, ...doSite.obras].map(o => o.id))].filter(id => daId(doc, id) !== daId(doSite, id));
+-      res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}; obras diferentes: ${diferem.join(', ') || 'nenhuma (a diferença está fora das obras)'}`);
++      res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}; ${obras}`);
+       return;
+     }
+-    res.end('ok');
++    // Nas folhas, os gastos da obra do passo que diferem (o que saiu de um lado só aparece como null do outro).
++    const gastos = d => d.obras.find(o => o.id === obra)?.gastos ?? [];
++    const gasto = (d, id) => gastos(d).find(g => g.id === id) ?? null;
++    const difere = [...new Set([...gastos(doc), ...gastos(doSite)].map(g => g.id))].filter(id => C.canon(gasto(doc, id)) !== C.canon(gasto(doSite, id)))
++      .map(id => `${id}: o app gravou ${JSON.stringify(gasto(doc, id))}, o site gravaria ${JSON.stringify(gasto(doSite, id))}`);
++    res.end(`passo ${n} das folhas (${obra}, ${p.acao} ${p.gasto}): ${difere.join('; ') || 'gastos iguais'}; ${obras}`);
+     return;
+   }
+   res.statusCode = 404; res.end();
+@@ -207,7 +240,7 @@ await new Promise(r => auxiliar.listen(8124, '127.0.0.1', r));
+ const env = { CUSTTA_CRUZADO: '1', CUSTTA_EMULADORES: '1', CUSTTA_EMAIL: email, CUSTTA_SENHA: senha,
+   CUSTTA_ESPERADO_V1: JSON.stringify(esperado(v1)), CUSTTA_ESPERADO_V2: JSON.stringify(esperado(v2)),
+   CUSTTA_ROTEIRO: JSON.stringify(roteiro), CUSTTA_IDS: ids.join(','), CUSTTA_ROTEIRO_OBRA: JSON.stringify(roteiroDaObra), CUSTTA_HOJE: HOJE,
+-  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento) };
++  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento), CUSTTA_ROTEIRO_FOLHAS: JSON.stringify(roteiroDasFolhas) };
+ let antesDoApp;
+ try{
+   await testarNoSimulador(['CusttaUITests/CruzadoUITests'], env);
+@@ -215,13 +248,14 @@ try{
+   antesDoApp = (await getDocFromServer(documento)).data()._atualizado;
+   await testarNoSimulador(['CusttaTests/CruzadoTests'], env);
+ }finally{ auxiliar.close(); }
+-assert.deepEqual(conferidos, [0, ...roteiroDoOrcamento.map((_, i) => i + 1)], 'o app pediu a conferência do documento antes do orçamento e de cada passo dele, na ordem');
++assert.deepEqual(conferidos, ['orcamento/0', ...roteiroDoOrcamento.map((_, i) => `orcamento/${i + 1}`), ...roteiroDasFolhas.map((_, i) => `folhas/${i + 1}`)],
++  'o app pediu a conferência do documento antes do orçamento, de cada passo dele e de cada passo das folhas, na ordem');
+ 
+ const final = (await getDocFromServer(documento)).data();
+ assert.ok(final._atualizado instanceof Timestamp, 'a gravação do app leva _atualizado do servidor');
+ assert.ok(final._atualizado.toMillis() > antesDoApp.toMillis(), 'o documento não foi regravado depois do teste do app: ele foi pulado ou não gravou');
+ delete final._atualizado;
+-assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
++assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
+ const v3 = comoOSite(v2);
+ assert.equal(C.canon(final), C.canon(v3), 'o app gravou o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
+ const porId = id => final.obras.find(o => o.id === id);
+@@ -234,15 +268,16 @@ assert.equal(x1.pagamento, 'cartao', 'a edição trocou o Pix pelo cartão');
+ assert.ok(!('jurosCartao' in x1), 'cartão na edição não ganha juros nem parcelas (app.js:1071)');
+ assert.equal(c3.gastos.length, 0, 'a compra toda da obra c3 saiu, inclusive a parcela editada');
+ assert.deepEqual(c2.gastos.map(g => g.id), ['y1', 'y2'], 'gasto de obra vendida também se apaga');
+-const compraDoApp = c1.gastos.filter(g => g.grupoId === 'app2');
++// A compra lançada no app, no documento de antes do orçamento: as folhas, no fim, tiram uma parcela e mudam a data de outra.
++const antes = id => antesDoOrcamento.obras.find(o => o.id === id);
++const compraDoApp = antes('c1').gastos.filter(g => g.grupoId === 'app2');
+ assert.deepEqual(compraDoApp.map(g => [g.parcela.n, g.parcela.de, g.data]), [[1, 3, '2026-04-10'], [2, 3, '2026-05-10'], [3, 3, '2026-06-10']],
+   'a compra em 3x lançada no app: as parcelas e as datas do site');
+ const cartao = C.parcelamentoCartao(3000, 3, 2.5, '2026-04-10');
+ assert.deepEqual(compraDoApp[0].jurosCartao, { taxaMensal: 2.5, valorCompra: 3000, nParcelas: 3, totalCompra: cartao.totalCompra, jurosCompra: cartao.jurosCompra },
+   'as condições da compra, iguais nas parcelas');
+-assert.equal(C.money(C.totalBruto(D.normaliza(final).obras.find(o => o.id === 'c1'))), C.money(12000 + 40000 + 999.99 + cartao.totalCompra), 'o site soma o que o app gravou');
++assert.equal(C.money(C.totalBruto(D.normaliza(antesDoOrcamento).obras.find(o => o.id === 'c1'))), C.money(12000 + 40000 + 999.99 + cartao.totalCompra), 'o site soma o que o app gravou');
+ // A obra (etapa 2, parte 3).
+-const antes = id => antesDoOrcamento.obras.find(o => o.id === id);
+ assert.ok(!('afazeres' in antes('appo1')) && !('venda' in antes('appo1')), 'a obra criada no app vai como o obraNova do site: sem afazeres e sem venda (a leitura acrescenta)');
+ assert.equal(criada.areaM2, 3.125, 'a área com três casas chega inteira');
+ assert.deepEqual(criada.orcamento, { modo: 'total', total: 120000 }, 'o orçamento total da obra nova');
+@@ -260,6 +295,13 @@ assert.equal(c2.fase, 'pronta');
+ assert.ok(!('venda' in antes('c2')), 'desfazer a venda tira a chave, como o delete do site');
+ // O orçamento (etapa 3): o fim do roteiro tira os dois (o que cada passo gravou, a conferência dele provou).
+ assert.ok(!('orcamento' in c2) && !('orcamento' in c3), 'tirar e salvar vazio tiram a chave, como o delete do site');
++// As folhas de origem (etapa 3, PR 2), no fim: o que cada passo gravou, a conferência dele provou.
++assert.deepEqual(c1.gastos.filter(g => g.grupoId === 'app2').map(g => [g.id, g.parcela.n, g.parcela.de, g.data]), [['app3', 1, 3, '2026-05-08'], ['app4', 2, 3, '2026-05-10']],
++  'só a 3/3 saiu: a compra fica, sem renumerar, e a 1/3 com a data nova, depois dos 30 dias');
++assert.deepEqual([c1.gastos.find(g => g.id === 'app1').topico, c1.gastos.some(g => g.topico === 'pintura')], ['acabamento', false],
++  'a Tinta foi para Acabamento, e a Pintura ficou sem gasto');
++assert.equal(C.money(C.totalBruto(D.normaliza(final).obras.find(o => o.id === 'c1'))), C.money(12000 + 40000 + 999.99 + cartao.parcelas[0].valor + cartao.parcelas[1].valor),
++  'o site soma o que o app gravou, sem a 3/3');
+ await terminate(db);
+-console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra e do orçamento gravaram o que o site gravaria, passo a passo no orçamento, sem perder nada');
++console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra, do orçamento e das folhas de origem gravaram o que o site gravaria, passo a passo no orçamento e nas folhas, sem perder nada');
+ process.exit(0);
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Não há vermelho natural: os passos e o 9º teste passam de cara, porque as folhas gravam pelas mutações de sempre. A prova é por mutação, uma de cada vez, desfeita no fim.
+
+O cruzado (M2 e M3 só trocam a linha da mutação):
+```bash
+# M1: o apagar da parcela leva a compra (o apagandoCompra no lugar do apagandoGasto)
+perl -0pi -e 's/(gastos\.contains\(where: \{ \$0\.id == gastoId \}\) else \{ return nil \}\n)/$1        if let grupo = obras[i].gastos.first(where: { \$0.id == gastoId })?.grupoId { return apagandoCompra(grupo, daObra: obraId) }\n/' app-ios/CusttaNucleo/Sources/CusttaNucleo/Mutacoes.swift
+# M2: sed -i '' 's/^    g\.topico = entrada\.topico$/    g.topico = gasto.topico/' app-ios/CusttaNucleo/Sources/CusttaNucleo/Formularios.swift
+# M3: sed -i '' 's/^    g\.data = conferido\.data$/    if gasto.grupoId == nil { g.data = conferido.data }/' app-ios/CusttaNucleo/Sources/CusttaNucleo/Formularios.swift
+CUSTTA_SIMULADOR=<udid> npm run test:app-ios:cruzado 2>&1 | grep -E "recorded an issue|passo [0-9] das folhas|xcodebuild test falhou" | cut -c1-200
+git checkout -- app-ios/CusttaNucleo/Sources/CusttaNucleo/
+```
+Expected:
+- O passo 0 e os seis do orçamento passam.
+- Reprova `✘ Test appSegueOsRoteirosDoSite() recorded an issue at CruzadoTests.swift:148:9: Expectation failed: (resposta as? HTTPURLResponse)?.statusCode == 200`, com o 409 do passo da regra:
+  - M1: `passo 1 das folhas (c1, apagar app5): app3: o app gravou null, o site gravaria {…"parcela":{"n":1,"de":3}…}; app4: o app gravou null, …`. O passo 3 para em `CruzadoTests.swift:123:29`, porque o `app3` saiu com a compra;
+  - M2: `passo 2 das folhas (c1, editar app1): app1: o app gravou {…"topico":"pintura"…}, o site gravaria {…"topico":"acabamento"…}`;
+  - M3, só `passo 3 das folhas (c1, editar app3): app3: o app gravou {"data":"2026-04-10",…}, o site gravaria {…"data":"2026-05-08"…}`.
+- E `Error: xcodebuild test falhou (CusttaTests/CruzadoTests)`.
+
+O 9º teste (M4: o "desce sem gasto" que ignora outro aparelho; a lista fecha a folha só quando ela mesma deixa o tópico vazio):
+```bash
+perl -0pi -e 's/\n        \.onChange\(of: semGasto\) \{ _, vazio in if vazio \{ folhas\.fechar\(\) \} \}\n/\n/' app-ios/Custta/Telas/FolhaDoTopico.swift
+perl -0pi -e 's/(\@Environment\(\\\.opcoes\) private var opcoes\n)/$1    \@Environment(Folhas.self) private var folhas\n/; s/(case \.salvou = saida \{ )(return \})/$1folhas.fechar(); $2/; s/(\.map \{ ordemDasLinhas\(pecasDepois\(\$0\)\) \} \?\? \[\]\n)/$1        if desceSemGasto, depois.isEmpty { folhas.fechar(); return }\n/' app-ios/Custta/Telas/ListaDaOrigem.swift
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests 2>&1 | grep -E "error: -\[|Executed [0-9]+ tests" | sed 's/.*DetalheDoTopicoUITests //' | sort -u
+git checkout -- app-ios/Custta/Telas/FolhaDoTopico.swift app-ios/Custta/Telas/ListaDaOrigem.swift
+```
+Expected:
+- O build passa sem aviso.
+- Reprova só o `testUltimoGastoApagadoEmOutroAparelhoComOAlertaAbertoDesceAFolha`:
+  - primeiro em `DetalheDoTopicoUITests.swift:367`, `XCTAssertTrue failed - o alerta sai com a folha`;
+  - depois em `:371` (`a folha desceu: o último gasto saiu em outro aparelho`) e em `:226` (o `desceu`).
+- Os quatro testes da descida da Tarefa 32 (`testTrocarOTopicoDoUltimoGastoDesceAFolha`, `testApagarACompraTodaQueEsvaziaOTopicoDesceAFolha`, `testArrastarOUltimoGastoDesceAFolha` e `testCarregandoNoArrastarAvisaNoDetalheENaoDesce`) passam com a mutação: só o 9º a mata.
+- `Executed 16 tests, with 3 failures` (medido com o 9º e esses quatro: `Executed 5 tests, with 3 failures`).
+
+- [ ] **Step 3: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+CUSTTA_SIMULADOR=<udid> npm run test:app-ios:cruzado 2>&1 | grep -E "passed|^ok|not ok" | tail -4
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite 'DetalheDoTopicoUITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests/testUltimoGastoApagadoEmOutroAparelhoComOAlertaAbertoDesceAFolha -test-iterations 3 2>&1 | grep -E "Test Case .*(passed|failed)|TEST EXECUTE"
+```
+Expected:
+- `ℹ pass 59`, `ℹ fail 0`.
+- O `CruzadoUITests` passa, com `✔ Test appSegueOsRoteirosDoSite() passed` e `ok - site e app na mesma conta: … passo a passo no orçamento e nas folhas, sem perder nada`, em ~1,5 min no Mac.
+- Sem aviso.
+- `✔ Test run with 161 tests in 30 suites passed`, o `DetalheDoTopicoUITests` 16 de 16 (~314 s) e `** TEST EXECUTE SUCCEEDED **`, em ~6 min.
+- O 9º passa as 3 vezes, em ~25 s cada.
+
+A prova no iOS 26 vem num run só com a Tarefa 34.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add app-ios/CusttaTests/CruzadoTests.swift \
+  app-ios/CusttaUITests/DetalheDoTopicoUITests.swift \
+  tests/app-ios/cruzado.mjs
+git commit -m "test: as folhas de origem na conferência cruzada e com outro aparelho" -m "A conferência cruzada ganha o roteiro das folhas de origem, seguido pelo app como o A pagar e o detalhe do tópico gravam: a edição empurrada é o rascunho do gasto, montado do próprio gasto, com só o que o passo muda por cima, e o \"Apagar\" tira um gasto só. São três passos, depois do orçamento: apagar só a 3/3 do Quadro de luz lançado no roteiro (a compra fica no documento, sem renumerar), levar a Tinta, o único gasto da Pintura, para Acabamento, e passar a 1/3 do Quadro de luz, que vencia dentro dos 30 dias, para depois deles. Cada passo parte do documento relido e é conferido no documento logo depois de o servidor confirmar, contra o que o site gravaria até ali. Nenhum alvo é apagado por um passo seguinte, e nenhum ponto de partida já é o resultado. Nenhum passo de antes trocava o tópico de um gasto, mudava a data de uma parcela ou apagava uma parcela sozinha, e essas três regras ficavam fora da prova de ponta a ponta." -m "O detalhe do tópico ganha o teste do caminho de outro aparelho: com a edição do único gasto da Alvenaria empurrada e o \"Apagar este gasto?\" aberto, outro aparelho apaga o gasto. A folha desce com o alerta e nada é gravado; com toda gravação recusada, uma que saísse traria o \"Não salvou na nuvem\". O \"desce sem gasto\" lido da obra gravada já cobria esse caminho por construção, mas sem teste de tela."
+```

@@ -100,6 +100,9 @@ export const CORES = {
     SobreApagar: ['#FFFFFF', '#FFFFFF'],
     SobreAlerta: ['#1F1503', '#FFFFFF'],            // "Salvar mesmo assim", sobre o Alerta
     Aceso: ['#14B39A38', '#0B7A6824'],              // --aceso: a linha nova, por 2 s
+    // Ajustes › Aparência: o aro claro das barrinhas de vidro desenhadas na miniatura de cada opção (no mockup, branco a 70% no
+    // Transparente e a 30% no Fosco, nos dois temas). O vidro de verdade tem o aro do sistema.
+    AroDaMiniatura: ['#FFFFFF', '#FFFFFF'],
   },
 };
 

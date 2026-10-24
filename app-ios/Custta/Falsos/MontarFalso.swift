@@ -21,10 +21,17 @@ import CusttaNucleo
    CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
                   e a 1ª nova tentativa também falha); cada nova tentativa leva 8 s, para o "Limpando…" ficar à
                   vista mesmo no simulador da CI, onde o teste só o encontra uns 4 s depois do toque
+   CUSTTA_APARENCIA manter (guarda o tema e o vidro escolhidos em Ajustes numa abertura anterior; sem ela, cada abertura
+                  começa no Escuro e no Transparente, e o -custta.tema e o -custta.vidro dos testes valem por cima das duas)
    CUSTTA_GRAVACAO_ESPERA aviso (cada gravação só responde no notify_post de "br.com.custta.falso.responderGravacao",
                   e não em 300 ms: o teste abre uma folha antes de a recusa chegar) */
 extension Composicao {
     static func montarFalso(_ ambiente: [String: String]) -> ModeloApp {
+        // O tema e o vidro escolhidos ficam no UserDefaults do simulador e passariam de um teste para os seguintes (no
+        // simulador da CI, todos): cada abertura com os falsos começa no padrão, a não ser que o teste peça para guardar.
+        if ambiente["CUSTTA_APARENCIA"] != "manter" {
+            for chave in [Aparencia.chaveTema, Aparencia.chaveVidro] { UserDefaults.standard.removeObject(forKey: chave) }
+        }
         let semRede = ambiente["CUSTTA_REDE"] == "offline"
         let conta = ContaFalsa(inicial: ambiente["CUSTTA_CONTA"] ?? "nenhuma", limpeza: ambiente["CUSTTA_LIMPEZA"])
         if ambiente["CUSTTA_LIMPEZA"] != nil { conta.demoraAoLimpar = .seconds(8) }

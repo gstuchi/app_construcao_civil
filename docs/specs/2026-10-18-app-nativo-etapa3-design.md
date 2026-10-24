@@ -288,5 +288,5 @@ Não vão ao conselho, porque o mockup ou o spec já fixam, ou porque são peque
 ## Fora do escopo
 
 - **Etapa 4:** gráficos (e com eles a outra entrada do detalhe do tópico, pela legenda e pelo donut), relatório, simulador "Vale a pena?" e PDF.
-- **Etapa 5:** Ajustes › Aparência (o Fosco escolhido pela pessoa), tópicos próprios (criar e apagar, com a guarda do orçamento), exportar e notificações. O push já usa o `orcamentoObra` e conta os afazeres; nada muda nele. Fica registrado que ele conta o afazer de um jeito diferente do site (achado 8).
+- **Etapa 5:** tópicos próprios (criar e apagar, com a guarda do orçamento), exportar e notificações. A escolha do tema e do vidro em Ajustes › Aparência (o Fosco escolhido pela pessoa) foi adiantada para a etapa 3 em 23/10, a pedido do Giovani, para comparar as duas doses do vidro pelo TestFlight; a cor do mockup fica de fora, porque a pele azul saiu em 21/10. O push já usa o `orcamentoObra` e conta os afazeres; nada muda nele. Fica registrado que ele conta o afazer de um jeito diferente do site (achado 8).
 - **Fora da etapa:** mudança no site além do PR 0; mudança nas `firestore.rules`.

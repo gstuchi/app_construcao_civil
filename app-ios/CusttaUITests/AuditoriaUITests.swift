@@ -184,11 +184,32 @@ final class AuditoriaUITests: XCTestCase {
         }
     }
 
+    /// Ajustes na maior letra: a Aparência no alto (as opções do vidro uma embaixo da outra, com o círculo em cima do
+    /// nome) e, rolada, a Conta; também com "Aumentar contraste" e com "Reduzir transparência", que trocam a nota pelo aviso.
     @MainActor func testAjustesNoMaiorTamanho() throws {
-        let app = abrirApp(conta: "senha-nao-confirmada", argumentos: maiorLetra + parado)
-        app.abrirAba("ajustes")
-        XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
-        try auditar(app, tiposDeAuditoria)
+        for opcao in [[], ["-custta.aumentarContraste", "YES"], solido] {
+            let app = abrirApp(conta: "senha-nao-confirmada", argumentos: maiorLetra + parado + opcao)
+            app.abrirAba("ajustes")
+            XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
+            try auditar(app, tiposDeAuditoria)
+            rolar(app)
+            try auditar(app, tiposDeAuditoria)
+            app.terminate()
+        }
+    }
+
+    /// Ajustes com superfícies sólidas, no escuro e no claro. Com "Reduzir transparência" as duas doses viram a mesma
+    /// superfície sólida, e as opções do vidro ficam esmaecidas e desligadas, com o aviso que diz por quê.
+    @MainActor func testContrasteDeAjustesNosDoisTemas() throws {
+        for tema in temas {
+            let app = abrirApp(conta: "senha", argumentos: ["-custta.tema", tema] + solido + parado)
+            app.abrirAba("ajustes")
+            XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
+            try auditar(app, [.contrast])
+            rolar(app)
+            try auditar(app, [.contrast])
+            app.terminate()
+        }
     }
 
     /// O falta pouco das contas Apple e Google, que nenhuma outra auditoria abre na maior letra.

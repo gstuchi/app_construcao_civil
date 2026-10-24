@@ -119,11 +119,13 @@ private struct VazioDoAPagar: View {
     }
 }
 
-/// Uma peça da lista de uma folha de origem, filha direta da LazyVStack: o cabeçalho de um mês ou um gasto, com o lugar
-/// dele no grupo do mês.
+/// Uma peça da lista de uma folha de origem, filha direta da LazyVStack: o cabeçalho de um mês (no A pagar, dentro do grupo)
+/// ou de uma seção (no detalhe do tópico, fora dele) ou um gasto, com o lugar dele no grupo.
 struct PecaDaOrigem: Identifiable, Equatable {
     enum Tipo: Equatable {
         case mes(MesDeGastos)
+        /// "A vencer · 6": o cabeçalho de uma seção do detalhe do tópico, fora do grupo.
+        case secao(titulo: String, quantidade: Int)
         case gasto(Gasto)
     }
 
@@ -132,10 +134,14 @@ struct PecaDaOrigem: Identifiable, Equatable {
     let primeiro: Bool
     /// O último gasto do grupo: com os cantos de baixo do grupo.
     let ultimo: Bool
+    /// O primeiro gasto de um grupo sem cabeçalho dentro (o do detalhe do tópico): com os cantos de cima do grupo. No A
+    /// pagar, quem os leva é o cabeçalho do mês.
+    var cima = false
 
     var id: String {
         switch tipo {
         case .mes(let mes): "mes-\(mes.id)"
+        case .secao(let titulo, _): "secao-\(titulo)"
         case .gasto(let gasto): gasto.id
         }
     }

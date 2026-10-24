@@ -126,7 +126,7 @@ extension OrcamentoUITests {
     }
 
     /// "Por tópico" com as frases do site, na ordem do site (quem gastou mais do previsto primeiro), e uma linha por tópico
-    /// fora do orçamento. Neste PR as linhas não abrem nada: nenhuma é botão.
+    /// fora do orçamento. As linhas com gasto são botões, que abrem o detalhe do tópico (DetalheDoTopicoUITests).
     func testPorTopicoComAsFrasesDoSiteEOsTopicosFora() {
         let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1")
         XCTAssertTrue(app.elemento("cartaoDoOrcamento").waitForExistence(timeout: 10))
@@ -143,7 +143,7 @@ extension OrcamentoUITests {
             for texto in textos { XCTAssertTrue(linha.label.contains(texto), "\(id): \"\(texto)\" em \"\(linha.label)\"") }
             XCTAssertGreaterThan(linha.frame.minY, anterior, "\(id) na ordem do site")
             anterior = linha.frame.minY
-            XCTAssertFalse(app.buttons["topicoOrc-\(id)"].exists, "\(id): neste PR a linha não abre o detalhe")
+            XCTAssertTrue(app.buttons["topicoOrc-\(id)"].exists, "\(id): com gasto, a linha é o botão do detalhe")
         }
         let acabamento = app.elemento("topicoOrc-acabamento")
         app.rolarAte(acabamento)
@@ -156,7 +156,7 @@ extension OrcamentoUITests {
         for (id, nome, gasto) in [("projeto", "Documentação", "R$ 23 mil"), ("pintura", "Pintura", "R$ 6,9 mil")] {
             let linha = app.elemento("foraOrc-\(id)")
             XCTAssertTrue(linha.label.contains(nome) && linha.label.contains(gasto), linha.label)
-            XCTAssertFalse(app.buttons["foraOrc-\(id)"].exists, "\(id): neste PR a linha não abre o detalhe")
+            XCTAssertTrue(app.buttons["foraOrc-\(id)"].exists, "\(id): fora do orçamento, a linha é o botão do detalhe")
         }
         XCTAssertLessThan(app.elemento("foraOrc-projeto").frame.minY, app.elemento("foraOrc-pintura").frame.minY, "do maior gasto ao menor")
     }
@@ -174,7 +174,7 @@ extension OrcamentoUITests {
         XCTAssertTrue(terreno.label.contains("Terreno") && terreno.label.contains("R$ 320 mil") && terreno.label.contains("38% da obra"),
                       terreno.label)
         XCTAssertLessThan(terreno.frame.minY, estrutura.frame.minY, "do maior bruto para o menor")
-        XCTAssertFalse(app.buttons["gastoTopico-terreno"].exists, "neste PR a linha não abre o detalhe")
+        XCTAssertTrue(app.buttons["gastoTopico-terreno"].exists, "a linha é o botão do detalhe")
         let dica = app.elemento("dicaDoModoTotal")
         app.rolarAte(dica)
         XCTAssertEqual(dica.label, "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")

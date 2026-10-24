@@ -49,6 +49,36 @@ final class OrcamentoUITests: XCTestCase {
         XCTAssertEqual(orcamento.minY - total.maxY, 10, accuracy: 1, "a primeira linha do grupo, logo abaixo do Total gasto")
         XCTAssertLessThanOrEqual(orcamento.maxY, corrigido.minY, "antes do Corrigido")
         XCTAssertEqual(orcamento.minX + 18, corrigido.minX, accuracy: 0.5, "no mesmo grupo")
+        // Na letra padrão, o chevron no quadro de 9 pt do mockup: a barra com os 315,1 pt dele.
+        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 315.1, accuracy: 0.5, "a largura da barra")
+    }
+
+    /// A largura da barra da linha do orçamento, por pixel (o VoiceOver junta a linha num elemento só): a corrida mais longa
+    /// de pixels que se afastam do fundo do vidro (lido 8 pt dentro da linha, na mesma linha de pixel), a partir dos 18 pt do
+    /// texto e sem chegar à borda do cartão. Em pontos.
+    private func larguraDaBarra(_ elemento: XCUIElement) -> CGFloat {
+        guard let cg = elemento.screenshot().image.cgImage else { return 0 }
+        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / elemento.frame.width)
+        var px = [UInt8](repeating: 0, count: l * a * 4)
+        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
+            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
+            return true
+        }
+        guard desenhou else { return 0 }
+        let (inicio, fundo, teto) = (Int(18 * e), Int(8 * e), Int((elemento.frame.width - 20) * e))
+        func longe(_ x: Int, _ y: Int) -> Bool {
+            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[(y * l + fundo) * 4 + $0])) > 12 }
+        }
+        var maior = 0
+        for y in 0..<a {
+            var n = 0
+            while inicio + n < l, longe(inicio + n, y) { n += 1 }
+            if n > maior, inicio + n < teto { maior = n }
+        }
+        return CGFloat(maior) / e
     }
 
     func testSemOrcamentoNenhumaLinha() {
@@ -96,7 +126,7 @@ extension OrcamentoUITests {
     }
 
     /// "Por tópico" com as frases do site, na ordem do site (quem gastou mais do previsto primeiro), e uma linha por tópico
-    /// fora do orçamento. Neste PR as linhas não abrem nada: nenhuma é botão.
+    /// fora do orçamento. As linhas com gasto são botões, que abrem o detalhe do tópico (DetalheDoTopicoUITests).
     func testPorTopicoComAsFrasesDoSiteEOsTopicosFora() {
         let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1")
         XCTAssertTrue(app.elemento("cartaoDoOrcamento").waitForExistence(timeout: 10))
@@ -113,7 +143,7 @@ extension OrcamentoUITests {
             for texto in textos { XCTAssertTrue(linha.label.contains(texto), "\(id): \"\(texto)\" em \"\(linha.label)\"") }
             XCTAssertGreaterThan(linha.frame.minY, anterior, "\(id) na ordem do site")
             anterior = linha.frame.minY
-            XCTAssertFalse(app.buttons["topicoOrc-\(id)"].exists, "\(id): neste PR a linha não abre o detalhe")
+            XCTAssertTrue(app.buttons["topicoOrc-\(id)"].exists, "\(id): com gasto, a linha é o botão do detalhe")
         }
         let acabamento = app.elemento("topicoOrc-acabamento")
         app.rolarAte(acabamento)
@@ -126,7 +156,7 @@ extension OrcamentoUITests {
         for (id, nome, gasto) in [("projeto", "Documentação", "R$ 23 mil"), ("pintura", "Pintura", "R$ 6,9 mil")] {
             let linha = app.elemento("foraOrc-\(id)")
             XCTAssertTrue(linha.label.contains(nome) && linha.label.contains(gasto), linha.label)
-            XCTAssertFalse(app.buttons["foraOrc-\(id)"].exists, "\(id): neste PR a linha não abre o detalhe")
+            XCTAssertTrue(app.buttons["foraOrc-\(id)"].exists, "\(id): fora do orçamento, a linha é o botão do detalhe")
         }
         XCTAssertLessThan(app.elemento("foraOrc-projeto").frame.minY, app.elemento("foraOrc-pintura").frame.minY, "do maior gasto ao menor")
     }
@@ -144,7 +174,7 @@ extension OrcamentoUITests {
         XCTAssertTrue(terreno.label.contains("Terreno") && terreno.label.contains("R$ 320 mil") && terreno.label.contains("38% da obra"),
                       terreno.label)
         XCTAssertLessThan(terreno.frame.minY, estrutura.frame.minY, "do maior bruto para o menor")
-        XCTAssertFalse(app.buttons["gastoTopico-terreno"].exists, "neste PR a linha não abre o detalhe")
+        XCTAssertTrue(app.buttons["gastoTopico-terreno"].exists, "a linha é o botão do detalhe")
         let dica = app.elemento("dicaDoModoTotal")
         app.rolarAte(dica)
         XCTAssertEqual(dica.label, "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")

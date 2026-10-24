@@ -92,6 +92,21 @@ extension DadosDeExemplo {
         return .objeto(raiz)
     }
 
+    /// A vitrine com um vencimento à vista no A pagar (`CUSTTA_DADOS=avista`): a caçamba de entulho no Pix, agendada para
+    /// daqui a 2 dias, antes das três parcelas do mockup. O apagar à vista de dentro da folha do A pagar ("Apagar este
+    /// gasto?", com o nome e o valor).
+    static func vitrineComVencimentoAVista(hoje: Date = .now) -> ValorJSON {
+        guard case .objeto(var raiz) = vitrine(hoje: hoje), case .lista(var obras) = raiz["obras"], case .objeto(var alphaville) = obras[0],
+              case .lista(var gastos) = alphaville["gastos"] else { return vitrine(hoje: hoje) }
+        let dia = Calendar(identifier: .gregorian).date(byAdding: .day, value: 2, to: hoje) ?? hoje
+        gastos.append(.objeto(["id": .texto("g047"), "valor": .numero(650), "topico": .texto("outros"), "descricao": .texto("Caçamba de entulho"),
+                               "data": .texto(dataLocalISO(dia, fuso: .current)), "pagamento": .texto("pix")]))
+        alphaville["gastos"] = .lista(gastos)
+        obras[0] = .objeto(alphaville)
+        raiz["obras"] = .lista(obras)
+        return .objeto(raiz)
+    }
+
     /// O teto das rules: 300 obras ("Obra 1" a "Obra 300"), para o aviso de "Nova obra".
     static func noTeto() -> ValorJSON {
         .objeto([

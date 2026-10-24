@@ -23,6 +23,64 @@ extension OrcamentoUITests {
         for t in teclas { app.buttons["tecla-\(t)"].tap() }
     }
 
+    /// O cursor da linha ativa contra o `.caret` do mockup (parte1.html no Chromium a 1×, medido por tinta em 23/10): a folga
+    /// até o último dígito, 2 pt de largura, 1,15 do em de 17 da linha de altura (o em do `.caret` é o da `.f-lin`, também no
+    /// "Só o total") e o meio dele contra o meio da tinta do último dígito (o `align-items:center` do `.d`). Ele pisca:
+    /// tenta até achar um print com ele aceso.
+    private func conferirCursor(_ linha: XCUIElement, borda: CGFloat, folga: CGFloat, meio: CGFloat, _ onde: String) {
+        var medida = cursorDoValor(linha, borda: borda), prints = 1
+        while medida == nil, prints < 8 {
+            medida = cursorDoValor(linha, borda: borda)
+            prints += 1
+        }
+        guard let medida else { return XCTFail("\(onde): o cursor não apareceu em \(prints) prints") }
+        XCTAssertEqual(medida.folga, folga, accuracy: 0.5, "\(onde): a folga de tinta do cursor ao último dígito \(medida)")
+        XCTAssertEqual(medida.largura, 2, accuracy: 0.5, "\(onde): a largura do cursor \(medida)")
+        XCTAssertEqual(medida.altura, 1.15 * 17, accuracy: 1, "\(onde): a altura do cursor \(medida)")
+        XCTAssertEqual(medida.meio, meio, accuracy: 1, "\(onde): o meio do cursor contra o do último dígito \(medida)")
+    }
+
+    /// O cursor do valor na linha, por pixel (a linha é um elemento só para o VoiceOver), como a `larguraDaBarra`: tinta é o
+    /// pixel a mais de 64, em algum canal, do fundo lido 8 pt depois do fim do conteúdo (`borda` pt antes da direita do
+    /// elemento), no meio da altura, e só conta 6 pt dentro do alto e da base. Da direita: o cursor (a corrida de colunas de
+    /// tinta), o vão e o último dígito. Com o cursor apagado, a corrida da direita é o "0", larga: nil. Em pontos.
+    private func cursorDoValor(_ linha: XCUIElement, borda: CGFloat)
+        -> (folga: CGFloat, largura: CGFloat, altura: CGFloat, meio: CGFloat)? {
+        guard let cg = linha.screenshot().image.cgImage else { return nil }
+        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / linha.frame.width)
+        var px = [UInt8](repeating: 0, count: l * a * 4)
+        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
+            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
+            return true
+        }
+        guard desenhou else { return nil }
+        let fim = Int((linha.frame.width - borda) * e), fundo = ((a / 2) * l + fim + Int(8 * e)) * 4
+        let faixa = Int(6 * e)..<(a - Int(6 * e))
+        func tinta(_ x: Int, _ y: Int) -> Bool {
+            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[fundo + $0])) > 64 }
+        }
+        func coluna(_ x: Int) -> Bool { faixa.contains { tinta(x, $0) } }
+        var x = fim + Int(4 * e)
+        while x > 0, !coluna(x) { x -= 1 }
+        let direita = x
+        while x > 0, coluna(x) { x -= 1 }
+        let esquerda = x + 1
+        while x > 0, !coluna(x) { x -= 1 }
+        let digito = x
+        while x > 0, coluna(x) { x -= 1 }
+        guard CGFloat(direita - esquerda + 1) / e < 4 else { return nil }
+        func linhas(_ colunas: ClosedRange<Int>) -> ClosedRange<Int> {
+            let comTinta = faixa.filter { y in colunas.contains { tinta($0, y) } }
+            return (comTinta.first ?? 0)...(comTinta.last ?? 0)
+        }
+        let cursor = linhas((esquerda + direita) / 2...(esquerda + direita) / 2), zero = linhas((x + 1)...digito)
+        return (CGFloat(esquerda - digito - 1) / e, CGFloat(direita - esquerda + 1) / e, CGFloat(cursor.count) / e,
+                CGFloat(cursor.lowerBound + cursor.upperBound - zero.lowerBound - zero.upperBound) / 2 / e)
+    }
+
     /// A tela Orçamento da obra e o lápis dela.
     private func editarPeloLapis(_ app: XCUIApplication) {
         let lapis = app.buttons["editarOrcamento"]
@@ -52,11 +110,14 @@ extension OrcamentoUITests {
         XCTAssertTrue(app.buttons["modoDoOrcamento-Só o total"].isSelected)
         XCTAssertTrue(app.buttons["tecla-1"].exists, "as teclas já abertas")
         XCTAssertFalse(app.buttons["barraDasTeclas-pronto"].exists, "no \"Só o total\", sem a barra")
+        XCTAssertEqual(app.buttons["tecla-1"].frame.minY - app.elemento("tecladoEncaixado").frame.minY, 12, accuracy: 0.5,
+                       "no \"Só o total\", da linha de cima das teclas encaixadas às teclas")
         XCTAssertFalse(app.buttons["tirarOrcamento"].exists, "sem orçamento, nada a tirar")
         let salvar = app.buttons["salvarOrcamento"]
         XCTAssertFalse(salvar.isEnabled, "o \"Salvar\" apagado até ter valor")
         digitar(app, "120000000")
         XCTAssertEqual(app.elemento("linhaOrcamentoTotal").value as? String, "R$\u{a0}1.200.000,00")
+        conferirCursor(app.elemento("linhaOrcamentoTotal"), borda: 16, folga: 11, meio: -0.5, "no \"Só o total\"")
         XCTAssertTrue(salvar.isEnabled)
         salvar.tap()
         XCTAssertTrue(salvar.waitForNonExistence(timeout: 5), "a folha desce")
@@ -82,6 +143,8 @@ extension OrcamentoUITests {
         app.buttons["barraDasTeclas-proximo"].tap()
         XCTAssertEqual(nome.label, "Documentação · 2 de 21")
         digitar(app, "1000000")
+        // "R$ 10.000,00" tem a largura do "R$ 30.000,00" da Elétrica do mockup (algarismos tabulares).
+        conferirCursor(app.elemento("linhaOrc-projeto"), borda: 32, folga: 10, meio: 0.5, "na linha do tópico")
         app.buttons["barraDasTeclas-anterior"].tap()
         XCTAssertEqual(nome.label, "Terreno · 1 de 21")
         app.buttons["barraDasTeclas-anterior"].tap()
@@ -131,11 +194,14 @@ extension OrcamentoUITests {
         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total")
         app.buttons["modoDoOrcamento-Por tópico"].tap()
         XCTAssertEqual(vao(ate: "totalDoOrcamento"), 12, accuracy: 0.5, "Por tópico")
-        // E sem os 10 do "Só o total" embaixo do Total ao vivo: dele até a primeira linha, só os 8 do alto da lista.
+        // O Total ao vivo com os 64 pt do mockup; a lista é cortada 6 abaixo dele, e a primeira linha vem 6 depois do corte.
+        let total = app.elemento("totalDoOrcamento").frame
+        XCTAssertEqual(total.height, 64, accuracy: 0.5, "Por tópico: a altura do Total ao vivo")
+        XCTAssertEqual(app.elemento("listaDoOrcamento").frame.minY - total.maxY, 6, accuracy: 0.5,
+                       "Por tópico: do Total ao vivo ao corte da lista")
         let primeira = app.elemento("linhaOrc-terreno")
         XCTAssertTrue(primeira.waitForExistence(timeout: 5), "linhaOrc-terreno")
-        XCTAssertEqual(primeira.frame.minY - app.elemento("totalDoOrcamento").frame.maxY, 8, accuracy: 0.5,
-                       "Por tópico: do Total ao vivo à primeira linha")
+        XCTAssertEqual(primeira.frame.minY - total.maxY, 12, accuracy: 0.5, "Por tópico: do Total ao vivo à primeira linha")
         soTotal.tap()
         XCTAssertEqual(vao(ate: "linhaOrcamentoTotal"), 18, accuracy: 0.5, "Só o total, de volta")
     }
@@ -263,8 +329,10 @@ extension OrcamentoUITests {
         XCTAssertTrue(app.elemento("linhaOrc-terreno").waitForExistence(timeout: 10))
         let lista = app.elemento("listaDoOrcamento")
         // A última linha inteira à vista antes de as teclas abrirem: depois, ela ficaria embaixo delas.
+        // A lista passa por baixo do "Salvar", que pega o toque até 7 pt acima do botão: a linha acaba antes da faixa dele.
+        let faixaDoSalvar = app.buttons["salvarOrcamento"].frame.minY - 14
         let ids = ["terreno", "projeto", "matbasicos", "fundacao", "ferragem", "estrutura", "alvenaria", "telhado", "eletrica", "hidraulica"]
-        let alvo = try XCTUnwrap(ids.last { app.elemento("linhaOrc-\($0)").exists && app.elemento("linhaOrc-\($0)").frame.maxY < lista.frame.maxY - 1 })
+        let alvo = try XCTUnwrap(ids.last { app.elemento("linhaOrc-\($0)").exists && app.elemento("linhaOrc-\($0)").frame.maxY < faixaDoSalvar })
         let linha = app.elemento("linhaOrc-\(alvo)")
         linha.tap()
         let teclas = app.elemento("tecladoEncaixado")

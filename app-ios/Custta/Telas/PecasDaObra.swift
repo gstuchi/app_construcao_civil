@@ -76,15 +76,18 @@ struct EtiquetaDoIndicador: View {
 }
 
 /// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
-/// só com orçamento), Corrigido, A pagar (a folha e a seta são da etapa 3) e Venda. Os textos e as contas são os do site
-/// (indicadoresDaObra, orcamentoObra).
+/// só com orçamento), Corrigido, A pagar (a linha inteira abre a folha dele, etapa 3) e Venda. Os textos e as contas são
+/// os do site (indicadoresDaObra, orcamentoObra).
 struct IndicadoresDaObraView: View {
     let indicadores: IndicadoresDaObra
     var orcamento: ResumoOrcamento? = nil
     /// Para onde a linha do orçamento leva (a tela Orçamento da obra).
     var rotaDoOrcamento: RotaDeObras? = nil
+    /// A seta do "A pagar · 30 dias": a folha dele.
+    let abrirAPagar: () -> Void
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
 
     /// "N lançamentos" na marca; "sem gastos" neutra, como o chip cinza do mockup.
     private var corDoTotal: EtiquetaDoIndicador.Cor { indicadores.etiquetaDoTotal == "sem gastos" ? .neutro : .marca }
@@ -107,15 +110,35 @@ struct IndicadoresDaObraView: View {
                 linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
                       identificador: "indicadorCorrigido")
                 LinhaFina().padding(.leading, 18)
-                // Sem a seta e sem o "Ver" até a etapa 3, que traz a folha do A pagar: a seta prometeria navegação (regra
-                // do Giovani de 08/10 para a seta das obras).
-                linha(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
-                      nota: "Parcelas e gastos futuros", identificador: "indicadorAPagar")
+                aPagar
                 LinhaFina().padding(.leading, 18)
                 venda
             }
             .superficie(.conteudo, em: .rect(cornerRadius: 24))
         }
+    }
+
+    /// O "A pagar · 30 dias": a linha inteira é o botão da folha dele, com a seta das linhas tocáveis no meio da altura
+    /// (o .k-chev do mockup), a mesma do "A vencer". Embaixo, "Parcelas e gastos futuros", como antes.
+    private var aPagar: some View {
+        Button(action: abrirAPagar) {
+            HStack(spacing: 4) {
+                miolo(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
+                      nota: "Parcelas e gastos futuros", corDaNota: nil)
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.semibold))
+                    // O mesmo chevron da linha do Orçamento, no mesmo cartão.
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
+                    .foregroundStyle(paleta.cor(vidro.secundario))
+                    .accessibilityHidden(true)
+                    .foraDoLaudo()
+            }
+            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("indicadorAPagar")
     }
 
     private var heroi: some View {
@@ -161,9 +184,17 @@ struct IndicadoresDaObraView: View {
         Text(texto).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
     }
 
-
     private func linha(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
                        identificador: String, corDaNota: Token? = nil) -> some View {
+        miolo(rotulo: texto, etiqueta: etiqueta, valor: valor, nota: nota, corDaNota: corDaNota)
+            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(identificador)
+    }
+
+    /// O rótulo com a etiqueta, o valor e a nota de uma linha do cartão.
+    private func miolo(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
+                       corDaNota: Token?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline) {
@@ -182,9 +213,6 @@ struct IndicadoresDaObraView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(identificador)
     }
 }
 
@@ -224,6 +252,7 @@ struct CabecalhoDoMes: View {
     let mes: MesDeGastos
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
+    @Environment(\.dentroDaFolha) private var naFolha
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -231,16 +260,19 @@ struct CabecalhoDoMes: View {
             VStack(alignment: .leading, spacing: 2) { titulo; total }
         }
         .font(.footnote.weight(.semibold))
-        .foregroundStyle(paleta.cor(vidro.secundario))
-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 6, trailing: 18))
+        .foregroundStyle(paleta.cor(secundario))
+        // Na folha, o .f-grupo .mes-cab do mockup: 16 dos lados, como as linhas da folha, e 2 embaixo.
+        .padding(naFolha ? EdgeInsets(top: 12, leading: 16, bottom: 2, trailing: 16) : EdgeInsets(top: 12, leading: 18, bottom: 6, trailing: 18))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
         .accessibilityIdentifier("mes-\(mes.id)")
     }
 
+    /// O secundário do vidro; na folha, o da folha.
+    private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
     private var titulo: some View { Text(mes.titulo) }
     private var total: some View {
-        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: vidro.secundario)
+        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: secundario)
     }
 }
 
@@ -302,6 +334,7 @@ struct LinhaDeGastoView: View {
     @Environment(\.dynamicTypeSize) private var tamanho
     @Environment(\.colorScheme) private var esquema
     @Environment(\.displayScale) private var escala
+    @Environment(\.dentroDaFolha) private var naFolha
 
     var body: some View {
         Group {
@@ -373,12 +406,15 @@ struct LinhaDeGastoView: View {
         }
         partes.append(Text(linha.data))
         let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
-        return junto.font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
+        return junto.font(.footnote).foregroundStyle(paleta.cor(secundario))
     }
 
     private func detalhe(_ texto: String) -> some View {
-        Text(texto).font(.footnote).foregroundStyle(paleta.cor(vidro.secundario))
+        Text(texto).font(.footnote).foregroundStyle(paleta.cor(secundario))
     }
+
+    /// O secundário do vidro; na folha, o da folha (o .f-grupo do mockup troca o --texto2 pelo --texto2-v).
+    private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
 }
 
 /// A etiqueta "novo" da linha que acabou de ser lançada (some com o destaque, em ~2 s).

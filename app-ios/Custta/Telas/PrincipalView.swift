@@ -44,6 +44,8 @@ struct PrincipalView: View {
                 case .editarObra(let obraId): FolhaDaObra(obraId: obraId)
                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
                 case .orcamento(let obraId): FolhaDoOrcamento(obraId: obraId)
+                case .aPagar(let obraId): FolhaDoAPagar(obraId: obraId)
+                case .topico(let obraId, let topicoId): FolhaDoTopico(obraId: obraId, topicoId: topicoId)
                 }
             }
             .environment(folhas)
@@ -123,7 +125,8 @@ extension PrincipalView {
 
     #if DEBUG
     /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
-    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`, `aPagar:<id>`,
+    /// `topico:<obra>:<tópico>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
     /// `-custta.folha editar:<gasto>`, a edição.
     private func abrirFolhaDoGancho() async {
@@ -142,6 +145,11 @@ extension PrincipalView {
             case "gastoDeVendida": folhas.aberta = .gastoDeVendida(vendidaId: id)
             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
             case "orcamento": folhas.aberta = .orcamento(obraId: id)
+            case "aPagar": folhas.aberta = .aPagar(obraId: id)
+            case "topico":
+                // topico:<obra>:<tópico>: o segundo corte separa a obra do tópico.
+                let ids = id.split(separator: ":", maxSplits: 1).map(String.init)
+                if ids.count == 2 { folhas.aberta = .topico(obraId: ids[0], topicoId: ids[1]) }
             default: break
             }
         } else if let passo, let obraId = caminhoDeObras.last?.obraId {
@@ -211,9 +219,29 @@ private struct AvisosDoPrincipal: ViewModifier {
                     }
                     .tint(paleta.cor(.texto))
             }
+            .alertaDeNaoSalvou(quando: !folhaAberta)
+            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
+    }
+}
+
+extension View {
+    /// O "Não salvou" (uma vez por erro, com "Tentar de novo"), quando `mostrar` deixa: na raiz, só com a folha fechada;
+    /// numa folha de origem, que não desce no "Salvar", dentro dela e sem outro alerta à vista.
+    func alertaDeNaoSalvou(quando mostrar: Bool) -> some View { modifier(AlertaDeNaoSalvou(mostrar: mostrar)) }
+}
+
+/// O alerta do "Não salvou" num fundo vazio, com os botões na cor do texto, como o "Sair da conta?".
+private struct AlertaDeNaoSalvou: ViewModifier {
+    let mostrar: Bool
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+
+    func body(content: Content) -> some View {
+        let gravacao = modelo.alertaDeGravacao
+        content
             .background {
                 Color.clear
-                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && !folhaAberta },
+                    .alert(gravacao?.titulo ?? "", isPresented: Binding(get: { gravacao != nil && mostrar },
                                                                          set: { if !$0 { modelo.fecharAlertaDeGravacao() } })) {
                         Button("OK", role: .cancel) {}
                         Button("Tentar de novo") { modelo.tentarDeNovo() }
@@ -222,7 +250,6 @@ private struct AvisosDoPrincipal: ViewModifier {
                     }
                     .tint(paleta.cor(.texto))
             }
-            .pausaOFundo(enquanto: !folhaAberta && (avisoDoMais != nil || gravacao != nil))
     }
 }
 

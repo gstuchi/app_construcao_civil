@@ -287,6 +287,7 @@ jobs:
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -351,7 +352,8 @@ jobs:
     runs-on: macos-26
     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
-    # encaixadas, no escuro, no claro e na maior letra. Cada PR da etapa anota aqui o tempo do job.
+    # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
+    # escuro e no claro (~20 cenas). Cada PR da etapa anota aqui o tempo do job.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -381,6 +383,7 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/laudo-etapa3.xcresult" \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
             -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
             CODE_SIGNING_ALLOWED=NO

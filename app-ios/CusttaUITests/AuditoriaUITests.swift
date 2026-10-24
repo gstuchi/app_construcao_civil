@@ -26,8 +26,10 @@ final class AuditoriaUITests: XCTestCase {
     /// Deixa fora o que não cresce de propósito (dinâmico: a cápsula de abas e o texto do botão do Google,
     /// pelo rótulo, porque a auditoria rola a tela sozinha) e o conteúdo que passa por baixo da barra de
     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
-    /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste.
-    @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType) throws {
+    /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste. Com `corteSemElemento`, deixa passar
+    /// também o "Text clipped" sem elemento, e só ele: o ponto cego do ViewThatFits na maior letra (T34), nas cenas com um à vista.
+    @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
+                                    corteSemElemento: Bool = false) throws {
         // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
         let folha = app.elemento("tituloDaFolha").exists
         let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
@@ -58,8 +60,12 @@ final class AuditoriaUITests: XCTestCase {
             && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
         try app.performAccessibilityAudit(for: tipos) { achado in
             guard let elemento = achado.element else {
-                Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
-                return false
+                // O arranjo que o ViewThatFits descartou dá "Text clipped" sem elemento, com a tela mostrando o outro inteiro.
+                // Qualquer outro achado sem elemento reprova, também nessas cenas.
+                let pontoCego = corteSemElemento && achado.auditType == .textClipped
+                Swift.print("auditoria | \(achado.compactDescription) | sem elemento | "
+                            + (pontoCego ? "ponto cego do ViewThatFits" : "reprova"))
+                return pontoCego
             }
             let fora: Bool
             let noTotal = totalMudaDeLugar && elemento.identifier.hasPrefix("totalDoOrcamento-")
@@ -428,6 +434,58 @@ extension AuditoriaUITests {
             Thread.sleep(forTimeInterval: 1)
             try auditar(app, [.contrast])
             app.terminate()
+        }
+    }
+
+    /// As folhas de origem (etapa 3, PR 2) na maior letra: o A pagar e o detalhe da Cerâmica no topo e depois de um arrasto
+    /// (como a folha do orçamento), e a edição empurrada em cada uma (a g039 no A pagar, a g021 no detalhe), com o voltar e o
+    /// nome da folha embaixo do título, todas com os quatro tipos. Onde há um ViewThatFits à vista (o cabeçalho do mês, em toda
+    /// a lista do A pagar, e o "No orçamento", no topo do detalhe), passa só o "Text clipped" sem elemento (ponto cego, T34): o
+    /// arranjo em linha que não coube dá esse achado (dois por cabeçalho no iOS 27, conforme a rolagem), e a tela mostra a
+    /// coluna inteira. Com a coluna no lugar do ViewThatFits, nenhum achado; nem identificador nem .contain dão elemento a ele,
+    /// então não há exceção por identificador. O corte com elemento segue reprovando nessas cenas: o "3 vencimentos · a partir
+    /// de amanhã" numa linha só reprova depois do arrasto (a mutação da T34). O corte dentro do .ignore da linha do gasto tem a
+    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3.
+    @MainActor func testFolhasDeOrigemNoMaiorTamanho() throws {
+        for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
+                                                     ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
+                                                     ("vitrine", "obra:v1", "aPagar:v1", "g039", "salvarGasto"),
+                                                     ("porTopico", "orcamento:v1", "topico:v1:revest", "g021", "salvarGasto")] {
+            let app = abrirApp(conta: "senha", dados: dados, abrir: abrir, folha: folha,
+                               argumentos: maiorLetra + parado + (edicao.isEmpty ? [] : ["-custta.origem", "editar:\(edicao)"]))
+            XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), "\(folha) \(edicao)")
+            Thread.sleep(forTimeInterval: 1)
+            try auditar(app, tiposDeAuditoria, corteSemElemento: edicao.isEmpty)
+            if edicao.isEmpty {
+                app.swipeUp()
+                Thread.sleep(forTimeInterval: 1.5)
+                try auditar(app, tiposDeAuditoria, corteSemElemento: folha.hasPrefix("aPagar"))
+            }
+            app.terminate()
+        }
+    }
+
+    /// As mesmas folhas no escuro e no claro, com superfícies sólidas: o A pagar, a Cerâmica no topo e rolada, a Estrutura (a
+    /// frase do "passou" no Alerta) e as duas edições (o "Apagar gasto" no Negativo).
+    @MainActor func testContrasteDasFolhasDeOrigemNosDoisTemas() throws {
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + solido + parado
+            for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
+                                                         ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
+                                                         ("porTopico", "orcamento:v1", "topico:v1:estrutura", "", "orcamentoDoTopico"),
+                                                         ("vitrine", "obra:v1", "aPagar:v1", "g039", "salvarGasto"),
+                                                         ("porTopico", "orcamento:v1", "topico:v1:revest", "g021", "salvarGasto")] {
+                let app = abrirApp(conta: "senha", dados: dados, abrir: abrir, folha: folha,
+                                   argumentos: combo + (edicao.isEmpty ? [] : ["-custta.origem", "editar:\(edicao)"]))
+                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), "\(tema) \(folha) \(edicao)")
+                Thread.sleep(forTimeInterval: 1)
+                try auditar(app, [.contrast])
+                if folha == "topico:v1:revest", edicao.isEmpty {
+                    rolar(app)
+                    try auditar(app, [.contrast])
+                }
+                app.terminate()
+            }
         }
     }
 }

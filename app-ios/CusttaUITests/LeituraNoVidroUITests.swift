@@ -604,6 +604,45 @@ extension LeituraNoVidroUITests {
         }
         cobrar(cenas)
     }
+
+    /// As folhas de origem na maior letra e com Aumentar contraste, no escuro (o molde é o testLeituraDoOrcamentoNaMaiorLetra):
+    /// o A pagar no topo e rolado e a edição de um vencimento empurrada; o detalhe da Cerâmica no topo e rolado, a Estrutura (a
+    /// frase do "passou" no Alerta, a mais fraca do laudo da letra padrão) e a edição com "Cerâmica"; com Aumentar contraste, o
+    /// A pagar e a Cerâmica. As roladas e as edições abrem pelos ganchos da lista das folhas, como no testLeituraDasFolhasDeOrigem.
+    /// Roda no job laudo-etapa3.
+    @MainActor func testLeituraDasFolhasDeOrigemNaMaiorLetra() {
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
+        let grande = escuro + maiorLetra, contraste = escuro + ["-custta.aumentarContraste", "YES"]
+        cobrar([
+            Cena(nome: "A pagar, na maior letra", conta: "senha", argumentos: grande, espera: "resumoDoAPagar", escopo: "tudo",
+                 dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
+            // A 248 pt, nos dois iPhones, a borda de cima fica no vão entre o resumo e o cabeçalho do primeiro mês: no 18 Pro (a
+            // largura da CI), 12 pt abaixo do "3 vencimentos…" e 60 acima do mês; no Pro Max, 59 e 13. Esse vão não depende do dia
+            // (o mês do primeiro vencimento vem sempre logo depois do resumo); os de baixo, sim (os vencimentos da vitrine mudam de
+            // mês com o dia). A cena mede o cabeçalho do mês e a primeira linha quase inteira.
+            Cena(nome: "A pagar, rolado, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "248"],
+                 espera: "resumoDoAPagar", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1", rolada: true),
+            Cena(nome: "A pagar, editar gasto, na maior letra", conta: "senha", argumentos: grande + ["-custta.origem", "editar:g039"],
+                 espera: "salvarGasto", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
+            Cena(nome: "detalhe, Cerâmica, topo, na maior letra", conta: "senha", argumentos: grande, espera: "orcamentoDoTopico",
+                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
+            // A 628 pt, nos dois iPhones, a borda fica no vão entre a frase do orçamento e o "A vencer · 6": no 18 Pro, 23 pt abaixo
+            // da frase e 13 acima do cabeçalho; no Pro Max, 12 e 24. Mais para baixo, as linhas dos dois iPhones se desencontram
+            // (no 18 Pro, o último a vencer quebra uma linha a mais) e nenhuma rolagem acha um vão comum nos pagos: eles ficam com
+            // a cena rolada da letra padrão.
+            Cena(nome: "detalhe, Cerâmica, rolada, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "628"],
+                 espera: "orcamentoDoTopico", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest",
+                 rolada: true),
+            Cena(nome: "detalhe, Estrutura, passou, na maior letra", conta: "senha", argumentos: grande, espera: "orcamentoDoTopico",
+                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:estrutura"),
+            Cena(nome: "detalhe, editar gasto, na maior letra", conta: "senha", argumentos: grande + ["-custta.origem", "editar:g021"],
+                 espera: "salvarGasto", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
+            Cena(nome: "A pagar com Aumentar contraste", conta: "senha", argumentos: contraste, espera: "resumoDoAPagar",
+                 escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
+            Cena(nome: "detalhe, Cerâmica, com Aumentar contraste", conta: "senha", argumentos: contraste, espera: "orcamentoDoTopico",
+                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
+        ])
+    }
 }
 
 /* O medidor com imagens sintéticas: sem abrir o app. */

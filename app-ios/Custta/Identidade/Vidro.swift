@@ -2,7 +2,7 @@ import SwiftUI
 
 /* Dose de vidro por tela (decisão do Giovani em 06/10; mockup aprovado, "Tokens de vidro, agora por
    tela"): entrar, criar conta e falta pouco usam sempre o Fosco; as telas do app, o Transparente
-   (padrão) ou o Fosco escolhido em Ajustes › Aparência (etapa 5). As opções do iPhone passam por
+   (padrão) ou o Fosco escolhido em Ajustes › Aparência. As opções do iPhone passam por
    cima das duas: "Aumentar contraste" leva tudo ao Fosco com contorno de 1,5 pt e "Reduzir
    transparência", a superfícies sólidas (a aurora continua). Aro especular, sombra e refração são
    do glassEffect do sistema; no escuro, uma camada do tom do fundo sob o vidro do conteúdo faz o que o
@@ -11,7 +11,7 @@ import SwiftUI
 
 enum TelaDoVidro: Sendable { case entrada, app }
 
-/// A escolha de Ajustes › Aparência (etapa 5); até lá vale o padrão, Transparente.
+/// A escolha de Ajustes › Aparência, deste aparelho (`Aparencia.chaveVidro`); o padrão é o Transparente.
 enum EscolhaDeVidro: String, CaseIterable, Sendable { case transparente, fosco }
 
 /// O nível que vale de fato, depois das opções do iPhone.

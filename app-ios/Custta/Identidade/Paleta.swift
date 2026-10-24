@@ -88,6 +88,8 @@ enum Token: String, CaseIterable, Sendable {
     case sobreAlerta = "SobreAlerta"
     /// O fundo da linha que acabou de entrar.
     case aceso = "Aceso"
+    /// O aro claro das barrinhas de vidro desenhadas na miniatura de cada opção do vidro (Ajustes › Aparência).
+    case aroDaMiniatura = "AroDaMiniatura"
 }
 
 struct Paleta: Equatable, Sendable {
@@ -103,8 +105,8 @@ extension EnvironmentValues {
     @Entry var paleta = Paleta()
 }
 
-/// Aparência deste aparelho: escuro e vidro Transparente por padrão. A tela de Ajustes da
-/// etapa 5 grava as duas chaves; os testes de tela passam `-custta.tema claro -custta.vidro fosco`.
+/// Aparência deste aparelho: escuro e vidro Transparente por padrão. Ajustes › Aparência grava as duas chaves; os testes
+/// de tela passam `-custta.tema claro -custta.vidro fosco`.
 enum Aparencia {
     static let chaveTema = "custta.tema"
     static let chaveVidro = "custta.vidro"

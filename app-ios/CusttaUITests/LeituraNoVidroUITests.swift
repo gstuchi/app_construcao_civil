@@ -211,17 +211,24 @@ final class LeituraNoVidroUITests: XCTestCase {
         ])
     }
 
-    /// Ajustes: o título grande (do sistema, com o halo da barra) e a versão, texto solto sobre a aurora, nos
-    /// escuro, com "Aumentar contraste" e na maior letra. No Pro Max, a versão fica em 4,42:1 no escuro
-    /// esmeralda (revisão final do PR 2).
+    /// Ajustes: o título grande (do sistema, com o halo da barra), o painel da Aparência (o rótulo, os nomes das opções e
+    /// a nota sobre o vidro, e o aviso com "Aumentar contraste"), a Conta e a versão, texto solto sobre a aurora; nos dois
+    /// temas e nas duas doses, com "Aumentar contraste" e na maior letra (no alto e rolada até a Conta e a versão, que a
+    /// Aparência empurra para baixo). No Pro Max, a versão fica em 4,42:1 no escuro esmeralda sem o halo (revisão final
+    /// do PR 2).
     @MainActor func testLeituraEmAjustes() {
         let escuro = ["-custta.tema", "escuro"] + piorMomento
-        let cenas: [(String, [String])] = [("escuro", escuro),
-                                           ("com Aumentar contraste", escuro + ["-custta.aumentarContraste", "YES"]),
-                                           ("na maior letra", escuro + maiorLetra)]
-        cobrar(cenas.map { nome, argumentos in
+        var cenas: [(String, [String], Bool)] = []
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
+            cenas += [("\(tema), Transparente", combo, false), ("\(tema), Fosco", combo + ["-custta.vidro", "fosco"], false)]
+        }
+        cenas += [("com Aumentar contraste", escuro + ["-custta.aumentarContraste", "YES"], false),
+                  ("na maior letra", escuro + maiorLetra, false),
+                  ("na maior letra, rolada", escuro + maiorLetra + ["-custta.rolagem", "2000"], true)]
+        cobrar(cenas.map { nome, argumentos, rolada in
             Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
-                 aba: "ajustes")
+                 aba: "ajustes", rolada: rolada)
         })
     }
 }

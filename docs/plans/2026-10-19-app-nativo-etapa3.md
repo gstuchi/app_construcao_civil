@@ -12835,3 +12835,943 @@ git add app-ios/Custta/Telas/FolhaDoAPagar.swift \
   tests/app-ios.test.cjs
 git commit -m "refactor: a lista da folha de origem em comum, com o A pagar por cima" -m "A lista da folha do A pagar sai da FolhaDoAPagar.swift e vira a ListaDaOrigem, que o detalhe do tópico vai montar na Tarefa 30. O difícil dessa lista está nos tempos e nos turnos (a luz de 2 s, o foco no fim do voltar e aos 500 ms depois de apagar, o anúncio aos 700 ms, o apagar no turno seguinte ao voltar, a recusa do \"Carregando\"), e duas cópias, uma por folha, divergiriam na primeira correção." -m "A ListaDaOrigem recebe as peças, as peças da obra já gravada (para onde o VoiceOver vai depois de apagar), a linha de cada gasto e, por @ViewBuilder, o cabeçalho, o vazio e o rodapé; a ordem das linhas sai das próprias peças. O corpo, a volta da edição, o apagar e o anúncio mudam de lugar sem mudar de comportamento. No A pagar ficam a folha, sem mudança, e uma ListaDoAPagar só com os dados: a obra, os vencimentos, os tópicos, o resumo, o vazio e a frase do fim. A PecaDaOrigem, o pecasDaOrigem e o FundoDoGrupo ficam onde estão." -m "As guardas Node que liam a lista na FolhaDoAPagar.swift (as peças filhas diretas da LazyVStack e o apagar no turno seguinte ao voltar) passam a ler a ListaDaOrigem.swift, e uma nova exige que a folha do A pagar monte a lista comum, sem lista própria. A prova de que o A pagar não muda: a FolhasDeOrigemUITests inteira (24 de 24), a ObraUITests (7 de 7) e o CusttaTests (156, com os 10 do FolhasDeOrigemTests) verdes, e os prints do A pagar no 18 Pro, no escuro e no claro, na letra padrão e na maior, com a lista no alto e no fim, iguais pixel a pixel aos de antes com o fundo parado (de uma rodada para outra só mudam o relógio e a barra de início do sistema); com o fundo andando, só muda a aurora atrás da folha, que para no quadro em que a folha a cobre."
 ```
+
+### Task 30: Folha do detalhe do tópico
+
+A folha do detalhe do tópico (o `folhaTopico` da parte 1 do mockup) abre pelo `Folhas.Qual.topico(obraId:topicoId:)`, e nos testes pelo gancho `CUSTTA_FOLHA=topico:<obra>:<tópico>`. As linhas da tela Orçamento que a abrem são a Tarefa 31. Ela é montada como a do A pagar:
+- o `NavigationStack` da `OrigemDaEdicao`;
+- o `passoDaFolha(nome, subtitulo: obra, fechar: .esquerda, escape: .fechar)`;
+- o `alertaDeNaoSalvou` e o `folhaDoApp` em volta;
+- fecha se a obra some.
+
+A lista é a `ListaDaOrigem` da Tarefa 29, com as linhas sem o tópico (`comTopico: false`). Por isso a edição empurrada, a volta e o apagar já vêm dela; os testes deles são a Tarefa 32.
+
+- **O resumo** é um `GrupoDaFolha` (16/16/14). Nele vão:
+  - o ícone do tópico, de 34 pt, que sai na letra grande;
+  - a linha "N gastos · X% da obra";
+  - o bruto no `ValorEmDinheiro(.title.bold)`;
+  - o corrigido.
+- **A linha do orçamento do tópico** fica embaixo de um fio, com o `rotuloNoOrcamento`, o previsto, a `BarraDoOrcamento` e a `fraseDoOrcamentoNoDetalhe`. A frase usa o `Alerta`, em semibold, no "passou". O sem valor mostra o `semValorNoOrcamento`; no modo total, não há linha.
+- **As seções "A vencer" e "Pagos"** são peças da lista, fora do grupo: `PecaDaOrigem.Tipo.secao(titulo:quantidade:)`, com o cabeçalho em footnote semibold e o "· N" em medium. O primeiro gasto de cada seção abre o grupo (`cima`, um campo novo da peça, com padrão `false`). O A pagar não muda: não tem seção, e o `cima` dele é sempre falso.
+- **Os falsos ganham o `CUSTTA_DADOS=topicoLongo`:** 120 diárias na Mão de obra, para a lista longa.
+- **A suíte nova roda num job novo da CI, o `app-etapa3-b`** (teto de 60 min), e o `app` a pula. O `app-etapa3` já leva de 51 a 59 dos 90 min dele e não cresce; o `app-etapa3-b` recebe também as suítes de tela do PR 3. A guarda do workflow passa a contar os oito jobs.
+- **Contra o mockup,** os textos e as cores, medidos por pixel, são iguais, e a barra fica na mesma altura. Ficam três diferenças:
+  - o grupo do resumo começa 6 pt mais baixo e é 7 pt mais curto: o alto da folha do sistema e da lista comum é o mesmo do A pagar, e as alturas de linha do SwiftUI são menores que as do CSS;
+  - o fio é de 1 px, contra 1 pt;
+  - as linhas de gasto da etapa 2 têm 85 pt, contra 88.
+
+**Files:**
+- Create: `app-ios/Custta/Telas/FolhaDoTopico.swift`
+- Test (criar): `app-ios/CusttaTests/DetalheDoTopicoTests.swift`
+- Test (criar): `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`
+- Modify: `.github/workflows/app-ios.yml`
+- Modify: `app-ios/Custta/Estado/Folhas.swift`
+- Modify: `app-ios/Custta/Falsos/MontarFalso.swift`
+- Modify: `app-ios/Custta/Falsos/VitrineDoOrcamento.swift`
+- Modify: `app-ios/Custta/Telas/FolhaDoAPagar.swift`
+- Modify: `app-ios/Custta/Telas/ListaDaOrigem.swift`
+- Modify: `app-ios/Custta/Telas/PrincipalView.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+- Test (alterar): `tests/workflow.test.cjs`
+
+**Interfaces:**
+- Consumes:
+  - `detalheDoTopico(_:topico:hoje:taxaMensal:)`, `DetalheDoTopico`, `OrcamentoDoTopico` e `semValorNoOrcamento` (Tarefa 22);
+  - `linhaDeGasto(_:topicos:comTopico:)`, `rotuloNoOrcamento` e `fraseDoOrcamentoNoDetalhe(_:)` (Tarefa 28);
+  - `ListaDaOrigem`, `PecaDaOrigem` e `FundoDoGrupo` (Tarefa 29);
+  - `OrigemDaEdicao`, `passoDaFolha`, `folhaDoApp` e `alertaDeNaoSalvou` (Tarefa 24);
+  - `GrupoDaFolha`, `SeparadorDaFolha`, `ValorEmDinheiro` e `BarraDoOrcamento` (app).
+- Produces:
+  - `Folhas.Qual.topico(obraId:topicoId:)` e o gancho `CUSTTA_FOLHA=topico:<obra>:<tópico>`;
+  - `FolhaDoTopico(obraId:topicoId:)`, `ResumoDoDetalhe`, `OrcamentoNoDetalhe` e `CabecalhoDaSecao`;
+  - `PecaDaOrigem.Tipo.secao(titulo:quantidade:)`, `PecaDaOrigem.cima` e `pecasDoDetalhe(_:)`;
+  - `partesDoCorrigido`;
+  - `CUSTTA_DADOS=topicoLongo`;
+  - o job `app-etapa3-b`;
+  - o identificador `resumoDoTopico`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Criar `app-ios/CusttaTests/DetalheDoTopicoTests.swift`:
+
+```swift
+import Foundation
+import Testing
+@testable import Custta
+import CusttaNucleo
+
+/* As peças do detalhe do tópico (etapa 3, PR 2), sobre a lista das folhas de origem: "A vencer · N" e "Pagos · N", cada
+   seção só com gasto, com o cabeçalho fora do grupo; o primeiro gasto da seção leva os cantos de cima do grupo e o último,
+   os de baixo (o fundo do grupo é desenhado por peça, as peças são filhas diretas da LazyVStack). E o corrigido do resumo,
+   partido em duas partes para a letra grande. */
+@MainActor
+struct DetalheDoTopicoTests {
+    func gasto(_ id: String, _ data: String, topico: String = "revest") -> ValorJSON {
+        .objeto(["id": .texto(id), "valor": .numero(100), "topico": .texto(topico), "descricao": .texto(""), "data": .texto(data),
+                 "pagamento": .texto("pix")])
+    }
+
+    func obra(_ gastos: [ValorJSON]) -> Obra {
+        Obra(arvore: ["id": .texto("o1"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+                      "gastos": .lista(gastos)])
+    }
+
+    func pecas(_ o: Obra) -> [PecaDaOrigem] {
+        pecasDoDetalhe(detalheDoTopico(o, topico: "revest", hoje: "2026-10-12", taxaMensal: 1))
+    }
+
+    @Test func pecasDoDetalheComSecoesEOLugarNoGrupo() {
+        // Hoje 12/10/26: dois a vencer, três pagos (um deles hoje) e um gasto de outro tópico, que fica fora.
+        let p = pecas(obra([gasto("p1", "2026-09-01"), gasto("v2", "2026-11-20"), gasto("hoje", "2026-10-12"),
+                            gasto("v1", "2026-10-20"), gasto("outro", "2026-10-01", topico: "pintura"), gasto("p2", "2026-10-05")]))
+        #expect(p.map(\.id) == ["secao-A vencer", "v1", "v2", "secao-Pagos", "hoje", "p2", "p1"],
+                "a vencer, o próximo primeiro; pagos, o mais novo primeiro")
+        #expect(p[0].tipo == .secao(titulo: "A vencer", quantidade: 2))
+        #expect(p[3].tipo == .secao(titulo: "Pagos", quantidade: 3))
+        #expect(p.map(\.cima) == [false, true, false, false, true, false, false],
+                "o cabeçalho fica fora do grupo: os cantos de cima vão no primeiro gasto da seção")
+        #expect(p.map(\.primeiro) == [false, true, false, false, true, false, false], "o primeiro gasto vem sem a linha fina em cima")
+        #expect(p.map(\.ultimo) == [false, false, true, false, false, false, true], "o último gasto leva os cantos de baixo")
+    }
+
+    @Test func semAVencerSoPagos() {
+        let p = pecas(obra([gasto("p1", "2026-09-01"), gasto("p2", "2026-10-05")]))
+        #expect(p.map(\.id) == ["secao-Pagos", "p2", "p1"], "a seção sem gasto não aparece")
+        #expect(p.first?.tipo == .secao(titulo: "Pagos", quantidade: 2))
+        #expect(p.map(\.cima) == [false, true, false])
+        #expect(p.map(\.ultimo) == [false, false, true])
+        // Um gasto só, a vencer: o primeiro e o último da seção, com os quatro cantos; sem "Pagos".
+        let um = pecas(obra([gasto("v", "2026-12-01")]))
+        #expect(um.map(\.id) == ["secao-A vencer", "v"])
+        #expect(um.last.map { $0.cima && $0.primeiro && $0.ultimo } == true)
+        #expect(pecas(obra([gasto("outro", "2026-10-01", topico: "pintura")])).isEmpty, "sem gasto do tópico, nenhuma peça")
+    }
+
+    @Test func oCorrigidoDoResumoEODoNucleo() {
+        // Partido para o dinheiro ir para a própria linha na letra grande; junto, o texto do núcleo (o do site).
+        let d = detalheDoTopico(obra([gasto("p1", "2026-09-01"), gasto("v1", "2026-10-20")]), topico: "revest", hoje: "2026-10-12",
+                                taxaMensal: 1)
+        let partes = partesDoCorrigido(d)
+        #expect(partes.antes + " " + partes.valor == d.corrigido)
+        #expect(partes.valor == moeda(d.resumo.corrigido))
+    }
+}
+```
+
+Criar `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`:
+
+```swift
+import XCTest
+import notify
+
+/* O detalhe do tópico da etapa 3 (PR 2), aberto pelo gancho por cima da tela Orçamento da Casa Alphaville do mockup (as
+   linhas da tela que o abrem chegam na Tarefa 31): a Cerâmica, com o resumo, a linha do orçamento do tópico e as seções "A
+   vencer" e "Pagos", a linha de gasto sem o tópico; a Documentação, fora do orçamento, com "Sem valor no orçamento" no lugar
+   da barra; no modo total (a vitrine de sempre), sem a linha do orçamento; a obra apagada em outro aparelho fecha a folha.
+   A edição, o apagar e a folha que desce sem gasto são da Tarefa 32. */
+@MainActor
+final class DetalheDoTopicoUITests: XCTestCase {
+    /// A tela Orçamento da Casa Alphaville (v1) com o detalhe do tópico aberto por cima.
+    private func abrirDetalhe(_ topico: String, dados: String = "porTopico", extra: [String: String] = [:]) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: dados, abrir: "orcamento:v1", folha: "topico:v1:\(topico)", extra: extra)
+        XCTAssertTrue(app.elemento("resumoDoTopico").waitForExistence(timeout: 10), "resumoDoTopico não apareceu")
+        return app
+    }
+
+    /// Rola a lista da folha (o meio da tela) até o elemento estar inteiro à vista, com o arrasto terminando parado.
+    private func rolarNaFolha(_ app: XCUIApplication, ate id: String, tentativas: Int = 8) -> XCUIElement {
+        let e = app.elemento(id)
+        for _ in 0..<tentativas {
+            if e.exists, e.frame.minY > 100, e.frame.maxY < app.frame.maxY - 40 { break }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        return e
+    }
+
+    /// As linhas, uma embaixo da outra, na ordem dada.
+    private func emOrdem(_ app: XCUIApplication, _ ids: [String], _ contexto: String) {
+        let linhas = ids.map { app.elemento("gasto-\($0)") }
+        XCTAssertEqual(linhas.filter(\.exists).count, ids.count, "\(contexto): as \(ids.count) linhas na folha")
+        for (a, b) in zip(linhas, linhas.dropFirst()) where a.exists && b.exists {
+            XCTAssertLessThanOrEqual(a.frame.maxY, b.frame.minY + 1, "\(contexto): \(a.identifier) antes de \(b.identifier)")
+        }
+    }
+
+    private func confere(_ elemento: XCUIElement, contem textos: [String]) {
+        for texto in textos { XCTAssertTrue(elemento.label.contains(texto), "\"\(texto)\" em \"\(elemento.label)\"") }
+    }
+
+    func testDetalheAbreComOResumoEAsSecoes() {
+        let app = abrirDetalhe("revest")
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Cerâmica"), app.elemento("tituloDaFolha").label)
+        let resumo = app.elemento("resumoDoTopico")
+        confere(resumo, contem: ["11 gastos · 9% da obra", "R$\u{a0}76.700,00", "corrigido: R$\u{a0}77.758,20"])
+        // A linha do orçamento do tópico, no mesmo grupo, embaixo do corrigido: o previsto e a frase do site.
+        let orcamento = app.elemento("orcamentoDoTopico")
+        XCTAssertTrue(orcamento.exists, "a linha do orçamento do tópico, no modo por tópico")
+        confere(orcamento, contem: ["No orçamento", "R$\u{a0}80.000,00", "Faltam R$ 3,3 mil — 96%"])
+        XCTAssertLessThanOrEqual(resumo.frame.maxY, orcamento.frame.minY, "embaixo do corrigido")
+        // "A vencer · 6", com o próximo primeiro; a linha de gasto sem o tópico, que o título da folha já diz.
+        let aVencer = app.elemento("secao-A vencer")
+        XCTAssertEqual(aVencer.label, "A vencer · 6")
+        XCTAssertLessThanOrEqual(orcamento.frame.maxY, aVencer.frame.minY, "a seção vem depois do resumo")
+        XCTAssertLessThanOrEqual(aVencer.frame.maxY, app.elemento("gasto-g032").frame.minY + 1, "o cabeçalho em cima do grupo")
+        emOrdem(app, ["g032", "g033", "g034", "g035", "g036", "g037"], "a vencer")
+        let proxima = app.elemento("gasto-g032")
+        XCTAssertTrue(proxima.label.hasPrefix("Porcelanato 60×60, parcela 5 de 10. Cartão, "), proxima.label)
+        XCTAssertFalse(proxima.label.contains("Cerâmica"), "o tópico sai da linha e do VoiceOver: \(proxima.label)")
+        XCTAssertEqual(proxima.value as? String, "R$\u{a0}6.150,00")
+        // Depois, "Pagos · 5", com o mais novo primeiro.
+        _ = rolarNaFolha(app, ate: "gasto-g021")
+        let pagos = app.elemento("secao-Pagos")
+        XCTAssertEqual(pagos.label, "Pagos · 5")
+        XCTAssertLessThanOrEqual(app.elemento("gasto-g037").frame.maxY, pagos.frame.minY + 1, "\"Pagos\" depois do último a vencer")
+        XCTAssertLessThanOrEqual(pagos.frame.maxY, app.elemento("gasto-g031").frame.minY + 1, "o cabeçalho em cima do grupo")
+        emOrdem(app, ["g031", "g030", "g029", "g028", "g021"], "pagos")
+        let maisAntigo = app.elemento("gasto-g021")
+        XCTAssertTrue(maisAntigo.label.hasPrefix("Contrapiso e regularização. Pix, "), maisAntigo.label)
+        // Só o × se chama Fechar (o botão "Fechar" do site sai), e ele fecha.
+        let fechar = app.buttons.matching(NSPredicate(format: "label == 'Fechar'")).allElementsBoundByIndex
+        XCTAssertEqual(fechar.map(\.identifier), ["fecharFolha"], "só o × se chama Fechar")
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(resumo.waitForNonExistence(timeout: 5), "o × fecha")
+    }
+
+    func testForaDoOrcamentoMostraSemValor() {
+        let app = abrirDetalhe("projeto")
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Documentação"), app.elemento("tituloDaFolha").label)
+        confere(app.elemento("resumoDoTopico"), contem: ["2 gastos · 3% da obra", "R$\u{a0}22.880,50", "corrigido: R$\u{a0}26.217,37"])
+        // No lugar do previsto, da barra e da frase, a frase do fora do orçamento.
+        XCTAssertEqual(app.elemento("orcamentoDoTopico").label, "Sem valor no orçamento: não entra na comparação.")
+        // Os dois já pagos: só a seção "Pagos".
+        XCTAssertFalse(app.elemento("secao-A vencer").exists, "sem gasto a vencer, a seção não aparece")
+        XCTAssertEqual(app.elemento("secao-Pagos").label, "Pagos · 2")
+        emOrdem(app, ["g003", "g002"], "pagos")
+        let linha = app.elemento("gasto-g002")
+        XCTAssertTrue(linha.label.hasPrefix("Projeto arquitetônico. Pix, "), linha.label)
+    }
+
+    func testNoModoTotalSemLinhaDoOrcamento() {
+        let app = abrirDetalhe("revest", dados: "vitrine")
+        let resumo = app.elemento("resumoDoTopico")
+        confere(resumo, contem: ["11 gastos · 9% da obra", "R$\u{a0}76.700,00", "corrigido: R$\u{a0}77.758,20"])
+        XCTAssertFalse(app.elemento("orcamentoDoTopico").exists, "só o total no orçamento: o tópico não tem linha do orçamento")
+        let aVencer = app.elemento("secao-A vencer")
+        XCTAssertEqual(aVencer.label, "A vencer · 6")
+        XCTAssertLessThanOrEqual(resumo.frame.maxY, aVencer.frame.minY, "a seção logo depois do resumo")
+        emOrdem(app, ["g032", "g033"], "a vencer")
+    }
+
+    func testObraApagadaEmOutroAparelhoFechaODetalhe() {
+        let app = abrirDetalhe("revest", extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(app.buttons["fecharFolha"].waitForNonExistence(timeout: 10), "a obra sumiu: a folha fecha")
+        XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "e a tela Orçamento volta para Obras")
+    }
+}
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -647,9 +647,11 @@ test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar es
+   assert.match(passos, /let temOQuePerder = perguntar\(\)[\s\S]*?\.interactiveDismissDisabled\(temOQuePerder\)/, 'lida no corpo do próprio FolhaDoApp');
+   for(const f of arquivosSwift('app-ios/Custta').filter(f => !f.endsWith('FolhaEmPassos.swift')))
+     assert.doesNotMatch(ler(f), /\.interactiveDismissDisabled\(/, `${f}: a trava do puxar só no FolhaDoApp, fora da pilha`);
+-  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
+-  assert.match(aPagar, /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
+-               'o folhaDoApp em volta da pilha da origem, com a mudança lida por ele');
++  // As duas folhas de origem (o A pagar e o detalhe do tópico) montam a pilha do mesmo jeito: o chevron, a borda e o puxar
++  // com mudança, que só a suíte do A pagar testa, valem para as duas.
++  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift', 'app-ios/Custta/Telas/FolhaDoTopico.swift'])
++    assert.match(ler(f), /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
++                 `${f}: o folhaDoApp em volta da pilha da origem, com a mudança lida por ele`);
+   const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
+   assert.match(origem, /\.navigationBarBackButtonHidden\(sujo\)\n\s*\.toolbar \{\n\s*if sujo \{\n\s*ToolbarItem\(placement: \.topBarLeading\)/,
+                'o voltar do sistema sai por modificador, e o chevron entra pela barra');
+@@ -810,13 +812,20 @@ test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com
+   let fim = t.indexOf('{', pecas) + 1;
+   for(let n = 1; n > 0 && fim < t.length; fim++) n += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+   assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
++  // O detalhe do tópico: o cabeçalho da seção ("A vencer · 6") é uma peça fora do grupo, sem o fundo, e os cantos de cima do
++  // grupo vão no primeiro gasto, pela peça (no A pagar, nunca: quem os leva é o cabeçalho do mês).
++  const secao = t.slice(pecas, fim).match(/case \.secao\([^)]*\):\n([\s\S]*?)\n\s*case /);
++  assert.ok(secao, 'o cabeçalho da seção do detalhe é uma peça da lista');
++  assert.doesNotMatch(secao[1], /FundoDoGrupo|GrupoDaFolha/, 'o cabeçalho da seção fora do grupo, sem o fundo');
++  assert.match(t.slice(pecas, fim), /case \.gasto\(let gasto\):[\s\S]*\.modifier\(FundoDoGrupo\(cima: peca\.cima, baixo: peca\.ultimo\)\)/,
++               'os cantos de cima do grupo no gasto vêm da peça');
+ });
+ 
+ test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
+   // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
+   // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de
+   // cada gasto, o cabeçalho, o vazio e o rodapé; as peças filhas diretas da LazyVStack da lista, a guarda de cima confere.
+-  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift']){
++  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift', 'app-ios/Custta/Telas/FolhaDoTopico.swift']){
+     const t = ler(f);
+     assert.match(t, /\bListaDaOrigem\(obra: /, `${f}: a folha monta a lista comum`);
+     assert.doesNotMatch(t, /\b(?:ScrollViewReader|ScrollView|LazyVStack|ForEach)\s*[({]|\bPerguntaDeApagar\(|\bfocoNaOrigem\(/,
+```
+
+Em `tests/workflow.test.cjs`:
+
+```diff
+--- a/tests/workflow.test.cjs
++++ b/tests/workflow.test.cjs
+@@ -228,10 +228,10 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
+ assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
+ assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
+ assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
+-assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 7, 'build, testes, os testes da etapa 3, os três laudos e auditoria sem assinatura');
++assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 8, 'build, testes, os testes da etapa 3 (app-etapa3 e app-etapa3-b), os três laudos e auditoria sem assinatura');
+ assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
+ assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
+-assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 7, 'build, testes, os testes da etapa 3, os três laudos e auditoria com os pacotes travados');
++assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 8, 'build, testes, os testes da etapa 3 (app-etapa3 e app-etapa3-b), os três laudos e auditoria com os pacotes travados');
+ // O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3 e auditoria, em paralelo: o app pula
+ // os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 (as da etapa 3) e o
+ // auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos as da parte 3 e as da etapa 3,
+@@ -239,7 +239,7 @@ assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile
+ // Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
+ const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
+ const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
+-const jobEtapa3 = jobAppIos('laudo-etapa3'), jobAppEtapa3 = jobAppIos('app-etapa3');
++const jobEtapa3 = jobAppIos('laudo-etapa3'), jobAppEtapa3 = jobAppIos('app-etapa3'), jobAppEtapa3b = jobAppIos('app-etapa3-b');
+ assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
+   'o job app pula o laudo e as auditorias');
+ assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
+@@ -273,31 +273,34 @@ for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['la
+   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${nome}\\.xcresult"[\\s\\S]*if: failure\\(\\)[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${nome}\\.xcresult`),
+     `o job ${nome} guarda o próprio resultado quando reprova`);
+ }
+-// Os testes de tela da etapa 3 rodam no app-etapa3, em paralelo com o app, que passou do teto de 75 min com eles. Cada suíte
+-// de tela que o app pula (inteira) roda noutro job, uma vez só: as leituras e as auditorias nos laudos e no auditoria (teste
+-// por teste, acima), e as outras, inteiras, no app-etapa3, que só roda o que o app pula. Pega a suíte que sai do app e não
+-// entra em nenhum job, e a que entra no app-etapa3 sem sair do app (roda nos dois).
++// Os testes de tela da etapa 3 rodam no app-etapa3 e no app-etapa3-b (o app-etapa3 não cresce mais: 55 a 58,8 min), em
++// paralelo com o app, que passou do teto de 75 min com eles. Cada suíte de tela que o app pula (inteira) roda noutro job,
++// uma vez só: as leituras e as auditorias nos laudos e no auditoria (teste por teste, acima), e as outras, inteiras, no
++// app-etapa3 ou no app-etapa3-b, que só rodam o que o app pula. Pega a suíte que sai do app e não entra em nenhum job, e a
++// que entra num dos dois sem sair do app (roda duas vezes).
+ const suitesInteiras = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/(\\w+)(?![\\w/])`, 'g'))].map(m => m[1]);
+ const suitesQueRodam = job => [...job.matchAll(/-only-testing:CusttaUITests\/(\w+)/g)].map(m => m[1]);
+ assert.ok(!/-skip-testing:CusttaUITests\/\w+\//.test(jobApp), 'o app pula suítes de tela inteiras');
+-assert.ok(!/-(?:only|skip)-testing:CusttaUITests\/\w+\//.test(jobAppEtapa3), 'o app-etapa3 roda suítes de tela inteiras');
+-assert.ok(suitesInteiras(jobAppEtapa3, 'only').length > 0, 'o app-etapa3 roda só as suítes da etapa 3 (sem -only-testing, rodaria todas)');
++for(const [nome, job] of [['app-etapa3', jobAppEtapa3], ['app-etapa3-b', jobAppEtapa3b]]){
++  assert.ok(!/-(?:only|skip)-testing:CusttaUITests\/\w+\//.test(job), `o ${nome} roda suítes de tela inteiras`);
++  assert.ok(suitesInteiras(job, 'only').length > 0, `o ${nome} roda só as suítes da etapa 3 (sem -only-testing, rodaria todas)`);
++  assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
++}
+ const puladasNoApp = suitesInteiras(jobApp, 'skip');
+ const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobAuditoria].flatMap(suitesQueRodam))];
+-assert.deepStrictEqual([...nosLaudos, ...suitesInteiras(jobAppEtapa3, 'only')].sort(), [...puladasNoApp].sort(),
+-  'a suíte de tela que o app pula roda nos laudos, no auditoria ou no app-etapa3, uma vez só, e o app-etapa3 roda só o que o app pula');
++assert.deepStrictEqual([...nosLaudos, ...suitesInteiras(jobAppEtapa3, 'only'), ...suitesInteiras(jobAppEtapa3b, 'only')].sort(), [...puladasNoApp].sort(),
++  'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3 ou no app-etapa3-b, uma vez só, e os dois rodam só o que o app pula');
+ const telas = readdirSync(join(__dirname, '..', 'app-ios', 'CusttaUITests')).filter(f => f.endsWith('.swift'))
+   .map(f => readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', f), 'utf8')).join('\n');
+ for(const suite of puladasNoApp)
+   assert.match(telas, new RegExp(`\\bclass ${suite}\\b`), `o app-ios.yml divide ${suite}, que não existe no CusttaUITests`);
+-assert.match(jobAppEtapa3, /\n    runs-on: macos-26\n/, 'o job app-etapa3 roda no macOS 26 fixo');
+ // O resultado sobe também quando o job é cancelado: o run 39710458060 foi cortado no teto e ficou sem xcresult.
+-for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', jobAppEtapa3, 'testes-etapa3']])
++for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', jobAppEtapa3, 'testes-etapa3'], ['app-etapa3-b', jobAppEtapa3b, 'testes-etapa3-b']])
+   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${resultado}\\.xcresult"[\\s\\S]*\\n\\s+if: failure\\(\\) \\|\\| cancelled\\(\\)\\n[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${resultado}\\.xcresult`),
+     `o job ${nome} guarda o próprio resultado quando reprova e quando é cortado no teto`);
+-assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
+-assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
+-for(const job of ['nucleo', 'app', 'app-etapa3', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
++assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
++assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
++for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
+   assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
+ const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
+ const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖" | sort -u
+node tests/workflow.test.cjs 2>&1 | grep -E "^AssertionError"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected:
+- **Node:** reprovam três, com `ℹ pass 53` e `ℹ fail 3`.
+  - `✖ folhas de origem: cada folha monta a lista comum, sem lista própria` e `✖ volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo`, com o `ENOENT` do `FolhaDoTopico.swift`;
+  - `✖ lista da folha de origem: as peças são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça`, com `AssertionError [ERR_ASSERTION]: o cabeçalho da seção do detalhe é uma peça da lista`.
+- **O workflow:** `AssertionError [ERR_ASSERTION]: build, testes, os testes da etapa 3 (app-etapa3 e app-etapa3-b), os três laudos e auditoria sem assinatura`.
+- **O `CusttaTests` não compila:**
+  - `value of type 'PecaDaOrigem' has no member 'cima'` (3);
+  - `type 'PecaDaOrigem.Tipo' has no member 'secao'` (2, e 1 com `Tipo?`);
+  - `cannot find 'pecasDoDetalhe' in scope`;
+  - `cannot find 'partesDoCorrigido' in scope`.
+- **Só com os testes de tela no lugar,** os 4 de `DetalheDoTopicoUITests` reprovam em `XCTAssertTrue failed - resumoDoTopico não apareceu` (`Executed 4 tests, with 7 failures`): o gancho `topico:` ainda não abre nada.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -118,7 +118,7 @@ jobs:
+ 
+       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
+       # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
+-      # testes de tela da etapa 3, no app-etapa3.
++      # testes de tela da etapa 3, no app-etapa3 e no app-etapa3-b.
+       - name: Testes de unidade e de tela no simulador
+         run: |
+           set -o pipefail
+@@ -137,6 +137,7 @@ jobs:
+             -skip-testing:CusttaUITests/AuditoriaUITests \
+             -skip-testing:CusttaUITests/OrcamentoUITests \
+             -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
++            -skip-testing:CusttaUITests/DetalheDoTopicoUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
+@@ -156,7 +157,7 @@ jobs:
+     # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
+     # lenta (≈ 51 no run 39799242127). O app, com as mesmas suítes, levou 42 min num run e 67 no outro: cada job pega a
+     # sua VM. O teto vai pela mais lenta: 90, como o do app. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do
+-    # job; este não cresce mais, e as suítes de tela do PR 3 vão para um job novo.
++    # job; este não cresce mais: a suíte do detalhe do tópico (PR 2) e as de tela do PR 3 vão para o app-etapa3-b.
+     timeout-minutes: 90
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -196,6 +197,50 @@ jobs:
+           path: ${{ runner.temp }}/testes-etapa3.xcresult
+           retention-days: 7
+ 
++  app-etapa3-b:
++    runs-on: macos-26
++    # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
++    # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests; no PR 3, as suítes de tela dele.
++    # O mesmo preparo do app-etapa3, em paralelo com ele: ~25 min com o detalhe (a suíte e ~8 de preparo e 1º boot). Teto de
++    # 60, mais que o dobro numa VM lenta; como no app-etapa3, cada PR da etapa anota aqui o tempo do job e, passando de ~50,
++    # a suíte nova vai para um job novo.
++    timeout-minutes: 60
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
++        with:
++          node-version: 22
++
++      - name: Versão do Xcode
++        run: xcodebuild -version
++
++      # Os mesmos serviços falsos do job app, que pula estas suítes.
++      - name: Testes de tela da etapa 3 no simulador (parte b)
++        run: |
++          set -o pipefail
++          DESTINO="$(node scripts/simulador-ios.mjs)"
++          echo "Simulador: $DESTINO"
++          xcodebuild test \
++            -project app-ios/Custta.xcodeproj \
++            -scheme Custta \
++            -destination "$DESTINO" \
++            -derivedDataPath app-ios/build \
++            -skipMacroValidation \
++            -skipPackagePluginValidation \
++            -onlyUsePackageVersionsFromResolvedFile \
++            -resultBundlePath "$RUNNER_TEMP/testes-etapa3-b.xcresult" \
++            -only-testing:CusttaUITests/DetalheDoTopicoUITests \
++            CODE_SIGNING_ALLOWED=NO
++
++      # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
++      - name: Resultado dos testes da etapa 3 (parte b) quando reprovam ou o job é cortado
++        if: failure() || cancelled()
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
++        with:
++          name: testes-etapa3-b-app-ios
++          path: ${{ runner.temp }}/testes-etapa3-b.xcresult
++          retention-days: 7
++
+   laudo:
+     runs-on: macos-26
+     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
+```
+
+Em `app-ios/Custta/Estado/Folhas.swift`:
+
+```diff
+--- a/app-ios/Custta/Estado/Folhas.swift
++++ b/app-ios/Custta/Estado/Folhas.swift
+@@ -19,6 +19,8 @@ final class Folhas {
+         case orcamento(obraId: String)
+         /// A seta do indicador "A pagar · 30 dias": os vencimentos da obra por mês (etapa 3).
+         case aPagar(obraId: String)
++        /// Uma linha da tela Orçamento: o detalhe do tópico, com o resumo e os gastos dele (etapa 3).
++        case topico(obraId: String, topicoId: String)
+ 
+         var id: Self { self }
+     }
+```
+
+Em `app-ios/Custta/Falsos/MontarFalso.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/MontarFalso.swift
++++ b/app-ios/Custta/Falsos/MontarFalso.swift
+@@ -7,9 +7,9 @@ import CusttaNucleo
+    CUSTTA_CONTA   conta inicial da ContaFalsa (nenhuma, senha, senha-nao-confirmada, apple-sem-perfil,
+                   google-sem-perfil, google-perfil-concorrente)
+    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto) |
+-                  prejuizo (a vitrine com a vendida no prejuízo) | porTopico, perto, passou, semOrcamento, muitosTopicos (os
+-                  orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift) | avista (a vitrine com um
+-                  vencimento à vista no A pagar)
++                  prejuizo (a vitrine com a vendida no prejuízo) | porTopico, perto, passou, semOrcamento, muitosTopicos,
++                  topicoLongo (os orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift) | avista (a
++                  vitrine com um vencimento à vista no A pagar)
+    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
+    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
+                   não responde: "Carregando suas obras…")
+@@ -38,7 +38,7 @@ extension Composicao {
+         case "exemplo": DadosDeExemplo.blob
+         case "limite": DadosDeExemplo.noTeto()
+         case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
+-        case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
++        case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos", "topicoLongo"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
+         case "avista": DadosDeExemplo.vitrineComVencimentoAVista()
+         default: DadosDeExemplo.vitrine()
+         }
+```
+
+Em `app-ios/Custta/Falsos/VitrineDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDoOrcamento.swift
++++ b/app-ios/Custta/Falsos/VitrineDoOrcamento.swift
+@@ -11,6 +11,8 @@ import CusttaNucleo
+    perto, passou  o total de R$ 920.000,00 (92%) e de R$ 800.000,00 (105%)
+    semOrcamento   a Casa Alphaville sem orçamento ("Definir orçamento")
+    muitosTopicos  o porTopico com 50 tópicos próprios, o limite das rules: 71 linhas na folha
++   topicoLongo    o porTopico com 120 diárias da equipe na Mão de obra (100 pagas e 20 a vencer, de R$ 350,00 no Pix): a
++                  lista longa do detalhe do tópico
+    Na vitrine de sempre, o total de R$ 1.200.000,00 (70%, dentro do previsto). */
+ extension DadosDeExemplo {
+     /// Os previstos por tópico do mockup.
+@@ -36,6 +38,9 @@ extension DadosDeExemplo {
+             let proprios = [("c_gesso", "Gesso e drywall")]
+                 + (variante == "muitosTopicos" ? (2...limiteDeTopicosProprios).map { ("c_proprio\($0)", "Tópico próprio \($0)") } : [])
+             config["topicosCustom"] = .lista(proprios.map { .objeto(["id": .texto($0.0), "nm": .texto($0.1), "ic": .texto("etiqueta")]) })
++            if variante == "topicoLongo", case .lista(let gastos) = casa["gastos"] {
++                casa["gastos"] = .lista(gastos + diariasDaEquipe(hoje: hoje))
++            }
+         }
+         obras[0] = .objeto(casa)
+         obras[2] = .objeto(tambore)
+@@ -44,6 +49,18 @@ extension DadosDeExemplo {
+         return .objeto(raiz)
+     }
+ 
++    /// As 120 diárias do `topicoLongo`, na Mão de obra: 100 pagas, uma por dia de ontem para trás, e 20 a vencer, de amanhã
++    /// em diante.
++    static func diariasDaEquipe(hoje: Date) -> [ValorJSON] {
++        let calendario = Calendar(identifier: .gregorian)
++        return (1...120).map { i in
++            let dia = calendario.date(byAdding: .day, value: i <= 100 ? -i : i - 100, to: hoje) ?? hoje
++            return .objeto(["id": .texto(String(format: "d%03d", i)), "valor": .numero(350), "topico": .texto("maoobra"),
++                            "descricao": .texto("Diária da equipe"), "data": .texto(dataLocalISO(dia, fuso: .current)),
++                            "pagamento": .texto("pix")])
++        }
++    }
++
+     /// O limite de tópicos próprios das rules (`topicosCustom.size() <= 50`).
+     static let limiteDeTopicosProprios = 50
+ }
+```
+
+Em `app-ios/Custta/Telas/FolhaDoAPagar.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoAPagar.swift
++++ b/app-ios/Custta/Telas/FolhaDoAPagar.swift
+@@ -119,11 +119,13 @@ private struct VazioDoAPagar: View {
+     }
+ }
+ 
+-/// Uma peça da lista de uma folha de origem, filha direta da LazyVStack: o cabeçalho de um mês ou um gasto, com o lugar
+-/// dele no grupo do mês.
++/// Uma peça da lista de uma folha de origem, filha direta da LazyVStack: o cabeçalho de um mês (no A pagar, dentro do grupo)
++/// ou de uma seção (no detalhe do tópico, fora dele) ou um gasto, com o lugar dele no grupo.
+ struct PecaDaOrigem: Identifiable, Equatable {
+     enum Tipo: Equatable {
+         case mes(MesDeGastos)
++        /// "A vencer · 6": o cabeçalho de uma seção do detalhe do tópico, fora do grupo.
++        case secao(titulo: String, quantidade: Int)
+         case gasto(Gasto)
+     }
+ 
+@@ -132,10 +134,14 @@ struct PecaDaOrigem: Identifiable, Equatable {
+     let primeiro: Bool
+     /// O último gasto do grupo: com os cantos de baixo do grupo.
+     let ultimo: Bool
++    /// O primeiro gasto de um grupo sem cabeçalho dentro (o do detalhe do tópico): com os cantos de cima do grupo. No A
++    /// pagar, quem os leva é o cabeçalho do mês.
++    var cima = false
+ 
+     var id: String {
+         switch tipo {
+         case .mes(let mes): "mes-\(mes.id)"
++        case .secao(let titulo, _): "secao-\(titulo)"
+         case .gasto(let gasto): gasto.id
+         }
+     }
+```
+
+Criar `app-ios/Custta/Telas/FolhaDoTopico.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* O detalhe do tópico (mockup da etapa 3, parte 1, a folha do tópico; o sheetTopico do site), aberto por uma linha da tela
+   Orçamento: o resumo do tópico num grupo sólido (quantos gastos e o "% da obra", o bruto, o corrigido e, no orçamento por
+   tópico, a linha do orçamento dele) e os gastos em "A vencer" (o próximo primeiro, como na obra) e "Pagos" (o mais novo
+   primeiro, como no site), cada seção só com gasto, com a linha de gasto da etapa 2 sem o tópico: o título da folha já o
+   diz. Fecham o × e o puxar (o "Fechar" do site sai). Tocar num gasto empurra a edição na mesma folha, e arrastar uma linha
+   mostra "Apagar", pela lista das folhas de origem, a mesma do A pagar (ListaDaOrigem.swift). Dentro da folha tudo é
+   sólido. */
+struct FolhaDoTopico: View {
+    let obraId: String
+    let topicoId: String
+    @Environment(ModeloApp.self) private var modelo
+
+    var body: some View {
+        // O nome vem dos dados (um tópico próprio também abre): a origem da edição nasce com ele, que o voltar da edição e o
+        // subtítulo dela dizem.
+        PilhaDoTopico(obraId: obraId, topico: topicoDoDetalhe(topicoId, proprios: modelo.sincronizador.estado.config.topicosProprios))
+    }
+}
+
+/// A pilha da folha, montada como a do A pagar (FolhaDoAPagar.swift): a edição empurrada, o "Não salvou" dentro da folha, a
+/// trava do puxar com mudança e a folha que fecha quando a obra some.
+private struct PilhaDoTopico: View {
+    let obraId: String
+    let topico: Topico
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(Folhas.self) private var folhas
+    @State private var origem: OrigemDaEdicao
+    @State private var alertas = AlertasNaFolha()
+
+    init(obraId: String, topico: Topico) {
+        self.obraId = obraId
+        self.topico = topico
+        _origem = State(initialValue: OrigemDaEdicao(titulo: topico.nome, nome: topico.nome))
+    }
+
+    private var obra: Obra? { modelo.sincronizador.estado.obras.first { $0.id == obraId } }
+
+    var body: some View {
+        NavigationStack(path: $origem.caminho) {
+            ListaDoTopico(obraId: obraId, topico: topico, origem: origem)
+                .passoDaFolha(topico.nome, subtitulo: obra?.nome, fechar: .esquerda, escape: .fechar)
+                .navigationDestination(for: PassoDaOrigem.self) { passo in
+                    DestinoNaOrigem(passo: passo, origem: origem)
+                }
+        }
+        // O "Não salvou" de uma edição salva aqui: a folha de origem não desce, e o da raiz só aparece com a folha fechada.
+        .alertaDeNaoSalvou(quando: alertas.nenhum)
+        // A trava do puxar fica fora da pilha, lida pelo próprio FolhaDoApp, como no A pagar.
+        .folhaDoApp(perguntar: { origem.temOQuePerder }, pergunta: "Você mudou este gasto.",
+                    mensagem: "As mudanças ainda não foram salvas.", descartar: "Descartar mudanças") { folhas.fechar() }
+        .environment(\.alertasNaFolha, alertas)
+        // A obra apagada em outro aparelho com a folha aberta: não há o que mostrar; a folha fecha.
+        .onChange(of: obra == nil) { _, sumiu in if sumiu { folhas.fechar() } }
+    }
+}
+
+/// O resumo e as seções do tópico, sobre a lista das folhas de origem (ListaDaOrigem.swift, com o tocar, o arrastar, a volta
+/// da edição e o apagar): aqui, só o que é do detalhe.
+private struct ListaDoTopico: View {
+    let obraId: String
+    let topico: Topico
+    @Bindable var origem: OrigemDaEdicao
+    @Environment(ModeloApp.self) private var modelo
+
+    var body: some View {
+        let estado = modelo.sincronizador.estado
+        if let obra = estado.obras.first(where: { $0.id == obraId }) {
+            let id = topico.id, taxa = estado.config.taxaMensal
+            let detalhe = detalheDoTopico(obra, topico: id, hoje: dataLocalISO(.now, fuso: .current), taxaMensal: taxa)
+            let topicos = mapaDeTopicos(estado.config.topicosProprios)
+            ListaDaOrigem(obra: obra, origem: origem, pecas: pecasDoDetalhe(detalhe),
+                          pecasDepois: { pecasDoDetalhe(detalheDoTopico($0, topico: id, hoje: dataLocalISO(.now, fuso: .current), taxaMensal: taxa)) },
+                          linha: { linhaDeGasto($0, topicos: topicos, comTopico: false) }) {
+                ResumoDoDetalhe(detalhe: detalhe, icone: topico.icone)
+            } vazio: {
+                EmptyView()
+            } rodape: {
+                EmptyView()
+            }
+        } else {
+            Color.clear
+        }
+    }
+}
+
+/// O tópico do detalhe: um do catálogo ou um próprio; o que o app não conhece (apagado em Ajustes) aparece pelo id, com o
+/// ícone etiqueta, como na linha de gasto e no site.
+func topicoDoDetalhe(_ id: String, proprios: [TopicoProprio]) -> Topico {
+    mapaDeTopicos(proprios)[id] ?? Topico(id: id, nome: id.isEmpty ? "Outros" : id, icone: "etiqueta")
+}
+
+/// As peças do detalhe, na ordem: "A vencer · N" e os gastos dele, depois "Pagos · N" e os dele, cada seção só com gasto. O
+/// cabeçalho fica fora do grupo: o primeiro gasto da seção leva os cantos de cima, e o último, os de baixo.
+func pecasDoDetalhe(_ d: DetalheDoTopico) -> [PecaDaOrigem] {
+    [("A vencer", d.aVencer), ("Pagos", d.pagos)].flatMap { titulo, gastos -> [PecaDaOrigem] in
+        guard !gastos.isEmpty else { return [] }
+        return [PecaDaOrigem(tipo: .secao(titulo: titulo, quantidade: gastos.count), primeiro: false, ultimo: false)]
+            + gastos.enumerated().map { i, g in
+                PecaDaOrigem(tipo: .gasto(g), primeiro: i == 0, ultimo: i == gastos.count - 1, cima: i == 0)
+            }
+    }
+}
+
+/// "corrigido:" e o valor: o `corrigido` do núcleo partido, para o dinheiro ir para a própria linha na letra grande.
+func partesDoCorrigido(_ d: DetalheDoTopico) -> (antes: String, valor: String) {
+    ("corrigido:", moeda(d.resumo.corrigido))
+}
+
+/// O cabeçalho de uma seção do detalhe ("A vencer · 6"), fora do grupo (o .f-cab do mockup): 13 semibold no secundário, o
+/// "· N" em peso médio, a 34 pt da borda (16 do grupo + 18; na letra grande, 22), 22 acima e 7 abaixo.
+struct CabecalhoDaSecao: View {
+    let titulo: String
+    let quantidade: Int
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let lado: CGFloat = tamanho.isAccessibilitySize ? 22 : 34
+        Text("\(Text(titulo + " ").font(.footnote.weight(.semibold)))\(Text("· " + String(quantidade)).font(.footnote.weight(.medium)))")
+            .foregroundStyle(paleta.cor(.secundarioTransparente))
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(EdgeInsets(top: 22, leading: lado, bottom: 7, trailing: lado))
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("secao-\(titulo)")
+    }
+}
+
+/// O resumo do tópico num grupo sólido (o .td-res do mockup, 16 de padding e 14 embaixo): o ícone de 34 e "11 gastos · 9% da
+/// obra", o bruto em 28 bold numa linha só (como o resumo do A pagar), o corrigido e a linha do orçamento do tópico. Na letra
+/// grande, sem o ícone, com o dinheiro do corrigido na própria linha.
+private struct ResumoDoDetalhe: View {
+    let detalhe: DetalheDoTopico
+    let icone: String
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let corrigido = partesDoCorrigido(detalhe)
+        GrupoDaFolha {
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 10) {
+                        if !tamanho.isAccessibilitySize {
+                            Image(decorative: iconeDoCatalogo(icone))
+                                .resizable().frame(width: 19, height: 19)
+                                .foregroundStyle(paleta.cor(.marca))
+                                .frame(width: 34, height: 34)
+                                .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 10))
+                        }
+                        Text(detalhe.linha)
+                            .font(.subheadline)
+                            .foregroundStyle(paleta.cor(.secundarioTransparente))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    ValorEmDinheiro(texto: moeda(detalhe.resumo.bruto), fonte: .title.weight(.bold))
+                        .padding(.top, 8)
+                    FraseComDinheiro(antes: corrigido.antes, valor: corrigido.valor, cor: .secundarioTransparente)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("resumoDoTopico")
+                OrcamentoNoDetalhe(orcamento: detalhe.orcamento)
+            }
+            .padding(EdgeInsets(top: 16, leading: 16, bottom: 14, trailing: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+/// A linha do orçamento do tópico, embaixo do corrigido, com um fio em cima (o .td-orc do mockup): "No orçamento" e o
+/// previsto em semibold na cor do texto, a barra de 8 e a frase do site (a do "passou" no âmbar e em semibold; no nível ok,
+/// "{pct}% usado"); fora do orçamento, "Sem valor no orçamento: não entra na comparação." no lugar de tudo; com só o total
+/// (ou sem orçamento), nada. O previsto quebra para a linha de baixo quando não cabe; na letra grande, a frase vai em
+/// subheadline.
+private struct OrcamentoNoDetalhe: View {
+    let orcamento: OrcamentoDoTopico
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        switch orcamento {
+        case .nenhum:
+            EmptyView()
+        case .previsto(let item):
+            let frase = fraseDoOrcamentoNoDetalhe(item)
+            comFio {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 0) { rotulo; Spacer(minLength: 12); previsto(item) }
+                    VStack(alignment: .leading, spacing: 4) { rotulo; previsto(item) }
+                }
+                BarraDoOrcamento(item: item)
+                    .padding(.top, 8)
+                texto(frase.texto, alerta: frase.alerta)
+                    .padding(.top, 7)
+            }
+        case .semValor:
+            comFio { texto(semValorNoOrcamento, alerta: false) }
+        }
+    }
+
+    private var rotulo: some View {
+        Text(rotuloNoOrcamento)
+            .font(.subheadline)
+            .foregroundStyle(paleta.cor(.secundarioTransparente))
+    }
+
+    private func previsto(_ item: ItemOrcamento) -> some View {
+        ValorEmDinheiro(texto: moeda(item.previsto), fonte: .subheadline.weight(.semibold))
+    }
+
+    private func texto(_ t: String, alerta: Bool) -> some View {
+        Text(t)
+            .font(tamanho.isAccessibilitySize ? .subheadline : .footnote)
+            .fontWeight(alerta ? .semibold : nil)
+            .foregroundStyle(paleta.cor(alerta ? .alerta : .secundarioTransparente))
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// O fio em cima, a 12 do corrigido, e o conteúdo 12 abaixo dele; um elemento só para o VoiceOver.
+    private func comFio(@ViewBuilder _ conteudo: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SeparadorDaFolha(recuo: 0)
+            VStack(alignment: .leading, spacing: 0, content: conteudo)
+                .padding(.top, 12)
+        }
+        .padding(.top, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("orcamentoDoTopico")
+    }
+}
+```
+
+Em `app-ios/Custta/Telas/ListaDaOrigem.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ListaDaOrigem.swift
++++ b/app-ios/Custta/Telas/ListaDaOrigem.swift
+@@ -4,9 +4,10 @@ import CusttaNucleo
+ /// A lista de uma folha de origem (a do A pagar; o detalhe do tópico monta a mesma): a folha dá as peças, a linha de cada
+ /// gasto, o cabeçalho, o vazio e o rodapé, e a lista faz o que é igual nas duas. Tocar num gasto empurra a edição na mesma
+ /// folha (a volta à folha de origem, FolhaDeOrigem.swift); arrastar uma linha para a esquerda mostra "Apagar", como na
+-/// lista da obra. As peças (cabeçalho de mês e gasto) são filhas diretas da LazyVStack, com o fundo do grupo desenhado por
+-/// peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria uma peça só (o detalhe do tópico passa de cem
+-/// gastos). A lista não fecha a folha.
++/// lista da obra. As peças (cabeçalho de mês ou de seção e gasto) são filhas diretas da LazyVStack, com o fundo do grupo
++/// desenhado por peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria uma peça só (o detalhe do tópico
++/// passa de cem gastos). O cabeçalho do mês fica dentro do grupo, com os cantos de cima; o da seção, fora, e os cantos vão no
++/// primeiro gasto. A lista não fecha a folha.
+ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
+     let obra: Obra
+     @Bindable var origem: OrigemDaEdicao
+@@ -67,10 +68,12 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
+                             CabecalhoDoMes(mes: mes)
+                                 .modifier(FundoDoGrupo(cima: true, baixo: false))
+                                 .padding(.top, 20)
++                        case .secao(let titulo, let quantidade):
++                            CabecalhoDaSecao(titulo: titulo, quantidade: quantidade)
+                         case .gasto(let gasto):
+                             LinhaDaLista(gasto: gasto, linha: linha(gasto), lista: acoes)
+                                 .overlay(alignment: .top) { if !peca.primeiro { SeparadorDaFolha(recuo: 67) } }
+-                                .modifier(FundoDoGrupo(cima: false, baixo: peca.ultimo))
++                                .modifier(FundoDoGrupo(cima: peca.cima, baixo: peca.ultimo))
+                         }
+                     }
+                     rodape
+```
+
+Em `app-ios/Custta/Telas/PrincipalView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -45,6 +45,7 @@ struct PrincipalView: View {
+                 case .venda(let obraId): FolhaDaVenda(obraId: obraId)
+                 case .orcamento(let obraId): FolhaDoOrcamento(obraId: obraId)
+                 case .aPagar(let obraId): FolhaDoAPagar(obraId: obraId)
++                case .topico(let obraId, let topicoId): FolhaDoTopico(obraId: obraId, topicoId: topicoId)
+                 }
+             }
+             .environment(folhas)
+@@ -124,7 +125,8 @@ extension PrincipalView {
+ 
+     #if DEBUG
+     /// Testes de tela, laudo e conferência visual: `CUSTTA_FOLHA` abre uma folha quando os dados chegam (`novaObra`,
+-    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`, `aPagar:<id>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
++    /// `editarObra:<id>`, `venda:<id>`, `gastoDeVendida:<id>`, `novoGasto:<id>`, `orcamento:<id>`, `aPagar:<id>`,
++    /// `topico:<obra>:<tópico>`). Sem ele, com `CUSTTA_ABRIR=obra:<id>`,
+     /// `-custta.folha <passo>` abre a folha do gasto novo já no passo (valor, detalhes, cartao, topicos, repetido) e
+     /// `-custta.folha editar:<gasto>`, a edição.
+     private func abrirFolhaDoGancho() async {
+@@ -144,6 +146,10 @@ extension PrincipalView {
+             case "novoGasto": folhas.aberta = .novoGasto(obraId: id)
+             case "orcamento": folhas.aberta = .orcamento(obraId: id)
+             case "aPagar": folhas.aberta = .aPagar(obraId: id)
++            case "topico":
++                // topico:<obra>:<tópico>: o segundo corte separa a obra do tópico.
++                let ids = id.split(separator: ":", maxSplits: 1).map(String.init)
++                if ids.count == 2 { folhas.aberta = .topico(obraId: ids[0], topicoId: ids[1]) }
+             default: break
+             }
+         } else if let passo, let obraId = caminhoDeObras.last?.obraId {
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+node tests/workflow.test.cjs 2>&1 | tail -1
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected:
+- `ℹ pass 56`, `ℹ fail 0`;
+- `ok - Actions com SHA imutável e permissão mínima; …`;
+- sem aviso;
+- `✔ Test run with 159 tests in 30 suites passed`, com o `DetalheDoTopicoTests`, suíte nova, com 3;
+- `DetalheDoTopicoUITests` 4 de 4, `FolhasDeOrigemUITests` 24 de 24 (o A pagar sobre a peça nova) e `OrcamentoUITests` 29 de 29;
+- `** TEST EXECUTE SUCCEEDED **`, em ~20 min no Mac (a suíte nova leva ~1 min).
+
+Na CI do iOS 26 (run 40050588953, com as Tarefas 29 e 30), a lista genérica compila no Swift 6.3.3. O `app-etapa3-b` passou em 14 min, e o `app` e os laudos também. O `app-etapa3` caiu uma vez num teste do A pagar, por tempo da VM: o XCUITest levou 28 s para tocar a seta, e a folha não abriu nos 5 s do `abrirAPagar`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/Custta/Estado/Folhas.swift \
+  app-ios/Custta/Falsos/MontarFalso.swift \
+  app-ios/Custta/Falsos/VitrineDoOrcamento.swift \
+  app-ios/Custta/Telas/FolhaDoAPagar.swift \
+  app-ios/Custta/Telas/FolhaDoTopico.swift \
+  app-ios/Custta/Telas/ListaDaOrigem.swift \
+  app-ios/Custta/Telas/PrincipalView.swift \
+  app-ios/CusttaTests/DetalheDoTopicoTests.swift \
+  app-ios/CusttaUITests/DetalheDoTopicoUITests.swift \
+  tests/app-ios.test.cjs \
+  tests/workflow.test.cjs
+git commit -m "feat: folha do detalhe do tópico" -m "O detalhe do tópico do mockup da etapa 3 entra como uma folha nova, aberta pelo gancho de teste CUSTTA_FOLHA=topico:<obra>:<tópico>; as linhas da tela Orçamento que a abrem vêm na tarefa seguinte. Em cima, o resumo num grupo sólido: \"11 gastos · 9% da obra\", o bruto em 28 bold numa linha só, o corrigido e, no orçamento por tópico, a linha do orçamento do tópico, com \"No orçamento\", o previsto, a barra de 8 e a frase do site (\"Faltam R\$ 3,3 mil — 96%\", a do \"passou\" no âmbar, ou \"{pct}% usado\"). O tópico fora do orçamento mostra \"Sem valor no orçamento: não entra na comparação.\" no lugar da barra, e no modo total a linha não aparece. Embaixo, \"A vencer · N\", com o próximo primeiro, e \"Pagos · N\", com o mais novo primeiro, cada seção só quando tem gasto, com a linha de gasto da etapa 2 sem o tópico, que o título da folha já diz." -m "A folha monta a lista comum das folhas de origem, a mesma do A pagar: tocar num gasto empurra a edição na mesma folha e arrastar mostra \"Apagar\", sem código novo para isso. A peça da lista ganha o cabeçalho de seção, que fica fora do grupo, e os cantos de cima no primeiro gasto, por um campo com padrão falso; o A pagar não muda. A pilha é montada como a do A pagar (o folhaDoApp em volta dela, o \"Não salvou\" dentro da folha, a folha que fecha quando a obra some), e a guarda Node da montagem passa a ler as duas folhas, porque o chevron, a borda e o puxar com mudança só são testados na tela pelo A pagar. Entra também o falso topicoLongo, com 120 diárias na Mão de obra, para a lista longa do detalhe." -m "A suíte de tela nova, DetalheDoTopicoUITests, roda num job novo da CI, o app-etapa3-b, no molde do app-etapa3 e em paralelo com ele. O app-etapa3 já leva de 55 a 58,8 minutos de 90, e o próprio workflow diz que ele não cresce mais: com a suíte do detalhe e as que ainda virão neste PR, ele passaria de 70 numa VM lenta. O job app pula a suíte nova, e a guarda dos jobs confere que cada suíte de tela roda uma vez só, num job só."
+```

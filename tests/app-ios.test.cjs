@@ -539,6 +539,19 @@ test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e 
     'a seta é a do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
 });
 
+test('linhas da tela Orçamento: a seta só na linha que abre, no meio da altura dela', () => {
+  // Nenhum teste de tela vê a seta (accessibilityHidden e foraDoLaudo): com a condição trocada, ela apareceria também no
+  // previsto sem gasto (o Acabamento e o Jardim do mockup), que não abre nada; com outro alinhamento, sairia do meio da
+  // altura da linha (o .chev do mockup ocupa todas as linhas da grade).
+  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
+  const inicio = t.indexOf('struct LinhaDeTopicoNoOrcamento');
+  assert.ok(inicio >= 0, 'a LinhaDeTopicoNoOrcamento');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.equal(linha.split('Image(systemName: "chevron.right")').length - 1, 1, 'uma seta só na linha');
+  assert.match(linha, /\.overlay\(alignment: \.trailing\) \{\n\s*if linha\.abre \{\n\s*Image\(systemName: "chevron\.right"\)\n/,
+    'a seta por cima da coluna, no meio da altura (o .trailing do overlay), e só na linha que abre');
+});
+
 test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
   // Nenhum teste de tela vê isso: eles tocam as teclas pelo identificador (a ordem não aparece), nenhum digita além do
   // teto, o anúncio do VoiceOver não chega ao XCUITest e a auditoria não mede o limite de tamanho das teclas.
@@ -928,6 +941,18 @@ test('conferência cruzada: o texto do orçamento na lista é o do site', () => 
   }
 });
 
+test('cursor do valor na folha do orçamento: o alto cresce com a letra e ele fica centrado no valor, sem a linha de base', () => {
+  // O CursorDaLinha tem o 1,15em do .caret no em de 17 da linha, e cresce com a letra: 55 pt na AX5 (medido no Pro Max, nas
+  // duas linhas). Os testes de tela medem o cursor por tinta na letra padrão, e um alto fixo passaria por todos.
+  const t = ler('app-ios/Custta/Telas/FolhaDoOrcamento.swift');
+  const inicio = t.indexOf('private struct CursorDaLinha');
+  assert.ok(inicio >= 0, 'o CursorDaLinha');
+  const corpo = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(corpo, /@ScaledMetric\(relativeTo: \.body\) private var altura: CGFloat = 17 \* 1\.15\n/, 'o alto cresce com a letra: 1,15 do em de 17');
+  assert.match(corpo, /\.frame\(width: 2, height: altura\)/, 'a barra de 2 pt, com esse alto');
+  assert.doesNotMatch(corpo, /alignmentGuide\(\.firstTextBaseline\)/, 'centrado no valor, sem a guia da linha de base');
+});
+
 test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que falha não segura a rodada no diagnose', async () => {
   const { escolherSimulador, argumentosDoTeste } = await import(join(RAIZ, 'scripts/simulador-ios.mjs'));
   const lista = {
@@ -942,4 +967,18 @@ test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que
   assert.deepEqual(args.slice(i, i + 2), ['-collect-test-diagnostics', 'never'], 'sem o simctl diagnose, que segura a rodada até 10 min');
   assert.deepEqual(args.slice(args.indexOf('-destination'), args.indexOf('-destination') + 2), ['-destination', 'platform=iOS Simulator,id=C']);
   assert.ok(args.includes('-only-testing:CusttaTests'));
+});
+
+test('apagar com a linha aberta: ela fecha dentro da transação do apagar, na lista da obra e na da folha de origem', () => {
+  // Nenhum teste de tela vê isso. A linha sai aberta, com o "Apagar": fechar antes, fora da transação, a fazia voltar num
+  // quadro e só então sair (o comentário do `apagar` de cada lista). A guarda: o `linhaAberta = nil` e o `modelo.gravar`
+  // no mesmo bloco do `withAnimation`. A lista da folha de origem mora na ListaDaOrigem (na FolhaDoAPagar, até a lista
+  // passar a ser uma só para as duas folhas).
+  const origens = ['app-ios/Custta/Telas/ListaDaOrigem.swift', 'app-ios/Custta/Telas/FolhaDoAPagar.swift']
+    .filter(f => { try { return ler(f).includes('.snappy(duration: 0.35)'); } catch { return false; } });
+  assert.equal(origens.length, 1, 'o apagar da folha de origem, num arquivo só');
+  for(const [f, aberta] of [['app-ios/Custta/Telas/ObraView.swift', 'linhaAberta'], [origens[0], 'origem\\.linhaAberta']]){
+    const re = new RegExp(String.raw`withAnimation\(opcoes\.reduzirMovimento \? nil : \.snappy\(duration: 0\.35\)\) \{\n\s*` + aberta + String.raw` = nil\n\s*return modelo\.gravar`);
+    assert.match(ler(f), re, `${f}: a linha aberta fecha na mesma transação que apaga`);
+  }
 });

@@ -165,6 +165,8 @@ struct LinhaDeTopicoNoOrcamento: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier(identificador)
+            // O Controle por Voz chama pelo nome do tópico ("Tocar Cerâmica"), não pelo rótulo inteiro, como no A pagar.
+            .accessibilityInputLabels([linha.nome])
         } else {
             conteudo
                 .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))

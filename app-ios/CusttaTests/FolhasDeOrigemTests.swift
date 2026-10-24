@@ -123,6 +123,8 @@ struct FolhasDeOrigemTests {
                 "a lista ficou vazia: o cartão do vazio")
         #expect(focoNaOrigem(.voltou("b"), antes: antes, depois: antes) == FocoNaOrigem(alvo: .gasto("b"), anuncio: nil),
                 "sem salvar: a linha que abriu a edição")
+        #expect(focoNaOrigem(.voltou("b"), antes: antes, depois: ["a", "c"]) == FocoNaOrigem(alvo: .gasto("c"), anuncio: nil),
+                "sem salvar, com a linha fora da lista (mudou em outro aparelho): a vizinha, sem anúncio")
         #expect(focoNaOrigem(.sumiu("a"), antes: antes, depois: ["b", "c"]) == FocoNaOrigem(alvo: .gasto("b"), anuncio: "Gasto apagado"),
                 "apagado em outro aparelho: a vizinha")
         #expect(focoNaOrigem(.salvou("b"), antes: ["a", "b", "c", "d"], depois: ["a", "d"]) == FocoNaOrigem(alvo: .gasto("d"), anuncio: "O gasto saiu desta lista."),

@@ -138,6 +138,8 @@ struct IndicadoresDaObraView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        // O Controle por Voz chama pelo nome da linha ("Tocar A pagar"), não pelo rótulo inteiro.
+        .accessibilityInputLabels(["A pagar"])
         .accessibilityIdentifier("indicadorAPagar")
     }
 

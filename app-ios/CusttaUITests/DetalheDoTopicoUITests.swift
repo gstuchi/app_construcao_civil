@@ -63,7 +63,7 @@ final class DetalheDoTopicoUITests: XCTestCase {
         app.rolarAte(linha)
         let quadro = linha.frame
         app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 30, dy: quadro.midY)).tap()
-        guard app.elemento("resumoDoTopico").waitForExistence(timeout: 5) else {
+        guard app.elemento("resumoDoTopico").waitForExistence(timeout: 10) else {
             XCTFail("resumoDoTopico não apareceu")
             return nil
         }

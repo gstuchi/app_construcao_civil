@@ -7,6 +7,8 @@ name: app-ios
 #   unidade e de tela no simulador com os serviços falsos;
 # - app-etapa3: os testes de tela da etapa 3, num simulador próprio, em paralelo com o app (com eles, o app passou do
 #   teto de 75 min);
+# - app-etapa3-b: os testes de tela da etapa 3 que não couberam no app-etapa3 (no PR 2, a suíte do detalhe do tópico), no
+#   mesmo molde e também em paralelo com o app;
 # - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
 #   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
 #   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da

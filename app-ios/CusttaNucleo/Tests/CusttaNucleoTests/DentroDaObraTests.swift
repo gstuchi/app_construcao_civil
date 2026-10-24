@@ -168,10 +168,6 @@ struct DentroDaObraTests {
         #expect(try frase([80_000]) == FraseDoOrcamento(texto: "Chegou ao previsto — 100%", alerta: false), "o previsto exato (P1:2096-2100)")
     }
 
-    func afazer(_ id: String, _ texto: String, feito: Bool) -> Afazer {
-        Afazer(campos: ["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
-    }
-
     @Test func topicosComValorNaFolha() {
         #expect(topicosComValor(["terreno": 10, "projeto": 0, "pintura": 5, "eletrica": -3], de: 23) == "2 de 23 tópicos com valor")
         #expect(topicosComValor([:], de: 21) == "0 de 21 tópicos com valor")

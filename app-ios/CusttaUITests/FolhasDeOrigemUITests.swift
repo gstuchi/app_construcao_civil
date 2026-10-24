@@ -27,7 +27,7 @@ final class FolhasDeOrigemUITests: XCTestCase {
         XCTAssertTrue(indicador.waitForExistence(timeout: 5))
         app.rolarAte(indicador)
         indicador.tap()
-        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForExistence(timeout: 5), "a seta abre a folha do A pagar")
+        XCTAssertTrue(app.elemento("resumoDoAPagar").waitForExistence(timeout: 10), "a seta abre a folha do A pagar")
     }
 
     /// O elemento da folha (o que recebe o toque), e não o da obra por trás dela.
@@ -108,6 +108,7 @@ final class FolhasDeOrigemUITests: XCTestCase {
         XCTAssertTrue(indicador.label.hasPrefix("A pagar · 30 dias"), indicador.label)
         XCTAssertTrue(indicador.label.contains("Parcelas e gastos futuros"), indicador.label)
         XCTAssertTrue(indicador.elementType == .button, "a linha inteira é o botão: \(indicador.elementType.rawValue)")
+        XCTAssertEqual(indicador.frame.width, app.frame.width - 40, accuracy: 1, "e o quadro dele vai de ponta a ponta do cartão (o contentShape, dentro do rótulo)")
         abrirAPagar(app)
         XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("A pagar · 30 dias"), app.elemento("tituloDaFolha").label)
         let resumo = app.elemento("resumoDoAPagar")

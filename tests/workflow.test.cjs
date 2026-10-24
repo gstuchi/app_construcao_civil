@@ -302,6 +302,11 @@ assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jo
 assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
 for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
   assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
+// O resultado de cada job sobe com um nome só dele: no mesmo run o upload-artifact não aceita o mesmo nome duas vezes, e dois
+// jobs reprovados juntos perderiam um dos resultados.
+const artefatos = [...appIosSemComentario.matchAll(/uses: actions\/upload-artifact@[^\n]*\n\s+with:\n\s+name: (\S+)\n/g)].map(m => m[1]);
+assert.ok(artefatos.length >= 7, `os resultados que sobem: ${artefatos.length}`);
+assert.equal(new Set(artefatos).size, artefatos.length, `cada job sobe o resultado com um nome só dele: ${artefatos}`);
 const appIosTf = readFileSync(join(dir, 'app-ios-testflight.yml'), 'utf8');
 const appIosTfSemComentario = appIosTf.split('\n').filter(l => !/^\s*#/.test(l)).join('\n');
 assert.match(appIosTf, /runs-on:\s*macos-26/);

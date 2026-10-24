@@ -13756,7 +13756,7 @@ Expected:
 - `DetalheDoTopicoUITests` 4 de 4, `FolhasDeOrigemUITests` 24 de 24 (o A pagar sobre a peça nova) e `OrcamentoUITests` 29 de 29;
 - `** TEST EXECUTE SUCCEEDED **`, em ~20 min no Mac (a suíte nova leva ~1 min).
 
-Na CI do iOS 26 (run 40050588953, com as Tarefas 29 e 30), a lista genérica compila no Swift 6.3.3. O `app-etapa3-b` passou em 14 min, e o `app` e os laudos também. O `app-etapa3` caiu uma vez num teste do A pagar, por tempo da VM: o XCUITest levou 28 s para tocar a seta, e a folha não abriu nos 5 s do `abrirAPagar`.
+Na CI do iOS 26 (run 40050588953, com as Tarefas 29 e 30), a lista genérica compila no Swift 6.3.3. O `app-etapa3-b` passou em 14 min, e o `app` e os laudos também. O `app-etapa3` caiu duas vezes, por tempo da VM: na primeira, num teste do A pagar, o XCUITest levou 28 s para tocar a seta, e a folha não abriu nos 5 s do `abrirAPagar`; na segunda (o job de novo), no `testToqueDuploNoSalvarDaEdicaoVoltaUmaVez`, o toque no "Pronto" do teclado se perdeu, e o job levou 55 min. No run 40108043199 (as Tarefas 31 a 33), ele passou em 37 min: o `FolhasDeOrigemUITests` 24 de 24 e o `OrcamentoUITests` 29 de 29.
 
 - [ ] **Step 5: Commit**
 
@@ -14322,7 +14322,7 @@ Expected:
 
 Nos prints da tela Orçamento (topo, fim, modo total e AX5), a seta tem 9 pt (18 na AX5), fica no meio da altura de cada linha com gasto, na coluna de 14 (22), e a coluna fica vazia no Acabamento e no Jardim.
 
-A prova no iOS 26 vem com a Tarefa 32, num run só.
+Na CI do iOS 26 (run 40108043199, com as Tarefas 31 a 33), passam o `OrcamentoUITests` (29 de 29, no `app-etapa3`), o `DetalheDoTopicoUITests` (15 de 15, no `app-etapa3-b`) e as auditorias e as leituras do Orçamento (no `laudo-etapa3`).
 
 - [ ] **Step 5: Commit**
 
@@ -14779,7 +14779,7 @@ Expected:
 - `** TEST EXECUTE SUCCEEDED **`, em ~15 min no Mac;
 - a lista longa passa as 3, em ~33 s cada.
 
-A prova no iOS 26 vem num run só com a Tarefa 31.
+Na CI do iOS 26 (o run 40108043199, com as Tarefas 31 a 33), o `DetalheDoTopicoUITests` passa 15 de 15 no `app-etapa3-b`, em 28 min, e a lista longa na maior letra leva 79 s.
 
 - [ ] **Step 5: Commit**
 
@@ -14789,4 +14789,266 @@ git add app-ios/Custta/Telas/FolhaDoTopico.swift \
   app-ios/CusttaUITests/DetalheDoTopicoUITests.swift \
   tests/app-ios.test.cjs
 git commit -m "feat: editar e apagar de dentro do detalhe do tópico, que desce sem gasto" -m "A folha do detalhe do tópico passa a descer quando o tópico fica sem gasto, como a do site, em que o sheetTopico fecha quando não sobra gasto dele. Um onChange na pilha da folha, ao lado do da obra que some, lê a obra gravada: cobre todos os caminhos de uma vez (apagar da edição, o gasto à vista ou a compra toda; arrastar a linha; trocar o tópico do gasto; apagar ou mudar em outro aparelho) e só dispara depois de gravar, de modo que a recusa (\"Carregando suas obras\") não fecha nada. O que se vê é a folha descendo, sem esperar a linha sair." -m "A lista comum das folhas de origem continua sem fechar folha nenhuma: o A pagar fica aberto, com o vazio, como no site. Ela ganha só o desceSemGasto, que o detalhe liga, para o \"Salvar\" que tira a última linha (o gasto foi para outro tópico) não anunciar \"O gasto saiu desta lista.\", porque quem ouve já está na tela Orçamento. O \"Gasto apagado\" e o \"Compra apagada\" ficam." -m "Editar e apagar de dentro do detalhe já vinham da lista comum. Os testes de tela novos provam o que é do detalhe: a edição com o nome do tópico no subtítulo e no voltar e o \"Salvar\" na mesma rolagem, com os números do mockup (R\$ 77.300,00, corrigido R\$ 78.383,02 e \"Faltam R\$ 2,7 mil — 97%\"), também na maior letra, com as 126 linhas da Mão de obra; o gasto que troca de tópico saindo do detalhe; o \"Apagar\" da edição com \"10 gastos · 7% da obra\", R\$ 61.500,00, corrigido R\$ 61.929,43 e \"77% usado\"; e a folha que desce trocando o tópico do último gasto da Fundação, apagando a compra toda das esquadrias e arrastando o último gasto da Alvenaria, mas não na recusa. Uma guarda Node fixa o fechar no onChange da obra gravada, a lista sem fechar folha e o anúncio calado."
+```
+
+### Task 33: Laudo de leitura das folhas de origem
+
+O laudo de leitura ganha as folhas de origem, no escuro e no claro, no job `laudo-etapa3` (e fora do `laudo`): o A pagar com os vencimentos, no fim de uma lista longa, vazio e com a edição de um vencimento empurrada; e o detalhe do tópico com a Cerâmica no topo e rolada até os pagos, a Estrutura que passou do orçamento, a Documentação fora dele, o modo total e a edição com "Cerâmica". São 20 cenas (10 em cada tema), e todas passam sem exceção nova.
+
+- **Os ganchos, só em DEBUG e só com o argumento** (decisão 6 do levantamento). Os dois moram na `ListaDaOrigem`, comum às duas folhas:
+  - **a rolagem:** `.rolagemFixaSoComOArgumento()` na `ScrollView` da lista, um `@ViewBuilder` novo no `Componentes.swift`, logo depois da `RolagemFixaDoTeste`, que só aplica o modificador quando o `-custta.rolagem` vem. A `RolagemFixaDoTeste` não muda: o `.scrollPosition` dela, ligado em todo Debug, mudaria a lista das duas folhas nos testes de tela, e a obra e a tela Orçamento seguem com ela como antes. Com o argumento, a tela de trás da folha também rola, sem efeito no print;
+  - **a edição:** um `.task` numa extensão `#if DEBUG` da lista que, com `-custta.origem editar:<gasto>`, chama o mesmo `editar(...)` do toque na linha, uma vez só (`guard origem.volta == nil`: a lista que volta da edição não empurra de novo). Sem o argumento, a tarefa volta na primeira linha, como o `-custta.linhaAberta` da `ObraView`.
+  - **A prova de que são inertes:** sem os argumentos, o `FolhasDeOrigemUITests` (24) e o `DetalheDoTopicoUITests` (15) passam como antes, e os prints do A pagar e do detalhe da Cerâmica (escuro, letra padrão, no alto e no fim, com `-custta.reduzirMovimento YES`) saem iguais pixel a pixel fora do relógio. Uma guarda Node segura os dois atrás do DEBUG e do argumento; as cinco mutações dela morrem.
+- **As cenas roladas.**
+  - **O A pagar, fim:** na vitrine, a folha cabe inteira no 18 Pro na letra padrão (a frase do fim a ~460 pt), e o "fim" seria a mesma tela. A cena usa o `topicoLongo` (23 vencimentos: as 20 diárias e os 3 da vitrine), parada a 1092 pt (o fim é 1096,8): a borda de cima fica no vão entre duas diárias. A frase do fim de uma lista longa cai na faixa de baixo que o laudo deixa de fora (os 140 pt da cápsula de abas, que segue atrás da folha), e nenhuma rolagem a põe acima dela: a cena mede as linhas do meio.
+  - **A Cerâmica, rolada** a 500 pt (rola até 574,9): a borda de cima no fio entre a parcela 7/10 e a 8/10, e passam pelo meio o "Pagos · 5" e as quatro primeiras pagas. A espera (`gasto-g021`) não prova a rolagem, porque a pilha preguiçosa monta as 16 peças da Cerâmica já no topo.
+- **As outras.** O vazio é a obra sem vencimentos (`aPagar:v2`, como no `testObraSemVencimentosAbreAFolhaVazia`). As edições são a `g039` no A pagar (a primeira linha, parcela 2/6) e a `g021` no detalhe (o Contrapiso, à vista, a do `testEditarEmpurraComONomeDoTopicoESalvarVoltaAceso`).
+- **O pior de cada cena** (escuro / claro, 18 Pro): o "Apagar gasto" no Negativo das duas edições, a 4,97 / 5,50 (`#FB7185` / `#C22E55`, o mesmo par da edição da etapa 2); a frase do "passou" no `Alerta` sobre a linha da folha, na Estrutura, a 6,26 / 5,92; nas outras, o secundário, de 9,66 a 10,49. O "Editar gasto" e o "A pagar"/"Cerâmica" embaixo dele ficam a x ≥ 154 pt, longe da sombra do voltar do iOS 26 (x < 100). O valor da data (o `DatePicker`) e o texto do campo da descrição são do UIKit, e o laudo não os vê (pontos cegos conhecidos).
+- **O que só a CI do iOS 26 prova:** a rolada do A pagar depende do dia, porque os cabeçalhos de mês das diárias mudam de lugar. Quando a virada do mês cai entre as últimas linhas (do dia ~6 ao ~17), a borda de cima pode cortar uma linha de secundário. Dentro da folha tudo é sólido, e o pedaço medido tem o contraste da palavra, mas é a primeira cena a olhar se a CI reprovar. O `laudo-etapa3` ganha ~7 min no Mac e ~9 na CI.
+
+**Files:**
+- Modify: `.github/workflows/app-ios.yml`
+- Modify: `app-ios/Custta/Identidade/Componentes.swift`
+- Modify: `app-ios/Custta/Telas/ListaDaOrigem.swift`
+- Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `RolagemFixaDoTeste` (etapa 2); `ListaDaOrigem.editar(_:obra:ordem:)` (Tarefa 29); `OrigemDaEdicao.volta` (Tarefa 24); `CUSTTA_DADOS=topicoLongo` e `CUSTTA_FOLHA=topico:<obra>:<tópico>` (Tarefa 30).
+- Produces: `View.rolagemFixaSoComOArgumento()` (DEBUG); os argumentos `-custta.origem editar:<gasto>` e `-custta.rolagem` nas folhas de origem; `LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem`, com as cenas "A pagar", "A pagar, fim", "A pagar vazio", "A pagar, editar gasto", "detalhe, Cerâmica, topo", "detalhe, Cerâmica, rolada", "detalhe, Estrutura, passou", "detalhe, Documentação, fora", "detalhe, só o total" e "detalhe, editar gasto", cada uma com ", escuro" e ", claro".
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -562,6 +562,50 @@ extension LeituraNoVidroUITests {
+     }
+ }
+ 
++extension LeituraNoVidroUITests {
++    /// As folhas de origem (etapa 3, PR 2), no escuro e no claro. O A pagar: com os vencimentos (na letra padrão a folha cabe
++    /// inteira, com a frase do fim), no fim de uma lista longa, vazio e com a edição de um vencimento empurrada (o "A pagar"
++    /// embaixo do título, o voltar ao lado). O detalhe do tópico: a Cerâmica no topo e rolada até os pagos, a Estrutura, que
++    /// passou do orçamento (a frase no Alerta sobre a linha da folha), a Documentação, fora do orçamento, a Cerâmica no modo
++    /// total e a edição com "Cerâmica". As roladas e as edições abrem pelos ganchos da lista das folhas (`-custta.rolagem` e
++    /// `-custta.origem editar:<gasto>`). Roda no job laudo-etapa3.
++    @MainActor func testLeituraDasFolhasDeOrigem() {
++        var cenas: [Cena] = []
++        for tema in temas {
++            let combo = ["-custta.tema", tema] + piorMomento
++            cenas += [
++                Cena(nome: "A pagar, \(tema)", conta: "senha", argumentos: combo, espera: "resumoDoAPagar", escopo: "tudo",
++                     dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
++                // As 20 diárias do topicoLongo alongam a lista. A 1092 pt, 5 antes do fim no 18 Pro, a borda de cima fica no vão
++                // entre duas diárias; a frase do fim cai na faixa de baixo, que o laudo deixa de fora (a da cápsula de abas, que
++                // segue atrás da folha): a cena mede as linhas que passam pelo meio.
++                Cena(nome: "A pagar, fim, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "1092"],
++                     espera: "ponteDoAPagar", escopo: "tudo", dados: "topicoLongo", abrir: "obra:v1", folha: "aPagar:v1", rolada: true),
++                Cena(nome: "A pagar vazio, \(tema)", conta: "senha", argumentos: combo, espera: "aPagarVazio", escopo: "tudo",
++                     dados: "vitrine", abrir: "obra:v2", folha: "aPagar:v2"),
++                Cena(nome: "A pagar, editar gasto, \(tema)", conta: "senha", argumentos: combo + ["-custta.origem", "editar:g039"],
++                     espera: "salvarGasto", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
++                Cena(nome: "detalhe, Cerâmica, topo, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
++                     escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
++                // A 500 pt (a Cerâmica rola até 575), a borda de cima fica no fio entre duas linhas e os pagos passam pelo meio.
++                // A espera não prova a rolagem: a pilha preguiçosa já monta as 16 peças da Cerâmica no topo.
++                Cena(nome: "detalhe, Cerâmica, rolada, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "500"],
++                     espera: "gasto-g021", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest",
++                     rolada: true),
++                Cena(nome: "detalhe, Estrutura, passou, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
++                     escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:estrutura"),
++                Cena(nome: "detalhe, Documentação, fora, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
++                     escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:projeto"),
++                Cena(nome: "detalhe, só o total, \(tema)", conta: "senha", argumentos: combo, espera: "secao-A vencer",
++                     escopo: "tudo", dados: "vitrine", abrir: "orcamento:v1", folha: "topico:v1:revest"),
++                Cena(nome: "detalhe, editar gasto, \(tema)", conta: "senha", argumentos: combo + ["-custta.origem", "editar:g021"],
++                     espera: "salvarGasto", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
++            ]
++        }
++        cobrar(cenas)
++    }
++}
++
+ /* O medidor com imagens sintéticas: sem abrir o app. */
+ final class LaudoDeContrasteTests: XCTestCase {
+     private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -891,6 +891,23 @@ test('detalhe do tópico: sem gasto, a folha desce depois de gravar, e o "O gast
+   assert.doesNotMatch(ler('app-ios/Custta/Telas/FolhaDoAPagar.swift'), /desceSemGasto/, 'o A pagar fica aberto, vazio');
+ });
+ 
++test('lista da folha de origem: os ganchos do laudo só em DEBUG e só com o argumento do teste', () => {
++  // A rolagem fixa (`-custta.rolagem`) liga o `.scrollPosition`, que muda a rolagem da lista: ligada em todo Debug, os testes
++  // de tela do A pagar e do detalhe rodariam uma lista diferente da de Release, e nenhum deles vê isso. Sem o argumento, ela
++  // não entra (a T33 provou com os testes de tela das duas folhas e os prints com Δ = 0), e o `-custta.origem editar:<gasto>`,
++  // que abre a edição já empurrada, não faz nada.
++  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
++  assert.match(lista, /\n\s*#if DEBUG\n\s*\/\/[^\n]*\n\s*\.rolagemFixaSoComOArgumento\(\)\n\s*#endif\n\s*\.onScrollPhaseChange/,
++               'a rolagem fixa na ScrollView da lista, só em DEBUG');
++  assert.doesNotMatch(lista, /RolagemFixaDoTeste\(\)/, 'a rolagem fixa sempre ligada mudaria a lista nos testes de tela');
++  assert.match(ler('app-ios/Custta/Identidade/Componentes.swift'),
++               /#if DEBUG\n(?:(?!#endif)[\s\S])*func rolagemFixaSoComOArgumento\(\) -> some View \{\n\s*if UserDefaults\.standard\.object\(forKey: "custta\.rolagem"\) != nil \{ modifier\(RolagemFixaDoTeste\(\)\) \} else \{ self \}\n/,
++               'sem o -custta.rolagem, a lista fica sem o .scrollPosition');
++  assert.match(lista, /\n\s*#if DEBUG\n\s*\.task \{ abrirAEdicaoDoTeste\(ordem: ordem\) \}\n\s*#endif\n/, 'o -custta.origem só em DEBUG');
++  assert.match(lista, /guard origem\.volta == nil, let pedido = UserDefaults\.standard\.string\(forKey: "custta\.origem"\), pedido\.hasPrefix\("editar:"\),/,
++               'sem o -custta.origem, nada; e a lista que volta da edição não empurra de novo');
++});
++
+ test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
+   const s = JSON.parse(ler('package.json')).scripts;
+   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖|AssertionError" | sort -u
+node tests/workflow.test.cjs
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem 2>&1 | grep -E "error: -\[|Executed [0-9]+ test" | sed 's/.*\] : //' | sort | uniq -c
+```
+Expected:
+- **Node:** reprova `✖ lista da folha de origem: os ganchos do laudo só em DEBUG e só com o argumento do teste`, com `AssertionError [ERR_ASSERTION]: a rolagem fixa na ScrollView da lista, só em DEBUG` (`ℹ pass 58`, `ℹ fail 1`); o `workflow.test.cjs` passa (o laudo novo já existe no Swift).
+- **O build** passa sem aviso.
+- **O laudo:** reprova só a espera de seis cenas, duas vezes cada (o print normal e o sem texto): `XCTAssertTrue failed - A pagar, fim, escuro: a tela não abriu` (e claro), `… A pagar, editar gasto, …` e `… detalhe, editar gasto, …`; `Executed 1 test, with 12 failures`, ~8 min no Mac. Sem os ganchos, a lista fica no topo e a edição não entra. A "detalhe, Cerâmica, rolada" passa a espera e mede o topo (a pilha preguiçosa já monta a `g021`). Nenhuma palavra abaixo de 4,5 nas 20 cenas.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -287,6 +287,7 @@ jobs:
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
++            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+@@ -351,7 +352,8 @@ jobs:
+     runs-on: macos-26
+     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
+     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
+-    # encaixadas, no escuro, no claro e na maior letra. Cada PR da etapa anota aqui o tempo do job.
++    # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
++    # escuro e no claro (~20 cenas). Cada PR da etapa anota aqui o tempo do job.
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -381,6 +383,7 @@ jobs:
+             -resultBundlePath "$RUNNER_TEMP/laudo-etapa3.xcresult" \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
++            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+             -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
+             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
+             CODE_SIGNING_ALLOWED=NO
+```
+
+Em `app-ios/Custta/Identidade/Componentes.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Componentes.swift
++++ b/app-ios/Custta/Identidade/Componentes.swift
+@@ -403,6 +403,15 @@ struct RolagemFixaDoTeste: ViewModifier {
+             .onScrollPhaseChange { _, fase in if fase == .interacting { segurando = false } }
+     }
+ }
++
++extension View {
++    /// A rolagem fixa do laudo só com o `-custta.rolagem`: sem ele, a lista fica sem o `.scrollPosition`, que muda a rolagem
++    /// dela, como em Release. É a das folhas de origem (o A pagar e o detalhe do tópico ficam como sem o gancho nos testes de
++    /// tela); a obra e a tela Orçamento usam a RolagemFixaDoTeste de sempre.
++    @ViewBuilder func rolagemFixaSoComOArgumento() -> some View {
++        if UserDefaults.standard.object(forKey: "custta.rolagem") != nil { modifier(RolagemFixaDoTeste()) } else { self }
++    }
++}
+ #endif
+ 
+ extension View {
+```
+
+Em `app-ios/Custta/Telas/ListaDaOrigem.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ListaDaOrigem.swift
++++ b/app-ios/Custta/Telas/ListaDaOrigem.swift
+@@ -88,9 +88,16 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
+                 .contentShape(.rect)
+                 .onTapGesture { if origem.linhaAberta != nil { fecharLinha() } }
+             }
++            #if DEBUG
++            // Laudo: a lista parada numa rolagem dada (`-custta.rolagem`); sem o argumento, nada muda.
++            .rolagemFixaSoComOArgumento()
++            #endif
+             .onScrollPhaseChange { _, fase in if fase != .idle, origem.linhaAberta != nil { fecharLinha() } }
+             .onChange(of: origem.volta) { _, volta in if let volta { voltou(volta, depois: ordem, leitor: leitor) } }
+         }
++        #if DEBUG
++        .task { abrirAEdicaoDoTeste(ordem: ordem) }
++        #endif
+         .environment(\.dentroDaFolha, true)
+         .modifier(PerguntaDeApagar(apresentada: $perguntando, obraId: obra.id, gasto: alvoDoApagar) { pedido in
+             apagar(pedido, antes: ordem, depoisDoVoltar: false)
+@@ -193,6 +200,18 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
+     }
+ }
+ 
++#if DEBUG
++extension ListaDaOrigem {
++    /// Laudo e conferência visual: `-custta.origem editar:<gasto>` abre a folha com a edição do gasto já empurrada, como o
++    /// toque na linha. Uma vez: a lista que volta da edição já tem a `volta` e não empurra de novo. Sem o argumento, nada.
++    fileprivate func abrirAEdicaoDoTeste(ordem: [String]) {
++        guard origem.volta == nil, let pedido = UserDefaults.standard.string(forKey: "custta.origem"), pedido.hasPrefix("editar:"),
++              let gasto = obra.gastos.first(where: { $0.id == String(pedido.dropFirst(7)) }) else { return }
++        editar(gasto, obra: obra, ordem: ordem)
++    }
++}
++#endif
++
+ /// A ordem das linhas: os gastos das peças, na ordem delas.
+ private func ordemDasLinhas(_ pecas: [PecaDaOrigem]) -> [String] {
+     pecas.compactMap { peca -> String? in
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+node tests/workflow.test.cjs
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem 2>&1 | grep -E "^leitura \||Test Case .*(passed|failed)"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/DetalheDoTopicoUITests 2>&1 | grep -E -A1 "Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test Suite|Executed|TEST EXECUTE"
+```
+Expected:
+- `ℹ pass 59`, `ℹ fail 0`; o workflow passa;
+- sem aviso;
+- o laudo: as 20 cenas com `0 abaixo`, o pior em 4,97 (o "Apagar gasto" da edição, no escuro); `passed`, em ~7 min no Mac;
+- `DetalheDoTopicoUITests` 15 de 15 e `FolhasDeOrigemUITests` 24 de 24 (sem o argumento, os ganchos não mudam as folhas); `** TEST EXECUTE SUCCEEDED **`, em ~15 min no Mac;
+- e os prints do A pagar e do detalhe (escuro, letra padrão, no alto e no fim, com `-custta.reduzirMovimento YES`) iguais aos do commit anterior fora do relógio.
+
+Na CI do iOS 26 (run 40108043199, com as Tarefas 31 a 33), o laudo passa as 20 cenas com `0 abaixo` e os mesmos piores do Mac (4,97 / 5,50 nas edições, 6,26 / 5,92 na Estrutura), em 10,4 min; o `laudo-etapa3` levou 39 min (30 no run 40050588953). O run foi no dia 24, fora da janela de risco da "A pagar, fim" (do dia ~6 ao ~17). No mesmo run, o `auditoria` caiu num teste da etapa 2, o `testContrasteDaObraNosDoisTemas`, com `Audit failed to complete in time`: é tempo da auditoria na VM, fora destas tarefas, e os outros 13 testes do job passaram.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/Custta/Identidade/Componentes.swift \
+  app-ios/Custta/Telas/ListaDaOrigem.swift \
+  app-ios/CusttaUITests/LeituraNoVidroUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "test: laudo de leitura das folhas de origem" -m "O laudo de leitura ganha as folhas de origem da etapa 3, no escuro e no claro, no job laudo-etapa3 (e fora do job laudo): o A pagar com os vencimentos, no fim de uma lista longa (as diárias do topicoLongo), vazio e com a edição de um vencimento empurrada; e o detalhe do tópico com a Cerâmica no topo e rolada até os pagos, a Estrutura que passou do orçamento (a frase no Alerta sobre a linha da folha), a Documentação fora dele, o modo total e a edição com \"Cerâmica\". As 20 cenas passam, sem exceção nova: o pior é o \"Apagar gasto\" no Negativo da edição, o mesmo par da etapa 2." -m "Para as cenas roladas e as da edição, a lista das folhas ganha dois ganchos de teste, só em DEBUG e só com o argumento: a rolagem fixa (-custta.rolagem), que agora entra só quando o argumento vem, porque o .scrollPosition dela, ligado em todo Debug, mudaria a lista do A pagar e do detalhe nos testes de tela; e o -custta.origem editar:<gasto>, que abre a folha com a edição já empurrada, uma vez. Sem os argumentos nada muda: os testes de tela das duas folhas passam como antes, e os prints do A pagar e do detalhe saem iguais pixel a pixel. A obra e a tela Orçamento seguem com a rolagem fixa de sempre. Uma guarda Node segura os dois ganchos atrás do DEBUG e do argumento."
 ```

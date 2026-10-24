@@ -7,7 +7,8 @@ import CusttaNucleo
 /// lista da obra. As peças (cabeçalho de mês ou de seção e gasto) são filhas diretas da LazyVStack, com o fundo do grupo
 /// desenhado por peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria uma peça só (o detalhe do tópico
 /// passa de cem gastos). O cabeçalho do mês fica dentro do grupo, com os cantos de cima; o da seção, fora, e os cantos vão no
-/// primeiro gasto. A lista não fecha a folha.
+/// primeiro gasto. A lista não fecha a folha: a do detalhe desce sozinha sem gasto, e o `desceSemGasto` só cala o "O gasto
+/// saiu desta lista." da última linha.
 struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
     let obra: Obra
     @Bindable var origem: OrigemDaEdicao
@@ -16,6 +17,8 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
     /// As peças na obra já gravada: dizem para onde o VoiceOver vai depois de apagar.
     let pecasDepois: (Obra) -> [PecaDaOrigem]
     let linha: (Gasto) -> LinhaDeGasto
+    /// A folha desce quando a lista fica sem gasto (o detalhe do tópico; o A pagar fica aberto, com o vazio, como no site).
+    let desceSemGasto: Bool
     let cabecalho: Cabecalho
     /// O cartão de quando não há peça nenhuma, com o foco do VoiceOver de quando a última linha sai.
     let vazio: Vazio
@@ -30,13 +33,14 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
     @State private var naoCarregado = false
 
     init(obra: Obra, origem: OrigemDaEdicao, pecas: [PecaDaOrigem], pecasDepois: @escaping (Obra) -> [PecaDaOrigem],
-         linha: @escaping (Gasto) -> LinhaDeGasto, @ViewBuilder cabecalho: () -> Cabecalho, @ViewBuilder vazio: () -> Vazio,
-         @ViewBuilder rodape: () -> Rodape) {
+         linha: @escaping (Gasto) -> LinhaDeGasto, desceSemGasto: Bool = false, @ViewBuilder cabecalho: () -> Cabecalho,
+         @ViewBuilder vazio: () -> Vazio, @ViewBuilder rodape: () -> Rodape) {
         self.obra = obra
         _origem = Bindable(origem)
         self.pecas = pecas
         self.pecasDepois = pecasDepois
         self.linha = linha
+        self.desceSemGasto = desceSemGasto
         self.cabecalho = cabecalho()
         self.vazio = vazio()
         self.rodape = rodape()
@@ -118,7 +122,8 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
     /// A edição voltou. No "Salvar", a linha fica onde está se continua à vista (a data nova pode tê-la mudado de lugar; se
     /// saiu da vista, a lista rola o mínimo até ela) e apaga a luz em 2 s. No "Apagar", a linha sai no turno seguinte ao
     /// voltar, com a animação dela (no mesmo turno, as transações do voltar e do apagar se misturariam). O VoiceOver vai para
-    /// onde o `focoNaOrigem` diz, quando o voltar termina, e ouve depois o que aconteceu.
+    /// onde o `focoNaOrigem` diz, quando o voltar termina, e ouve depois o que aconteceu; o "Salvar" que tirou a última linha
+    /// de uma folha que desce sem gasto, nada (quem ouve já está na tela de trás).
     private func voltou(_ volta: OrigemDaEdicao.Volta, depois: [String], leitor: ScrollViewProxy) {
         let saida: SaidaDaLinha
         switch volta.motivo {
@@ -143,6 +148,7 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
             Task { @MainActor in apagar(pedido, antes: volta.ordem, depoisDoVoltar: true) }
             return
         }
+        if desceSemGasto, depois.isEmpty, case .salvou = saida { return }
         let destino = focoNaOrigem(saida, antes: volta.ordem, depois: depois)
         Task { @MainActor in
             try? await Task.sleep(for: OrigemDaEdicao.fimDoVoltar)

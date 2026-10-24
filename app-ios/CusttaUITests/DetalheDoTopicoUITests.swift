@@ -6,12 +6,19 @@ import notify
    Documentação, fora do orçamento, com "Sem valor no orçamento" no lugar da barra; no modo total (a vitrine de sempre), sem a
    linha do orçamento; a obra apagada em outro aparelho fecha a folha. E pelas linhas da tela Orçamento, cada uma um botão
    inteiro: o previsto com gasto abre e o sem gasto não; o fora do orçamento abre; no modo total, o "Gasto por tópico" abre.
-   A edição, o apagar e a folha que desce sem gasto são da Tarefa 32. */
+   De dentro do detalhe: tocar num gasto empurra a edição, com o nome do tópico, e "Salvar" volta na mesma rolagem com os
+   números novos (também na maior letra, com as 126 linhas da Mão de obra do topicoLongo); o gasto que troca de tópico sai do
+   detalhe; "Apagar" da edição volta com os números novos. Sem gasto no tópico, a folha desce: trocando o tópico do último
+   gasto, apagando a compra toda que era o tópico inteiro e arrastando o último; na recusa, ela fica. */
 @MainActor
 final class DetalheDoTopicoUITests: XCTestCase {
+    private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+
     /// A tela Orçamento da Casa Alphaville (v1) com o detalhe do tópico aberto por cima.
-    private func abrirDetalhe(_ topico: String, dados: String = "porTopico", extra: [String: String] = [:]) -> XCUIApplication {
-        let app = abrirApp(conta: "senha", dados: dados, abrir: "orcamento:v1", folha: "topico:v1:\(topico)", extra: extra)
+    private func abrirDetalhe(_ topico: String, dados: String = "porTopico", argumentos: [String] = [],
+                              extra: [String: String] = [:]) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: dados, abrir: "orcamento:v1", folha: "topico:v1:\(topico)", argumentos: argumentos,
+                           extra: extra)
         XCTAssertTrue(app.elemento("resumoDoTopico").waitForExistence(timeout: 10), "resumoDoTopico não apareceu")
         return app
     }
@@ -173,5 +180,195 @@ final class DetalheDoTopicoUITests: XCTestCase {
         notify_post("br.com.custta.falso.apagarRemoto")
         XCTAssertTrue(app.buttons["fecharFolha"].waitForNonExistence(timeout: 10), "a obra sumiu: a folha fecha")
         XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 5), "e a tela Orçamento volta para Obras")
+    }
+
+    // MARK: Editar e apagar de dentro do detalhe
+
+    /// Toca num gasto do detalhe, rolando até ele: a edição entra na mesma folha.
+    private func editar(_ app: XCUIApplication, _ id: String) {
+        let linha = rolarNaFolha(app, ate: "gasto-\(id)")
+        guard linha.exists else { return XCTFail("a linha \(id) no detalhe") }
+        linha.tap()
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5), "a edição de \(id) entrou na folha")
+    }
+
+    /// O valor no teclado de valor: apaga e digita `teclas`; "Pronto" volta à edição.
+    private func mudarValor(_ app: XCUIApplication, _ teclas: String) {
+        app.elemento("linhaValor").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        for _ in 0..<8 { app.buttons["tecla-del"].tap() }
+        for t in teclas { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.elemento("linhaValor").waitForExistence(timeout: 5))
+    }
+
+    /// Troca o tópico da edição por um da lista "Todos" e volta a ela.
+    private func trocarOTopico(_ app: XCUIApplication, para id: String, nome: String) {
+        app.elemento("linhaTopico").tap()
+        let topico = app.buttons["topico-\(id)"]
+        XCTAssertTrue(topico.waitForExistence(timeout: 5), "a lista dos tópicos")
+        topico.tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForExistence(timeout: 5))
+        XCTAssertEqual(app.elemento("linhaTopico").value as? String, nome, "o tópico novo na edição")
+    }
+
+    /// Volta na mesma folha: a edição sai e o detalhe fica, com o × (o resumo, lá no alto, pode estar fora da parte da lista
+    /// que a LazyVStack criou).
+    private func voltouAoDetalhe(_ app: XCUIApplication, _ porque: String) {
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5), porque)
+        XCTAssertTrue(app.buttons["fecharFolha"].waitForExistence(timeout: 3), "o detalhe continua aberto")
+    }
+
+    /// Sem gasto no tópico, a folha desce, como no site, e fica a tela Orçamento: a linha do tópico em R$ 0,00, que não abre
+    /// mais o detalhe.
+    private func desceu(_ app: XCUIApplication, _ porque: String, linha id: String) {
+        guard app.buttons["fecharFolha"].waitForNonExistence(timeout: 5) else { return XCTFail("a folha desceu: \(porque)") }
+        XCTAssertFalse(app.elemento("resumoDoTopico").exists, "sem o detalhe")
+        let linha = app.elemento(id)
+        app.rolarAte(linha)
+        XCTAssertTrue(linha.label.contains("R$\u{a0}0,00"), "a tela Orçamento sem o gasto: \(linha.label)")
+        XCTAssertFalse(app.buttons[id].exists, "\(id): sem gasto, a linha não abre o detalhe")
+    }
+
+    /// Arrasta a linha da folha para a esquerda e toca no "Apagar" dela.
+    private func arrastarEApagar(_ app: XCUIApplication, _ id: String) {
+        let linha = rolarNaFolha(app, ate: "gasto-\(id)")
+        guard linha.exists else { return XCTFail("a linha \(id) no detalhe") }
+        linha.swipeLeft()
+        let apagar = app.buttons["apagar-\(id)"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3), "arrastar para a esquerda mostra Apagar, com a folha aberta")
+        apagar.tap()
+    }
+
+    /// O voltar do sistema da edição: tem o nome da folha de origem.
+    private func voltarDoSistema(_ app: XCUIApplication) -> XCUIElement? {
+        app.navigationBars.buttons.matching(identifier: "BackButton").allElementsBoundByIndex.first(where: \.isHittable)
+    }
+
+    /// O Contrapiso (o pago mais antigo da Cerâmica) de R$ 15.200,00 para R$ 15.800,00, como no mockup: a edição diz
+    /// "Cerâmica" no subtítulo e no voltar, e "Salvar" volta na mesma rolagem, com a linha sem o tópico, os números novos e a
+    /// linha acesa (a luz de 2 s o XCUITest não vê).
+    func testEditarEmpurraComONomeDoTopicoESalvarVoltaAceso() {
+        let app = abrirDetalhe("revest")
+        let linha = rolarNaFolha(app, ate: "gasto-g021")
+        guard linha.exists else { return XCTFail("a linha g021 no detalhe") }
+        let antes = linha.frame.minY
+        linha.tap()
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5), "tocar no gasto empurra a edição na mesma folha")
+        let titulo = app.elemento("tituloDaFolha")
+        XCTAssertTrue(titulo.label.hasPrefix("Editar gasto"), titulo.label)
+        XCTAssertTrue(titulo.label.hasSuffix("Cerâmica"), "o tópico embaixo do título: \(titulo.label)")
+        XCTAssertFalse(app.buttons["fecharFolha"].exists, "sem o ×: o voltar fica no lugar dele")
+        XCTAssertEqual(voltarDoSistema(app)?.label, "Cerâmica", "o voltar do sistema, com o nome do tópico")
+        mudarValor(app, "1580000")
+        XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}15.800,00")
+        app.buttons["salvarGasto"].tap()
+        voltouAoDetalhe(app, "Salvar volta ao detalhe")
+        sleep(1)
+        let depois = app.elemento("gasto-g021")
+        XCTAssertEqual(depois.value as? String, "R$\u{a0}15.800,00", "a linha com o valor novo")
+        XCTAssertTrue(depois.label.hasPrefix("Contrapiso e regularização. Pix, "), "a linha sem o tópico: \(depois.label)")
+        XCTAssertEqual(depois.frame.minY, antes, accuracy: 1, "a lista volta na mesma rolagem")
+        confere(app.elemento("resumoDoTopico"), contem: ["11 gastos · 9% da obra", "R$\u{a0}77.300,00", "corrigido: R$\u{a0}78.383,02"])
+        confere(app.elemento("orcamentoDoTopico"), contem: ["Faltam R$ 2,7 mil — 97%"])
+    }
+
+    /// O Contrapiso para Materiais básicos: "Salvar" volta ao detalhe sem a linha, com os números sem ela; com gasto, a folha
+    /// fica.
+    func testTrocarOTopicoTiraALinhaDoDetalhe() {
+        let app = abrirDetalhe("revest")
+        editar(app, "g021")
+        trocarOTopico(app, para: "matbasicos", nome: "Materiais básicos")
+        app.buttons["salvarGasto"].tap()
+        voltouAoDetalhe(app, "Salvar volta ao detalhe")
+        XCTAssertTrue(app.elemento("gasto-g021").waitForNonExistence(timeout: 5), "o gasto de outro tópico sai do detalhe")
+        confere(app.elemento("resumoDoTopico"), contem: ["10 gastos · 7% da obra", "R$\u{a0}61.500,00"])
+        XCTAssertEqual(app.elemento("secao-Pagos").label, "Pagos · 4")
+        sleep(1)
+        XCTAssertTrue(app.buttons["fecharFolha"].exists, "com gasto, a folha fica")
+    }
+
+    /// As Sapatas e baldrames, o único gasto da Fundação, para Materiais básicos: a folha desce.
+    func testTrocarOTopicoDoUltimoGastoDesceAFolha() {
+        let app = abrirDetalhe("fundacao")
+        editar(app, "g006")
+        trocarOTopico(app, para: "matbasicos", nome: "Materiais básicos")
+        app.buttons["salvarGasto"].tap()
+        desceu(app, "o último gasto foi para outro tópico", linha: "topicoOrc-fundacao")
+    }
+
+    /// O Contrapiso, à vista: "Apagar gasto" pergunta com o nome e o valor, e "Apagar" volta ao detalhe com os números do
+    /// mockup ("10 gastos · 7% da obra", R$ 61.500,00, corrigido R$ 61.929,43 e "77% usado").
+    func testApagarAVistaDaEdicaoVoltaComOsNumerosNovos() {
+        let app = abrirDetalhe("revest")
+        editar(app, "g021")
+        app.buttons["apagarGasto"].tap()
+        let alerta = app.alerts["Apagar este gasto?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        XCTAssertTrue(alerta.staticTexts["Contrapiso e regularização · R$\u{a0}15.200,00. Não dá para desfazer."].exists)
+        alerta.buttons["Apagar"].tap()
+        voltouAoDetalhe(app, "Apagar volta ao detalhe")
+        XCTAssertTrue(app.elemento("gasto-g021").waitForNonExistence(timeout: 5), "e a linha sai, no detalhe")
+        confere(app.elemento("resumoDoTopico"), contem: ["10 gastos · 7% da obra", "R$\u{a0}61.500,00", "corrigido: R$\u{a0}61.929,43"])
+        confere(app.elemento("orcamentoDoTopico"), contem: ["77% usado"])
+        sleep(1)
+        XCTAssertTrue(app.buttons["fecharFolha"].exists, "com gasto, a folha fica")
+    }
+
+    /// As janelas e portas de alumínio em 6x são os 6 gastos das Esquadrias ("Esq. de alumínio"): "Apagar a compra toda" da
+    /// edição de uma parcela esvazia o tópico, e a folha desce.
+    func testApagarACompraTodaQueEsvaziaOTopicoDesceAFolha() {
+        let app = abrirDetalhe("esquadrias")
+        confere(app.elemento("resumoDoTopico"), contem: ["6 gastos · "])
+        editar(app, "g039")
+        app.buttons["apagarGasto"].tap()
+        let alerta = app.alerts["Janelas e portas de alumínio (2/6)"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        alerta.buttons["Apagar a compra toda (6 parcelas)"].tap()
+        desceu(app, "a compra toda era o tópico inteiro", linha: "topicoOrc-esquadrias")
+    }
+
+    /// Os Tijolos, o único gasto da Alvenaria, arrastados: "Apagar" pergunta, e a folha desce.
+    func testArrastarOUltimoGastoDesceAFolha() {
+        let app = abrirDetalhe("alvenaria")
+        arrastarEApagar(app, "g012")
+        let alerta = app.alerts["Apagar este gasto?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "a pergunta do gasto à vista")
+        alerta.buttons["Apagar"].tap()
+        desceu(app, "o último gasto saiu arrastando", linha: "topicoOrc-alvenaria")
+    }
+
+    /// A recusa do apagar do último gasto: o alerta do site dentro da folha, nada apagado, e a folha não desce.
+    func testCarregandoNoArrastarAvisaNoDetalheENaoDesce() {
+        let app = abrirDetalhe("alvenaria", argumentos: ["-custta.recusarGravacao", "nao-carregado"])
+        arrastarEApagar(app, "g012")
+        app.alerts["Apagar este gasto?"].buttons["Apagar"].tap()
+        let alerta = app.alerts["Carregando suas obras, tente em instantes."]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "o alerta do site, dentro da folha: \(app.alerts.allElementsBoundByIndex.map(\.label))")
+        alerta.buttons["OK"].tap()
+        XCTAssertTrue(alerta.waitForNonExistence(timeout: 3))
+        sleep(1)
+        XCTAssertTrue(app.buttons["fecharFolha"].exists, "na recusa, a folha não desce")
+        XCTAssertTrue(app.elemento("gasto-g012").exists, "nada foi apagado")
+        confere(app.elemento("resumoDoTopico"), contem: ["1 gasto · "])
+    }
+
+    /// Na maior letra, a Mão de obra do topicoLongo tem 126 linhas (20 diárias a vencer e 106 pagos): a terceira diária a
+    /// vencer, de R$ 350,00 para R$ 450,00, e "Salvar" volta com ela no mesmo lugar (o ×, e não o resumo, diz que o detalhe
+    /// ficou: o resumo sai da parte criada).
+    func testNaMaiorLetraSalvarVoltaNaMesmaRolagemComCemGastos() {
+        let app = abrirDetalhe("maoobra", dados: "topicoLongo", argumentos: Self.maiorLetra)
+        let linha = rolarNaFolha(app, ate: "gasto-d103")
+        guard linha.exists, linha.isHittable else { return XCTFail("a terceira diária a vencer no detalhe: \(linha.frame)") }
+        let antes = linha.frame.minY
+        linha.tap()
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5), "a edição entrou na folha")
+        mudarValor(app, "45000")
+        app.buttons["salvarGasto"].tap()
+        voltouAoDetalhe(app, "Salvar volta ao detalhe")
+        sleep(1)
+        let depois = app.elemento("gasto-d103")
+        XCTAssertEqual(depois.value as? String, "R$\u{a0}450,00", "a linha com o valor novo")
+        XCTAssertEqual(depois.frame.minY, antes, accuracy: 1, "a lista longa volta na mesma rolagem")
     }
 }

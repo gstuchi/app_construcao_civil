@@ -5,9 +5,9 @@ import CusttaNucleo
    Orçamento: o resumo do tópico num grupo sólido (quantos gastos e o "% da obra", o bruto, o corrigido e, no orçamento por
    tópico, a linha do orçamento dele) e os gastos em "A vencer" (o próximo primeiro, como na obra) e "Pagos" (o mais novo
    primeiro, como no site), cada seção só com gasto, com a linha de gasto da etapa 2 sem o tópico: o título da folha já o
-   diz. Fecham o × e o puxar (o "Fechar" do site sai). Tocar num gasto empurra a edição na mesma folha, e arrastar uma linha
-   mostra "Apagar", pela lista das folhas de origem, a mesma do A pagar (ListaDaOrigem.swift). Dentro da folha tudo é
-   sólido. */
+   diz. Fecham o × e o puxar (o "Fechar" do site sai); e, quando o tópico fica sem gasto, a folha desce, como no site. Tocar
+   num gasto empurra a edição na mesma folha, e arrastar uma linha mostra "Apagar", pela lista das folhas de origem, a mesma
+   do A pagar (ListaDaOrigem.swift). Dentro da folha tudo é sólido. */
 struct FolhaDoTopico: View {
     let obraId: String
     let topicoId: String
@@ -21,7 +21,7 @@ struct FolhaDoTopico: View {
 }
 
 /// A pilha da folha, montada como a do A pagar (FolhaDoAPagar.swift): a edição empurrada, o "Não salvou" dentro da folha, a
-/// trava do puxar com mudança e a folha que fecha quando a obra some.
+/// trava do puxar com mudança e a folha que fecha quando a obra some; e, só aqui, a que desce quando o tópico fica sem gasto.
 private struct PilhaDoTopico: View {
     let obraId: String
     let topico: Topico
@@ -37,6 +37,8 @@ private struct PilhaDoTopico: View {
     }
 
     private var obra: Obra? { modelo.sincronizador.estado.obras.first { $0.id == obraId } }
+    /// Nenhum gasto do tópico na obra gravada (o filtro do detalheDoTopico); a obra que some é o outro onChange.
+    private var semGasto: Bool { obra.map { o in !o.gastos.contains { $0.topico == topico.id } } ?? false }
 
     var body: some View {
         NavigationStack(path: $origem.caminho) {
@@ -54,6 +56,10 @@ private struct PilhaDoTopico: View {
         .environment(\.alertasNaFolha, alertas)
         // A obra apagada em outro aparelho com a folha aberta: não há o que mostrar; a folha fecha.
         .onChange(of: obra == nil) { _, sumiu in if sumiu { folhas.fechar() } }
+        // O último gasto do tópico saiu, por qualquer caminho (apagado aqui, da edição ou arrastando; trocado de tópico; apagado
+        // ou mudado em outro aparelho): a folha desce, como o sheetTopico do site. Lido da obra gravada, depois de gravar: a
+        // recusa não muda nada e não fecha. O que se vê é a folha descendo, sem esperar a linha sair.
+        .onChange(of: semGasto) { _, vazio in if vazio { folhas.fechar() } }
     }
 }
 
@@ -73,7 +79,7 @@ private struct ListaDoTopico: View {
             let topicos = mapaDeTopicos(estado.config.topicosProprios)
             ListaDaOrigem(obra: obra, origem: origem, pecas: pecasDoDetalhe(detalhe),
                           pecasDepois: { pecasDoDetalhe(detalheDoTopico($0, topico: id, hoje: dataLocalISO(.now, fuso: .current), taxaMensal: taxa)) },
-                          linha: { linhaDeGasto($0, topicos: topicos, comTopico: false) }) {
+                          linha: { linhaDeGasto($0, topicos: topicos, comTopico: false) }, desceSemGasto: true) {
                 ResumoDoDetalhe(detalhe: detalhe, icone: topico.icone)
             } vazio: {
                 EmptyView()

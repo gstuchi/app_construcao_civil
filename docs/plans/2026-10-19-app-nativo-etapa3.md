@@ -15052,3 +15052,287 @@ git add .github/workflows/app-ios.yml \
   tests/app-ios.test.cjs
 git commit -m "test: laudo de leitura das folhas de origem" -m "O laudo de leitura ganha as folhas de origem da etapa 3, no escuro e no claro, no job laudo-etapa3 (e fora do job laudo): o A pagar com os vencimentos, no fim de uma lista longa (as diárias do topicoLongo), vazio e com a edição de um vencimento empurrada; e o detalhe do tópico com a Cerâmica no topo e rolada até os pagos, a Estrutura que passou do orçamento (a frase no Alerta sobre a linha da folha), a Documentação fora dele, o modo total e a edição com \"Cerâmica\". As 20 cenas passam, sem exceção nova: o pior é o \"Apagar gasto\" no Negativo da edição, o mesmo par da etapa 2." -m "Para as cenas roladas e as da edição, a lista das folhas ganha dois ganchos de teste, só em DEBUG e só com o argumento: a rolagem fixa (-custta.rolagem), que agora entra só quando o argumento vem, porque o .scrollPosition dela, ligado em todo Debug, mudaria a lista do A pagar e do detalhe nos testes de tela; e o -custta.origem editar:<gasto>, que abre a folha com a edição já empurrada, uma vez. Sem os argumentos nada muda: os testes de tela das duas folhas passam como antes, e os prints do A pagar e do detalhe saem iguais pixel a pixel. A obra e a tela Orçamento seguem com a rolagem fixa de sempre. Uma guarda Node segura os dois ganchos atrás do DEBUG e do argumento."
 ```
+
+### Task 34: Maior letra e auditorias das folhas de origem
+
+O laudo de leitura ganha as folhas de origem na maior letra e com Aumentar contraste, no escuro. As auditorias ganham as duas folhas na maior letra e o contraste delas no escuro e no claro. Os três testes rodam no job `laudo-etapa3` (e ficam fora do `laudo` e do `auditoria`). São 9 cenas no laudo, e todas passam sem exceção nova no 18 Pro e no Pro Max. Nenhum arquivo do app muda.
+
+- **As cenas do laudo** (`testLeituraDasFolhasDeOrigemNaMaiorLetra`, no molde do `testLeituraDoOrcamentoNaMaiorLetra`: escuro e `piorMomento`):
+  - na maior letra: o A pagar no topo, rolado e com a edição da `g039` empurrada; o detalhe da Cerâmica no topo e rolado, o da Estrutura (a frase do "passou") e a edição da `g021`;
+  - com Aumentar contraste, na letra padrão: o A pagar e a Cerâmica.
+- **As rolagens,** achadas pela sonda na maior letra nos dois iPhones. A borda de cima fica num vão que serve aos dois, porque a CI tem a largura do 18 Pro:
+  - **o A pagar a 248 pt,** entre o resumo e o primeiro mês: 12 pt abaixo do resumo e 60 acima do mês no 18 Pro; 59 e 13 no Pro Max. Esse vão não depende do dia; os de baixo, sim (os cabeçalhos de mês mudam com os vencimentos). O fim não tem vão: a frase do fim tem 313 pt, e a borda corta a última linha;
+  - **a Cerâmica a 628,** entre a frase do orçamento e o "A vencer · 6": 23 e 13 no 18 Pro; 12 e 24 no Pro Max. Nos pagos não há vão comum (as linhas se desencontram ~43 pt), e eles ficam com a rolada da letra padrão (Tarefa 33);
+  - **a Estrutura, no topo:** a frase do "passou" fica a 637–682 pt, acima da faixa de baixo (734), e é medida inteira, sem rolar.
+- **O pior de cada cena** é igual no 18 Pro e no Pro Max:
+  - o texto de uma peça sólida da edição à vista (`#EAFFF6`), a 6,00;
+  - a frase do "passou" no `Alerta` (`#E0A83A`), a 6,26;
+  - nas outras cenas, o secundário, a 10,49.
+  Na edição do A pagar, o "Apagar gasto" fica abaixo da dobra. No Pro Max, o laudo da Tarefa 33 passa as 20 cenas com os piores do 18 Pro.
+- **As auditorias:**
+  - **`testFolhasDeOrigemNoMaiorTamanho`:** o A pagar e a Cerâmica no topo e depois de um arrasto, e as duas edições empurradas, com os quatro tipos;
+  - **`testContrasteDasFolhasDeOrigemNosDoisTemas`:** escuro e claro, com superfícies sólidas e paradas. Entram o A pagar, a Cerâmica no topo e rolada, a Estrutura e as duas edições (o "Apagar gasto" no Negativo).
+- **O ponto cego do `ViewThatFits`** (o vermelho da tarefa).
+  - **O achado.** Na maior letra, um `ViewThatFits` escolhe entre a linha e a coluna no cabeçalho do mês (em toda a lista do A pagar) e no "No orçamento" (no topo do detalhe). O arranjo em linha que não coube dá "Text clipped" sem elemento, dois por cabeçalho no iOS 27, e a tela mostra a coluna inteira.
+  - **Por que não é defeito.** Com a coluna no lugar do `ViewThatFits`, não sai achado. Nem identificador nem `.contain` dão elemento a esse achado, então não há exceção por identificador.
+  - **A tolerância.** O `auditar` ganha o `corteSemElemento`. Só nas três cenas com um `ViewThatFits` à vista (o A pagar no topo e arrastado, o topo da Cerâmica), ele deixa passar o `.textClipped` sem elemento, e imprime `ponto cego do ViewThatFits` no lugar do `reprova`.
+  - **O que segue reprovando.** Todo outro achado sem elemento, e o corte com elemento também. Pelas mutações da tarefa, o "3 vencimentos · a partir de amanhã" e o "11 gastos · 9% da obra" numa linha só reprovam na auditoria.
+  - **O que a auditoria não vê.** O corte dentro do `.ignore` da linha do gasto; ele fica com a guarda Node do `lineLimit` (etapa 2).
+- **O lugar na CI.**
+  - O `laudo-etapa3` levou 38,7 min no run 40108043199. Os três testes levam 5,5 min no Mac, ~11 na CI, e o job fica perto de 50 min, com teto de 60.
+  - O PR 3 já não cabe nele e abre o `laudo-etapa3-b` (como o `app-etapa3-b`).
+  - O `laudo` pula a leitura nova, e o `auditoria`, as duas auditorias. A guarda do workflow já cobra que o que eles pulam rode noutro job, uma vez só.
+- **O que só a CI do iOS 26 prova:** as cenas novas só foram vistas no iOS 27.
+  - No iOS 26, a auditoria da maior letra troca a letra enquanto audita. O A pagar e o detalhe arrastados podem dar achado sem elemento lá, e o `ViewThatFits` pode se comportar diferente.
+  - Se o achado dele vier com elemento, a tolerância não o cobre.
+
+**Files:**
+- Modify: `.github/workflows/app-ios.yml`
+- Test (alterar): `app-ios/CusttaUITests/AuditoriaUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+
+**Interfaces:**
+- Consumes: os ganchos da Tarefa 33 (`-custta.rolagem` e `-custta.origem editar:<gasto>`); `abrirApp`, `Cena`/`cobrar` e `auditar`/`rolar`/`tiposDeAuditoria` (etapa 2 e Tarefa 19).
+- Produces:
+  - o parâmetro `corteSemElemento` do `auditar`;
+  - `LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra`, com as cenas "A pagar, na maior letra", "A pagar, rolado, na maior letra", "A pagar, editar gasto, na maior letra", "detalhe, Cerâmica, topo, na maior letra", "detalhe, Cerâmica, rolada, na maior letra", "detalhe, Estrutura, passou, na maior letra", "detalhe, editar gasto, na maior letra", "A pagar com Aumentar contraste" e "detalhe, Cerâmica, com Aumentar contraste";
+  - `AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho` e `AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AuditoriaUITests.swift
++++ b/app-ios/CusttaUITests/AuditoriaUITests.swift
+@@ -26,8 +26,10 @@ final class AuditoriaUITests: XCTestCase {
+     /// Deixa fora o que não cresce de propósito (dinâmico: a cápsula de abas e o texto do botão do Google,
+     /// pelo rótulo, porque a auditoria rola a tela sozinha) e o conteúdo que passa por baixo da barra de
+     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
+-    /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste.
+-    @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType) throws {
++    /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste. Com `corteSemElemento`, deixa passar
++    /// também o "Text clipped" sem elemento, e só ele: o ponto cego do ViewThatFits na maior letra (T34), nas cenas com um à vista.
++    @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
++                                    corteSemElemento: Bool = false) throws {
+         // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
+         let folha = app.elemento("tituloDaFolha").exists
+         let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+@@ -58,8 +60,12 @@ final class AuditoriaUITests: XCTestCase {
+             && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
+         try app.performAccessibilityAudit(for: tipos) { achado in
+             guard let elemento = achado.element else {
+-                Swift.print("auditoria | \(achado.compactDescription) | sem elemento | reprova")
+-                return false
++                // O arranjo que o ViewThatFits descartou dá "Text clipped" sem elemento, com a tela mostrando o outro inteiro.
++                // Qualquer outro achado sem elemento reprova, também nessas cenas.
++                let pontoCego = corteSemElemento && achado.auditType == .textClipped
++                Swift.print("auditoria | \(achado.compactDescription) | sem elemento | "
++                            + (pontoCego ? "ponto cego do ViewThatFits" : "reprova"))
++                return pontoCego
+             }
+             let fora: Bool
+             let noTotal = totalMudaDeLugar && elemento.identifier.hasPrefix("totalDoOrcamento-")
+@@ -430,4 +436,56 @@ extension AuditoriaUITests {
+             app.terminate()
+         }
+     }
++
++    /// As folhas de origem (etapa 3, PR 2) na maior letra: o A pagar e o detalhe da Cerâmica no topo e depois de um arrasto
++    /// (como a folha do orçamento), e a edição empurrada em cada uma (a g039 no A pagar, a g021 no detalhe), com o voltar e o
++    /// nome da folha embaixo do título, todas com os quatro tipos. Onde há um ViewThatFits à vista (o cabeçalho do mês, em toda
++    /// a lista do A pagar, e o "No orçamento", no topo do detalhe), passa só o "Text clipped" sem elemento (ponto cego, T34): o
++    /// arranjo em linha que não coube dá esse achado (dois por cabeçalho no iOS 27, conforme a rolagem), e a tela mostra a
++    /// coluna inteira. Com a coluna no lugar do ViewThatFits, nenhum achado; nem identificador nem .contain dão elemento a ele,
++    /// então não há exceção por identificador. O corte com elemento segue reprovando nessas cenas: o "3 vencimentos · a partir
++    /// de amanhã" numa linha só reprova depois do arrasto (a mutação da T34). O corte dentro do .ignore da linha do gasto tem a
++    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3.
++    @MainActor func testFolhasDeOrigemNoMaiorTamanho() throws {
++        for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
++                                                     ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
++                                                     ("vitrine", "obra:v1", "aPagar:v1", "g039", "salvarGasto"),
++                                                     ("porTopico", "orcamento:v1", "topico:v1:revest", "g021", "salvarGasto")] {
++            let app = abrirApp(conta: "senha", dados: dados, abrir: abrir, folha: folha,
++                               argumentos: maiorLetra + parado + (edicao.isEmpty ? [] : ["-custta.origem", "editar:\(edicao)"]))
++            XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), "\(folha) \(edicao)")
++            Thread.sleep(forTimeInterval: 1)
++            try auditar(app, tiposDeAuditoria, corteSemElemento: edicao.isEmpty)
++            if edicao.isEmpty {
++                app.swipeUp()
++                Thread.sleep(forTimeInterval: 1.5)
++                try auditar(app, tiposDeAuditoria, corteSemElemento: folha.hasPrefix("aPagar"))
++            }
++            app.terminate()
++        }
++    }
++
++    /// As mesmas folhas no escuro e no claro, com superfícies sólidas: o A pagar, a Cerâmica no topo e rolada, a Estrutura (a
++    /// frase do "passou" no Alerta) e as duas edições (o "Apagar gasto" no Negativo).
++    @MainActor func testContrasteDasFolhasDeOrigemNosDoisTemas() throws {
++        for tema in temas {
++            let combo = ["-custta.tema", tema] + solido + parado
++            for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
++                                                         ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
++                                                         ("porTopico", "orcamento:v1", "topico:v1:estrutura", "", "orcamentoDoTopico"),
++                                                         ("vitrine", "obra:v1", "aPagar:v1", "g039", "salvarGasto"),
++                                                         ("porTopico", "orcamento:v1", "topico:v1:revest", "g021", "salvarGasto")] {
++                let app = abrirApp(conta: "senha", dados: dados, abrir: abrir, folha: folha,
++                                   argumentos: combo + (edicao.isEmpty ? [] : ["-custta.origem", "editar:\(edicao)"]))
++                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), "\(tema) \(folha) \(edicao)")
++                Thread.sleep(forTimeInterval: 1)
++                try auditar(app, [.contrast])
++                if folha == "topico:v1:revest", edicao.isEmpty {
++                    rolar(app)
++                    try auditar(app, [.contrast])
++                }
++                app.terminate()
++            }
++        }
++    }
+ }
+```
+
+Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -604,6 +604,45 @@ extension LeituraNoVidroUITests {
+         }
+         cobrar(cenas)
+     }
++
++    /// As folhas de origem na maior letra e com Aumentar contraste, no escuro (o molde é o testLeituraDoOrcamentoNaMaiorLetra):
++    /// o A pagar no topo e rolado e a edição de um vencimento empurrada; o detalhe da Cerâmica no topo e rolado, a Estrutura (a
++    /// frase do "passou" no Alerta, a mais fraca do laudo da letra padrão) e a edição com "Cerâmica"; com Aumentar contraste, o
++    /// A pagar e a Cerâmica. As roladas e as edições abrem pelos ganchos da lista das folhas, como no testLeituraDasFolhasDeOrigem.
++    /// Roda no job laudo-etapa3.
++    @MainActor func testLeituraDasFolhasDeOrigemNaMaiorLetra() {
++        let escuro = ["-custta.tema", "escuro"] + piorMomento
++        let grande = escuro + maiorLetra, contraste = escuro + ["-custta.aumentarContraste", "YES"]
++        cobrar([
++            Cena(nome: "A pagar, na maior letra", conta: "senha", argumentos: grande, espera: "resumoDoAPagar", escopo: "tudo",
++                 dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
++            // A 248 pt, nos dois iPhones, a borda de cima fica no vão entre o resumo e o cabeçalho do primeiro mês: no 18 Pro (a
++            // largura da CI), 12 pt abaixo do "3 vencimentos…" e 60 acima do mês; no Pro Max, 59 e 13. Esse vão não depende do dia
++            // (o mês do primeiro vencimento vem sempre logo depois do resumo); os de baixo, sim (os vencimentos da vitrine mudam de
++            // mês com o dia). A cena mede o cabeçalho do mês e a primeira linha quase inteira.
++            Cena(nome: "A pagar, rolado, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "248"],
++                 espera: "resumoDoAPagar", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1", rolada: true),
++            Cena(nome: "A pagar, editar gasto, na maior letra", conta: "senha", argumentos: grande + ["-custta.origem", "editar:g039"],
++                 espera: "salvarGasto", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
++            Cena(nome: "detalhe, Cerâmica, topo, na maior letra", conta: "senha", argumentos: grande, espera: "orcamentoDoTopico",
++                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
++            // A 628 pt, nos dois iPhones, a borda fica no vão entre a frase do orçamento e o "A vencer · 6": no 18 Pro, 23 pt abaixo
++            // da frase e 13 acima do cabeçalho; no Pro Max, 12 e 24. Mais para baixo, as linhas dos dois iPhones se desencontram
++            // (no 18 Pro, o último a vencer quebra uma linha a mais) e nenhuma rolagem acha um vão comum nos pagos: eles ficam com
++            // a cena rolada da letra padrão.
++            Cena(nome: "detalhe, Cerâmica, rolada, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "628"],
++                 espera: "orcamentoDoTopico", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest",
++                 rolada: true),
++            Cena(nome: "detalhe, Estrutura, passou, na maior letra", conta: "senha", argumentos: grande, espera: "orcamentoDoTopico",
++                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:estrutura"),
++            Cena(nome: "detalhe, editar gasto, na maior letra", conta: "senha", argumentos: grande + ["-custta.origem", "editar:g021"],
++                 espera: "salvarGasto", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
++            Cena(nome: "A pagar com Aumentar contraste", conta: "senha", argumentos: contraste, espera: "resumoDoAPagar",
++                 escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
++            Cena(nome: "detalhe, Cerâmica, com Aumentar contraste", conta: "senha", argumentos: contraste, espera: "orcamentoDoTopico",
++                 escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
++        ])
++    }
+ }
+ 
+ /* O medidor com imagens sintéticas: sem abrir o app. */
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Os testes não mexem no app, e passam de cara com a tolerância. Para ver o ponto cego, rode com o `corteSemElemento` das duas chamadas do `testFolhasDeOrigemNoMaiorTamanho` em `false`, só nesta rodada, e volte ao do Step 1 depois.
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra 2>&1 | grep -E "auditoria \|.*reprova|^leitura \||Test Case .*(passed|failed)"
+```
+Expected:
+- `ℹ pass 59`, `ℹ fail 0` (nada de app nem de guarda Node na tarefa); o build passa sem aviso.
+- O `testFolhasDeOrigemNoMaiorTamanho` reprova com 4 × `auditoria | Text clipped | sem elemento | reprova`: 2 no topo do A pagar e 2 no topo da Cerâmica (o cabeçalho do mês e o "No orçamento"). Depois do arrasto e nas edições, nada. `failed`, em ~55 s no Mac.
+- O laudo (9 cenas, `0 abaixo`, pior 6,00 e 6,26) e o contraste passam: o vermelho da tarefa é só o ponto cego.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -288,6 +288,7 @@ jobs:
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
++            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+@@ -353,7 +354,9 @@ jobs:
+     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
+     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
+     # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
+-    # escuro e no claro (~20 cenas). Cada PR da etapa anota aqui o tempo do job.
++    # escuro e no claro (~20 cenas): 38,7 min no run 40108043199. E a maior letra e as auditorias delas: 5,5 min no Mac, ~11
++    # na CI, ~50 min no job. Cada PR da etapa anota aqui o tempo do job; o PR 3 já não cabe e abre o laudo-etapa3-b (como o
++    # app-etapa3-b).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -384,8 +387,11 @@ jobs:
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
++            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
+             -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
+             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
++            -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
++            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+@@ -433,6 +439,8 @@ jobs:
+             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
+             -skip-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
+             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
++            -skip-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
++            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
+             CODE_SIGNING_ALLOWED=NO
+ 
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "ℹ (pass|fail)"
+node tests/workflow.test.cjs
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem 2>&1 | grep -E "^leitura \|.*(maior letra|Aumentar)|auditoria \|.*(reprova|ponto cego)|Test Case .*(passed|failed)|TEST EXECUTE"
+```
+Expected:
+- `ℹ pass 59`, `ℹ fail 0`. O workflow passa, e reprova sem qualquer uma das seis linhas novas do yml.
+- Sem aviso.
+- As 9 cenas novas com `0 abaixo`: pior 6,00 na edição do detalhe e 6,26 na frase do "passou".
+- Nenhum `reprova`, e 4 × `auditoria | Text clipped | sem elemento | ponto cego do ViewThatFits`: 2 no topo do A pagar e 2 no topo da Cerâmica. No A pagar arrastado, 0 no 18 Pro (o número depende de onde o arrasto para).
+- Os quatro `passed` (~55, ~101, ~172 e ~383 s no Mac) e `** TEST EXECUTE SUCCEEDED **`, em ~12 min.
+- No Pro Max (só no Mac, com o `CUSTTA_SIMULADOR` nele e o `XB` de novo), o `testLeituraDasFolhasDeOrigem` e o `…NaMaiorLetra` passam, em ~7 e ~3 min, com os mesmos piores.
+
+A prova no iOS 26 vem num run só com a Tarefa 35.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/CusttaUITests/AuditoriaUITests.swift \
+  app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+git commit -m "test: maior letra e auditorias das folhas de origem" -m "O laudo de leitura ganha as folhas de origem na maior letra e com Aumentar contraste, no escuro: o A pagar no topo, rolado e com a edição de um vencimento empurrada; o detalhe da Cerâmica no topo e rolado, a Estrutura com a frase do \"passou\" no Alerta e a edição com \"Cerâmica\"; e, com Aumentar contraste, o A pagar e a Cerâmica. As roladas param com a borda de cima num vão que serve aos dois iPhones, achado pela sonda: o A pagar a 248 pt, entre o resumo e o primeiro mês (um vão que não depende do dia), e a Cerâmica a 628, entre a frase do orçamento e o \"A vencer\". As nove cenas passam no 18 Pro e no Pro Max, sem exceção nova: os piores são o texto de uma peça sólida da edição à vista (6,00) e a frase do \"passou\" (6,26)." -m "As auditorias ganham as duas folhas na maior letra (no topo, depois de um arrasto e com a edição empurrada) e o contraste delas no escuro e no claro, com superfícies sólidas. Na maior letra, onde há um ViewThatFits à vista, a auditoria de corte deixa passar só o achado sem elemento: o cabeçalho do mês, em toda a lista do A pagar, e o \"No orçamento\", no topo do detalhe, escolhem a linha ou a coluna por ele, e o arranjo em linha que não coube dá \"Text clipped\" sem elemento, embora a tela mostre a coluna inteira; o corte com elemento segue reprovando, como o \"3 vencimentos · a partir de amanhã\" numa linha só. Com a coluna no lugar do ViewThatFits não sai achado nenhum, e nem identificador nem .contain dão um elemento a ele, então não há exceção por identificador; o corte por lineLimit segue com a guarda Node, e o detalhe rolado e as edições ficam sem a tolerância." -m "Os três testes rodam no job laudo-etapa3, que levou 38,7 min no run das Tarefas 31 a 33: com os 5,5 min deles no Mac, uns 11 na CI, o job fica perto de 50, e o laudo e o auditoria passam a pulá-los."
+```

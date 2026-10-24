@@ -794,11 +794,11 @@ test('gasto lançado de dentro de uma vendida: a obra troca por trás da folha, 
     'a troca da obra e, no turno seguinte, o fechar da folha');
 });
 
-test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça', () => {
+test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça', () => {
   // A LazyVStack só fatia filhos diretos: com o grupo do mês num VStack (o GrupoDaFolha), o grupo inteiro seria uma peça
   // só, criada de uma vez com todas as linhas (o detalhe do tópico, com a mesma lista, passa de cem gastos). Nenhum teste
   // de tela vê isso: a tela fica igual.
-  const t = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
+  const t = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
   const pecas = t.search(/ForEach\(pecas(?:DaOrigem\([^)]*\))?\) \{/);
   assert.ok(pecas > 0, 'as peças da lista num ForEach');
   let nivel = 0, abre = -1;
@@ -812,12 +812,24 @@ test('folha do A pagar: as peças da lista são filhas diretas da LazyVStack, co
   assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
 });
 
+test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
+  // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
+  // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de
+  // cada gasto, o cabeçalho, o vazio e o rodapé; as peças filhas diretas da LazyVStack da lista, a guarda de cima confere.
+  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift']){
+    const t = ler(f);
+    assert.match(t, /\bListaDaOrigem\(obra: /, `${f}: a folha monta a lista comum`);
+    assert.doesNotMatch(t, /\b(?:ScrollViewReader|ScrollView|LazyVStack|ForEach)\s*[({]|\bPerguntaDeApagar\(|\bfocoNaOrigem\(/,
+                        `${f}: uma lista própria, fora da ListaDaOrigem`);
+  }
+});
+
 test('apagar na folha de origem: a linha sai no turno seguinte ao voltar, e a linha aberta fica na Tecla', () => {
   // Nenhum teste de tela vê isso. No mesmo turno do voltar da pilha, a transação do apagar (com a mola) se misturaria à do
   // voltar, como a troca de obra sem animação fazia a folha sumir de uma vez (T34). E, dentro da folha, a linha arrastada
   // aberta fica na Tecla (o .folha .gasto.puxada do mockup), e não na Linha da folha, que é o fundo do grupo.
-  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
-  assert.match(aPagar, /case \.apagou\(let pedido\):\n\s*Task \{ @MainActor in apagar\(pedido, antes: volta\.ordem, depoisDoVoltar: true\) \}\n\s*return\n/,
+  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  assert.match(lista, /case \.apagou\(let pedido\):\n\s*Task \{ @MainActor in apagar\(pedido, antes: volta\.ordem, depoisDoVoltar: true\) \}\n\s*return\n/,
                'o apagar vindo da edição, no turno seguinte ao voltar');
   assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
                /if case \.origem\(let origem\) = saida \{ origem\.apagou\(pedido\) \} else \{ folhas\.fechar \{ folhas\.apagar\(pedido\) \} \}/,

@@ -647,9 +647,11 @@ test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar es
   assert.match(passos, /let temOQuePerder = perguntar\(\)[\s\S]*?\.interactiveDismissDisabled\(temOQuePerder\)/, 'lida no corpo do próprio FolhaDoApp');
   for(const f of arquivosSwift('app-ios/Custta').filter(f => !f.endsWith('FolhaEmPassos.swift')))
     assert.doesNotMatch(ler(f), /\.interactiveDismissDisabled\(/, `${f}: a trava do puxar só no FolhaDoApp, fora da pilha`);
-  const aPagar = ler('app-ios/Custta/Telas/FolhaDoAPagar.swift');
-  assert.match(aPagar, /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
-               'o folhaDoApp em volta da pilha da origem, com a mudança lida por ele');
+  // As duas folhas de origem (o A pagar e o detalhe do tópico) montam a pilha do mesmo jeito: o chevron, a borda e o puxar
+  // com mudança, que só a suíte do A pagar testa, valem para as duas.
+  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift', 'app-ios/Custta/Telas/FolhaDoTopico.swift'])
+    assert.match(ler(f), /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
+                 `${f}: o folhaDoApp em volta da pilha da origem, com a mudança lida por ele`);
   const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
   assert.match(origem, /\.navigationBarBackButtonHidden\(sujo\)\n\s*\.toolbar \{\n\s*if sujo \{\n\s*ToolbarItem\(placement: \.topBarLeading\)/,
                'o voltar do sistema sai por modificador, e o chevron entra pela barra');
@@ -810,13 +812,20 @@ test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com
   let fim = t.indexOf('{', pecas) + 1;
   for(let n = 1; n > 0 && fim < t.length; fim++) n += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
   assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
+  // O detalhe do tópico: o cabeçalho da seção ("A vencer · 6") é uma peça fora do grupo, sem o fundo, e os cantos de cima do
+  // grupo vão no primeiro gasto, pela peça (no A pagar, nunca: quem os leva é o cabeçalho do mês).
+  const secao = t.slice(pecas, fim).match(/case \.secao\([^)]*\):\n([\s\S]*?)\n\s*case /);
+  assert.ok(secao, 'o cabeçalho da seção do detalhe é uma peça da lista');
+  assert.doesNotMatch(secao[1], /FundoDoGrupo|GrupoDaFolha/, 'o cabeçalho da seção fora do grupo, sem o fundo');
+  assert.match(t.slice(pecas, fim), /case \.gasto\(let gasto\):[\s\S]*\.modifier\(FundoDoGrupo\(cima: peca\.cima, baixo: peca\.ultimo\)\)/,
+               'os cantos de cima do grupo no gasto vêm da peça');
 });
 
 test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
   // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
   // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de
   // cada gasto, o cabeçalho, o vazio e o rodapé; as peças filhas diretas da LazyVStack da lista, a guarda de cima confere.
-  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift']){
+  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift', 'app-ios/Custta/Telas/FolhaDoTopico.swift']){
     const t = ler(f);
     assert.match(t, /\bListaDaOrigem\(obra: /, `${f}: a folha monta a lista comum`);
     assert.doesNotMatch(t, /\b(?:ScrollViewReader|ScrollView|LazyVStack|ForEach)\s*[({]|\bPerguntaDeApagar\(|\bfocoNaOrigem\(/,

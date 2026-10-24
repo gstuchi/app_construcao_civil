@@ -4,9 +4,10 @@ import CusttaNucleo
 /// A lista de uma folha de origem (a do A pagar; o detalhe do tópico monta a mesma): a folha dá as peças, a linha de cada
 /// gasto, o cabeçalho, o vazio e o rodapé, e a lista faz o que é igual nas duas. Tocar num gasto empurra a edição na mesma
 /// folha (a volta à folha de origem, FolhaDeOrigem.swift); arrastar uma linha para a esquerda mostra "Apagar", como na
-/// lista da obra. As peças (cabeçalho de mês e gasto) são filhas diretas da LazyVStack, com o fundo do grupo desenhado por
-/// peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria uma peça só (o detalhe do tópico passa de cem
-/// gastos). A lista não fecha a folha.
+/// lista da obra. As peças (cabeçalho de mês ou de seção e gasto) são filhas diretas da LazyVStack, com o fundo do grupo
+/// desenhado por peça: a pilha só fatia filhos diretos, e um grupo inteiro num VStack seria uma peça só (o detalhe do tópico
+/// passa de cem gastos). O cabeçalho do mês fica dentro do grupo, com os cantos de cima; o da seção, fora, e os cantos vão no
+/// primeiro gasto. A lista não fecha a folha.
 struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
     let obra: Obra
     @Bindable var origem: OrigemDaEdicao
@@ -67,10 +68,12 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
                             CabecalhoDoMes(mes: mes)
                                 .modifier(FundoDoGrupo(cima: true, baixo: false))
                                 .padding(.top, 20)
+                        case .secao(let titulo, let quantidade):
+                            CabecalhoDaSecao(titulo: titulo, quantidade: quantidade)
                         case .gasto(let gasto):
                             LinhaDaLista(gasto: gasto, linha: linha(gasto), lista: acoes)
                                 .overlay(alignment: .top) { if !peca.primeiro { SeparadorDaFolha(recuo: 67) } }
-                                .modifier(FundoDoGrupo(cima: false, baixo: peca.ultimo))
+                                .modifier(FundoDoGrupo(cima: peca.cima, baixo: peca.ultimo))
                         }
                     }
                     rodape

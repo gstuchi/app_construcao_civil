@@ -15760,9 +15760,9 @@ git commit -m "test: as folhas de origem na conferência cruzada e com outro apa
 
 ### Task 36: Checklist do aparelho do PR 2 e os tempos da CI
 
-O checklist que o Giovani roda no iPhone ganha a seção do PR 2, no molde da do PR 1. O A pagar e o detalhe do tópico são conferidos numa obra de verdade, sem gravar. O que grava, troca de tópico e apaga vai para uma obra de teste, criada no app e apagada no último item (spec, "Conta"). Depois vêm a maior letra e a acessibilidade. Os itens do PR 1 que o PR 2 muda passam a valer nos dois builds, e os do PR 1 que tiram dado também vão para uma obra de teste. Os comentários do `app-ios.yml` ganham os tempos do run com o PR 2 inteiro. Nenhum código muda.
+O checklist que o Giovani roda no iPhone ganha a seção do PR 2, no molde da do PR 1. O A pagar e o detalhe do tópico são conferidos numa obra de verdade, sem gravar. O que grava, troca de tópico e apaga vai para uma obra de teste, criada no app e apagada no último item (spec, "Conta"). Depois vêm a maior letra e a acessibilidade. Cinco itens do PR 1, os que o PR 2 muda e os que tiram dado, voltam reescritos no começo da seção do PR 2, e a seção do PR 1 fica como está. Os comentários do `app-ios.yml` ganham os tempos do run com o PR 2 inteiro. Nenhum código muda.
 
-- **A seção do PR 2** tem 44 itens, com os textos copiados do código:
+- **A seção do PR 2** tem 49 itens, com os textos copiados do código: os cinco do PR 1 (abaixo) e mais estes:
   - **o A pagar** (5) e **o detalhe do tópico** (5), sem gravar: a entrada, a folha, os números contra o site (no detalhe, o `sheetTopico`, aberto pelo orçamento ou pelos Gráficos), a edição empurrada e a volta na mesma rolagem, a pergunta com mudança e o puxar;
   - **na obra de teste** (22), em ordem, cada item sobre o que o anterior deixou: o vazio do A pagar, 8 lançamentos e o orçamento por tópico; salvar, mudar a data, apagar pelo rotor, arrastar a parcela e apagar pela edição até o vazio; as entradas do detalhe, a troca de tópico e a folha que desce (pela troca e pelo rotor); o site mudando, apagando e trocando o tópico com a folha aberta; o modo total; e, por último, a obra apagada no site;
   - **Texto Maior no máximo** (4): o último item é o ponto cego do `ViewThatFits` (Tarefa 34), e só o aparelho prova que nada corta no topo das duas folhas;
@@ -15772,9 +15772,9 @@ O checklist que o Giovani roda no iPhone ganha a seção do PR 2, no molde da do
   - depois das duas descidas, o item pergunta para onde vai o foco, porque o plano não o fixa.
   O Z fica na acessibilidade, porque não grava.
 - **O Controle por Voz nas entradas** chama pelo nome curto (`accessibilityInputLabels`): "Tocar A pagar" abre a folha, e "Tocar Cerâmica" abre o detalhe, como a linha do orçamento já fazia com "Orçamento". Esses nomes vêm do commit dos menores do #85 (`a40da2c`, fora das fatias). O item pede que o Giovani diga se algum nome não aparece ou não abre a folha.
-- **As reescritas do PR 1.** Os itens de um PR continuam valendo nos builds seguintes:
-  - as linhas de tópico sem seta e sem "botão" valem só no build do PR 1. Do PR 2 em diante, só o tópico previsto e ainda sem gasto fica sem seta e sem "botão";
-  - a obra apagada no site com a tela Orçamento aberta, o "Tirar orçamento" e o salvar vazio tiram dado, e passam a uma obra de teste (spec, "Conta").
+- **Os cinco do PR 1, neste build.** Os itens de um PR continuam valendo nos builds seguintes, e a seção do PR 1 fica como está (na main, o Giovani a marcou em 23/10). Os que o PR 2 muda ou que tiram dado voltam, reescritos, no bloco "Do PR 1, neste build", no começo da seção do PR 2:
+  - as linhas de tópico com seta e com "botão": só o tópico previsto e ainda sem gasto fica sem;
+  - a obra apagada no site com a tela Orçamento aberta, o "Tirar orçamento" e o salvar vazio, numa obra de teste (spec, "Conta").
 - **Os tempos da CI** vêm do run 40125911713, o do #85 na `e0ea919`, com as Tarefas 22 a 35 (a árvore é a das fatias). Só os comentários de tempo mudam; os tetos e a regra dos ~50 min ficam.
   - O `app` levou 60,2 min, e o `app-etapa3`, 48,3, numa VM lenta.
   - O `app-etapa3-b` levou 21,8, com o detalhe em 13,4.
@@ -15793,43 +15793,20 @@ Em `docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md`:
 ```diff
 --- a/docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
 +++ b/docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
-@@ -26,9 +26,9 @@ O app grava na conta de sempre desde o fim da etapa 2, e cada gravação regrava
- - [ ] "Por tópico": os tópicos na ordem do site (quem passou do previsto primeiro), cada um com o gasto, "/ previsto", a barra fina e a frase do site ("Passou R$ 6,2 mil do previsto", "Faltam R$ 3,3 mil — 96%", "Chegou ao previsto — 100%"); o "Passou…" em âmbar. Um nome comprido quebra, e o valor fica numa linha só.
- - [ ] "Fora do orçamento": o total, "Tópico sem valor não entra na comparação." e uma linha por tópico fora, do maior gasto para o menor.
- - [ ] No modo total: "Gasto por tópico" (o bruto e a parte da obra de cada tópico) e, no fim, "Para comparar tópico a tópico, toque no lápis e escolha "Por tópico"."
--- [ ] Neste build, as linhas de tópico não têm seta e não abrem nada: o detalhe do tópico chega no PR 2.
-+- [ ] No build do PR 1, as linhas de tópico não têm seta e não abrem nada (o detalhe do tópico chega no PR 2). Do PR 2 em diante, só a do tópico previsto e ainda sem gasto fica sem seta e sem toque; as outras abrem o detalhe (os itens do PR 2).
- - [ ] O + na tela Orçamento lança gasto na obra dela; ao salvar, a tela Orçamento mostra os números novos e continua aberta.
--- [ ] Apague a obra no site com a tela Orçamento aberta no iPhone: o app volta para a lista de Obras.
-+- [ ] Numa obra de teste, criada no app com um orçamento (spec, "Conta": nunca numa obra de verdade), abra a tela Orçamento e apague a obra no site: o app volta para a lista de Obras.
- 
- **A folha "Orçamento da obra"**
- 
-@@ -39,8 +39,8 @@ O app grava na conta de sempre desde o fim da etapa 2, e cada gravação regrava
- - [ ] Teto: depois de R$ 99.999.999,99, a tecla é ignorada (o site não tem teto).
- - [ ] Com o total vazio, troque para "Só o total": ele vem com a soma dos tópicos e a frase "Preenchido com a soma dos tópicos.". Trocar de modo não grava: feche pelo × e aparece "Você mudou este orçamento." ("Descartar alterações" / "Continuar editando"). No "Definir", fechar depois de digitar pergunta "Você já preencheu este orçamento." ("Descartar orçamento"). Puxar a folha para baixo pergunta igual.
- - [ ] No modo total, o rodapé diz "Comparado com o Total gasto (bruto), com as parcelas a vencer."
--- [ ] "Tirar orçamento" pergunta "Tirar o orçamento desta obra?" / "Os gastos continuam como estão."; "Cancelar" não muda nada; "Tirar orçamento" tira: a folha desce já na obra (a tela Orçamento voltou por trás), a linha some e "Definir orçamento" volta. No site também.
--- [ ] Apague todos os valores e toque em "Salvar": a mesma pergunta do "Tirar orçamento" (no site, tira sem perguntar).
-+- [ ] Numa obra de teste com orçamento, criada no app (spec, "Conta"): "Tirar orçamento" pergunta "Tirar o orçamento desta obra?" / "Os gastos continuam como estão."; "Cancelar" não muda nada; "Tirar orçamento" tira: a folha desce já na obra (a tela Orçamento voltou por trás), a linha some e "Definir orçamento" volta. No site também.
-+- [ ] Na mesma obra de teste, defina de novo o orçamento, apague todos os valores e toque em "Salvar": a mesma pergunta do "Tirar orçamento" (no site, tira sem perguntar). Depois, apague a obra de teste.
- - [ ] Toque duas vezes seguidas, rápido, no "Salvar": o orçamento grava uma vez (no site, igual).
- - [ ] Modo avião com os dados já vistos: defina um orçamento; a pílula mostra "Sem conexão"; ao voltar a internet, o site mostra o orçamento.
- - [ ] Modo avião logo depois de instalar (antes de o app ver os dados): o "Salvar" avisa dentro da folha, com "O orçamento continua aqui; nada foi salvo ainda.", e a folha não fecha.
-@@ -56,10 +56,71 @@ O app grava na conta de sempre desde o fim da etapa 2, e cada gravação regrava
- **Acessibilidade**
- 
- - [ ] VoiceOver, na obra: a linha do orçamento é um elemento só, que lê o nível, quanto sobra ou passou, quanto foi usado e o aviso dos tópicos; dois toques abrem a tela Orçamento.
--- [ ] VoiceOver, na tela Orçamento: o cartão e cada linha de tópico são lidos inteiros, um elemento cada, sem "botão" nas linhas de tópico.
-+- [ ] VoiceOver, na tela Orçamento: o cartão e cada linha de tópico são lidos inteiros, um elemento cada. No build do PR 1, sem "botão" nas linhas de tópico; do PR 2 em diante, só a do tópico previsto e ainda sem gasto fica sem "botão", e dois toques numa linha com "botão" abrem o detalhe do tópico.
- - [ ] VoiceOver, na folha: dois toques numa linha abrem as teclas nela; ouve-se "Elétrica, 9 de N, R$ …" e o foco vai para a linha ativa. No rotor da linha ativa, as ações "Tópico anterior", "Próximo tópico" e "Pronto". Cada tecla fala o valor novo. Diga o que o VoiceOver fala a cada tecla e a cada troca de tópico, e se alguma coisa sobra ou falta.
- - [ ] VoiceOver, gesto de escape (Z com dois dedos): com as teclas abertas, fecha as teclas; sem elas, faz o mesmo que o ×. Ao trocar para "Só o total" com o total vazio, ouve-se "Preenchido com a soma dos tópicos.".
- - [ ] Controle por Voz ("Mostrar nomes"): na obra, "Tocar Definir orçamento" abre a folha e "Tocar Orçamento" abre a tela Orçamento; nela, "Tocar Editar orçamento" abre a folha; na folha, o nome de cada linha de tópico abre as teclas nela, e "Tocar Próximo tópico", "Tocar Tópico anterior", "Tocar Pronto" e "Tocar Salvar" funcionam.
+@@ -63,3 +63,72 @@ O app grava na conta de sempre desde o fim da etapa 2, e cada gravação regrava
  - [ ] Controle Assistivo (varredura por item): na folha, a varredura passa pelas linhas, pela barra (‹, ›, Pronto), pelas teclas e pelo "Salvar"; dá para definir um orçamento por tópico e salvar só pela varredura.
  - [ ] No escuro e no claro, o aviso dos tópicos e o "Passou … do previsto" em âmbar se leem sobre o vidro (no claro, um âmbar mais escuro, `#6F4705`).
  - [ ] Nas telas de entrar e criar conta, no escuro: o texto secundário ficou um pouco mais claro (a decisão 6 da parte 2). Diga se incomoda.
 +
 +## PR 2: o A pagar e o detalhe do tópico
++
++**Do PR 1, neste build** (cinco itens do PR 1 que o PR 2 muda; valem para o build do PR 2, e os que tiram dado rodam numa obra de teste)
++
++- [ ] No build do PR 1, as linhas de tópico não têm seta e não abrem nada (o detalhe do tópico chega no PR 2). Do PR 2 em diante, só a do tópico previsto e ainda sem gasto fica sem seta e sem toque; as outras abrem o detalhe (os itens do PR 2).
++- [ ] Numa obra de teste, criada no app com um orçamento (spec, "Conta": nunca numa obra de verdade), abra a tela Orçamento e apague a obra no site: o app volta para a lista de Obras.
++- [ ] Numa obra de teste com orçamento, criada no app (spec, "Conta"): "Tirar orçamento" pergunta "Tirar o orçamento desta obra?" / "Os gastos continuam como estão."; "Cancelar" não muda nada; "Tirar orçamento" tira: a folha desce já na obra (a tela Orçamento voltou por trás), a linha some e "Definir orçamento" volta. No site também.
++- [ ] Na mesma obra de teste, defina de novo o orçamento, apague todos os valores e toque em "Salvar": a mesma pergunta do "Tirar orçamento" (no site, tira sem perguntar). Depois, apague a obra de teste.
++- [ ] VoiceOver, na tela Orçamento: o cartão e cada linha de tópico são lidos inteiros, um elemento cada. No build do PR 1, sem "botão" nas linhas de tópico; do PR 2 em diante, só a do tópico previsto e ainda sem gasto fica sem "botão", e dois toques numa linha com "botão" abrem o detalhe do tópico.
 +
 +**O A pagar** (numa obra com vencimentos nos próximos 30 dias; nada aqui grava)
 +
@@ -15984,7 +15961,7 @@ Expected:
 ```bash
 git add .github/workflows/app-ios.yml \
   docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
-git commit -m "docs: checklist do aparelho do PR 2 e os tempos da CI" -m "O checklist do aparelho da etapa 3 ganha a seção do PR 2. O A pagar e o detalhe do tópico são conferidos sem gravar; o que grava, troca de tópico e apaga vai para uma obra de teste criada no app e apagada no fim, como pede o spec, com o foco do VoiceOver e os anúncios que o XCUITest não lê. Seguem a maior letra, com o topo das duas folhas que a auditoria não vê, e a acessibilidade. Os itens do PR 1 sobre as linhas de tópico passam a valer nos dois builds, e os que tiram dado vão para uma obra de teste." -m "Os comentários do app-ios.yml ganham os tempos do run 40125911713, com o PR 2 inteiro. O laudo-etapa3 foi a 52 min, com teto de 60, e fica assim até o PR 3, que abre o laudo-etapa3-b com as três da Tarefa 34."
+git commit -m "docs: checklist do aparelho do PR 2 e os tempos da CI" -m "O checklist do aparelho da etapa 3 ganha a seção do PR 2. Ela começa com cinco itens do PR 1 reescritos para este build: as linhas de tópico, que agora abrem o detalhe, e o que tira dado, numa obra de teste. Depois, o A pagar e o detalhe do tópico são conferidos sem gravar; o que grava, troca de tópico e apaga vai para uma obra de teste criada no app e apagada no fim, como pede o spec, com o foco do VoiceOver e os anúncios que o XCUITest não lê. Seguem a maior letra, com o topo das duas folhas que a auditoria não vê, e a acessibilidade. A seção do PR 1 não muda." -m "Os comentários do app-ios.yml ganham os tempos do run 40125911713, com o PR 2 inteiro. O laudo-etapa3 foi a 52 min, com teto de 60, e fica assim até o PR 3, que abre o laudo-etapa3-b com as três da Tarefa 34."
 ```
 
-**Ponto de controle do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `app-etapa3-b`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`). No fim do PR, o núcleo tem 226 testes e o `CusttaTests`, 161 em 30 suítes; o `FolhasDeOrigemUITests` tem 24, o `OrcamentoUITests` 29 e o `DetalheDoTopicoUITests` 16. No Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` ficam verdes, e as leituras das folhas de origem passam também no Pro Max. O Verniz confere o detalhe do tópico lado a lado com o mockup (o `folhaTopico`, parte 1), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 2" do checklist. Na CI do iOS 26, a fase 2 rodou nos runs 40050588953 (Tarefas 29 e 30), 40108043199 (31 a 33) e 40125911713 (o #85, com as Tarefas 22 a 35). As quedas foram de tempo, de toque ou de auditoria da VM, e a linha de CI de cada tarefa diz o que cada run provou. A prova final é o run do último push do #85, com a Tarefa 36. Antes dela, o #85 leva o commit dos menores (`a40da2c`, fora das fatias): os achados menores das revisões das Tarefas 22 a 31 e dois pedidos depois da CI do iOS 26, o nome curto das entradas no Controle por Voz e a espera de 10 s (eram 5) pela folha no `abrirAPagar` e no `abrirPelaLinha`.
+**Ponto de controle do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `app-etapa3-b`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`). No fim do PR, o núcleo tem 226 testes e o `CusttaTests`, 161 em 30 suítes; o `FolhasDeOrigemUITests` tem 24, o `OrcamentoUITests` 29 e o `DetalheDoTopicoUITests` 16. No Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` ficam verdes, e as leituras das folhas de origem passam também no Pro Max. O Verniz confere o detalhe do tópico lado a lado com o mockup (o `folhaTopico`, parte 1), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 2" do checklist. Na CI do iOS 26, a fase 2 rodou nos runs 40050588953 (Tarefas 29 e 30), 40108043199 (31 a 33) e 40125911713 (o #85, com as Tarefas 22 a 35). As quedas foram de tempo, de toque ou de auditoria da VM, e a linha de CI de cada tarefa diz o que cada run provou. A prova final é o run do último push do #85, com a Tarefa 36. Antes dela, o #85 leva o commit dos menores (`a40da2c`, fora das fatias): os achados menores das revisões das Tarefas 22 a 31 e dois pedidos depois da CI do iOS 26, o nome curto das entradas no Controle por Voz e a espera de 10 s (eram 5) pela folha no `abrirAPagar` e no `abrirPelaLinha`. E recebe por merge a main de 24/10, com o #84 e o PR 1 do checklist marcado.

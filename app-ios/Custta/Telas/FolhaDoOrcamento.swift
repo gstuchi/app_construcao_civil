@@ -675,7 +675,9 @@ private struct ValorDaLinhaDoOrcamento: View {
     @Environment(\.paleta) private var paleta
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        // 10 pt de tinta do último dígito ao cursor, como no mockup (o gap de 8 do `.d`, a margem de 2 do `.caret` e o respiro
+        // do dígito, que a letra -0,024em da linha encurta): 1 pt menos que no "Só o total".
+        HStack(spacing: 9) {
             if centavos > 0 || ativa {
                 ValorEmDinheiro(texto: moeda(centavosParaReais(centavos)), fonte: .body.weight(ativa ? .semibold : .regular),
                                 cor: ativa ? .linkNoVidro : .texto)
@@ -696,7 +698,9 @@ private struct LinhaDoTotalNaFolha: View {
 
     var body: some View {
         LinhaDaFolhaComRotulo(rotulo: "Orçamento total", altura: 60) {
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
+            // 11 pt de tinta do último dígito ao cursor, como no mockup: o gap de 8 do `.d`, a margem de 2 do `.caret` e o
+            // respiro do dígito.
+            HStack(spacing: 10) {
                 ValorEmDinheiro(texto: fmtCentavos(centavos), fonte: .title2.weight(.bold), cor: ativa ? .linkNoVidro : .texto,
                                 prefixo: .callout.weight(.semibold))
                 if ativa { CursorDaLinha() }
@@ -712,12 +716,13 @@ private struct LinhaDoTotalNaFolha: View {
     }
 }
 
-/// O cursor da linha ativa: 2 pt na cor do link, da altura da letra, piscando a 2 Hz (pelo relógio, sem animação); parado
-/// com Reduzir movimento.
+/// O cursor da linha ativa, o `.caret` do mockup: 2 pt na cor do link, centrado no valor (o `align-items:center` do `.d`),
+/// piscando a 2 Hz (pelo relógio, sem animação); parado com Reduzir movimento.
 private struct CursorDaLinha: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.opcoes) private var opcoes
-    @ScaledMetric(relativeTo: .body) private var altura: CGFloat = 20
+    // O 1,15em do `.caret` no em de 17 da linha (a `.f-lin`), também no "Só o total", onde o valor tem 22.
+    @ScaledMetric(relativeTo: .body) private var altura: CGFloat = 17 * 1.15
 
     var body: some View {
         Group {
@@ -734,6 +739,5 @@ private struct CursorDaLinha: View {
 
     private func barra(visivel: Bool) -> some View {
         RoundedRectangle(cornerRadius: 1).fill(paleta.cor(.linkNoVidro)).frame(width: 2, height: altura).opacity(visivel ? 1 : 0)
-            .alignmentGuide(.firstTextBaseline) { $0.height * 0.8 }
     }
 }

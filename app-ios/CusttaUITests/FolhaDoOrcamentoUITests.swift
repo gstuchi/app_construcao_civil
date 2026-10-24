@@ -23,6 +23,64 @@ extension OrcamentoUITests {
         for t in teclas { app.buttons["tecla-\(t)"].tap() }
     }
 
+    /// O cursor da linha ativa contra o `.caret` do mockup (parte1.html no Chromium a 1×, medido por tinta em 23/10): a folga
+    /// até o último dígito, 2 pt de largura, 1,15 do em de 17 da linha de altura (o em do `.caret` é o da `.f-lin`, também no
+    /// "Só o total") e o meio dele contra o meio da tinta do último dígito (o `align-items:center` do `.d`). Ele pisca:
+    /// tenta até achar um print com ele aceso.
+    private func conferirCursor(_ linha: XCUIElement, borda: CGFloat, folga: CGFloat, meio: CGFloat, _ onde: String) {
+        var medida = cursorDoValor(linha, borda: borda), prints = 1
+        while medida == nil, prints < 8 {
+            medida = cursorDoValor(linha, borda: borda)
+            prints += 1
+        }
+        guard let medida else { return XCTFail("\(onde): o cursor não apareceu em \(prints) prints") }
+        XCTAssertEqual(medida.folga, folga, accuracy: 0.5, "\(onde): a folga de tinta do cursor ao último dígito \(medida)")
+        XCTAssertEqual(medida.largura, 2, accuracy: 0.5, "\(onde): a largura do cursor \(medida)")
+        XCTAssertEqual(medida.altura, 1.15 * 17, accuracy: 1, "\(onde): a altura do cursor \(medida)")
+        XCTAssertEqual(medida.meio, meio, accuracy: 1, "\(onde): o meio do cursor contra o do último dígito \(medida)")
+    }
+
+    /// O cursor do valor na linha, por pixel (a linha é um elemento só para o VoiceOver), como a `larguraDaBarra`: tinta é o
+    /// pixel a mais de 64, em algum canal, do fundo lido 8 pt depois do fim do conteúdo (`borda` pt antes da direita do
+    /// elemento), no meio da altura, e só conta 6 pt dentro do alto e da base. Da direita: o cursor (a corrida de colunas de
+    /// tinta), o vão e o último dígito. Com o cursor apagado, a corrida da direita é o "0", larga: nil. Em pontos.
+    private func cursorDoValor(_ linha: XCUIElement, borda: CGFloat)
+        -> (folga: CGFloat, largura: CGFloat, altura: CGFloat, meio: CGFloat)? {
+        guard let cg = linha.screenshot().image.cgImage else { return nil }
+        let (l, a, e) = (cg.width, cg.height, CGFloat(cg.width) / linha.frame.width)
+        var px = [UInt8](repeating: 0, count: l * a * 4)
+        let desenhou = px.withUnsafeMutableBytes { b -> Bool in
+            guard let c = CGContext(data: b.baseAddress, width: l, height: a, bitsPerComponent: 8, bytesPerRow: l * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            c.draw(cg, in: CGRect(x: 0, y: 0, width: l, height: a))
+            return true
+        }
+        guard desenhou else { return nil }
+        let fim = Int((linha.frame.width - borda) * e), fundo = ((a / 2) * l + fim + Int(8 * e)) * 4
+        let faixa = Int(6 * e)..<(a - Int(6 * e))
+        func tinta(_ x: Int, _ y: Int) -> Bool {
+            (0..<3).contains { abs(Int(px[(y * l + x) * 4 + $0]) - Int(px[fundo + $0])) > 64 }
+        }
+        func coluna(_ x: Int) -> Bool { faixa.contains { tinta(x, $0) } }
+        var x = fim + Int(4 * e)
+        while x > 0, !coluna(x) { x -= 1 }
+        let direita = x
+        while x > 0, coluna(x) { x -= 1 }
+        let esquerda = x + 1
+        while x > 0, !coluna(x) { x -= 1 }
+        let digito = x
+        while x > 0, coluna(x) { x -= 1 }
+        guard CGFloat(direita - esquerda + 1) / e < 4 else { return nil }
+        func linhas(_ colunas: ClosedRange<Int>) -> ClosedRange<Int> {
+            let comTinta = faixa.filter { y in colunas.contains { tinta($0, y) } }
+            return (comTinta.first ?? 0)...(comTinta.last ?? 0)
+        }
+        let cursor = linhas((esquerda + direita) / 2...(esquerda + direita) / 2), zero = linhas((x + 1)...digito)
+        return (CGFloat(esquerda - digito - 1) / e, CGFloat(direita - esquerda + 1) / e, CGFloat(cursor.count) / e,
+                CGFloat(cursor.lowerBound + cursor.upperBound - zero.lowerBound - zero.upperBound) / 2 / e)
+    }
+
     /// A tela Orçamento da obra e o lápis dela.
     private func editarPeloLapis(_ app: XCUIApplication) {
         let lapis = app.buttons["editarOrcamento"]
@@ -59,6 +117,7 @@ extension OrcamentoUITests {
         XCTAssertFalse(salvar.isEnabled, "o \"Salvar\" apagado até ter valor")
         digitar(app, "120000000")
         XCTAssertEqual(app.elemento("linhaOrcamentoTotal").value as? String, "R$\u{a0}1.200.000,00")
+        conferirCursor(app.elemento("linhaOrcamentoTotal"), borda: 16, folga: 11, meio: -0.5, "no \"Só o total\"")
         XCTAssertTrue(salvar.isEnabled)
         salvar.tap()
         XCTAssertTrue(salvar.waitForNonExistence(timeout: 5), "a folha desce")
@@ -84,6 +143,8 @@ extension OrcamentoUITests {
         app.buttons["barraDasTeclas-proximo"].tap()
         XCTAssertEqual(nome.label, "Documentação · 2 de 21")
         digitar(app, "1000000")
+        // "R$ 10.000,00" tem a largura do "R$ 30.000,00" da Elétrica do mockup (algarismos tabulares).
+        conferirCursor(app.elemento("linhaOrc-projeto"), borda: 32, folga: 10, meio: 0.5, "na linha do tópico")
         app.buttons["barraDasTeclas-anterior"].tap()
         XCTAssertEqual(nome.label, "Terreno · 1 de 21")
         app.buttons["barraDasTeclas-anterior"].tap()

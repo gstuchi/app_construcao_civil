@@ -13775,3 +13775,564 @@ git add .github/workflows/app-ios.yml \
   tests/workflow.test.cjs
 git commit -m "feat: folha do detalhe do tópico" -m "O detalhe do tópico do mockup da etapa 3 entra como uma folha nova, aberta pelo gancho de teste CUSTTA_FOLHA=topico:<obra>:<tópico>; as linhas da tela Orçamento que a abrem vêm na tarefa seguinte. Em cima, o resumo num grupo sólido: \"11 gastos · 9% da obra\", o bruto em 28 bold numa linha só, o corrigido e, no orçamento por tópico, a linha do orçamento do tópico, com \"No orçamento\", o previsto, a barra de 8 e a frase do site (\"Faltam R\$ 3,3 mil — 96%\", a do \"passou\" no âmbar, ou \"{pct}% usado\"). O tópico fora do orçamento mostra \"Sem valor no orçamento: não entra na comparação.\" no lugar da barra, e no modo total a linha não aparece. Embaixo, \"A vencer · N\", com o próximo primeiro, e \"Pagos · N\", com o mais novo primeiro, cada seção só quando tem gasto, com a linha de gasto da etapa 2 sem o tópico, que o título da folha já diz." -m "A folha monta a lista comum das folhas de origem, a mesma do A pagar: tocar num gasto empurra a edição na mesma folha e arrastar mostra \"Apagar\", sem código novo para isso. A peça da lista ganha o cabeçalho de seção, que fica fora do grupo, e os cantos de cima no primeiro gasto, por um campo com padrão falso; o A pagar não muda. A pilha é montada como a do A pagar (o folhaDoApp em volta dela, o \"Não salvou\" dentro da folha, a folha que fecha quando a obra some), e a guarda Node da montagem passa a ler as duas folhas, porque o chevron, a borda e o puxar com mudança só são testados na tela pelo A pagar. Entra também o falso topicoLongo, com 120 diárias na Mão de obra, para a lista longa do detalhe." -m "A suíte de tela nova, DetalheDoTopicoUITests, roda num job novo da CI, o app-etapa3-b, no molde do app-etapa3 e em paralelo com ele. O app-etapa3 já leva de 55 a 58,8 minutos de 90, e o próprio workflow diz que ele não cresce mais: com a suíte do detalhe e as que ainda virão neste PR, ele passaria de 70 numa VM lenta. O job app pula a suíte nova, e a guarda dos jobs confere que cada suíte de tela roda uma vez só, num job só."
 ```
+
+### Task 31: As linhas da tela Orçamento abrem o detalhe do tópico
+
+Três linhas da tela Orçamento abrem a folha do detalhe daquele tópico:
+- o previsto com gasto;
+- toda linha de fora do orçamento;
+- no modo total, toda linha do "Gasto por tópico".
+
+O previsto sem gasto continua sem botão, com a coluna da seta vazia. A regra é ter gasto, e não a soma: o `linhasPorTopico` passa a receber os gastos. Saem os dois comentários do PR 1 que diziam que as linhas ainda não abriam, e as três asserções do `OrcamentoUITests` que conferiam isso se invertem.
+
+- **O botão é o do indicador A pagar** (Tarefa 23): `Button(.plain)`, com o quadro e o `contentShape` dentro do rótulo. A seta é o chevron do Orçamento, de 9/18 pt, no meio da altura, sobre a coluna reservada de 14/22. Uma guarda Node fixa isso.
+- **A varredura de 375 pt na maior letra** confere, por `sizeThatFits`, que as linhas com a seta cabem.
+- **Contra o mockup:**
+  - a seta usa a cor do chevron do Orçamento, #D6E8E0 no escuro, e não o `--texto3` do `.chev`, #64887A (para o Verniz);
+  - na AX5, a seta sai 2 pt à direita;
+  - as linhas de fora e do total ficam 10 e 9 pt mais baixas, porque a grade do mockup abre linhas vazias.
+
+**Files:**
+- Modify: `app-ios/Custta/Telas/OrcamentoView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaTelaOrcamento.swift`
+- Test (alterar): `app-ios/CusttaTests/OrcamentoEm375Tests.swift`
+- Test (alterar): `app-ios/CusttaTests/TelaOrcamentoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/OrcamentoUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `LinhaDeTopicoDoOrcamento`, `linhasPorTopico`, `linhasForaDoOrcamento` e `linhasDoGastoPorTopico` (Tarefa 16); `Folhas.Qual.topico(obraId:topicoId:)` (Tarefa 30); o chevron do Orçamento (Tarefa 26).
+- Produces: `LinhaDeTopicoDoOrcamento.abre`; `linhasPorTopico(…, gastos:)`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/OrcamentoEm375Tests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/OrcamentoEm375Tests.swift
++++ b/app-ios/CusttaTests/OrcamentoEm375Tests.swift
+@@ -3,8 +3,8 @@ import SwiftUI
+ @testable import Custta
+ import CusttaNucleo
+ 
+-/* O orçamento num iPhone de 375 pt (etapa 3, PR 1), na maior letra, com e sem Texto em negrito: nenhuma peça passa da
+-   largura. O laudo e as auditorias rodam no 18 Pro (402) e no Pro Max (440); 375 só aqui, num UIHostingController em escala
++/* O orçamento num iPhone de 375 pt (etapa 3, PR 1; as linhas com a seta, do PR 2), na maior letra, com e sem Texto em
++   negrito: nenhuma peça passa da largura. O laudo e as auditorias rodam no 18 Pro (402) e no Pro Max (440); 375 só aqui, num UIHostingController em escala
+    1, com a largura de cada peça na tela (375 menos os 20 de cada lado; na folha, a linha já traz o recuo dela). */
+ @MainActor
+ struct OrcamentoEm375Tests {
+@@ -22,8 +22,30 @@ struct OrcamentoEm375Tests {
+         #expect(largura(LinhaDoOrcamento(resumo: resumo, comSeta: true), 335, negrito: negrito) <= 335, "a linha do orçamento")
+         #expect(largura(CartaoDoOrcamento(resumo: resumo), 335, negrito: negrito) <= 335, "o cartão")
+         let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
+-        for linha in linhasPorTopico(resumo, topicos: topicos) + linhasForaDoOrcamento(resumo, topicos: topicos) {
+-            #expect(largura(LinhaDeTopicoNoOrcamento(linha: linha, identificador: linha.id), 335, negrito: negrito) <= 335, "\(linha.nome)")
++        for linha in linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos) + linhasForaDoOrcamento(resumo, topicos: topicos) {
++            #expect(largura(LinhaDeTopicoNoOrcamento(linha: linha, identificador: linha.id, abrir: {}), 335, negrito: negrito) <= 335,
++                    "\(linha.nome)")
++        }
++    }
++
++    /// As linhas da tela Orçamento com a seta (as que abrem o detalhe: o previsto com gasto, as de fora e as do gasto por
++    /// tópico do modo total), numa varredura das larguras até os 335 pt da linha num iPhone de 375: nenhuma passa da largura
++    /// que recebe. O defeito do irmão de tamanho fracionário só aparece em algumas larguras (AvisoDoOrcamentoTests).
++    @Test(arguments: [false, true]) func linhasComASetaCabemEm375(negrito: Bool) throws {
++        let casa = try #require(porTopico.obras.first { $0.id == "v1" })
++        let resumo = try #require(orcamentoObra(casa))
++        let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
++        let previstos = linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos).filter(\.abre)
++        let fora = linhasForaDoOrcamento(resumo, topicos: topicos)
++        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa, hoje: dataLocalISO(.now, fuso: .current),
++                                                             taxaMensal: porTopico.config.taxaMensal), topicos: topicos)
++        #expect(!previstos.isEmpty && fora.count == 2 && !porGasto.isEmpty, "as três listas")
++        for linha in previstos + fora + porGasto {
++            #expect(linha.abre, "\(linha.nome) com a seta")
++            for disponivel in stride(from: CGFloat(300), through: 335, by: 1) {
++                let medida = largura(LinhaDeTopicoNoOrcamento(linha: linha, identificador: linha.id, abrir: {}), disponivel, negrito: negrito)
++                #expect(medida <= disponivel, "\(linha.nome) a \(disponivel) pt: \(medida)")
++            }
+         }
+     }
+ 
+```
+
+Em `app-ios/CusttaTests/TelaOrcamentoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/TelaOrcamentoTests.swift
++++ b/app-ios/CusttaTests/TelaOrcamentoTests.swift
+@@ -6,7 +6,7 @@ import CusttaNucleo
+ /* As linhas e as frases da tela Orçamento (etapa 3, PR 1), montadas das regras do núcleo: o nome do tópico (o id, com o
+    ícone etiqueta, quando o app não conhece o tópico, como no site), o gasto e o previsto do site, a frase do nível (a do
+    "passou" em âmbar), o valor da linha, que não quebra, e as frases do cartão partidas em volta do dinheiro, iguais às do
+-   núcleo. */
++   núcleo. E que linha abre o detalhe do tópico (PR 2): a do tópico com gasto. */
+ struct TelaOrcamentoTests {
+     private func obra(_ orcamento: ValorJSON, gastos: [(String, Double)]) -> Obra {
+         Obra(arvore: ["id": .texto("o"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+@@ -24,11 +24,11 @@ struct TelaOrcamentoTests {
+     @Test func porTopicoComAsFrasesDoSiteEOTopicoDesconhecidoPeloId() throws {
+         let o = obra(porTopico, gastos: [("estrutura", 91_200), ("revest", 76_700), ("pintura", 1_000), ("projeto", 22_880.5)])
+         let r = try #require(orcamentoObra(o))
+-        let linhas = linhasPorTopico(r, topicos: mapaDeTopicos([]))
++        let linhas = linhasPorTopico(r, topicos: mapaDeTopicos([]), gastos: o.gastos)
+         #expect(linhas.map(\.id) == ["estrutura", "revest", "pintura", "c_apagado"], "a ordem do site: quem gastou mais do previsto primeiro")
+         #expect(linhas[0] == LinhaDeTopicoDoOrcamento(id: "estrutura", nome: "Estrutura", icone: "guindaste", gasto: "R$ 91 mil",
+                                                        previsto: "85 mil", item: r.topicos[0], frase: "Passou R$ 6,2 mil do previsto",
+-                                                       fraseEmAlerta: true))
++                                                       abre: true, fraseEmAlerta: true))
+         #expect(linhas[1].frase == "Faltam R$ 3,3 mil — 96%" && !linhas[1].fraseEmAlerta)
+         #expect(linhas[2].frase == nil, "dentro do previsto, sem frase")
+         // O tópico que o app não conhece aparece pelo id, com o ícone etiqueta; sem gasto, "R$ 0,00" (abaixo de mil, a moeda
+@@ -38,7 +38,24 @@ struct TelaOrcamentoTests {
+         #expect(linhas[3].gasto == "R$\u{a0}0,00")
+         let fora = linhasForaDoOrcamento(r, topicos: mapaDeTopicos([]))
+         #expect(fora == [LinhaDeTopicoDoOrcamento(id: "projeto", nome: "Documentação", icone: "documento", gasto: "R$ 23 mil",
+-                                                   previsto: nil, item: nil, frase: nil)])
++                                                   previsto: nil, item: nil, frase: nil, abre: true)])
++    }
++
++    /// A linha abre o detalhe do tópico quando ele tem gasto. No "Por tópico", só o previsto com gasto: a regra do site é ter
++    /// gasto, e não a soma (um gasto de R$ 0,00 também abre). Fora do orçamento e no gasto por tópico, todas.
++    @Test func abreODetalheNasTresListas() throws {
++        let o = obra(porTopico, gastos: [("estrutura", 91_200), ("pintura", 0), ("projeto", 22_880.5)])
++        let r = try #require(orcamentoObra(o))
++        let previstos = linhasPorTopico(r, topicos: mapaDeTopicos([]), gastos: o.gastos)
++        #expect(previstos.filter(\.abre).map(\.id).sorted() == ["estrutura", "pintura"], "o previsto com gasto abre")
++        #expect(previstos.first { $0.id == "pintura" }?.gasto == "R$\u{a0}0,00", "o gasto de R$ 0,00 também conta")
++        #expect(previstos.filter { !$0.abre }.map(\.id).sorted() == ["c_apagado", "revest"], "o previsto sem gasto não abre")
++        #expect(linhasForaDoOrcamento(r, topicos: mapaDeTopicos([])).map(\.abre) == [true], "o fora do orçamento abre")
++        let total = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
++                         gastos: [("terreno", 319_847.85), ("revest", 0), ("c_meu", 2_000)])
++        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([]))
++        #expect(porGasto.map(\.id) == ["terreno", "c_meu", "revest"])
++        #expect(porGasto.allSatisfy { $0.abre }, "no gasto por tópico, todas abrem, mesmo a de R$ 0,00")
+     }
+ 
+     @Test func gastoPorTopicoComAParteDaObra() {
+```
+
+Em `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
++++ b/app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
+@@ -1,10 +1,11 @@
+ import XCTest
+ import notify
+ 
+-/* O detalhe do tópico da etapa 3 (PR 2), aberto pelo gancho por cima da tela Orçamento da Casa Alphaville do mockup (as
+-   linhas da tela que o abrem chegam na Tarefa 31): a Cerâmica, com o resumo, a linha do orçamento do tópico e as seções "A
+-   vencer" e "Pagos", a linha de gasto sem o tópico; a Documentação, fora do orçamento, com "Sem valor no orçamento" no lugar
+-   da barra; no modo total (a vitrine de sempre), sem a linha do orçamento; a obra apagada em outro aparelho fecha a folha.
++/* O detalhe do tópico da etapa 3 (PR 2), aberto pelo gancho por cima da tela Orçamento da Casa Alphaville do mockup: a
++   Cerâmica, com o resumo, a linha do orçamento do tópico e as seções "A vencer" e "Pagos", a linha de gasto sem o tópico; a
++   Documentação, fora do orçamento, com "Sem valor no orçamento" no lugar da barra; no modo total (a vitrine de sempre), sem a
++   linha do orçamento; a obra apagada em outro aparelho fecha a folha. E pelas linhas da tela Orçamento, cada uma um botão
++   inteiro: o previsto com gasto abre e o sem gasto não; o fora do orçamento abre; no modo total, o "Gasto por tópico" abre.
+    A edição, o apagar e a folha que desce sem gasto são da Tarefa 32. */
+ @MainActor
+ final class DetalheDoTopicoUITests: XCTestCase {
+@@ -40,6 +41,35 @@ final class DetalheDoTopicoUITests: XCTestCase {
+         for texto in textos { XCTAssertTrue(elemento.label.contains(texto), "\"\(texto)\" em \"\(elemento.label)\"") }
+     }
+ 
++    /// A tela Orçamento da Casa Alphaville, sem folha aberta: por tópico, ou no modo total com a vitrine de sempre.
++    private func abrirOrcamento(_ dados: String = "porTopico") -> XCUIApplication {
++        let app = abrirApp(conta: "senha", dados: dados, abrir: "orcamento:v1")
++        XCTAssertTrue(app.elemento("cartaoDoOrcamento").waitForExistence(timeout: 10), "a tela Orçamento")
++        return app
++    }
++
++    /// Rola até a linha da tela Orçamento e toca nela a 30 pt da borda da tela, longe do texto, na altura do meio dela; espera o
++    /// detalhe subir. Devolve o quadro da linha antes do toque (nil se o detalhe não abriu).
++    private func abrirPelaLinha(_ app: XCUIApplication, _ id: String) -> CGRect? {
++        let linha = app.elemento(id)
++        app.rolarAte(linha)
++        let quadro = linha.frame
++        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 30, dy: quadro.midY)).tap()
++        guard app.elemento("resumoDoTopico").waitForExistence(timeout: 5) else {
++            XCTFail("resumoDoTopico não apareceu")
++            return nil
++        }
++        return quadro
++    }
++
++    /// A linha é um botão de ponta a ponta do cartão (o quadro do VoiceOver e do Controle por Voz), e o × fecha o detalhe.
++    private func linhaInteiraEFechar(_ app: XCUIApplication, _ id: String, _ quadro: CGRect) {
++        XCTAssertEqual(quadro.width, app.frame.width - 40, accuracy: 1, "\(id): a linha inteira é o botão, \(quadro)")
++        app.buttons["fecharFolha"].tap()
++        XCTAssertTrue(app.elemento("resumoDoTopico").waitForNonExistence(timeout: 5), "o × fecha")
++        XCTAssertTrue(app.buttons[id].exists, "\(id): a linha é um botão")
++    }
++
+     func testDetalheAbreComOResumoEAsSecoes() {
+         let app = abrirDetalhe("revest")
+         XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Cerâmica"), app.elemento("tituloDaFolha").label)
+@@ -101,6 +131,43 @@ final class DetalheDoTopicoUITests: XCTestCase {
+         emOrdem(app, ["g032", "g033"], "a vencer")
+     }
+ 
++    func testPrevistoComGastoAbreESemGastoNao() {
++        let app = abrirOrcamento()
++        guard let quadro = abrirPelaLinha(app, "topicoOrc-revest") else { return }
++        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Cerâmica"), app.elemento("tituloDaFolha").label)
++        confere(app.elemento("resumoDoTopico"), contem: ["11 gastos · 9% da obra", "R$\u{a0}76.700,00"])
++        confere(app.elemento("orcamentoDoTopico"), contem: ["No orçamento", "R$\u{a0}80.000,00"])
++        linhaInteiraEFechar(app, "topicoOrc-revest", quadro)
++        // O Acabamento, sem gasto ("R$ 0,00 / 60 mil"): sem traço de botão, e o toque não abre nada.
++        let acabamento = app.elemento("topicoOrc-acabamento")
++        app.rolarAte(acabamento)
++        XCTAssertTrue(acabamento.label.contains("R$\u{a0}0,00"), acabamento.label)
++        XCTAssertFalse(app.buttons["topicoOrc-acabamento"].exists, "sem gasto, a linha não é botão")
++        acabamento.tap()
++        XCTAssertFalse(app.elemento("resumoDoTopico").waitForExistence(timeout: 2), "sem gasto, a linha não abre o detalhe")
++    }
++
++    func testForaDoOrcamentoAbreODetalhe() {
++        let app = abrirOrcamento()
++        guard let quadro = abrirPelaLinha(app, "foraOrc-projeto") else { return }
++        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Documentação"), app.elemento("tituloDaFolha").label)
++        confere(app.elemento("resumoDoTopico"), contem: ["2 gastos · 3% da obra", "R$\u{a0}22.880,50"])
++        XCTAssertEqual(app.elemento("orcamentoDoTopico").label, "Sem valor no orçamento: não entra na comparação.")
++        linhaInteiraEFechar(app, "foraOrc-projeto", quadro)
++        XCTAssertTrue(app.buttons["foraOrc-pintura"].exists, "toda linha de fora do orçamento é um botão")
++    }
++
++    func testGastoPorTopicoAbreODetalheNoModoTotal() {
++        let app = abrirOrcamento("vitrine")
++        XCTAssertTrue(app.elemento("gastoTopico-terreno").label.contains("38% da obra"), app.elemento("gastoTopico-terreno").label)
++        guard let quadro = abrirPelaLinha(app, "gastoTopico-terreno") else { return }
++        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Terreno"), app.elemento("tituloDaFolha").label)
++        // O mesmo "% da obra" da linha que abriu.
++        confere(app.elemento("resumoDoTopico"), contem: ["2 gastos · 38% da obra", "R$\u{a0}319.847,85"])
++        XCTAssertFalse(app.elemento("orcamentoDoTopico").exists, "só o total no orçamento: sem a linha do orçamento do tópico")
++        linhaInteiraEFechar(app, "gastoTopico-terreno", quadro)
++    }
++
+     func testObraApagadaEmOutroAparelhoFechaODetalhe() {
+         let app = abrirDetalhe("revest", extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
+         notify_post("br.com.custta.falso.apagarRemoto")
+```
+
+Em `app-ios/CusttaUITests/OrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/OrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/OrcamentoUITests.swift
+@@ -126,7 +126,7 @@ extension OrcamentoUITests {
+     }
+ 
+     /// "Por tópico" com as frases do site, na ordem do site (quem gastou mais do previsto primeiro), e uma linha por tópico
+-    /// fora do orçamento. Neste PR as linhas não abrem nada: nenhuma é botão.
++    /// fora do orçamento. As linhas com gasto são botões, que abrem o detalhe do tópico (DetalheDoTopicoUITests).
+     func testPorTopicoComAsFrasesDoSiteEOsTopicosFora() {
+         let app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1")
+         XCTAssertTrue(app.elemento("cartaoDoOrcamento").waitForExistence(timeout: 10))
+@@ -143,7 +143,7 @@ extension OrcamentoUITests {
+             for texto in textos { XCTAssertTrue(linha.label.contains(texto), "\(id): \"\(texto)\" em \"\(linha.label)\"") }
+             XCTAssertGreaterThan(linha.frame.minY, anterior, "\(id) na ordem do site")
+             anterior = linha.frame.minY
+-            XCTAssertFalse(app.buttons["topicoOrc-\(id)"].exists, "\(id): neste PR a linha não abre o detalhe")
++            XCTAssertTrue(app.buttons["topicoOrc-\(id)"].exists, "\(id): com gasto, a linha é o botão do detalhe")
+         }
+         let acabamento = app.elemento("topicoOrc-acabamento")
+         app.rolarAte(acabamento)
+@@ -156,7 +156,7 @@ extension OrcamentoUITests {
+         for (id, nome, gasto) in [("projeto", "Documentação", "R$ 23 mil"), ("pintura", "Pintura", "R$ 6,9 mil")] {
+             let linha = app.elemento("foraOrc-\(id)")
+             XCTAssertTrue(linha.label.contains(nome) && linha.label.contains(gasto), linha.label)
+-            XCTAssertFalse(app.buttons["foraOrc-\(id)"].exists, "\(id): neste PR a linha não abre o detalhe")
++            XCTAssertTrue(app.buttons["foraOrc-\(id)"].exists, "\(id): fora do orçamento, a linha é o botão do detalhe")
+         }
+         XCTAssertLessThan(app.elemento("foraOrc-projeto").frame.minY, app.elemento("foraOrc-pintura").frame.minY, "do maior gasto ao menor")
+     }
+@@ -174,7 +174,7 @@ extension OrcamentoUITests {
+         XCTAssertTrue(terreno.label.contains("Terreno") && terreno.label.contains("R$ 320 mil") && terreno.label.contains("38% da obra"),
+                       terreno.label)
+         XCTAssertLessThan(terreno.frame.minY, estrutura.frame.minY, "do maior bruto para o menor")
+-        XCTAssertFalse(app.buttons["gastoTopico-terreno"].exists, "neste PR a linha não abre o detalhe")
++        XCTAssertTrue(app.buttons["gastoTopico-terreno"].exists, "a linha é o botão do detalhe")
+         let dica = app.elemento("dicaDoModoTotal")
+         app.rolarAte(dica)
+         XCTAssertEqual(dica.label, "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -517,6 +517,28 @@ test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18
+     'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+ });
+ 
++test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
++  // O mesmo botão do indicador A pagar (D7 do PR 2). Com o quadro ou o contentShape fora do rótulo, o toque e o foco do
++  // VoiceOver ficam só no miolo da linha (medido no "Apagar obra" da etapa 2 e no A pagar), e a folga do dedo do SwiftUI
++  // esconde isso no toque. E nenhum teste de tela vê a seta, que fica fora da árvore de acessibilidade (accessibilityHidden)
++  // e do laudo (foraDoLaudo).
++  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
++  const inicio = t.indexOf('struct LinhaDeTopicoNoOrcamento');
++  assert.ok(inicio >= 0, 'a LinhaDeTopicoNoOrcamento');
++  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
++  const botao = linha.indexOf('Button(action: abrir) {');
++  assert.ok(botao >= 0, 'a linha que abre é um Button, com o rótulo próprio');
++  let fim = botao + 'Button(action: abrir) {'.length, nivel = 1;
++  for(; nivel > 0 && fim < linha.length; fim++) nivel += linha[fim] === '{' ? 1 : linha[fim] === '}' ? -1 : 0;
++  assert.match(linha.slice(botao, fim),
++    /\.padding\(EdgeInsets\(top: 12, leading: 18, bottom: 12, trailing: 14\)\)\s*\.frame\(maxWidth: \.infinity, alignment: \.leading\)\s*\.contentShape\(\.rect\)\s*\}$/,
++    'o recuo, o quadro e o contentShape dentro do rótulo, por último');
++  assert.match(linha.slice(fim), /^\s*\.buttonStyle\(\.plain\)\s*\.accessibilityIdentifier\(identificador\)\n/,
++    'depois do rótulo, só o estilo plano e o identificador');
++  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
++    'a seta é a do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
++});
++
+ test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
+   // Nenhum teste de tela vê isso: eles tocam as teclas pelo identificador (a ordem não aparece), nenhum digita além do
+   // teto, o anúncio do VoiceOver não chega ao XCUITest e a auditoria não mede o limite de tamanho das teclas.
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected:
+- **Node:** reprova `✖ linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento`, com `AssertionError [ERR_ASSERTION]: a linha que abre é um Button, com o rótulo próprio` (`ℹ pass 56`, `ℹ fail 1`).
+- **O `CusttaTests` não compila,** no `OrcamentoEm375Tests` e no `TelaOrcamentoTests`:
+  - `generic parameter 'some StringProtocol' could not be inferred` (3);
+  - `extra argument 'gastos' in call` (3);
+  - `extra argument 'abrir' in call` (2);
+  - `extra argument 'abre' in call` (2);
+  - `cannot infer key path type from context; consider explicitly specifying a root type` (2);
+  - `cannot convert value of type 'KeyPath<Root, Value>' to expected argument type 'Predicate<LinhaDeTopicoDoOrcamento>'` (1).
+  O build para no primeiro arquivo que falha: às vezes sai só o `OrcamentoEm375Tests`.
+- **Só com os testes de tela no lugar,** os 3 novos de `DetalheDoTopicoUITests` reprovam depois do toque, em `failed - resumoDoTopico não apareceu` (`Executed 3 tests, with 3 failures`): a linha ainda não é botão.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Telas/OrcamentoView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/OrcamentoView.swift
++++ b/app-ios/Custta/Telas/OrcamentoView.swift
+@@ -6,8 +6,8 @@ import CusttaNucleo
+    com "previstos em N tópicos" e a frase do que está fora (no modo por tópico, o cartão soma só os tópicos previstos e não
+    fecha com o Total gasto: achado 10); o "Por tópico" com as frases do site, na ordem do site, e uma linha por tópico fora
+    do orçamento (no site, uma linha só, com os nomes: achado 11); no modo total, o "Gasto por tópico" (bruto e % da obra, na
+-   ordem da legenda do donut) e a dica do lápis. As linhas dos tópicos ainda não
+-   abrem nada: o detalhe do tópico chega no PR 2, e até lá elas ficam sem seta e sem toque (conselho de 19/10, decisão 3).
++   ordem da legenda do donut) e a dica do lápis. As linhas com gasto (o previsto com gasto, toda linha de fora e toda do
++   gasto por tópico) abrem o detalhe do tópico, com a seta; o previsto sem gasto não abre, como no site.
+    Sem a obra (apagada em outro aparelho) ou sem o orçamento (tirado), a tela volta. */
+ struct OrcamentoView: View {
+     let id: String
+@@ -44,9 +44,9 @@ struct OrcamentoView: View {
+                     PilulaDaLista(titulo: "Por tópico", quantidade: r.topicos.count, identificador: "porTopico")
+                         .padding(.top, 14)
+                     CartaoDaLista {
+-                        ForEach(Array(linhasPorTopico(r, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
++                        ForEach(Array(linhasPorTopico(r, topicos: topicos, gastos: obra.gastos).enumerated()), id: \.element.id) { i, linha in
+                             if i > 0 { LinhaFina().padding(.leading, 67) }
+-                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "topicoOrc-\(linha.id)")
++                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "topicoOrc-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
+                         }
+                     }
+                     if !r.fora.isEmpty {
+@@ -59,7 +59,7 @@ struct OrcamentoView: View {
+                                 .padding(EdgeInsets(top: 0, leading: 18, bottom: 4, trailing: 18))
+                             ForEach(Array(linhasForaDoOrcamento(r, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
+                                 if i > 0 { LinhaFina().padding(.leading, 67) }
+-                                LinhaDeTopicoNoOrcamento(linha: linha, identificador: "foraOrc-\(linha.id)")
++                                LinhaDeTopicoNoOrcamento(linha: linha, identificador: "foraOrc-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
+                             }
+                         }
+                     }
+@@ -69,7 +69,7 @@ struct OrcamentoView: View {
+                     CartaoDaLista {
+                         ForEach(Array(linhasDoGastoPorTopico(gastos, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
+                             if i > 0 { LinhaFina().padding(.leading, 67) }
+-                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "gastoTopico-\(linha.id)")
++                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "gastoTopico-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
+                         }
+                     }
+                     DicaDoModoTotal()
+@@ -99,4 +99,7 @@ struct OrcamentoView: View {
+                 .sharedBackgroundVisibility(.hidden)
+         }
+     }
++
++    /// O toque numa linha que abre: o detalhe do tópico, nesta obra.
++    private func abrirDetalhe(_ topico: String) { folhas.aberta = .topico(obraId: id, topicoId: topico) }
+ }
+```
+
+Em `app-ios/Custta/Telas/PecasDaTelaOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaTelaOrcamento.swift
++++ b/app-ios/Custta/Telas/PecasDaTelaOrcamento.swift
+@@ -19,6 +19,8 @@ struct LinhaDeTopicoDoOrcamento: Identifiable, Equatable {
+     let item: ItemOrcamento?
+     /// A frase do site ("Passou R$ 6,2 mil do previsto") ou, no gasto por tópico, "38% da obra".
+     let frase: String?
++    /// A linha abre o detalhe do tópico (a seta e o toque): o tópico tem gasto.
++    let abre: Bool
+     /// A frase do "passou", no âmbar.
+     var fraseEmAlerta = false
+ }
+@@ -28,30 +30,32 @@ private func topico(_ id: String, _ topicos: [String: Topico]) -> Topico {
+     topicos[id] ?? Topico(id: id, nome: id, icone: "etiqueta")
+ }
+ 
+-/// O "Por tópico": os previstos, na ordem do site (quem gastou mais do previsto primeiro).
+-func linhasPorTopico(_ r: ResumoOrcamento, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
+-    r.topicos.map { t in
++/// O "Por tópico": os previstos, na ordem do site (quem gastou mais do previsto primeiro). Abre o detalhe o previsto com gasto:
++/// a regra do site é ter gasto (o detalhe fecha sem nenhum), e não a soma.
++func linhasPorTopico(_ r: ResumoOrcamento, topicos: [String: Topico], gastos: [Gasto]) -> [LinhaDeTopicoDoOrcamento] {
++    let comGasto = Set(gastos.map(\.topico))
++    return r.topicos.map { t in
+         let id = t.id ?? "", nome = topico(id, topicos), linha = linhaTopicoOrc(t), frase = fraseTopicoOrc(t)
+         return LinhaDeTopicoDoOrcamento(id: id, nome: nome.nome, icone: nome.icone, gasto: linha.gasto, previsto: linha.previsto,
+-                                        item: t, frase: frase?.texto, fraseEmAlerta: frase?.alerta ?? false)
++                                        item: t, frase: frase?.texto, abre: comGasto.contains(id), fraseEmAlerta: frase?.alerta ?? false)
+     }
+ }
+ 
+-/// Uma linha por tópico fora do orçamento (gasto sem previsto), do maior gasto para o menor.
++/// Uma linha por tópico fora do orçamento (gasto sem previsto), do maior gasto para o menor; todas abrem o detalhe.
+ func linhasForaDoOrcamento(_ r: ResumoOrcamento, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
+     r.fora.map { f in
+         let t = topico(f.id, topicos)
+         return LinhaDeTopicoDoOrcamento(id: f.id, nome: t.nome, icone: t.icone, gasto: moedaCurtaSemZero(f.gasto), previsto: nil,
+-                                        item: nil, frase: nil)
++                                        item: nil, frase: nil, abre: true)
+     }
+ }
+ 
+-/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto.
++/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto; todas abrem o detalhe.
+ func linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
+     gastos.map { g in
+         let t = topico(g.id, topicos)
+         return LinhaDeTopicoDoOrcamento(id: g.id, nome: t.nome, icone: t.icone, gasto: moedaCurtaSemZero(g.bruto), previsto: nil,
+-                                        item: nil, frase: textoDaParteDaObra(g.pct))
++                                        item: nil, frase: textoDaParteDaObra(g.pct), abre: true)
+     }
+ }
+ 
+@@ -137,18 +141,42 @@ struct CartaoDoOrcamento: View {
+ /// Uma linha de tópico da tela Orçamento: o ícone, o nome, o gasto (e "/ previsto"), a barra fina e a frase. O valor não
+ /// quebra; o nome quebra antes, com o valor no meio da altura dele (o `.ot` do mockup). A linha fora do orçamento, só com o
+ /// nome e o gasto, fica no meio da altura do ícone. Na letra grande, sem o ícone, cada informação numa linha. A coluna da
+-/// seta fica reservada e vazia: neste PR a linha não abre nada (o detalhe do tópico chega no PR 2). Um elemento só para o
+-/// VoiceOver, sem traço de botão.
++/// seta fica reservada em toda linha. A que abre o detalhe do tópico (`abre`) é um botão inteiro, o do indicador A pagar,
++/// com a seta no meio da altura; a do previsto sem gasto fica sem seta e é um elemento só para o VoiceOver, sem traço de
++/// botão.
+ struct LinhaDeTopicoNoOrcamento: View {
+     let linha: LinhaDeTopicoDoOrcamento
+     let identificador: String
++    /// O toque na linha que abre: o detalhe do tópico.
++    let abrir: () -> Void
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
+     @Environment(\.dynamicTypeSize) private var tamanho
+ 
+     var body: some View {
++        if linha.abre {
++            // A linha inteira é o botão: o quadro e o contentShape dentro do rótulo, ou o toque e o foco do VoiceOver ficam
++            // só no miolo.
++            Button(action: abrir) {
++                conteudo
++                    .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))
++                    .frame(maxWidth: .infinity, alignment: .leading)
++                    .contentShape(.rect)
++            }
++            .buttonStyle(.plain)
++            .accessibilityIdentifier(identificador)
++        } else {
++            conteudo
++                .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))
++                .frame(maxWidth: .infinity, alignment: .leading)
++                .accessibilityElement(children: .combine)
++                .accessibilityIdentifier(identificador)
++        }
++    }
++
++    private var conteudo: some View {
+         let grande = tamanho.isAccessibilitySize
+-        HStack(alignment: linha.item == nil && linha.frase == nil ? .center : .top, spacing: 11) {
++        return HStack(alignment: linha.item == nil && linha.frase == nil ? .center : .top, spacing: 11) {
+             if !grande {
+                 Image(decorative: iconeDoCatalogo(linha.icone))
+                     .resizable().frame(width: 20, height: 20)
+@@ -171,13 +199,23 @@ struct LinhaDeTopicoNoOrcamento: View {
+                 if let frase = linha.frase { FraseDoTopicoNoOrcamento(texto: frase, alerta: linha.fraseEmAlerta) }
+             }
+             .frame(maxWidth: .infinity, alignment: .leading)
+-            // A coluna da seta (14 pt; 22 na letra grande), vazia até o detalhe do tópico chegar.
++            // A coluna da seta (14 pt; 22 na letra grande), reservada em toda linha.
+             Color.clear.frame(width: grande ? 22 : 14, height: 1)
+         }
+-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))
+-        .frame(maxWidth: .infinity, alignment: .leading)
+-        .accessibilityElement(children: .combine)
+-        .accessibilityIdentifier(identificador)
++        // A seta, no meio da altura da linha, sobre a coluna (o .chev do mockup ocupa todas as linhas da grade).
++        .overlay(alignment: .trailing) {
++            if linha.abre {
++                Image(systemName: "chevron.right")
++                    .font(.body.weight(.semibold))
++                    // O mesmo chevron da linha do Orçamento: para no AX2 e ocupa 18 pt na maior letra e 9 na padrão.
++                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
++                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
++                    .foregroundStyle(paleta.cor(vidro.secundario))
++                    .accessibilityHidden(true)
++                    .foraDoLaudo()
++                    .frame(width: grande ? 22 : 14)
++            }
++        }
+     }
+ 
+     private var nome: some View {
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaTests -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
+```
+Expected:
+- `ℹ pass 57`, `ℹ fail 0`;
+- sem aviso;
+- `✔ Test run with 161 tests in 30 suites passed` (novos: o `abreODetalheNasTresListas` e o `linhasComASetaCabemEm375`);
+- `DetalheDoTopicoUITests` 7 de 7, `OrcamentoUITests` 29 de 29 (as linhas com gasto, agora botões), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2;
+- `** TEST EXECUTE SUCCEEDED **`, em ~20 min no Mac.
+
+Nos prints da tela Orçamento (topo, fim, modo total e AX5), a seta tem 9 pt (18 na AX5), fica no meio da altura de cada linha com gasto, na coluna de 14 (22), e a coluna fica vazia no Acabamento e no Jardim.
+
+A prova no iOS 26 vem com a Tarefa 32, num run só.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Telas/OrcamentoView.swift \
+  app-ios/Custta/Telas/PecasDaTelaOrcamento.swift \
+  app-ios/CusttaTests/OrcamentoEm375Tests.swift \
+  app-ios/CusttaTests/TelaOrcamentoTests.swift \
+  app-ios/CusttaUITests/DetalheDoTopicoUITests.swift \
+  app-ios/CusttaUITests/OrcamentoUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "feat: linhas da tela Orçamento abrem o detalhe do tópico" -m "As linhas da tela Orçamento passam a abrir a folha do detalhe do tópico daquela obra: o previsto com gasto, toda linha de fora do orçamento e, no modo total, toda linha do \"Gasto por tópico\". O previsto sem gasto não abre, como no site, que só mostra o detalhe de tópico com gasto. A regra é ter gasto, e não a soma, e por isso o \"Por tópico\" passa a ler os gastos da obra." -m "A linha que abre é o mesmo botão do indicador A pagar: um Button de estilo plano com a linha inteira, com o recuo, o quadro e o contentShape dentro do rótulo (fora dele, o toque e o foco do VoiceOver ficam só no miolo), e a seta das linhas tocáveis no meio da altura, sobre a coluna que o PR 1 deixou reservada: 9 pt na letra padrão e 18 na maior, parando no AX2. O previsto sem gasto continua um elemento só para o VoiceOver, sem traço de botão e com a coluna vazia. Sai o comentário de que as linhas ainda não abriam nada." -m "Testes: o abre nas três listas, a varredura das linhas com a seta em 375 pt na maior letra, os três caminhos de tela (o previsto com gasto abre e o sem gasto não, o fora do orçamento abre, o gasto por tópico abre no modo total), as linhas com gasto como botões no OrcamentoUITests e uma guarda do botão e da seta."
+```

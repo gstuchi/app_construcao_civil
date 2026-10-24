@@ -77,6 +77,37 @@ struct ObraNaTelaTests {
         #expect(semTopico.titulo == "Outros" && semTopico.icone == "etiqueta", "tópico vazio cai em Outros")
     }
 
+    /// O detalhe do tópico mostra os gastos de um tópico só, e o título da folha já o diz: a linha tira o tópico da linha de
+    /// baixo e do VoiceOver ("Pix · 05/10/26", o `semTopico` do mockup) e deixa o resto como na lista da obra.
+    @Test func linhaDoGastoSemOTopico() {
+        let topicos = mapaDeTopicos([])
+        func linhas(_ g: ValorJSON) -> (padrao: LinhaDeGasto, com: LinhaDeGasto, sem: LinhaDeGasto) {
+            let gasto = Gasto(campos: g.comoObjeto!)
+            return (linhaDeGasto(gasto, topicos: topicos), linhaDeGasto(gasto, topicos: topicos, comTopico: true),
+                    linhaDeGasto(gasto, topicos: topicos, comTopico: false))
+        }
+        func semOTopico(_ l: LinhaDeGasto, rotulo: String) -> LinhaDeGasto {
+            LinhaDeGasto(titulo: l.titulo, topico: nil, pagamento: l.pagamento, data: l.data, valor: l.valor, rotulo: rotulo,
+                         valorFalado: l.valorFalado, icone: l.icone)
+        }
+        let cimento = linhas(gasto("a", "2026-10-10", 4980, descricao: "Cimento CP-II, 120 sacos"))
+        #expect(cimento.padrao == cimento.com && cimento.com.topico == "Materiais básicos", "o padrão é a linha de sempre")
+        #expect(cimento.sem == semOTopico(cimento.com, rotulo: "Cimento CP-II, 120 sacos. Pix, 10 de outubro de 2026"))
+        #expect(cimento.sem.titulo == "Cimento CP-II, 120 sacos" && cimento.sem.pagamento == "Pix" && cimento.sem.data == "10/10/26")
+        let semDescricao = linhas(gasto("b", "2026-10-06", 2300, topico: "pintura", pagamento: "cartao", parcela: (1, 3)))
+        #expect(semDescricao.padrao == semDescricao.com)
+        #expect(semDescricao.sem == semDescricao.com, "sem descrição, o título continua o tópico e a linha de baixo já vinha sem ele")
+        #expect(semDescricao.sem.titulo == "Pintura (1/3)" && semDescricao.sem.rotulo == "Pintura, parcela 1 de 3. Cartão, 6 de outubro de 2026")
+        let parcela = linhas(gasto("p", "2026-10-05", 6150, descricao: "Porcelanato 60×60", topico: "revest", pagamento: "cartao", parcela: (4, 10)))
+        #expect(parcela.padrao == parcela.com && parcela.com.topico == "Cerâmica")
+        #expect(parcela.sem == semOTopico(parcela.com, rotulo: "Porcelanato 60×60, parcela 4 de 10. Cartão, 5 de outubro de 2026"))
+        #expect(parcela.sem.titulo == "Porcelanato 60×60 (4/10)")
+        let boleto = linhas(gasto("c", "2026-10-06", 1_200, descricao: "Taxa da prefeitura", pagamento: "boleto"))
+        #expect(boleto.padrao == boleto.com && boleto.com.rotulo == "Taxa da prefeitura. Materiais básicos, 6 de outubro de 2026")
+        #expect(boleto.sem == semOTopico(boleto.com, rotulo: "Taxa da prefeitura. 6 de outubro de 2026"), "sem tópico e sem pagamento, só a data")
+        #expect(boleto.sem.pagamento == nil)
+    }
+
     @Test func indicadoresComOsTextosDoSite() {
         let comGastos = obra([gasto("a", "2026-09-30", 100), gasto("b", "2026-10-20", 50), gasto("c", "2026-12-20", 70)],
                              extra: ["valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300)])

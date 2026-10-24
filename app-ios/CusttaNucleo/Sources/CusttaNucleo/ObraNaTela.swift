@@ -92,7 +92,8 @@ public func listaDaObra(_ obra: Obra, hoje: String) -> ListaDaObra {
 public struct LinhaDeGasto: Equatable, Sendable {
     /// A descrição, ou o nome do tópico quando ela está vazia, com " (n/de)" na parcela.
     public let titulo: String
-    /// O nome do tópico na linha de baixo; nil quando o título já é o tópico (sem descrição).
+    /// O nome do tópico na linha de baixo; nil quando o título já é o tópico (sem descrição) e na lista de um tópico só
+    /// (`comTopico: false`).
     public let topico: String?
     /// "Pix", "Cartão" ou nil (outra forma de pagamento que o site gravou).
     public let pagamento: String?
@@ -108,16 +109,18 @@ public struct LinhaDeGasto: Equatable, Sendable {
 }
 
 /// A linha do gasto. O tópico que o app não conhece (apagado em Ajustes) aparece pelo id, com o ícone etiqueta, como
-/// no site.
-public func linhaDeGasto(_ g: Gasto, topicos: [String: Topico]) -> LinhaDeGasto {
+/// no site. Com `comTopico: false` (o detalhe do tópico, que só lista gastos dele e já o diz no título da folha), o tópico
+/// sai da linha de baixo e do VoiceOver, como o `semTopico` do mockup; sem descrição, o título continua o nome do tópico.
+public func linhaDeGasto(_ g: Gasto, topicos: [String: Topico], comTopico: Bool = true) -> LinhaDeGasto {
     let topico = topicos[g.topico] ?? Topico(id: g.topico, nome: g.topico.isEmpty ? "Outros" : g.topico, icone: "etiqueta")
     let descricao = g.descricao                      // o `g.descricao || t.nm` do site: só a descrição vazia cai no tópico
     let parcela = g.parcela.map { " (\($0.n)/\($0.de))" } ?? ""
     let titulo = (descricao.isEmpty ? topico.nome : descricao) + parcela
     let pagamento: String? = g.pagamento == "pix" ? "Pix" : g.pagamento == "cartao" ? "Cartão" : nil
     let tituloFalado = (descricao.isEmpty ? topico.nome : descricao) + (g.parcela.map { ", parcela \($0.n) de \($0.de)" } ?? "")
-    let detalhes = [descricao.isEmpty ? nil : topico.nome, pagamento, dataPorExtenso(g.data)].compactMap { $0 }
-    return LinhaDeGasto(titulo: titulo, topico: descricao.isEmpty ? nil : topico.nome, pagamento: pagamento,
+    let embaixo = comTopico && !descricao.isEmpty ? topico.nome : nil
+    let detalhes = [embaixo, pagamento, dataPorExtenso(g.data)].compactMap { $0 }
+    return LinhaDeGasto(titulo: titulo, topico: embaixo, pagamento: pagamento,
                         data: dataCurta(g.data), valor: "\u{2212}" + moeda(g.valor),
                         rotulo: tituloFalado + ". " + detalhes.joined(separator: ", "), valorFalado: moeda(g.valor),
                         icone: topico.icone)

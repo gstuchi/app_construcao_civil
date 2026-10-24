@@ -151,6 +151,23 @@ struct DentroDaObraTests {
         #expect(d.corrigido != "corrigido: " + moeda(corrigido(10_000, de: "2025-01-10", ate: Self.hoje, taxa: 1)))
     }
 
+    /// A linha do orçamento do detalhe, com os números da Cerâmica do mockup (previsto R$ 80.000,00; os gastos somam
+    /// R$ 76.700,00): a frase do site ou, no nível ok, "{pct}% usado", nunca vazia (P1:2238; P1:2096-2100).
+    @Test func fraseDoOrcamentoNoDetalheComOsTextosDoMockup() throws {
+        func frase(_ valores: [Double]) throws -> FraseDoOrcamento {
+            let o = obra(valores.enumerated().map { gasto("r\($0.offset)", "2026-10-01", $0.element, topico: "revest") },
+                         orcamento: porTopico(["revest": 80_000, "pintura": 1_000]))
+            return fraseDoOrcamentoNoDetalhe(try #require(orcamentoObra(o)?.topicos.first { $0.id == "revest" }))
+        }
+        #expect(rotuloNoOrcamento == "No orçamento", "antes do previsto em moeda cheia (P1:2238)")
+        #expect(try frase([61_500, 15_200]) == FraseDoOrcamento(texto: "Faltam R$ 3,3 mil — 96%", alerta: false), "perto: a Cerâmica (P1:2326-2329)")
+        #expect(try frase([61_500, 15_800]) == FraseDoOrcamento(texto: "Faltam R$ 2,7 mil — 97%", alerta: false), "perto (P1:2337)")
+        #expect(try frase([61_500]) == FraseDoOrcamento(texto: "77% usado", alerta: false), "ok: sem o contrapiso de R$ 15.200,00 (P2:2651)")
+        #expect(try frase([80_000, 6_200]) == FraseDoOrcamento(texto: "Passou R$ 6,2 mil do previsto", alerta: true),
+                "passou, no âmbar e semibold (P1:2097)")
+        #expect(try frase([80_000]) == FraseDoOrcamento(texto: "Chegou ao previsto — 100%", alerta: false), "o previsto exato (P1:2096-2100)")
+    }
+
     func afazer(_ id: String, _ texto: String, feito: Bool) -> Afazer {
         Afazer(campos: ["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
     }

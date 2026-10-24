@@ -869,6 +869,28 @@ test('apagar na folha de origem: a linha sai no turno seguinte ao voltar, e a li
                'a linha aberta na Tecla dentro da folha');
 });
 
+test('detalhe do tópico: sem gasto, a folha desce depois de gravar, e o "O gasto saiu desta lista." não sai', () => {
+  // A folha do detalhe desce quando o tópico fica sem gasto, por qualquer caminho (apagar da edição ou arrastando, trocar o
+  // tópico, outro aparelho): um onChange do estado gravado, em volta da pilha, como o da obra que some (o sheetTopico do
+  // site fecha igual). Fechar antes de gravar fecharia na recusa, e o teste de tela da recusa só anda o arrastar; o anúncio,
+  // nenhum teste de tela ouve. A lista comum não fecha a folha (o A pagar fica aberto, vazio, como no site), e o
+  // "O gasto saiu desta lista." de um "Salvar" que tirou a última linha não sai: quem ouve já está na tela Orçamento. O
+  // "Gasto apagado" e o "Compra apagada" ficam.
+  const topico = ler('app-ios/Custta/Telas/FolhaDoTopico.swift');
+  assert.match(topico, /private var semGasto: Bool \{ obra\.map \{ o in !o\.gastos\.contains \{ \$0\.topico == topico\.id \} \} \?\? false \}/,
+               'o "sem gasto" lido da obra gravada, com o filtro do detalheDoTopico');
+  assert.match(topico, /\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}[\s\S]*?\.onChange\(of: semGasto\) \{ _, vazio in if vazio \{ folhas\.fechar\(\) \} \}/,
+               'o fechar sem gasto num onChange, fora da pilha');
+  assert.equal(topico.match(/folhas\.fechar\(/g)?.length, 3, 'o detalhe fecha só pelo ×, pela obra que some e sem gasto');
+  assert.match(topico, /ListaDaOrigem\(obra: [^\n]*\n[^\n]*pecasDepois:[^\n]*\n\s*linha: \{ linhaDeGasto\(\$0, topicos: topicos, comTopico: false\) \}, desceSemGasto: true\)/,
+               'o detalhe avisa a lista de que desce sem gasto');
+  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  assert.doesNotMatch(lista, /\bfolhas\.|Folhas\.self/, 'a lista comum não fecha a folha');
+  assert.match(lista, /if desceSemGasto, depois\.isEmpty, case \.salvou = saida \{ return \}\n\s*let destino = focoNaOrigem\(saida, antes: volta\.ordem, depois: depois\)/,
+               'sem gasto, a folha que desce não diz "O gasto saiu desta lista."');
+  assert.doesNotMatch(ler('app-ios/Custta/Telas/FolhaDoAPagar.swift'), /desceSemGasto/, 'o A pagar fica aberto, vazio');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

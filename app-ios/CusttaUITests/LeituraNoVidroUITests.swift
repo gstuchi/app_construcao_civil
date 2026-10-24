@@ -562,6 +562,50 @@ extension LeituraNoVidroUITests {
     }
 }
 
+extension LeituraNoVidroUITests {
+    /// As folhas de origem (etapa 3, PR 2), no escuro e no claro. O A pagar: com os vencimentos (na letra padrão a folha cabe
+    /// inteira, com a frase do fim), no fim de uma lista longa, vazio e com a edição de um vencimento empurrada (o "A pagar"
+    /// embaixo do título, o voltar ao lado). O detalhe do tópico: a Cerâmica no topo e rolada até os pagos, a Estrutura, que
+    /// passou do orçamento (a frase no Alerta sobre a linha da folha), a Documentação, fora do orçamento, a Cerâmica no modo
+    /// total e a edição com "Cerâmica". As roladas e as edições abrem pelos ganchos da lista das folhas (`-custta.rolagem` e
+    /// `-custta.origem editar:<gasto>`). Roda no job laudo-etapa3.
+    @MainActor func testLeituraDasFolhasDeOrigem() {
+        var cenas: [Cena] = []
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
+            cenas += [
+                Cena(nome: "A pagar, \(tema)", conta: "senha", argumentos: combo, espera: "resumoDoAPagar", escopo: "tudo",
+                     dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
+                // As 20 diárias do topicoLongo alongam a lista. A 1092 pt, 5 antes do fim no 18 Pro, a borda de cima fica no vão
+                // entre duas diárias; a frase do fim cai na faixa de baixo, que o laudo deixa de fora (a da cápsula de abas, que
+                // segue atrás da folha): a cena mede as linhas que passam pelo meio.
+                Cena(nome: "A pagar, fim, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "1092"],
+                     espera: "ponteDoAPagar", escopo: "tudo", dados: "topicoLongo", abrir: "obra:v1", folha: "aPagar:v1", rolada: true),
+                Cena(nome: "A pagar vazio, \(tema)", conta: "senha", argumentos: combo, espera: "aPagarVazio", escopo: "tudo",
+                     dados: "vitrine", abrir: "obra:v2", folha: "aPagar:v2"),
+                Cena(nome: "A pagar, editar gasto, \(tema)", conta: "senha", argumentos: combo + ["-custta.origem", "editar:g039"],
+                     espera: "salvarGasto", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
+                Cena(nome: "detalhe, Cerâmica, topo, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
+                     escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
+                // A 500 pt (a Cerâmica rola até 575), a borda de cima fica no fio entre duas linhas e os pagos passam pelo meio.
+                // A espera não prova a rolagem: a pilha preguiçosa já monta as 16 peças da Cerâmica no topo.
+                Cena(nome: "detalhe, Cerâmica, rolada, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "500"],
+                     espera: "gasto-g021", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest",
+                     rolada: true),
+                Cena(nome: "detalhe, Estrutura, passou, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
+                     escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:estrutura"),
+                Cena(nome: "detalhe, Documentação, fora, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
+                     escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:projeto"),
+                Cena(nome: "detalhe, só o total, \(tema)", conta: "senha", argumentos: combo, espera: "secao-A vencer",
+                     escopo: "tudo", dados: "vitrine", abrir: "orcamento:v1", folha: "topico:v1:revest"),
+                Cena(nome: "detalhe, editar gasto, \(tema)", conta: "senha", argumentos: combo + ["-custta.origem", "editar:g021"],
+                     espera: "salvarGasto", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
+            ]
+        }
+        cobrar(cenas)
+    }
+}
+
 /* O medidor com imagens sintéticas: sem abrir o app. */
 final class LaudoDeContrasteTests: XCTestCase {
     private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),

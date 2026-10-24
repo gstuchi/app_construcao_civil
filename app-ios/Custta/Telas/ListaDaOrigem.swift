@@ -88,9 +88,16 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
                 .contentShape(.rect)
                 .onTapGesture { if origem.linhaAberta != nil { fecharLinha() } }
             }
+            #if DEBUG
+            // Laudo: a lista parada numa rolagem dada (`-custta.rolagem`); sem o argumento, nada muda.
+            .rolagemFixaSoComOArgumento()
+            #endif
             .onScrollPhaseChange { _, fase in if fase != .idle, origem.linhaAberta != nil { fecharLinha() } }
             .onChange(of: origem.volta) { _, volta in if let volta { voltou(volta, depois: ordem, leitor: leitor) } }
         }
+        #if DEBUG
+        .task { abrirAEdicaoDoTeste(ordem: ordem) }
+        #endif
         .environment(\.dentroDaFolha, true)
         .modifier(PerguntaDeApagar(apresentada: $perguntando, obraId: obra.id, gasto: alvoDoApagar) { pedido in
             apagar(pedido, antes: ordem, depoisDoVoltar: false)
@@ -192,6 +199,18 @@ struct ListaDaOrigem<Cabecalho: View, Vazio: View, Rodape: View>: View {
         AccessibilityNotification.Announcement(aviso).post()
     }
 }
+
+#if DEBUG
+extension ListaDaOrigem {
+    /// Laudo e conferência visual: `-custta.origem editar:<gasto>` abre a folha com a edição do gasto já empurrada, como o
+    /// toque na linha. Uma vez: a lista que volta da edição já tem a `volta` e não empurra de novo. Sem o argumento, nada.
+    fileprivate func abrirAEdicaoDoTeste(ordem: [String]) {
+        guard origem.volta == nil, let pedido = UserDefaults.standard.string(forKey: "custta.origem"), pedido.hasPrefix("editar:"),
+              let gasto = obra.gastos.first(where: { $0.id == String(pedido.dropFirst(7)) }) else { return }
+        editar(gasto, obra: obra, ordem: ordem)
+    }
+}
+#endif
 
 /// A ordem das linhas: os gastos das peças, na ordem delas.
 private func ordemDasLinhas(_ pecas: [PecaDaOrigem]) -> [String] {

@@ -891,6 +891,23 @@ test('detalhe do tópico: sem gasto, a folha desce depois de gravar, e o "O gast
   assert.doesNotMatch(ler('app-ios/Custta/Telas/FolhaDoAPagar.swift'), /desceSemGasto/, 'o A pagar fica aberto, vazio');
 });
 
+test('lista da folha de origem: os ganchos do laudo só em DEBUG e só com o argumento do teste', () => {
+  // A rolagem fixa (`-custta.rolagem`) liga o `.scrollPosition`, que muda a rolagem da lista: ligada em todo Debug, os testes
+  // de tela do A pagar e do detalhe rodariam uma lista diferente da de Release, e nenhum deles vê isso. Sem o argumento, ela
+  // não entra (a T33 provou com os testes de tela das duas folhas e os prints com Δ = 0), e o `-custta.origem editar:<gasto>`,
+  // que abre a edição já empurrada, não faz nada.
+  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  assert.match(lista, /\n\s*#if DEBUG\n\s*\/\/[^\n]*\n\s*\.rolagemFixaSoComOArgumento\(\)\n\s*#endif\n\s*\.onScrollPhaseChange/,
+               'a rolagem fixa na ScrollView da lista, só em DEBUG');
+  assert.doesNotMatch(lista, /RolagemFixaDoTeste\(\)/, 'a rolagem fixa sempre ligada mudaria a lista nos testes de tela');
+  assert.match(ler('app-ios/Custta/Identidade/Componentes.swift'),
+               /#if DEBUG\n(?:(?!#endif)[\s\S])*func rolagemFixaSoComOArgumento\(\) -> some View \{\n\s*if UserDefaults\.standard\.object\(forKey: "custta\.rolagem"\) != nil \{ modifier\(RolagemFixaDoTeste\(\)\) \} else \{ self \}\n/,
+               'sem o -custta.rolagem, a lista fica sem o .scrollPosition');
+  assert.match(lista, /\n\s*#if DEBUG\n\s*\.task \{ abrirAEdicaoDoTeste\(ordem: ordem\) \}\n\s*#endif\n/, 'o -custta.origem só em DEBUG');
+  assert.match(lista, /guard origem\.volta == nil, let pedido = UserDefaults\.standard\.string\(forKey: "custta\.origem"\), pedido\.hasPrefix\("editar:"\),/,
+               'sem o -custta.origem, nada; e a lista que volta da edição não empurra de novo');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

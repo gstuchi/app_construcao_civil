@@ -1,10 +1,11 @@
 import XCTest
 import notify
 
-/* O detalhe do tópico da etapa 3 (PR 2), aberto pelo gancho por cima da tela Orçamento da Casa Alphaville do mockup (as
-   linhas da tela que o abrem chegam na Tarefa 31): a Cerâmica, com o resumo, a linha do orçamento do tópico e as seções "A
-   vencer" e "Pagos", a linha de gasto sem o tópico; a Documentação, fora do orçamento, com "Sem valor no orçamento" no lugar
-   da barra; no modo total (a vitrine de sempre), sem a linha do orçamento; a obra apagada em outro aparelho fecha a folha.
+/* O detalhe do tópico da etapa 3 (PR 2), aberto pelo gancho por cima da tela Orçamento da Casa Alphaville do mockup: a
+   Cerâmica, com o resumo, a linha do orçamento do tópico e as seções "A vencer" e "Pagos", a linha de gasto sem o tópico; a
+   Documentação, fora do orçamento, com "Sem valor no orçamento" no lugar da barra; no modo total (a vitrine de sempre), sem a
+   linha do orçamento; a obra apagada em outro aparelho fecha a folha. E pelas linhas da tela Orçamento, cada uma um botão
+   inteiro: o previsto com gasto abre e o sem gasto não; o fora do orçamento abre; no modo total, o "Gasto por tópico" abre.
    A edição, o apagar e a folha que desce sem gasto são da Tarefa 32. */
 @MainActor
 final class DetalheDoTopicoUITests: XCTestCase {
@@ -38,6 +39,35 @@ final class DetalheDoTopicoUITests: XCTestCase {
 
     private func confere(_ elemento: XCUIElement, contem textos: [String]) {
         for texto in textos { XCTAssertTrue(elemento.label.contains(texto), "\"\(texto)\" em \"\(elemento.label)\"") }
+    }
+
+    /// A tela Orçamento da Casa Alphaville, sem folha aberta: por tópico, ou no modo total com a vitrine de sempre.
+    private func abrirOrcamento(_ dados: String = "porTopico") -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: dados, abrir: "orcamento:v1")
+        XCTAssertTrue(app.elemento("cartaoDoOrcamento").waitForExistence(timeout: 10), "a tela Orçamento")
+        return app
+    }
+
+    /// Rola até a linha da tela Orçamento e toca nela a 30 pt da borda da tela, longe do texto, na altura do meio dela; espera o
+    /// detalhe subir. Devolve o quadro da linha antes do toque (nil se o detalhe não abriu).
+    private func abrirPelaLinha(_ app: XCUIApplication, _ id: String) -> CGRect? {
+        let linha = app.elemento(id)
+        app.rolarAte(linha)
+        let quadro = linha.frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 30, dy: quadro.midY)).tap()
+        guard app.elemento("resumoDoTopico").waitForExistence(timeout: 5) else {
+            XCTFail("resumoDoTopico não apareceu")
+            return nil
+        }
+        return quadro
+    }
+
+    /// A linha é um botão de ponta a ponta do cartão (o quadro do VoiceOver e do Controle por Voz), e o × fecha o detalhe.
+    private func linhaInteiraEFechar(_ app: XCUIApplication, _ id: String, _ quadro: CGRect) {
+        XCTAssertEqual(quadro.width, app.frame.width - 40, accuracy: 1, "\(id): a linha inteira é o botão, \(quadro)")
+        app.buttons["fecharFolha"].tap()
+        XCTAssertTrue(app.elemento("resumoDoTopico").waitForNonExistence(timeout: 5), "o × fecha")
+        XCTAssertTrue(app.buttons[id].exists, "\(id): a linha é um botão")
     }
 
     func testDetalheAbreComOResumoEAsSecoes() {
@@ -99,6 +129,43 @@ final class DetalheDoTopicoUITests: XCTestCase {
         XCTAssertEqual(aVencer.label, "A vencer · 6")
         XCTAssertLessThanOrEqual(resumo.frame.maxY, aVencer.frame.minY, "a seção logo depois do resumo")
         emOrdem(app, ["g032", "g033"], "a vencer")
+    }
+
+    func testPrevistoComGastoAbreESemGastoNao() {
+        let app = abrirOrcamento()
+        guard let quadro = abrirPelaLinha(app, "topicoOrc-revest") else { return }
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Cerâmica"), app.elemento("tituloDaFolha").label)
+        confere(app.elemento("resumoDoTopico"), contem: ["11 gastos · 9% da obra", "R$\u{a0}76.700,00"])
+        confere(app.elemento("orcamentoDoTopico"), contem: ["No orçamento", "R$\u{a0}80.000,00"])
+        linhaInteiraEFechar(app, "topicoOrc-revest", quadro)
+        // O Acabamento, sem gasto ("R$ 0,00 / 60 mil"): sem traço de botão, e o toque não abre nada.
+        let acabamento = app.elemento("topicoOrc-acabamento")
+        app.rolarAte(acabamento)
+        XCTAssertTrue(acabamento.label.contains("R$\u{a0}0,00"), acabamento.label)
+        XCTAssertFalse(app.buttons["topicoOrc-acabamento"].exists, "sem gasto, a linha não é botão")
+        acabamento.tap()
+        XCTAssertFalse(app.elemento("resumoDoTopico").waitForExistence(timeout: 2), "sem gasto, a linha não abre o detalhe")
+    }
+
+    func testForaDoOrcamentoAbreODetalhe() {
+        let app = abrirOrcamento()
+        guard let quadro = abrirPelaLinha(app, "foraOrc-projeto") else { return }
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Documentação"), app.elemento("tituloDaFolha").label)
+        confere(app.elemento("resumoDoTopico"), contem: ["2 gastos · 3% da obra", "R$\u{a0}22.880,50"])
+        XCTAssertEqual(app.elemento("orcamentoDoTopico").label, "Sem valor no orçamento: não entra na comparação.")
+        linhaInteiraEFechar(app, "foraOrc-projeto", quadro)
+        XCTAssertTrue(app.buttons["foraOrc-pintura"].exists, "toda linha de fora do orçamento é um botão")
+    }
+
+    func testGastoPorTopicoAbreODetalheNoModoTotal() {
+        let app = abrirOrcamento("vitrine")
+        XCTAssertTrue(app.elemento("gastoTopico-terreno").label.contains("38% da obra"), app.elemento("gastoTopico-terreno").label)
+        guard let quadro = abrirPelaLinha(app, "gastoTopico-terreno") else { return }
+        XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("Terreno"), app.elemento("tituloDaFolha").label)
+        // O mesmo "% da obra" da linha que abriu.
+        confere(app.elemento("resumoDoTopico"), contem: ["2 gastos · 38% da obra", "R$\u{a0}319.847,85"])
+        XCTAssertFalse(app.elemento("orcamentoDoTopico").exists, "só o total no orçamento: sem a linha do orçamento do tópico")
+        linhaInteiraEFechar(app, "gastoTopico-terreno", quadro)
     }
 
     func testObraApagadaEmOutroAparelhoFechaODetalhe() {

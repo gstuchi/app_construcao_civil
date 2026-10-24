@@ -517,6 +517,28 @@ test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 
     'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
 });
 
+test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
+  // O mesmo botão do indicador A pagar (D7 do PR 2). Com o quadro ou o contentShape fora do rótulo, o toque e o foco do
+  // VoiceOver ficam só no miolo da linha (medido no "Apagar obra" da etapa 2 e no A pagar), e a folga do dedo do SwiftUI
+  // esconde isso no toque. E nenhum teste de tela vê a seta, que fica fora da árvore de acessibilidade (accessibilityHidden)
+  // e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
+  const inicio = t.indexOf('struct LinhaDeTopicoNoOrcamento');
+  assert.ok(inicio >= 0, 'a LinhaDeTopicoNoOrcamento');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  const botao = linha.indexOf('Button(action: abrir) {');
+  assert.ok(botao >= 0, 'a linha que abre é um Button, com o rótulo próprio');
+  let fim = botao + 'Button(action: abrir) {'.length, nivel = 1;
+  for(; nivel > 0 && fim < linha.length; fim++) nivel += linha[fim] === '{' ? 1 : linha[fim] === '}' ? -1 : 0;
+  assert.match(linha.slice(botao, fim),
+    /\.padding\(EdgeInsets\(top: 12, leading: 18, bottom: 12, trailing: 14\)\)\s*\.frame\(maxWidth: \.infinity, alignment: \.leading\)\s*\.contentShape\(\.rect\)\s*\}$/,
+    'o recuo, o quadro e o contentShape dentro do rótulo, por último');
+  assert.match(linha.slice(fim), /^\s*\.buttonStyle\(\.plain\)\s*\.accessibilityIdentifier\(identificador\)\n/,
+    'depois do rótulo, só o estilo plano e o identificador');
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+    'a seta é a do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+});
+
 test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
   // Nenhum teste de tela vê isso: eles tocam as teclas pelo identificador (a ordem não aparece), nenhum digita além do
   // teto, o anúncio do VoiceOver não chega ao XCUITest e a auditoria não mede o limite de tamanho das teclas.

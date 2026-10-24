@@ -6,8 +6,8 @@ import CusttaNucleo
    com "previstos em N tópicos" e a frase do que está fora (no modo por tópico, o cartão soma só os tópicos previstos e não
    fecha com o Total gasto: achado 10); o "Por tópico" com as frases do site, na ordem do site, e uma linha por tópico fora
    do orçamento (no site, uma linha só, com os nomes: achado 11); no modo total, o "Gasto por tópico" (bruto e % da obra, na
-   ordem da legenda do donut) e a dica do lápis. As linhas dos tópicos ainda não
-   abrem nada: o detalhe do tópico chega no PR 2, e até lá elas ficam sem seta e sem toque (conselho de 19/10, decisão 3).
+   ordem da legenda do donut) e a dica do lápis. As linhas com gasto (o previsto com gasto, toda linha de fora e toda do
+   gasto por tópico) abrem o detalhe do tópico, com a seta; o previsto sem gasto não abre, como no site.
    Sem a obra (apagada em outro aparelho) ou sem o orçamento (tirado), a tela volta. */
 struct OrcamentoView: View {
     let id: String
@@ -44,9 +44,9 @@ struct OrcamentoView: View {
                     PilulaDaLista(titulo: "Por tópico", quantidade: r.topicos.count, identificador: "porTopico")
                         .padding(.top, 14)
                     CartaoDaLista {
-                        ForEach(Array(linhasPorTopico(r, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
+                        ForEach(Array(linhasPorTopico(r, topicos: topicos, gastos: obra.gastos).enumerated()), id: \.element.id) { i, linha in
                             if i > 0 { LinhaFina().padding(.leading, 67) }
-                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "topicoOrc-\(linha.id)")
+                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "topicoOrc-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
                         }
                     }
                     if !r.fora.isEmpty {
@@ -59,7 +59,7 @@ struct OrcamentoView: View {
                                 .padding(EdgeInsets(top: 0, leading: 18, bottom: 4, trailing: 18))
                             ForEach(Array(linhasForaDoOrcamento(r, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
                                 if i > 0 { LinhaFina().padding(.leading, 67) }
-                                LinhaDeTopicoNoOrcamento(linha: linha, identificador: "foraOrc-\(linha.id)")
+                                LinhaDeTopicoNoOrcamento(linha: linha, identificador: "foraOrc-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
                             }
                         }
                     }
@@ -69,7 +69,7 @@ struct OrcamentoView: View {
                     CartaoDaLista {
                         ForEach(Array(linhasDoGastoPorTopico(gastos, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
                             if i > 0 { LinhaFina().padding(.leading, 67) }
-                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "gastoTopico-\(linha.id)")
+                            LinhaDeTopicoNoOrcamento(linha: linha, identificador: "gastoTopico-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
                         }
                     }
                     DicaDoModoTotal()
@@ -99,4 +99,7 @@ struct OrcamentoView: View {
                 .sharedBackgroundVisibility(.hidden)
         }
     }
+
+    /// O toque numa linha que abre: o detalhe do tópico, nesta obra.
+    private func abrirDetalhe(_ topico: String) { folhas.aberta = .topico(obraId: id, topicoId: topico) }
 }

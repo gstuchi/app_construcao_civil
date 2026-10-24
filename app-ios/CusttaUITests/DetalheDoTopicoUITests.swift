@@ -9,7 +9,8 @@ import notify
    De dentro do detalhe: tocar num gasto empurra a edição, com o nome do tópico, e "Salvar" volta na mesma rolagem com os
    números novos (também na maior letra, com as 126 linhas da Mão de obra do topicoLongo); o gasto que troca de tópico sai do
    detalhe; "Apagar" da edição volta com os números novos. Sem gasto no tópico, a folha desce: trocando o tópico do último
-   gasto, apagando a compra toda que era o tópico inteiro e arrastando o último; na recusa, ela fica. */
+   gasto, apagando a compra toda que era o tópico inteiro e arrastando o último; na recusa, ela fica; e quando outro aparelho
+   apaga o último gasto com a edição e o "Apagar este gasto?" abertos, ela desce com o alerta, sem gravar nada. */
 @MainActor
 final class DetalheDoTopicoUITests: XCTestCase {
     private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
@@ -351,6 +352,25 @@ final class DetalheDoTopicoUITests: XCTestCase {
         XCTAssertTrue(app.buttons["fecharFolha"].exists, "na recusa, a folha não desce")
         XCTAssertTrue(app.elemento("gasto-g012").exists, "nada foi apagado")
         confere(app.elemento("resumoDoTopico"), contem: ["1 gasto · "])
+    }
+
+    /// Os Tijolos, o único gasto da Alvenaria, com a edição empurrada e o "Apagar este gasto?" aberto: outro aparelho os apaga
+    /// (o aviso do teste solta o snapshot sem eles). A folha desce com o alerta, e nada é gravado: toda gravação é recusada
+    /// aqui, e uma que saísse traria o "Não salvou na nuvem" depois da descida.
+    func testUltimoGastoApagadoEmOutroAparelhoComOAlertaAbertoDesceAFolha() {
+        let app = abrirDetalhe("alvenaria", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g012@0", "CUSTTA_GRAVACAO": "recusa"])
+        editar(app, "g012")
+        app.buttons["apagarGasto"].tap()
+        let alerta = app.alerts["Apagar este gasto?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3), "a pergunta, com a edição empurrada")
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(alerta.waitForNonExistence(timeout: 10), "o alerta sai com a folha")
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5), "e a edição também")
+        // A edição não tem o ×: o do detalhe voltaria com ele se a folha ficasse, e a descida leva menos que isto.
+        sleep(2)
+        XCTAssertFalse(app.buttons["fecharFolha"].exists, "a folha desceu: o último gasto saiu em outro aparelho")
+        desceu(app, "o último gasto saiu em outro aparelho, com o alerta aberto", linha: "topicoOrc-alvenaria")
+        XCTAssertFalse(app.alerts["Não salvou na nuvem"].waitForExistence(timeout: 3), "nada foi gravado: \(app.alerts.allElementsBoundByIndex.map(\.label))")
     }
 
     /// Na maior letra, a Mão de obra do topicoLongo tem 126 linhas (20 diárias a vencer e 106 pagos): a terceira diária a

@@ -295,4 +295,31 @@ final class BuscaUITests: XCTestCase {
         XCTAssertTrue(campo.waitForNonExistence(timeout: 5), "a lupa, que virou ×, fecha a busca")
         XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
     }
+
+    /// Sonda temporária, que sai depois do run do iOS 26: abre o menu do mês da Casa Alphaville do exemplo e imprime no log,
+    /// com o prefixo "sonda-menu |", o rótulo, o valor, o identificador e os filhos de cada item, e os textos com "gasto" à
+    /// vista, para saber onde a contagem de gastos de cada mês chega ao VoiceOver. Não confere nada além de o menu abrir.
+    func testSondaDoItemDoMenuDoMes() {
+        let app = abrirObra("o1", dados: "exemplo")
+        let mes = app.buttons["filtrarPorMes"]
+        app.rolarAte(mes)
+        mes.tap()
+        let titulos = ["Todos os meses", "Junho de 2025", "Março de 2025"]
+        XCTAssertTrue(itemDoMenu(app, titulos[0]).waitForExistence(timeout: 5), "o menu abriu")
+        let sonda = { (texto: String) in
+            for linha in texto.split(separator: "\n") { print("sonda-menu | \(linha)") }
+        }
+        for titulo in titulos {
+            let item = itemDoMenu(app, titulo)
+            guard item.exists else { sonda("\(titulo): não achado"); continue }
+            sonda("\(titulo): label \"\(item.label)\" · value \(item.value.map { "\"\($0)\"" } ?? "nil") · identifier "
+                  + "\"\(item.identifier)\" · tipo \(item.elementType.rawValue) · selecionado \(item.isSelected)")
+            let filhos = item.children(matching: .any).allElementsBoundByIndex
+            sonda("\(titulo): \(filhos.count) filho(s)")
+            for (n, filho) in filhos.enumerated() { sonda("\(titulo), filho \(n):\n\(filho.debugDescription)") }
+        }
+        for texto in app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'gasto'")).allElementsBoundByIndex {
+            sonda("texto com \"gasto\": \"\(texto.label)\" · \(texto.frame)")
+        }
+    }
 }

@@ -61,5 +61,20 @@ struct DadosDeExemploTests {
         #expect(orcamentoObra(casa("semOrcamento")) == nil && pecasOrcamento(casa("semOrcamento")).definir)
         let muitos = Estado.de(DadosDeExemplo.vitrineDoOrcamento("muitosTopicos", hoje: hoje))
         #expect(topicosDoFormulario(muitos.config.topicosProprios).count == 71, "os 21 fixos e os 50 próprios do limite das rules")
+        // O topicoLongo, da lista longa do detalhe do tópico: 120 diárias da equipe na Mão de obra (100 pagas, de ontem para trás,
+        // e 20 a vencer, de amanhã em diante), de R$ 350,00 no Pix; o resto da obra é o do porTopico.
+        func iso(_ dias: Int) -> String {
+            var c = Calendar(identifier: .gregorian)
+            c.timeZone = .current
+            return dataLocalISO(c.date(byAdding: .day, value: dias, to: hoje)!, fuso: .current)
+        }
+        let sem = Set(casa("porTopico").gastos.map(\.id))
+        let longa = casa("topicoLongo")
+        let diarias = longa.gastos.filter { !sem.contains($0.id) }
+        #expect(longa.gastos.count == sem.count + 120 && diarias.count == 120, "as 120 diárias, e mais nada")
+        #expect(diarias.allSatisfy { $0.topico == "maoobra" && $0.valor == 350 && $0.pagamento == "pix" })
+        #expect(diarias.filter { $0.data < iso(0) }.count == 100 && diarias.filter { $0.data > iso(0) }.count == 20, "100 pagas e 20 a vencer, nenhuma hoje")
+        let data = Dictionary(uniqueKeysWithValues: diarias.map { ($0.id, $0.data) })
+        #expect(data["d001"] == iso(-1) && data["d100"] == iso(-100) && data["d101"] == iso(1) && data["d120"] == iso(20), "de ontem para trás e de amanhã em diante")
     }
 }

@@ -403,6 +403,15 @@ struct RolagemFixaDoTeste: ViewModifier {
             .onScrollPhaseChange { _, fase in if fase == .interacting { segurando = false } }
     }
 }
+
+extension View {
+    /// A rolagem fixa do laudo só com o `-custta.rolagem`: sem ele, a lista fica sem o `.scrollPosition`, que muda a rolagem
+    /// dela, como em Release. É a das folhas de origem (o A pagar e o detalhe do tópico ficam como sem o gancho nos testes de
+    /// tela); a obra e a tela Orçamento usam a RolagemFixaDoTeste de sempre.
+    @ViewBuilder func rolagemFixaSoComOArgumento() -> some View {
+        if UserDefaults.standard.object(forKey: "custta.rolagem") != nil { modifier(RolagemFixaDoTeste()) } else { self }
+    }
+}
 #endif
 
 extension View {

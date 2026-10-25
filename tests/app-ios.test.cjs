@@ -493,7 +493,7 @@ test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura f
   assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
 });
 
-test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt do mockup', () => {
+test('linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
   // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
   // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
   // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
@@ -501,8 +501,55 @@ test('linha do orçamento na maior letra: o chevron para no AX2 e ocupa os 18 pt
   const inicio = t.indexOf('struct LinhaDoOrcamento');
   assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
   const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : nil\)\n/,
-    'o chevron para no AX2 e, na letra de acessibilidade, ocupa 18 pt');
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+    'o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+});
+
+test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
+  // Os dois chevrons do cartão dos indicadores são o mesmo .k-chev do mockup. Sem o teto, o do A pagar sai com ~27 × 46 pt
+  // na AX5, contra os 17 × 29 do Orçamento. E nenhum teste de tela vê o símbolo, que fica fora da árvore de acessibilidade
+  // (accessibilityHidden) e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/PecasDaObra.swift');
+  const inicio = t.indexOf('private var aPagar: some View');
+  assert.ok(inicio >= 0, 'a linha do A pagar');
+  const linha = t.slice(inicio, t.indexOf('\n    }\n', inicio));
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+    'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+});
+
+test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
+  // O mesmo botão do indicador A pagar (D7 do PR 2). Com o quadro ou o contentShape fora do rótulo, o toque e o foco do
+  // VoiceOver ficam só no miolo da linha (medido no "Apagar obra" da etapa 2 e no A pagar), e a folga do dedo do SwiftUI
+  // esconde isso no toque. E nenhum teste de tela vê a seta, que fica fora da árvore de acessibilidade (accessibilityHidden)
+  // e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
+  const inicio = t.indexOf('struct LinhaDeTopicoNoOrcamento');
+  assert.ok(inicio >= 0, 'a LinhaDeTopicoNoOrcamento');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  const botao = linha.indexOf('Button(action: abrir) {');
+  assert.ok(botao >= 0, 'a linha que abre é um Button, com o rótulo próprio');
+  let fim = botao + 'Button(action: abrir) {'.length, nivel = 1;
+  for(; nivel > 0 && fim < linha.length; fim++) nivel += linha[fim] === '{' ? 1 : linha[fim] === '}' ? -1 : 0;
+  assert.match(linha.slice(botao, fim),
+    /\.padding\(EdgeInsets\(top: 12, leading: 18, bottom: 12, trailing: 14\)\)\s*\.frame\(maxWidth: \.infinity, alignment: \.leading\)\s*\.contentShape\(\.rect\)\s*\}$/,
+    'o recuo, o quadro e o contentShape dentro do rótulo, por último');
+  assert.match(linha.slice(fim), /^\s*\.buttonStyle\(\.plain\)\s*\.accessibilityIdentifier\(identificador\)\n/,
+    'depois do rótulo, só o estilo plano e o identificador');
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+    'a seta é a do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+});
+
+test('linhas da tela Orçamento: a seta só na linha que abre, no meio da altura dela', () => {
+  // Nenhum teste de tela vê a seta (accessibilityHidden e foraDoLaudo): com a condição trocada, ela apareceria também no
+  // previsto sem gasto (o Acabamento e o Jardim do mockup), que não abre nada; com outro alinhamento, sairia do meio da
+  // altura da linha (o .chev do mockup ocupa todas as linhas da grade).
+  const t = ler('app-ios/Custta/Telas/PecasDaTelaOrcamento.swift');
+  const inicio = t.indexOf('struct LinhaDeTopicoNoOrcamento');
+  assert.ok(inicio >= 0, 'a LinhaDeTopicoNoOrcamento');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.equal(linha.split('Image(systemName: "chevron.right")').length - 1, 1, 'uma seta só na linha');
+  assert.match(linha, /\.overlay\(alignment: \.trailing\) \{\n\s*if linha\.abre \{\n\s*Image\(systemName: "chevron\.right"\)\n/,
+    'a seta por cima da coluna, no meio da altura (o .trailing do overlay), e só na linha que abre');
 });
 
 test('teclado de valor: ordem do telefone, teto do núcleo, "zero zero", o valor falado a cada tecla e teclas até o AX2', () => {
@@ -606,18 +653,49 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
   // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
+  // A edição empurrada numa folha de origem (etapa 3) não fecha a folha: a guarda dela é a edição ainda no topo do caminho.
   const acoes = {
-    'app-ios/Custta/Telas/FolhaDoGasto.swift': 'private func salvar() {',
-    'app-ios/Custta/Telas/FolhaDaVenda.swift': 'private func confirmar(inicio: String, hoje: String) {',
-    'app-ios/Custta/Telas/FolhaDaObra.swift': 'private func salvar() {',
-    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': 'private func salvar() {',
+    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDaVenda.swift': ['private func confirmar(inicio: String, hoje: String) {', /guard folhas\.aberta != nil else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDaObra.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDoOrcamento.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
   };
-  for(const [f, assinatura] of Object.entries(acoes)){
+  for(const [f, [assinatura, guarda]] of Object.entries(acoes)){
     const t = ler(f);
     assert.equal(t.split(assinatura).length, 2, `${f}: ${assinatura}`);
-    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), /^\n(?:\s*\/\/[^\n]*\n)*\s*guard folhas\.aberta != nil else \{ return \}\n/,
+    assert.match(t.slice(t.indexOf(assinatura) + assinatura.length), new RegExp(String.raw`^\n(?:\s*\/\/[^\n]*\n)*\s*` + guarda.source + String.raw`\n`),
                  `${f}: a guarda do toque duplo na primeira linha da ação`);
   }
+  const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
+  assert.match(origem, /case \.folha: folhas\.aberta != nil\n\s*case \.origem\(let origem\): origem\.editando\(gastoId\)/,
+               'a guarda da edição: a folha aberta ou, na origem, a edição no topo do caminho');
+  assert.match(origem, /func editando\(_ gastoId: String\?\) -> Bool \{\n\s*guard let gastoId else \{ return false \}\n\s*return caminho\.last == \.editar\(gastoId\)/);
+});
+
+test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo', () => {
+  // Nenhum teste de tela vê isso. A trava do puxar lida no corpo de quem monta a pilha refaria a lista da origem a cada tecla
+  // da descrição; dentro do passo ela não chega à folha (medido em 19/10), e o puxar descartaria a mudança. O voltar trocado
+  // por um `if` de estrutura recriaria o passo e derrubaria o foco do teclado na primeira tecla. E a ação de escape escolhida
+  // pelo rascunho trocaria o passo do mesmo jeito, ou engoliria o voltar do VoiceOver (revisão da T22).
+  const passos = ler('app-ios/Custta/Telas/FolhaEmPassos.swift');
+  assert.match(passos, /func folhaDoApp\(perguntar: @escaping \(\) -> Bool,/, 'o folhaDoApp recebe uma função, e não o valor');
+  assert.match(passos, /let temOQuePerder = perguntar\(\)[\s\S]*?\.interactiveDismissDisabled\(temOQuePerder\)/, 'lida no corpo do próprio FolhaDoApp');
+  for(const f of arquivosSwift('app-ios/Custta').filter(f => !f.endsWith('FolhaEmPassos.swift')))
+    assert.doesNotMatch(ler(f), /\.interactiveDismissDisabled\(/, `${f}: a trava do puxar só no FolhaDoApp, fora da pilha`);
+  // As duas folhas de origem (o A pagar e o detalhe do tópico) montam a pilha do mesmo jeito: o chevron, a borda e o puxar
+  // com mudança, que só a suíte do A pagar testa, valem para as duas.
+  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift', 'app-ios/Custta/Telas/FolhaDoTopico.swift'])
+    assert.match(ler(f), /NavigationStack\(path: \$origem\.caminho\) \{[\s\S]*?\n        \}\n(?:\s*\/\/[^\n]*\n|\s*\.[^\n]*\n)*?\s*\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}/,
+                 `${f}: o folhaDoApp em volta da pilha da origem, com a mudança lida por ele`);
+  const origem = ler('app-ios/Custta/Telas/FolhaDeOrigem.swift');
+  assert.match(origem, /\.navigationBarBackButtonHidden\(sujo\)\n\s*\.toolbar \{\n\s*if sujo \{\n\s*ToolbarItem\(placement: \.topBarLeading\)/,
+               'o voltar do sistema sai por modificador, e o chevron entra pela barra');
+  assert.equal(origem.match(/if sujo/g)?.length, 1, 'nenhum outro `if sujo`: a estrutura do passo não muda com a mudança');
+  assert.match(origem, /\.gesture\(BordaQuePergunta\(ativa: sujo\)/, 'a borda que pergunta, ligada só com mudança');
+  const gasto = ler('app-ios/Custta/Telas/FolhaDoGasto.swift');
+  assert.match(gasto, /private var escape: EscapeDoPasso \{\n\s*if case \.origem\(let origem\) = saida \{\n\s*return \.proprio \{ if rascunho\.temOQuePerder \{ perguntandoAVolta = true \} else \{ origem\.voltar\(\) \} \}\n\s*\}\n\s*return raiz \? \.fechar : \.sistema\n\s*\}/,
+               'o Z da edição: fixo pela saída e pela raiz; o rascunho só decide dentro da ação');
+  assert.match(gasto, /\.passoDaFolha\(rascunho\.editado == nil \? "Novo gasto" : "Editar gasto", subtitulo: subtitulo, fechar: lado, escape: escape\)/);
 });
 
 test('folha: o R$ das linhas de dinheiro no texto do número e o degradê da folha atrás do botão de baixo', () => {
@@ -753,6 +831,96 @@ test('gasto lançado de dentro de uma vendida: a obra troca por trás da folha, 
     'a troca da obra e, no turno seguinte, o fechar da folha');
 });
 
+test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça', () => {
+  // A LazyVStack só fatia filhos diretos: com o grupo do mês num VStack (o GrupoDaFolha), o grupo inteiro seria uma peça
+  // só, criada de uma vez com todas as linhas (o detalhe do tópico, com a mesma lista, passa de cem gastos). Nenhum teste
+  // de tela vê isso: a tela fica igual.
+  const t = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  const pecas = t.search(/ForEach\(pecas(?:DaOrigem\([^)]*\))?\) \{/);
+  assert.ok(pecas > 0, 'as peças da lista num ForEach');
+  let nivel = 0, abre = -1;
+  for(let i = pecas - 1; i >= 0 && abre < 0; i--){
+    if(t[i] === '}') nivel++;
+    else if(t[i] === '{'){ if(nivel === 0) abre = i; else nivel--; }
+  }
+  assert.match(t.slice(0, abre), /LazyVStack\([^)]*\)\s*$/, 'o ForEach das peças direto dentro da LazyVStack');
+  let fim = t.indexOf('{', pecas) + 1;
+  for(let n = 1; n > 0 && fim < t.length; fim++) n += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+  assert.equal(t.slice(pecas, fim).match(/\.modifier\(FundoDoGrupo\(/g)?.length, 2, 'o fundo do grupo no cabeçalho e em cada gasto');
+  // O detalhe do tópico: o cabeçalho da seção ("A vencer · 6") é uma peça fora do grupo, sem o fundo, e os cantos de cima do
+  // grupo vão no primeiro gasto, pela peça (no A pagar, nunca: quem os leva é o cabeçalho do mês).
+  const secao = t.slice(pecas, fim).match(/case \.secao\([^)]*\):\n([\s\S]*?)\n\s*case /);
+  assert.ok(secao, 'o cabeçalho da seção do detalhe é uma peça da lista');
+  assert.doesNotMatch(secao[1], /FundoDoGrupo|GrupoDaFolha/, 'o cabeçalho da seção fora do grupo, sem o fundo');
+  assert.match(t.slice(pecas, fim), /case \.gasto\(let gasto\):[\s\S]*\.modifier\(FundoDoGrupo\(cima: peca\.cima, baixo: peca\.ultimo\)\)/,
+               'os cantos de cima do grupo no gasto vêm da peça');
+});
+
+test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
+  // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
+  // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de
+  // cada gasto, o cabeçalho, o vazio e o rodapé; as peças filhas diretas da LazyVStack da lista, a guarda de cima confere.
+  for(const f of ['app-ios/Custta/Telas/FolhaDoAPagar.swift', 'app-ios/Custta/Telas/FolhaDoTopico.swift']){
+    const t = ler(f);
+    assert.match(t, /\bListaDaOrigem\(obra: /, `${f}: a folha monta a lista comum`);
+    assert.doesNotMatch(t, /\b(?:ScrollViewReader|ScrollView|LazyVStack|ForEach)\s*[({]|\bPerguntaDeApagar\(|\bfocoNaOrigem\(/,
+                        `${f}: uma lista própria, fora da ListaDaOrigem`);
+  }
+});
+
+test('apagar na folha de origem: a linha sai no turno seguinte ao voltar, e a linha aberta fica na Tecla', () => {
+  // Nenhum teste de tela vê isso. No mesmo turno do voltar da pilha, a transação do apagar (com a mola) se misturaria à do
+  // voltar, como a troca de obra sem animação fazia a folha sumir de uma vez (T34). E, dentro da folha, a linha arrastada
+  // aberta fica na Tecla (o .folha .gasto.puxada do mockup), e não na Linha da folha, que é o fundo do grupo.
+  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  assert.match(lista, /case \.apagou\(let pedido\):\n\s*Task \{ @MainActor in apagar\(pedido, antes: volta\.ordem, depoisDoVoltar: true\) \}\n\s*return\n/,
+               'o apagar vindo da edição, no turno seguinte ao voltar');
+  assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
+               /if case \.origem\(let origem\) = saida \{ origem\.apagou\(pedido\) \} else \{ folhas\.fechar \{ folhas\.apagar\(pedido\) \} \}/,
+               'na origem, a edição volta e a origem apaga; na folha do gasto, ela desce e a obra apaga');
+  assert.match(ler('app-ios/Custta/Telas/LinhaArrastavel.swift'), /\.background\(x < 0 \? paleta\.cor\(naFolha \? \.tecla : \.linhaDaFolha\) : \.clear\)/,
+               'a linha aberta na Tecla dentro da folha');
+});
+
+test('detalhe do tópico: sem gasto, a folha desce depois de gravar, e o "O gasto saiu desta lista." não sai', () => {
+  // A folha do detalhe desce quando o tópico fica sem gasto, por qualquer caminho (apagar da edição ou arrastando, trocar o
+  // tópico, outro aparelho): um onChange do estado gravado, em volta da pilha, como o da obra que some (o sheetTopico do
+  // site fecha igual). Fechar antes de gravar fecharia na recusa, e o teste de tela da recusa só anda o arrastar; o anúncio,
+  // nenhum teste de tela ouve. A lista comum não fecha a folha (o A pagar fica aberto, vazio, como no site), e o
+  // "O gasto saiu desta lista." de um "Salvar" que tirou a última linha não sai: quem ouve já está na tela Orçamento. O
+  // "Gasto apagado" e o "Compra apagada" ficam.
+  const topico = ler('app-ios/Custta/Telas/FolhaDoTopico.swift');
+  assert.match(topico, /private var semGasto: Bool \{ obra\.map \{ o in !o\.gastos\.contains \{ \$0\.topico == topico\.id \} \} \?\? false \}/,
+               'o "sem gasto" lido da obra gravada, com o filtro do detalheDoTopico');
+  assert.match(topico, /\.folhaDoApp\(perguntar: \{ origem\.temOQuePerder \}[\s\S]*?\.onChange\(of: semGasto\) \{ _, vazio in if vazio \{ folhas\.fechar\(\) \} \}/,
+               'o fechar sem gasto num onChange, fora da pilha');
+  assert.equal(topico.match(/folhas\.fechar\(/g)?.length, 3, 'o detalhe fecha só pelo ×, pela obra que some e sem gasto');
+  assert.match(topico, /ListaDaOrigem\(obra: [^\n]*\n[^\n]*pecasDepois:[^\n]*\n\s*linha: \{ linhaDeGasto\(\$0, topicos: topicos, comTopico: false\) \}, desceSemGasto: true\)/,
+               'o detalhe avisa a lista de que desce sem gasto');
+  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  assert.doesNotMatch(lista, /\bfolhas\.|Folhas\.self/, 'a lista comum não fecha a folha');
+  assert.match(lista, /if desceSemGasto, depois\.isEmpty, case \.salvou = saida \{ return \}\n\s*let destino = focoNaOrigem\(saida, antes: volta\.ordem, depois: depois\)/,
+               'sem gasto, a folha que desce não diz "O gasto saiu desta lista."');
+  assert.doesNotMatch(ler('app-ios/Custta/Telas/FolhaDoAPagar.swift'), /desceSemGasto/, 'o A pagar fica aberto, vazio');
+});
+
+test('lista da folha de origem: os ganchos do laudo só em DEBUG e só com o argumento do teste', () => {
+  // A rolagem fixa (`-custta.rolagem`) liga o `.scrollPosition`, que muda a rolagem da lista: ligada em todo Debug, os testes
+  // de tela do A pagar e do detalhe rodariam uma lista diferente da de Release, e nenhum deles vê isso. Sem o argumento, ela
+  // não entra (a T33 provou com os testes de tela das duas folhas e os prints com Δ = 0), e o `-custta.origem editar:<gasto>`,
+  // que abre a edição já empurrada, não faz nada.
+  const lista = ler('app-ios/Custta/Telas/ListaDaOrigem.swift');
+  assert.match(lista, /\n\s*#if DEBUG\n\s*\/\/[^\n]*\n\s*\.rolagemFixaSoComOArgumento\(\)\n\s*#endif\n\s*\.onScrollPhaseChange/,
+               'a rolagem fixa na ScrollView da lista, só em DEBUG');
+  assert.doesNotMatch(lista, /RolagemFixaDoTeste\(\)/, 'a rolagem fixa sempre ligada mudaria a lista nos testes de tela');
+  assert.match(ler('app-ios/Custta/Identidade/Componentes.swift'),
+               /#if DEBUG\n(?:(?!#endif)[\s\S])*func rolagemFixaSoComOArgumento\(\) -> some View \{\n\s*if UserDefaults\.standard\.object\(forKey: "custta\.rolagem"\) != nil \{ modifier\(RolagemFixaDoTeste\(\)\) \} else \{ self \}\n/,
+               'sem o -custta.rolagem, a lista fica sem o .scrollPosition');
+  assert.match(lista, /\n\s*#if DEBUG\n\s*\.task \{ abrirAEdicaoDoTeste\(ordem: ordem\) \}\n\s*#endif\n/, 'o -custta.origem só em DEBUG');
+  assert.match(lista, /guard origem\.volta == nil, let pedido = UserDefaults\.standard\.string\(forKey: "custta\.origem"\), pedido\.hasPrefix\("editar:"\),/,
+               'sem o -custta.origem, nada; e a lista que volta da edição não empurra de novo');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){
@@ -773,6 +941,18 @@ test('conferência cruzada: o texto do orçamento na lista é o do site', () => 
   }
 });
 
+test('cursor do valor na folha do orçamento: o alto cresce com a letra e ele fica centrado no valor, sem a linha de base', () => {
+  // O CursorDaLinha tem o 1,15em do .caret no em de 17 da linha, e cresce com a letra: 55 pt na AX5 (medido no Pro Max, nas
+  // duas linhas). Os testes de tela medem o cursor por tinta na letra padrão, e um alto fixo passaria por todos.
+  const t = ler('app-ios/Custta/Telas/FolhaDoOrcamento.swift');
+  const inicio = t.indexOf('private struct CursorDaLinha');
+  assert.ok(inicio >= 0, 'o CursorDaLinha');
+  const corpo = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(corpo, /@ScaledMetric\(relativeTo: \.body\) private var altura: CGFloat = 17 \* 1\.15\n/, 'o alto cresce com a letra: 1,15 do em de 17');
+  assert.match(corpo, /\.frame\(width: 2, height: altura\)/, 'a barra de 2 pt, com esse alto');
+  assert.doesNotMatch(corpo, /alignmentGuide\(\.firstTextBaseline\)/, 'centrado no valor, sem a guia da linha de base');
+});
+
 test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que falha não segura a rodada no diagnose', async () => {
   const { escolherSimulador, argumentosDoTeste } = await import(join(RAIZ, 'scripts/simulador-ios.mjs'));
   const lista = {
@@ -787,4 +967,18 @@ test('simulador dos testes locais: CUSTTA_SIMULADOR escolhe pelo id, e teste que
   assert.deepEqual(args.slice(i, i + 2), ['-collect-test-diagnostics', 'never'], 'sem o simctl diagnose, que segura a rodada até 10 min');
   assert.deepEqual(args.slice(args.indexOf('-destination'), args.indexOf('-destination') + 2), ['-destination', 'platform=iOS Simulator,id=C']);
   assert.ok(args.includes('-only-testing:CusttaTests'));
+});
+
+test('apagar com a linha aberta: ela fecha dentro da transação do apagar, na lista da obra e na da folha de origem', () => {
+  // Nenhum teste de tela vê isso. A linha sai aberta, com o "Apagar": fechar antes, fora da transação, a fazia voltar num
+  // quadro e só então sair (o comentário do `apagar` de cada lista). A guarda: o `linhaAberta = nil` e o `modelo.gravar`
+  // no mesmo bloco do `withAnimation`. A lista da folha de origem mora na ListaDaOrigem (na FolhaDoAPagar, até a lista
+  // passar a ser uma só para as duas folhas).
+  const origens = ['app-ios/Custta/Telas/ListaDaOrigem.swift', 'app-ios/Custta/Telas/FolhaDoAPagar.swift']
+    .filter(f => { try { return ler(f).includes('.snappy(duration: 0.35)'); } catch { return false; } });
+  assert.equal(origens.length, 1, 'o apagar da folha de origem, num arquivo só');
+  for(const [f, aberta] of [['app-ios/Custta/Telas/ObraView.swift', 'linhaAberta'], [origens[0], 'origem\\.linhaAberta']]){
+    const re = new RegExp(String.raw`withAnimation\(opcoes\.reduzirMovimento \? nil : \.snappy\(duration: 0\.35\)\) \{\n\s*` + aberta + String.raw` = nil\n\s*return modelo\.gravar`);
+    assert.match(ler(f), re, `${f}: a linha aberta fecha na mesma transação que apaga`);
+  }
 });

@@ -7,6 +7,8 @@ name: app-ios
 #   unidade e de tela no simulador com os serviços falsos;
 # - app-etapa3: os testes de tela da etapa 3, num simulador próprio, em paralelo com o app (com eles, o app passou do
 #   teto de 75 min);
+# - app-etapa3-b: os testes de tela da etapa 3 que não couberam no app-etapa3 (no PR 2, a suíte do detalhe do tópico), no
+#   mesmo molde e também em paralelo com o app;
 # - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
 #   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
 #   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da
@@ -71,7 +73,8 @@ jobs:
     runs-on: macos-26
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
     # (job app-etapa3): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa lenta, 67 min, com 48,9 de testes
-    # de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90.
+    # de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No fim do PR 2 da etapa 3, 60,2 min,
+    # com 46,2 de testes de tela (run 40125911713).
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -118,7 +121,7 @@ jobs:
 
       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
       # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
-      # testes de tela da etapa 3, no app-etapa3.
+      # testes de tela da etapa 3, no app-etapa3 e no app-etapa3-b.
       - name: Testes de unidade e de tela no simulador
         run: |
           set -o pipefail
@@ -136,6 +139,8 @@ jobs:
             -skip-testing:CusttaUITests/LeituraNoVidroUITests \
             -skip-testing:CusttaUITests/AuditoriaUITests \
             -skip-testing:CusttaUITests/OrcamentoUITests \
+            -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
+            -skip-testing:CusttaUITests/DetalheDoTopicoUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
@@ -151,9 +156,14 @@ jobs:
   app-etapa3:
     runs-on: macos-26
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
-    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests: 20,8 min de testes + ~11 de
-    # preparo ≈ 32 min. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do job, e ele se divide se passar de ~50.
-    timeout-minutes: 60
+    # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
+    # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
+    # lenta (≈ 51 no run 39799242127). O app, com as mesmas suítes, levou 42 min num run e 67 no outro: cada job pega a
+    # sua VM. O teto vai pela mais lenta: 90, como o do app. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do
+    # job; este não cresce mais: a suíte do detalhe do tópico (PR 2) e as de tela do PR 3 vão para o app-etapa3-b.
+    # No fim do PR 2, FolhasDeOrigem 21,3 + Orçamento 18,7 min e 48,3 com o preparo, numa VM lenta (run 40125911713, com
+    # um arrasto perdido do iOS 26); 36,8 no run 40108043199.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -179,6 +189,7 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/testes-etapa3.xcresult" \
             -only-testing:CusttaUITests/OrcamentoUITests \
+            -only-testing:CusttaUITests/FolhasDeOrigemUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Tela reprovada: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run 39710458060
@@ -191,6 +202,51 @@ jobs:
           path: ${{ runner.temp }}/testes-etapa3.xcresult
           retention-days: 7
 
+  app-etapa3-b:
+    runs-on: macos-26
+    # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
+    # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests; no PR 3, as suítes de tela dele.
+    # O mesmo preparo do app-etapa3, em paralelo com ele. No fim do PR 2, 21,8 min no run 40125911713: o detalhe, com 16
+    # testes, em 13,4, e o resto é o preparo e o 1º boot (um teste caiu por toque perdido do iOS 26, com os 16 até o fim);
+    # 28 min no 40108043199, com 15. Teto de 60, mais que o dobro numa VM lenta; como no app-etapa3, cada PR da etapa anota
+    # aqui o tempo do job e, passando de ~50, a suíte nova vai para um job novo.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # Os mesmos serviços falsos do job app, que pula estas suítes.
+      - name: Testes de tela da etapa 3 no simulador (parte b)
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/testes-etapa3-b.xcresult" \
+            -only-testing:CusttaUITests/DetalheDoTopicoUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
+      - name: Resultado dos testes da etapa 3 (parte b) quando reprovam ou o job é cortado
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testes-etapa3-b-app-ios
+          path: ${{ runner.temp }}/testes-etapa3-b.xcresult
+          retention-days: 7
+
   laudo:
     runs-on: macos-26
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
@@ -198,7 +254,8 @@ jobs:
     # do dobro do Mac), 75–79 min. A leitura da folha, a mais pesada, roda no job auditoria: ~35 min de testes e ~43 min de
     # job em cada um. Teto de 60 min; se um passar de ~50, mova uma leitura para o outro (-skip-testing aqui e
     # -only-testing lá). No fim do PR 2 o laudo já usava perto de 50 min, e a parte 3 da etapa 2 soma ~30 cenas: as
-    # leituras dela rodam no job laudo-parte3, e as auditorias dela também (~7 min na CI, o auditoria ia a ~50).
+    # leituras dela rodam no job laudo-parte3, e as auditorias dela também (~7 min na CI, o auditoria ia a ~50). No fim do
+    # PR 2 da etapa 3, 33,6 min, com 24,2 de leitura (run 40125911713).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -237,6 +294,8 @@ jobs:
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -301,7 +360,10 @@ jobs:
     runs-on: macos-26
     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
-    # encaixadas, no escuro, no claro e na maior letra. Cada PR da etapa anota aqui o tempo do job.
+    # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
+    # escuro e no claro (~20 cenas): 38,7 min no run 40108043199. E a maior letra e as auditorias delas: 5,5 min no Mac,
+    # 13,6 na CI, e o job foi a 52 min (run 40125911713), com teto de 60. Cada PR da etapa anota aqui o tempo do job; o PR 3
+    # já não cabe e abre o laudo-etapa3-b (como o app-etapa3-b), que começa com estas três.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -331,8 +393,12 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/laudo-etapa3.xcresult" \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
             -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
+            -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
+            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -347,7 +413,8 @@ jobs:
   auditoria:
     runs-on: macos-26
     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3) e a leitura
-    # da folha do gasto; a conta do tempo está no job laudo.
+    # da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min: as 14 auditorias em 19,1
+    # e a leitura em 11,2 (run 40125911713).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -380,6 +447,8 @@ jobs:
             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
             -skip-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
             CODE_SIGNING_ALLOWED=NO
 

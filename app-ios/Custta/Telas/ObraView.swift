@@ -66,7 +66,11 @@ struct ObraView: View {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
-                                          rotaDoOrcamento: .orcamento(obra.id))
+                                          rotaDoOrcamento: .orcamento(obra.id)) {
+                        // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
+                        if linhaAberta != nil { fecharLinha(); return }
+                        folhas.aberta = .aPagar(obraId: obra.id)
+                    }
                     AcoesDaFaseView(fase: obra.fase,
                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
                         agir($0, obra: obra)
@@ -221,10 +225,12 @@ func vizinhoDepoisDeApagar(_ saem: Set<String>, ordem: [String]) -> String? {
     return ordem[i...].first { !saem.contains($0) } ?? ordem[..<i].last { !saem.contains($0) }
 }
 
-/// Para onde o VoiceOver vai na lista da obra.
+/// Para onde o VoiceOver vai na lista da obra e na de uma folha de origem.
 enum AlvoDoFoco: Hashable {
     case gasto(String)
     case lancamentos
+    /// O cartão do vazio de uma folha de origem (o A pagar sem nenhum vencimento).
+    case vazio
 }
 
 /// O que as linhas da lista fazem, passado do ObraView aos cartões.

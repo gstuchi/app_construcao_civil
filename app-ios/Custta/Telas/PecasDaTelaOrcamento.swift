@@ -19,6 +19,8 @@ struct LinhaDeTopicoDoOrcamento: Identifiable, Equatable {
     let item: ItemOrcamento?
     /// A frase do site ("Passou R$ 6,2 mil do previsto") ou, no gasto por tópico, "38% da obra".
     let frase: String?
+    /// A linha abre o detalhe do tópico (a seta e o toque): o tópico tem gasto.
+    let abre: Bool
     /// A frase do "passou", no âmbar.
     var fraseEmAlerta = false
 }
@@ -28,30 +30,32 @@ private func topico(_ id: String, _ topicos: [String: Topico]) -> Topico {
     topicos[id] ?? Topico(id: id, nome: id, icone: "etiqueta")
 }
 
-/// O "Por tópico": os previstos, na ordem do site (quem gastou mais do previsto primeiro).
-func linhasPorTopico(_ r: ResumoOrcamento, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
-    r.topicos.map { t in
+/// O "Por tópico": os previstos, na ordem do site (quem gastou mais do previsto primeiro). Abre o detalhe o previsto com gasto:
+/// a regra do site é ter gasto (o detalhe fecha sem nenhum), e não a soma.
+func linhasPorTopico(_ r: ResumoOrcamento, topicos: [String: Topico], gastos: [Gasto]) -> [LinhaDeTopicoDoOrcamento] {
+    let comGasto = Set(gastos.map(\.topico))
+    return r.topicos.map { t in
         let id = t.id ?? "", nome = topico(id, topicos), linha = linhaTopicoOrc(t), frase = fraseTopicoOrc(t)
         return LinhaDeTopicoDoOrcamento(id: id, nome: nome.nome, icone: nome.icone, gasto: linha.gasto, previsto: linha.previsto,
-                                        item: t, frase: frase?.texto, fraseEmAlerta: frase?.alerta ?? false)
+                                        item: t, frase: frase?.texto, abre: comGasto.contains(id), fraseEmAlerta: frase?.alerta ?? false)
     }
 }
 
-/// Uma linha por tópico fora do orçamento (gasto sem previsto), do maior gasto para o menor.
+/// Uma linha por tópico fora do orçamento (gasto sem previsto), do maior gasto para o menor; todas abrem o detalhe.
 func linhasForaDoOrcamento(_ r: ResumoOrcamento, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
     r.fora.map { f in
         let t = topico(f.id, topicos)
         return LinhaDeTopicoDoOrcamento(id: f.id, nome: t.nome, icone: t.icone, gasto: moedaCurtaSemZero(f.gasto), previsto: nil,
-                                        item: nil, frase: nil)
+                                        item: nil, frase: nil, abre: true)
     }
 }
 
-/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto.
+/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto; todas abrem o detalhe.
 func linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
     gastos.map { g in
         let t = topico(g.id, topicos)
         return LinhaDeTopicoDoOrcamento(id: g.id, nome: t.nome, icone: t.icone, gasto: moedaCurtaSemZero(g.bruto), previsto: nil,
-                                        item: nil, frase: textoDaParteDaObra(g.pct))
+                                        item: nil, frase: textoDaParteDaObra(g.pct), abre: true)
     }
 }
 
@@ -137,18 +141,44 @@ struct CartaoDoOrcamento: View {
 /// Uma linha de tópico da tela Orçamento: o ícone, o nome, o gasto (e "/ previsto"), a barra fina e a frase. O valor não
 /// quebra; o nome quebra antes, com o valor no meio da altura dele (o `.ot` do mockup). A linha fora do orçamento, só com o
 /// nome e o gasto, fica no meio da altura do ícone. Na letra grande, sem o ícone, cada informação numa linha. A coluna da
-/// seta fica reservada e vazia: neste PR a linha não abre nada (o detalhe do tópico chega no PR 2). Um elemento só para o
-/// VoiceOver, sem traço de botão.
+/// seta fica reservada em toda linha. A que abre o detalhe do tópico (`abre`) é um botão inteiro, o do indicador A pagar,
+/// com a seta no meio da altura; a do previsto sem gasto fica sem seta e é um elemento só para o VoiceOver, sem traço de
+/// botão.
 struct LinhaDeTopicoNoOrcamento: View {
     let linha: LinhaDeTopicoDoOrcamento
     let identificador: String
+    /// O toque na linha que abre: o detalhe do tópico.
+    let abrir: () -> Void
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
+        if linha.abre {
+            // A linha inteira é o botão: o quadro e o contentShape dentro do rótulo, ou o toque e o foco do VoiceOver ficam
+            // só no miolo.
+            Button(action: abrir) {
+                conteudo
+                    .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(identificador)
+            // O Controle por Voz chama pelo nome do tópico ("Tocar Cerâmica"), não pelo rótulo inteiro, como no A pagar.
+            .accessibilityInputLabels([linha.nome])
+        } else {
+            conteudo
+                .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(identificador)
+        }
+    }
+
+    private var conteudo: some View {
         let grande = tamanho.isAccessibilitySize
-        HStack(alignment: linha.item == nil && linha.frase == nil ? .center : .top, spacing: 11) {
+        return HStack(alignment: linha.item == nil && linha.frase == nil ? .center : .top, spacing: 11) {
             if !grande {
                 Image(decorative: iconeDoCatalogo(linha.icone))
                     .resizable().frame(width: 20, height: 20)
@@ -171,13 +201,23 @@ struct LinhaDeTopicoNoOrcamento: View {
                 if let frase = linha.frase { FraseDoTopicoNoOrcamento(texto: frase, alerta: linha.fraseEmAlerta) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            // A coluna da seta (14 pt; 22 na letra grande), vazia até o detalhe do tópico chegar.
+            // A coluna da seta (14 pt; 22 na letra grande), reservada em toda linha.
             Color.clear.frame(width: grande ? 22 : 14, height: 1)
         }
-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 14))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(identificador)
+        // A seta, no meio da altura da linha, sobre a coluna (o .chev do mockup ocupa todas as linhas da grade).
+        .overlay(alignment: .trailing) {
+            if linha.abre {
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.semibold))
+                    // O mesmo chevron da linha do Orçamento: para no AX2 e ocupa 18 pt na maior letra e 9 na padrão.
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
+                    .foregroundStyle(paleta.cor(vidro.secundario))
+                    .accessibilityHidden(true)
+                    .foraDoLaudo()
+                    .frame(width: grande ? 22 : 14)
+            }
+        }
     }
 
     private var nome: some View {

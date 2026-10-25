@@ -6,7 +6,7 @@ import CusttaNucleo
 /* As linhas e as frases da tela Orçamento (etapa 3, PR 1), montadas das regras do núcleo: o nome do tópico (o id, com o
    ícone etiqueta, quando o app não conhece o tópico, como no site), o gasto e o previsto do site, a frase do nível (a do
    "passou" em âmbar), o valor da linha, que não quebra, e as frases do cartão partidas em volta do dinheiro, iguais às do
-   núcleo. */
+   núcleo. E que linha abre o detalhe do tópico (PR 2): a do tópico com gasto. */
 struct TelaOrcamentoTests {
     private func obra(_ orcamento: ValorJSON, gastos: [(String, Double)]) -> Obra {
         Obra(arvore: ["id": .texto("o"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
@@ -24,11 +24,11 @@ struct TelaOrcamentoTests {
     @Test func porTopicoComAsFrasesDoSiteEOTopicoDesconhecidoPeloId() throws {
         let o = obra(porTopico, gastos: [("estrutura", 91_200), ("revest", 76_700), ("pintura", 1_000), ("projeto", 22_880.5)])
         let r = try #require(orcamentoObra(o))
-        let linhas = linhasPorTopico(r, topicos: mapaDeTopicos([]))
+        let linhas = linhasPorTopico(r, topicos: mapaDeTopicos([]), gastos: o.gastos)
         #expect(linhas.map(\.id) == ["estrutura", "revest", "pintura", "c_apagado"], "a ordem do site: quem gastou mais do previsto primeiro")
         #expect(linhas[0] == LinhaDeTopicoDoOrcamento(id: "estrutura", nome: "Estrutura", icone: "guindaste", gasto: "R$ 91 mil",
                                                        previsto: "85 mil", item: r.topicos[0], frase: "Passou R$ 6,2 mil do previsto",
-                                                       fraseEmAlerta: true))
+                                                       abre: true, fraseEmAlerta: true))
         #expect(linhas[1].frase == "Faltam R$ 3,3 mil — 96%" && !linhas[1].fraseEmAlerta)
         #expect(linhas[2].frase == nil, "dentro do previsto, sem frase")
         // O tópico que o app não conhece aparece pelo id, com o ícone etiqueta; sem gasto, "R$ 0,00" (abaixo de mil, a moeda
@@ -38,7 +38,24 @@ struct TelaOrcamentoTests {
         #expect(linhas[3].gasto == "R$\u{a0}0,00")
         let fora = linhasForaDoOrcamento(r, topicos: mapaDeTopicos([]))
         #expect(fora == [LinhaDeTopicoDoOrcamento(id: "projeto", nome: "Documentação", icone: "documento", gasto: "R$ 23 mil",
-                                                   previsto: nil, item: nil, frase: nil)])
+                                                   previsto: nil, item: nil, frase: nil, abre: true)])
+    }
+
+    /// A linha abre o detalhe do tópico quando ele tem gasto. No "Por tópico", só o previsto com gasto: a regra do site é ter
+    /// gasto, e não a soma (um gasto de R$ 0,00 também abre). Fora do orçamento e no gasto por tópico, todas.
+    @Test func abreODetalheNasTresListas() throws {
+        let o = obra(porTopico, gastos: [("estrutura", 91_200), ("pintura", 0), ("projeto", 22_880.5)])
+        let r = try #require(orcamentoObra(o))
+        let previstos = linhasPorTopico(r, topicos: mapaDeTopicos([]), gastos: o.gastos)
+        #expect(previstos.filter(\.abre).map(\.id).sorted() == ["estrutura", "pintura"], "o previsto com gasto abre")
+        #expect(previstos.first { $0.id == "pintura" }?.gasto == "R$\u{a0}0,00", "o gasto de R$ 0,00 também conta")
+        #expect(previstos.filter { !$0.abre }.map(\.id).sorted() == ["c_apagado", "revest"], "o previsto sem gasto não abre")
+        #expect(linhasForaDoOrcamento(r, topicos: mapaDeTopicos([])).map(\.abre) == [true], "o fora do orçamento abre")
+        let total = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
+                         gastos: [("terreno", 319_847.85), ("revest", 0), ("c_meu", 2_000)])
+        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([]))
+        #expect(porGasto.map(\.id) == ["terreno", "c_meu", "revest"])
+        #expect(porGasto.allSatisfy { $0.abre }, "no gasto por tópico, todas abrem, mesmo a de R$ 0,00")
     }
 
     @Test func gastoPorTopicoComAParteDaObra() {

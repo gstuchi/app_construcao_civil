@@ -6,12 +6,13 @@ import CusttaNucleo
 
 /* Metade app da conferência cruzada (tests/app-ios/cruzado.mjs): entra na conta que o "site" criou, carrega o
    documento e segue os roteiros do site pelas mesmas regras das telas: o dos gastos (lançar no Pix e no cartão
-   parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda) e o da obra (criar, editar, marcar como
-   pronta, vender, desfazer a venda e apagar) e o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar). O
-   núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador, como um toque
-   em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O roteiro
-   confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada do site
-   se perdeu; no orçamento, antes e a cada passo, pelo auxiliar do roteiro. */
+   parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda), o da obra (criar, editar, marcar como
+   pronta, vender, desfazer a venda e apagar), o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar) e
+   o das folhas de origem (a edição empurrada no A pagar e no detalhe do tópico pelo rascunho do gasto, e o apagar de um
+   gasto só). O núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador,
+   como um toque em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O
+   roteiro confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada
+   do site se perdeu; no orçamento, antes e a cada passo, e nas folhas, a cada passo, pelo auxiliar do roteiro. */
 @MainActor
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["CUSTTA_CRUZADO"] == "1"))
 struct CruzadoTests {
@@ -106,12 +107,42 @@ struct CruzadoTests {
             try await s.aplicar(try #require(novo, "o passo \(i + 1) do orçamento achou a obra")).confirmada()
             try await pedirConferencia(i + 1)
         }
+        // As folhas de origem (etapa 3, PR 2): cada passo como o A pagar e o detalhe do tópico gravam, também a partir do
+        // documento relido. A edição empurrada é o rascunho do gasto (o da folha, montado do gasto), com o que o passo muda
+        // por cima, e o "Salvar" dela; o "Apagar" da linha, ou o "só esta parcela" da edição, tira um gasto só.
+        let roteiroDasFolhas = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_FOLHAS"]).utf8))
+        for (i, passo) in try #require(roteiroDasFolhas.comoLista).enumerated() {
+            for _ in 0..<200 {
+                if mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do passo \(i + 1) das folhas não chegou")
+            let p = try #require(passo.comoObjeto)
+            let obraId = try #require(p["obra"]?.comoTexto)
+            let obra = try #require(s.estado.obras.first { $0.id == obraId }, "a obra \(obraId) do roteiro")
+            let gasto = try #require(obra.gastos.first { $0.id == p["gasto"]?.comoTexto }, "o gasto do passo \(i + 1) das folhas")
+            let novo: Estado?
+            if p["acao"]?.comoTexto == "apagar" {
+                novo = s.estado.apagandoGasto(gasto.id, daObra: obraId)
+            } else {
+                let r = RascunhoDoGasto(obra: obra, editado: gasto, todas: s.estado.obras, proprios: s.estado.config.topicosProprios, hoje: hoje)
+                let mudar = try #require(p["mudar"]?.comoObjeto)
+                if let topico = mudar["topico"]?.comoTexto { r.topico = topico }
+                if let data = mudar["data"]?.comoTexto { r.data = data }
+                let entrada = r.entrada
+                let conferido = try conferirGasto(entrada, editado: r.editado, hoje: hoje).get()
+                novo = s.estado.editandoGasto(gasto.id, entrada, conferido, naObra: obraId)
+            }
+            try await s.aplicar(try #require(novo, "o passo \(i + 1) das folhas achou o gasto")).confirmada()
+            try await pedirConferencia(i + 1, de: "folhas")
+        }
         s.parar()
     }
 
-    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0).
-    private func pedirConferencia(_ n: Int) async throws {
-        var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/orcamento/\(n)")))
+    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0), ou o do passo n
+    /// das folhas.
+    private func pedirConferencia(_ n: Int, de roteiro: String = "orcamento") async throws {
+        var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/\(roteiro)/\(n)")))
         pedido.httpMethod = "POST"
         let (corpo, resposta) = try await URLSession.shared.data(for: pedido)
         #expect((resposta as? HTTPURLResponse)?.statusCode == 200, "\(String(decoding: corpo, as: UTF8.self))")

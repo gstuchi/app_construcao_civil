@@ -57,6 +57,11 @@ struct EtiquetaDoIndicador: View {
     let texto: String
     let cor: Cor
     @Environment(\.paleta) private var paleta
+    /// Um pouco mais que a linha da footnote (15,67 pt na letra padrão), crescendo com a letra. O raio do fundo é a metade
+    /// da etiqueta de uma linha (a linha e os 3 + 3 do recuo): numa linha ele passa da metade da altura e o fundo é a cápsula
+    /// do mockup; quando a etiqueta quebra em duas na letra grande, as quinas continuam as de uma linha. Com a cápsula da
+    /// altura toda, a quina comia o canto do texto: o "30" de "nada em 30 dias" saía do fundo na AX5 do Pro Max.
+    @ScaledMetric(relativeTo: .footnote) private var linha: CGFloat = 16
 
     var body: some View {
         let (frente, fundo): (Token, Token) = switch cor {
@@ -71,7 +76,7 @@ struct EtiquetaDoIndicador: View {
             .fixedSize(horizontal: false, vertical: true)    // na letra grande, quebra em vez de cortar
             .padding(.horizontal, 10)
             .padding(.vertical, 3)
-            .background(paleta.cor(fundo), in: .capsule)
+            .background(paleta.cor(fundo), in: .rect(cornerRadius: (linha + 6) / 2))
     }
 }
 

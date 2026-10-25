@@ -76,6 +76,36 @@ struct EtiquetaNovoTests {
     }
 }
 
+/* A etiqueta dos indicadores (PecasDaObra) na maior letra quebra em duas linhas, e o fundo fica com as quinas da cápsula de
+   uma linha. Com a cápsula da altura toda, a quina comia o canto do texto: o "30" de "nada em 30 dias" saía do fundo na AX5
+   do Pro Max (4,31:1 no laudo da parte 3), e o 18 Pro da CI não via. No ImageRenderer em escala 1; os 200 pt quebram a
+   etiqueta como na linha do A pagar do Pro Max ("nada em" / "30 dias"). */
+@MainActor
+struct EtiquetaDoIndicadorTests {
+    @Test func emDuasLinhasOCantoDoTextoFicaNoFundo() throws {
+        let r = ImageRenderer(content: EtiquetaDoIndicador(texto: "nada em 30 dias", cor: .alerta)
+            .environment(\.paleta, Paleta()).environment(\.colorScheme, .dark).environment(\.dynamicTypeSize, .accessibility5))
+        r.scale = 1
+        r.proposedSize = ProposedViewSize(width: 200, height: nil)
+        let imagem = try #require(r.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        try #require(h > 80, "a etiqueta quebra em duas linhas: \(w) × \(h)")
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        let pixel = { (x: Int, y: Int) in (0..<4).map { Int(rgba[(y * w + x) * 4 + $0]) } }
+        // O fundo na meia altura, no recuo da esquerda. Os cantos do texto (a primeira letra de cada linha, a 14 pt da borda)
+        // a 9 pt do alto e do pé, entre a letra e a borda: com a cápsula da altura toda, os dois ficavam fora do fundo.
+        let fundo = pixel(4, h / 2)
+        #expect(fundo == [0x33, 0x26, 0x0F, 0xFF], "a AlertaFundo do escuro: \(fundo)")
+        #expect(pixel(14, 9) == fundo, "o canto de cima do texto no fundo: \(pixel(14, 9))")
+        #expect(pixel(14, h - 9) == fundo, "o canto de baixo do texto no fundo: \(pixel(14, h - 9))")
+    }
+}
+
 /* As ações da fase na maior letra (quadro "Ações da fase" do mockup da parte 3, AX5): o ícone para nos 34 pt do mockup,
    o recuo interno cai de 20 para 10 nos tamanhos de acessibilidade (o mockup em 375 deixa o texto a cerca de 10 pt da
    borda) e o rótulo fica centrado em cada linha. Sem o teto, o ícone ia a cerca de 62 pt; com o recuo de 20, "construção",

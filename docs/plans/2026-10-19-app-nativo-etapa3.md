@@ -8687,6 +8687,7 @@ A linha "A pagar · 30 dias" dos indicadores da obra vira um botão inteiro, com
 - **As peças da lista são filhas diretas da `LazyVStack`.** O cabeçalho do mês e cada gasto são peças soltas, com o fundo do grupo desenhado por peça (`FundoDoGrupo(cima:baixo:)`): a pilha preguiçosa só fatia filhos diretos, e o detalhe do tópico, que usa a mesma lista na fase 2, passa de cem gastos numa obra grande. Uma guarda Node fixa isso.
 - **O secundário da folha.** Dentro da folha (`EnvironmentValues.dentroDaFolha`), o cabeçalho do mês e a linha de gasto usam o secundário da folha, e não o do vidro.
 - **O × se chama "Fechar".** É o `Button(role: .close)`; o teste confere que só o `fecharFolha` tem esse nome.
+- **A etiqueta com as quinas de uma linha.** Com a seta, a etiqueta da linha quebra em duas na maior letra ("nada em" / "30 dias", na obra pronta), e a cápsula da altura toda comia o canto do texto: o "30" ficava em 4,31:1 no laudo da parte 3 do Pro Max, que a CI do 18 Pro não roda. O fundo da `EtiquetaDoIndicador` passa a ter o raio da cápsula de uma linha (a linha da footnote por `@ScaledMetric`, mais os 3 + 3 do recuo): numa linha continua a cápsula do mockup, e em duas as quinas não chegam ao texto. O `EtiquetaDoIndicadorTests` mede os cantos do texto na maior letra, para a CI pegar. (Errata de 24/10: a Lupa achou a quina no Pro Max, com o PR pronto.)
 - **A suíte nova roda no `app-etapa3`.** O `FolhasDeOrigemUITests` entra no `-only-testing` do `app-etapa3` e no `-skip-testing` do `app`: com ela, o `app` chegaria ao teto de 90 min numa VM lenta (no run 39799242127, ela levou 23,0 min, e o `app` sem ela, 67). No run 39813469497 (iOS 26, o PR 1 e esta fase), o `app` levou 42 min com as mesmas suítes, e o `app-etapa3`, 58,8 numa VM lenta (≈ 51 no 39799242127): cada job pega a sua VM, e o teto do `app-etapa3` vai pela mais lenta, de 60 a 90, como o do `app`. Ele não cresce mais: as suítes de tela do PR 3 vão para um job novo.
 
 **Files:**
@@ -8699,6 +8700,7 @@ A linha "A pagar · 30 dias" dos indicadores da obra vira um botão inteiro, com
 - Modify: `app-ios/Custta/Telas/ObraView.swift`
 - Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
 - Modify: `app-ios/Custta/Telas/PrincipalView.swift`
+- Test (alterar): `app-ios/CusttaTests/ComponentesTests.swift`
 - Test (alterar): `tests/app-ios.test.cjs`
 
 **Interfaces:**
@@ -8706,6 +8708,50 @@ A linha "A pagar · 30 dias" dos indicadores da obra vira um botão inteiro, com
 - Produces: `Folhas.Qual.aPagar(obraId:)` e o gancho `CUSTTA_FOLHA=aPagar:<id>`; `FolhaDoAPagar(obraId:)`; `PecaDaOrigem` (`tipo`: `.mes(MesDeGastos)` ou `.gasto(Gasto)`; `primeiro`, `ultimo`, `id`) e `pecasDaOrigem(_:)`; `FundoDoGrupo(cima:baixo:)`; `IndicadoresDaObraView(indicadores:orcamento:rotaDoOrcamento:abrirAPagar:)`, com o fecho por último; `EnvironmentValues.dentroDaFolha`; identificadores `indicadorAPagar` (agora botão), `resumoDoAPagar`, `aPagarVazio` e `ponteDoAPagar`.
 
 - [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/ComponentesTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/ComponentesTests.swift
++++ b/app-ios/CusttaTests/ComponentesTests.swift
+@@ -76,6 +76,36 @@ struct EtiquetaNovoTests {
+     }
+ }
+ 
++/* A etiqueta dos indicadores (PecasDaObra) na maior letra quebra em duas linhas, e o fundo fica com as quinas da cápsula de
++   uma linha. Com a cápsula da altura toda, a quina comia o canto do texto: o "30" de "nada em 30 dias" saía do fundo na AX5
++   do Pro Max (4,31:1 no laudo da parte 3), e o 18 Pro da CI não via. No ImageRenderer em escala 1; os 200 pt quebram a
++   etiqueta como na linha do A pagar do Pro Max ("nada em" / "30 dias"). */
++@MainActor
++struct EtiquetaDoIndicadorTests {
++    @Test func emDuasLinhasOCantoDoTextoFicaNoFundo() throws {
++        let r = ImageRenderer(content: EtiquetaDoIndicador(texto: "nada em 30 dias", cor: .alerta)
++            .environment(\.paleta, Paleta()).environment(\.colorScheme, .dark).environment(\.dynamicTypeSize, .accessibility5))
++        r.scale = 1
++        r.proposedSize = ProposedViewSize(width: 200, height: nil)
++        let imagem = try #require(r.cgImage)
++        let (w, h) = (imagem.width, imagem.height)
++        try #require(h > 80, "a etiqueta quebra em duas linhas: \(w) × \(h)")
++        var rgba = [UInt8](repeating: 0, count: w * h * 4)
++        rgba.withUnsafeMutableBytes { bytes in
++            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
++                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
++                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
++        }
++        let pixel = { (x: Int, y: Int) in (0..<4).map { Int(rgba[(y * w + x) * 4 + $0]) } }
++        // O fundo na meia altura, no recuo da esquerda. Os cantos do texto (a primeira letra de cada linha, a 14 pt da borda)
++        // a 9 pt do alto e do pé, entre a letra e a borda: com a cápsula da altura toda, os dois ficavam fora do fundo.
++        let fundo = pixel(4, h / 2)
++        #expect(fundo == [0x33, 0x26, 0x0F, 0xFF], "a AlertaFundo do escuro: \(fundo)")
++        #expect(pixel(14, 9) == fundo, "o canto de cima do texto no fundo: \(pixel(14, 9))")
++        #expect(pixel(14, h - 9) == fundo, "o canto de baixo do texto no fundo: \(pixel(14, h - 9))")
++    }
++}
++
+ /* As ações da fase na maior letra (quadro "Ações da fase" do mockup da parte 3, AX5): o ícone para nos 34 pt do mockup,
+    o recuo interno cai de 20 para 10 nos tamanhos de acessibilidade (o mockup em 375 deixa o texto a cerca de 10 pt da
+    borda) e o rótulo fica centrado em cada linha. Sem o teto, o ícone ia a cerca de 62 pt; com o recuo de 20, "construção",
+```
 
 Criar `app-ios/CusttaTests/FolhasDeOrigemTests.swift`:
 
@@ -9177,7 +9223,25 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
 ```diff
 --- a/app-ios/Custta/Telas/PecasDaObra.swift
 +++ b/app-ios/Custta/Telas/PecasDaObra.swift
-@@ -76,13 +76,15 @@ struct EtiquetaDoIndicador: View {
+@@ -57,6 +57,11 @@ struct EtiquetaDoIndicador: View {
+     let texto: String
+     let cor: Cor
+     @Environment(\.paleta) private var paleta
++    /// Um pouco mais que a linha da footnote (15,67 pt na letra padrão), crescendo com a letra. O raio do fundo é a metade
++    /// da etiqueta de uma linha (a linha e os 3 + 3 do recuo): numa linha ele passa da metade da altura e o fundo é a cápsula
++    /// do mockup; quando a etiqueta quebra em duas na letra grande, as quinas continuam as de uma linha. Com a cápsula da
++    /// altura toda, a quina comia o canto do texto: o "30" de "nada em 30 dias" saía do fundo na AX5 do Pro Max.
++    @ScaledMetric(relativeTo: .footnote) private var linha: CGFloat = 16
+ 
+     var body: some View {
+         let (frente, fundo): (Token, Token) = switch cor {
+@@ -71,18 +76,20 @@ struct EtiquetaDoIndicador: View {
+             .fixedSize(horizontal: false, vertical: true)    // na letra grande, quebra em vez de cortar
+             .padding(.horizontal, 10)
+             .padding(.vertical, 3)
+-            .background(paleta.cor(fundo), in: .capsule)
++            .background(paleta.cor(fundo), in: .rect(cornerRadius: (linha + 6) / 2))
+     }
  }
  
  /// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
@@ -9195,7 +9259,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
      @Environment(\.paleta) private var paleta
      @Environment(\.vidro) private var vidro
  
-@@ -107,10 +109,7 @@ struct IndicadoresDaObraView: View {
+@@ -107,10 +114,7 @@ struct IndicadoresDaObraView: View {
                  linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
                        identificador: "indicadorCorrigido")
                  LinhaFina().padding(.leading, 18)
@@ -9207,7 +9271,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
                  LinhaFina().padding(.leading, 18)
                  venda
              }
-@@ -118,6 +117,26 @@ struct IndicadoresDaObraView: View {
+@@ -118,6 +122,26 @@ struct IndicadoresDaObraView: View {
          }
      }
  
@@ -9234,7 +9298,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
      private var heroi: some View {
          VStack(alignment: .leading, spacing: 6) {
              ViewThatFits(in: .horizontal) {
-@@ -161,9 +180,17 @@ struct IndicadoresDaObraView: View {
+@@ -161,9 +185,17 @@ struct IndicadoresDaObraView: View {
          Text(texto).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
      }
  
@@ -9253,7 +9317,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
          VStack(alignment: .leading, spacing: 4) {
              ViewThatFits(in: .horizontal) {
                  HStack(alignment: .firstTextBaseline) {
-@@ -182,9 +209,6 @@ struct IndicadoresDaObraView: View {
+@@ -182,9 +214,6 @@ struct IndicadoresDaObraView: View {
                  .fixedSize(horizontal: false, vertical: true)
          }
          .frame(maxWidth: .infinity, alignment: .leading)
@@ -9263,7 +9327,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
      }
  }
  
-@@ -224,6 +248,7 @@ struct CabecalhoDoMes: View {
+@@ -224,6 +253,7 @@ struct CabecalhoDoMes: View {
      let mes: MesDeGastos
      @Environment(\.paleta) private var paleta
      @Environment(\.vidro) private var vidro
@@ -9271,7 +9335,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
  
      var body: some View {
          ViewThatFits(in: .horizontal) {
-@@ -231,16 +256,19 @@ struct CabecalhoDoMes: View {
+@@ -231,16 +261,19 @@ struct CabecalhoDoMes: View {
              VStack(alignment: .leading, spacing: 2) { titulo; total }
          }
          .font(.footnote.weight(.semibold))
@@ -9294,7 +9358,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
      }
  }
  
-@@ -302,6 +330,7 @@ struct LinhaDeGastoView: View {
+@@ -302,6 +335,7 @@ struct LinhaDeGastoView: View {
      @Environment(\.dynamicTypeSize) private var tamanho
      @Environment(\.colorScheme) private var esquema
      @Environment(\.displayScale) private var escala
@@ -9302,7 +9366,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
  
      var body: some View {
          Group {
-@@ -373,12 +402,15 @@ struct LinhaDeGastoView: View {
+@@ -373,12 +407,15 @@ struct LinhaDeGastoView: View {
          }
          partes.append(Text(linha.data))
          let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
@@ -9362,7 +9426,7 @@ node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
 ```
-Expected: `ℹ pass 52`, `ℹ fail 0`; sem aviso; `✔ Test run with 148 tests in 29 suites passed` (os 2 de `FolhasDeOrigemTests`, suíte nova); `FolhasDeOrigemUITests` 3 de 3 e `ObraUITests` 7 de 7; `** TEST EXECUTE SUCCEEDED **`.
+Expected: `ℹ pass 52`, `ℹ fail 0`; sem aviso; `✔ Test run with 149 tests in 30 suites passed` (os 2 de `FolhasDeOrigemTests` e o de `EtiquetaDoIndicadorTests`, suítes novas); `FolhasDeOrigemUITests` 3 de 3 e `ObraUITests` 7 de 7; `** TEST EXECUTE SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
@@ -9374,10 +9438,11 @@ git add .github/workflows/app-ios.yml \
   app-ios/Custta/Telas/ObraView.swift \
   app-ios/Custta/Telas/PecasDaObra.swift \
   app-ios/Custta/Telas/PrincipalView.swift \
+  app-ios/CusttaTests/ComponentesTests.swift \
   app-ios/CusttaTests/FolhasDeOrigemTests.swift \
   app-ios/CusttaUITests/FolhasDeOrigemUITests.swift \
   tests/app-ios.test.cjs
-git commit -m "feat: folha do A pagar pela seta do indicador" -m "A linha \"A pagar · 30 dias\" dos indicadores da obra passa a ser um botão inteiro, com a seta das linhas tocáveis, e abre a folha \"A pagar · 30 dias\" (o Folhas.Qual ganha o .aPagar), como no mockup aprovado da etapa 3 (parte 2, seção 1). A folha mostra num grupo sólido o total e o \"{N} vencimentos · a partir de amanhã\" do núcleo; os vencimentos vêm por mês, com a linha de gasto da etapa 2 e sem a etiqueta \"a vencer\", e no fim vem a frase do que fica depois dos 30 dias. Vazia, abre com \"Nenhum gasto previsto para esse período.\". Fecham o × e o puxar (o \"Fechar\" do site sai), e ela só fecha sozinha se a obra sumir." -m "As peças da lista (o cabeçalho do mês e cada gasto) são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça: a pilha só fatia filhos diretos, e o detalhe do tópico, que vai usar a mesma lista, passa de cem gastos. Uma guarda em Node fixa isso. Dentro da folha, o cabeçalho do mês e a linha de gasto usam o secundário da folha, e não o do vidro." -m "A suíte nova, FolhasDeOrigemUITests, roda no job app-etapa3, com os testes de tela da etapa 3, e o app a pula: com ela, o app chegaria ao teto de 90 min numa VM lenta (no run 39799242127, ela levou 23,0 min, e o app sem ela, 67). No run 39813469497, o app levou 42 min com as mesmas suítes, e o app-etapa3, 58,8 numa VM lenta (≈ 51 no 39799242127): cada job pega a sua VM, e o teto do app-etapa3 vai pela mais lenta, de 60 a 90, como o do app. Ele não cresce mais: as suítes de tela do PR 3 vão para um job novo."
+git commit -m "feat: folha do A pagar pela seta do indicador" -m "A linha \"A pagar · 30 dias\" dos indicadores da obra passa a ser um botão inteiro, com a seta das linhas tocáveis, e abre a folha \"A pagar · 30 dias\" (o Folhas.Qual ganha o .aPagar), como no mockup aprovado da etapa 3 (parte 2, seção 1). A folha mostra num grupo sólido o total e o \"{N} vencimentos · a partir de amanhã\" do núcleo; os vencimentos vêm por mês, com a linha de gasto da etapa 2 e sem a etiqueta \"a vencer\", e no fim vem a frase do que fica depois dos 30 dias. Vazia, abre com \"Nenhum gasto previsto para esse período.\". Fecham o × e o puxar (o \"Fechar\" do site sai), e ela só fecha sozinha se a obra sumir." -m "As peças da lista (o cabeçalho do mês e cada gasto) são filhas diretas da LazyVStack, com o fundo do grupo desenhado por peça: a pilha só fatia filhos diretos, e o detalhe do tópico, que vai usar a mesma lista, passa de cem gastos. Uma guarda em Node fixa isso. Dentro da folha, o cabeçalho do mês e a linha de gasto usam o secundário da folha, e não o do vidro." -m "Com a seta, a etiqueta da linha quebra em duas na maior letra, e a cápsula da altura toda comia o canto do texto: o \"30\" de \"nada em 30 dias\", na obra pronta, ficava em 4,31:1 no laudo do Pro Max, que a CI do 18 Pro não roda. O fundo da EtiquetaDoIndicador passa a ter o raio da cápsula de uma linha: numa linha continua a cápsula do mockup, e em duas as quinas não chegam ao texto. Um teste do CusttaTests mede os cantos do texto na maior letra, para a CI pegar." -m "A suíte nova, FolhasDeOrigemUITests, roda no job app-etapa3, com os testes de tela da etapa 3, e o app a pula: com ela, o app chegaria ao teto de 90 min numa VM lenta (no run 39799242127, ela levou 23,0 min, e o app sem ela, 67). No run 39813469497, o app levou 42 min com as mesmas suítes, e o app-etapa3, 58,8 numa VM lenta (≈ 51 no 39799242127): cada job pega a sua VM, e o teto do app-etapa3 vai pela mais lenta, de 60 a 90, como o do app. Ele não cresce mais: as suítes de tela do PR 3 vão para um job novo."
 ```
 
 ### Task 24: Edição empurrada na folha do A pagar, com a volta à origem
@@ -10891,7 +10956,7 @@ node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/GastoUITests -only-testing:CusttaUITests/FolhaDaObraUITests -only-testing:CusttaUITests/FasesUITests -only-testing:CusttaUITests/EstadosUITests -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
 ```
-Expected: `ℹ pass 53`, `ℹ fail 0`; sem aviso; `✔ Test run with 154 tests in 29 suites passed` (`FolhasDeOrigemTests` com 8); `FolhasDeOrigemUITests` 16 de 16 (os 3 da Tarefa 23 e os 13 novos), `GastoUITests` 24 de 24, `FolhaDaObraUITests` 15 de 15, `FasesUITests` 9 de 9, `EstadosUITests` 13 de 13 e `OrcamentoUITests` 29 de 29; `** TEST EXECUTE SUCCEEDED **`. São ~31 min no Mac.
+Expected: `ℹ pass 53`, `ℹ fail 0`; sem aviso; `✔ Test run with 155 tests in 30 suites passed` (`FolhasDeOrigemTests` com 8); `FolhasDeOrigemUITests` 16 de 16 (os 3 da Tarefa 23 e os 13 novos), `GastoUITests` 24 de 24, `FolhaDaObraUITests` 15 de 15, `FasesUITests` 9 de 9, `EstadosUITests` 13 de 13 e `OrcamentoUITests` 29 de 29; `** TEST EXECUTE SUCCEEDED **`. São ~31 min no Mac.
 
 - [ ] **Step 5: Commit**
 
@@ -11563,7 +11628,7 @@ node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/GastoUITests -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
 ```
-Expected: `ℹ pass 54`, `ℹ fail 0`; sem aviso; `✔ Test run with 156 tests in 29 suites passed` (`FolhasDeOrigemTests` com 10); `FolhasDeOrigemUITests` 24 de 24 (os 8 novos) e `GastoUITests` 24 de 24; `** TEST EXECUTE SUCCEEDED **`.
+Expected: `ℹ pass 54`, `ℹ fail 0`; sem aviso; `✔ Test run with 157 tests in 30 suites passed` (`FolhasDeOrigemTests` com 10); `FolhasDeOrigemUITests` 24 de 24 (os 8 novos) e `GastoUITests` 24 de 24; `** TEST EXECUTE SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
@@ -11842,7 +11907,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
 ```diff
 --- a/app-ios/Custta/Telas/PecasDaObra.swift
 +++ b/app-ios/Custta/Telas/PecasDaObra.swift
-@@ -87,6 +87,7 @@ struct IndicadoresDaObraView: View {
+@@ -92,6 +92,7 @@ struct IndicadoresDaObraView: View {
      let abrirAPagar: () -> Void
      @Environment(\.paleta) private var paleta
      @Environment(\.vidro) private var vidro
@@ -11850,7 +11915,7 @@ Em `app-ios/Custta/Telas/PecasDaObra.swift`:
  
      /// "N lançamentos" na marca; "sem gastos" neutra, como o chip cinza do mockup.
      private var corDoTotal: EtiquetaDoIndicador.Cor { indicadores.etiquetaDoTotal == "sem gastos" ? .neutro : .marca }
-@@ -126,6 +127,9 @@ struct IndicadoresDaObraView: View {
+@@ -131,6 +132,9 @@ struct IndicadoresDaObraView: View {
                        nota: "Parcelas e gastos futuros", corDaNota: nil)
                  Image(systemName: "chevron.right")
                      .font(.body.weight(.semibold))
@@ -11891,7 +11956,7 @@ xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUI
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/OrcamentoUITests -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra -only-testing:CusttaTests 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/FolhasDeOrigemUITests -only-testing:CusttaUITests/AuditoriaUITests/testObraNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaObraNosDoisTemas -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObra -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraRolando 2>&1 | grep -E -A1 "Test run with|Test Suite '[A-Za-z]+UITests' (passed|failed)|TEST EXECUTE" | grep -E "Test run with|Test Suite|Executed|TEST EXECUTE"
 ```
-Expected: `ℹ pass 55`, `ℹ fail 0`; sem aviso. Na primeira rodada, `✔ Test run with 156 tests in 29 suites passed`, `OrcamentoUITests` 29 de 29 (com os 2 `testTocarUmaLinhaDeBaixo…` no alvo novo), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2. Na segunda, a do chevron do A pagar: `ObraUITests` 7 de 7, `FolhasDeOrigemUITests` 24 de 24, `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2. `** TEST EXECUTE SUCCEEDED **` nas duas, ~19 min cada no Mac.
+Expected: `ℹ pass 55`, `ℹ fail 0`; sem aviso. Na primeira rodada, `✔ Test run with 157 tests in 30 suites passed`, `OrcamentoUITests` 29 de 29 (com os 2 `testTocarUmaLinhaDeBaixo…` no alvo novo), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2. Na segunda, a do chevron do A pagar: `ObraUITests` 7 de 7, `FolhasDeOrigemUITests` 24 de 24, `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2. `** TEST EXECUTE SUCCEEDED **` nas duas, ~19 min cada no Mac.
 
 - [ ] **Step 5: Commit**
 
@@ -12111,7 +12176,7 @@ xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -onl
 Expected:
 - `ℹ pass 55`, `ℹ fail 0`;
 - sem aviso;
-- `✔ Test run with 156 tests in 29 suites passed`;
+- `✔ Test run with 157 tests in 30 suites passed`;
 - `OrcamentoUITests` 29 de 29, `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2;
 - `** TEST EXECUTE SUCCEEDED **`.
 
@@ -12125,7 +12190,7 @@ git add app-ios/Custta/Telas/FolhaDoOrcamento.swift \
 git commit -m "fix: folga do cursor do valor como no mockup" -m "O cursor do valor na folha do orçamento, na linha do tópico ativa e no \"Só o total\", ficava a 3 pt de tinta do último dígito, quase encostado, e no \"Só o total\" descia 1,8 pt abaixo do meio do número. A meta sai do CSS do mockup, medido por pixel no Chromium a 1× (parte1.html): o \`.caret\` é um item do \`.d\`, que é flex com \`gap: 8px\` e \`align-items: center\`, e soma a margem de 2 dele. A tinta do cursor fica a 11 pt do último dígito no \"Só o total\" e a 10 pt na linha do tópico (a letra -0,024em da linha encurta o respiro do dígito), tem 2 pt de largura, 1,15em de altura no em de 17 da linha (19,5 pt, também no \"Só o total\", onde o valor tem 22) e fica centrada no valor." -m "Os dois HStack passam a ter 10 e 9 pt de espaço, alinhados ao centro, e o cursor perde a guia da linha de base e fica com 17 × 1,15 pt de altura, que cresce com a letra. No 18 Pro, escuro e letra padrão, a folga de 3 pt foi para 11 no \"Só o total\" e 10 na linha do tópico, a largura seguiu 2, a altura foi de 20 para 19,7, e o meio do cursor contra o do último dígito foi de +1,8 para 0 no \"Só o total\" (-0,5 no mockup) e ficou em 0 na linha do tópico (+0,5 no mockup)." -m "O testDefinirPorTotal e o testDefinirPorTopicoComAsSetas medem o cursor por tinta, como a largura da barra da linha do orçamento, e tiram outro print enquanto ele está apagado, porque pisca. Só a folha do orçamento usa a peça: o CursorDaLinha é privado dela."
 ```
 
-**Ponto de controle da fase 1 do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim da fase, o núcleo com 224 testes, o `CusttaTests` com 156 em 29 suítes e, no `app-etapa3`, o `FolhasDeOrigemUITests` com 24 e o `OrcamentoUITests` com 29). No Mac, além das suítes das tarefas, as telas da etapa 2 que a fase toca: `GastoUITests` (24), `FolhaDaObraUITests` (15), `FasesUITests` (9), `ObraUITests` (7) e `EstadosUITests` (13); as auditorias `testObraNoMaiorTamanho`, `testContrasteDaObraNosDoisTemas`, `testFolhaDoGastoNoMaiorTamanho`, `testContrasteDaFolhaNosDoisTemas`, `testParte3NoMaiorTamanho` e `testContrasteDaParte3NosDoisTemas`; e as leituras `testLeituraDaObra`, `testLeituraDaObraRolando`, `testLeituraDaObraVendida`, `testLeituraDaFolhaDoGasto`, `testLeituraDaParte3`, `testLeituraDaParte3NaMaiorLetra` e `testLeituraDoAlertaDeNaoSalvou`. Um "Audit failed to complete in time" (−56) numa auditoria é o tempo da máquina, com outros simuladores rodando: roda-se de novo só ela. A fase 1 não tem leitura nem auditoria própria; as do A pagar e do detalhe do tópico entram no `laudo-etapa3` na fase 2. As tarefas 22 a 25 já rodaram na CI do iOS 26 sobre as fatias do PR 1, com os mesmos patches (run 39813469497, verde 7/7, com o `app` em 42 min e o `app-etapa3` em 58,8, os dois com teto de 90). Elas provaram o que o Mac não tem: os alertas presos no passo empurrado e o "Não salvou" de dentro da folha; a trava do puxar fora da pilha; o voltar escondido, o chevron próprio e a borda que pergunta, sem acionar o botão de baixo nem atrapalhar a rolagem; o rótulo do voltar do sistema ("A pagar · 30 dias", `BackButton`); a rolagem mínima da lista preguiçosa até a linha que mudou de lugar; e o arrastar dentro da folha. No run de antes (39799242127), a volta pela borda falhou uma vez na edição do A pagar e ganhou a segunda tentativa do PR 1 (Tarefa 24). Na base nova, a fase rodou no run 40004450489 (iOS 26, com a Tarefa 26 ainda sem o teste das teclas encaixadas): o `nucleo`, o `app-etapa3` (com o `OrcamentoUITests` e o `FolhasDeOrigemUITests`), o `laudo` e o `laudo-etapa3` passaram; o `app` reprovou só o `TecladoEncaixadoTests` (o 304 da Tarefa 26); o `laudo-parte3` caiu no `testContrasteDaParte3NosDoisTemas` por tempo, com a folha "Nova obra" já aberta e cada busca do `nomeDaObra` levando de 9 a 31 s, e passou na segunda tentativa; e o `auditoria` nem começou, porque o download dos binários do Firebase (`dl.google.com`) estourou o tempo. Nesses dois casos, roda-se de novo só o job. Com a Tarefa 27 por cima (run 40028239612, com a 26 ainda sem o chevron do A pagar), foi verde 7/7, e o cursor confere por pixel também no iOS 26. A fase 1 final, com o chevron do A pagar na 26, também foi verde 7/7 (run 40036484661, com o `app` em 59 min e o `app-etapa3` em 51). No meio, o run 40019534025, com o mesmo código da 26, reprovou no `app-etapa3` dois testes de rolagem na maior letra, que passaram nos outros dois runs:
+**Ponto de controle da fase 1 do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`; no fim da fase, o núcleo com 224 testes, o `CusttaTests` com 157 em 30 suítes e, no `app-etapa3`, o `FolhasDeOrigemUITests` com 24 e o `OrcamentoUITests` com 29). No Mac, além das suítes das tarefas, as telas da etapa 2 que a fase toca: `GastoUITests` (24), `FolhaDaObraUITests` (15), `FasesUITests` (9), `ObraUITests` (7) e `EstadosUITests` (13); as auditorias `testObraNoMaiorTamanho`, `testContrasteDaObraNosDoisTemas`, `testFolhaDoGastoNoMaiorTamanho`, `testContrasteDaFolhaNosDoisTemas`, `testParte3NoMaiorTamanho` e `testContrasteDaParte3NosDoisTemas`; e as leituras `testLeituraDaObra`, `testLeituraDaObraRolando`, `testLeituraDaObraVendida`, `testLeituraDaFolhaDoGasto`, `testLeituraDaParte3`, `testLeituraDaParte3NaMaiorLetra` e `testLeituraDoAlertaDeNaoSalvou`. Um "Audit failed to complete in time" (−56) numa auditoria é o tempo da máquina, com outros simuladores rodando: roda-se de novo só ela. A fase 1 não tem leitura nem auditoria própria; as do A pagar e do detalhe do tópico entram no `laudo-etapa3` na fase 2. As tarefas 22 a 25 já rodaram na CI do iOS 26 sobre as fatias do PR 1, com os mesmos patches (run 39813469497, verde 7/7, com o `app` em 42 min e o `app-etapa3` em 58,8, os dois com teto de 90). Elas provaram o que o Mac não tem: os alertas presos no passo empurrado e o "Não salvou" de dentro da folha; a trava do puxar fora da pilha; o voltar escondido, o chevron próprio e a borda que pergunta, sem acionar o botão de baixo nem atrapalhar a rolagem; o rótulo do voltar do sistema ("A pagar · 30 dias", `BackButton`); a rolagem mínima da lista preguiçosa até a linha que mudou de lugar; e o arrastar dentro da folha. No run de antes (39799242127), a volta pela borda falhou uma vez na edição do A pagar e ganhou a segunda tentativa do PR 1 (Tarefa 24). Na base nova, a fase rodou no run 40004450489 (iOS 26, com a Tarefa 26 ainda sem o teste das teclas encaixadas): o `nucleo`, o `app-etapa3` (com o `OrcamentoUITests` e o `FolhasDeOrigemUITests`), o `laudo` e o `laudo-etapa3` passaram; o `app` reprovou só o `TecladoEncaixadoTests` (o 304 da Tarefa 26); o `laudo-parte3` caiu no `testContrasteDaParte3NosDoisTemas` por tempo, com a folha "Nova obra" já aberta e cada busca do `nomeDaObra` levando de 9 a 31 s, e passou na segunda tentativa; e o `auditoria` nem começou, porque o download dos binários do Firebase (`dl.google.com`) estourou o tempo. Nesses dois casos, roda-se de novo só o job. Com a Tarefa 27 por cima (run 40028239612, com a 26 ainda sem o chevron do A pagar), foi verde 7/7, e o cursor confere por pixel também no iOS 26. A fase 1 final, com o chevron do A pagar na 26, também foi verde 7/7 (run 40036484661, com o `app` em 59 min e o `app-etapa3` em 51). No meio, o run 40019534025, com o mesmo código da 26, reprovou no `app-etapa3` dois testes de rolagem na maior letra, que passaram nos outros dois runs:
 - a varredura das 71 linhas, com todas centradas como se as teclas não estivessem lá;
 - o `testNaMaiorLetraALinhaQueVaiParaOFimFicaAVista`.
 Os dois estão em diagnóstico; por ora, roda-se de novo o job. O Verniz confere a folha do A pagar, a edição empurrada e o apagar lado a lado com o mockup (parte 2, seção 1), nos dois temas e na maior letra.
@@ -12822,7 +12887,7 @@ xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -onl
 Expected:
 - `ℹ pass 56`, `ℹ fail 0`;
 - sem aviso;
-- `✔ Test run with 156 tests in 29 suites passed`, com os 10 de sempre do `FolhasDeOrigemTests`;
+- `✔ Test run with 157 tests in 30 suites passed`, com os 10 de sempre do `FolhasDeOrigemTests`;
 - `FolhasDeOrigemUITests` 24 de 24 e `ObraUITests` 7 de 7;
 - `** TEST EXECUTE SUCCEEDED **`, em ~12 min no Mac;
 - os prints do A pagar iguais aos do commit anterior dentro da folha.
@@ -13752,7 +13817,7 @@ Expected:
 - `ℹ pass 56`, `ℹ fail 0`;
 - `ok - Actions com SHA imutável e permissão mínima; …`;
 - sem aviso;
-- `✔ Test run with 159 tests in 30 suites passed`, com o `DetalheDoTopicoTests`, suíte nova, com 3;
+- `✔ Test run with 160 tests in 31 suites passed`, com o `DetalheDoTopicoTests`, suíte nova, com 3;
 - `DetalheDoTopicoUITests` 4 de 4, `FolhasDeOrigemUITests` 24 de 24 (o A pagar sobre a peça nova) e `OrcamentoUITests` 29 de 29;
 - `** TEST EXECUTE SUCCEEDED **`, em ~20 min no Mac (a suíte nova leva ~1 min).
 
@@ -14316,7 +14381,7 @@ xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -onl
 Expected:
 - `ℹ pass 57`, `ℹ fail 0`;
 - sem aviso;
-- `✔ Test run with 161 tests in 30 suites passed` (novos: o `abreODetalheNasTresListas` e o `linhasComASetaCabemEm375`);
+- `✔ Test run with 162 tests in 31 suites passed` (novos: o `abreODetalheNasTresListas` e o `linhasComASetaCabemEm375`);
 - `DetalheDoTopicoUITests` 7 de 7, `OrcamentoUITests` 29 de 29 (as linhas com gasto, agora botões), `AuditoriaUITests` 2 de 2 e `LeituraNoVidroUITests` 2 de 2;
 - `** TEST EXECUTE SUCCEEDED **`, em ~20 min no Mac.
 
@@ -14774,7 +14839,7 @@ xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -onl
 Expected:
 - `ℹ pass 58`, `ℹ fail 0`;
 - sem aviso;
-- `✔ Test run with 161 tests in 30 suites passed`;
+- `✔ Test run with 162 tests in 31 suites passed`;
 - `DetalheDoTopicoUITests` 15 de 15 e `FolhasDeOrigemUITests` 24 de 24 (o A pagar não muda);
 - `** TEST EXECUTE SUCCEEDED **`, em ~15 min no Mac;
 - a lista longa passa as 3, em ~33 s cada.
@@ -15744,7 +15809,7 @@ Expected:
 - `ℹ pass 59`, `ℹ fail 0`.
 - O `CruzadoUITests` passa, com `✔ Test appSegueOsRoteirosDoSite() passed` e `ok - site e app na mesma conta: … passo a passo no orçamento e nas folhas, sem perder nada`, em ~1,5 min no Mac.
 - Sem aviso.
-- `✔ Test run with 161 tests in 30 suites passed`, o `DetalheDoTopicoUITests` 16 de 16 (~314 s) e `** TEST EXECUTE SUCCEEDED **`, em ~6 min.
+- `✔ Test run with 162 tests in 31 suites passed`, o `DetalheDoTopicoUITests` 16 de 16 (~314 s) e `** TEST EXECUTE SUCCEEDED **`, em ~6 min.
 - O 9º passa as 3 vezes, em ~25 s cada.
 
 Na CI do iOS 26 (o run 40125911713, do #85 com as Tarefas 22 a 35, que tem a árvore das fatias), o 9º passa em 44 s: a folha desce com o alerta também lá. No mesmo `app-etapa3-b`, com os 16 testes até o fim, caiu o `testApagarACompraTodaQueEsvaziaOTopicoDesceAFolha` (Tarefa 32) por toque perdido do iOS 26: o "Apagar gasto" acende e volta, e o alerta não vem. O app e esse teste são os do run 40108043199, onde ele passou. A prova final é o run do último push do #85.
@@ -15964,4 +16029,4 @@ git add .github/workflows/app-ios.yml \
 git commit -m "docs: checklist do aparelho do PR 2 e os tempos da CI" -m "O checklist do aparelho da etapa 3 ganha a seção do PR 2. Ela começa com cinco itens do PR 1 reescritos para este build: as linhas de tópico, que agora abrem o detalhe, e o que tira dado, numa obra de teste. Depois, o A pagar e o detalhe do tópico são conferidos sem gravar; o que grava, troca de tópico e apaga vai para uma obra de teste criada no app e apagada no fim, como pede o spec, com o foco do VoiceOver e os anúncios que o XCUITest não lê. Seguem a maior letra, com o topo das duas folhas que a auditoria não vê, e a acessibilidade. A seção do PR 1 não muda." -m "Os comentários do app-ios.yml ganham os tempos do run 40125911713, com o PR 2 inteiro. O laudo-etapa3 foi a 52 min, com teto de 60, e fica assim até o PR 3, que abre o laudo-etapa3-b com as três da Tarefa 34."
 ```
 
-**Ponto de controle do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `app-etapa3-b`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`). No fim do PR, o núcleo tem 226 testes e o `CusttaTests`, 161 em 30 suítes; o `FolhasDeOrigemUITests` tem 24, o `OrcamentoUITests` 29 e o `DetalheDoTopicoUITests` 16. No Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` ficam verdes, e as leituras das folhas de origem passam também no Pro Max. O Verniz confere o detalhe do tópico lado a lado com o mockup (o `folhaTopico`, parte 1), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 2" do checklist. Na CI do iOS 26, a fase 2 rodou nos runs 40050588953 (Tarefas 29 e 30), 40108043199 (31 a 33) e 40125911713 (o #85, com as Tarefas 22 a 35). As quedas foram de tempo, de toque ou de auditoria da VM, e a linha de CI de cada tarefa diz o que cada run provou. A prova final é o run do último push do #85, com a Tarefa 36. Antes dela, o #85 leva o commit dos menores (`a40da2c`, fora das fatias): os achados menores das revisões das Tarefas 22 a 31 e dois pedidos depois da CI do iOS 26, o nome curto das entradas no Controle por Voz e a espera de 10 s (eram 5) pela folha no `abrirAPagar` e no `abrirPelaLinha`. E recebe por merge a main de 24/10, com o #84 e o PR 1 do checklist marcado.
+**Ponto de controle do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `app-etapa3-b`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`). No fim do PR, o núcleo tem 226 testes e o `CusttaTests`, 162 em 31 suítes; o `FolhasDeOrigemUITests` tem 24, o `OrcamentoUITests` 29 e o `DetalheDoTopicoUITests` 16. No Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` ficam verdes, e, no Pro Max, que a CI não roda, passam as leituras das folhas de origem e o laudo da parte 3 (foi nele que a quina da etiqueta da Tarefa 23 apareceu). O Verniz confere o detalhe do tópico lado a lado com o mockup (o `folhaTopico`, parte 1), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 2" do checklist. Na CI do iOS 26, a fase 2 rodou nos runs 40050588953 (Tarefas 29 e 30), 40108043199 (31 a 33) e 40125911713 (o #85, com as Tarefas 22 a 35). As quedas foram de tempo, de toque ou de auditoria da VM, e a linha de CI de cada tarefa diz o que cada run provou. A prova final é o run do último push do #85, com a Tarefa 36. Antes dela, o #85 leva o commit dos menores (`a40da2c`, fora das fatias): os achados menores das revisões das Tarefas 22 a 31 e dois pedidos depois da CI do iOS 26, o nome curto das entradas no Controle por Voz e a espera de 10 s (eram 5) pela folha no `abrirAPagar` e no `abrirPelaLinha`. E recebe por merge a main de 24/10, com o #84 e o PR 1 do checklist marcado. Por último vem o conserto da etiqueta (`8799134`), que no plano está na Tarefa 23.

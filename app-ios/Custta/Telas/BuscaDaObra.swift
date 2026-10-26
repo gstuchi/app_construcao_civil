@@ -132,56 +132,80 @@ struct MenuDoMes: View {
     let busca: BuscaDaObra
     let meses: [MesDoFiltro]
 
+    @State private var pendente: String?
+    @State private var dialogo = false
+
     var body: some View {
-        Menu {
-            if Sonda215.picker {
-                Picker("Mês", selection: Binding(get: { busca.mes }, set: { escolher($0) })) {
-                    Text("Todos os meses").tag("")
-                    ForEach(meses, id: \.mes) { m in Text(tituloDoMes(m.mes)).tag(m.mes) }
+        if Sonda215.pedido == "dialogo" {
+            Button { dialogo = true } label: { rotulo }
+                .buttonStyle(.plain)
+                .acessibilidadeDoMes(busca)
+                .confirmationDialog("Filtrar por mês", isPresented: $dialogo) {
+                    Button("Todos os meses") { busca.mes = "" }
+                    ForEach(meses, id: \.mes) { m in Button(tituloDoMes(m.mes)) { busca.mes = m.mes } }
                 }
-                .pickerStyle(.inline)
-            } else {
-                item("", titulo: "Todos os meses", subtitulo: nil)
-                Section {
-                    ForEach(meses, id: \.mes) { m in
-                        item(m.mes, titulo: tituloDoMes(m.mes), subtitulo: m.qtd == 1 ? "1 gasto" : "\(m.qtd) gastos")
+        } else {
+            Menu {
+                Group {
+                    item("", titulo: "Todos os meses", subtitulo: nil)
+                    Section {
+                        ForEach(meses, id: \.mes) { m in
+                            item(m.mes, titulo: tituloDoMes(m.mes), subtitulo: m.qtd == 1 ? "1 gasto" : "\(m.qtd) gastos")
+                        }
                     }
                 }
+                .onDisappear {
+                    guard let mes = pendente else { return }
+                    pendente = nil
+                    busca.mes = mes
+                }
+            } label: {
+                rotulo
             }
-        } label: {
-            CirculoDaLista(icone: .catalogo("Icones/calendario"), aceso: !busca.mes.isEmpty)
+            .buttonStyle(.plain)
+            .acessibilidadeDoMes(busca)
+            .id(Sonda215.pedido == "id" ? busca.mes : "")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Filtrar por mês")
-        .accessibilityValue(busca.mes.isEmpty ? "Todos os meses" : tituloDoMes(busca.mes))
-        .accessibilityIdentifier("filtrarPorMes")
-        .task {
-            guard Sonda215.direto else { return }
-            try? await Task.sleep(for: .seconds(3))
-            busca.mes = "2023-06"
-        }
+    }
+
+    private var rotulo: some View {
+        CirculoDaLista(icone: .catalogo("Icones/calendario"), aceso: !busca.mes.isEmpty)
     }
 
     /// Tocar no escolhido não o tira: escolhe de novo o mesmo (tirar é o × do chip ou "Todos os meses").
     private func item(_ mes: String, titulo: String, subtitulo: String?) -> some View {
         Toggle(isOn: Binding(get: { busca.mes == mes }, set: { _ in escolher(mes) })) {
             Text(titulo)
-            if let subtitulo, !Sonda215.semSubtitulo { Text(subtitulo) }
+            if let subtitulo { Text(subtitulo) }
         }
     }
 
     private func escolher(_ mes: String) {
-        guard Sonda215.adiado else { busca.mes = mes; return }
-        Task {
-            try? await Task.sleep(for: .milliseconds(600))
-            busca.mes = mes
+        switch Sonda215.pedido {
+        case "semMudanca": return
+        case "aoFechar": pendente = mes
+        case "adiado2":
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                busca.mes = mes
+            }
+        default: busca.mes = mes
         }
     }
 }
 
-/// Sonda temporária da :215 no iOS 26 (sai depois do run): `-custta.sonda215` com `adiado` (o mês muda 0,6 s depois do
-/// toque, com o menu já fechado), `semSubtitulo` (os itens sem a contagem), `picker` (um `Picker` dentro do `Menu`) ou
-/// `direto` (sem menu: o mês muda 3 s depois de o botão aparecer). Com `nenhum`, ou sem o argumento (e em Release), nada muda.
+private extension View {
+    func acessibilidadeDoMes(_ busca: BuscaDaObra) -> some View {
+        accessibilityLabel("Filtrar por mês")
+            .accessibilityValue(busca.mes.isEmpty ? "Todos os meses" : tituloDoMes(busca.mes))
+            .accessibilityIdentifier("filtrarPorMes")
+    }
+}
+
+/// Sonda temporária da :215 no iOS 26, 2ª rodada (sai depois do run): `-custta.sonda215` com `semMudanca` (o item não muda
+/// o mês), `aoFechar` (o mês muda no `onDisappear` do conteúdo do menu), `id` (o `Menu` refeito a cada mês), `adiado2` (o mês
+/// muda 2 s depois do toque) ou `dialogo` (um `confirmationDialog` no lugar do `Menu`). Com `nenhum`, ou sem o argumento (e
+/// em Release), nada muda.
 @MainActor
 enum Sonda215 {
     #if DEBUG
@@ -189,10 +213,6 @@ enum Sonda215 {
     #else
     static let pedido = ""
     #endif
-    static var adiado: Bool { pedido == "adiado" }
-    static var semSubtitulo: Bool { pedido == "semSubtitulo" }
-    static var picker: Bool { pedido == "picker" }
-    static var direto: Bool { pedido == "direto" }
 }
 
 /// O campo da busca, embaixo da pílula: vidro do conteúdo em cápsula, a lupa, o texto e o × que apaga o texto; ao lado, o

@@ -296,4 +296,69 @@ final class BuscaUITests: XCTestCase {
         XCTAssertTrue(campo.waitForNonExistence(timeout: 5), "a lupa, que virou ×, fecha a busca")
         XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
     }
+
+    /// Sonda temporária do :59 no iOS 26, que sai depois do run: os passos do testBuscarSemAcentoPeloTopicoEPelaDescricao até
+    /// a conferência da pílula, com o gancho `-custta.sonda59` nas quatro combinações (a: a rolagem fixa da obra só com o
+    /// `-custta.rolagem`; b: a lupa rola de novo até a pílula no `keyboardDidShow`), 3 vezes cada. Imprime no log, com o
+    /// prefixo "sonda-59 |", o minY da pílula na conferência do :59 (que pede < 200) e o que ajuda a ler o salto: o minY antes
+    /// do toque, quanto o teclado levou, o campo, o alto do teclado e a pílula 2 s depois. Não confere nada além de o campo
+    /// abrir (no `digitarComFoco`).
+    func testSondaDoPulo59() {
+        let n = { (y: CGFloat) in String(format: "%.1f", y) }
+        for combo in ["nenhum", "a", "b", "ab"] {
+            for i in 1...3 {
+                let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: ["-custta.sonda59", combo])
+                _ = app.elemento("tituloDaObra").waitForExistence(timeout: 10)
+                let pilula = app.elemento("lancamentos"), lupa = app.buttons["buscar"], campo = app.textFields["campoDaBusca"]
+                _ = pilula.label                              // a primeira consulta do :59 ("Lançamentos, 46")
+                app.rolarAte(lupa)
+                let antes = pilula.frame.minY
+                let toque = Date.now
+                lupa.tap()
+                let teclado = app.keyboards.firstMatch.waitForExistence(timeout: 5)
+                let ateOTeclado = Date.now.timeIntervalSince(toque)
+                app.digitarComFoco("ceramica", em: campo)
+                _ = campo.label                               // o rótulo do campo, conferido no :59 antes da pílula
+                let y = pilula.frame.minY
+                let quadro = campo.frame, alto = app.keyboards.firstMatch.frame.minY
+                sleep(2)
+                let depois = pilula.frame.minY
+                print("sonda-59 | \(combo) | \(i) | \(n(y)) | antes do toque \(n(antes)) · teclado \(teclado ? "sim" : "não") em "
+                      + "\(String(format: "%.2f", ateOTeclado)) s · campo \(n(quadro.minY))–\(n(quadro.maxY)) · alto do teclado "
+                      + "\(n(alto)) · 2 s depois \(n(depois))")
+            }
+        }
+    }
+
+    /// Sonda temporária do :215 no iOS 26, que sai depois do run: na o4 do exemplo, "Junho de 2023" escolhido no menu do mês
+    /// com os passos do testObraQueFicaSemGastoComMesOuBuscaAbertaFicaComOsBotoes até o chip, primeiro na letra padrão (o
+    /// controle) e depois na maior letra. Imprime no log, com o prefixo "sonda-215 |", a hora do toque no mês (desde a
+    /// abertura), quanto o toque levou (o XCUITest espera o app ficar ocioso, até 60 s), quanto o chip levou depois dele
+    /// (espera de até 90 s) e quanto levou uma consulta barata logo depois. Não confere nada além de o menu abrir.
+    func testSondaDoMes215() {
+        let s = { (t: TimeInterval) in String(format: "%.2f", t) }
+        for (letra, argumentos) in [("padrão", [String]()),
+                                    ("maior", ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])] {
+            let abertura = Date.now
+            let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o4", argumentos: argumentos)
+            _ = app.elemento("tituloDaObra").waitForExistence(timeout: 10)
+            let mes = app.buttons["filtrarPorMes"]
+            app.rolarAte(mes, tentativas: 20)
+            app.rolarAte(mes)                                 // o escolherMes do :215 rola de novo (já à vista, sai na hora)
+            mes.tap()
+            let item = itemDoMenu(app, "Junho de 2023")
+            XCTAssertTrue(item.waitForExistence(timeout: 5), "o menu abriu (\(letra))")
+            let toque = Date.now
+            item.tap()
+            let tocou = Date.now
+            // Uma linha por passo: com o app travado, a consulta que estoura o tempo encerra o teste, e o que veio antes fica.
+            print("sonda-215 | \(letra) | toque aos \(s(toque.timeIntervalSince(abertura))) s da abertura · o toque levou "
+                  + "\(s(tocou.timeIntervalSince(toque))) s")
+            let chip = app.elemento("chipDoMes").waitForExistence(timeout: 90)
+            let veio = Date.now
+            print("sonda-215 | \(letra) | chip \(chip ? "sim" : "não"), \(s(veio.timeIntervalSince(tocou))) s depois do toque")
+            let valor = mes.value as? String ?? "nil"         // a consulta barata: o valor do botão do mês, já à vista
+            print("sonda-215 | \(letra) | consulta \(s(Date.now.timeIntervalSince(veio))) s (filtrarPorMes = \(valor))")
+        }
+    }
 }

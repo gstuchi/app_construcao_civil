@@ -40,6 +40,8 @@ struct ObraView: View {
     #if DEBUG
     /// Laudo e conferência visual: a linha que abre mostrando "Apagar" (`-custta.linhaAberta g027`).
     @AppStorage("custta.linhaAberta") private var linhaDeTeste = ""
+    /// Sonda temporária do :59 (b): a lupa pediu a segunda rolagem até a pílula, que vem no próximo `keyboardDidShow`.
+    @State private var rolarDeNovoNoTeclado = false
     #endif
 
     var body: some View {
@@ -133,6 +135,10 @@ struct ObraView: View {
             }
             // Só com a obra à vista: o gasto lançado pelo + da tela Orçamento não rola nem leva o foco aqui, por baixo dela.
             .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
+            #if DEBUG
+            .sonda59RolaDeNovoNoTeclado($rolarDeNovoNoTeclado, leitor: leitor,
+                                        animacao: opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3))
+            #endif
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
@@ -160,7 +166,7 @@ struct ObraView: View {
         .tituloPequenoAoRolar(barra)
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
-        .modifier(RolagemFixaDoTeste())
+        .rolagemFixaDaObraComASonda59()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)
@@ -212,6 +218,9 @@ extension ObraView {
     private func abrirBusca(_ leitor: ScrollViewProxy) {
         let rolar = !busca.aberta
         busca.aberta = true
+        #if DEBUG
+        if rolar, Sonda59.b { rolarDeNovoNoTeclado = true }
+        #endif
         Task { @MainActor in
             if rolar {
                 withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo("lancamentos", anchor: .top) }
@@ -455,3 +464,36 @@ struct CartaoDoMes: View {
         }
     }
 }
+
+#if DEBUG
+/// Sonda temporária do :59 da Busca no iOS 26 (sai depois do run): `-custta.sonda59` com `a`, `b` ou `ab`; com `nenhum`, ou
+/// sem o argumento, nada muda. (a) A rolagem fixa da obra só com o `-custta.rolagem`, como nas folhas de origem (sem o
+/// `.scrollPosition`, como em Release). (b) A lupa rola de novo até a pílula no `keyboardDidShow` que vem depois dela.
+@MainActor
+enum Sonda59 {
+    static let pedido = UserDefaults.standard.string(forKey: "custta.sonda59") ?? ""
+    static var a: Bool { pedido == "a" || pedido == "ab" }
+    static var b: Bool { pedido == "b" || pedido == "ab" }
+}
+
+extension View {
+    /// A rolagem fixa da obra: a de sempre, em todo Debug; com a sonda (a), só com o `-custta.rolagem`.
+    @ViewBuilder func rolagemFixaDaObraComASonda59() -> some View {
+        if Sonda59.a { rolagemFixaSoComOArgumento() } else { modifier(RolagemFixaDoTeste()) }
+    }
+
+    /// Com a sonda (b), o `keyboardDidShow` depois da lupa rola de novo até a pílula, uma vez por abertura da busca; sem ela,
+    /// nem escuta o teclado.
+    @ViewBuilder func sonda59RolaDeNovoNoTeclado(_ pedido: Binding<Bool>, leitor: ScrollViewProxy, animacao: Animation?) -> some View {
+        if Sonda59.b {
+            onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                guard pedido.wrappedValue else { return }
+                pedido.wrappedValue = false
+                withAnimation(animacao) { leitor.scrollTo("lancamentos", anchor: .top) }
+            }
+        } else {
+            self
+        }
+    }
+}
+#endif

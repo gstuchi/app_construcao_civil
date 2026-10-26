@@ -54,6 +54,7 @@ concurrency:
 
 jobs:
   nucleo:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     timeout-minutes: 20
     steps:
@@ -72,6 +73,7 @@ jobs:
         run: swift test --package-path app-ios/CusttaNucleo
 
   app:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
@@ -158,6 +160,7 @@ jobs:
           retention-days: 7
 
   app-etapa3:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
     # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
@@ -208,6 +211,7 @@ jobs:
           retention-days: 7
 
   app-etapa3-b:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
     # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests. As suítes de tela do PR 3
@@ -283,8 +287,11 @@ jobs:
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/testes-etapa3-c.xcresult" \
-            -only-testing:CusttaUITests/BuscaUITests \
-            -only-testing:CusttaUITests/AfazeresUITests \
+            -only-testing:CusttaUITests/BuscaUITests/testSonda215Nenhum \
+            -only-testing:CusttaUITests/BuscaUITests/testSonda215Adiado \
+            -only-testing:CusttaUITests/BuscaUITests/testSonda215SemSubtitulo \
+            -only-testing:CusttaUITests/BuscaUITests/testSonda215Picker \
+            -only-testing:CusttaUITests/BuscaUITests/testSonda215Direto \
             CODE_SIGNING_ALLOWED=NO
 
       # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
@@ -297,6 +304,7 @@ jobs:
           retention-days: 7
 
   laudo:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
     # 718 s e ~7 min de build e simulador, 54 min; a folha do gasto soma ~1150 s de leitura e ~320 s de auditoria (perto
@@ -357,6 +365,7 @@ jobs:
           retention-days: 7
 
   laudo-parte3:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
     # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
@@ -406,6 +415,7 @@ jobs:
           retention-days: 7
 
   laudo-etapa3:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
@@ -460,6 +470,7 @@ jobs:
           retention-days: 7
 
   auditoria:
+    if: false  # temporário: o run das sondas roda só o app-etapa3-c
     runs-on: macos-26
     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3) e a leitura
     # da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min: as 14 auditorias em 19,1

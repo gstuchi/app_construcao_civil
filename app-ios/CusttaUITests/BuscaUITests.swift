@@ -296,4 +296,39 @@ final class BuscaUITests: XCTestCase {
         XCTAssertTrue(campo.waitForNonExistence(timeout: 5), "a lupa, que virou ×, fecha a busca")
         XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
     }
+
+    // Sonda temporária da :215 no iOS 26 (sai depois do run): cada variante do menu do mês na maior letra, num teste próprio,
+    // porque o app travado encerra o teste. A `nenhum` é o controle (no run 40410859573, o toque levou 60,8 s).
+    func testSonda215Nenhum() { sonda215("nenhum") }
+    func testSonda215Adiado() { sonda215("adiado") }
+    func testSonda215SemSubtitulo() { sonda215("semSubtitulo") }
+    func testSonda215Picker() { sonda215("picker") }
+    func testSonda215Direto() { sonda215("direto") }
+
+    private func sonda215(_ variante: String) {
+        let s = { (t: TimeInterval) in String(format: "%.2f", t) }
+        let abertura = Date.now
+        let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o4",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+                                        "-custta.sonda215", variante])
+        _ = app.elemento("tituloDaObra").waitForExistence(timeout: 10)
+        let mes = app.buttons["filtrarPorMes"]
+        app.rolarAte(mes, tentativas: 20)
+        let toque = Date.now
+        if variante != "direto" {
+            mes.tap()
+            let item = itemDoMenu(app, "Junho de 2023")
+            XCTAssertTrue(item.waitForExistence(timeout: 5), "o menu abriu (\(variante))")
+            item.tap()
+        }
+        let tocou = Date.now
+        // Uma linha por passo: com o app travado, a consulta que estoura o tempo encerra o teste, e o que veio antes fica.
+        print("sonda-215v | \(variante) | toque aos \(s(toque.timeIntervalSince(abertura))) s da abertura · levou "
+              + "\(s(tocou.timeIntervalSince(toque))) s")
+        let chip = app.elemento("chipDoMes").waitForExistence(timeout: 90)
+        let veio = Date.now
+        print("sonda-215v | \(variante) | chip \(chip ? "sim" : "não"), \(s(veio.timeIntervalSince(tocou))) s depois do toque")
+        let valor = mes.value as? String ?? "nil"
+        print("sonda-215v | \(variante) | consulta \(s(Date.now.timeIntervalSince(veio))) s (filtrarPorMes = \(valor))")
+    }
 }

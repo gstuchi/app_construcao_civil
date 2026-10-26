@@ -16031,3 +16031,453 @@ git commit -m "docs: checklist do aparelho do PR 2 e os tempos da CI" -m "O chec
 ```
 
 **Ponto de controle do PR 2:** CI verde (`nucleo`, `app`, `app-etapa3`, `app-etapa3-b`, `laudo`, `laudo-parte3`, `laudo-etapa3` e `auditoria`). No fim do PR, o núcleo tem 226 testes e o `CusttaTests`, 162 em 31 suítes; o `FolhasDeOrigemUITests` tem 24, o `OrcamentoUITests` 29 e o `DetalheDoTopicoUITests` 16. No Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` ficam verdes, e, no Pro Max, que a CI não roda, passam as leituras das folhas de origem e o laudo da parte 3 (foi nele que a quina da etiqueta da Tarefa 23 apareceu). O Verniz confere o detalhe do tópico lado a lado com o mockup (o `folhaTopico`, parte 1), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 2" do checklist. Na CI do iOS 26, a fase 2 rodou nos runs 40050588953 (Tarefas 29 e 30), 40108043199 (31 a 33) e 40125911713 (o #85, com as Tarefas 22 a 35). As quedas foram de tempo, de toque ou de auditoria da VM, e a linha de CI de cada tarefa diz o que cada run provou. Antes da Tarefa 36, o #85 leva o commit dos menores (`a40da2c`, fora das fatias): os achados menores das revisões das Tarefas 22 a 31 e dois pedidos depois da CI do iOS 26, o nome curto das entradas no Controle por Voz e a espera de 10 s (eram 5) pela folha no `abrirAPagar` e no `abrirPelaLinha`. Depois dela, recebe por merge a main de 24/10, com o #84 e o PR 1 do checklist marcado, e, por último, o conserto da etiqueta (`8799134`), que no plano está na Tarefa 23. A prova final é o run 40152738846, o desse último push: os 8 jobs verdes, sem rerun. No run do merge (40143284456, na `d869d3a`), três jobs tinham caído por instabilidade do iOS 26 (a volta pela borda no Orçamento, a sombra do voltar na leitura da obra e a auditoria que não abriu o app), e os três passam no run final.
+
+## PR 3 (app): a busca e os afazeres
+
+A parte 3 do mockup, gravando de verdade: a busca e o filtro por mês na lista de lançamentos da obra, com a soma dos achados e os vazios; a linha dos afazeres na obra e a tela Afazeres, com adicionar, marcar e apagar; o achado 3 (a mudança de outro aparelho não apaga o afazer em digitação nem tira o foco da busca); a conferência cruzada dos afazeres; o laudo de leitura das telas novas; e o checklist do aparelho. É a última mutação nova da etapa.
+
+O PR entra em fases, como o PR 2. A fase 1, nesta seção, é o núcleo (Tarefas 37 a 39): as mutações dos afazeres, as regras das telas da busca e dos afazeres e os afazeres pelo `gravar` do app, no molde das Tarefas 11 a 13 do PR 1. Ela não muda tela nem workflow. A fase 2 (as telas, o achado 3, a conferência cruzada, o laudo e o checklist, das Tarefas 40 em diante) entra nesta seção quando fechar o diagnóstico de dois testes de tela da busca no iOS 26 (a rolagem até a pílula com o teclado subindo e a escolha do mês na maior letra), que não tocam o núcleo.
+
+O PR nasce da `origin/main` de 26/10 (`9bbfcfc`, o merge do #85). As fatias foram refeitas sobre ela e conferidas uma a uma: o "ver falhar" de cada tarefa é o dos testes dela sobre o commit anterior, nesta base.
+
+- **Nenhuma chave nova no blob e nenhuma regra nova.** Os afazeres já existem no site e no documento (`afazeres` dentro da obra), e as regras deles vieram para o núcleo no PR 0; o `firestore.rules`, o `sw.js` e os arquivos da raiz não mudam neste PR.
+- **Os filtros do ver falhar e do ver passar** são os do PR 2: o ver falhar conta só as linhas `arquivo:L:C: error:`, por mensagem; o ver passar do app lê o `✔ Test run with` da suíte.
+
+### Task 37: Afazeres nas mutações do núcleo
+
+O adicionar, o marcar ou desmarcar e o apagar dos afazeres viram mutações do `Estado`, como as do orçamento (Tarefa 11): partem do estado do momento (o que outro aparelho mudou nos outros afazeres com a tela aberta fica), devolvem `nil` quando a obra ou o afazer sumiram e não mexem no que o app não conhece. As listas saem das regras do PR 0: o afazer novo entra no começo, com o texto já conferido (`conferirAfazer`); marcar ou desmarcar leva o afazer ao começo; apagar é arrastando, sem perguntar. A obra que não trazia a chave `afazeres` passa a trazer, como o `oo.afazeres = []` do site: apagado o último afazer, ela grava `afazeres: []`. Os testes conferem a árvore inteira, para pegar a obra errada e a chave que vaza.
+
+**Files:**
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/Mutacoes.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/MutacoesTests.swift`
+
+**Interfaces:**
+- Consumes: `afazeresComNovo(_:texto:id:)`, `afazeresAlternado(_:id:)` e `afazeresSem(_:id:)` (PR 0); `indiceDaObra` e `Obra.afazeresNaArvore`.
+- Produces: `Estado.adicionandoAfazer(_:id:naObra:)`, `Estado.alternandoAfazer(_:naObra:)` e `Estado.apagandoAfazer(_:daObra:)`, os três `-> Estado?`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/MutacoesTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/MutacoesTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/MutacoesTests.swift
+@@ -139,7 +139,7 @@ struct RegrasDaFolhaBordasTests {
+     }
+ }
+ 
+-/* As da etapa 3 (o orçamento). Cada uma opera nas pontas (a primeira e a última obra de três) e confere a árvore
++/* As da etapa 3 (orçamento e afazeres). Cada uma opera nas pontas (a primeira e a última obra de três) e confere a árvore
+    inteira: a da obra mudada menos a chave da ação e a das outras obras, para pegar a obra errada e a chave que vaza. */
+ struct MutacoesDaEtapa3Tests {
+     func estado() -> Estado {
+@@ -231,4 +231,63 @@ struct MutacoesDaEtapa3Tests {
+         #expect(tirado.obras[2].arvore["orcamento"] == nil)
+         #expect(resto(tirado, obra: 2, sem: "orcamento") == resto(antes, obra: 2, sem: "orcamento"))
+     }
++
++    @Test func adicionarAfazerNoComecoDaUltimaObra() throws {
++        let antes = estado()
++        let e = try #require(antes.adicionandoAfazer("Comprar disjuntor de 40 A", id: "n1", naObra: "o3"))
++        #expect(e.obras[2].arvore["afazeres"] == .lista([
++            .objeto(["id": .texto("n1"), "texto": .texto("Comprar disjuntor de 40 A"), "feito": .booleano(false)]),
++            .objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(true)]),
++        ]))
++        #expect(resto(e, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
++        let primeira = try #require(antes.adicionandoAfazer("Ver o reboco", id: "n2", naObra: "o1"))
++        #expect(primeira.obras[0].afazeres.map(\.id) == ["n2", "p1", "p2", "f1"])
++        #expect(resto(primeira, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
++        #expect(antes.adicionandoAfazer("x", id: "n3", naObra: "sumiu") == nil)
++    }
++
++    @Test func obraSemAChaveDosAfazeresGanhaAChaveComoNoSite() throws {
++        // A obra nova do site não traz `afazeres`; o primeiro afazer cria a lista (`oo.afazeres = []`), e apagar o último
++        // deixa `afazeres: []` no documento, como o site grava.
++        let criada = try #require(estado().criandoObra(["id": .texto("o4"), "nome": .texto("Nova"), "dataInicio": .texto("2026-10-01"),
++                                                         "fase": .texto("construcao"), "gastos": .lista([])]))
++        #expect(criada.obras[3].arvore["afazeres"] == nil)
++        let com = try #require(criada.adicionandoAfazer("Murar", id: "m", naObra: "o4"))
++        #expect(com.obras[3].arvore["afazeres"] == .lista([.objeto(["id": .texto("m"), "texto": .texto("Murar"), "feito": .booleano(false)])]))
++        let sem = try #require(com.apagandoAfazer("m", daObra: "o4"))
++        #expect(sem.obras[3].arvore["afazeres"] == .lista([]))
++        #expect(resto(sem, obra: 3, sem: "afazeres") == resto(criada, obra: 3, sem: "afazeres"))
++    }
++
++    @Test func marcarEDesmarcarLevamAoComecoNaObraCerta() throws {
++        let antes = estado()
++        let marcado = try #require(antes.alternandoAfazer("p2", naObra: "o1"))
++        #expect(marcado.obras[0].arvore["afazeres"] == .lista([
++            .objeto(["id": .texto("p2"), "texto": .texto("Ligar pro pedreiro"), "feito": .booleano(true)]),
++            .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
++            .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
++        ]))
++        #expect(resto(marcado, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
++        let desmarcado = try #require(marcado.alternandoAfazer("f1", naObra: "o1"))
++        #expect(desmarcado.obras[0].afazeres.map(\.id) == ["f1", "p2", "p1"] && desmarcado.obras[0].afazeres.map(\.feito) == [false, true, false])
++        let ultima = try #require(antes.alternandoAfazer("q1", naObra: "o3"))
++        #expect(ultima.obras[2].arvore["afazeres"] == .lista([.objeto(["id": .texto("q1"), "texto": .texto("Murar"), "feito": .booleano(false)])]))
++        #expect(resto(ultima, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
++        #expect(antes.alternandoAfazer("x", naObra: "o1") == nil, "o afazer sumiu desta obra (o x é de outra)")
++        #expect(antes.alternandoAfazer("p1", naObra: "sumiu") == nil)
++    }
++
++    @Test func apagarAfazerNaObraCerta() throws {
++        let antes = estado()
++        let e = try #require(antes.apagandoAfazer("p2", daObra: "o1"))
++        #expect(e.obras[0].arvore["afazeres"] == .lista([
++            .objeto(["id": .texto("p1"), "texto": .texto("Comprar tinta"), "feito": .booleano(false), "marca": .texto("fica")]),
++            .objeto(["id": .texto("f1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(true)]),
++        ]))
++        #expect(resto(e, obra: 0, sem: "afazeres") == resto(antes, obra: 0, sem: "afazeres"))
++        let ultima = try #require(antes.apagandoAfazer("q1", daObra: "o3"))
++        #expect(ultima.obras[2].arvore["afazeres"] == .lista([]))
++        #expect(resto(ultima, obra: 2, sem: "afazeres") == resto(antes, obra: 2, sem: "afazeres"))
++        #expect(antes.apagandoAfazer("x", daObra: "o3") == nil && antes.apagandoAfazer("q1", daObra: "sumiu") == nil)
++    }
+ }
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter MutacoesDaEtapa3Tests 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -8`
+Expected: não compila: `value of type 'Estado' has no member 'adicionandoAfazer'`, `value of type 'Estado' has no member 'alternandoAfazer'` e `value of type 'Estado' has no member 'apagandoAfazer'`, 4 de cada; o resto é cascata da inferência dos literais (`type 'Any' has no member 'texto'`, `type 'Any' has no member 'booleano'`, `reference to member 'lista' cannot be resolved without a contextual type`, `cannot infer key path type from context; consider explicitly specifying a root type` e `cannot infer contextual base in reference to member 'lista'`). São 51 erros, todos no `MutacoesTests.swift`.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/Mutacoes.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/Mutacoes.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/Mutacoes.swift
+@@ -103,8 +103,9 @@ public func parcelasDaCompra(_ gasto: Gasto, naObra obra: Obra) -> Int {
+     return obra.gastos.filter { $0.grupoId == grupo }.count
+ }
+ 
+-/* As da etapa 3 (app.js formOrcamento): o "Salvar" e o "Tirar orçamento" da folha do orçamento, pela regra do
+-   dados.js. Também partem do estado do momento: o que outro aparelho mudou dentro do orçamento com a tela aberta fica. */
++/* As da etapa 3 (app.js formOrcamento e os afazeres do renderObra e do afazerRow): o "Salvar" e o "Tirar orçamento" da
++   folha do orçamento e o adicionar, marcar e apagar dos afazeres, pelas regras do dados.js. Também partem do estado do
++   momento: o que outro aparelho mudou dentro do orçamento, ou nos outros afazeres, com a tela aberta fica. */
+ public extension Estado {
+     /// "Salvar" da folha do orçamento: o `orcamentoGravado` sobre o orçamento que está no estado agora; o nil dele tira a
+     /// chave, como o `delete` do site.
+@@ -122,4 +123,30 @@ public extension Estado {
+         e.obras[i].orcamento = nil
+         return e
+     }
++
++    /// O afazer novo no começo, com o texto já conferido (`conferirAfazer`). A obra que não trazia a chave `afazeres` passa
++    /// a trazer, como o `oo.afazeres = []` do site: apagado o último afazer, ela grava `afazeres: []`.
++    func adicionandoAfazer(_ texto: String, id: String, naObra obraId: String) -> Estado? {
++        guard let i = indiceDaObra(obraId) else { return nil }
++        var e = self
++        e.obras[i].afazeres = afazeresComNovo(obras[i].afazeres, texto: texto, id: id)
++        e.obras[i].afazeresNaArvore = true
++        return e
++    }
++
++    /// Marcar ou desmarcar, pelo círculo ou pelo texto: o afazer vai para o começo. Nil quando ele sumiu.
++    func alternandoAfazer(_ afazerId: String, naObra obraId: String) -> Estado? {
++        guard let i = indiceDaObra(obraId), let lista = afazeresAlternado(obras[i].afazeres, id: afazerId) else { return nil }
++        var e = self
++        e.obras[i].afazeres = lista
++        return e
++    }
++
++    /// Apagar arrastando, sem perguntar. Nil quando ele sumiu.
++    func apagandoAfazer(_ afazerId: String, daObra obraId: String) -> Estado? {
++        guard let i = indiceDaObra(obraId), let lista = afazeresSem(obras[i].afazeres, id: afazerId) else { return nil }
++        var e = self
++        e.obras[i].afazeres = lista
++        return e
++    }
+ }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | tail -2`
+Expected: `✔ Test run with 230 tests in 37 suites passed` (eram 226; os 4 novos de `MutacoesDaEtapa3Tests`: `adicionarAfazerNoComecoDaUltimaObra`, `obraSemAChaveDosAfazeresGanhaAChaveComoNoSite`, `marcarEDesmarcarLevamAoComecoNaObraCerta` e `apagarAfazerNaObraCerta`).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/CusttaNucleo/Sources/CusttaNucleo/Mutacoes.swift \
+  app-ios/CusttaNucleo/Tests/CusttaNucleoTests/MutacoesTests.swift
+git commit -m "feat: afazeres nas mutações do núcleo" -m "O núcleo ganha as mutações dos afazeres da etapa 3: adicionar, marcar ou desmarcar e apagar. Como as do orçamento, partem do estado do momento, devolvem nil quando a obra ou o afazer sumiram e não mexem no que o app não conhece; a obra que não trazia a chave dos afazeres passa a trazer, como no site, e apagado o último afazer ela grava a lista vazia."
+```
+
+### Task 38: Regras das telas dos afazeres e da busca no núcleo
+
+O que o mockup aprovado acrescenta ao site na busca e nos afazeres entra no núcleo com teste próprio (`DentroDaObraTests`); os números saem das regras com vetor (o `afazeresEmOrdem` do PR 0 e a `moeda`). Embaixo do filtro, a "Soma dos achados: R$ …", só com filtro e com achado, com o rótulo e o valor separados: na maior letra o valor vai para a própria linha e encolhe, como todo dinheiro dentro de uma frase. O vazio da lista filtrada é o mês escolhido que ficou sem gasto ("Nenhum gasto em março de 2026." e "Ver todos os meses", com o filtro à vista) ou o "Nada encontrado com esse filtro.", com a frase de onde a busca olha ("A busca olha a descrição e o tópico, com ou sem acento.") e o botão que limpa o que filtra ("Limpar a busca", "Limpar o mês" ou "Limpar busca e mês"). A linha dos afazeres na obra tem três estados: "3 pendentes" e o primeiro pendente; "tudo feito" e "4 feitos"; e, sem afazer, a frase do site, "Anote o que falta na obra.".
+
+**Files:**
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`
+
+**Interfaces:**
+- Consumes: `moeda`, `aparadoJS`, `tituloDoMes`, `afazeresEmOrdem`, `Gasto` e `Afazer` (já existem).
+- Produces: `SomaDosAchados` (`rotulo`, `valor`, `falado`) e `somaDosAchados(_:filtrando:)`; `VazioDaBusca` (`.mesSemGasto(titulo:botao:)`, `.nadaEncontrado(titulo:frase:botao:)`) e `vazioDaBusca(_:texto:mes:)`; `LinhaDosAfazeres` (`.pendentes(etiqueta:primeiro:)`, `.tudoFeito(etiqueta:feitos:)`, `.vazia(frase:)`) e `linhaDosAfazeres(_:)`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+@@ -2,8 +2,8 @@ import Testing
+ @testable import CusttaNucleo
+ 
+ /* As regras da etapa 3 que o site não tem (mockup aprovado em 18/10): o aviso dos tópicos e o que está fora, o cartão da
+-   tela Orçamento, o gasto por tópico no modo total, o A pagar por mês com o que vem depois e o detalhe do tópico. Valores
+-   de mil para cima, para separar moeda de moedaCurta. */
++   tela Orçamento, o gasto por tópico no modo total, o A pagar por mês com o que vem depois, a soma dos achados, os vazios
++   da busca, o detalhe do tópico e a linha dos afazeres. Valores de mil para cima, para separar moeda de moedaCurta. */
+ struct DentroDaObraTests {
+     static let hoje = "2026-10-12"
+ 
+@@ -120,6 +120,27 @@ struct DentroDaObraTests {
+         #expect(soDepois.qtd == 0 && soDepois.meses.isEmpty && soDepois.ponte != nil, "vazia nos 30 dias, a frase ainda diz o que vem")
+     }
+ 
++    @Test func somaDosAchadosSoComFiltroEAchado() {
++        let achados = obra([gasto("a", "2026-09-01", 1_250.25), gasto("b", "2026-09-02", 2_000.25)]).gastos
++        // O rótulo e o valor separados: na maior letra, o valor vai para a própria linha e encolhe (o dinheiro numa frase).
++        #expect(somaDosAchados(achados, filtrando: true) == SomaDosAchados(rotulo: "Soma dos achados:", valor: "R$\u{00A0}3.250,50"))
++        #expect(somaDosAchados(achados, filtrando: true)?.falado == "Soma dos achados: R$\u{00A0}3.250,50", "o VoiceOver lê a frase inteira")
++        #expect(somaDosAchados(achados, filtrando: false) == nil, "sem filtro, a lista é a obra inteira")
++        #expect(somaDosAchados([], filtrando: true) == nil)
++    }
++
++    @Test func vaziosDaBusca() {
++        let gastos = obra([gasto("a", "2026-09-01", 1_000), gasto("b", "2026-10-02", 2_000)]).gastos
++        let nada = "Nada encontrado com esse filtro.", onde = "A busca olha a descrição e o tópico, com ou sem acento."
++        #expect(vazioDaBusca(gastos, texto: "azulejo", mes: "") == .nadaEncontrado(titulo: nada, frase: onde, botao: "Limpar a busca"))
++        #expect(vazioDaBusca(gastos, texto: "azulejo", mes: "2026-09") == .nadaEncontrado(titulo: nada, frase: onde, botao: "Limpar busca e mês"))
++        #expect(vazioDaBusca(gastos, texto: "  ", mes: "2026-09") == .nadaEncontrado(titulo: nada, frase: onde, botao: "Limpar o mês"),
++                "o texto aparado")
++        #expect(vazioDaBusca(gastos, texto: "azulejo", mes: "2026-03")
++                == .mesSemGasto(titulo: "Nenhum gasto em março de 2026.", botao: "Ver todos os meses"), "o mês que ficou sem gasto vem antes")
++        #expect(vazioDaBusca(gastos, texto: "", mes: "2026-11") == .mesSemGasto(titulo: "Nenhum gasto em novembro de 2026.", botao: "Ver todos os meses"))
++    }
++
+     @Test func detalheDoTopicoComAVencerEPagos() throws {
+         let gastos = [gasto("r2", "2026-11-20", 615, topico: "revest"), gasto("r0", "2026-10-05", 800, topico: "revest"),
+                       gasto("r1", "2026-10-20", 615, topico: "revest"), gasto("x1", "2026-09-01", 1_385, topico: "pintura"),
+@@ -168,6 +189,21 @@ struct DentroDaObraTests {
+         #expect(try frase([80_000]) == FraseDoOrcamento(texto: "Chegou ao previsto — 100%", alerta: false), "o previsto exato (P1:2096-2100)")
+     }
+ 
++    func afazer(_ id: String, _ texto: String, feito: Bool) -> Afazer {
++        Afazer(campos: ["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
++    }
++
++    @Test func linhaDosAfazeresNosTresEstados() {
++        let com = [afazer("f1", "Pagar o gesso", feito: true), afazer("p1", "Comprar tinta", feito: false),
++                   afazer("p2", "Ligar pro pedreiro", feito: false), afazer("p3", "Ver o reboco", feito: false)]
++        #expect(linhaDosAfazeres(com) == .pendentes(etiqueta: "3 pendentes", primeiro: "Comprar tinta"), "o primeiro pendente, não o primeiro do array")
++        #expect(linhaDosAfazeres([afazer("p1", "Comprar tinta", feito: false), afazer("f1", "Pagar o gesso", feito: true)])
++                == .pendentes(etiqueta: "1 pendente", primeiro: "Comprar tinta"))
++        #expect(linhaDosAfazeres(com.map { var a = $0; a.feito = true; return a }) == .tudoFeito(etiqueta: "tudo feito", feitos: "4 feitos"))
++        #expect(linhaDosAfazeres([afazer("f1", "Pagar o gesso", feito: true)]) == .tudoFeito(etiqueta: "tudo feito", feitos: "1 feito"))
++        #expect(linhaDosAfazeres([]) == .vazia(frase: "Anote o que falta na obra."))
++    }
++
+     @Test func topicosComValorNaFolha() {
+         #expect(topicosComValor(["terreno": 10, "projeto": 0, "pintura": 5, "eletrica": -3], de: 23) == "2 de 23 tópicos com valor")
+         #expect(topicosComValor([:], de: 21) == "0 de 21 tópicos com valor")
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter DentroDaObraTests 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6`
+Expected: não compila, um erro por uso: `cannot find 'vazioDaBusca' in scope` (5), `cannot find 'linhaDosAfazeres' in scope` (5), `cannot find 'somaDosAchados' in scope` (4) e `cannot find 'SomaDosAchados' in scope` (1). São 15 erros, todos no `DentroDaObraTests.swift`.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
+@@ -1,7 +1,7 @@
+ import Foundation
+ 
+ /* Regras das telas da etapa 3 (dentro da obra) que o site não tem: o mockup aprovado em 18/10 as acrescenta ao que vem do
+-   app.js. Os números saem das regras com vetor (orcamentoObra, aPagar, resumoTopico); o que está aqui é
++   app.js. Os números saem das regras com vetor (orcamentoObra, aPagar, resumoTopico, afazeresEmOrdem); o que está aqui é
+    texto e agrupamento, com teste próprio (DentroDaObraTests). */
+ 
+ /* ---------- orçamento: a linha nos indicadores e o cartão da tela Orçamento ---------- */
+@@ -106,6 +106,43 @@ public func aPagarDaObra(_ obra: Obra, hoje: String) -> APagarDaObra {
+                         depoisQtd: depois.count, depoisTotal: total, ponte: ponte)
+ }
+ 
++/* ---------- busca e filtro por mês ---------- */
++
++/// "Soma dos achados: R$ …", embaixo do filtro. O rótulo e o valor vêm separados: na maior letra o valor vai para a
++/// própria linha e encolhe para caber, como todo dinheiro dentro de uma frase (mockup da etapa 3).
++public struct SomaDosAchados: Equatable, Sendable {
++    public let rotulo: String
++    public let valor: String
++    /// A frase inteira, para o VoiceOver.
++    public var falado: String { "\(rotulo) \(valor)" }
++}
++
++/// A soma da lista filtrada; nil sem filtro (a lista é a obra inteira) ou sem achado.
++public func somaDosAchados(_ achados: [Gasto], filtrando: Bool) -> SomaDosAchados? {
++    guard filtrando, !achados.isEmpty else { return nil }
++    return SomaDosAchados(rotulo: "Soma dos achados:", valor: moeda(achados.reduce(0) { $0 + $1.valor }))
++}
++
++/// A lista vazia com filtro.
++public enum VazioDaBusca: Equatable, Sendable {
++    /// O mês escolhido ficou sem gasto (o filtro continua à vista): "Nenhum gasto em março de 2026." e "Ver todos os meses".
++    case mesSemGasto(titulo: String, botao: String)
++    /// "Nada encontrado com esse filtro.", onde a busca olha e o botão que limpa o que filtra.
++    case nadaEncontrado(titulo: String, frase: String, botao: String)
++}
++
++/// O vazio da lista filtrada da obra (texto como digitado; ele é aparado aqui, como na busca).
++public func vazioDaBusca(_ gastos: [Gasto], texto: String, mes: String) -> VazioDaBusca {
++    if !mes.isEmpty && !gastos.contains(where: { $0.data.prefix(7) == mes }) {
++        let titulo = tituloDoMes(mes)
++        return .mesSemGasto(titulo: "Nenhum gasto em \(titulo.prefix(1).lowercased() + titulo.dropFirst()).", botao: "Ver todos os meses")
++    }
++    let busca = !aparadoJS(texto).isEmpty
++    let botao = busca && !mes.isEmpty ? "Limpar busca e mês" : !mes.isEmpty ? "Limpar o mês" : "Limpar a busca"
++    return .nadaEncontrado(titulo: "Nada encontrado com esse filtro.", frase: "A busca olha a descrição e o tópico, com ou sem acento.",
++                           botao: botao)
++}
++
+ /* ---------- detalhe do tópico ---------- */
+ 
+ /// A linha do orçamento dentro do detalhe do tópico.
+@@ -157,3 +194,24 @@ public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMens
+                            aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
+                            pagos: ordenados.filter { !menorJS(hoje, $0.data) })
+ }
++
++/* ---------- afazeres ---------- */
++
++/// A linha dos afazeres na tela da obra, nos três estados.
++public enum LinhaDosAfazeres: Equatable, Sendable {
++    /// "3 pendentes" e o primeiro pendente (até duas linhas).
++    case pendentes(etiqueta: String, primeiro: String)
++    /// "tudo feito" e "4 feitos".
++    case tudoFeito(etiqueta: String, feitos: String)
++    /// Sem afazer: a frase do site.
++    case vazia(frase: String)
++}
++
++public func linhaDosAfazeres(_ afazeres: [Afazer]) -> LinhaDosAfazeres {
++    let pendentes = afazeresEmOrdem(afazeres).filter { !$0.feito }
++    if let primeiro = pendentes.first {
++        return .pendentes(etiqueta: "\(pendentes.count) pendente\(pendentes.count > 1 ? "s" : "")", primeiro: primeiro.texto)
++    }
++    if afazeres.isEmpty { return .vazia(frase: "Anote o que falta na obra.") }
++    return .tudoFeito(etiqueta: "tudo feito", feitos: "\(afazeres.count) feito\(afazeres.count > 1 ? "s" : "")")
++}
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run: `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | tail -2`
+Expected: `✔ Test run with 233 tests in 37 suites passed` (os 3 novos de `DentroDaObraTests`: `somaDosAchadosSoComFiltroEAchado`, `vaziosDaBusca` e `linhaDosAfazeresNosTresEstados`).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift \
+  app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+git commit -m "feat: regras das telas dos afazeres e da busca no núcleo" -m "As regras que o mockup aprovado da etapa 3 acrescenta ao site para a busca e os afazeres entram no núcleo com teste próprio: a soma dos achados embaixo do filtro, o vazio da lista filtrada (o mês que ficou sem gasto ou nada encontrado) e a linha dos afazeres na tela da obra, nos três estados. A soma dos achados vem com o rótulo e o valor separados, para o valor ir à própria linha e encolher na maior letra, como todo dinheiro dentro de uma frase. Os números saem das regras com vetor."
+```
+
+### Task 39: Afazeres pelo gravar do app
+
+As três mutações passam pelo mesmo `gravar` da etapa 2, junto com as do orçamento, sem método novo no `ModeloApp`. Os dois testes do orçamento pelo `gravar` (Tarefa 13) passam a levar os afazeres e mudam de nome: a tela vê a mudança na hora, cada mutação sobe o documento inteiro, o último afazer apagado deixa `afazeres: []`, o afazer que já saiu não grava de novo (`.sumiu`) e nada sobe quando o app ainda não viu os dados da conta.
+
+**Files:**
+- Test (alterar): `app-ios/CusttaTests/GravacaoDoAppTests.swift`
+
+**Interfaces:**
+- Consumes: `ModeloApp.gravar(_:)`; `adicionandoAfazer`, `alternandoAfazer` e `apagandoAfazer` (Tarefa 37); `salvandoOrcamento` e `tirandoOrcamento` (Tarefa 11).
+- Produces: nada.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/GravacaoDoAppTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/GravacaoDoAppTests.swift
++++ b/app-ios/CusttaTests/GravacaoDoAppTests.swift
+@@ -51,25 +51,30 @@ struct GravacaoDoAppTests {
+         #expect(transporte.gravacoes == 0)
+     }
+ 
+-    /// Orçamento (etapa 3) pelo mesmo `gravar`: a tela vê na hora, cada mudança sobe o documento inteiro, a chave do
+-    /// orçamento sai em vez de virar null, e nada sobe quando a obra sumiu.
+-    @Test func orcamentoGravaPeloMesmoCaminho() async {
++    /// Orçamento e afazeres (etapa 3) pelo mesmo `gravar`: a tela vê na hora, cada um sobe o documento inteiro, a chave do
++    /// orçamento sai em vez de virar null, e nada sobe quando a obra ou o afazer sumiram.
++    @Test func orcamentoEAfazeresGravamPeloMesmoCaminho() async {
+         let (m, transporte, _) = montar()
+         await ate { m.sincronizador.dadosCarregados }
+         #expect(m.gravar { $0.salvandoOrcamento(modo: "topicos", total: 0, valores: ["fundacao": 120_000, "estrutura": 0], naObra: "o1") }
+                 == .gravou)
+         #expect(m.sincronizador.estado.obras[0].orcamento
+                 == .objeto(["modo": .texto("topicos"), "topicos": .objeto(["fundacao": .numero(120_000)])]))
++        #expect(m.gravar { $0.adicionandoAfazer("Comprar tinta", id: "a1", naObra: "o1") } == .gravou)
++        #expect(m.gravar { $0.alternandoAfazer("a1", naObra: "o1") } == .gravou)
++        #expect(m.sincronizador.estado.obras[0].afazeres.map(\.feito) == [true], "a tela vê antes do servidor responder")
++        #expect(m.gravar { $0.apagandoAfazer("a1", daObra: "o1") } == .gravou)
+         #expect(m.gravar { $0.tirandoOrcamento(daObra: "o1") } == .gravou)
+         let obra = m.sincronizador.estado.obras[0].arvore
+-        #expect(obra["orcamento"] == nil)
++        #expect(obra["orcamento"] == nil && obra["afazeres"] == .lista([]))
+         #expect(m.sincronizador.estado.obras[1].orcamento == .objeto(["modo": .texto("total"), "total": .numero(500_000)]), "a outra obra fica")
+-        #expect(transporte.gravacoes == 2)
++        #expect(transporte.gravacoes == 5)
++        #expect(m.gravar { $0.alternandoAfazer("a1", naObra: "o1") } == .sumiu, "o afazer já saiu")
+         #expect(m.gravar { $0.salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: "nao-existe") } == .sumiu)
+-        #expect(transporte.gravacoes == 2)
++        #expect(transporte.gravacoes == 5)
+     }
+ 
+-    @Test func orcamentoAntesDeVerOsDadosNaoGrava() async {
++    @Test func orcamentoEAfazeresAntesDeVerOsDadosNaoGravam() async {
+         let (m, transporte, _) = montar(semRede: true, dados: nil)
+         await ate { m.fase.ehPrincipal }
+         let estado = m.sincronizador.estado
+@@ -77,6 +82,9 @@ struct GravacaoDoAppTests {
+         let mudancas: [(Estado) -> Estado?] = [
+             { $0.salvandoOrcamento(modo: "total", total: 10, valores: [:], naObra: id($0)) ?? $0 },
+             { $0.tirandoOrcamento(daObra: id($0)) ?? $0 },
++            { $0.adicionandoAfazer("Comprar tinta", id: "a1", naObra: id($0)) ?? $0 },
++            { $0.alternandoAfazer("a1", naObra: id($0)) ?? $0 },
++            { $0.apagandoAfazer("a1", daObra: id($0)) ?? $0 },
+         ]
+         for mudanca in mudancas { #expect(m.gravar(mudanca) == .naoCarregado) }
+         #expect(m.sincronizador.estado == estado && transporte.gravacoes == 0)
+```
+
+- [ ] **Step 2: Ver passar**
+
+É integração sobre a Tarefa 37: passa de primeira (sem ela, não compila: os três métodos não existem no `Estado`).
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/GravacaoDoAppTests 2>&1 | tail -5
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 18 tests in 1 suite passed` (os mesmos 18: os dois do orçamento agora levam os afazeres).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app-ios/CusttaTests/GravacaoDoAppTests.swift
+git commit -m "test: afazeres pelo gravar do app" -m "As três mutações dos afazeres passam pelo mesmo gravar da etapa 2, junto com as do orçamento: a tela vê a mudança na hora, cada uma sobe o documento inteiro, o afazer que já saiu não grava de novo e nada sobe quando o app ainda não viu os dados da conta."
+```
+
+**Ponto de controle da fase 1 do PR 3:** no Mac, com a Tarefa 39, o build com 0 aviso; o núcleo com 233 testes em 37 suítes; o `CusttaTests` inteiro com 162 testes em 31 suítes; e o `npm run test:unit` com 401. A fase não muda tela nem workflow: nenhuma suíte de tela a rodar no Mac.

@@ -228,47 +228,50 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
 assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
 assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
 assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
-assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 9, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria sem assinatura');
+assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 10, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os quatro laudos e auditoria sem assinatura');
 assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
 assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
-assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 9, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria com os pacotes travados');
-// O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3 e auditoria, em paralelo: o app pula
-// os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 (as da etapa 3) e o
-// auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos as da parte 3 e as da etapa 3,
-// que rodam no laudo-parte3 e no laudo-etapa3, para cada job caber no teto com folga.
+assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 10, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os quatro laudos e auditoria com os pacotes travados');
+// O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3, laudo-etapa3-b e auditoria, em
+// paralelo: o app pula os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 e
+// o laudo-etapa3-b (as da etapa 3) e o auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos
+// as da parte 3 e as da etapa 3, que rodam no laudo-parte3, no laudo-etapa3 e no laudo-etapa3-b, para cada job caber no teto
+// com folga.
 // Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
 const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
 const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
-const jobEtapa3 = jobAppIos('laudo-etapa3'), jobAppEtapa3 = jobAppIos('app-etapa3'), jobAppEtapa3b = jobAppIos('app-etapa3-b');
+const jobEtapa3 = jobAppIos('laudo-etapa3'), jobEtapa3b = jobAppIos('laudo-etapa3-b'), jobAppEtapa3 = jobAppIos('app-etapa3');
+const jobAppEtapa3b = jobAppIos('app-etapa3-b');
 const jobAppEtapa3c = jobAppIos('app-etapa3-c');
 assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
   'o job app pula o laudo e as auditorias');
 assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
-assert.ok(!/AuditoriaUITests/.test(jobLaudo), 'as auditorias rodam no auditoria e no laudo-parte3, não no laudo');
+assert.ok(!/AuditoriaUITests/.test(jobLaudo), 'as auditorias rodam no auditoria e nos outros laudos, não no laudo');
 assert.match(jobAuditoria, /-only-testing:CusttaUITests\/AuditoriaUITests \\\n/, 'o job auditoria roda as auditorias');
-assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria + jobParte3 + jobEtapa3), 'o laudo-parte3, o laudo-etapa3 e o auditoria rodam só as leituras que o laudo pula');
+assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria + jobParte3 + jobEtapa3 + jobEtapa3b), 'o laudo-parte3, o laudo-etapa3, o laudo-etapa3-b e o auditoria rodam só as leituras que o laudo pula');
 assert.match(jobEtapa3, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-etapa3 roda as leituras da etapa 3');
+assert.match(jobEtapa3b, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-etapa3-b roda as leituras da etapa 3 que não cabem no laudo-etapa3');
 assert.match(jobParte3, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-parte3 roda as leituras da parte 3');
-// Nenhuma leitura se perde nem roda duas vezes: a que o laudo pula roda no laudo-parte3, no laudo-etapa3 ou no auditoria, e
-// só nele.
+// Nenhuma leitura se perde nem roda duas vezes: a que o laudo pula roda no laudo-parte3, no laudo-etapa3, no laudo-etapa3-b ou
+// no auditoria, e só nele.
 const leiturasDe = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/LeituraNoVidroUITests/(\\w+)`, 'g'))].map(m => m[1]).sort();
 const puladasNoLaudo = leiturasDe(jobLaudo, 'skip');
-assert.deepStrictEqual([...leiturasDe(jobParte3, 'only'), ...leiturasDe(jobEtapa3, 'only'), ...leiturasDe(jobAuditoria, 'only')].sort(), puladasNoLaudo,
-  'a leitura que o laudo pula roda num dos outros três, uma vez só, e eles só rodam essas');
+assert.deepStrictEqual([...leiturasDe(jobParte3, 'only'), ...leiturasDe(jobEtapa3, 'only'), ...leiturasDe(jobEtapa3b, 'only'), ...leiturasDe(jobAuditoria, 'only')].sort(),
+  puladasNoLaudo, 'a leitura que o laudo pula roda num dos outros quatro, uma vez só, e eles só rodam essas');
 const leituraNoVidro = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'LeituraNoVidroUITests.swift'), 'utf8');
 for(const metodo of puladasNoLaudo)
   assert.match(leituraNoVidro, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no LeituraNoVidroUITests`);
-// As auditorias da parte 3 e as da etapa 3 rodam no laudo-parte3 e no laudo-etapa3: a que o auditoria pula roda num deles,
-// uma vez só, e só ela.
+// As auditorias da parte 3 e as da etapa 3 rodam no laudo-parte3, no laudo-etapa3 e no laudo-etapa3-b: a que o auditoria
+// pula roda num deles, uma vez só, e só ela.
 const auditoriasDe = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/AuditoriaUITests/(\\w+)`, 'g'))].map(m => m[1]).sort();
 const puladasNoAuditoria = auditoriasDe(jobAuditoria, 'skip');
-assert.deepStrictEqual([...auditoriasDe(jobParte3, 'only'), ...auditoriasDe(jobEtapa3, 'only')].sort(), puladasNoAuditoria,
-  'a auditoria que o auditoria pula roda no laudo-parte3 ou no laudo-etapa3, uma vez só, e só ela');
-assert.ok(!/-only-testing:CusttaUITests\/AuditoriaUITests \\\n/.test(jobParte3 + jobEtapa3), 'o laudo-parte3 e o laudo-etapa3 rodam só as auditorias que o auditoria pula');
+assert.deepStrictEqual([...auditoriasDe(jobParte3, 'only'), ...auditoriasDe(jobEtapa3, 'only'), ...auditoriasDe(jobEtapa3b, 'only')].sort(), puladasNoAuditoria,
+  'a auditoria que o auditoria pula roda no laudo-parte3, no laudo-etapa3 ou no laudo-etapa3-b, uma vez só, e só ela');
+assert.ok(!/-only-testing:CusttaUITests\/AuditoriaUITests \\\n/.test(jobParte3 + jobEtapa3 + jobEtapa3b), 'o laudo-parte3, o laudo-etapa3 e o laudo-etapa3-b rodam só as auditorias que o auditoria pula');
 const auditoria = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'AuditoriaUITests.swift'), 'utf8');
 for(const metodo of puladasNoAuditoria)
   assert.match(auditoria, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no AuditoriaUITests`);
-for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['laudo-etapa3', jobEtapa3], ['auditoria', jobAuditoria]]){
+for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['laudo-etapa3', jobEtapa3], ['laudo-etapa3-b', jobEtapa3b], ['auditoria', jobAuditoria]]){
   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
   assert.match(job, /\n\s+TEST_RUNNER_CUSTTA_VARREDURA: curta\n/, `o job ${nome} usa a varredura curta (a lista sob a cápsula só em 0, 20, 40 e 260 pt)`);
   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${nome}\\.xcresult"[\\s\\S]*if: failure\\(\\)[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${nome}\\.xcresult`),
@@ -289,7 +292,7 @@ for(const [nome, job] of [['app-etapa3', jobAppEtapa3], ['app-etapa3-b', jobAppE
   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
 }
 const puladasNoApp = suitesInteiras(jobApp, 'skip');
-const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobAuditoria].flatMap(suitesQueRodam))];
+const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobEtapa3b, jobAuditoria].flatMap(suitesQueRodam))];
 assert.deepStrictEqual([...nosLaudos, ...[jobAppEtapa3, jobAppEtapa3b, jobAppEtapa3c].flatMap(job => suitesInteiras(job, 'only'))].sort(), [...puladasNoApp].sort(),
   'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3, no app-etapa3-b ou no app-etapa3-c, uma vez só, e os três rodam só o que o app pula');
 const telas = readdirSync(join(__dirname, '..', 'app-ios', 'CusttaUITests')).filter(f => f.endsWith('.swift'))
@@ -301,9 +304,9 @@ for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', j
   ['app-etapa3-c', jobAppEtapa3c, 'testes-etapa3-c']])
   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${resultado}\\.xcresult"[\\s\\S]*\\n\\s+if: failure\\(\\) \\|\\| cancelled\\(\\)\\n[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${resultado}\\.xcresult`),
     `o job ${nome} guarda o próprio resultado quando reprova e quando é cortado no teto`);
-assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
-assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
-for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'app-etapa3-c', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
+assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobEtapa3b + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
+assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobEtapa3b + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
+for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'app-etapa3-c', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'laudo-etapa3-b', 'auditoria'])
   assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
 // O resultado de cada job sobe com um nome só dele: no mesmo run o upload-artifact não aceita o mesmo nome duas vezes, e dois
 // jobs reprovados juntos perderiam um dos resultados.

@@ -103,8 +103,9 @@ public func parcelasDaCompra(_ gasto: Gasto, naObra obra: Obra) -> Int {
     return obra.gastos.filter { $0.grupoId == grupo }.count
 }
 
-/* As da etapa 3 (app.js formOrcamento): o "Salvar" e o "Tirar orçamento" da folha do orçamento, pela regra do
-   dados.js. Também partem do estado do momento: o que outro aparelho mudou dentro do orçamento com a tela aberta fica. */
+/* As da etapa 3 (app.js formOrcamento e os afazeres do renderObra e do afazerRow): o "Salvar" e o "Tirar orçamento" da
+   folha do orçamento e o adicionar, marcar e apagar dos afazeres, pelas regras do dados.js. Também partem do estado do
+   momento: o que outro aparelho mudou dentro do orçamento, ou nos outros afazeres, com a tela aberta fica. */
 public extension Estado {
     /// "Salvar" da folha do orçamento: o `orcamentoGravado` sobre o orçamento que está no estado agora; o nil dele tira a
     /// chave, como o `delete` do site.
@@ -120,6 +121,32 @@ public extension Estado {
         guard let i = indiceDaObra(obraId) else { return nil }
         var e = self
         e.obras[i].orcamento = nil
+        return e
+    }
+
+    /// O afazer novo no começo, com o texto já conferido (`conferirAfazer`). A obra que não trazia a chave `afazeres` passa
+    /// a trazer, como o `oo.afazeres = []` do site: apagado o último afazer, ela grava `afazeres: []`.
+    func adicionandoAfazer(_ texto: String, id: String, naObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId) else { return nil }
+        var e = self
+        e.obras[i].afazeres = afazeresComNovo(obras[i].afazeres, texto: texto, id: id)
+        e.obras[i].afazeresNaArvore = true
+        return e
+    }
+
+    /// Marcar ou desmarcar, pelo círculo ou pelo texto: o afazer vai para o começo. Nil quando ele sumiu.
+    func alternandoAfazer(_ afazerId: String, naObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), let lista = afazeresAlternado(obras[i].afazeres, id: afazerId) else { return nil }
+        var e = self
+        e.obras[i].afazeres = lista
+        return e
+    }
+
+    /// Apagar arrastando, sem perguntar. Nil quando ele sumiu.
+    func apagandoAfazer(_ afazerId: String, daObra obraId: String) -> Estado? {
+        guard let i = indiceDaObra(obraId), let lista = afazeresSem(obras[i].afazeres, id: afazerId) else { return nil }
+        var e = self
+        e.obras[i].afazeres = lista
         return e
     }
 }

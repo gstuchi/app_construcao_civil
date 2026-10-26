@@ -2,8 +2,8 @@ import Testing
 @testable import CusttaNucleo
 
 /* As regras da etapa 3 que o site não tem (mockup aprovado em 18/10): o aviso dos tópicos e o que está fora, o cartão da
-   tela Orçamento, o gasto por tópico no modo total, o A pagar por mês com o que vem depois e o detalhe do tópico. Valores
-   de mil para cima, para separar moeda de moedaCurta. */
+   tela Orçamento, o gasto por tópico no modo total, o A pagar por mês com o que vem depois, a soma dos achados, os vazios
+   da busca, o detalhe do tópico e a linha dos afazeres. Valores de mil para cima, para separar moeda de moedaCurta. */
 struct DentroDaObraTests {
     static let hoje = "2026-10-12"
 
@@ -120,6 +120,27 @@ struct DentroDaObraTests {
         #expect(soDepois.qtd == 0 && soDepois.meses.isEmpty && soDepois.ponte != nil, "vazia nos 30 dias, a frase ainda diz o que vem")
     }
 
+    @Test func somaDosAchadosSoComFiltroEAchado() {
+        let achados = obra([gasto("a", "2026-09-01", 1_250.25), gasto("b", "2026-09-02", 2_000.25)]).gastos
+        // O rótulo e o valor separados: na maior letra, o valor vai para a própria linha e encolhe (o dinheiro numa frase).
+        #expect(somaDosAchados(achados, filtrando: true) == SomaDosAchados(rotulo: "Soma dos achados:", valor: "R$\u{00A0}3.250,50"))
+        #expect(somaDosAchados(achados, filtrando: true)?.falado == "Soma dos achados: R$\u{00A0}3.250,50", "o VoiceOver lê a frase inteira")
+        #expect(somaDosAchados(achados, filtrando: false) == nil, "sem filtro, a lista é a obra inteira")
+        #expect(somaDosAchados([], filtrando: true) == nil)
+    }
+
+    @Test func vaziosDaBusca() {
+        let gastos = obra([gasto("a", "2026-09-01", 1_000), gasto("b", "2026-10-02", 2_000)]).gastos
+        let nada = "Nada encontrado com esse filtro.", onde = "A busca olha a descrição e o tópico, com ou sem acento."
+        #expect(vazioDaBusca(gastos, texto: "azulejo", mes: "") == .nadaEncontrado(titulo: nada, frase: onde, botao: "Limpar a busca"))
+        #expect(vazioDaBusca(gastos, texto: "azulejo", mes: "2026-09") == .nadaEncontrado(titulo: nada, frase: onde, botao: "Limpar busca e mês"))
+        #expect(vazioDaBusca(gastos, texto: "  ", mes: "2026-09") == .nadaEncontrado(titulo: nada, frase: onde, botao: "Limpar o mês"),
+                "o texto aparado")
+        #expect(vazioDaBusca(gastos, texto: "azulejo", mes: "2026-03")
+                == .mesSemGasto(titulo: "Nenhum gasto em março de 2026.", botao: "Ver todos os meses"), "o mês que ficou sem gasto vem antes")
+        #expect(vazioDaBusca(gastos, texto: "", mes: "2026-11") == .mesSemGasto(titulo: "Nenhum gasto em novembro de 2026.", botao: "Ver todos os meses"))
+    }
+
     @Test func detalheDoTopicoComAVencerEPagos() throws {
         let gastos = [gasto("r2", "2026-11-20", 615, topico: "revest"), gasto("r0", "2026-10-05", 800, topico: "revest"),
                       gasto("r1", "2026-10-20", 615, topico: "revest"), gasto("x1", "2026-09-01", 1_385, topico: "pintura"),
@@ -166,6 +187,21 @@ struct DentroDaObraTests {
         #expect(try frase([80_000, 6_200]) == FraseDoOrcamento(texto: "Passou R$ 6,2 mil do previsto", alerta: true),
                 "passou, no âmbar e semibold (P1:2097)")
         #expect(try frase([80_000]) == FraseDoOrcamento(texto: "Chegou ao previsto — 100%", alerta: false), "o previsto exato (P1:2096-2100)")
+    }
+
+    func afazer(_ id: String, _ texto: String, feito: Bool) -> Afazer {
+        Afazer(campos: ["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
+    }
+
+    @Test func linhaDosAfazeresNosTresEstados() {
+        let com = [afazer("f1", "Pagar o gesso", feito: true), afazer("p1", "Comprar tinta", feito: false),
+                   afazer("p2", "Ligar pro pedreiro", feito: false), afazer("p3", "Ver o reboco", feito: false)]
+        #expect(linhaDosAfazeres(com) == .pendentes(etiqueta: "3 pendentes", primeiro: "Comprar tinta"), "o primeiro pendente, não o primeiro do array")
+        #expect(linhaDosAfazeres([afazer("p1", "Comprar tinta", feito: false), afazer("f1", "Pagar o gesso", feito: true)])
+                == .pendentes(etiqueta: "1 pendente", primeiro: "Comprar tinta"))
+        #expect(linhaDosAfazeres(com.map { var a = $0; a.feito = true; return a }) == .tudoFeito(etiqueta: "tudo feito", feitos: "4 feitos"))
+        #expect(linhaDosAfazeres([afazer("f1", "Pagar o gesso", feito: true)]) == .tudoFeito(etiqueta: "tudo feito", feitos: "1 feito"))
+        #expect(linhaDosAfazeres([]) == .vazia(frase: "Anote o que falta na obra."))
     }
 
     @Test func topicosComValorNaFolha() {

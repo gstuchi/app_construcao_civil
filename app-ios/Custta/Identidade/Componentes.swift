@@ -383,6 +383,8 @@ extension View {
 /// depois de rolada: o laudo comparou um print rolado com outro no topo (CenaNaoDeterministica na CI, em 15/10 e 17/10). Até
 /// alguém arrastar, a rolagem que sai da pedida volta.
 struct RolagemFixaDoTeste: ViewModifier {
+    /// Sonda da cena "A pagar, fim": 0 na obra, 1 nas outras telas (temporário).
+    var onde: UInt64 = 1
     @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
     @State private var posicao = ScrollPosition(edge: .top)
     /// A rolagem fixa foi pedida e ninguém arrastou a lista depois: o gancho a segura.
@@ -396,9 +398,13 @@ struct RolagemFixaDoTeste: ViewModifier {
                 try? await Task.sleep(for: .milliseconds(300))
                 posicao.scrollTo(y: rolagemFixa)
                 segurando = true
+                SondaFim.avisar("fixa", onde)
             }
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
-                if segurando, abs(y - rolagemFixa) > 0.5 { posicao.scrollTo(y: rolagemFixa) }
+                if segurando, abs(y - rolagemFixa) > 0.5 {
+                    posicao.scrollTo(y: rolagemFixa)
+                    SondaFim.avisar("refixa", onde * 100_000 + UInt64(max(0, y)))
+                }
             }
             .onScrollPhaseChange { _, fase in if fase == .interacting { segurando = false } }
     }

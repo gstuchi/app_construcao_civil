@@ -8,7 +8,7 @@ final class SondaFocoUITests: XCTestCase {
     private func sonda(_ variante: String) {
         let inicio = Date.now
         let nomes = ["foco.sim", "foco.nao", "campo.apareceu", "campo.sumiu", "edicao.comeca", "edicao.acaba", "teclado.mostra",
-                     "teclado.esconde", "texto", "parada"]
+                     "teclado.esconde", "texto", "parada", "congelou"]
         var tokens: [Int32] = []
         for nome in nomes {
             var token: Int32 = 0
@@ -51,7 +51,8 @@ final class SondaFocoUITests: XCTestCase {
 
     func testSondaFocoNenhum1() { sonda("nenhum") }
     func testSondaFocoNenhum2() { sonda("nenhum") }
-    func testSondaFocoVstack() { sonda("vstack") }
-    func testSondaFocoLento() { sonda("lento") }
-    func testSondaFocoLentoVstack() { sonda("lentoVstack") }
+    func testSondaFocoNenhum3() { sonda("nenhum") }
+    func testSondaFocoNenhum4() { sonda("nenhum") }
+    func testSondaFocoSemSoma1() { sonda("semSoma") }
+    func testSondaFocoSemSoma2() { sonda("semSoma") }
 }

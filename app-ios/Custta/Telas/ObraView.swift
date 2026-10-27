@@ -103,7 +103,7 @@ struct ObraView: View {
                     if !busca.mes.isEmpty {
                         ChipDoMes(mes: busca.mes, tirar: tirarOMes)
                     }
-                    if let soma = somaDosAchados(achados, filtrando: filtrando) {
+                    if let soma = somaDosAchados(achados, filtrando: filtrando), !SondaFoco.semSoma {
                         SomaDosAchadosView(soma: soma)
                     }
                     if obra.gastos.isEmpty {

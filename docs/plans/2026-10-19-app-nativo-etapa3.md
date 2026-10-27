@@ -17726,3 +17726,1182 @@ git add .github/workflows/app-ios.yml \
   tests/workflow.test.cjs
 git commit -m "feat: busca e filtro por mês na lista de lançamentos do app" -m "A lista de lançamentos da obra ganha a busca e o filtro por mês do site, no desenho aprovado no mockup da etapa 3 (parte 2, opção A): dois botões redondos de vidro ao lado da pílula \"Lançamentos\", a lupa e o mês, e a tela não cresce enquanto ninguém busca. A lupa abre o campo \"Buscar gasto ou tópico\" embaixo da pílula, rola a lista até ela e põe o teclado; o × fecha a busca e limpa o texto, e o \"buscar\" do teclado só o fecha. A busca é a do núcleo, sem acento e sem diferença de maiúscula, na descrição ou no tópico, com o texto aparado." -m "O mês sai de um Menu do sistema, com \"Todos os meses\" e os meses que têm gasto, por extenso, com quantos gastos cada um tem no subtítulo do item (o menu do sistema não tem a coluna à direita do mockup), e vira um chip com × embaixo da pílula. O mês escolhido continua no chip e no menu mesmo quando fica sem gasto, o conserto do achado 1: a lista diz \"Nenhum gasto em março de 2025.\" e oferece \"Ver todos os meses\". Com filtro, a pílula conta \"achados/total\", o \"A vencer\" abre sozinho com os achados, cada mês soma só os seus, e \"Soma dos achados\" dá o total; sem achado, a lista diz por quê e o botão limpa a busca, o mês ou os dois. Na maior letra, a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira × para fechar." -m "O filtro mora na tela da obra, e não no modelo: zera ao trocar de obra, como no site, não vai para a nuvem e não depende do estado que chega do Sincronizador. A obra sem gasto mostra só a pílula, agora sem o número, como o contador do site e o mockup da etapa 2. A pílula é a PilulaDaLista, a mesma das listas da tela Orçamento, que passa a ser um texto só: na maior letra ela quebra como texto corrido, igual ao mockup, que põe o título e o número no mesmo fluxo, em vez do HStack de antes, que podia hifenizar o título na AX5; o VoiceOver segue lendo \"Por tópico, 14\" e \"Gasto por tópico, 14\". A lupa do site entra no catálogo de ícones." -m "A suíte nova, BuscaUITests, roda num job novo, o app-etapa3-c, na mesma forma do app-etapa3-b e com teto de 60 min, e o app a pula: o app-etapa3 não cresce mais (58,8 min no run 39813469497), e no app-etapa3-b as suítes do PR 3 (~22 min de testes no run 39878786962) o levariam a ~50 min. A guarda do workflow conta o job novo."
 ```
+
+### Task 41: Afazeres na obra e a tela Afazeres
+
+A obra ganha os afazeres do site, no desenho da parte 2 do mockup (opção A): uma linha entre as ações da fase e os lançamentos, em todas as fases, com quantos estão pendentes e o primeiro deles (em até duas linhas), ou "tudo feito" e quantos, ou a frase do site quando não há nenhum. A linha empurra a tela "Afazeres", no caminho de Obras, com título grande. A obra cresce uma linha, e não o painel do site, que crescia a cada afazer. Na tela, o campo "Novo afazer" fica no alto e para em 500 caracteres; o "OK" do teclado e o + adicionam o texto aparado no alto dos pendentes, aceso um instante, e o cursor continua no campo para anotar vários seguidos (vazio não faz nada). Os pendentes mostram o texto inteiro, quebrando linha (no site, cortavam numa linha). O círculo de 44 pt marca, e o toque no texto também, como no site. Os Feitos começam fechados, com o texto riscado na cor secundária (a opacidade do site não passava de 4,5:1). Arrastar mostra "Apagar", que apaga sem perguntar, pela mesma linha arrastável da lista de gastos. A obra apagada em outro aparelho fecha a tela.
+
+- **O toque que marca.** O círculo troca na hora e, meio segundo depois, o afazer vai para o alto dos Feitos, com a mola (sem ela, com Reduzir movimento); desmarcado, volta para o alto dos pendentes. Um segundo toque nesse meio segundo desiste, sem gravar nada (dois toques = marcar e desmarcar, como no site). A regra mora em `TrocasPendentes` e é provada no teste de unidade: o `doubleTap()` do XCUITest chega à linha como um toque só. O gancho `-custta.esperaDoAfazer <ms>` (Debug) troca o meio segundo, e o teste de tela vê o círculo trocado e o VoiceOver com "feito" antes de a linha sair.
+- **O campo para em 500.** Fica o `TextField` do SwiftUI, que não recusa tecla: o texto guardado e o gravado nunca passam de 500, o + nunca fica calado (um texto longo iria ao aviso do topo) e, tecla a tecla, o campo para em 500. Só com teclas a 1–3 ms, como as do XCUITest, a tela mostra mais por um instante, até a tecla seguinte; uma `UITextView` própria recusaria a tecla, mas refaria o campo, o laudo e a auditoria, e fica para depois.
+- **O campo quebra linha.** O exemplo é desenhado num `Text` (a guarda do campo que quebra linha), e o "OK" chega como `\n`: sai do texto e adiciona, com o teclado aberto (o campo de uma linha fecharia o teclado a cada afazer). Com `prompt:`, o título do `TextField` não vira o rótulo do VoiceOver: o campo leva `.accessibilityLabel("Novo afazer")`, como o da busca.
+- **Gravação recusada avisa.** Cada gravação passa pelo `gravar` do modelo, com o alerta do site quando o app ainda não viu os dados; uma guarda Node confere isso nos três jeitos de gravar (adicionar, marcar e apagar).
+- **O + da cápsula, nos afazeres, lança gasto na obra deles** (o mockup desenha o + nessa tela; dentro da obra, ele é "Lançar gasto").
+- **O título da linha** ("Afazeres") vai na cor do texto, como os rótulos dos indicadores da mesma tela (a `.k-nome` do mockup), e a pílula "Pendentes" é a `PilulaDaLista`, num texto só.
+- **Os falsos e o gancho.** Os falsos ganham os 7 afazeres do mockup na Casa Alphaville e 2 feitos no Sobrado Granja Viana (`DadosDeExemplo.afazeresDaVitrine`), e o Debug abre a tela por `CUSTTA_ABRIR=afazeres:<obra>`: abre a obra e empurra os afazeres quando os dados chegam (empurrados juntos na abertura, o título grande nascia recolhido).
+- **A suíte nova de tela,** `AfazeresUITests`, roda no `app-etapa3-c`, com a `BuscaUITests`, e o `app` a pula.
+
+**Files:**
+- Create: `app-ios/Custta/Telas/AfazeresView.swift`
+- Test (criar): `app-ios/CusttaTests/AfazeresTests.swift`
+- Test (criar): `app-ios/CusttaUITests/AfazeresUITests.swift`
+- Modify: `.github/workflows/app-ios.yml`
+- Modify: `app-ios/Custta/Falsos/TransporteFalsoApp.swift`
+- Modify: `app-ios/Custta/Falsos/VitrineDaObra.swift`
+- Modify: `app-ios/Custta/Telas/ObraView.swift`
+- Modify: `app-ios/Custta/Telas/ObrasView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
+- Modify: `app-ios/Custta/Telas/PrincipalView.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `linhaDosAfazeres` e `LinhaDosAfazeres` (Tarefa 38), `conferirAfazer` e `ConferenciaDoAfazer`, `adicionandoAfazer`, `alternandoAfazer` e `apagandoAfazer` (Tarefa 37), `gerarId`, `Limites.afazer` e `aparadoJS` (núcleo); `modelo.gravar`, `mensagemDeNaoCarregado`, `LinhaArrastavel`, `CartaoDaLista`, `CartaoDeEstado`, `EtiquetaDoIndicador`, `LinhaFina`, `IndicadorDeSincronizacao`, `haloDoTituloDaBarra`, `bordaDeRolagem` e `PilulaDaLista` (app).
+- Produces: `RotaDeObras.afazeres(String)` e `RotaDeObras.obraId`; `LinhaDosAfazeresView` e `AfazeresView`; `limitadoAoAfazer(_:) -> String`; `textoDoCampoDoAfazer(_:) -> (texto: String, adiciona: Bool)`; `feitoAVista(_:trocando:) -> Bool`; `TrocasPendentes` (`ids`, `tocar(_:) -> Bool`, `confirmar(_:) -> Bool`); `DadosDeExemplo.afazeresDaVitrine` e `DadosDeExemplo.afazer(_:_:feito:)`; o gancho `CUSTTA_ABRIR=afazeres:<obra>` e o `-custta.esperaDoAfazer`; identificadores `linhaDosAfazeres`, `novoAfazer`, `adicionarAfazer`, `pendentes`, `feitos`, `afazer-<id>`, `apagar-<id>` (da `LinhaArrastavel`) e `afazeresVazio`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Criar `app-ios/CusttaTests/AfazeresTests.swift`:
+
+```swift
+import Testing
+@testable import Custta
+import CusttaNucleo
+
+/* A tela Afazeres (etapa 3): o campo que para em 500 unidades UTF-16 como o maxlength do site, sem partir um emoji, e tira
+   o "\n" do OK do teclado, que adiciona; o estado à vista do afazer tocado, que troca na hora e muda de lugar meio segundo
+   depois; e o segundo toque que desiste. */
+struct AfazeresTests {
+    @Test func campoParaEm500UnidadesSemPartirEmoji() {
+        #expect(limitadoAoAfazer("Comprar areia") == "Comprar areia")
+        let quinhentos = String(repeating: "a", count: 500)
+        #expect(limitadoAoAfazer(quinhentos) == quinhentos, "cabe até a 500ª unidade")
+        #expect(limitadoAoAfazer(quinhentos + "a") == quinhentos)
+        #expect(limitadoAoAfazer(String(repeating: "a", count: 499) + "🧱b") == String(repeating: "a", count: 499),
+                "corta no tijolo, como o maxlength: o b depois dele não entra")
+        #expect(limitadoAoAfazer(String(repeating: "a", count: 498) + "🧱b") == String(repeating: "a", count: 498) + "🧱",
+                "o tijolo que cabe inteiro fica")
+    }
+
+    /// O que o campo guarda do texto que o teclado deixou nele: o "OK" chega como "\n", que sai e adiciona, e o guardado
+    /// nunca passa de 500 (o + grava o guardado, então nunca fica calado com o campo cheio).
+    @Test func campoTiraOOKECortaEm500() {
+        let quinhentos = String(repeating: "a", count: 500)
+        let digitando = textoDoCampoDoAfazer("Comprar areia")
+        #expect(digitando.texto == "Comprar areia" && !digitando.adiciona)
+        let ok = textoDoCampoDoAfazer("Comprar areia\n")
+        #expect(ok.texto == "Comprar areia" && ok.adiciona, "o OK sai do texto e adiciona")
+        let cheio = textoDoCampoDoAfazer(quinhentos + "aa")
+        #expect(cheio.texto == quinhentos && !cheio.adiciona, "a rajada que passa de 500 fica nos 500")
+        let okCheio = textoDoCampoDoAfazer(quinhentos + "a\n")
+        #expect(okCheio.texto == quinhentos && okCheio.adiciona, "o OK com a tela acima de 500 adiciona os 500")
+        let okNoMeio = textoDoCampoDoAfazer(String(repeating: "a", count: 499) + "\nb")
+        #expect(okNoMeio.texto == String(repeating: "a", count: 499) + "b" && okNoMeio.adiciona, "o \\n sai antes do corte")
+    }
+
+    @Test func estadoAVistaTrocaNaHoraDoToque() {
+        let pendente = Afazer(campos: ["id": .texto("a1"), "texto": .texto("Pagar o gesso"), "feito": .booleano(false)])
+        let feito = Afazer(campos: ["id": .texto("a2"), "texto": .texto("Ver o reboco"), "feito": .booleano(true)])
+        #expect(!feitoAVista(pendente, trocando: []))
+        #expect(feitoAVista(pendente, trocando: ["a1"]), "marcado agora: o círculo enche antes de a linha mudar de lugar")
+        #expect(feitoAVista(feito, trocando: []))
+        #expect(!feitoAVista(feito, trocando: ["a2"]), "desmarcado agora")
+        #expect(feitoAVista(feito, trocando: ["a1"]), "o toque em outro não muda este")
+    }
+
+    /// Um segundo toque no meio segundo entre o círculo trocar e a linha mudar de lugar desiste, e nada é gravado (dois
+    /// toques seguidos marcam e desmarcam, como no site). O toque duplo do XCUITest chega a esta linha como um toque só.
+    @Test func segundoToqueNoMeioDoCaminhoDesiste() {
+        var trocas = TrocasPendentes()
+        let primeiro = trocas.tocar("a1")
+        #expect(primeiro, "o primeiro toque pede a troca")
+        #expect(trocas.ids == ["a1"], "o círculo já mostra o estado novo")
+        let segundo = trocas.tocar("a1"), gravouDesistido = trocas.confirmar("a1")
+        #expect(!segundo, "o segundo, antes do meio segundo, desiste")
+        #expect(!gravouDesistido, "e nada é gravado")
+        let deNovo = trocas.tocar("a1"), outro = trocas.tocar("a2")
+        #expect(deNovo && outro, "um afazer não atrapalha o outro")
+        let gravou = trocas.confirmar("a1"), gravouDeNovo = trocas.confirmar("a1")
+        #expect(gravou, "meio segundo depois, grava")
+        #expect(!gravouDeNovo, "uma vez só")
+        #expect(trocas.ids == ["a2"])
+    }
+}
+```
+
+Criar `app-ios/CusttaUITests/AfazeresUITests.swift`:
+
+```swift
+import XCTest
+import notify
+
+/* Os afazeres (etapa 3, PR 3; mockup da parte 2, seção 4): a linha na obra nos três estados, que abre a tela "Afazeres";
+   adicionar vários seguidos (o novo no alto, o cursor no campo), o campo vazio que não faz nada e o que para em 500
+   caracteres, com o + que grava os 500 mesmo depois de rajadas de teclas; marcar pelo círculo e desmarcar pelo texto, na
+   ordem nova (o feito no alto dos Feitos, o desmarcado no alto dos pendentes), com o círculo que troca na hora e o segundo
+   toque que desiste; "Feitos" fechado, que abre; apagar arrastando, sem pergunta; o texto longo inteiro na tela e cortado
+   em duas linhas na obra; o vazio; a gravação recusada antes de ver os dados; a obra apagada em outro aparelho; e o + da
+   cápsula, que lança gasto na obra. Na vitrine, a Casa Alphaville tem os 7 afazeres do mockup (3 pendentes e 4 feitos), o
+   Sobrado Granja Viana, 2 feitos, e a Casa Tamboré 4, nenhum. */
+@MainActor
+final class AfazeresUITests: XCTestCase {
+    private func abrirAfazeres(_ obra: String = "v1", argumentos: [String] = []) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "afazeres:\(obra)", argumentos: argumentos)
+        XCTAssertTrue(app.textFields["novoAfazer"].waitForExistence(timeout: 10))
+        return app
+    }
+
+    /// Os afazeres à vista, de cima para baixo, pelo texto.
+    private func ordem(_ app: XCUIApplication) -> [String] {
+        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'afazer-'")).allElementsBoundByIndex
+            .sorted { $0.frame.minY < $1.frame.minY }.map(\.label)
+    }
+
+    private func pendentes(_ app: XCUIApplication) -> String { app.elemento("pendentes").label }
+
+    /// A linha da obra nos três estados, cada uma abrindo a tela da obra dela.
+    func testLinhaNosTresEstadosAbreAfazeres() {
+        let app = abrirApp(conta: "senha", dados: "vitrine")
+        for (obra, valor) in [("v1", "3 pendentes, Pagar a quinzena do pedreiro na sexta"), ("v2", "tudo feito, 2 feitos"),
+                              ("v3", "Anote o que falta na obra.")] {
+            let cartao = app.elemento("obra-\(obra)")
+            XCTAssertTrue(cartao.waitForExistence(timeout: 10))
+            cartao.tap()
+            let linha = app.elemento("linhaDosAfazeres")
+            XCTAssertTrue(linha.waitForExistence(timeout: 5))
+            app.rolarAte(linha)
+            XCTAssertEqual(linha.label, "Afazeres")
+            XCTAssertEqual(linha.value as? String, valor, obra)
+            linha.tap()
+            XCTAssertTrue(app.textFields["novoAfazer"].waitForExistence(timeout: 5), "a linha empurra a tela Afazeres")
+            XCTAssertTrue(app.navigationBars["Afazeres"].exists)
+            app.navigationBars.buttons["BackButton"].tap()
+            XCTAssertTrue(linha.waitForExistence(timeout: 5), "volta para a obra")
+            app.navigationBars.buttons["BackButton"].tap()
+        }
+    }
+
+    /// O "OK" do teclado e o + adicionam, aparado; o novo entra no alto dos pendentes, o campo limpa e o teclado fica.
+    func testAdicionarVariosSeguidosNoAltoComOCursorNoCampo() {
+        let app = abrirAfazeres()
+        let campo = app.textFields["novoAfazer"]
+        XCTAssertEqual(campo.label, "Novo afazer", "o rótulo do campo para o VoiceOver")
+        XCTAssertEqual(pendentes(app), "Pendentes, 3")
+        app.digitarComFoco("Comprar disjuntor de 40 A\n", em: campo)
+        XCTAssertEqual(pendentes(app), "Pendentes, 4")
+        XCTAssertEqual(ordem(app).first, "Comprar disjuntor de 40 A")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "o cursor continua no campo")
+        campo.typeText("  Ligar pro eletricista  ")
+        app.buttons["adicionarAfazer"].tap()
+        XCTAssertEqual(pendentes(app), "Pendentes, 5")
+        XCTAssertEqual(Array(ordem(app).prefix(3)), ["Ligar pro eletricista", "Comprar disjuntor de 40 A",
+                                                    "Pagar a quinzena do pedreiro na sexta"], "aparado, no alto")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "o + também deixa o cursor no campo")
+        campo.typeText("x")
+        XCTAssertEqual(campo.value as? String, "x", "o campo limpou depois de adicionar")
+    }
+
+    /// Vazio (ou só espaços) não faz nada: o "OK" sai do campo mesmo assim (sem a quebra de linha que ele traz), e o campo
+    /// continua com o cursor.
+    func testCampoVazioNaoFazNada() {
+        let app = abrirAfazeres()
+        app.buttons["adicionarAfazer"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "o + sem texto põe o cursor no campo")
+        app.textFields["novoAfazer"].typeText("   \n")
+        XCTAssertEqual(pendentes(app), "Pendentes, 3")
+        XCTAssertEqual(app.textFields["novoAfazer"].value as? String, "   ", "o OK sai do campo, mesmo sem adicionar")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+    }
+
+    /// O campo para em 500 caracteres, como o maxlength do site: digitando tecla a tecla, a que passa não fica, e o + grava
+    /// os 500. (Os 500 vão de uma vez, e as teclas a mais uma por vez, como a mão digita.)
+    func testCampoParaEm500Caracteres() {
+        let app = abrirAfazeres()
+        let campo = app.textFields["novoAfazer"]
+        let quinhentos = String(repeating: "a", count: 500)
+        app.digitarComFoco(quinhentos, em: campo)
+        for tecla in 1...5 {
+            campo.typeText("a")
+            XCTAssertEqual((campo.value as? String)?.count, 500, "tecla \(tecla) a mais")
+        }
+        app.buttons["adicionarAfazer"].tap()
+        XCTAssertEqual(pendentes(app), "Pendentes, 4")
+        XCTAssertEqual(ordem(app).first, quinhentos, "o afazer novo, com os 500")
+    }
+
+    /// Com o campo em 500, rajadas de teclas (o XCUITest digita a ~1 ms, mais rápido que a mão) e o +: o afazer novo é
+    /// gravado com os 500, e os pendentes crescem um. No meio de uma rajada a tela pode passar de 500 (a tecla seguinte
+    /// corrige), mas o estado e o gravado não, e o + nunca fica calado. As rajadas param na primeira em que a tela não mostra
+    /// 500, para o + chegar logo depois dela.
+    func testRajadasEm500EOMaisGravaOs500() {
+        let app = abrirAfazeres()
+        let campo = app.textFields["novoAfazer"]
+        let quinhentos = String(repeating: "a", count: 500)
+        app.digitarComFoco(quinhentos, em: campo)
+        for _ in 1...40 {
+            campo.typeText("aaa")
+            guard (campo.value as? String)?.count == 500 else { break }
+        }
+        app.buttons["adicionarAfazer"].tap()
+        XCTAssertEqual(pendentes(app), "Pendentes, 4", "o + gravou, sem ficar calado")
+        XCTAssertEqual(ordem(app).first, quinhentos, "o afazer novo, com os 500")
+        campo.typeText("x")
+        XCTAssertEqual(campo.value as? String, "x", "o campo limpou depois do +")
+    }
+
+    /// Marcar pelo círculo leva o afazer ao alto dos Feitos (fechados, que abrem); desmarcar pelo texto, ao alto dos
+    /// pendentes. O feito fica riscado e, para o VoiceOver, "feito".
+    func testMarcarEDesmarcarNaOrdemNova() {
+        let app = abrirAfazeres()
+        let a1 = app.elemento("afazer-a1")
+        XCTAssertEqual(a1.value as? String, "pendente")
+        // O círculo, à esquerda do texto: alvo de 44 pt a partir de 12 da borda da linha.
+        a1.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 34, dy: 28)).tap()
+        XCTAssertTrue(app.elemento("pendentes").waitForExistence(timeout: 3))
+        let feitos = app.elemento("feitos")
+        let ate = Date.now.addingTimeInterval(5)
+        while pendentes(app) != "Pendentes, 2" && Date.now < ate { usleep(200_000) }
+        XCTAssertEqual(pendentes(app), "Pendentes, 2", "meio segundo depois, o afazer sai dos pendentes")
+        XCTAssertEqual(feitos.label, "Feitos, 5")
+        XCTAssertEqual(feitos.value as? String, "fechado", "os Feitos começam fechados")
+        XCTAssertFalse(a1.exists, "com os Feitos fechados, o marcado some")
+        feitos.tap()
+        XCTAssertEqual(feitos.value as? String, "aberto")
+        XCTAssertTrue(a1.waitForExistence(timeout: 3))
+        XCTAssertEqual(a1.value as? String, "feito")
+        let rotulos = ordem(app)
+        XCTAssertEqual(Array(rotulos.suffix(5)).first, "Pagar a quinzena do pedreiro na sexta", "no alto dos Feitos")
+        a1.tap()
+        let ate2 = Date.now.addingTimeInterval(5)
+        while pendentes(app) != "Pendentes, 3" && Date.now < ate2 { usleep(200_000) }
+        XCTAssertEqual(pendentes(app), "Pendentes, 3")
+        XCTAssertEqual(ordem(app).first, "Pagar a quinzena do pedreiro na sexta", "desmarcado, no alto dos pendentes")
+        XCTAssertEqual(a1.value as? String, "pendente")
+        XCTAssertEqual(feitos.label, "Feitos, 4")
+    }
+
+    /// O círculo troca na hora (e o VoiceOver já ouve "feito"), e o afazer só muda de lugar depois; um segundo toque nesse
+    /// meio-tempo desiste. A espera passa de meio segundo para dez (gancho do Debug), para o teste ver o meio do caminho: no
+    /// iOS 26 da CI, o segundo toque saiu 4,2 s depois do primeiro, e com três o afazer já tinha ido para os Feitos.
+    func testCirculoTrocaNaHoraESegundoToqueDesiste() {
+        let app = abrirAfazeres(argumentos: ["-custta.esperaDoAfazer", "10000"])
+        let a1 = app.elemento("afazer-a1"), a3 = app.elemento("afazer-a3")
+        XCTAssertTrue(a1.waitForExistence(timeout: 5))
+        a1.tap()
+        XCTAssertEqual(a1.value as? String, "feito", "o círculo troca na hora")
+        XCTAssertEqual(pendentes(app), "Pendentes, 3", "e o afazer ainda não saiu dos pendentes")
+        a1.tap()
+        XCTAssertEqual(a1.value as? String, "pendente", "o segundo toque desiste")
+        sleep(12)                                         // passados os 10 s: antes deles, nada mudaria mesmo sem desistir
+        XCTAssertEqual(pendentes(app), "Pendentes, 3", "nada mudou de lugar")
+        XCTAssertEqual(ordem(app).first, "Pagar a quinzena do pedreiro na sexta")
+        a3.tap()
+        XCTAssertEqual(a3.value as? String, "feito")
+        let ate = Date.now.addingTimeInterval(14)
+        while pendentes(app) != "Pendentes, 2" && Date.now < ate { usleep(200_000) }
+        XCTAssertEqual(pendentes(app), "Pendentes, 2", "passada a espera, o marcado vai para os Feitos")
+        XCTAssertEqual(app.elemento("feitos").label, "Feitos, 5")
+    }
+
+    /// Na linha da obra, o primeiro pendente para em duas linhas (o texto inteiro está na tela Afazeres e no VoiceOver).
+    func testLinhaCortaOPrimeiroPendenteEmDuasLinhas() {
+        let app = abrirAfazeres()
+        app.elemento("afazer-a1").tap()
+        let ate = Date.now.addingTimeInterval(5)
+        while pendentes(app) != "Pendentes, 2" && Date.now < ate { usleep(200_000) }
+        app.navigationBars.buttons["BackButton"].tap()
+        let linha = app.elemento("linhaDosAfazeres")
+        XCTAssertTrue(linha.waitForExistence(timeout: 5))
+        app.rolarAte(linha)
+        XCTAssertTrue((linha.value as? String ?? "").hasSuffix("com a altura do peitoril e o lado de abrir de cada folha."),
+                      "o VoiceOver lê o pendente de 213 caracteres inteiro")
+        XCTAssertLessThan(linha.frame.height, 110, "duas linhas do pendente, e não seis")
+    }
+
+    /// A obra apagada em outro aparelho com os afazeres abertos: volta para Obras, como a tela da obra.
+    func testObraApagadaEmOutroAparelhoVoltaParaObras() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "afazeres:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
+        XCTAssertTrue(app.textFields["novoAfazer"].waitForExistence(timeout: 10))
+        notify_post("br.com.custta.falso.apagarRemoto")
+        XCTAssertTrue(app.elemento("obra-v2").waitForExistence(timeout: 10), "voltou para a lista de obras")
+        XCTAssertFalse(app.textFields["novoAfazer"].exists)
+        XCTAssertFalse(app.elemento("obra-v1").exists)
+    }
+
+    /// Arrastar mostra "Apagar", que apaga na hora, sem pergunta.
+    func testApagarArrastandoSemPergunta() {
+        let app = abrirAfazeres()
+        let a3 = app.elemento("afazer-a3")
+        XCTAssertTrue(a3.waitForExistence(timeout: 5))
+        a3.swipeLeft()
+        let apagar = app.buttons["apagar-a3"]
+        XCTAssertTrue(apagar.waitForExistence(timeout: 3), "arrastar para a esquerda mostra Apagar")
+        apagar.tap()
+        XCTAssertTrue(a3.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(app.alerts.count, 0, "sem pergunta")
+        XCTAssertEqual(pendentes(app), "Pendentes, 2")
+    }
+
+    /// O pendente longo (213 caracteres) se lê inteiro, quebrando linha.
+    func testTextoLongoSeLeInteiro() {
+        let app = abrirAfazeres()
+        let a2 = app.elemento("afazer-a2")
+        XCTAssertTrue(a2.waitForExistence(timeout: 5))
+        XCTAssertTrue(a2.label.hasSuffix("com a altura do peitoril e o lado de abrir de cada folha."), a2.label)
+        XCTAssertGreaterThan(a2.frame.height, 6 * 20, "seis linhas, nenhuma cortada")
+    }
+
+    /// Sem nenhum afazer, o vazio do site; o primeiro adicionado o tira.
+    func testVazioEOPrimeiroAfazer() {
+        let app = abrirAfazeres("v3")
+        let vazio = app.elemento("afazeresVazio")
+        XCTAssertTrue(vazio.waitForExistence(timeout: 5))
+        XCTAssertEqual(vazio.label, "Nenhum afazer.")
+        XCTAssertTrue(app.staticTexts["Anote o que falta na obra."].exists)
+        XCTAssertFalse(app.elemento("pendentes").exists)
+        app.digitarComFoco("Pagar o eletricista\n", em: app.textFields["novoAfazer"])
+        XCTAssertTrue(vazio.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(pendentes(app), "Pendentes, 1")
+    }
+
+    /// Antes de ver os dados, o alerta do site, e o texto continua no campo.
+    func testNaoCarregadoAvisaEMantemOTexto() {
+        let app = abrirAfazeres(argumentos: ["-custta.recusarGravacao", "nao-carregado"])
+        let campo = app.textFields["novoAfazer"]
+        app.digitarComFoco("Comprar areia\n", em: campo)
+        let alerta = app.alerts["Carregando suas obras, tente em instantes."]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 3))
+        alerta.buttons["OK"].tap()
+        XCTAssertEqual(campo.value as? String, "Comprar areia", "o texto continua no campo")
+        XCTAssertEqual(pendentes(app), "Pendentes, 3", "nada foi gravado")
+    }
+
+    /// Nos afazeres, o + da cápsula lança gasto na obra, como dentro dela.
+    func testOMaisDaCapsulaLancaGastoNaObra() {
+        let app = abrirAfazeres()
+        let mais = app.buttons["botaoMais"]
+        XCTAssertEqual(mais.label, "Lançar gasto")
+        mais.tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5), "a folha do gasto abre")
+    }
+}
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -422,10 +422,10 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
+     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
+ });
+ 
+-test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no escuro', () => {
++test('título grande de Obras, de Ajustes e de Afazeres e a versão em Ajustes com o halo no escuro', () => {
+   // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1 e a
+   // versão, texto solto, em 4,42:1. O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
+-  for(const tela of ['ObrasView', 'AjustesView'])
++  for(const tela of ['ObrasView', 'AjustesView', 'AfazeresView'])
+     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
+   assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
+     /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
+@@ -459,9 +459,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do
+   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
+   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
+   // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
+-  // sistema, em vez de empurrar os botões).
++  // sistema, em vez de empurrar os botões). Na etapa 3, o primeiro pendente na linha dos afazeres da obra para em duas
++  // linhas (quatro na maior letra), como no mockup: o texto inteiro está na tela Afazeres, e o VoiceOver o lê inteiro pela linha.
+   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
+-    'TituloDaFolha', 'BarraDasTeclas']);
++    'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
+   for(const f of arquivosSwift('app-ios/Custta')){
+     const t = ler(f);
+     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
+@@ -649,6 +650,33 @@ test('folha do orçamento: o teclado físico apaga como a tecla da tela, e a lin
+     'a linha ativa volta ao meio quando a letra muda');
+ });
+ 
++test('afazeres: gravação recusada avisa, em cada um dos três jeitos de gravar', () => {
++  // Adicionar, marcar (meio segundo depois do toque) e apagar arrastando gravam pela tela; nenhum teste de tela recusa os
++  // três. Sem o alerta, o toque recusado não faria nada (o achado da T29 no mudar da fase).
++  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
++  const gravacoes = t.match(/modelo\.gravar \{/g)?.length;
++  assert.equal(gravacoes, 3, 'adicionar, alternar e apagar');
++  assert.equal(t.match(/if resultado == \.naoCarregado \{ naoCarregado = true/g)?.length, gravacoes,
++    'cada gravação: antes de ver os dados, o alerta do site');
++  assert.match(t, /\.alert\(modelo\.mensagemDeNaoCarregado, isPresented: \$naoCarregado\)/, 'o alerta na própria tela');
++});
++
++test('afazeres: o + com texto longo avisa, sem ficar calado', () => {
++  // O set do campo corta em 500, então nenhum teste de tela chega ao `.longo` do `adicionar()`. Se um texto longo chegasse
++  // lá, sem o aviso do topo (o toast do site) o + não faria nada ao toque, e o campo ficaria cheio sem dizer por quê.
++  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
++  const i = t.indexOf('private func adicionar()'), j = t.indexOf('private func alternar(');
++  assert.ok(i >= 0 && j > i, 'o adicionar() da AfazeresView');
++  assert.match(t.slice(i, j), /case \.longo\(let mensagem\): modelo\.avisar\(mensagem\)/, 'o .longo vai ao aviso do topo');
++});
++
++test('afazeres: o + tira o texto cru que a tela guarda antes de adicionar', () => {
++  // O naTela (o texto da tela quando o guardado é outro) sai no onChange da volta seguinte. Um onChange perdido numa
++  // rajada o deixaria preso, e o campo mostraria o texto velho depois do +; o XCUITest espera o app ocioso e não chega lá.
++  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
++  assert.match(t, /Button\(action: \{ naTela = nil; adicionar\(\) \}\)/, 'o + limpa o naTela antes de adicionar');
++});
++
+ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {
+   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
+   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖|^ℹ (pass|fail)" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected: reprovam `✖ afazeres: gravação recusada avisa, em cada um dos três jeitos de gravar`, `✖ afazeres: o + com texto longo avisa, sem ficar calado`, `✖ afazeres: o + tira o texto cru que a tela guarda antes de adicionar` e `✖ título grande de Obras, de Ajustes e de Afazeres e a versão em Ajustes com o halo no escuro` (o `AfazeresView.swift` ainda não existe); `ℹ pass 62`, `ℹ fail 4`. O `CusttaTests` não compila: `cannot find 'limitadoAoAfazer' in scope` (5), `cannot find 'feitoAVista' in scope` (5), `cannot find 'textoDoCampoDoAfazer' in scope` (5) e `cannot find 'TrocasPendentes' in scope` (1). Só com os testes de tela no lugar (sem a `AfazeresTests`), o `AfazeresUITests` reprova 14 de 14 (`Executed 14 tests, with 32 failures`): 12 no `abrirAfazeres` (`XCTAssertTrue failed`: sem o `CUSTTA_ABRIR=afazeres:`, o campo "novoAfazer" não aparece), o `testObraApagadaEmOutroAparelhoVoltaParaObras` no mesmo campo e o `testLinhaNosTresEstadosAbreAfazeres` sem a `linhaDosAfazeres`.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -144,6 +144,7 @@ jobs:
+             -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
+             -skip-testing:CusttaUITests/DetalheDoTopicoUITests \
+             -skip-testing:CusttaUITests/BuscaUITests \
++            -skip-testing:CusttaUITests/AfazeresUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
+@@ -255,8 +256,8 @@ jobs:
+   app-etapa3-c:
+     runs-on: macos-26
+     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
+-    # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests. O mesmo preparo do app-etapa3, em paralelo com ele.
+-    # Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
++    # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
++    # paralelo com ele. Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -283,6 +284,7 @@ jobs:
+             -onlyUsePackageVersionsFromResolvedFile \
+             -resultBundlePath "$RUNNER_TEMP/testes-etapa3-c.xcresult" \
+             -only-testing:CusttaUITests/BuscaUITests \
++            -only-testing:CusttaUITests/AfazeresUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
+```
+
+Em `app-ios/Custta/Falsos/TransporteFalsoApp.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/TransporteFalsoApp.swift
++++ b/app-ios/Custta/Falsos/TransporteFalsoApp.swift
+@@ -162,9 +162,12 @@ enum DadosDeExemplo {
+             "obras": .lista([
+                 obra("v1", "Casa Alphaville", "construcao", inicio: 14, gastos: [],
+                      extra: ["orcamento": .objeto(["modo": .texto("total"), "total": .numero(1_200_000)]),
+-                             "valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300), "gastos": gastosDaVitrine(hoje: hoje)]),
++                             "valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300), "gastos": gastosDaVitrine(hoje: hoje),
++                             "afazeres": afazeresDaVitrine]),
+                 obra("v2", "Sobrado Granja Viana", "pronta", inicio: 23,
+-                     gastos: [(23, 250_000), (21, 330_000), (18, 310_000), (15, 280_000), (12, 210_000)]),
++                     gastos: [(23, 250_000), (21, 330_000), (18, 310_000), (15, 280_000), (12, 210_000)],
++                     extra: ["afazeres": .lista([afazer("b1", "Entregar as chaves ao corretor", feito: true),
++                                                 afazer("b2", "Pintar o muro da frente", feito: true)])]),
+                 obra("v3", "Casa Tamboré 4", "vendida", inicio: 20,
+                      gastos: [(20, 210_000), (18, 260_000), (15, 250_000), (12, 256_000)],
+                      extra: ["venda": .objeto(["valor": .numero(1_450_000), "data": data(2)])]),
+```
+
+Em `app-ios/Custta/Falsos/VitrineDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDaObra.swift
++++ b/app-ios/Custta/Falsos/VitrineDaObra.swift
+@@ -78,6 +78,25 @@ extension DadosDeExemplo {
+             return .objeto(campos)
+         })
+     }
++
++    /// Os afazeres da Casa Alphaville do mockup da etapa 3 (parte 2, seção 4): 3 pendentes (um de 213 caracteres, que se lê
++    /// inteiro na tela Afazeres) e 4 feitos, na ordem do array.
++    static let afazeresDaVitrine: ValorJSON = .lista([
++        afazer("a1", "Pagar a quinzena do pedreiro na sexta", feito: false),
++        afazer("a2", "Ligar para o vidraceiro e confirmar a medida das janelas da sala, do quarto do casal e do banheiro social "
++               + "antes de sexta. Ele pediu as medidas por escrito, com a altura do peitoril e o lado de abrir de cada folha.",
++               feito: false),
++        afazer("a3", "Comprar 10 sacos de argamassa para o banheiro", feito: false),
++        afazer("a4", "Agendar a entrega do porcelanato", feito: true),
++        afazer("a5", "Buscar a tinta na loja", feito: true),
++        afazer("a6", "Mandar o projeto elétrico para a concessionária", feito: true),
++        afazer("a7", "Trocar o cadeado do portão", feito: true),
++    ])
++
++    /// Um afazer como o site grava.
++    static func afazer(_ id: String, _ texto: String, feito: Bool) -> ValorJSON {
++        .objeto(["id": .texto(id), "texto": .texto(texto), "feito": .booleano(feito)])
++    }
+ }
+ 
+ extension DadosDeExemplo {
+```
+
+Criar `app-ios/Custta/Telas/AfazeresView.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* Os afazeres da obra (mockup aprovado da etapa 3, parte 2, seção 4, opção A): uma linha na tela da obra, entre as ações e
+   os lançamentos, que empurra a tela "Afazeres". Na tela, o campo "Novo afazer" no alto (até 500 caracteres; o novo entra no
+   alto dos pendentes, aceso um instante, e o cursor fica no campo para anotar vários seguidos); os pendentes com o texto
+   inteiro, quebrando linha; o círculo de 44 pt que marca (o toque no texto também, como no site); "Feitos · N" fechado. Marcar
+   leva o afazer ao alto dos Feitos e desmarcar, ao alto dos pendentes: a ordem do array, que o site mostra igual. O feito fica
+   riscado, na cor secundária (a opacidade 0,5 do site não passa de 4,5:1). Arrastar mostra "Apagar", que apaga sem pergunta
+   (o × fixo do site sai). Grava pelo `modelo.gravar`, com o alerta do site antes de ver os dados. */
+
+/// A linha dos afazeres na tela da obra, num grupo de vidro: com pendentes, "N pendentes" e o primeiro deles; tudo feito,
+/// "tudo feito" e quantos; sem nenhum, a frase do site. O VoiceOver lê o texto inteiro do primeiro pendente.
+struct LinhaDosAfazeresView: View {
+    let linha: LinhaDosAfazeres
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        HStack(spacing: 11) {
+            if !grande {
+                Image(decorative: "Icones/check")
+                    .resizable().frame(width: 20, height: 20)
+                    .foregroundStyle(paleta.cor(.marca))
+                    .frame(width: 38, height: 38)
+                    .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 11))
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline) { titulo; Spacer(minLength: 10); etiqueta }
+                    VStack(alignment: .leading, spacing: 4) { titulo; etiqueta }
+                }
+                PrimeiroPendente(texto: textoDeBaixo, cortado: pendente)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(paleta.cor(vidro.secundario))
+                .frame(width: grande ? 22 : 14)
+                .accessibilityHidden(true)
+                .foraDoLaudo()
+        }
+        .padding(EdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 14))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(.rect)
+        .superficie(.conteudo, em: .rect(cornerRadius: 24))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Afazeres")
+        .accessibilityValue(falado)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("linhaDosAfazeres")
+    }
+
+    private var titulo: some View {
+        Text("Afazeres").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder private var etiqueta: some View {
+        switch linha {
+        case .pendentes(let e, _): EtiquetaDoIndicador(texto: e, cor: .marca)
+        case .tudoFeito(let e, _): EtiquetaDoIndicador(texto: e, cor: .positivo)
+        case .vazia: EmptyView()
+        }
+    }
+
+    private var pendente: Bool { if case .pendentes = linha { return true } else { return false } }
+
+    private var textoDeBaixo: String {
+        switch linha {
+        case .pendentes(_, let primeiro): return primeiro
+        case .tudoFeito(_, let feitos): return feitos
+        case .vazia(let frase): return frase
+        }
+    }
+
+    private var falado: String {
+        switch linha {
+        case .pendentes(let e, let primeiro): return "\(e), \(primeiro)"
+        case .tudoFeito(let e, let feitos): return "\(e), \(feitos)"
+        case .vazia(let frase): return frase
+        }
+    }
+}
+
+/// O texto de baixo da linha dos afazeres. O primeiro pendente para em duas linhas (quatro na maior letra), como no mockup:
+/// o texto inteiro está na tela Afazeres, e o VoiceOver o lê inteiro pela linha.
+struct PrimeiroPendente: View {
+    let texto: String
+    let cortado: Bool
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        Text(texto)
+            .font(.subheadline)
+            .foregroundStyle(paleta.cor(vidro.secundario))
+            .lineLimit(cortado ? (tamanho.isAccessibilitySize ? 4 : 2) : nil)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// O texto de um afazer até 500 unidades UTF-16, como o `maxlength` do site: corta no primeiro caractere que não cabe
+/// (nada depois dele entra, e um emoji não parte ao meio).
+func limitadoAoAfazer(_ texto: String) -> String {
+    guard texto.utf16.count > Limites.afazer else { return texto }
+    var r = ""
+    for c in texto {
+        guard r.utf16.count + c.utf16.count <= Limites.afazer else { break }
+        r.append(c)
+    }
+    return r
+}
+
+/// O que o campo do afazer guarda do texto que o teclado deixou nele: sem o "\n" do "OK" do teclado, que adiciona, e até 500
+/// unidades UTF-16.
+func textoDoCampoDoAfazer(_ novo: String) -> (texto: String, adiciona: Bool) {
+    let adiciona = novo.contains("\n")
+    return (limitadoAoAfazer(adiciona ? novo.replacingOccurrences(of: "\n", with: "") : novo), adiciona)
+}
+
+/// O estado de um afazer à vista: o círculo troca na hora do toque, e o afazer muda de lugar meio segundo depois.
+func feitoAVista(_ afazer: Afazer, trocando: Set<String>) -> Bool { afazer.feito != trocando.contains(afazer.id) }
+
+/// Os afazeres tocados há menos de meio segundo: o círculo já mostra o estado novo e a linha ainda não mudou de lugar.
+struct TrocasPendentes {
+    private(set) var ids: Set<String> = []
+
+    /// O toque no afazer: o primeiro pede a troca (true: grave daqui a meio segundo); o segundo, no meio do caminho, desiste
+    /// (dois toques seguidos marcam e desmarcam, como no site, e nada é gravado).
+    mutating func tocar(_ id: String) -> Bool {
+        if ids.remove(id) != nil { return false }
+        ids.insert(id)
+        return true
+    }
+
+    /// Meio segundo depois do toque: grava se a troca continua pedida.
+    mutating func confirmar(_ id: String) -> Bool { ids.remove(id) != nil }
+}
+
+struct AfazeresView: View {
+    let obraId: String
+    @Binding var caminho: [RotaDeObras]
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.opcoes) private var opcoes
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
+    /// O texto em digitação e o foco moram aqui, e não no modelo: o redesenho que chega do Sincronizador (uma mudança vinda
+    /// de outro aparelho) não os recria (achado 3).
+    @State private var texto = ""
+    @FocusState private var noCampo: Bool
+    @State private var feitosAbertos = false
+    /// A linha arrastada que mostra "Apagar" (uma por vez).
+    @State private var linhaAberta: String?
+    /// Os tocados há menos de meio segundo: o círculo já mostra o estado novo, e a linha ainda não mudou de lugar.
+    @State private var trocando = TrocasPendentes()
+    /// O afazer que acabou de entrar, aceso por 2 s.
+    @State private var aceso: String?
+    @State private var naoCarregado = false
+    #if DEBUG
+    /// Testes de tela: a espera entre o toque e a mudança de lugar, em ms (`-custta.esperaDoAfazer 3000`), para o teste ver o
+    /// círculo trocado (e o VoiceOver ouvir o estado novo) antes de a linha sair, e tocar de novo nesse meio-tempo.
+    @AppStorage("custta.esperaDoAfazer") private var esperaDeTeste = 500
+    #endif
+
+    /// Meio segundo entre o círculo trocar e a linha mudar de lugar (mockup: "o círculo enche na hora; meio segundo depois…").
+    private var espera: Duration {
+        #if DEBUG
+        return .milliseconds(esperaDeTeste)
+        #else
+        return .milliseconds(500)
+        #endif
+    }
+
+    var body: some View {
+        let estado = modelo.sincronizador.estado
+        if let obra = estado.obras.first(where: { $0.id == obraId }) {
+            conteudo(obra)
+        } else if !modelo.sincronizador.dadosCarregados {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Color.clear                                  // a obra sumiu (apagada em outro aparelho): volta para Obras
+                .onAppear { caminho.removeAll { $0.obraId == obraId } }
+        }
+    }
+
+    private func conteudo(_ obra: Obra) -> some View {
+        let pendentes = obra.afazeres.filter { !$0.feito }
+        let feitos = obra.afazeres.filter(\.feito)
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                CampoDoAfazer(texto: $texto, foco: $noCampo) { adicionar() }
+                    .padding(.top, 16)
+                if !pendentes.isEmpty {
+                    PilulaDaLista(titulo: "Pendentes", quantidade: pendentes.count, identificador: "pendentes")
+                        .padding(.top, 24)
+                        .padding(.bottom, 10)
+                    CartaoDaLista {
+                        ForEach(Array(pendentes.enumerated()), id: \.element.id) { i, afazer in
+                            if i > 0 { separador }
+                            linha(afazer)
+                        }
+                    }
+                } else if feitos.isEmpty {
+                    CartaoDeEstado(titulo: "Nenhum afazer.", texto: "Anote o que falta na obra.", icone: "Icones/check",
+                                   identificador: "afazeresVazio") { EmptyView() }
+                        .padding(.top, 16)
+                }
+                if !feitos.isEmpty {
+                    CartaoDaLista {
+                        CabecalhoDosFeitos(quantidade: feitos.count, aberto: feitosAbertos, alternar: alternarFeitos)
+                        if feitosAbertos {
+                            ForEach(feitos, id: \.id) { afazer in
+                                separador
+                                linha(afazer)
+                            }
+                        }
+                    }
+                    .padding(.top, 10)
+                }
+            }
+            .padding(.horizontal, 20)
+            // O fim da lista fica à vista acima da cápsula de abas, como na tela da obra.
+            .padding(.bottom, 98)
+            .haloDoTituloDaBarra()
+            // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
+            .contentShape(.rect)
+            .onTapGesture { if linhaAberta != nil { fecharLinha() } }
+        }
+        .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
+        .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
+        .onDisappear { linhaAberta = nil }
+        .alert(modelo.mensagemDeNaoCarregado, isPresented: $naoCarregado) { Button("OK", role: .cancel) {} }
+        .pausaOFundoAoRolar()
+        .bordaDeRolagem(abas: true)
+        .containerBackground(.clear, for: .navigation)
+        .navigationTitle("Afazeres")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { IndicadorDeSincronizacao() }
+                .sharedBackgroundVisibility(.hidden)
+        }
+    }
+
+    /// A linha fina entre dois afazeres, alinhada ao texto (na maior letra, ao recuo da linha).
+    private var separador: some View { LinhaFina().padding(.leading, tamanho.isAccessibilitySize ? 18 : 62) }
+
+    private func linha(_ afazer: Afazer) -> some View {
+        let feito = feitoAVista(afazer, trocando: trocando.ids)
+        return LinhaArrastavel(id: afazer.id, aberta: $linhaAberta, apagar: { apagar(afazer) }) {
+            LinhaDoAfazer(afazer: afazer, feito: feito, riscado: afazer.feito && !trocando.ids.contains(afazer.id),
+                          aceso: aceso == afazer.id) { alternar(afazer) }
+        }
+        .id(afazer.id)
+        .transition(opcoes.reduzirMovimento ? .opacity
+                    : .asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
+    }
+
+    private func fecharLinha() {
+        guard linhaAberta != nil else { return }
+        if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }
+    }
+
+    private func alternarFeitos() {
+        if linhaAberta != nil { fecharLinha(); return }
+        if opcoes.reduzirMovimento { feitosAbertos.toggle() } else { withAnimation(.snappy) { feitosAbertos.toggle() } }
+    }
+
+    /// O + ou o "OK" do teclado: o texto aparado entra no alto dos pendentes, o campo limpa e o cursor fica nele. Vazio não
+    /// faz nada (site). O campo guarda no máximo 500, então o longo não deveria chegar aqui; se chegar, vai ao aviso do topo
+    /// (o toast do site), e o + nunca fica calado.
+    private func adicionar() {
+        noCampo = true
+        let t: String
+        switch conferirAfazer(texto) {
+        case .ok(let aparado): t = aparado
+        case .vazio: return
+        case .longo(let mensagem): modelo.avisar(mensagem); return
+        }
+        let id = gerarId()
+        let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
+            modelo.gravar { $0.adicionandoAfazer(t, id: id, naObra: obraId) }
+        }
+        if resultado == .naoCarregado { naoCarregado = true; return }
+        guard resultado == .gravou else { return }
+        texto = ""
+        aceso = id
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            guard aceso == id else { return }
+            withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.4)) { aceso = nil }
+        }
+    }
+
+    /// Marcar ou desmarcar, pelo círculo ou pelo texto: o círculo troca na hora; meio segundo depois o afazer vai para o alto
+    /// dos Feitos (ou dos pendentes), com a mola (sem ela, com Reduzir movimento). Tocar de novo nesse meio segundo desiste.
+    private func alternar(_ afazer: Afazer) {
+        if linhaAberta != nil { fecharLinha(); return }
+        guard trocando.tocar(afazer.id) else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: espera)
+            let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.4, bounce: 0)) { () -> ModeloApp.ResultadoDaGravacao? in
+                guard trocando.confirmar(afazer.id) else { return nil }
+                return modelo.gravar { $0.alternandoAfazer(afazer.id, naObra: obraId) }
+            }
+            if resultado == .naoCarregado { naoCarregado = true }
+        }
+    }
+
+    /// "Apagar" da linha arrastada: apaga na hora, sem pergunta (são dois gestos de propósito).
+    private func apagar(_ afazer: Afazer) {
+        let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .snappy(duration: 0.35)) {
+            linhaAberta = nil
+            return modelo.gravar { $0.apagandoAfazer(afazer.id, daObra: obraId) }
+        }
+        if resultado == .naoCarregado { naoCarregado = true }
+    }
+}
+
+/// O campo do afazer novo, num grupo de vidro de 56 pt: o texto, que quebra linha e para em 500 caracteres, e o + de 44 pt
+/// (cinza sem texto, na marca com texto). O "OK" do teclado também adiciona, e o teclado fica. O exemplo é desenhado num
+/// Text, que quebra na maior letra, e o prompt fica no campo, transparente, com o rótulo "Novo afazer" para o VoiceOver.
+struct CampoDoAfazer: View {
+    @Binding var texto: String
+    var foco: FocusState<Bool>.Binding
+    let adicionar: () -> Void
+    /// O texto cru que a tela tem quando o guardado é outro (sem o "\n" do "OK", ou cortado em 500), por uma volta. A troca
+    /// redesenha o campo, e o redesenho já leva o guardado à tela; na volta seguinte, o campo passa do cru ao guardado, uma
+    /// segunda garantia.
+    @State private var naTela: String?
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        let comTexto = !aparadoJS(texto).isEmpty
+        HStack(spacing: 10) {
+            ZStack(alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline)) {
+                if texto.isEmpty {
+                    Text("Ex: pagar pedreiro, buscar tinta")
+                        .foregroundStyle(paleta.cor(vidro.secundario))
+                        .accessibilityHidden(true)
+                        .onTapGesture { foco.wrappedValue = true }
+                }
+                // O "OK" do teclado chega como "\n" no campo que quebra linha: sai do texto e adiciona, com o teclado aberto.
+                // O "\n" e o corte em 500 vão pelo set, que vê toda tecla (um onChange do texto perde tecla numa rajada), e o
+                // texto guardado nunca passa de 500. Numa rajada, tecla que chega enquanto o SwiftUI empurra o texto não
+                // passa pelo set: a tela mostra mais por um instante, e a tecla seguinte corrige.
+                TextField("Novo afazer",
+                          text: Binding(get: { naTela ?? texto },
+                                        set: { novo in
+                                            let (guardado, adiciona) = textoDoCampoDoAfazer(novo)
+                                            naTela = guardado == novo ? nil : novo
+                                            texto = guardado
+                                            // Na volta seguinte: dentro do set, a gravação redesenha a tela no meio da
+                                            // tecla, e o campo manda o mesmo texto de novo (o "OK" adicionava duas vezes).
+                                            if adiciona { Task { @MainActor in adicionar() } }
+                                        }),
+                          prompt: Text("Ex: pagar pedreiro, buscar tinta").foregroundStyle(.clear),
+                          axis: .vertical)
+                    .foregroundStyle(paleta.cor(.texto))
+                    .submitLabel(.done)
+                    .focused(foco)
+                    // Com prompt, o título do TextField não vira o rótulo do VoiceOver (o CampoDeEntrada também o põe).
+                    .accessibilityLabel("Novo afazer")
+                    .accessibilityIdentifier("novoAfazer")
+                    .onChange(of: naTela) { _, novo in if novo != nil { naTela = nil } }
+            }
+            .font(.body)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Sem o naTela, que um onChange perdido numa rajada deixaria na tela depois do +.
+            Button(action: { naTela = nil; adicionar() }) {
+                Image(systemName: "plus")
+                    .font(.system(size: grande ? 30 : 20, weight: .medium))
+                    .foregroundStyle(paleta.cor(comTexto ? .sobreMarca : vidro.secundario))
+                    .frame(width: grande ? 64 : 44, height: grande ? 64 : 44)
+                    .background(comTexto ? paleta.cor(.marca) : paleta.cor(.texto).opacity(0.12), in: .circle)
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Adicionar afazer")
+            .accessibilityIdentifier("adicionarAfazer")
+        }
+        .padding(EdgeInsets(top: grande ? 12 : 6, leading: 18, bottom: grande ? 12 : 6, trailing: grande ? 12 : 6))
+        .frame(minHeight: 56)
+        .superficie(.conteudo, em: .rect(cornerRadius: 24, style: .continuous))
+    }
+}
+
+/// O cabeçalho do grupo dos feitos, fechado no começo, como o "A vencer" da obra: "Feitos", quantos e o chevron.
+struct CabecalhoDosFeitos: View {
+    let quantidade: Int
+    let aberto: Bool
+    let alternar: () -> Void
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("Feitos").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("\(quantidade)").font(.body.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
+            Image(systemName: aberto ? "chevron.down" : "chevron.right")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(paleta.cor(vidro.secundario))
+                .frame(width: tamanho.isAccessibilitySize ? 22 : 14)
+                .accessibilityHidden(true)
+                .foraDoLaudo()
+        }
+        .padding(EdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 14))
+        .frame(minHeight: 44)
+        .contentShape(.rect)
+        .onTapGesture(perform: alternar)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Feitos, \(quantidade)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityValue(aberto ? "aberto" : "fechado")
+        .accessibilityHint(aberto ? "Fecha os afazeres feitos" : "Mostra os afazeres feitos")
+        .accessibilityAction { alternar() }
+        .accessibilityIdentifier("feitos")
+    }
+}
+
+/// Um afazer: o círculo que marca (alvo de 44 pt; 56 na maior letra) e o texto inteiro, quebrando linha. Feito, o círculo
+/// fica cheio no verde, com a marca, e o texto riscado na cor secundária. Para o VoiceOver, um botão de alternar com o
+/// texto como rótulo; a linha toda marca, como no site.
+struct LinhaDoAfazer: View {
+    let afazer: Afazer
+    let feito: Bool
+    let riscado: Bool
+    let aceso: Bool
+    let tocar: () -> Void
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        HStack(alignment: .top, spacing: 12) {
+            circulo(grande ? 38 : 26)
+                .frame(width: grande ? 56 : 44, height: grande ? 56 : 44)
+                .padding(.vertical, -4)
+            Text(afazer.texto)
+                .font(.body)
+                .foregroundStyle(paleta.cor(riscado ? vidro.secundario : .texto))
+                .strikethrough(riscado, color: paleta.cor(vidro.secundario))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, grande ? 6 : 7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 18))
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+        .background(aceso ? paleta.cor(.aceso) : .clear)
+        .contentShape(.rect)
+        .onTapGesture(perform: tocar)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(afazer.texto)
+        .accessibilityValue(feito ? "feito" : "pendente")
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityAction { tocar() }
+        .accessibilityIdentifier("afazer-\(afazer.id)")
+    }
+
+    @ViewBuilder private func circulo(_ lado: CGFloat) -> some View {
+        if feito {
+            Circle().fill(paleta.cor(.positivo)).frame(width: lado, height: lado)
+                .overlay {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: lado * 0.5, weight: .bold))
+                        .foregroundStyle(paleta.cor(.fundo))
+                }
+        } else {
+            Circle().strokeBorder(paleta.cor(vidro.secundario), lineWidth: 2).frame(width: lado, height: lado)
+        }
+    }
+}
+```
+
+Em `app-ios/Custta/Telas/ObraView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObraView.swift
++++ b/app-ios/Custta/Telas/ObraView.swift
+@@ -88,7 +88,13 @@ struct ObraView: View {
+                         agir($0, obra: obra)
+                     }
+                         .padding(.top, 2)
+-                        .padding(.bottom, 14)
++                        .padding(.bottom, 2)
++                    // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
++                    NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
++                        LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
++                    }
++                    .buttonStyle(.plain)
++                    .padding(.bottom, 14)
+                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
+                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
+                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
+```
+
+Em `app-ios/Custta/Telas/ObrasView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObrasView.swift
++++ b/app-ios/Custta/Telas/ObrasView.swift
+@@ -6,11 +6,13 @@ enum RotaDeObras: Hashable, Sendable {
+     case obra(String)
+     /// A tela Orçamento da obra (etapa 3), empurrada pela linha do orçamento.
+     case orcamento(String)
++    /// A tela "Afazeres" da obra, empurrada pela linha dos afazeres (etapa 3).
++    case afazeres(String)
+ 
+-    /// A obra da tela: a própria, ou a dona do orçamento.
++    /// A obra da tela: a própria, ou a dona do orçamento ou dos afazeres (o + da cápsula lança gasto nela).
+     var obraId: String {
+         switch self {
+-        case .obra(let id), .orcamento(let id): return id
++        case .obra(let id), .orcamento(let id), .afazeres(let id): return id
+         }
+     }
+ }
+@@ -90,6 +92,7 @@ struct ObrasView: View {
+                 switch rota {
+                 case .obra(let id): ObraView(id: id, caminho: $caminho)
+                 case .orcamento(let id): OrcamentoView(id: id, caminho: $caminho)
++                case .afazeres(let id): AfazeresView(obraId: id, caminho: $caminho)
+                 }
+             }
+         }
+```
+
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -223,10 +223,11 @@ struct IndicadoresDaObraView: View {
+     }
+ }
+ 
+-/// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`) e, na tela Orçamento, "Por tópico 14" e
+-/// "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline semibold e o número em peso médio, no secundário (sem
+-/// número, só o título), num texto só: na maior letra a pílula quebra como texto corrido ("Lançamentos" numa linha, "12/46"
+-/// na de baixo), como o mockup, que põe título e número no mesmo fluxo; um `HStack` dos dois hifenizaria o título na AX5.
++/// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`), "Pendentes 3" nos afazeres
++/// (`AfazeresView`) e, na tela Orçamento, "Por tópico 14" e "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline
++/// semibold e o número em peso médio, no secundário (sem número, só o título), num texto só: na maior letra a pílula quebra
++/// como texto corrido ("Lançamentos" numa linha, "12/46" na de baixo), como o mockup, que põe título e número no mesmo
++/// fluxo; um `HStack` dos dois hifenizaria o título na AX5.
+ struct PilulaDaLista: View {
+     let titulo: String
+     let numero: String
+```
+
+Em `app-ios/Custta/Telas/PrincipalView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -56,6 +56,7 @@ struct PrincipalView: View {
+         .modifier(AvisosDoPrincipal(avisoDoMais: $avisoDoMais, folhaAberta: folhas.aberta != nil))
+         #if DEBUG
+         .task { await abrirFolhaDoGancho() }
++        .task { await abrirAfazeresDoGancho() }
+         // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
+         .overlay(alignment: .topLeading) {
+             if UserDefaults.standard.bool(forKey: "custta.contarPontes") {
+@@ -73,9 +74,9 @@ struct PrincipalView: View {
+ }
+ 
+ extension PrincipalView {
+-    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra, lança gasto nela. Obra vendida não recebe
+-    /// gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as abertas; sem nenhuma aberta, cria
+-    /// obra. Em Ajustes, some.
++    /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra (e no orçamento e nos afazeres dela), lança
++    /// gasto nela. Obra vendida não recebe gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as
++    /// abertas; sem nenhuma aberta, cria obra. Em Ajustes, some.
+     private var acaoDoMais: AcaoDoMais? {
+         guard aba == .obras else { return nil }
+         let obras = modelo.sincronizador.estado.obras
+@@ -157,14 +158,28 @@ extension PrincipalView {
+                                                        : .novoGasto(obraId: obraId)
+         }
+     }
++
++    /// `CUSTTA_ABRIR=afazeres:<id>`: a obra abre pelo caminho inicial e os afazeres dela são empurrados quando os dados
++    /// chegam, como num toque na linha. Empurrados junto com a obra na abertura, o título grande "Afazeres" nascia recolhido.
++    private func abrirAfazeresDoGancho() async {
++        guard let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("afazeres:") else { return }
++        for _ in 0..<50 {
++            guard !modelo.sincronizador.dadosCarregados else { break }
++            try? await Task.sleep(for: .milliseconds(100))
++        }
++        try? await Task.sleep(for: .milliseconds(300))
++        caminhoDeObras.append(.afazeres(String(abrir.dropFirst(9))))
++    }
+     #endif
+ 
+-    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto e
+-    /// `CUSTTA_ABRIR=orcamento:<id>`, a tela Orçamento dela (testes de tela, laudo de leitura e conferência visual).
++    /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto,
++    /// `CUSTTA_ABRIR=orcamento:<id>`, a tela Orçamento dela (testes de tela, laudo de leitura e conferência visual), e
++    /// `afazeres:<id>`, a obra, com os afazeres dela empurrados depois.
+     static var caminhoInicial: [RotaDeObras] {
+         #if DEBUG
+-        if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("obra:") {
+-            return [.obra(String(abrir.dropFirst(5)))]
++        if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] {
++            if abrir.hasPrefix("obra:") { return [.obra(String(abrir.dropFirst(5)))] }
++            if abrir.hasPrefix("afazeres:") { return [.obra(String(abrir.dropFirst(9)))] }
+         }
+         if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("orcamento:") {
+             let id = String(abrir.dropFirst(10))
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "^ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests 2>&1 | grep -E "Test run with" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AfazeresUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/ObrasUITests 2>&1 | grep -E "Executed [0-9]+ tests?, with|TEST EXECUTE" | tail -2
+```
+Expected: `ℹ pass 66`, `ℹ fail 0` (o `npm run test:unit` vai a 405, com as 3 guardas novas); sem aviso; `✔ Test run with 170 tests in 33 suites passed` (a `AfazeresTests`, com 4 testes, é suíte nova); `Executed 29 tests, with 0 failures` (`AfazeresUITests` 14, `ObraUITests` 7 e `ObrasUITests` 8) e `** TEST EXECUTE SUCCEEDED **`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/Custta/Falsos/TransporteFalsoApp.swift \
+  app-ios/Custta/Falsos/VitrineDaObra.swift \
+  app-ios/Custta/Telas/AfazeresView.swift \
+  app-ios/Custta/Telas/ObraView.swift \
+  app-ios/Custta/Telas/ObrasView.swift \
+  app-ios/Custta/Telas/PecasDaObra.swift \
+  app-ios/Custta/Telas/PrincipalView.swift \
+  app-ios/CusttaTests/AfazeresTests.swift \
+  app-ios/CusttaUITests/AfazeresUITests.swift \
+  tests/app-ios.test.cjs
+git commit -m "feat: afazeres na obra e a tela Afazeres no app" -m "A obra ganha os afazeres do site no desenho aprovado no mockup da etapa 3 (parte 2, opção A): uma linha entre as ações da fase e os lançamentos, em todas as fases, com quantos estão pendentes e o primeiro deles (em até duas linhas), ou \"tudo feito\" e quantos, ou a frase do site quando não há nenhum. A linha empurra a tela \"Afazeres\", no caminho de Obras, com título grande. A obra cresce uma linha, e não o painel do site, que crescia a cada afazer." -m "Na tela, o campo \"Novo afazer\" fica no alto, com o rótulo para o VoiceOver que o site não tem, e para em 500 caracteres. O \"OK\" do teclado e o + adicionam o texto aparado no alto dos pendentes, aceso um instante, e o cursor continua no campo para anotar vários seguidos; vazio não faz nada. Os pendentes mostram o texto inteiro, quebrando linha (no site, cortavam numa linha). O círculo de 44 pt marca, e o toque no texto também, como no site: o círculo troca na hora e, meio segundo depois, o afazer vai para o alto dos Feitos, com a mola; um segundo toque nesse meio segundo desiste. Desmarcado, ele volta para o alto dos pendentes. Os Feitos começam fechados, com o texto riscado na cor secundária (a opacidade do site não passava de 4,5:1). Arrastar mostra \"Apagar\", que apaga sem perguntar, pela mesma linha arrastável da lista de gastos. A obra apagada em outro aparelho fecha a tela." -m "Fica o TextField do SwiftUI, que não recusa tecla: o texto guardado e o gravado nunca passam de 500, o + nunca fica calado (um texto longo iria ao aviso do topo) e, tecla a tecla, o campo para em 500; só com teclas a 1–3 ms, como as do XCUITest, a tela mostra mais por um instante, até a tecla seguinte, e uma UITextView própria, que recusaria a tecla mas refaria o campo, o laudo e a auditoria, fica para depois." -m "Cada gravação passa pelo gravar do modelo, com o alerta do site quando o app ainda não viu os dados, e uma guarda confere isso nos três jeitos de gravar. Nos afazeres, o + da cápsula lança gasto na obra, como dentro dela. Os falsos ganham os afazeres do mockup na Casa Alphaville e dois feitos no Sobrado Granja Viana, e o Debug abre a tela direto por CUSTTA_ABRIR=afazeres:<obra>. A pílula \"Pendentes\" é a PilulaDaLista, a mesma dos lançamentos e da tela Orçamento, num texto só." -m "A suíte nova de tela, AfazeresUITests, roda no app-etapa3-c, com a BuscaUITests, e o app a pula."
+```

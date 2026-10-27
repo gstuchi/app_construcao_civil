@@ -193,6 +193,9 @@ struct CampoDaBusca: View {
                         // Com prompt, o título do TextField não vira o rótulo do VoiceOver (o CampoDeEntrada também o põe).
                         .accessibilityLabel("Buscar gasto ou tópico")
                         .accessibilityIdentifier("campoDaBusca")
+                        .onAppear { SondaFoco.avisar("campo.apareceu") }
+                        .onDisappear { SondaFoco.avisar("campo.sumiu") }
+                        .onChange(of: texto) { _, t in SondaFoco.avisar("texto", UInt64(t.count)) }
                         // No campo que quebra linha, o "buscar" do teclado chega como "\n": sai do texto e fecha o teclado.
                         .onChange(of: texto) { _, novo in
                             guard novo.contains("\n") else { return }

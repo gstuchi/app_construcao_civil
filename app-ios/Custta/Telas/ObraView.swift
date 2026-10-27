@@ -71,7 +71,7 @@ struct ObraView: View {
                                  })
         return ScrollViewReader { leitor in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
+                PilhaDaObra {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
@@ -136,6 +136,9 @@ struct ObraView: View {
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
+        .onChange(of: buscaEmFoco) { _, f in SondaFoco.avisar(f ? "foco.sim" : "foco.nao") }
+        .onChange(of: busca.texto) { _, _ in SondaFoco.pararSeLento() }
+        .onAppear { SondaFoco.iniciar() }
         .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
         .onChange(of: folhas.aberta) { _, aberta in if aberta != nil { linhaAberta = nil } }
         .onChange(of: busca.filtrando) { _, agora in if agora { aVencerAbertoNaBusca = true } }

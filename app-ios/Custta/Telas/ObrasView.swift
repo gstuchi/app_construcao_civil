@@ -6,11 +6,13 @@ enum RotaDeObras: Hashable, Sendable {
     case obra(String)
     /// A tela Orçamento da obra (etapa 3), empurrada pela linha do orçamento.
     case orcamento(String)
+    /// A tela "Afazeres" da obra, empurrada pela linha dos afazeres (etapa 3).
+    case afazeres(String)
 
-    /// A obra da tela: a própria, ou a dona do orçamento.
+    /// A obra da tela: a própria, ou a dona do orçamento ou dos afazeres (o + da cápsula lança gasto nela).
     var obraId: String {
         switch self {
-        case .obra(let id), .orcamento(let id): return id
+        case .obra(let id), .orcamento(let id), .afazeres(let id): return id
         }
     }
 }
@@ -90,6 +92,7 @@ struct ObrasView: View {
                 switch rota {
                 case .obra(let id): ObraView(id: id, caminho: $caminho)
                 case .orcamento(let id): OrcamentoView(id: id, caminho: $caminho)
+                case .afazeres(let id): AfazeresView(obraId: id, caminho: $caminho)
                 }
             }
         }

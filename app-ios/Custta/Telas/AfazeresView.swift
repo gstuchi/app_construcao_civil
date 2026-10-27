@@ -345,7 +345,9 @@ struct CampoDoAfazer: View {
         let grande = tamanho.isAccessibilitySize
         let comTexto = !aparadoJS(texto).isEmpty
         HStack(spacing: 10) {
-            ZStack(alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline)) {
+            // Pelo alto, como o nome da obra (FolhaDaObra): o TextField que quebra linha não dá a linha de base, e por ela o
+            // exemplo subia ~10 pt e o cursor ficava embaixo dele.
+            ZStack(alignment: .topLeading) {
                 if texto.isEmpty {
                     Text("Ex: pagar pedreiro, buscar tinta")
                         .foregroundStyle(paleta.cor(vidro.secundario))

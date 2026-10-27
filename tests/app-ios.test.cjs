@@ -789,6 +789,25 @@ test('campo de texto que quebra linha: o exemplo desenhado num Text, e o prompt 
   assert.ok(campos >= 2, 'os campos da entrada e o nome da obra');
 });
 
+test('campo de texto que quebra linha: o exemplo e o campo pelo alto, nunca pela linha de base', () => {
+  // O TextField com axis: .vertical não dá a linha de base: num ZStack por .firstTextBaseline, o exemplo subia ~10 pt no
+  // campo da busca e no do afazer, e o cursor ficava embaixo dele (conferência do Verniz, PR 3 da etapa 3). Pelo alto, como
+  // o nome da obra, os dois começam na mesma linha, também quando o exemplo quebra na maior letra.
+  let pilhas = 0;
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/ZStack\(alignment: ([^{]*)\) \{/g)){
+      let fim = m.index + m[0].length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+      const corpo = t.slice(m.index, fim);
+      if(!/TextField\([^]*?axis:/.test(corpo)) continue;
+      pilhas++;
+      assert.doesNotMatch(m[1], /firstTextBaseline/, `${f}: exemplo de campo que quebra linha pela linha de base`);
+    }
+  }
+  assert.ok(pilhas >= 3, 'o nome da obra, a busca e o afazer');
+});
+
 test('barra: o botão de vidro (o sair, o lápis, a sincronização) sem o vidro da barra por trás', () => {
   // A barra do iOS 26 põe um fundo de vidro atrás de cada item; o círculo de vidro do sair ou do lápis ficaria vidro
   // dentro de vidro. Nenhum teste de tela vê o fundo; esta guarda liga cada peça de vidro posta na barra ao

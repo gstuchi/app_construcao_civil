@@ -297,16 +297,18 @@ final class BuscaUITests: XCTestCase {
         XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
     }
 
-    // Sonda temporária da :215 no iOS 26, 4ª rodada (sai depois do run): cada variante do menu do mês na maior letra, num
+    // Sonda temporária da :215 no iOS 26, 5ª rodada (sai depois do run): cada variante do menu do mês na maior letra, num
     // teste próprio, porque o app travado encerra o teste. No run 40417236427, o mês posto sem menu não travou, e pelo menu
     // travou com o Toggle, com o Picker, sem o subtítulo e adiado 0,6 s; no 40420755600, adiado 2 s, com o Menu refeito e
     // com um confirmationDialog também, e sem mudar o mês não travou; no 40424844226, sem a rolagem fixa e com um botão comum
-    // também. Agora, sem a soma dos achados, sem o chip, sem os dois e com a soma sem ViewThatFits nem encolher.
+    // também; no 40429944214, sem a soma, sem o chip e com a soma sem ViewThatFits nem encolher não parou, e a soma empilhada
+    // com o encolher parou no :215 do 40432109031. Agora: a soma fixa e sem soma de novo, a empilhada, sem encolher e com teto AX2.
     func testSonda215Nenhum() { sonda215("nenhum") }
-    func testSonda215SemSoma() { sonda215("semSoma") }
-    func testSonda215SemChip() { sonda215("semChip") }
-    func testSonda215SemSomaNemChip() { sonda215("semSomaNemChip") }
     func testSonda215SomaFixa() { sonda215("somaFixa") }
+    func testSonda215SemSoma() { sonda215("semSoma") }
+    func testSonda215SomaEmpilhada() { sonda215("somaEmpilhada") }
+    func testSonda215SomaSemEncolher() { sonda215("somaSemEncolher") }
+    func testSonda215SomaTetoAX2() { sonda215("somaTetoAX2") }
 
     private func sonda215(_ variante: String) {
         let s = { (t: TimeInterval) in String(format: "%.2f", t) }

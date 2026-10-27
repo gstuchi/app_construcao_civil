@@ -356,6 +356,16 @@ struct SomaDosAchadosView: View {
                     rotulo
                     Text(soma.valor).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(paleta.cor(.texto))
                 }
+            } else if Sonda215.pedido == "somaEmpilhada" {
+                VStack(alignment: .leading, spacing: 2) { rotulo; valor }
+            } else if Sonda215.pedido == "somaSemEncolher" {
+                VStack(alignment: .leading, spacing: 2) {
+                    rotulo
+                    Text(soma.valor).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(paleta.cor(.texto))
+                        .lineLimit(1)
+                }
+            } else if Sonda215.pedido == "somaTetoAX2" {
+                VStack(alignment: .leading, spacing: 2) { rotulo; valor.dynamicTypeSize(...DynamicTypeSize.accessibility2) }
             } else {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) { rotulo; valor }

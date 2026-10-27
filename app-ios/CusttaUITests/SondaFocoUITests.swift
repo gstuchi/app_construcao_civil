@@ -91,6 +91,40 @@ final class SondaFocoUITests: XCTestCase {
         }
     }
 
-    func testSondaFocoEstresse1() { estresse("estresse") }
-    func testSondaFocoEstresse2() { estresse("estresse") }
+    /// Estresse da abertura: do topo da obra, abre a busca pela lupa (o campo entra, a lista rola até a pílula e o teclado
+    /// sobe) e fecha pelo ×, doze vezes. Cada volta tem um `campo.apareceu` e um `campo.sumiu` (o ×); a mais, é a pilha
+    /// refazendo o campo à vista (visto uma vez no run 40508695109, 0,4 s depois de o teclado subir).
+    private func aberturas(_ variante: String) {
+        let inicio = Date.now
+        let nomes = ["foco.sim", "foco.nao", "campo.apareceu", "campo.sumiu", "edicao.acaba", "teclado.mostra", "teclado.esconde"]
+        var tokens: [Int32] = []
+        for nome in nomes {
+            var token: Int32 = 0
+            notify_register_dispatch("br.com.custta.sonda.\(nome)", &token, DispatchQueue.global()) { @Sendable t in
+                print("sonda-foco | \(variante) | t=\(String(format: "%.1f", Date.now.timeIntervalSince(inicio))) | app: \(nome)")
+            }
+            tokens.append(token)
+        }
+        defer { tokens.forEach { notify_cancel($0) } }
+        func linha(_ texto: String) {
+            print("sonda-foco | \(variante) | t=\(String(format: "%.1f", Date.now.timeIntervalSince(inicio))) | teste: \(texto)")
+        }
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: ["-custta.sondaFoco", variante])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        for volta in 1...12 {
+            app.swipeDown(); app.swipeDown()
+            let lupa = app.buttons["buscar"]
+            app.rolarAte(lupa)
+            lupa.tap()
+            let teclado = app.keyboards.firstMatch.waitForExistence(timeout: 5)
+            sleep(1)
+            linha("volta \(volta) · abriu · teclado \(teclado)")
+            app.buttons["fecharBusca"].tap()
+            _ = app.keyboards.firstMatch.waitForNonExistence(timeout: 5)
+            linha("volta \(volta) · fechou")
+        }
+    }
+
+    func testSondaFocoAberturas1() { aberturas("aberturas") }
+    func testSondaFocoAberturas2() { aberturas("aberturas") }
 }

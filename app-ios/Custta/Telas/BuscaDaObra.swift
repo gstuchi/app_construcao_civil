@@ -232,6 +232,8 @@ enum Sonda215 {
     #else
     static let pedido = ""
     #endif
+    static var semChip: Bool { pedido == "semChip" || pedido == "semSomaNemChip" }
+    static var semSoma: Bool { pedido == "semSoma" || pedido == "semSomaNemChip" }
 }
 
 /// O campo da busca, embaixo da pílula: vidro do conteúdo em cápsula, a lupa, o texto e o × que apaga o texto; ao lado, o
@@ -348,9 +350,18 @@ struct SomaDosAchadosView: View {
     @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) { rotulo; valor }
-            VStack(alignment: .leading, spacing: 2) { rotulo; valor }
+        Group {
+            if Sonda215.pedido == "somaFixa" {
+                VStack(alignment: .leading, spacing: 2) {
+                    rotulo
+                    Text(soma.valor).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(paleta.cor(.texto))
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) { rotulo; valor }
+                    VStack(alignment: .leading, spacing: 2) { rotulo; valor }
+                }
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)

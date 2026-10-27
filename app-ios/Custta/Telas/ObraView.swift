@@ -100,10 +100,10 @@ struct ObraView: View {
                     if busca.aberta {
                         CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
                     }
-                    if !busca.mes.isEmpty {
+                    if !busca.mes.isEmpty, !Sonda215.semChip {
                         ChipDoMes(mes: busca.mes, tirar: tirarOMes)
                     }
-                    if let soma = somaDosAchados(achados, filtrando: filtrando) {
+                    if let soma = somaDosAchados(achados, filtrando: filtrando), !Sonda215.semSoma {
                         SomaDosAchadosView(soma: soma)
                     }
                     if obra.gastos.isEmpty {

@@ -297,13 +297,16 @@ final class BuscaUITests: XCTestCase {
         XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
     }
 
-    // Sonda temporária da :215 no iOS 26, 3ª rodada (sai depois do run): cada variante do menu do mês na maior letra, num
+    // Sonda temporária da :215 no iOS 26, 4ª rodada (sai depois do run): cada variante do menu do mês na maior letra, num
     // teste próprio, porque o app travado encerra o teste. No run 40417236427, o mês posto sem menu não travou, e pelo menu
     // travou com o Toggle, com o Picker, sem o subtítulo e adiado 0,6 s; no 40420755600, adiado 2 s, com o Menu refeito e
-    // com um confirmationDialog também, e sem mudar o mês não travou. A `nenhum` é o controle.
+    // com um confirmationDialog também, e sem mudar o mês não travou; no 40424844226, sem a rolagem fixa e com um botão comum
+    // também. Agora, sem a soma dos achados, sem o chip, sem os dois e com a soma sem ViewThatFits nem encolher.
     func testSonda215Nenhum() { sonda215("nenhum") }
-    func testSonda215SemRolagemFixa() { sonda215("semRolagemFixa") }
-    func testSonda215ToqueSemMenu() { sonda215("toqueSemMenu") }
+    func testSonda215SemSoma() { sonda215("semSoma") }
+    func testSonda215SemChip() { sonda215("semChip") }
+    func testSonda215SemSomaNemChip() { sonda215("semSomaNemChip") }
+    func testSonda215SomaFixa() { sonda215("somaFixa") }
 
     private func sonda215(_ variante: String) {
         let s = { (t: TimeInterval) in String(format: "%.2f", t) }

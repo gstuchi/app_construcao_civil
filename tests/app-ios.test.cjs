@@ -789,6 +789,22 @@ test('campo de texto que quebra linha: o exemplo desenhado num Text, e o prompt 
   assert.ok(campos >= 2, 'os campos da entrada e o nome da obra');
 });
 
+test('cabeçalhos dos Feitos e do A vencer: a seta para no AX2 e ocupa 18 pt na maior letra', () => {
+  // Sem o teto, a seta sai com 27 × 46 pt na AX5, num quadro de 22, contra 20 × 30 no mockup (conferência do Verniz, PR 3
+  // da etapa 3). No mockup, o "Feitos" é o cabeçalho do "A vencer", e as duas setas ficam iguais na letra de acessibilidade;
+  // na padrão, a dos Feitos ocupa 14 pt e a do A vencer, a largura do símbolo, como antes. Nenhum teste de tela vê o
+  // símbolo, fora da árvore de acessibilidade e do laudo.
+  const seta = /Image\(systemName: aberto \? "chevron\.down" : "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : /.source;
+  for(const [arquivo, peca, padrao] of [['app-ios/Custta/Telas/AfazeresView.swift', 'struct CabecalhoDosFeitos', '14'],
+    ['app-ios/Custta/Telas/PecasDaObra.swift', 'struct LinhaDoAVencer', 'nil']]){
+    const t = ler(arquivo);
+    const inicio = t.indexOf(peca);
+    assert.ok(inicio >= 0, peca);
+    const cab = t.slice(inicio, t.indexOf('\n}\n', inicio));
+    assert.match(cab, new RegExp(seta + padrao + '\\)\\n'), `${peca}: a seta para no AX2 e ocupa 18 pt na letra de acessibilidade`);
+  }
+});
+
 test('campo de texto que quebra linha: o exemplo e o campo pelo alto, nunca pela linha de base', () => {
   // O TextField com axis: .vertical não dá a linha de base: num ZStack por .firstTextBaseline, o exemplo subia ~10 pt no
   // campo da busca e no do afazer, e o cursor ficava embaixo dele (conferência do Verniz, PR 3 da etapa 3). Pelo alto, como

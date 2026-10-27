@@ -323,6 +323,10 @@ struct LinhaDoAVencer: View {
             Image(systemName: aberto ? "chevron.down" : "chevron.right")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(paleta.cor(vidro.secundario))
+                // A seta dos Feitos (AfazeresView), que no mockup é este cabeçalho: para no AX2 e ocupa 18 pt na maior letra
+                // (sem o teto, ~27 × 46 pt na AX5, contra 20 × 30 no mockup). Na letra padrão, a largura do símbolo, como antes.
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                .frame(width: tamanho.isAccessibilitySize ? 18 : nil)
                 .accessibilityHidden(true)
                 .foraDoLaudo()
         }

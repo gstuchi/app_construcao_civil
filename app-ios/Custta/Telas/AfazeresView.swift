@@ -416,7 +416,10 @@ struct CabecalhoDosFeitos: View {
             Image(systemName: aberto ? "chevron.down" : "chevron.right")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(paleta.cor(vidro.secundario))
-                .frame(width: tamanho.isAccessibilitySize ? 22 : 14)
+                // A seta das linhas que abrem: para no AX2 e ocupa 18 pt na maior letra (sem o teto, 27 × 46 pt na AX5, mais
+                // larga que o quadro, contra 20 × 30 no mockup).
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                .frame(width: tamanho.isAccessibilitySize ? 18 : 14)
                 .accessibilityHidden(true)
                 .foraDoLaudo()
         }

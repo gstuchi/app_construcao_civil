@@ -19581,3 +19581,471 @@ git add app-ios/CusttaTests/CruzadoTests.swift \
   tests/app-ios/cruzado.mjs
 git commit -m "test: conferência cruzada dos afazeres, passo a passo no documento" -m "A conferência cruzada site ↔ app passa a cobrir os afazeres nos dois sentidos. O site anota um afazer e marca outro na mudança que o teste de tela pede, e o app tem de mostrar os dois na linha da obra e na tela Afazeres, na ordem que o site mostra (pendentes e depois feitos, cada grupo na ordem da lista). Depois do orçamento e das folhas de origem inteiros, o app segue um roteiro de afazeres (adicionar com espaços em volta, adicionar, marcar, desmarcar e apagar na obra do site, e um afazer que entra e sai na obra que não tinha nenhum), conferido pelo mesmo mecanismo do orçamento: antes do primeiro passo o roteiro guarda o documento, que no fim tem de ser o do orçamento e das folhas inteiros, e cada passo, confirmado pelo servidor, é comparado com o que o site gravaria até ali, com um 409 que diz o passo, a obra e as duas listas. Um afazer apagado mais adiante, ou um que entra e sai, só prova alguma coisa no passo dele." -m "Como no orçamento, cada passo parte do documento relido (o app espera o eco da gravação anterior) e o modelo do site renormaliza antes de cada passo, como o bootCloud: a comparação é do documento como o app o gravou, sem normalizar o que se lê. O fim cobra a ordem das conferências dos três roteiros (orçamento, folhas e afazeres), a ordem que o site mostra, os campos de afazer que só o site conhece (inclusive num afazer desmarcado no app) e a lista vazia que fica na obra que não tinha afazeres." -m "Na tela, depois de entrar com e-mail e senha, o iOS 27 do simulador oferece guardar a senha numa folha que cobre o meio da tela e engolia o toque na obra; o teste a fecha antes de tocar."
 ```
+
+### Task 44: Laudo de leitura da busca e dos afazeres
+
+A linha dos afazeres e o cabeçalho da busca entraram na obra, e nenhum laudo cobria as telas novas. O `testLeituraDaBuscaEDosAfazeres` mede, no escuro e no claro, a busca (em repouso, um mês, achados, nada achado e o mês sem gasto) e os afazeres (a tela, os Feitos abertos, o vazio e a linha arrastada), tudo pelo toque e sem gancho novo: o `Cena` ganha os toques, que rodam depois de a tela abrir. Ficam de fora o menu do mês, que é do sistema, e o texto digitado e o prompt, que o laudo não vê.
+
+- **As rolagens da obra.** A lista fica na rolagem fixa da obra a 835 pt, com a borda de cima no vão entre a linha dos afazeres e a pílula; o nada achado, que não chega lá, fica a 596, no vão antes do valor da venda estimada. A linha dos afazeres e o cabeçalho da busca empurraram a lista 117 pt, e as rolagens fixas do laudo da obra, medidas no PR 2, passaram a cortar palavra pela borda de cima (a 1318, a linha de um gasto em 3,91). A lista vai a 905, e a varredura do Mac a 318, 561, 905, 1101, 1423 e 1715 (a da CI, a 561 e a 1101), cada uma num vão entre duas linhas. Da 1101 para baixo, as linhas são as dos cartões dos meses e mudam com o dia; o comentário diz o que muda. A "obra, linha aberta" do `testLeituraDaFolhaDoGasto` sai da 758 para a 835: a 758, a borda cortava o cabeçalho dos afazeres.
+- **Um job novo, o `laudo-etapa3-b`.** O `laudo-etapa3` já ia a 46–52 min, com teto de 60. O laudo novo vai para o `laudo-etapa3-b`, com o mesmo preparo, junto com a leitura e as duas auditorias das folhas de origem, que saem do `laudo-etapa3`; o `laudo` pula o teste novo, e a guarda do workflow passa a conhecer o job.
+
+**Files:**
+- Modify: `.github/workflows/app-ios.yml`
+- Test (alterar): `app-ios/CusttaUITests/AuditoriaUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+- Test (alterar): `tests/workflow.test.cjs`
+
+**Interfaces:**
+- Consumes: `Cena`, `piorMomento`, `temas` e a rolagem fixa (`-custta.rolagem`) do laudo da etapa 2; `CUSTTA_ABRIR=afazeres:<obra>` (Tarefa 41); os identificadores da busca (Tarefa 40) e dos afazeres (Tarefa 41).
+- Produces: `testLeituraDaBuscaEDosAfazeres`; `Cena.toques`; o job `laudo-etapa3-b`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AuditoriaUITests.swift
++++ b/app-ios/CusttaUITests/AuditoriaUITests.swift
+@@ -466,7 +466,7 @@ extension AuditoriaUITests {
+     /// coluna inteira. Com a coluna no lugar do ViewThatFits, nenhum achado; nem identificador nem .contain dão elemento a ele,
+     /// então não há exceção por identificador. O corte com elemento segue reprovando nessas cenas: o "3 vencimentos · a partir
+     /// de amanhã" numa linha só reprova depois do arrasto (a mutação da T34). O corte dentro do .ignore da linha do gasto tem a
+-    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3.
++    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3-b.
+     @MainActor func testFolhasDeOrigemNoMaiorTamanho() throws {
+         for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
+                                                      ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
+@@ -487,7 +487,7 @@ extension AuditoriaUITests {
+     }
+ 
+     /// As mesmas folhas no escuro e no claro, com superfícies sólidas: o A pagar, a Cerâmica no topo e rolada, a Estrutura (a
+-    /// frase do "passou" no Alerta) e as duas edições (o "Apagar gasto" no Negativo).
++    /// frase do "passou" no Alerta) e as duas edições (o "Apagar gasto" no Negativo). Roda no job laudo-etapa3-b.
+     @MainActor func testContrasteDasFolhasDeOrigemNosDoisTemas() throws {
+         for tema in temas {
+             let combo = ["-custta.tema", tema] + solido + parado
+```
+
+Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -46,6 +46,9 @@ final class LeituraNoVidroUITests: XCTestCase {
+         /// Tela rolada: o texto que passa por baixo da barra é borrado pela borda de rolagem e muda quando é apagado, a
+         /// mais de 5 pt das letras; os 140 pt de cima (a borda) ficam de fora, como os de baixo.
+         var rolada = false
++        /// Toques depois de a tela abrir e antes do print, os mesmos nos dois (a busca, o mês, os Feitos, a linha arrastada;
++        /// etapa 3, PR 3): o estado a que se chega pelo toque, sem gancho de teste.
++        var toques: (@MainActor (XCUIApplication) -> Void)? = nil
+     }
+ 
+     /// A tabela de exceções do laudo: a cena e a figura que sai dos dois prints dela (`foraDoLaudo(_:)` no app, com
+@@ -68,6 +71,7 @@ final class LeituraNoVidroUITests: XCTestCase {
+             app.abrirAba(aba)
+             XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")
+         }
++        cena.toques?(app)
+         Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
+         let foto = XCUIScreen.main.screenshot()
+         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+@@ -337,8 +341,10 @@ extension LeituraNoVidroUITests {
+ 
+     /// A tela da obra (etapa 2): o topo (título, fase, indicadores) e a lista rolada (o "A vencer" e os cartões dos meses),
+     /// no escuro e no claro; mais a maior letra e o Aumentar contraste, no escuro esmeralda. A vendida fica no
+-    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 758 pt: a 640 até a etapa 2, e a linha do orçamento da
+-    /// vitrine (118 pt, etapa 3) empurrou tudo o que vem depois dos indicadores.
++    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 905 pt: a 640 até a etapa 2; a linha do orçamento da vitrine
++    /// (118 pt, PR 1 da etapa 3) e a linha dos afazeres com o cabeçalho da busca (117 pt, PR 3) empurraram tudo o que vem
++    /// depois deles. A borda de cima fica no vão entre a pílula "Lançamentos" e o "A vencer" (no 18 Pro, 23 pt abaixo da pílula
++    /// e 18 acima do "A vencer"): a 875, os mesmos 758 de antes mais 117, ela cortava a pílula.
+     @MainActor func testLeituraDaObra() {
+         var cenas: [Cena] = []
+         for tema in temas {
+@@ -346,7 +352,7 @@ extension LeituraNoVidroUITests {
+             cenas += [
+                 Cena(nome: "obra, topo, \(tema)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
+                      dados: "vitrine", abrir: "obra:v1"),
+-                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "758"],
++                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "905"],
+                      espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
+             ]
+         }
+@@ -354,7 +360,7 @@ extension LeituraNoVidroUITests {
+         cenas += [
+             Cena(nome: "obra na maior letra", conta: "senha", argumentos: escuro + maiorLetra, espera: "tituloDaObra", escopo: "tudo",
+                  dados: "vitrine", abrir: "obra:v1"),
+-            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "758"],
++            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "905"],
+                  espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
+         ]
+         cobrar(cenas)
+@@ -364,9 +370,16 @@ extension LeituraNoVidroUITests {
+     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, seis rolagens; na
+     /// CI, duas.
+     @MainActor func testLeituraDaObraRolando() {
+-        // 118 pt abaixo das da etapa 2 (200 a 1500), a altura da linha do orçamento da vitrine: o mesmo pedaço da tela de
+-        // antes, sem palavra cortada pela borda (a 640 e a 1200, o pedaço de baixo de uma palavra ficava em 4,04 a 4,36).
+-        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [518, 1018] : [318, 518, 758, 1018, 1318, 1618]
++        // As da etapa 2 (200 a 1500) desceram 118 pt com a linha do orçamento da vitrine (PR 1 da etapa 3). No PR 3, cada uma
++        // tem a borda de cima no meio de um vão entre duas linhas (de 12 a 23 pt de folga no 18 Pro, em 25/10), sem palavra
++        // cortada pela borda: a 318 fica; a 561 é a 518 mais 43 (a 518 já cortava uma palavra); da terceira em diante, as de
++        // antes mais 117 (a linha dos afazeres e o cabeçalho da busca, que o PR 3 pôs depois das ações) cortavam palavra (a
++        // 1318, a linha de baixo de um gasto em 3,91), e cada uma foi para o vão mais perto. A 318 e a 561 mostram a linha dos
++        // afazeres e a busca embaixo. Da 1101 para baixo, as linhas são as dos cartões dos meses, que mudam com o dia (a
++        // vitrine conta os gastos a partir de hoje): em 26/10, a "Quinzena do pedreiro" de 55 dias atrás passou de agosto para
++        // setembro, e a 1715 ficou com 8 pt de folga embaixo; com o hoje deslocado para 3/11 (o cartão do mês novo nasce com um
++        // gasto só), a 561 e a 1101 seguem num vão, e a 1423 e a 1715 cortam uma palavra pela borda (que passa, de 6,26 a 7,26).
++        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [561, 1101] : [318, 561, 905, 1101, 1423, 1715]
+         var cenas: [Cena] = []
+         for contraste in [false, true] {
+             for y in rolagens {
+@@ -399,8 +412,10 @@ extension LeituraNoVidroUITests {
+                 folha("folha, tópicos, \(tema)", "topicos", combo, espera: "topico-terreno"),
+                 folha("folha, parcela, \(tema)", "editar:g031", combo, espera: "avisoParcela"),
+                 folha("folha, repetido, \(tema)", "repetido", combo, espera: "avisoRepetido"),
++                // A 835 põe a borda no vão entre os afazeres e a pílula; a 758 de antes, com a lista 117 pt mais abaixo
++                // desde o PR 3, cortava o cabeçalho dos afazeres.
+                 Cena(nome: "obra, linha aberta, \(tema)", conta: "senha",
+-                     argumentos: combo + ["-custta.rolagem", "758", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
++                     argumentos: combo + ["-custta.rolagem", "835", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
+                      escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
+             ]
+         }
+@@ -616,7 +631,7 @@ extension LeituraNoVidroUITests {
+     /// o A pagar no topo e rolado e a edição de um vencimento empurrada; o detalhe da Cerâmica no topo e rolado, a Estrutura (a
+     /// frase do "passou" no Alerta, a mais fraca do laudo da letra padrão) e a edição com "Cerâmica"; com Aumentar contraste, o
+     /// A pagar e a Cerâmica. As roladas e as edições abrem pelos ganchos da lista das folhas, como no testLeituraDasFolhasDeOrigem.
+-    /// Roda no job laudo-etapa3.
++    /// Roda no job laudo-etapa3-b.
+     @MainActor func testLeituraDasFolhasDeOrigemNaMaiorLetra() {
+         let escuro = ["-custta.tema", "escuro"] + piorMomento
+         let grande = escuro + maiorLetra, contraste = escuro + ["-custta.aumentarContraste", "YES"]
+@@ -652,6 +667,95 @@ extension LeituraNoVidroUITests {
+     }
+ }
+ 
++extension LeituraNoVidroUITests {
++    /// A busca e os afazeres (etapa 3, PR 3), no escuro e no claro, na Casa Alphaville da vitrine; tudo pelo toque
++    /// (`Cena.toques`), sem gancho novo. A busca: os lançamentos com o campo vazio e o chip do mês de hoje, em repouso (o
++    /// "buscar" do teclado o fecha); o mês de hoje com a soma; "ceramica", com os achados e a soma deles; "azulejo", nada
++    /// achado, com o "Limpar a busca"; e o mês sem gasto, com o "Ver todos os meses" (o mês mais novo tem só a última parcela
++    /// do porcelanato, daqui a 175 dias, em qualquer dia: apagada só ela, o mês fica vazio). A lista fica parada pela rolagem
++    /// fixa da obra, que a segura mesmo depois da lupa (sem ela, a lupa põe a pílula "Lançamentos" sob a borda). A 835 pt, a
++    /// borda de cima fica no vão entre a linha dos afazeres e a pílula (no 18 Pro, 26 pt abaixo de uma e 32 acima da outra),
++    /// acima de tudo o que muda com o dia. As listas curtas não chegam aos 835 e param no fim: no mês sem gasto, a borda fica
++    /// no vão entre os dois últimos indicadores (7 pt abaixo do "Parcelas e gastos futuros" e 24 acima do "Venda estimada");
++    /// no nada achado, o fim a punha sobre o valor da venda estimada, e a 596 pt (7 antes do fim) ela fica no vão entre o
++    /// "Venda estimada" e o valor, a 7 pt de cada um, com o "Limpar a busca" 26 pt acima da faixa de baixo. Nenhuma dessas
++    /// linhas muda com o dia. Os afazeres: a tela com os 3 pendentes (o de 213 caracteres inteiro) e os "Feitos" fechados, os
++    /// "Feitos" abertos, o vazio (a Casa Tamboré) e a linha arrastada com o "Apagar". Ficam de fora: o menu do mês, que é do
++    /// sistema (nem a cor nem o vidro dele são do app); e o texto digitado e o prompt dos campos, que o UIKit desenha e o
++    /// texto apagado não tira (ponto cego do laudo: saem iguais nos dois prints). Roda no job laudo-etapa3-b.
++    @MainActor func testLeituraDaBuscaEDosAfazeres() {
++        let hoje = Self.mesPorExtenso(daqui: 0), maisNovo = Self.mesPorExtenso(daqui: 175)
++        var cenas: [Cena] = []
++        for tema in temas {
++            let combo = ["-custta.tema", tema] + piorMomento
++            func busca(_ nome: String, rolagem: Int = 835, _ toques: @escaping @MainActor (XCUIApplication) -> Void) -> Cena {
++                Cena(nome: "busca, \(nome), \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "\(rolagem)"],
++                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, toques: toques)
++            }
++            cenas += [
++                busca("em repouso") { app in
++                    Self.buscar(app, "")
++                    Self.escolherMes(app, hoje)
++                },
++                busca("mês") { app in Self.escolherMes(app, hoje) },
++                busca("achados") { app in Self.buscar(app, "ceramica") },
++                busca("nada achado", rolagem: 596) { app in Self.buscar(app, "azulejo") },
++                busca("mês sem gasto") { app in
++                    Self.escolherMes(app, maisNovo)
++                    let linha = app.elemento("gasto-g037")
++                    XCTAssertTrue(linha.waitForExistence(timeout: 5), "a última parcela no A vencer, aberto pelo filtro")
++                    linha.swipeLeft()
++                    app.buttons["apagar-g037"].tap()
++                    app.alerts.firstMatch.buttons["Apagar só esta parcela"].tap()
++                    XCTAssertTrue(app.elemento("buscaMesSemGasto").waitForExistence(timeout: 5), "o mês ficou sem gasto")
++                },
++                Cena(nome: "afazeres, \(tema)", conta: "senha", argumentos: combo, espera: "pendentes", escopo: "tudo",
++                     dados: "vitrine", abrir: "afazeres:v1"),
++                Cena(nome: "afazeres, feitos abertos, \(tema)", conta: "senha", argumentos: combo, espera: "pendentes", escopo: "tudo",
++                     dados: "vitrine", abrir: "afazeres:v1", toques: { app in
++                         app.elemento("feitos").tap()
++                         XCTAssertTrue(app.elemento("afazer-a4").waitForExistence(timeout: 5), "os Feitos abertos")
++                     }),
++                Cena(nome: "afazeres vazio, \(tema)", conta: "senha", argumentos: combo, espera: "afazeresVazio", escopo: "tudo",
++                     dados: "vitrine", abrir: "afazeres:v3"),
++                Cena(nome: "afazeres, linha aberta, \(tema)", conta: "senha", argumentos: combo, espera: "pendentes", escopo: "tudo",
++                     dados: "vitrine", abrir: "afazeres:v1", toques: { app in
++                         app.elemento("afazer-a3").swipeLeft()
++                         XCTAssertTrue(app.buttons["apagar-a3"].waitForExistence(timeout: 3), "arrastar mostra Apagar")
++                     }),
++            ]
++        }
++        cobrar(cenas)
++    }
++
++    /// O mês por extenso, como o menu e o chip o mostram ("Outubro de 2026"), daqui a tantos dias: a vitrine conta os gastos a
++    /// partir de hoje, e o mês de hoje sempre tem gasto (o g039, daqui a 3 dias, ou o g027, de 2 dias atrás).
++    private static func mesPorExtenso(daqui dias: Int) -> String {
++        let data = Calendar(identifier: .gregorian).date(byAdding: .day, value: dias, to: .now) ?? .now
++        let formato = DateFormatter()
++        formato.locale = Locale(identifier: "pt_BR")
++        formato.dateFormat = "LLLL 'de' yyyy"
++        let texto = formato.string(from: data)
++        return texto.prefix(1).uppercased() + texto.dropFirst()
++    }
++
++    /// O mês pelo menu do sistema, tocado pelo título (o item traz a contagem no subtítulo), como no BuscaUITests.
++    @MainActor private static func escolherMes(_ app: XCUIApplication, _ titulo: String) {
++        app.buttons["filtrarPorMes"].tap()
++        let item = app.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", titulo, titulo + ",")).firstMatch
++        XCTAssertTrue(item.waitForExistence(timeout: 5), "o menu mostra \(titulo)")
++        item.tap()
++        XCTAssertTrue(app.elemento("chipDoMes").waitForExistence(timeout: 5), "o chip de \(titulo)")
++    }
++
++    /// A lupa abre o campo com o teclado; o texto entra e o "buscar" do teclado o fecha, com a busca aberta (em repouso).
++    @MainActor private static func buscar(_ app: XCUIApplication, _ texto: String) {
++        app.buttons["buscar"].tap()
++        app.digitarComFoco(texto + "\n", em: app.textFields["campoDaBusca"])
++        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "o buscar do teclado o fecha")
++    }
++}
++
+ /* O medidor com imagens sintéticas: sem abrir o app. */
+ final class LaudoDeContrasteTests: XCTestCase {
+     private func retrato(_ largura: Int, _ altura: Int, fundo: (UInt8, UInt8, UInt8),
+```
+
+Em `tests/workflow.test.cjs`:
+
+```diff
+--- a/tests/workflow.test.cjs
++++ b/tests/workflow.test.cjs
+@@ -228,47 +228,50 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
+ assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
+ assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
+ assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
+-assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 9, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria sem assinatura');
++assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 10, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os quatro laudos e auditoria sem assinatura');
+ assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
+ assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
+-assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 9, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria com os pacotes travados');
+-// O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3 e auditoria, em paralelo: o app pula
+-// os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 (as da etapa 3) e o
+-// auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos as da parte 3 e as da etapa 3,
+-// que rodam no laudo-parte3 e no laudo-etapa3, para cada job caber no teto com folga.
++assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 10, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os quatro laudos e auditoria com os pacotes travados');
++// O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3, laudo-etapa3-b e auditoria, em
++// paralelo: o app pula os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 e
++// o laudo-etapa3-b (as da etapa 3) e o auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos
++// as da parte 3 e as da etapa 3, que rodam no laudo-parte3, no laudo-etapa3 e no laudo-etapa3-b, para cada job caber no teto
++// com folga.
+ // Cada job vai do nome até o próximo job (as linhas de comentário já saíram).
+ const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
+ const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
+-const jobEtapa3 = jobAppIos('laudo-etapa3'), jobAppEtapa3 = jobAppIos('app-etapa3'), jobAppEtapa3b = jobAppIos('app-etapa3-b');
++const jobEtapa3 = jobAppIos('laudo-etapa3'), jobEtapa3b = jobAppIos('laudo-etapa3-b'), jobAppEtapa3 = jobAppIos('app-etapa3');
++const jobAppEtapa3b = jobAppIos('app-etapa3-b');
+ const jobAppEtapa3c = jobAppIos('app-etapa3-c');
+ assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
+   'o job app pula o laudo e as auditorias');
+ assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
+-assert.ok(!/AuditoriaUITests/.test(jobLaudo), 'as auditorias rodam no auditoria e no laudo-parte3, não no laudo');
++assert.ok(!/AuditoriaUITests/.test(jobLaudo), 'as auditorias rodam no auditoria e nos outros laudos, não no laudo');
+ assert.match(jobAuditoria, /-only-testing:CusttaUITests\/AuditoriaUITests \\\n/, 'o job auditoria roda as auditorias');
+-assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria + jobParte3 + jobEtapa3), 'o laudo-parte3, o laudo-etapa3 e o auditoria rodam só as leituras que o laudo pula');
++assert.ok(!/-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/.test(jobAuditoria + jobParte3 + jobEtapa3 + jobEtapa3b), 'o laudo-parte3, o laudo-etapa3, o laudo-etapa3-b e o auditoria rodam só as leituras que o laudo pula');
+ assert.match(jobEtapa3, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-etapa3 roda as leituras da etapa 3');
++assert.match(jobEtapa3b, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-etapa3-b roda as leituras da etapa 3 que não cabem no laudo-etapa3');
+ assert.match(jobParte3, /-only-testing:CusttaUITests\/LeituraNoVidroUITests\/\w+ \\\n/, 'o job laudo-parte3 roda as leituras da parte 3');
+-// Nenhuma leitura se perde nem roda duas vezes: a que o laudo pula roda no laudo-parte3, no laudo-etapa3 ou no auditoria, e
+-// só nele.
++// Nenhuma leitura se perde nem roda duas vezes: a que o laudo pula roda no laudo-parte3, no laudo-etapa3, no laudo-etapa3-b ou
++// no auditoria, e só nele.
+ const leiturasDe = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/LeituraNoVidroUITests/(\\w+)`, 'g'))].map(m => m[1]).sort();
+ const puladasNoLaudo = leiturasDe(jobLaudo, 'skip');
+-assert.deepStrictEqual([...leiturasDe(jobParte3, 'only'), ...leiturasDe(jobEtapa3, 'only'), ...leiturasDe(jobAuditoria, 'only')].sort(), puladasNoLaudo,
+-  'a leitura que o laudo pula roda num dos outros três, uma vez só, e eles só rodam essas');
++assert.deepStrictEqual([...leiturasDe(jobParte3, 'only'), ...leiturasDe(jobEtapa3, 'only'), ...leiturasDe(jobEtapa3b, 'only'), ...leiturasDe(jobAuditoria, 'only')].sort(),
++  puladasNoLaudo, 'a leitura que o laudo pula roda num dos outros quatro, uma vez só, e eles só rodam essas');
+ const leituraNoVidro = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'LeituraNoVidroUITests.swift'), 'utf8');
+ for(const metodo of puladasNoLaudo)
+   assert.match(leituraNoVidro, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no LeituraNoVidroUITests`);
+-// As auditorias da parte 3 e as da etapa 3 rodam no laudo-parte3 e no laudo-etapa3: a que o auditoria pula roda num deles,
+-// uma vez só, e só ela.
++// As auditorias da parte 3 e as da etapa 3 rodam no laudo-parte3, no laudo-etapa3 e no laudo-etapa3-b: a que o auditoria
++// pula roda num deles, uma vez só, e só ela.
+ const auditoriasDe = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/AuditoriaUITests/(\\w+)`, 'g'))].map(m => m[1]).sort();
+ const puladasNoAuditoria = auditoriasDe(jobAuditoria, 'skip');
+-assert.deepStrictEqual([...auditoriasDe(jobParte3, 'only'), ...auditoriasDe(jobEtapa3, 'only')].sort(), puladasNoAuditoria,
+-  'a auditoria que o auditoria pula roda no laudo-parte3 ou no laudo-etapa3, uma vez só, e só ela');
+-assert.ok(!/-only-testing:CusttaUITests\/AuditoriaUITests \\\n/.test(jobParte3 + jobEtapa3), 'o laudo-parte3 e o laudo-etapa3 rodam só as auditorias que o auditoria pula');
++assert.deepStrictEqual([...auditoriasDe(jobParte3, 'only'), ...auditoriasDe(jobEtapa3, 'only'), ...auditoriasDe(jobEtapa3b, 'only')].sort(), puladasNoAuditoria,
++  'a auditoria que o auditoria pula roda no laudo-parte3, no laudo-etapa3 ou no laudo-etapa3-b, uma vez só, e só ela');
++assert.ok(!/-only-testing:CusttaUITests\/AuditoriaUITests \\\n/.test(jobParte3 + jobEtapa3 + jobEtapa3b), 'o laudo-parte3, o laudo-etapa3 e o laudo-etapa3-b rodam só as auditorias que o auditoria pula');
+ const auditoria = readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', 'AuditoriaUITests.swift'), 'utf8');
+ for(const metodo of puladasNoAuditoria)
+   assert.match(auditoria, new RegExp(`func ${metodo}\\(`), `o app-ios.yml divide ${metodo}, que não existe mais no AuditoriaUITests`);
+-for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['laudo-etapa3', jobEtapa3], ['auditoria', jobAuditoria]]){
++for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['laudo-etapa3', jobEtapa3], ['laudo-etapa3-b', jobEtapa3b], ['auditoria', jobAuditoria]]){
+   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
+   assert.match(job, /\n\s+TEST_RUNNER_CUSTTA_VARREDURA: curta\n/, `o job ${nome} usa a varredura curta (a lista sob a cápsula só em 0, 20, 40 e 260 pt)`);
+   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${nome}\\.xcresult"[\\s\\S]*if: failure\\(\\)[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${nome}\\.xcresult`),
+@@ -289,7 +292,7 @@ for(const [nome, job] of [['app-etapa3', jobAppEtapa3], ['app-etapa3-b', jobAppE
+   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
+ }
+ const puladasNoApp = suitesInteiras(jobApp, 'skip');
+-const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobAuditoria].flatMap(suitesQueRodam))];
++const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobEtapa3b, jobAuditoria].flatMap(suitesQueRodam))];
+ assert.deepStrictEqual([...nosLaudos, ...[jobAppEtapa3, jobAppEtapa3b, jobAppEtapa3c].flatMap(job => suitesInteiras(job, 'only'))].sort(), [...puladasNoApp].sort(),
+   'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3, no app-etapa3-b ou no app-etapa3-c, uma vez só, e os três rodam só o que o app pula');
+ const telas = readdirSync(join(__dirname, '..', 'app-ios', 'CusttaUITests')).filter(f => f.endsWith('.swift'))
+@@ -301,9 +304,9 @@ for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', j
+   ['app-etapa3-c', jobAppEtapa3c, 'testes-etapa3-c']])
+   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${resultado}\\.xcresult"[\\s\\S]*\\n\\s+if: failure\\(\\) \\|\\| cancelled\\(\\)\\n[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${resultado}\\.xcresult`),
+     `o job ${nome} guarda o próprio resultado quando reprova e quando é cortado no teto`);
+-assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
+-assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
+-for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'app-etapa3-c', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
++assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobEtapa3b + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
++assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobEtapa3b + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
++for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'app-etapa3-c', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'laudo-etapa3-b', 'auditoria'])
+   assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
+ // O resultado de cada job sobe com um nome só dele: no mesmo run o upload-artifact não aceita o mesmo nome duas vezes, e dois
+ // jobs reprovados juntos perderiam um dos resultados.
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/workflow.test.cjs 2>&1 | grep -E "^✖|^ℹ (pass|fail)|AssertionError" | sort -u
+```
+Expected: reprova `✖ tests/workflow.test.cjs`, com `AssertionError [ERR_ASSERTION]: build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os quatro laudos e auditoria sem assinatura` (acha 9 jobs, sem o `laudo-etapa3-b`); `ℹ pass 0`, `ℹ fail 1`. As leituras passam de primeira: medem telas que já existem.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -345,6 +345,7 @@ jobs:
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
++            -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaBuscaEDosAfazeres \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+@@ -411,8 +412,8 @@ jobs:
+     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
+     # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
+     # escuro e no claro (~20 cenas): 38,7 min no run 40108043199. E a maior letra e as auditorias delas: 5,5 min no Mac,
+-    # 13,6 na CI, e o job foi a 52 min (run 40125911713), com teto de 60. Cada PR da etapa anota aqui o tempo do job; o PR 3
+-    # já não cabe e abre o laudo-etapa3-b (como o app-etapa3-b), que começa com estas três.
++    # 13,6 na CI, e o job foi a 52 min (run 40125911713), com teto de 60. Cada PR da etapa anota aqui o tempo do job; no PR 3
++    # estas três passam para o laudo-etapa3-b (como o app-etapa3-b), que também roda as leituras do PR 3.
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -443,11 +444,8 @@ jobs:
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
+             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
+             -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
+             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
+-            -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
+-            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+@@ -459,11 +457,59 @@ jobs:
+           path: ${{ runner.temp }}/laudo-etapa3.xcresult
+           retention-days: 7
+ 
++  laudo-etapa3-b:
++    runs-on: macos-26
++    # As leituras e as auditorias da etapa 3 que não cabem no laudo-etapa3: ele foi a 52 min no run 40125911713 e a 46 no
++    # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
++    # lá e abrem este job, com o laudo da busca e dos afazeres (PR 3), que o laudo pula. O mesmo preparo do laudo-etapa3, em
++    # paralelo com ele; como lá, cada PR da etapa anota aqui o tempo do job.
++    timeout-minutes: 60
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
++        with:
++          node-version: 22
++
++      - name: Versão do Xcode
++        run: xcodebuild -version
++
++      # A mesma varredura curta do job laudo: uma leitura troca de job sem mudar o que mede.
++      - name: Laudo de leitura e auditorias da etapa 3 no simulador (parte b)
++        env:
++          TEST_RUNNER_CUSTTA_VARREDURA: curta
++        run: |
++          set -o pipefail
++          DESTINO="$(node scripts/simulador-ios.mjs)"
++          echo "Simulador: $DESTINO"
++          xcodebuild test \
++            -project app-ios/Custta.xcodeproj \
++            -scheme Custta \
++            -destination "$DESTINO" \
++            -derivedDataPath app-ios/build \
++            -skipMacroValidation \
++            -skipPackagePluginValidation \
++            -onlyUsePackageVersionsFromResolvedFile \
++            -resultBundlePath "$RUNNER_TEMP/laudo-etapa3-b.xcresult" \
++            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra \
++            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaBuscaEDosAfazeres \
++            -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
++            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
++            CODE_SIGNING_ALLOWED=NO
++
++      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
++      - name: Resultado do laudo da etapa 3 (parte b) quando reprova
++        if: failure()
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
++        with:
++          name: laudo-etapa3-b-app-ios
++          path: ${{ runner.temp }}/laudo-etapa3-b.xcresult
++          retention-days: 7
++
+   auditoria:
+     runs-on: macos-26
+-    # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3) e a leitura
+-    # da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min: as 14 auditorias em 19,1
+-    # e a leitura em 11,2 (run 40125911713).
++    # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3 e no
++    # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
++    # as 14 auditorias em 19,1 e a leitura em 11,2 (run 40125911713).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/workflow.test.cjs 2>&1 | grep -E "^ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaBuscaEDosAfazeres -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObra -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraRolando -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigemNaMaiorLetra -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas -only-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho 2>&1 | grep -E "^leitura \||Executed [0-9]+ tests?, with|TEST EXECUTE" > /tmp/laudo-t44.txt
+grep -c "^leitura |" /tmp/laudo-t44.txt; grep "^leitura |" /tmp/laudo-t44.txt | grep -vc " 0 abaixo"; tail -2 /tmp/laudo-t44.txt
+```
+Expected: `ℹ pass 1`, `ℹ fail 0` (o `npm run test:unit` segue em 404); sem aviso; 83 cenas e 0 abaixo (o `testLeituraDaBuscaEDosAfazeres` com 18, 9 por tema; as piores, 4,56 numa etiqueta verde do claro, na busca do mês sem gasto e no topo da obra, e 4,92 na obra rolando a 1423, no escuro); `Executed 8 tests, with 0 failures` e `** TEST EXECUTE SUCCEEDED **`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/CusttaUITests/AuditoriaUITests.swift \
+  app-ios/CusttaUITests/LeituraNoVidroUITests.swift \
+  tests/workflow.test.cjs
+git commit -m "test: laudo de leitura da busca e dos afazeres" -m "O PR 3 pôs na obra a linha dos afazeres e o cabeçalho da busca, e nenhum laudo cobria as telas novas. O testLeituraDaBuscaEDosAfazeres mede, no escuro e no claro, a busca (em repouso, um mês, achados, nada achado e o mês sem gasto) e os afazeres (a tela, os Feitos abertos, o vazio e a linha arrastada), tudo pelo toque e sem gancho novo: o Cena ganha os toques, que rodam depois de a tela abrir. Ficam de fora o menu do mês, que é do sistema, e o texto digitado e o prompt, que o laudo não vê. A lista fica na rolagem fixa da obra, a 835 pt, com a borda de cima no vão entre a linha dos afazeres e a pílula; o nada achado, que não chega lá, fica a 596, no vão antes do valor da venda estimada." -m "A linha dos afazeres e o cabeçalho da busca empurraram a lista da obra 117 pt, e as rolagens fixas do laudo da obra, medidas no PR 2, passaram a cortar palavra pela borda de cima (a 1318, a linha de um gasto em 3,91). A lista vai a 905, e a varredura do Mac a 318, 561, 905, 1101, 1423 e 1715 (a da CI, a 561 e a 1101), cada uma num vão entre duas linhas. Da 1101 para baixo, as linhas são as dos cartões dos meses e mudam com o dia; o comentário diz o que muda." -m "O laudo-etapa3 já ia a 46 a 52 min com teto de 60. O laudo novo vai para um job novo, o laudo-etapa3-b, com o mesmo preparo, junto com a leitura e as duas auditorias das folhas de origem que saem do laudo-etapa3; o laudo pula o teste novo, e a guarda do workflow passa a conhecer o job."
+```

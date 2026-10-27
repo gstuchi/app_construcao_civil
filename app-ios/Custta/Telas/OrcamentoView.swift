@@ -82,7 +82,7 @@ struct OrcamentoView: View {
         .scrollIndicators(.hidden)
         .tituloPequenoAoRolar(barra)
         #if DEBUG
-        .modifier(RolagemFixaDoTeste())
+        .rolagemFixaSemFolha()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

@@ -407,9 +407,18 @@ struct RolagemFixaDoTeste: ViewModifier {
 extension View {
     /// A rolagem fixa do laudo só com o `-custta.rolagem`: sem ele, a lista fica sem o `.scrollPosition`, que muda a rolagem
     /// dela, como em Release. É a das folhas de origem (o A pagar e o detalhe do tópico ficam como sem o gancho nos testes de
-    /// tela); a obra e a tela Orçamento usam a RolagemFixaDoTeste de sempre.
+    /// tela); a obra e a tela Orçamento usam a `rolagemFixaSemFolha`.
     @ViewBuilder func rolagemFixaSoComOArgumento() -> some View {
         if UserDefaults.standard.object(forKey: "custta.rolagem") != nil { modifier(RolagemFixaDoTeste()) } else { self }
+    }
+
+    /// A rolagem fixa das telas de baixo das folhas (a obra e a tela Orçamento). Na cena que abre uma folha
+    /// (`CUSTTA_FOLHA`) com o `-custta.rolagem`, a rolagem é só da folha, e a tela de baixo fica sem o gancho: na VM do
+    /// iOS 26, rolar também a obra atrás da folha parava a thread principal de 14 a 21 s, e a cena do fim do A pagar
+    /// passava dos 10 s de espera do laudo (sonda do run 40590390423).
+    @ViewBuilder func rolagemFixaSemFolha() -> some View {
+        let comFolha = ProcessInfo.processInfo.environment["CUSTTA_FOLHA"] != nil
+        if comFolha, UserDefaults.standard.object(forKey: "custta.rolagem") != nil { self } else { modifier(RolagemFixaDoTeste()) }
     }
 }
 #endif

@@ -77,6 +77,7 @@ jobs:
     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
     # lenta, 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No
     # fim do PR 2 da etapa 3, 60,2 min, com 46,2 de testes de tela (run 40125911713).
+    # No fim do PR 3, 67,5 min, com 54,6 de testes de tela, numa VM lenta (run 40526951027).
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -168,6 +169,7 @@ jobs:
     # app-etapa3-c.
     # No fim do PR 2, FolhasDeOrigem 21,3 + Orçamento 18,7 min e 48,3 com o preparo, numa VM lenta (run 40125911713, com
     # um arrasto perdido do iOS 26); 36,8 no run 40108043199.
+    # No fim do PR 3, FolhasDeOrigem 24,3 + Orçamento 21,7 min e 52,6 com o preparo (run 40526951027).
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -216,6 +218,7 @@ jobs:
     # testes, em 13,4, e o resto é o preparo e o 1º boot (um teste caiu por toque perdido do iOS 26, com os 16 até o fim);
     # 28 min no 40108043199, com 15. Teto de 60, mais que o dobro numa VM lenta; como no app-etapa3, cada PR da etapa anota
     # aqui o tempo do job e, passando de ~50, a suíte nova vai para um job novo.
+    # No fim do PR 3, 26,7 min, com o detalhe em 18,4 (run 40526951027).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -258,6 +261,7 @@ jobs:
     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
     # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
     # paralelo com ele. Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
+    # No fim do PR 3, 29,5 min: a busca, com 11 testes, em 10,5 e os afazeres, com 15, em 10,8 (run 40526951027).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -305,6 +309,7 @@ jobs:
     # -only-testing lá). No fim do PR 2 o laudo já usava perto de 50 min, e a parte 3 da etapa 2 soma ~30 cenas: as
     # leituras dela rodam no job laudo-parte3, e as auditorias dela também (~7 min na CI, o auditoria ia a ~50). No fim do
     # PR 2 da etapa 3, 33,6 min, com 24,2 de leitura (run 40125911713).
+    # No fim do PR 3, 32,3 min, com 23,6 de leitura (run 40526951027).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -362,6 +367,7 @@ jobs:
     # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
     # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
     # no job laudo.
+    # No fim do PR 3, 29,8 min: as leituras em 10,5 e as auditorias em 9,8 (run 40526951027).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -414,6 +420,8 @@ jobs:
     # escuro e no claro (~20 cenas): 38,7 min no run 40108043199. E a maior letra e as auditorias delas: 5,5 min no Mac,
     # 13,6 na CI, e o job foi a 52 min (run 40125911713), com teto de 60. Cada PR da etapa anota aqui o tempo do job; no PR 3
     # estas três passam para o laudo-etapa3-b (como o app-etapa3-b), que também roda as leituras do PR 3.
+    # No fim do PR 3, sem as três, 46,2 min: o orçamento em 22,9 e a leitura das folhas de origem em 15,0 (run
+    # 40526951027, 2ª tentativa; na 1ª, a VM lenta passou dos 10 s de espera na cena do fim do A pagar).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -463,6 +471,8 @@ jobs:
     # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
     # lá e abrem este job, com o laudo da busca e dos afazeres (PR 3), que o laudo pula. O mesmo preparo do laudo-etapa3, em
     # paralelo com ele; como lá, cada PR da etapa anota aqui o tempo do job.
+    # No fim do PR 3, 37,3 min: o laudo da busca e dos afazeres em 14,1, as auditorias das folhas de origem em 10,2 e a
+    # leitura delas na maior letra em 4,7 (run 40526951027, 2ª tentativa).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -510,6 +520,7 @@ jobs:
     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3 e no
     # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
     # as 14 auditorias em 19,1 e a leitura em 11,2 (run 40125911713).
+    # No fim do PR 3, 39,4 min: as 14 auditorias em 18,8 e a leitura em 12,5 (run 40526951027, 2ª tentativa).
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -20049,3 +20049,223 @@ git add .github/workflows/app-ios.yml \
   tests/workflow.test.cjs
 git commit -m "test: laudo de leitura da busca e dos afazeres" -m "O PR 3 pôs na obra a linha dos afazeres e o cabeçalho da busca, e nenhum laudo cobria as telas novas. O testLeituraDaBuscaEDosAfazeres mede, no escuro e no claro, a busca (em repouso, um mês, achados, nada achado e o mês sem gasto) e os afazeres (a tela, os Feitos abertos, o vazio e a linha arrastada), tudo pelo toque e sem gancho novo: o Cena ganha os toques, que rodam depois de a tela abrir. Ficam de fora o menu do mês, que é do sistema, e o texto digitado e o prompt, que o laudo não vê. A lista fica na rolagem fixa da obra, a 835 pt, com a borda de cima no vão entre a linha dos afazeres e a pílula; o nada achado, que não chega lá, fica a 596, no vão antes do valor da venda estimada." -m "A linha dos afazeres e o cabeçalho da busca empurraram a lista da obra 117 pt, e as rolagens fixas do laudo da obra, medidas no PR 2, passaram a cortar palavra pela borda de cima (a 1318, a linha de um gasto em 3,91). A lista vai a 905, e a varredura do Mac a 318, 561, 905, 1101, 1423 e 1715 (a da CI, a 561 e a 1101), cada uma num vão entre duas linhas. Da 1101 para baixo, as linhas são as dos cartões dos meses e mudam com o dia; o comentário diz o que muda." -m "O laudo-etapa3 já ia a 46 a 52 min com teto de 60. O laudo novo vai para um job novo, o laudo-etapa3-b, com o mesmo preparo, junto com a leitura e as duas auditorias das folhas de origem que saem do laudo-etapa3; o laudo pula o teste novo, e a guarda do workflow passa a conhecer o job."
 ```
+
+### Task 45: Checklist do aparelho do PR 3 e os tempos da CI
+
+O checklist que o Giovani roda no iPhone ganha a seção do PR 3, no molde da do PR 2. A busca é conferida numa obra de verdade, sem gravar. Os afazeres e a mudança de outro aparelho vão para uma obra de teste, criada no app e apagada no último item (spec, "Conta"). Depois vêm a maior letra e a acessibilidade. A seção do PR 2 ganha uma linha: o Giovani a aprovou por amostragem em 27/10, no build 7.1, sem marcar os itens um a um. Os comentários do `app-ios.yml` ganham os tempos do run com o PR 3 inteiro. Nenhum código muda.
+
+- **A seção do PR 3** tem 45 itens, com os textos copiados do código, do núcleo e dos testes de tela:
+  - **do PR 2, neste build** (5): a lista da obra mais embaixo, com a linha dos afazeres e o cabeçalho da busca; a obra sem gasto só com a pílula; o rolar até o gasto novo, no tamanho normal e na maior letra, numa obra de teste própria; e as pílulas da tela Orçamento num texto só;
+  - **a busca** (11), sem gravar: a lupa e o teclado, a busca sem acento, o "A vencer" que abre sozinho, a soma conferida contra o site, o "buscar" do teclado, os dois ×, o menu do mês e o chip, busca e mês juntos, os vazios e a troca de obra;
+  - **o teclado na busca** (1): escrever e apagar várias vezes, sem arrastar a lista, e dizer se o teclado cair (no iOS 26 da CI ele caiu uma vez, sem se repetir);
+  - **os afazeres** (14), na obra de teste e em ordem: a linha nos três estados, a tela, adicionar pelo "OK" e pelo +, o vazio, os 500 caracteres, marcar pelo círculo e pelo texto, os dois toques que desistem, desmarcar, os Feitos, arrastar e "Apagar", o rotor, o + da cápsula e o site;
+  - **duas telas** (4): o achado 3 na busca e nos afazeres, o mês que fica sem gasto (achado 1) e, por último, a obra apagada no site com a tela Afazeres aberta;
+  - **Texto Maior no máximo** (4): a pílula e os botões em duas linhas, o campo e a lupa que vira ×, a soma empilhada com o valor que pode quebrar (o único lugar em que o dinheiro sai da linha que encolhe) e os afazeres quebrando linha;
+  - **Acessibilidade** (6): VoiceOver na busca, no menu do mês e nos afazeres, o Controle por Voz, o Controle Assistivo e o contraste.
+- **O que grava com o VoiceOver** (o "Apagar" do rotor e os dois toques que marcam) fica nos afazeres da obra de teste, em itens marcados "VoiceOver", como no PR 2; a acessibilidade só lê.
+- **Os tempos da CI** vêm do run 40526951027, na `7cb5a3f` (a árvore das fatias). Só os comentários de tempo mudam; os tetos e a regra dos ~50 min ficam.
+  - O `app` levou 67,5 min, com 54,6 de testes de tela, numa VM lenta; o `app-etapa3`, 52,6; o `app-etapa3-b`, 26,7, com o detalhe em 18,4.
+  - O `app-etapa3-c`, novo, levou 29,5: a busca em 10,5 e os afazeres em 10,8.
+  - O `laudo` levou 32,3, e o `laudo-parte3`, 29,8.
+  - O `laudo-etapa3`, sem as três que saíram para o novo job, levou 46,2 min; o `laudo-etapa3-b`, novo, 37,3 (o laudo da busca e dos afazeres em 14,1); o `auditoria`, 39,4. Os três são da 2ª tentativa do run.
+  - **Na 1ª tentativa, três jobs caíram por tempo da VM do iOS 26,** sem nada do PR 3 envolvido. No `laudo-etapa3`, a cena do fim do A pagar passou dos 10 s de espera, e o print mostra a cena certa. No `auditoria`, a auditoria da obra não terminou a tempo. No `laudo-etapa3-b`, a folha da Cerâmica não abriu em 10 s, e houve um "partially unsupported" no total do A pagar na maior letra. Na 2ª tentativa, os três passam, e o run fica verde nos 10 jobs.
+
+**Files:**
+- Modify: `.github/workflows/app-ios.yml`
+- Modify: `docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md`
+
+- [ ] **Step 1: Escrever o checklist**
+
+Em `docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md`:
+
+```diff
+--- a/docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
++++ b/docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
+@@ -81,6 +81,8 @@ Adiantada da etapa 5 (23/10), para comparar as duas doses do vidro no iPhone. Va
+ 
+ ## PR 2: o A pagar e o detalhe do tópico
+ 
++Aprovado pelo Giovani por amostragem em 27/10/2026, no build 7.1 do TestFlight: ele testou parte dos itens, e os itens desta seção não foram marcados um a um.
++
+ **Do PR 1, neste build** (cinco itens do PR 1 que o PR 2 muda; valem para o build do PR 2, e os que tiram dado rodam numa obra de teste)
+ 
+ - [ ] No build do PR 1, as linhas de tópico não têm seta e não abrem nada (o detalhe do tópico chega no PR 2). Do PR 2 em diante, só a do tópico previsto e ainda sem gasto fica sem seta e sem toque; as outras abrem o detalhe (os itens do PR 2).
+@@ -147,3 +149,71 @@ Adiantada da etapa 5 (23/10), para comparar as duas doses do vidro no iPhone. Va
+ - [ ] Controle por Voz ("Mostrar nomes"), nas entradas: na obra, o indicador "A pagar · 30 dias" mostra "A pagar", e "Tocar A pagar" abre a folha; na tela Orçamento, cada linha de tópico que abre o detalhe mostra o nome do tópico, e "Tocar" com ele ("Tocar Cerâmica") abre a folha do tópico (a linha do orçamento, na obra, segue com "Orçamento"). Diga se algum nome não aparece ou não abre a folha.
+ - [ ] Controle Assistivo (varredura por item), nas duas folhas: a varredura passa pelo × e pelas linhas de gasto; selecionar uma linha abre a edição, e o "Apagar" dela aparece entre as ações; dá para abrir a edição e voltar só pela varredura.
+ - [ ] No escuro e no claro, e com Aumentar contraste, o "Passou R$ … do previsto" do detalhe (em âmbar, dentro da folha) e os textos secundários das duas folhas se leem.
++
++## PR 3: a busca e os afazeres
++
++**Do PR 2, neste build** (o que o PR 3 muda nas telas de antes; valem para o build do PR 3, e os que gravam rodam numa obra de teste)
++
++- [ ] Numa obra com gastos, embaixo das ações da fase (e do "Definir orçamento", quando aparece), vêm agora a linha "Afazeres" (os itens dela estão em "Os afazeres", adiante) e a pílula "Lançamentos", com a lupa e o mês à direita, dois botões redondos de vidro; a lista de gastos começa mais embaixo. O resto da obra não muda.
++- [ ] Numa obra de teste, criada agora no app (spec, "Conta": nunca numa obra de verdade): na lista de Obras, + → "Nova obra", com o nome "Teste da lista", uma área qualquer e "Criar obra". Sem gasto, a pílula fica só "Lançamentos", sem o "0" do build do PR 2 e sem a lupa e o mês, com "Nenhum gasto lançado." / "Toque no + para lançar o primeiro." embaixo.
++- [ ] Na mesma obra, lance pelo + Areia (Materiais básicos, hoje, R$ 100,00): ao salvar, a lista rola até ela, agora abaixo da linha dos afazeres e da pílula, e a linha acende por uns 2 s com a etiqueta "novo"; a pílula passa a "Lançamentos 1", com a lupa e o mês ao lado. Lance Fios (Elétrica, no cartão em 3x, R$ 300,00 sem juros): a lista abre o "A vencer" e mostra a 1ª parcela.
++- [ ] Feche o "A vencer" e ponha o Texto Maior no máximo. Lance Brita (Materiais básicos, hoje, R$ 50,00): ao salvar, a lista rola até ela, e a linha acesa aparece inteira na tela. Lance Tubos (Encanamento, no cartão em 3x, R$ 150,00 sem juros): a lista rola até o "A vencer", que abre com a 1ª parcela dos Tubos à vista. Depois, apague a obra de teste (lápis da obra, "Apagar obra").
++- [ ] Ainda com Texto Maior no máximo, na tela Orçamento de uma obra com orçamento por tópico: a pílula "Por tópico" com o número agora é um texto só e, se não couber numa linha, quebra entre palavras, como texto corrido, sem partir palavra com hífen; numa obra com orçamento só no total, o mesmo com "Gasto por tópico". VoiceOver: a pílula segue lida como "Por tópico, 14" (com o número da obra), um cabeçalho. Depois, volte o Texto Maior.
++
++**A busca** (numa obra de verdade com muitos gastos, de preferência com algum gasto a vencer; nada aqui grava)
++
++- [ ] Ao lado da pílula "Lançamentos 46" (com o número da obra), a lupa e o mês. Toque na lupa: o campo "Buscar gasto ou tópico" abre embaixo da pílula, a lista rola até a pílula, que fica no alto da tela, e o teclado sobe sozinho, sem tocar no campo; a lupa fica acesa, cheia na cor da marca.
++- [ ] Busque o nome de um tópico que tem acento, sem acento e em minúsculas ("ceramica", "eletrica"): a lista fica com os gastos do tópico e os que têm a palavra na descrição, mesmo de outro tópico, cada mês com a soma só dos seus achados, e a pílula conta "achados/total" ("Lançamentos 12/46"). Com acento, maiúsculas e um espaço no fim ("CERÂMICA "), o mesmo resultado. Uma palavra da descrição de um gasto, escrita sem acento, também acha. Os indicadores e a linha do orçamento seguem com a obra inteira: a busca muda só a lista.
++- [ ] Com algum achado a vencer, o "A vencer" abre sozinho, só com os achados (o total e "N gastos · …" deles). Feche-o: ele fica fechado enquanto a busca vale. Apague o texto: a lista volta inteira, com o "A vencer" como estava antes da busca; escreva de novo, e ele abre de novo.
++- [ ] Embaixo do campo, "Soma dos achados: R$ …". Os números são os do site: no site, na mesma obra, a mesma busca no campo de busca dos lançamentos dá o mesmo "12/46" ao lado de "Lançamentos" e os mesmos gastos; numa busca de poucos achados, a soma dos valores deles no site é a do app.
++- [ ] O "buscar" do teclado fecha o teclado, e a busca fica, com o texto e a lista filtrada; a lupa traz o teclado de volta ao campo.
++- [ ] Os dois ×: o de dentro do campo, que aparece com texto, apaga só o texto (a lista volta inteira, e o campo fica aberto); o de fora, ao lado do campo, fecha a busca: o campo sai, a pílula volta a "Lançamentos 46", a "Soma dos achados" some e o "A vencer" fica como estava antes da busca. A lupa reabre o campo vazio.
++- [ ] O mês: o calendário abre o menu do sistema, com "Todos os meses" (com a marca, sem filtro) e os meses com gasto, do mais novo ao mais antigo (os do "A vencer" no alto), cada um por extenso ("Outubro de 2026") e com quantos gastos tem embaixo do nome ("6 gastos", "1 gasto"). Num mês passado, a contagem é o número de linhas do cartão dele na lista.
++- [ ] Escolha um mês: ele vira um chip embaixo da pílula, com o calendário, o nome ("Outubro de 2026") e o ×, e o botão do mês fica aceso; a pílula conta "achados/total", e a "Soma dos achados" é o total do mês. No site, com o mesmo mês no seletor ("out/26"), o mesmo "achados/total", e a soma é a da barra do mês no "Gasto por mês" (toque na barra: "out/26 · R$ …"). Abra o menu de novo: o mês escolhido tem a marca, e tocar nele não tira o filtro. O × do chip tira o mês; "Todos os meses" também.
++- [ ] Busca e mês valem juntos: com um mês escolhido, busque uma palavra: só os achados dela naquele mês. O × do chip tira só o mês, e a busca fica.
++- [ ] Os vazios: busque algo que a obra não tem ("xyz"): "Nada encontrado com esse filtro.", com "A busca olha a descrição e o tópico, com ou sem acento." e o botão "Limpar a busca", e a pílula "Lançamentos 0/46"; "Limpar a busca" apaga o texto, e o campo fica aberto. Com um mês escolhido e uma busca sem achado nele, o botão é "Limpar busca e mês", que tira os dois. (O vazio do mês que fica sem gasto, com "Ver todos os meses", grava: está nas duas telas, adiante.)
++- [ ] Trocar de obra zera: com uma busca e um mês valendo, volte para Obras e abra outra obra: a lista inteira, sem o campo e sem o chip; volte à primeira: também sem filtro.
++
++**O teclado na busca** (na mesma obra; nada grava)
++
++- [ ] Com a busca aberta, escreva e apague várias vezes, letra a letra e palavras inteiras, sem arrastar a lista (arrastá-la para baixo, até o teclado, o recolhe de propósito): o teclado não pode cair sozinho. No iOS 26 da CI, ele caiu uma vez durante a digitação, em muitos runs, e não se repetiu. Se cair no aparelho, diga em que passo (depois de que letra ou toque), se o texto ficou no campo e a versão do iOS do iPhone.
++
++**Os afazeres** (numa obra de teste, criada no app e apagada no fim das duas telas; grava)
++
++- [ ] Este grupo e o seguinte gravam e apagam afazeres e gastos, então rodam numa obra de teste, criada agora no próprio app e apagada no último item das duas telas (spec, "Conta"), nunca numa obra de verdade. Os itens seguem em ordem, cada um sobre o que o anterior deixou; nos marcados "VoiceOver", o VoiceOver fica ligado ao menos no último toque (o atalho de acessibilidade liga e desliga). Na lista de Obras, + → "Nova obra", com o nome "Teste PR 3", uma área qualquer e "Criar obra". Na obra, entre as ações e a pílula "Lançamentos", a linha "Afazeres", sem etiqueta, com "Anote o que falta na obra." embaixo e a seta à direita.
++- [ ] Toque na linha: a tela "Afazeres" entra, com o título grande; no alto, o campo com o exemplo "Ex: pagar pedreiro, buscar tinta" e o + cinza; embaixo, "Nenhum afazer." / "Anote o que falta na obra.". Volte pelo círculo do topo e, de novo, arrastando da borda esquerda; entre outra vez.
++- [ ] Toque no campo, escreva "Comprar disjuntor" e toque no "OK" do teclado: o afazer entra em "Pendentes 1", aceso por uns 2 s; o campo limpa, e o teclado fica. Escreva "  Ligar pro eletricista  ", com espaços antes e depois: o + passa à cor da marca; toque nele: o afazer entra no alto, sem os espaços. Do mesmo jeito, pelo "OK", "Pagar o pedreiro". Fica "Pendentes 3", do mais novo ao mais antigo.
++- [ ] Com o campo vazio, o + só põe o cursor no campo; com só espaços, nem o + nem o "OK" adicionam.
++- [ ] Os 500 caracteres: cole no campo um texto de mais de 500 caracteres (um parágrafo copiado de Notas, por exemplo): o campo guarda só os primeiros 500, e o fim do texto colado fica de fora; uma letra a mais, no fim, não entra. Toque no +: o afazer entra no alto, inteiro, quebrando linha. Volte à obra: a linha mostra "4 pendentes", na cor da marca, e o texto longo cortado em duas linhas; entre de novo nos afazeres.
++- [ ] Marque "Ligar pro eletricista" pelo círculo: o círculo enche na hora, verde, com a marca; meio segundo depois, o afazer sai dos pendentes, e o grupo "Feitos" aparece embaixo, fechado, com 1. Marque "Comprar disjuntor" tocando no texto: o mesmo, e os Feitos passam a 2.
++- [ ] Toque duas vezes seguidas, rápido, no círculo de "Pagar o pedreiro": o círculo enche e esvazia, e nada muda de lugar (no site, os dois toques marcariam e desmarcariam; aqui, nada é gravado).
++- [ ] Toque em "Feitos": abre, com "Comprar disjuntor" no alto (o último marcado) e "Ligar pro eletricista" embaixo. Toque em "Comprar disjuntor": o círculo esvazia na hora e, meio segundo depois, ele volta ao alto dos pendentes; os Feitos ficam com 1.
++- [ ] Os Feitos: "Ligar pro eletricista" fica riscado, na cor secundária, com o círculo verde cheio. Toque em "Feitos": fecha. Abra-os, volte à obra e entre de novo: começam fechados.
++- [ ] Arraste o texto longo para a esquerda: aparece o "Apagar" vermelho; tocar fora ou rolar fecha sem apagar. Arraste de novo e toque em "Apagar": o afazer sai na hora, sem pergunta.
++- [ ] VoiceOver: na linha de "Pagar o pedreiro", a ação "Apagar" do rotor apaga na hora, sem pergunta. Diga para onde vai o foco e se ouve algum aviso.
++- [ ] VoiceOver: dois toques em "Comprar disjuntor": ouve-se "feito" na hora; meio segundo depois, ele vai para os Feitos, fechados, e a pílula "Pendentes" some. Diga para onde vai o foco. Volte à obra: a linha mostra "tudo feito", em verde, e "2 feitos".
++- [ ] Ainda na tela Afazeres, o + ao lado da cápsula de abas lança gasto nesta obra: a folha abre em "Valor do gasto", com "Teste PR 3" embaixo. Lance Cimento (Materiais básicos, hoje, R$ 100,00), Cimento cola (Cerâmica, hoje, R$ 50,00) e Tinta (Pintura, um dia do mês passado, R$ 80,00): a cada "Salvar", a folha desce, e a tela Afazeres continua. Volte à obra: os três na lista, e "Lançamentos 3".
++- [ ] No site, na obra de teste: em "Afazeres", sem contador (nenhum pendente), "Comprar disjuntor" e, embaixo, "Ligar pro eletricista", os dois feitos, nessa ordem (o último marcado primeiro); nem o texto longo nem "Pagar o pedreiro"; e os três gastos.
++
++**Duas telas: a mudança de outro aparelho (achado 3)** (na obra de teste dos afazeres, com o site aberto nela no computador; grava)
++
++- [ ] Na obra de teste, toque na lupa e escreva "cimen": "Lançamentos 2/3" (Cimento e Cimento cola) e "Soma dos achados: R$ 150,00". Confira o teclado à vista e apague no site o Cimento cola (o × da linha e "Excluir"): no iPhone, a linha sai, a pílula passa a "1/2" e a soma a "R$ 100,00"; o "cimen" fica no campo, e o teclado também. Continue ("to"): as letras entram no campo, e a pílula segue "1/2".
++- [ ] O mês que fica sem gasto (achado 1): feche a busca e escolha no menu o mês passado, com "1 gasto": o chip, "Lançamentos 1/2" e "Soma dos achados: R$ 80,00". Apague a Tinta no site: no iPhone, "Nenhum gasto em …" (o mês por extenso, em minúscula: "Nenhum gasto em setembro de 2026.") e "Ver todos os meses"; o chip continua no mês, a pílula fica "0/1", e o menu mantém o mês marcado, com "0 gastos". "Ver todos os meses" tira o mês: "Lançamentos 1".
++- [ ] Abra a tela Afazeres e escreva "Comprar areia", sem o "OK". Com o teclado à vista, anote no site, na obra de teste, o afazer "Ver a entrega do gesso": no iPhone, ele entra no alto, em "Pendentes 1", e "Comprar areia" fica no campo, com o teclado. Continue (" fina") e toque no "OK": "Comprar areia fina" entra no alto, e fica "Pendentes 2".
++- [ ] Por último, com a tela Afazeres aberta no iPhone, apague a obra de teste no site: o app volta para a lista de Obras, sem ela. Se algo falhar, apague-a no app (lápis da obra, "Apagar obra").
++
++**Texto Maior no máximo** (Ajustes do iPhone → Acessibilidade → Tela e Tamanho do Texto → Texto Maior; numa obra de verdade, nada grava)
++
++- [ ] Na obra, a pílula "Lançamentos 46" fica numa linha, e a lupa e o mês descem para a de baixo, maiores; com filtro, se a pílula não couber, ela quebra como texto corrido ("Lançamentos" numa linha, "12/46" na de baixo). Toque na lupa: o campo fica com a largura toda, sem a lupa de dentro e sem o × ao lado, e a lupa de cima vira o × que fecha a busca. O exemplo "Buscar gasto ou tópico" e o texto digitado quebram linha no campo e se leem inteiros (o laudo da CI não mede o texto digitado).
++- [ ] Escolha um mês: o chip quebra o nome, se não couber, e o × dele cresce; embaixo, "Soma dos achados:" e, na linha de baixo, o valor, que pode quebrar ("R$" numa linha e o número na outra). É o único lugar em que o dinheiro sai da linha que encolhe, e só na letra de acessibilidade: no iOS 26, com o valor na linha que encolhe, escolher o mês parava o app de 45 a 70 s. Escolha meses diferentes, várias vezes, e busque com o mês escolhido: o app responde na hora; diga se travar ou demorar.
++- [ ] O vazio da busca ("Nada encontrado com esse filtro.", a frase e "Limpar a busca") fica sem o ícone, com o texto e o botão inteiros, quebrando linha.
++- [ ] Os afazeres, numa obra que tenha afazeres (se nenhuma tiver, rode este item na obra de teste, antes do último item das duas telas): na obra, a linha fica sem o ícone, e o primeiro pendente para em quatro linhas; na tela Afazeres, o exemplo "Ex: pagar pedreiro, buscar tinta" e o texto digitado (sem adicionar) quebram linha, o + cresce, e cada afazer quebra inteiro, com o círculo maior; nada corta.
++
++**Acessibilidade** (numa obra de verdade; nos afazeres, sem marcar nem apagar: o que grava está nos afazeres da obra de teste)
++
++- [ ] VoiceOver, na busca: a lupa lê "Buscar gasto ou tópico"; o mês, "Filtrar por mês" e o escolhido ("Todos os meses" ou "Outubro de 2026"); a pílula é um cabeçalho, "Lançamentos, 46" ou, com filtro, "Lançamentos, 12 de 46"; o campo, "Buscar gasto ou tópico"; os ×, "Apagar o texto" e "Fechar a busca"; o chip, o nome do mês e o botão "Tirar o filtro do mês"; a soma é um elemento só, "Soma dos achados: R$ …". Depois de "Fechar a busca", "Tirar o filtro do mês" ou "Limpar a busca", o foco vai para "Lançamentos".
++- [ ] VoiceOver, no menu do mês: cada mês lê o nome e quantos gastos tem ("Outubro de 2026, 6 gastos"). No iOS 26, ele pode ler só o nome (a contagem é desenhada, mas não chega ao VoiceOver): diga a versão do iOS e o que ouve.
++- [ ] VoiceOver, nos afazeres: na obra, a linha é um botão só, "Afazeres", com a etiqueta e o primeiro pendente inteiro ("N pendentes, …"; "tudo feito, N feitos"; ou "Anote o que falta na obra."), e dois toques abrem a tela. Na tela, o campo lê "Novo afazer" e o +, "Adicionar afazer"; "Pendentes, N" é um cabeçalho; cada afazer lê o texto inteiro e "pendente" ou "feito", com a ação "Apagar" no rotor (não use: apaga); "Feitos, N" diz se está aberto ou fechado, e dois toques abrem e fecham.
++- [ ] Controle por Voz ("Mostrar nomes"): na obra, "Tocar Afazeres" abre a tela, "Tocar Buscar gasto ou tópico" abre a busca e "Tocar Filtrar por mês" abre o menu, onde o nome de um mês o escolhe; "Tocar Apagar o texto", "Tocar Fechar a busca", "Tocar Tirar o filtro do mês" e "Tocar Limpar a busca" funcionam. Na tela Afazeres, "Tocar Novo afazer" põe o cursor no campo e "Tocar Feitos" abre e fecha. Diga se algum nome não aparece ou não funciona.
++- [ ] Controle Assistivo (varredura por item): na busca, a varredura passa pela lupa, pelo mês, pelo campo, pelos × e pelo botão de limpar; dá para buscar, escolher um mês e tirá-lo só pela varredura. Nos afazeres, ela passa pelo campo, pelo +, por cada afazer e por "Feitos", e o "Apagar" aparece entre as ações de cada afazer (sem usar).
++- [ ] No escuro e no claro, com Aumentar contraste: na busca, o exemplo e o texto digitado no campo, o chip, a "Soma dos achados", a frase do vazio e o "Limpar a busca"; nos afazeres, o exemplo e o texto digitado no campo, as etiquetas da linha ("N pendentes", "tudo feito") e os feitos riscados, na cor secundária, se leem. O laudo da CI não mede o texto digitado: só o aparelho prova.
+```
+
+- [ ] **Step 2: Os tempos da CI**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -77,6 +77,7 @@ jobs:
+     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
+     # lenta, 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No
+     # fim do PR 2 da etapa 3, 60,2 min, com 46,2 de testes de tela (run 40125911713).
++    # No fim do PR 3, 67,5 min, com 54,6 de testes de tela, numa VM lenta (run 40526951027).
+     timeout-minutes: 90
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -168,6 +169,7 @@ jobs:
+     # app-etapa3-c.
+     # No fim do PR 2, FolhasDeOrigem 21,3 + Orçamento 18,7 min e 48,3 com o preparo, numa VM lenta (run 40125911713, com
+     # um arrasto perdido do iOS 26); 36,8 no run 40108043199.
++    # No fim do PR 3, FolhasDeOrigem 24,3 + Orçamento 21,7 min e 52,6 com o preparo (run 40526951027).
+     timeout-minutes: 90
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -216,6 +218,7 @@ jobs:
+     # testes, em 13,4, e o resto é o preparo e o 1º boot (um teste caiu por toque perdido do iOS 26, com os 16 até o fim);
+     # 28 min no 40108043199, com 15. Teto de 60, mais que o dobro numa VM lenta; como no app-etapa3, cada PR da etapa anota
+     # aqui o tempo do job e, passando de ~50, a suíte nova vai para um job novo.
++    # No fim do PR 3, 26,7 min, com o detalhe em 18,4 (run 40526951027).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -258,6 +261,7 @@ jobs:
+     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
+     # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
+     # paralelo com ele. Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
++    # No fim do PR 3, 29,5 min: a busca, com 11 testes, em 10,5 e os afazeres, com 15, em 10,8 (run 40526951027).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -305,6 +309,7 @@ jobs:
+     # -only-testing lá). No fim do PR 2 o laudo já usava perto de 50 min, e a parte 3 da etapa 2 soma ~30 cenas: as
+     # leituras dela rodam no job laudo-parte3, e as auditorias dela também (~7 min na CI, o auditoria ia a ~50). No fim do
+     # PR 2 da etapa 3, 33,6 min, com 24,2 de leitura (run 40125911713).
++    # No fim do PR 3, 32,3 min, com 23,6 de leitura (run 40526951027).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -362,6 +367,7 @@ jobs:
+     # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
+     # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
+     # no job laudo.
++    # No fim do PR 3, 29,8 min: as leituras em 10,5 e as auditorias em 9,8 (run 40526951027).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -414,6 +420,8 @@ jobs:
+     # escuro e no claro (~20 cenas): 38,7 min no run 40108043199. E a maior letra e as auditorias delas: 5,5 min no Mac,
+     # 13,6 na CI, e o job foi a 52 min (run 40125911713), com teto de 60. Cada PR da etapa anota aqui o tempo do job; no PR 3
+     # estas três passam para o laudo-etapa3-b (como o app-etapa3-b), que também roda as leituras do PR 3.
++    # No fim do PR 3, sem as três, 46,2 min: o orçamento em 22,9 e a leitura das folhas de origem em 15,0 (run
++    # 40526951027, 2ª tentativa; na 1ª, a VM lenta passou dos 10 s de espera na cena do fim do A pagar).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -463,6 +471,8 @@ jobs:
+     # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
+     # lá e abrem este job, com o laudo da busca e dos afazeres (PR 3), que o laudo pula. O mesmo preparo do laudo-etapa3, em
+     # paralelo com ele; como lá, cada PR da etapa anota aqui o tempo do job.
++    # No fim do PR 3, 37,3 min: o laudo da busca e dos afazeres em 14,1, as auditorias das folhas de origem em 10,2 e a
++    # leitura delas na maior letra em 4,7 (run 40526951027, 2ª tentativa).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -510,6 +520,7 @@ jobs:
+     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3 e no
+     # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
+     # as 14 auditorias em 19,1 e a leitura em 11,2 (run 40125911713).
++    # No fim do PR 3, 39,4 min: as 14 auditorias em 18,8 e a leitura em 12,5 (run 40526951027, 2ª tentativa).
+     timeout-minutes: 60
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+```
+
+- [ ] **Step 3: Ver passar**
+
+Run:
+```bash
+node --test tests/docs.test.mjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+node tests/workflow.test.cjs
+git diff -U0 .github/workflows/app-ios.yml | grep -E '^[-+][^-+]' | grep -vE '^[-+]\s*#'
+```
+Expected:
+- `ℹ pass 7`, `ℹ fail 0`.
+- O workflow passa.
+- A última linha não imprime nada: no yml, só comentário muda.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md
+git commit -m "docs: checklist do aparelho do PR 3 e os tempos da CI" -m "O checklist que o Giovani roda no iPhone ganha a seção do PR 3, no molde da do PR 2: a busca numa obra de verdade, sem gravar; os afazeres e a mudança de outro aparelho numa obra de teste, criada no app e apagada no fim; e depois a maior letra e a acessibilidade, com os textos copiados do código. Um item pede para dizer se o teclado da busca cair, como caiu uma vez no iOS 26 da CI. A seção do PR 2 ganha uma linha: o Giovani a aprovou por amostragem em 27/10, no build 7.1, sem marcar os itens um a um. Os comentários do app-ios.yml ganham os tempos do run 40526951027, com o PR 3 inteiro: só os comentários mudam, e os tetos ficam."
+```
+
+**Ponto de controle do PR 3:** CI verde nos 10 jobs (`nucleo`, `app`, `app-etapa3`, `app-etapa3-b`, `app-etapa3-c`, `laudo`, `laudo-parte3`, `laudo-etapa3`, `laudo-etapa3-b` e `auditoria`). No fim do PR, o núcleo tem 233 testes em 37 suítes; o `CusttaTests`, 170 em 33; o `BuscaUITests`, 11; o `AfazeresUITests`, 15; e o `npm run test:unit`, 404. No Mac, `npm run test:app-ios:emuladores` e `npm run test:app-ios:cruzado` ficam verdes. No Pro Max, que a CI não roda, passam o laudo da busca e dos afazeres e o `LeituraNoVidroUITests` inteiro. O Verniz confere a busca e os afazeres lado a lado com o mockup (parte 2), nos dois temas e na maior letra. Depois do merge, o Orquestrador dispara o `app-ios-testflight` com o OK do Giovani, e o Giovani faz a parte "PR 3" do checklist. Na CI do iOS 26, a ponta com as Tarefas 37 a 44 rodou no run 40526951027 (verde na 2ª tentativa, acima). O diagnóstico do foco da busca está nas Tarefas 40 e 42: sondas, estresse e A/B nos runs 40506341041 a 40519178167.

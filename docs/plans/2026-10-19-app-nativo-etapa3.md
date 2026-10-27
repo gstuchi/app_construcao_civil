@@ -16036,7 +16036,7 @@ git commit -m "docs: checklist do aparelho do PR 2 e os tempos da CI" -m "O chec
 
 A parte 3 do mockup, gravando de verdade: a busca e o filtro por mês na lista de lançamentos da obra, com a soma dos achados e os vazios; a linha dos afazeres na obra e a tela Afazeres, com adicionar, marcar e apagar; o achado 3 (a mudança de outro aparelho não apaga o afazer em digitação nem tira o foco da busca); a conferência cruzada dos afazeres; o laudo de leitura das telas novas; e o checklist do aparelho. É a última mutação nova da etapa.
 
-O PR entra em fases, como o PR 2. A fase 1, nesta seção, é o núcleo (Tarefas 37 a 39): as mutações dos afazeres, as regras das telas da busca e dos afazeres e os afazeres pelo `gravar` do app, no molde das Tarefas 11 a 13 do PR 1. Ela não muda tela nem workflow. A fase 2 (as telas, o achado 3, a conferência cruzada, o laudo e o checklist, das Tarefas 40 em diante) entra nesta seção por tarefa, à medida que cada uma fecha no iOS 26: a busca (Tarefa 40) primeiro, com os consertos da escolha do mês na maior letra e do foco do campo; depois os afazeres, o achado 3, a conferência cruzada e o laudo.
+O PR entra em fases, como o PR 2. A fase 1, nesta seção, é o núcleo (Tarefas 37 a 39): as mutações dos afazeres, as regras das telas da busca e dos afazeres e os afazeres pelo `gravar` do app, no molde das Tarefas 11 a 13 do PR 1. Ela não muda tela nem workflow. A fase 2 (as telas, o achado 3, a conferência cruzada, o laudo e o checklist, das Tarefas 40 em diante) entra nesta seção por tarefa, à medida que cada uma fecha no iOS 26: a busca (Tarefa 40) primeiro, com o conserto da escolha do mês na maior letra; depois os afazeres, o achado 3, a conferência cruzada e o laudo.
 
 O PR nasce da `origin/main` de 26/10 (`9bbfcfc`, o merge do #85). As fatias foram refeitas sobre ela e conferidas uma a uma: o "ver falhar" de cada tarefa é o dos testes dela sobre o commit anterior, nesta base.
 
@@ -16495,7 +16495,7 @@ A lista de lançamentos da obra ganha a busca e o filtro por mês do site, no de
 - **A soma dos achados na letra de acessibilidade.** Fora dela, o rótulo e o valor numa linha; sem espaço, o valor desce, numa linha só, e encolhe (`ViewThatFits`). Na letra de acessibilidade, a soma empilha e o valor fica livre para quebrar (na AX5, "R$" numa linha e o número na outra). Com o valor numa linha só (`lineLimit(1)`, encolhendo ou não), escolher o mês parava a thread principal de 45 a 70 s no iOS 26 na maior letra (sondas dos runs 40429944214 e 40435271147); com ele livre, não (runs 40438031467 e 40440188222). É o único lugar em que o dinheiro sai da linha que encolhe, e só na letra de acessibilidade.
 - **A suíte nova roda num job novo.** O `BuscaUITests` roda no `app-etapa3-c`, na mesma forma do `app-etapa3-b` e com teto de 60 min, e o `app` o pula: o `app-etapa3` não cresce mais (58,8 min no run 39813469497), e no `app-etapa3-b` as suítes do PR 3 (~22 min de testes no run 39878786962) o levariam a ~50. A guarda do workflow conta o job novo.
 - **A lupa do site entra no catálogo de ícones** (`node scripts/icones-app-ios.mjs` gera o `lupa.imageset`).
-- **A parte de cima da obra fica fora da pilha preguiçosa.** Do título à soma dos achados, com o campo da busca, as peças ficam num `VStack`, e a `LazyVStack` fica só com o "A vencer" e os meses. No iOS 26, a `LazyVStack` refazia o campo à vista quando o teclado subia: a sonda do foco (run 40508695109) viu o campo sair e voltar, com o foco em `false` no meio, 0,4 s depois de o teclado subir, e numa VM lenta o teclado foi embora durante a digitação (run 40440188222). No estresse da abertura (24 aberturas da busca a partir do topo, de cada lado), a pilha refez o campo à vista uma vez com a obra de antes e nenhuma com o conserto (runs 40513984095 e 40513988088). A tela fica igual, e uma guarda Node fixa a forma (nenhum teste de tela vê isso: no iOS 27, o campo não é refeito).
+- **O campo da busca fica na LazyVStack da obra.** No iOS 26, a pilha preguiçosa às vezes refaz o campo à vista na abertura (2 em 35 aberturas na sonda do foco, runs 40508695109 e 40513984095), e o foco sempre voltou sozinho. Tirar dela as peças de cima (um `VStack` com a lista preguiçosa dentro) travou a rolagem da busca filtrada no iOS 26: 3 de 3 com esse layout, contra 0 de 2 com o de sempre (runs 40514082640, 40519173250 e 40519178167). A obra fica toda numa `LazyVStack`.
 - **A busca do teste espera o campo com o texto todo.** Na VM lenta do iOS 26, o `typeText` volta antes de o app ver as últimas letras (run 40432109031: a pílula de "ci" com o "cimen" digitado); o `buscar` espera o campo com o texto inteiro antes de o teste ler a pílula.
 
 **Files:**
@@ -16506,7 +16506,6 @@ A lista de lançamentos da obra ganha a busca e o filtro por mês do site, no de
 - Modify: `app-ios/Custta/Telas/ObraView.swift`
 - Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
 - Modify: `scripts/icones-app-ios.mjs`
-- Test (alterar): `tests/app-ios.test.cjs`
 - Test (alterar): `tests/workflow.test.cjs`
 - Gerado: `app-ios/Custta/Assets.xcassets/Icones/` (`node scripts/icones-app-ios.mjs`)
 
@@ -16866,33 +16865,6 @@ final class BuscaUITests: XCTestCase {
 }
 ```
 
-Em `tests/app-ios.test.cjs`:
-
-```diff
---- a/tests/app-ios.test.cjs
-+++ b/tests/app-ios.test.cjs
-@@ -856,6 +856,19 @@ test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com
-                'os cantos de cima do grupo no gasto vêm da peça');
- });
- 
-+test('obra: o campo da busca fica fora da LazyVStack, que fica só com a lista', () => {
-+  // No iOS 26, a LazyVStack refazia o campo da busca à vista quando o teclado subia, e o foco caía (sonda do foco, run
-+  // 40508695109; o teclado foi embora no run 40440188222). As peças de cima, do título à soma dos achados, ficam num VStack, e
-+  // a pilha preguiçosa só com o A vencer e os meses. Nenhum teste de tela vê isso: no iOS 27, o campo não é refeito.
-+  const t = ler('app-ios/Custta/Telas/ObraView.swift');
-+  const campo = t.indexOf('CampoDaBusca(');
-+  assert.ok(campo > 0, 'o campo da busca na obra');
-+  const pilhas = [...t.matchAll(/LazyVStack\(/g)].map(m => m.index);
-+  assert.equal(pilhas.length, 1, 'uma LazyVStack só na obra, a da lista');
-+  assert.ok(campo < pilhas[0], 'o campo da busca antes da LazyVStack, fora dela');
-+  assert.ok(t.indexOf('ForEach(lista.meses)') > pilhas[0], 'os meses dentro da LazyVStack');
-+});
-+
- test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
-   // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
-   // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de
-```
-
 Em `tests/workflow.test.cjs`:
 
 ```diff
@@ -16974,10 +16946,10 @@ Em `tests/workflow.test.cjs`:
 
 Run:
 ```bash
-node --test tests/workflow.test.cjs tests/app-ios.test.cjs 2>&1 | grep -E "^✖|^ℹ (pass|fail)" | sort -u
+node --test tests/workflow.test.cjs 2>&1 | grep -E "^✖|^ℹ (pass|fail)" | sort -u
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
 ```
-Expected: reprovam `✖ obra: o campo da busca fica fora da LazyVStack, que fica só com a lista` (`o campo da busca na obra`: ele ainda não existe) e `✖ tests/workflow.test.cjs` (a guarda do workflow espera 9 jobs sem assinatura, "build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria", e acha 8); `ℹ pass 62`, `ℹ fail 2`. O `CusttaTests` não compila: `cannot find 'BuscaDaObra' in scope` (3) e `value of type 'Obra' has no member 'comOsGastos'` (1); o resto é cascata da inferência (`cannot infer key path type from context`). Só com os testes de tela no lugar (sem a `BuscaDaObraTests`), o `BuscaUITests` reprova 10 de 10: `Failed to tap "buscar" Button: No matches found` em 4 e `Failed to get matching snapshot` com o mesmo `"buscar"` na da maior letra; `Failed to tap "filtrarPorMes" Button` em 4; e `("Lançamentos, 0") is not equal to ("Lançamentos")` no `testObraSemGastoSoAPilula`.
+Expected: reprova `✖ tests/workflow.test.cjs` (a guarda do workflow espera 9 jobs sem assinatura, "build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria", e acha 8); `ℹ pass 0`, `ℹ fail 1`. O `CusttaTests` não compila: `cannot find 'BuscaDaObra' in scope` (3) e `value of type 'Obra' has no member 'comOsGastos'` (1); o resto é cascata da inferência (`cannot infer key path type from context`). Só com os testes de tela no lugar (sem a `BuscaDaObraTests`), o `BuscaUITests` reprova 10 de 10: `Failed to tap "buscar" Button: No matches found` em 4 e `Failed to get matching snapshot` com o mesmo `"buscar"` na da maior letra; `Failed to tap "filtrarPorMes" Button` em 4; e `("Lançamentos, 0") is not equal to ("Lançamentos")` no `testObraSemGastoSoAPilula`.
 
 - [ ] **Step 3: Implementar**
 
@@ -17481,19 +17453,7 @@ Em `app-ios/Custta/Telas/ObraView.swift`:
          let acoes = AcoesDaLista(aberta: $linhaAberta, acesos: acesos, novos: novos, foco: $foco,
                                   tocar: { gasto in
                                       if linhaAberta != nil { fecharLinha(); return }
-@@ -62,7 +71,10 @@ struct ObraView: View {
-                                  })
-         return ScrollViewReader { leitor in
-             ScrollView {
--                LazyVStack(alignment: .leading, spacing: 10) {
-+                // As peças de cima, do título à soma dos achados, ficam fora da pilha preguiçosa, que fica só com a lista: no
-+                // iOS 26, a LazyVStack refazia o campo da busca à vista quando o teclado subia, e o foco caía (sonda do foco,
-+                // run 40508695109; o teclado foi embora no run 40440188222).
-+                VStack(alignment: .leading, spacing: 10) {
-                     TituloDaObra(nome: obra.nome)
-                     PilulaDaFase(obra: obra, hoje: hoje)
-                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
-@@ -77,18 +89,36 @@ struct ObraView: View {
+@@ -77,14 +86,30 @@ struct ObraView: View {
                      }
                          .padding(.top, 2)
                          .padding(.bottom, 14)
@@ -17520,25 +17480,14 @@ Em `app-ios/Custta/Telas/ObraView.swift`:
 +                        VazioDaBuscaView(vazio: vazioDaBusca(obra.gastos, texto: busca.texto, mes: busca.mes), limpar: limparFiltro,
 +                                         verTodos: tirarOMes)
                      } else {
--                        if let aVencer = lista.aVencer {
+                         if let aVencer = lista.aVencer {
 -                            CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos, lista: acoes)
--                                .id("aVencer")
--                        }
--                        ForEach(lista.meses) { mes in
--                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
-+                        LazyVStack(alignment: .leading, spacing: 10) {
-+                            if let aVencer = lista.aVencer {
-+                                CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto,
-+                                                topicos: topicos, lista: acoes)
-+                                    .id("aVencer")
-+                            }
-+                            ForEach(lista.meses) { mes in
-+                                CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
-+                            }
++                            CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto, topicos: topicos,
++                                            lista: acoes)
+                                 .id("aVencer")
                          }
-                     }
-                 }
-@@ -104,8 +134,10 @@ struct ObraView: View {
+                         ForEach(lista.meses) { mes in
+@@ -104,8 +129,10 @@ struct ObraView: View {
              .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
          }
          .scrollIndicators(.hidden)
@@ -17549,7 +17498,7 @@ Em `app-ios/Custta/Telas/ObraView.swift`:
          .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
          .onDisappear { linhaAberta = nil }
          .sensoryFeedback(.success, trigger: folhas.destaque)
-@@ -167,6 +199,45 @@ extension ObraView {
+@@ -167,6 +194,45 @@ extension ObraView {
          if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }
      }
  
@@ -17595,7 +17544,7 @@ Em `app-ios/Custta/Telas/ObraView.swift`:
      /// Depois de salvar: rola em dois tempos (o cartão, que a LazyVStack cria, e depois a linha), abre o "A vencer" se o
      /// gasto foi para lá, acende por 2 s e leva o VoiceOver para a linha.
      private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
-@@ -181,7 +252,7 @@ extension ObraView {
+@@ -181,7 +247,7 @@ extension ObraView {
              // pontos que a LazyVStack ainda não criou), a rolagem parava num mês lá embaixo.
              if noAVencer {
                  try? await Task.sleep(for: .milliseconds(80))
@@ -17604,7 +17553,7 @@ Em `app-ios/Custta/Telas/ObraView.swift`:
              }
              try? await Task.sleep(for: .milliseconds(80))
              withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(primeiro, anchor: .center) }
-@@ -198,7 +269,7 @@ extension ObraView {
+@@ -198,7 +264,7 @@ extension ObraView {
      /// que aconteceu, um depois do outro.
      private func apagar(_ p: Folhas.PedidoDeApagar, obra: Obra, lista: ListaDaObra) {
          let saem: Set<String> = p.grupoId.map { g in Set(obra.gastos.filter { $0.grupoId == g }.map(\.id)) } ?? [p.gastoId]
@@ -17703,12 +17652,12 @@ Em `scripts/icones-app-ios.mjs`:
 
 Run:
 ```bash
-node --test tests/workflow.test.cjs tests/app-ios.test.cjs 2>&1 | grep -E "^ℹ (pass|fail)"
+node --test tests/workflow.test.cjs 2>&1 | grep -E "^ℹ (pass|fail)"
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests 2>&1 | grep -E "Test run with" | tail -1
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/BuscaUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/OrcamentoUITests 2>&1 | grep -E "Executed [0-9]+ tests?, with|TEST EXECUTE" | tail -2
 ```
-Expected: `ℹ pass 64`, `ℹ fail 0` (o `npm run test:unit` vai a 402, com a guarda nova); sem aviso; `✔ Test run with 166 tests in 32 suites passed` (a `BuscaDaObraTests`, com 4 testes, é suíte nova); `Executed 46 tests, with 0 failures` (`BuscaUITests` 10, `ObraUITests` 7 e `OrcamentoUITests` 29) e `** TEST EXECUTE SUCCEEDED **`.
+Expected: `ℹ pass 1`, `ℹ fail 0` (o `npm run test:unit` segue em 401); sem aviso; `✔ Test run with 166 tests in 32 suites passed` (a `BuscaDaObraTests`, com 4 testes, é suíte nova); `Executed 46 tests, with 0 failures` (`BuscaUITests` 10, `ObraUITests` 7 e `OrcamentoUITests` 29) e `** TEST EXECUTE SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
@@ -17722,7 +17671,6 @@ git add .github/workflows/app-ios.yml \
   app-ios/CusttaTests/BuscaDaObraTests.swift \
   app-ios/CusttaUITests/BuscaUITests.swift \
   scripts/icones-app-ios.mjs \
-  tests/app-ios.test.cjs \
   tests/workflow.test.cjs
 git commit -m "feat: busca e filtro por mês na lista de lançamentos do app" -m "A lista de lançamentos da obra ganha a busca e o filtro por mês do site, no desenho aprovado no mockup da etapa 3 (parte 2, opção A): dois botões redondos de vidro ao lado da pílula \"Lançamentos\", a lupa e o mês, e a tela não cresce enquanto ninguém busca. A lupa abre o campo \"Buscar gasto ou tópico\" embaixo da pílula, rola a lista até ela e põe o teclado; o × fecha a busca e limpa o texto, e o \"buscar\" do teclado só o fecha. A busca é a do núcleo, sem acento e sem diferença de maiúscula, na descrição ou no tópico, com o texto aparado." -m "O mês sai de um Menu do sistema, com \"Todos os meses\" e os meses que têm gasto, por extenso, com quantos gastos cada um tem no subtítulo do item (o menu do sistema não tem a coluna à direita do mockup), e vira um chip com × embaixo da pílula. O mês escolhido continua no chip e no menu mesmo quando fica sem gasto, o conserto do achado 1: a lista diz \"Nenhum gasto em março de 2025.\" e oferece \"Ver todos os meses\". Com filtro, a pílula conta \"achados/total\", o \"A vencer\" abre sozinho com os achados, cada mês soma só os seus, e \"Soma dos achados\" dá o total; sem achado, a lista diz por quê e o botão limpa a busca, o mês ou os dois. Na maior letra, a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira × para fechar." -m "O filtro mora na tela da obra, e não no modelo: zera ao trocar de obra, como no site, não vai para a nuvem e não depende do estado que chega do Sincronizador. A obra sem gasto mostra só a pílula, agora sem o número, como o contador do site e o mockup da etapa 2. A pílula é a PilulaDaLista, a mesma das listas da tela Orçamento, que passa a ser um texto só: na maior letra ela quebra como texto corrido, igual ao mockup, que põe o título e o número no mesmo fluxo, em vez do HStack de antes, que podia hifenizar o título na AX5; o VoiceOver segue lendo \"Por tópico, 14\" e \"Gasto por tópico, 14\". A lupa do site entra no catálogo de ícones." -m "A suíte nova, BuscaUITests, roda num job novo, o app-etapa3-c, na mesma forma do app-etapa3-b e com teto de 60 min, e o app a pula: o app-etapa3 não cresce mais (58,8 min no run 39813469497), e no app-etapa3-b as suítes do PR 3 (~22 min de testes no run 39878786962) o levariam a ~50 min. A guarda do workflow conta o job novo."
 ```
@@ -18159,7 +18107,7 @@ Run:
 node --test tests/app-ios.test.cjs 2>&1 | grep -E "^✖|^ℹ (pass|fail)" | sort -u
 xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
 ```
-Expected: reprovam `✖ afazeres: gravação recusada avisa, em cada um dos três jeitos de gravar`, `✖ afazeres: o + com texto longo avisa, sem ficar calado`, `✖ afazeres: o + tira o texto cru que a tela guarda antes de adicionar` e `✖ título grande de Obras, de Ajustes e de Afazeres e a versão em Ajustes com o halo no escuro` (o `AfazeresView.swift` ainda não existe); `ℹ pass 62`, `ℹ fail 4`. O `CusttaTests` não compila: `cannot find 'limitadoAoAfazer' in scope` (5), `cannot find 'feitoAVista' in scope` (5), `cannot find 'textoDoCampoDoAfazer' in scope` (5) e `cannot find 'TrocasPendentes' in scope` (1). Só com os testes de tela no lugar (sem a `AfazeresTests`), o `AfazeresUITests` reprova 14 de 14 (`Executed 14 tests, with 32 failures`): 12 no `abrirAfazeres` (`XCTAssertTrue failed`: sem o `CUSTTA_ABRIR=afazeres:`, o campo "novoAfazer" não aparece), o `testObraApagadaEmOutroAparelhoVoltaParaObras` no mesmo campo e o `testLinhaNosTresEstadosAbreAfazeres` sem a `linhaDosAfazeres`.
+Expected: reprovam `✖ afazeres: gravação recusada avisa, em cada um dos três jeitos de gravar`, `✖ afazeres: o + com texto longo avisa, sem ficar calado`, `✖ afazeres: o + tira o texto cru que a tela guarda antes de adicionar` e `✖ título grande de Obras, de Ajustes e de Afazeres e a versão em Ajustes com o halo no escuro` (o `AfazeresView.swift` ainda não existe); `ℹ pass 61`, `ℹ fail 4`. O `CusttaTests` não compila: `cannot find 'limitadoAoAfazer' in scope` (5), `cannot find 'feitoAVista' in scope` (5), `cannot find 'textoDoCampoDoAfazer' in scope` (5) e `cannot find 'TrocasPendentes' in scope` (1). Só com os testes de tela no lugar (sem a `AfazeresTests`), o `AfazeresUITests` reprova 14 de 14 (`Executed 14 tests, with 32 failures`): 12 no `abrirAfazeres` (`XCTAssertTrue failed`: sem o `CUSTTA_ABRIR=afazeres:`, o campo "novoAfazer" não aparece), o `testObraApagadaEmOutroAparelhoVoltaParaObras` no mesmo campo e o `testLinhaNosTresEstadosAbreAfazeres` sem a `linhaDosAfazeres`.
 
 - [ ] **Step 3: Implementar**
 
@@ -18746,7 +18694,7 @@ Em `app-ios/Custta/Telas/ObraView.swift`:
 ```diff
 --- a/app-ios/Custta/Telas/ObraView.swift
 +++ b/app-ios/Custta/Telas/ObraView.swift
-@@ -88,7 +88,13 @@ struct ObraView: View {
+@@ -85,7 +85,13 @@ struct ObraView: View {
                          agir($0, obra: obra)
                      }
                          .padding(.top, 2)
@@ -18887,7 +18835,7 @@ xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUI
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests 2>&1 | grep -E "Test run with" | tail -1
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AfazeresUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/ObrasUITests 2>&1 | grep -E "Executed [0-9]+ tests?, with|TEST EXECUTE" | tail -2
 ```
-Expected: `ℹ pass 66`, `ℹ fail 0` (o `npm run test:unit` vai a 405, com as 3 guardas novas); sem aviso; `✔ Test run with 170 tests in 33 suites passed` (a `AfazeresTests`, com 4 testes, é suíte nova); `Executed 29 tests, with 0 failures` (`AfazeresUITests` 14, `ObraUITests` 7 e `ObrasUITests` 8) e `** TEST EXECUTE SUCCEEDED **`.
+Expected: `ℹ pass 65`, `ℹ fail 0` (o `npm run test:unit` vai a 404, com as 3 guardas novas); sem aviso; `✔ Test run with 170 tests in 33 suites passed` (a `AfazeresTests`, com 4 testes, é suíte nova); `Executed 29 tests, with 0 failures` (`AfazeresUITests` 14, `ObraUITests` 7 e `ObrasUITests` 8) e `** TEST EXECUTE SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 

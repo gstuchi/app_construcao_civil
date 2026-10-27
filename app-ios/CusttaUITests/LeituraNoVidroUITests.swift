@@ -66,7 +66,9 @@ final class LeituraNoVidroUITests: XCTestCase {
         let excecao = Self.excecoes[cena.nome].map { ["-custta.foraDoLaudo", $0] } ?? []
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir, folha: cena.folha,
                            argumentos: cena.argumentos + excecao + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
-        XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
+        // Até 30 s: na VM do iOS 26, a thread principal para de 3 a 8 s na abertura, e a cena rolada só fica pronta depois da
+        // rolagem fixa (do "abriu" à frase do fim do A pagar, de 9 a 34 s no run 40590390423; no Mac, ~2 s).
+        XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 30), "\(cena.nome): a tela não abriu")
         if let aba = cena.aba {
             app.abrirAba(aba)
             XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")

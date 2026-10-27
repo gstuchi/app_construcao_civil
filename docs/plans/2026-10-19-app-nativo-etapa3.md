@@ -19144,3 +19144,440 @@ git add app-ios/Custta/Falsos/MontarFalso.swift \
   app-ios/CusttaUITests/BuscaUITests.swift
 git commit -m "test: mudança de outro aparelho não apaga o afazer em digitação nem tira o foco da busca" -m "O spec pede que uma mudança vinda de outro aparelho não apague o afazer que está sendo digitado nem tire o foco da busca (achado 3): o texto em digitação e o foco moram na tela, e o redesenho que chega do Sincronizador não os recria. Dois testes de tela provam isso com uma escrita remota no meio da digitação: na tela Afazeres, outro aparelho anota um afazer enquanto um é digitado aqui; na obra, com a busca aberta e o teclado à vista, outro aparelho apaga um dos achados. Nos dois, a lista muda, e o texto e o teclado ficam no campo, que continua recebendo o que se digita." -m "O transporte falso ganha o outro aparelho que anota um afazer no alto da lista de uma obra (CUSTTA_MUDANCA_REMOTA=afazer:<obra>). Como o apagar remoto da etapa 2, ele só grava quando o próprio teste avisa, por notify_post, e não por relógio desde a abertura, que corria contra o teste na CI. O aviso do teste passa a ser uma função só, usada pelos dois."
 ```
+
+### Task 43: Conferência cruzada dos afazeres, passo a passo no documento
+
+A conferência cruzada site ↔ app passa a cobrir os afazeres nos dois sentidos. O site anota um afazer e marca outro na mudança que o teste de tela pede, e o app tem de mostrar os dois na linha da obra e na tela Afazeres, na ordem que o site mostra (pendentes e depois feitos, cada grupo na ordem da lista). Depois do orçamento e das folhas de origem inteiros, o app segue um roteiro de afazeres: adicionar com espaços em volta, adicionar, marcar, desmarcar e apagar na obra do site, e um afazer que entra e sai na obra que não tinha nenhum. O app não muda: a tarefa é só de teste.
+
+- **Conferido passo a passo, como o orçamento.** Antes do primeiro passo, o roteiro guarda o documento, que no fim tem de ser o do orçamento e das folhas inteiros; cada passo, confirmado pelo servidor, é comparado com o que o site gravaria até ali, pelo auxiliar (`POST /site/conferir`, com `{"passo": N}`), que responde 409 com o passo, a obra e as duas listas. Um afazer apagado mais adiante, ou um que entra e sai, só prova alguma coisa no passo dele.
+- **O documento como o app o gravou.** Cada passo parte do documento relido (o app espera o eco da gravação anterior), e o modelo do site renormaliza antes de cada passo, como o `bootCloud`: a comparação é do documento gravado, sem normalizar o que se lê. O passo 0 confere o documento cru: as obras criadas no app levam `afazeres: []`, e a conta do site não tem a chave.
+- **O fim cobra** a ordem das conferências dos três roteiros (orçamento, folhas e afazeres), a ordem que o site mostra, os campos de afazer que só o site conhece (inclusive num afazer desmarcado no app) e a lista vazia que fica na obra que não tinha afazeres.
+- **A folha de guardar a senha.** Depois de entrar com e-mail e senha, o iOS 27 do simulador oferece guardar a senha numa folha que cobre o meio da tela e engolia o toque na obra: o teste a fecha antes de tocar (`recusarGuardarSenha()`).
+
+**Files:**
+- Test (alterar): `app-ios/CusttaTests/CruzadoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/Abrir.swift`
+- Test (alterar): `app-ios/CusttaUITests/CruzadoUITests.swift`
+- Test (alterar): `tests/app-ios/cruzado.mjs`
+
+**Interfaces:**
+- Consumes: `D.conferirAfazer`, `D.afazeresComNovo`, `D.afazeresAlternado`, `D.afazeresSem`, `C.afazeresEmOrdem` e `D.normaliza` (site); `adicionandoAfazer`, `alternandoAfazer` e `apagandoAfazer` (Tarefa 37), `conferirAfazer` e `Gravacao.confirmada()` (app).
+- Produces: o endpoint `/site/conferir` do auxiliar (`{"passo": N}`; 200, ou 409 com os afazeres de cada obra no documento e no site); as variáveis `CUSTTA_ROTEIRO_AFAZERES` e `CUSTTA_ESPERADO_AFAZERES`; `recusarGuardarSenha()`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaTests/CruzadoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/CruzadoTests.swift
++++ b/app-ios/CusttaTests/CruzadoTests.swift
+@@ -7,12 +7,13 @@ import CusttaNucleo
+ /* Metade app da conferência cruzada (tests/app-ios/cruzado.mjs): entra na conta que o "site" criou, carrega o
+    documento e segue os roteiros do site pelas mesmas regras das telas: o dos gastos (lançar no Pix e no cartão
+    parcelado, editar um gasto e uma parcela, apagar um gasto e a compra toda), o da obra (criar, editar, marcar como
+-   pronta, vender, desfazer a venda e apagar), o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar) e
++   pronta, vender, desfazer a venda e apagar), o do orçamento (as respostas da folha pelo rascunho dela, salvar e tirar),
+    o das folhas de origem (a edição empurrada no A pagar e no detalhe do tópico pelo rascunho do gasto, e o apagar de um
+-   gasto só). O núcleo confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador,
+-   como um toque em "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O
+-   roteiro confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada
+-   do site se perdeu; no orçamento, antes e a cada passo, e nas folhas, a cada passo, pelo auxiliar do roteiro. */
++   gasto só) e o dos afazeres (adicionar pelo conferirAfazer, marcar, desmarcar e apagar, como a tela Afazeres). O núcleo
++   confere e monta cada mudança, o estado muda pelas mutações e cada passo grava pelo Sincronizador, como um toque em
++   "Salvar", "Confirmar venda" ou "Apagar". Os ids vêm do roteiro, para o site montar o mesmo resultado. O roteiro
++   confere depois, com o SDK JavaScript, que o documento é o que o site gravaria com as mesmas respostas e que nada do site
++   se perdeu; no orçamento e nos afazeres, antes e a cada passo, e nas folhas, a cada passo, pelo auxiliar do roteiro. */
+ @MainActor
+ @Suite(.enabled(if: ProcessInfo.processInfo.environment["CUSTTA_CRUZADO"] == "1"))
+ struct CruzadoTests {
+@@ -88,8 +89,7 @@ struct CruzadoTests {
+         // chegar o eco da gravação anterior: o estado já é o documento relido, que a leitura normaliza como a do site.
+         let roteiroDoOrcamento = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_ORCAMENTO"]).utf8))
+         for (i, passo) in try #require(roteiroDoOrcamento.comoLista).enumerated() {
+-            for _ in 0..<200 where !mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) { try await Task.sleep(for: .milliseconds(50)) }
+-            try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do passo \(i + 1) do orçamento não chegou")
++            try await esperarOEco(s, antesDo: "passo \(i + 1) do orçamento")
+             let p = try #require(passo.comoObjeto)
+             let obraId = try #require(p["obra"]?.comoTexto)
+             let obra = try #require(s.estado.obras.first { $0.id == obraId }, "a obra \(obraId) do roteiro")
+@@ -136,11 +136,49 @@ struct CruzadoTests {
+             try await s.aplicar(try #require(novo, "o passo \(i + 1) das folhas achou o gasto")).confirmada()
+             try await pedirConferencia(i + 1, de: "folhas")
+         }
++        // Os afazeres (etapa 3, PR 3), depois do orçamento e das folhas inteiros e do mesmo jeito: cada passo como a tela
++        // Afazeres grava (o texto pelo conferirAfazer, o círculo que marca e desmarca, o arrastar que apaga), a partir do
++        // documento relido, e o roteiro confere o documento logo depois de o servidor confirmar; antes do primeiro, guarda o
++        // documento (o passo 0).
++        try await pedirConferencia(0, de: "afazeres")
++        let roteiroDosAfazeres = try JSONDecoder().decode(ValorJSON.self, from: Data(try #require(ambiente["CUSTTA_ROTEIRO_AFAZERES"]).utf8))
++        for (i, passo) in try #require(roteiroDosAfazeres.comoLista).enumerated() {
++            try await esperarOEco(s, antesDo: "passo \(i + 1) dos afazeres")
++            let p = try #require(passo.comoObjeto)
++            let acao = try #require(p["acao"]?.comoTexto), obraId = try #require(p["obra"]?.comoTexto)
++            let novo: Estado?
++            switch acao {
++            case "adicionar":
++                guard case .ok(let texto) = conferirAfazer(try #require(p["texto"]?.comoTexto)) else {
++                    Issue.record("o afazer do passo \(i + 1) não passou no conferirAfazer"); return
++                }
++                novo = s.estado.adicionandoAfazer(texto, id: try #require(p["id"]?.comoTexto), naObra: obraId)
++            case "marcar", "desmarcar":
++                let id = try #require(p["afazer"]?.comoTexto)
++                let afazer = try #require(s.estado.obras.first(where: { $0.id == obraId })?.afazeres.first(where: { $0.id == id }), "o afazer \(id)")
++                try #require(afazer.feito == (acao == "desmarcar"), "\(acao) \(id): o afazer no estado de antes")
++                novo = s.estado.alternandoAfazer(id, naObra: obraId)
++            default:
++                novo = s.estado.apagandoAfazer(try #require(p["afazer"]?.comoTexto), daObra: obraId)
++            }
++            try await s.aplicar(try #require(novo, "o passo \(i + 1) dos afazeres achou o que mudar")).confirmada()
++            try await pedirConferencia(i + 1, de: "afazeres")
++        }
+         s.parar()
+     }
+ 
+-    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0), ou o do passo n
+-    /// das folhas.
++    /// Espera o eco da gravação anterior: a pessoa abre a folha ou a tela depois de ele chegar, e o estado já é o documento
++    /// relido, que a leitura normaliza como a do site.
++    private func esperarOEco(_ s: Sincronizador, antesDo passo: String) async throws {
++        for _ in 0..<200 {
++            guard !mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore) else { break }
++            try await Task.sleep(for: .milliseconds(50))
++        }
++        try #require(mesmoConteudo(normaliza(s.estado.arvore), s.estado.arvore), "o eco da gravação antes do \(passo) não chegou")
++    }
++
++    /// Pede ao roteiro que confira o documento do momento: o do passo n do orçamento, ou o de antes dele (0), o do passo n
++    /// das folhas, e o do passo n dos afazeres, ou o de antes deles (0).
+     private func pedirConferencia(_ n: Int, de roteiro: String = "orcamento") async throws {
+         var pedido = URLRequest(url: try #require(URL(string: "http://127.0.0.1:8124/app/\(roteiro)/\(n)")))
+         pedido.httpMethod = "POST"
+```
+
+Em `app-ios/CusttaUITests/Abrir.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/Abrir.swift
++++ b/app-ios/CusttaUITests/Abrir.swift
+@@ -100,6 +100,21 @@ extension XCUIApplication {
+         campo.typeText(texto)
+     }
+ 
++    /// Depois de entrar com e-mail e senha, o iOS 27 do simulador oferece guardar a senha numa folha de outro processo
++    /// ("Save Password?", com "Not Now" e "Save"), por cima do meio da tela: o toque seguinte cai nela e não chega ao app (a
++    /// conferência cruzada não abria a obra). Quando ela aparece (até 5 s), "Not Now" a fecha; no iOS 26 ela pode não
++    /// aparecer. O toque se repete até a folha sair, como no `recusarSenhaForte`.
++    func recusarGuardarSenha() {
++        let agoraNao = buttons.matching(NSPredicate(format: "label IN %@", ["Not Now", "Agora Não", "Agora não"])).firstMatch
++        guard agoraNao.waitForExistence(timeout: 5) else { return }
++        for _ in 1...3 {
++            guard agoraNao.exists else { break }
++            agoraNao.tap()
++            _ = agoraNao.waitForNonExistence(timeout: 1.5)
++        }
++        XCTAssertFalse(agoraNao.exists, "a oferta de guardar a senha não fechou")
++    }
++
+     /// O iOS 27 do simulador oferece uma senha forte ao focar um campo de senha nova (.newPassword), mesmo com o
+     /// app sem domínio associado: a folha "Use Strong Password?" toma o lugar do teclado e engole a digitação.
+     /// Quando ela aparece (até 2 s), é fechada; no iOS 26 da CI ela pode não aparecer. A folha é de outro processo,
+```
+
+Em `app-ios/CusttaUITests/CruzadoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/CruzadoUITests.swift
++++ b/app-ios/CusttaUITests/CruzadoUITests.swift
+@@ -2,8 +2,9 @@ import XCTest
+ 
+ /* Metade tela da conferência cruzada (tests/app-ios/cruzado.mjs): entra pelo formulário na
+    conta que o "site" criou, confere o total e o orçamento que o site calculou e pede ao roteiro
+-   uma mudança feita como o site faz; ela tem de aparecer sozinha na lista. Os elementos são
+-   achados pelo identificador, de qualquer tipo: o visual pode mudar sem quebrar o teste. */
++   uma mudança feita como o site faz; ela tem de aparecer sozinha na lista e, nos afazeres que o site anotou e marcou,
++   na linha da obra e na tela Afazeres, na ordem que o site mostra. Os elementos são achados pelo identificador, de
++   qualquer tipo: o visual pode mudar sem quebrar o teste. */
+ final class CruzadoUITests: XCTestCase {
+     private let ambiente = ProcessInfo.processInfo.environment
+ 
+@@ -14,6 +15,13 @@ final class CruzadoUITests: XCTestCase {
+         let orcamento: String?
+     }
+ 
++    private struct AfazeresEsperados: Decodable {
++        let obra: String
++        let linha: String
++        let pendentes: [String]
++        let feitos: [String]
++    }
++
+     override func setUpWithError() throws {
+         try XCTSkipUnless(ambiente["CUSTTA_CRUZADO"] == "1", "só na conferência cruzada: npm run test:app-ios:cruzado")
+         continueAfterFailure = false
+@@ -44,6 +52,26 @@ final class CruzadoUITests: XCTestCase {
+         XCTAssertEqual((resposta as? HTTPURLResponse)?.statusCode, 200)
+ 
+         for obra in v2 { await confere(app, obra) }
++
++        // Os afazeres da v2, na obra e na tela Afazeres: os pendentes e, abertos os Feitos, os feitos, na ordem do site.
++        let afazeres = try JSONDecoder().decode(AfazeresEsperados.self, from: Data(ambiente["CUSTTA_ESPERADO_AFAZERES"]!.utf8))
++        app.recusarGuardarSenha()                       // a oferta do iOS de guardar a senha do formulário cobre a lista
++        elemento("obra-\(afazeres.obra)").tap()
++        let linha = elemento("linhaDosAfazeres")
++        XCTAssertTrue(linha.waitForExistence(timeout: 30))
++        app.rolarAte(linha)
++        XCTAssertEqual(linha.value as? String, afazeres.linha)
++        linha.tap()
++        XCTAssertTrue(elemento("pendentes").waitForExistence(timeout: 10))
++        XCTAssertEqual(rotulosDosAfazeres(app), afazeres.pendentes, "os pendentes, com os Feitos fechados")
++        elemento("feitos").tap()
++        XCTAssertEqual(rotulosDosAfazeres(app), afazeres.pendentes + afazeres.feitos, "abertos os Feitos")
++    }
++
++    /// Os afazeres à vista, de cima para baixo, pelo texto.
++    @MainActor private func rotulosDosAfazeres(_ app: XCUIApplication) -> [String] {
++        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'afazer-'")).allElementsBoundByIndex
++            .sorted { $0.frame.minY < $1.frame.minY }.map(\.label)
+     }
+ 
+     /// A linha da obra traz no valor de acessibilidade o total completo e a linha do orçamento.
+```
+
+Em `tests/app-ios/cruzado.mjs`:
+
+```diff
+--- a/tests/app-ios/cruzado.mjs
++++ b/tests/app-ios/cruzado.mjs
+@@ -4,20 +4,23 @@
+    O "site" aqui é o SDK JavaScript do Firebase gravando como o cloud.js grava (documento
+    inteiro com _atualizado do servidor), com as regras de verdade do site (dados.js, calc.js).
+    O app é o build Debug no simulador:
+-     1. o site cria a conta e grava a v1 (obra com orçamento, obra vendida com orçamento por
++     1. o site cria a conta e grava a v1 (obra com orçamento e afazeres, obra vendida com orçamento por
+         tópico estourado, obra com compra parcelada no cartão com juros e campos que só o site conhece);
+      2. CruzadoUITests entra pelo formulário e confere o total e o orçamento que o calc.js calculou;
+-     3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos;
++     3. o teste pede a v2 (POST no auxiliar abaixo) e espera ver os números novos sozinhos, e os afazeres que o site
++        anotou e marcou na v2, na linha da obra e na tela Afazeres, na ordem que o site mostra;
+      4. CruzadoTests segue os roteiros abaixo pelas regras das telas do app: o dos gastos (lançar no Pix e no
+         cartão parcelado com juros, editar um gasto do site e uma parcela, apagar um gasto da obra vendida e a
+         compra toda), o da obra (criar três, editar, marcar como pronta, vender, desfazer a venda da obra vendida
+         do site e apagar a terceira criada), o do orçamento (definir por total, passar para por tópico, editar
+         por tópico guardando o tópico fora da lista e o campo que só o site conhece, trocar para o total, tirar e
+-        salvar vazio) e o das folhas de origem (o A pagar e o detalhe do tópico: apagar só uma parcela de uma compra
+-        que fica, levar o único gasto de um tópico para outro e passar uma parcela para depois dos 30 dias), gravando
+-        cada passo pelo Sincronizador; antes do orçamento e a cada passo dele e das folhas, pede a este roteiro (POST
+-        no auxiliar) que confira o documento daquele momento contra o que o site gravaria até ali, e cada um desses
+-        passos parte do documento relido, como a pessoa abre a folha depois do eco da gravação;
++        salvar vazio), o das folhas de origem (o A pagar e o detalhe do tópico: apagar só uma parcela de uma compra
++        que fica, levar o único gasto de um tópico para outro e passar uma parcela para depois dos 30 dias) e o dos
++        afazeres (adicionar com espaços em volta, adicionar, marcar, desmarcar e apagar na obra do site, e um afazer
++        que entra e sai na obra que não tinha nenhum), gravando cada passo pelo Sincronizador; antes do orçamento e
++        dos afazeres e a cada passo deles e das folhas, pede a este roteiro (POST no auxiliar) que confira o
++        documento daquele momento contra o que o site gravaria até ali, e cada um desses passos parte do documento
++        relido, como a pessoa abre a folha ou a tela depois do eco da gravação;
+      5. este roteiro confere que o documento final foi gravado pelo app (o _atualizado avançou), que é
+         exatamente o que o site gravaria com as mesmas respostas (dados.js, com os mesmos ids), sem perder os
+         campos que só o site conhece nem pôr o que a leitura acrescentaria (no documento antes do orçamento,
+@@ -58,7 +61,8 @@ const v1 = {
+   obras: [
+     { id: 'c1', nome: 'Casa do teste cruzado', dataInicio: '2026-01-10', fase: 'construcao', campoSoDoSite: { versao: 7 },
+       valorEstimadoVenda: 600000, orcamento: { modo: 'total', total: 50000 },
+-      gastos: [{ id: 'x1', valor: 12345.67, topico: 'fundacao', descricao: 'Sapatas', data: '2026-02-01', pagamento: 'pix', notaSoDoSite: 'fica' }] },
++      gastos: [{ id: 'x1', valor: 12345.67, topico: 'fundacao', descricao: 'Sapatas', data: '2026-02-01', pagamento: 'pix', notaSoDoSite: 'fica' }],
++      afazeres: [{ id: 's1', texto: 'Ligar pro arquiteto', feito: false, notaSoDoSite: 'fica' }, { id: 's2', texto: 'Pagar o ART', feito: true, quem: 'site' }] },
+     /* O orçamento por tópico com um tópico fora da lista da folha (um tópico próprio apagado) e um campo que só o site
+        conhece: o app guarda os dois, e o site de antes do PR 0 da etapa 3 perdia (achado 7). */
+     { id: 'c2', nome: 'Sobrado vendido', dataInicio: '2025-03-01', fase: 'vendida', venda: { valor: 480000, data: '2025-12-20' },
+@@ -74,6 +78,8 @@ const v1 = {
+ };
+ const v2 = structuredClone(v1);
+ v2.obras[0].gastos.push({ id: 'x2', valor: 40000, topico: 'estrutura', descricao: 'Laje', data: '2026-03-01', pagamento: 'pix' });
++// Na v2, o site anota um afazer e marca outro (dados.js), e o teste de tela os vê na linha da obra e na tela Afazeres.
++v2.obras[0].afazeres = D.afazeresAlternado(D.afazeresComNovo(v1.obras[0].afazeres, 'Comprar luvas', 's3'), 's1');
+ /* O roteiro de gastos do app (etapa 2): cada passo é o que a pessoa responde na folha do gasto. Os ids dos gastos
+    novos vêm daqui, para o site montar o mesmo resultado com as regras dele. */
+ const HOJE = '2026-04-01';
+@@ -129,15 +135,31 @@ const roteiroDasFolhas = [
+   // A 1/3 do Quadro de luz vence a 9 dias de HOJE (está no A pagar) e passa para 8/5, depois dos 30 dias: sai da lista.
+   { acao: 'editar', obra: 'c1', gasto: 'app3', mudar: { data: '2026-05-08' } },
+ ];
++/* O roteiro dos afazeres (etapa 3, PR 3), depois do orçamento e das folhas inteiros: o que a pessoa faz na tela Afazeres.
++   Cada passo é conferido no documento, como no orçamento: o afazer apagado no 5º passo e o da c2, que entra e sai, só
++   provam alguma coisa no passo deles. O texto do 1º vem com espaços, que saem (conferirAfazer). A c2 não tinha afazer: a
++   lista dela fica vazia no fim. */
++const roteiroDosAfazeres = [
++  { acao: 'adicionar', obra: 'c1', texto: '  Comprar disjuntor de 40 A  ', id: 'appf1' },
++  { acao: 'adicionar', obra: 'c1', texto: 'Ver o reboco', id: 'appf2' },
++  { acao: 'marcar', obra: 'c1', afazer: 's3' },
++  { acao: 'desmarcar', obra: 'c1', afazer: 's2' },
++  { acao: 'apagar', obra: 'c1', afazer: 'appf1' },
++  { acao: 'adicionar', obra: 'c2', texto: 'Entregar as chaves', id: 'appf3' },
++  { acao: 'apagar', obra: 'c2', afazer: 'appf3' },
++];
+ /** As linhas da folha do orçamento do site (o topicos() do app.js): os fixos e depois os próprios, cada uma com o valor dado
+     ou vazia (0), como o "Salvar" lê. */
+ const valoresDaFolha = (db, dados = {}) => Object.fromEntries([...C.TOPICOS.map(t => t.id), ...db.config.topicosCustom.map(t => t.id)]
+   .map(id => [id, dados[id] || 0]));
+ 
+ /** O que o site gravaria com as mesmas respostas: as regras do dados.js e os filtros do apagar do app.js; do roteiro do
+-    orçamento, os `passosDoOrcamento` primeiros, e do das folhas, que vem depois do orçamento inteiro, os
+-    `passosDasFolhas` primeiros (0 na conferência de um passo do orçamento), cada um a partir do documento relido. */
+-function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDasFolhas = roteiroDasFolhas.length){
++    orçamento, os `passosDoOrcamento` primeiros, do das folhas, que vem depois do orçamento inteiro, os `passosDasFolhas`
++    primeiros (0 na conferência de um passo do orçamento), e do dos afazeres, que vem depois das folhas inteiras, os
++    `passosDosAfazeres` primeiros (0 na conferência de um passo do orçamento ou das folhas), cada um a partir do documento
++    relido. */
++function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDasFolhas = roteiroDasFolhas.length,
++  passosDosAfazeres = roteiroDosAfazeres.length){
+   let db = D.normaliza(structuredClone(blob));
+   const fila = [...ids], novoId = () => fila.shift();
+   for(const p of roteiro){
+@@ -181,6 +203,19 @@ function comoOSite(blob, passosDoOrcamento = roteiroDoOrcamento.length, passosDa
+     const entrada = { valor: g.valor, topico: g.topico, descricao: g.descricao, data: g.data, pagamento: g.pagamento, parcelas: 1, juros: 0, ...p.mudar };
+     o.gastos[i] = D.gastoEditado(g, entrada, D.conferirGasto(entrada, g, HOJE));
+   }
++  /* Os afazeres: o adicionar, o alternar e o apagar do dados.js, como a tela do site os chama; cada passo parte do documento
++     relido, como no orçamento. */
++  for(const p of roteiroDosAfazeres.slice(0, passosDosAfazeres)){
++    db = D.normaliza(db);
++    const o = db.obras.find(x => x.id === p.obra);
++    if(p.acao === 'adicionar'){
++      const c = D.conferirAfazer(p.texto);
++      assert.ok(c.texto, `o afazer ${p.id} passa no conferirAfazer`);
++      o.afazeres = D.afazeresComNovo(o.afazeres, c.texto, p.id);
++    }
++    else if(p.acao === 'apagar') o.afazeres = D.afazeresSem(o.afazeres, p.afazer);
++    else o.afazeres = D.afazeresAlternado(o.afazeres, p.afazer);
++  }
+   return db;
+ }
+ 
+@@ -192,27 +227,38 @@ const textoOrcamento = o => {
+   return orc.nivel === 'passou' ? `${orc.pct}% · passou ${C.moneyCurto(-orc.sobra)}` : `${orc.pct}% do orçamento`;
+ };
+ const esperado = blob => D.normaliza(blob).obras.map(o => ({ id: o.id, nome: o.nome, total: C.money(C.totalBruto(o)), orcamento: textoOrcamento(o) }));
++/* O que a tela dos afazeres do site mostra (calc.js afazeresEmOrdem: pendentes e depois feitos, cada grupo na ordem da
++   lista) e a linha da obra no app ("N pendentes" e o primeiro pendente), para o teste de tela conferir a v2. */
++const vistaDosAfazeres = blob => {
++  const o = D.normaliza(blob).obras.find(x => x.id === 'c1');
++  const ordem = C.afazeresEmOrdem(o.afazeres), pendentes = ordem.filter(a => !a.feito).map(a => a.texto);
++  return { obra: 'c1', linha: `${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}, ${pendentes[0]}`, pendentes,
++    feitos: ordem.filter(a => a.feito).map(a => a.texto) };
++};
+ 
+ await gravarComoOSite(v1);
+ 
+ let siteMudou = false;
+-/* Depois de cada passo do orçamento e das folhas, o app pede a conferência do documento daquele momento: 200 quando é o que o
+-   site gravaria com as respostas até ali, 409 com as duas versões do que o passo mudou quando não é. Antes do primeiro passo do
+-   orçamento (o passo 0), pede que este roteiro guarde o documento dos roteiros do gasto e da obra, gravados em seguida, sem
+-   leitura no meio: é nele que se confere que o app não grava o que a leitura acrescenta. */
++/* Depois de cada passo do orçamento, das folhas e dos afazeres, o app pede a conferência do documento daquele momento: 200
++   quando é o que o site gravaria com as respostas até ali, 409 com as duas versões do que o passo mudou quando não é. Antes do
++   primeiro passo do orçamento (o passo 0), pede que este roteiro guarde o documento dos roteiros do gasto e da obra, gravados
++   em seguida, sem leitura no meio: é nele que se confere que o app não grava o que a leitura acrescenta. Antes do primeiro
++   dos afazeres (o passo 0 deles), o do orçamento e das folhas inteiros. */
+ const conferidos = [];
+-let antesDoOrcamento;
++let antesDoOrcamento, antesDosAfazeres;
+ const auxiliar = createServer(async (req, res) => {
+   if(req.method === 'POST' && req.url === '/site/mudar'){ await gravarComoOSite(v2); siteMudou = true; res.end('ok'); return; }
+-  const passo = /^\/app\/(orcamento|folhas)\/(\d+)$/.exec(req.url);
++  const passo = /^\/app\/(orcamento|folhas|afazeres)\/(\d+)$/.exec(req.url);
+   if(req.method === 'POST' && passo){
+     const qual = passo[1], n = Number(passo[2]);
+     const doc = (await getDocFromServer(documento)).data();
+     delete doc._atualizado;
+     conferidos.push(`${qual}/${n}`);
+     if(qual === 'orcamento' && n === 0){ antesDoOrcamento = doc; res.end('ok'); return; }
+-    const doSite = qual === 'orcamento' ? comoOSite(v2, n, 0) : comoOSite(v2, roteiroDoOrcamento.length, n);
+-    const p = (qual === 'orcamento' ? roteiroDoOrcamento : roteiroDasFolhas)[n - 1], obra = p.obra;
++    if(qual === 'afazeres' && n === 0){ antesDosAfazeres = doc; res.end('ok'); return; }
++    const doSite = qual === 'orcamento' ? comoOSite(v2, n, 0, 0) : qual === 'folhas' ? comoOSite(v2, roteiroDoOrcamento.length, n, 0)
++      : comoOSite(v2, roteiroDoOrcamento.length, roteiroDasFolhas.length, n);
++    const p = { orcamento: roteiroDoOrcamento, folhas: roteiroDasFolhas, afazeres: roteiroDosAfazeres }[qual][n - 1], obra = p.obra;
+     if(C.canon(doc) === C.canon(doSite)){ res.end('ok'); return; }
+     res.statusCode = 409;
+     /* A diferença pode estar fora do que o passo mudou (um passo anterior que ficou diferente, ou o que a leitura acrescenta
+@@ -225,6 +271,11 @@ const auxiliar = createServer(async (req, res) => {
+       res.end(`passo ${n} (${obra}): o app gravou ${daObra(doc)}, o site gravaria ${daObra(doSite)}; ${obras}`);
+       return;
+     }
++    if(qual === 'afazeres'){
++      const dosAfazeres = d => JSON.stringify(d.obras.find(o => o.id === obra)?.afazeres ?? null);
++      res.end(`passo ${n} dos afazeres (${obra}): o app gravou ${dosAfazeres(doc)}, o site gravaria ${dosAfazeres(doSite)}; ${obras}`);
++      return;
++    }
+     // Nas folhas, os gastos da obra do passo que diferem (o que saiu de um lado só aparece como null do outro).
+     const gastos = d => d.obras.find(o => o.id === obra)?.gastos ?? [];
+     const gasto = (d, id) => gastos(d).find(g => g.id === id) ?? null;
+@@ -240,7 +291,8 @@ await new Promise(r => auxiliar.listen(8124, '127.0.0.1', r));
+ const env = { CUSTTA_CRUZADO: '1', CUSTTA_EMULADORES: '1', CUSTTA_EMAIL: email, CUSTTA_SENHA: senha,
+   CUSTTA_ESPERADO_V1: JSON.stringify(esperado(v1)), CUSTTA_ESPERADO_V2: JSON.stringify(esperado(v2)),
+   CUSTTA_ROTEIRO: JSON.stringify(roteiro), CUSTTA_IDS: ids.join(','), CUSTTA_ROTEIRO_OBRA: JSON.stringify(roteiroDaObra), CUSTTA_HOJE: HOJE,
+-  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento), CUSTTA_ROTEIRO_FOLHAS: JSON.stringify(roteiroDasFolhas) };
++  CUSTTA_ROTEIRO_ORCAMENTO: JSON.stringify(roteiroDoOrcamento), CUSTTA_ROTEIRO_FOLHAS: JSON.stringify(roteiroDasFolhas),
++  CUSTTA_ROTEIRO_AFAZERES: JSON.stringify(roteiroDosAfazeres), CUSTTA_ESPERADO_AFAZERES: JSON.stringify(vistaDosAfazeres(v2)) };
+ let antesDoApp;
+ try{
+   await testarNoSimulador(['CusttaUITests/CruzadoUITests'], env);
+@@ -248,14 +300,17 @@ try{
+   antesDoApp = (await getDocFromServer(documento)).data()._atualizado;
+   await testarNoSimulador(['CusttaTests/CruzadoTests'], env);
+ }finally{ auxiliar.close(); }
+-assert.deepEqual(conferidos, ['orcamento/0', ...roteiroDoOrcamento.map((_, i) => `orcamento/${i + 1}`), ...roteiroDasFolhas.map((_, i) => `folhas/${i + 1}`)],
+-  'o app pediu a conferência do documento antes do orçamento, de cada passo dele e de cada passo das folhas, na ordem');
++assert.deepEqual(conferidos, ['orcamento/0', ...roteiroDoOrcamento.map((_, i) => `orcamento/${i + 1}`), ...roteiroDasFolhas.map((_, i) => `folhas/${i + 1}`),
++  'afazeres/0', ...roteiroDosAfazeres.map((_, i) => `afazeres/${i + 1}`)],
++  'o app pediu a conferência do documento antes do orçamento, de cada passo dele e de cada passo das folhas, e antes dos afazeres e de cada passo deles, na ordem');
+ 
+ const final = (await getDocFromServer(documento)).data();
+ assert.ok(final._atualizado instanceof Timestamp, 'a gravação do app leva _atualizado do servidor');
+ assert.ok(final._atualizado.toMillis() > antesDoApp.toMillis(), 'o documento não foi regravado depois do teste do app: ele foi pulado ou não gravou');
+ delete final._atualizado;
+-assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
++assert.equal(C.canon(antesDoOrcamento), C.canon(comoOSite(v2, 0, 0, 0)), 'os roteiros do gasto e da obra gravaram o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
++assert.equal(C.canon(antesDosAfazeres), C.canon(comoOSite(v2, roteiroDoOrcamento.length, roteiroDasFolhas.length, 0)),
++  'antes dos afazeres, o documento do orçamento e das folhas inteiros: nada gravado entre os roteiros');
+ const v3 = comoOSite(v2);
+ assert.equal(C.canon(final), C.canon(v3), 'o app gravou o que o site gravaria com as mesmas respostas, sem tirar nem pôr nada');
+ const porId = id => final.obras.find(o => o.id === id);
+@@ -302,6 +357,15 @@ assert.deepEqual([c1.gastos.find(g => g.id === 'app1').topico, c1.gastos.some(g
+   'a Tinta foi para Acabamento, e a Pintura ficou sem gasto');
+ assert.equal(C.money(C.totalBruto(D.normaliza(final).obras.find(o => o.id === 'c1'))), C.money(12000 + 40000 + 999.99 + cartao.parcelas[0].valor + cartao.parcelas[1].valor),
+   'o site soma o que o app gravou, sem a 3/3');
++// Os afazeres (etapa 3, PR 3): o fim do roteiro, na ordem que o site mostra (o que cada passo gravou, a conferência dele provou).
++assert.deepEqual(C.afazeresEmOrdem(c1.afazeres).map(a => a.id), ['s2', 'appf2', 's3', 's1'],
++  'na ordem que o site mostra: o desmarcado no alto dos pendentes, o marcado no alto dos feitos');
++assert.equal(c1.afazeres.find(a => a.id === 'appf2').texto, 'Ver o reboco');
++assert.ok(!c1.afazeres.some(a => a.id === 'appf1'), 'o apagado saiu');
++assert.equal(c1.afazeres.find(a => a.id === 's1').notaSoDoSite, 'fica', 'campo de afazer que só o site conhece');
++assert.deepEqual(c1.afazeres.find(a => a.id === 's2'), { id: 's2', texto: 'Pagar o ART', feito: false, quem: 'site' },
++  'o afazer desmarcado no app guarda o campo que só o site conhece');
++assert.deepEqual(c2.afazeres, [], 'o afazer da c2 entrou e saiu no app, e a lista ficou vazia, como o site grava');
+ await terminate(db);
+-console.log('ok - site e app na mesma conta: totais e orçamentos iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra, do orçamento e das folhas de origem gravaram o que o site gravaria, passo a passo no orçamento e nas folhas, sem perder nada');
++console.log('ok - site e app na mesma conta: totais, orçamentos e afazeres iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra, do orçamento, das folhas de origem e dos afazeres gravaram o que o site gravaria, passo a passo no orçamento, nas folhas e nos afazeres, sem perder nada');
+ process.exit(0);
+```
+
+- [ ] **Step 2: Ver passar**
+
+O app não muda: passa de primeira sobre a Tarefa 42 (sem as Tarefas 37 a 41, não compila nem tem a linha e a tela Afazeres que o teste de tela lê).
+
+Run:
+```bash
+CUSTTA_SIMULADOR=<udid> npm run test:app-ios:cruzado 2>&1 | grep -E "Test run with|^ok|^not ok" | tail -2
+```
+Expected: `✔ Test run with 1 test in 1 suite passed` (o `CruzadoTests`; o `CruzadoUITests` roda antes, e a falha dele dá `not ok`) e `ok - site e app na mesma conta: totais, orçamentos e afazeres iguais, mudança do site chegou ao app, e os roteiros do gasto, da obra, do orçamento, das folhas de origem e dos afazeres gravaram o que o site gravaria, passo a passo no orçamento, nas folhas e nos afazeres, sem perder nada`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app-ios/CusttaTests/CruzadoTests.swift \
+  app-ios/CusttaUITests/Abrir.swift \
+  app-ios/CusttaUITests/CruzadoUITests.swift \
+  tests/app-ios/cruzado.mjs
+git commit -m "test: conferência cruzada dos afazeres, passo a passo no documento" -m "A conferência cruzada site ↔ app passa a cobrir os afazeres nos dois sentidos. O site anota um afazer e marca outro na mudança que o teste de tela pede, e o app tem de mostrar os dois na linha da obra e na tela Afazeres, na ordem que o site mostra (pendentes e depois feitos, cada grupo na ordem da lista). Depois do orçamento e das folhas de origem inteiros, o app segue um roteiro de afazeres (adicionar com espaços em volta, adicionar, marcar, desmarcar e apagar na obra do site, e um afazer que entra e sai na obra que não tinha nenhum), conferido pelo mesmo mecanismo do orçamento: antes do primeiro passo o roteiro guarda o documento, que no fim tem de ser o do orçamento e das folhas inteiros, e cada passo, confirmado pelo servidor, é comparado com o que o site gravaria até ali, com um 409 que diz o passo, a obra e as duas listas. Um afazer apagado mais adiante, ou um que entra e sai, só prova alguma coisa no passo dele." -m "Como no orçamento, cada passo parte do documento relido (o app espera o eco da gravação anterior) e o modelo do site renormaliza antes de cada passo, como o bootCloud: a comparação é do documento como o app o gravou, sem normalizar o que se lê. O fim cobra a ordem das conferências dos três roteiros (orçamento, folhas e afazeres), a ordem que o site mostra, os campos de afazer que só o site conhece (inclusive num afazer desmarcado no app) e a lista vazia que fica na obra que não tinha afazeres." -m "Na tela, depois de entrar com e-mail e senha, o iOS 27 do simulador oferece guardar a senha numa folha que cobre o meio da tela e engolia o toque na obra; o teste a fecha antes de tocar."
+```

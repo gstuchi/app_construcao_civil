@@ -49,10 +49,48 @@ final class SondaFocoUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.exists, "o teclado fica")
     }
 
-    func testSondaFocoNenhum1() { sonda("nenhum") }
-    func testSondaFocoNenhum2() { sonda("nenhum") }
-    func testSondaFocoNenhum3() { sonda("nenhum") }
-    func testSondaFocoNenhum4() { sonda("nenhum") }
-    func testSondaFocoSemSoma1() { sonda("semSoma") }
-    func testSondaFocoSemSoma2() { sonda("semSoma") }
+    /// Estresse: com a busca aberta o tempo todo, digita "cimen", apaga e baixa o teclado pelo "buscar"; o toque no campo o
+    /// traz de volta. Seis voltas. O campo não sai da tela: um `campo.sumiu` aqui é a pilha refazendo o campo à vista.
+    private func estresse(_ variante: String) {
+        let inicio = Date.now
+        let nomes = ["foco.sim", "foco.nao", "campo.apareceu", "campo.sumiu", "edicao.comeca", "edicao.acaba", "teclado.mostra",
+                     "teclado.esconde", "parada", "congelou"]
+        var tokens: [Int32] = []
+        for nome in nomes {
+            var token: Int32 = 0
+            notify_register_dispatch("br.com.custta.sonda.\(nome)", &token, DispatchQueue.global()) { @Sendable t in
+                var estado: UInt64 = 0
+                notify_get_state(t, &estado)
+                print("sonda-foco | \(variante) | t=\(String(format: "%.1f", Date.now.timeIntervalSince(inicio))) | app: \(nome) \(estado)")
+            }
+            tokens.append(token)
+        }
+        defer { tokens.forEach { notify_cancel($0) } }
+        func linha(_ texto: String) {
+            print("sonda-foco | \(variante) | t=\(String(format: "%.1f", Date.now.timeIntervalSince(inicio))) | teste: \(texto)")
+        }
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: ["-custta.sondaFoco", variante])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        func esperarPilula(_ texto: String) -> String {
+            let ate = Date.now.addingTimeInterval(15)
+            while app.elemento("lancamentos").label != texto && Date.now < ate { usleep(200_000) }
+            return app.elemento("lancamentos").label
+        }
+        let lupa = app.buttons["buscar"]
+        app.rolarAte(lupa)
+        lupa.tap()
+        linha("lupa · teclado \(app.keyboards.firstMatch.waitForExistence(timeout: 5))")
+        let campo = app.textFields["campoDaBusca"]
+        for volta in 1...6 {
+            app.digitarComFoco("cimen", em: campo)
+            let achou = esperarPilula("Lançamentos, 2 de 46")
+            campo.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 5))
+            let tudo = esperarPilula("Lançamentos, 46")
+            campo.typeText("\n")
+            linha("volta \(volta) · \(achou) · \(tudo) · teclado \(app.keyboards.firstMatch.exists)")
+        }
+    }
+
+    func testSondaFocoEstresse1() { estresse("estresse") }
+    func testSondaFocoEstresse2() { estresse("estresse") }
 }

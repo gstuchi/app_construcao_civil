@@ -18853,3 +18853,294 @@ git add .github/workflows/app-ios.yml \
   tests/app-ios.test.cjs
 git commit -m "feat: afazeres na obra e a tela Afazeres no app" -m "A obra ganha os afazeres do site no desenho aprovado no mockup da etapa 3 (parte 2, opção A): uma linha entre as ações da fase e os lançamentos, em todas as fases, com quantos estão pendentes e o primeiro deles (em até duas linhas), ou \"tudo feito\" e quantos, ou a frase do site quando não há nenhum. A linha empurra a tela \"Afazeres\", no caminho de Obras, com título grande. A obra cresce uma linha, e não o painel do site, que crescia a cada afazer." -m "Na tela, o campo \"Novo afazer\" fica no alto, com o rótulo para o VoiceOver que o site não tem, e para em 500 caracteres. O \"OK\" do teclado e o + adicionam o texto aparado no alto dos pendentes, aceso um instante, e o cursor continua no campo para anotar vários seguidos; vazio não faz nada. Os pendentes mostram o texto inteiro, quebrando linha (no site, cortavam numa linha). O círculo de 44 pt marca, e o toque no texto também, como no site: o círculo troca na hora e, meio segundo depois, o afazer vai para o alto dos Feitos, com a mola; um segundo toque nesse meio segundo desiste. Desmarcado, ele volta para o alto dos pendentes. Os Feitos começam fechados, com o texto riscado na cor secundária (a opacidade do site não passava de 4,5:1). Arrastar mostra \"Apagar\", que apaga sem perguntar, pela mesma linha arrastável da lista de gastos. A obra apagada em outro aparelho fecha a tela." -m "Fica o TextField do SwiftUI, que não recusa tecla: o texto guardado e o gravado nunca passam de 500, o + nunca fica calado (um texto longo iria ao aviso do topo) e, tecla a tecla, o campo para em 500; só com teclas a 1–3 ms, como as do XCUITest, a tela mostra mais por um instante, até a tecla seguinte, e uma UITextView própria, que recusaria a tecla mas refaria o campo, o laudo e a auditoria, fica para depois." -m "Cada gravação passa pelo gravar do modelo, com o alerta do site quando o app ainda não viu os dados, e uma guarda confere isso nos três jeitos de gravar. Nos afazeres, o + da cápsula lança gasto na obra, como dentro dela. Os falsos ganham os afazeres do mockup na Casa Alphaville e dois feitos no Sobrado Granja Viana, e o Debug abre a tela direto por CUSTTA_ABRIR=afazeres:<obra>. A pílula \"Pendentes\" é a PilulaDaLista, a mesma dos lançamentos e da tela Orçamento, num texto só." -m "A suíte nova de tela, AfazeresUITests, roda no app-etapa3-c, com a BuscaUITests, e o app a pula."
 ```
+
+### Task 42: Mudança de outro aparelho durante a digitação (achado 3)
+
+O spec pede que uma mudança vinda de outro aparelho não apague o afazer que está sendo digitado nem tire o foco da busca (achado 3). O texto em digitação e o foco moram na tela, e o redesenho que chega do Sincronizador não os recria: nada muda no app. Dois testes de tela provam isso com uma escrita remota no meio da digitação. Na tela Afazeres, outro aparelho anota um afazer enquanto um é digitado aqui; na obra, com a busca aberta e o teclado à vista, outro aparelho apaga um dos achados. Nos dois, a lista muda, e o texto e o teclado ficam no campo, que continua recebendo o que se digita.
+
+- **O outro aparelho que anota um afazer.** O transporte falso ganha `CUSTTA_MUDANCA_REMOTA=afazer:<obra>`: o documento que chega é o de antes, com um afazer novo no alto da lista da obra. Como o apagar remoto da etapa 2, ele só grava quando o próprio teste avisa, por `notify_post`, e não por relógio desde a abertura, que corria contra o teste na CI. O aviso vira uma função só (`esperarOAviso`), usada pelos dois.
+- **O teclado conferido antes da mudança.** No teste da busca, o teclado é conferido logo depois da digitação, antes de o outro aparelho apagar: no run 40440188222 (iOS 26), ele caiu durante a digitação, e a falha aparecia no "e o teclado também", como se fosse da mudança remota. Depois do "to", o teste espera o campo com "cimento" antes de comparar (o `esperarTexto` da Tarefa 40).
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/MontarFalso.swift`
+- Modify: `app-ios/Custta/Falsos/TransporteFalsoApp.swift`
+- Test (alterar): `app-ios/CusttaUITests/Abrir.swift`
+- Test (alterar): `app-ios/CusttaUITests/AfazeresUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/BuscaUITests.swift`
+
+**Interfaces:**
+- Consumes: `CUSTTA_APAGAR_REMOTO` e o transporte falso (etapa 2); `buscar`, `pilula` e `esperarTexto` (Tarefa 40); `abrirApp` e `digitarComFoco`.
+- Produces: `CUSTTA_MUDANCA_REMOTA=afazer:<obra>`; `TransporteFalsoApp.init(…, afazerRemoto:)` e `esperarOAviso(_:)`; os testes `testMudancaDeOutroAparelhoNaoApagaOAfazerEmDigitacao` e `testMudancaDeOutroAparelhoNaoTiraOFocoDaBusca`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Em `app-ios/CusttaUITests/Abrir.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/Abrir.swift
++++ b/app-ios/CusttaUITests/Abrir.swift
+@@ -2,7 +2,7 @@ import XCTest
+ 
+ /// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase. `abrir: "obra:v1"` já abre a obra;
+ /// `folha: "novaObra"` abre uma folha quando os dados chegam; `gravacao: "recusa"` recusa toda gravação; `extra` passa
+-/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`).
++/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`, `CUSTTA_MUDANCA_REMOTA`).
+ @MainActor
+ func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
+               limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, folha: String? = nil, gravacao: String? = nil,
+```
+
+Em `app-ios/CusttaUITests/AfazeresUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AfazeresUITests.swift
++++ b/app-ios/CusttaUITests/AfazeresUITests.swift
+@@ -6,9 +6,10 @@ import notify
+    caracteres, com o + que grava os 500 mesmo depois de rajadas de teclas; marcar pelo círculo e desmarcar pelo texto, na
+    ordem nova (o feito no alto dos Feitos, o desmarcado no alto dos pendentes), com o círculo que troca na hora e o segundo
+    toque que desiste; "Feitos" fechado, que abre; apagar arrastando, sem pergunta; o texto longo inteiro na tela e cortado
+-   em duas linhas na obra; o vazio; a gravação recusada antes de ver os dados; a obra apagada em outro aparelho; e o + da
+-   cápsula, que lança gasto na obra. Na vitrine, a Casa Alphaville tem os 7 afazeres do mockup (3 pendentes e 4 feitos), o
+-   Sobrado Granja Viana, 2 feitos, e a Casa Tamboré 4, nenhum. */
++   em duas linhas na obra; o vazio; a gravação recusada antes de ver os dados; a obra apagada em outro aparelho; o + da
++   cápsula, que lança gasto na obra; e a mudança vinda de outro aparelho durante a digitação (achado 3). Na vitrine, a
++   Casa Alphaville tem os 7 afazeres do mockup (3 pendentes e 4 feitos), o Sobrado Granja Viana, 2 feitos, e a Casa
++   Tamboré 4, nenhum. */
+ @MainActor
+ final class AfazeresUITests: XCTestCase {
+     private func abrirAfazeres(_ obra: String = "v1", argumentos: [String] = []) -> XCUIApplication {
+@@ -242,6 +243,23 @@ final class AfazeresUITests: XCTestCase {
+         XCTAssertEqual(pendentes(app), "Pendentes, 3", "nada foi gravado")
+     }
+ 
++    /// Achado 3: outro aparelho anota um afazer enquanto um é digitado aqui. A lista ganha o de lá, e o texto e o cursor
++    /// ficam no campo (o texto em digitação e o foco moram na tela, e o redesenho que chega do Sincronizador não os recria).
++    func testMudancaDeOutroAparelhoNaoApagaOAfazerEmDigitacao() {
++        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "afazeres:v1", extra: ["CUSTTA_MUDANCA_REMOTA": "afazer:v1"])
++        let campo = app.textFields["novoAfazer"]
++        app.digitarComFoco("Comprar cimen", em: campo)
++        // O outro aparelho grava agora, com o afazer em digitação (um relógio desde a abertura correria contra o teste).
++        notify_post("br.com.custta.falso.mudancaRemota")
++        XCTAssertTrue(app.elemento("afazer-remoto1").waitForExistence(timeout: 10), "o afazer do outro aparelho chega")
++        XCTAssertEqual(pendentes(app), "Pendentes, 4")
++        XCTAssertEqual(campo.value as? String, "Comprar cimen", "o texto em digitação fica")
++        XCTAssertTrue(app.keyboards.firstMatch.exists, "e o teclado também")
++        campo.typeText("to\n")                         // sem o foco, o XCUITest não digita ("no keyboard focus")
++        XCTAssertEqual(pendentes(app), "Pendentes, 5")
++        XCTAssertEqual(Array(ordem(app).prefix(2)), ["Comprar cimento", "Ver a entrega do gesso"])
++    }
++
+     /// Nos afazeres, o + da cápsula lança gasto na obra, como dentro dela.
+     func testOMaisDaCapsulaLancaGastoNaObra() {
+         let app = abrirAfazeres()
+```
+
+Em `app-ios/CusttaUITests/BuscaUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/BuscaUITests.swift
++++ b/app-ios/CusttaUITests/BuscaUITests.swift
+@@ -1,9 +1,11 @@
+ import XCTest
++import notify
+ 
+ /* A busca e o filtro por mês da lista de lançamentos (etapa 3, PR 3; mockup da parte 2, seção 3): buscar com e sem acento,
+    pelo tópico e pela descrição, com o texto aparado; o × que fecha e limpa; o mês pelo menu, o chip e o contador; o mês que
+    fica sem gasto e não some (achado 1); "Limpar a busca", "Limpar busca e mês" e "Ver todos os meses"; o filtro que zera ao
+-   trocar de obra; a obra sem gasto, só com a pílula; e a lupa que vira × na maior letra. A busca usa a vitrine (os 46
++   trocar de obra; a obra sem gasto, só com a pílula; a lupa que vira × na maior letra; e a mudança vinda de outro
++   aparelho com a busca aberta (achado 3). A busca usa a vitrine (os 46
+    lançamentos do mockup; as datas contam de hoje), e o mês, o exemplo (datas fixas: a Casa Alphaville do exemplo tem um
+    gasto em março e outro em junho de 2025). */
+ @MainActor
+@@ -267,6 +269,29 @@ final class BuscaUITests: XCTestCase {
+         XCTAssertFalse(app.textFields["campoDaBusca"].exists)
+     }
+ 
++    /// Achado 3: com a busca aberta e o teclado à vista, outro aparelho apaga um dos achados. A lista e a pílula mudam, e
++    /// o texto e o foco ficam no campo.
++    func testMudancaDeOutroAparelhoNaoTiraOFocoDaBusca() {
++        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", extra: ["CUSTTA_APAGAR_REMOTO": "v1/g027@0"])
++        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
++        buscar(app, "cimen")
++        XCTAssertEqual(pilula(app), "Lançamentos, 2 de 46")
++        // O teclado de pé antes da mudança: no run 40440188222 (iOS 26), ele caiu durante a digitação, antes de o outro aparelho
++        // apagar, e a falha aparecia no "e o teclado também", como se fosse da mudança remota.
++        XCTAssertTrue(app.keyboards.firstMatch.exists, "o teclado de pé antes da mudança remota")
++        notify_post("br.com.custta.falso.apagarRemoto")
++        let ate = Date.now.addingTimeInterval(10)
++        while pilula(app) != "Lançamentos, 1 de 45" && Date.now < ate { usleep(200_000) }
++        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 45", "o cimento apagado lá sai da lista")
++        let campo = app.textFields["campoDaBusca"]
++        XCTAssertEqual(campo.value as? String, "cimen", "o texto fica")
++        XCTAssertTrue(app.keyboards.firstMatch.exists, "e o teclado também")
++        campo.typeText("to")                            // sem o foco, o XCUITest não digita ("no keyboard focus")
++        esperarTexto(campo, "cimento")
++        XCTAssertEqual(campo.value as? String, "cimento")
++        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 45")
++    }
++
+     /// Na maior letra a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira ×.
+     func testNaMaiorLetraALupaViraXEOCampoTemALarguraToda() {
+         let app = abrirObra(argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AfazeresUITests/testMudancaDeOutroAparelhoNaoApagaOAfazerEmDigitacao -only-testing:CusttaUITests/BuscaUITests/testMudancaDeOutroAparelhoNaoTiraOFocoDaBusca 2>&1 | grep -E "error: -\[|Executed [0-9]+ tests?, with" | sed 's#.*/app-ios/##' | sort -u
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso (os testes só pedem ao falso o que ele ainda não faz). O `testMudancaDeOutroAparelhoNaoApagaOAfazerEmDigitacao` reprova: sem o `CUSTTA_MUDANCA_REMOTA`, o afazer do outro aparelho não chega (`XCTAssertTrue failed - o afazer do outro aparelho chega`, `("Pendentes, 3") is not equal to ("Pendentes, 4")`, `("Pendentes, 4") is not equal to ("Pendentes, 5")` e a lista sem o "Ver a entrega do gesso"). O `testMudancaDeOutroAparelhoNaoTiraOFocoDaBusca` passa: o apagar remoto é da etapa 2, e o foco já mora na tela. `Executed 2 tests, with 4 failures`.
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Falsos/MontarFalso.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/MontarFalso.swift
++++ b/app-ios/Custta/Falsos/MontarFalso.swift
+@@ -16,6 +16,8 @@ import CusttaNucleo
+    CUSTTA_GRAVACAO recusa (toda gravação volta com permission-denied: o "Não salvou" que não passa sozinho)
+    CUSTTA_APAGAR_REMOTO <obra>/<gasto>@<segundos> (outro aparelho apaga o gasto, com o app aberto) | <obra>@<segundos>
+                   (apaga a obra)
++   CUSTTA_MUDANCA_REMOTA afazer:<obra> (outro aparelho anota um afazer no alto da lista da obra quando o teste avisa, pelo
++                  notify_post de "br.com.custta.falso.mudancaRemota": o documento novo chega com a tela em uso, achado 3)
+    CUSTTA_MARCA   servidor (o servidor já respondeu a esta conta numa abertura anterior: com CUSTTA_REDE=offline e
+                   CUSTTA_DADOS=vazio, é a conta vazia que abre sem rede e pode lançar)
+    CUSTTA_LIMPEZA falha (a limpeza do cache falha no sair e na 1ª nova tentativa) | abertura (abre bloqueado,
+@@ -56,10 +58,11 @@ extension Composicao {
+             guard partes.count == 2 || partes.count == 3, let segundos = Double(partes[partes.count - 1]) else { return nil }
+             return (partes[0], partes.count == 3 ? partes[1] : "", segundos)
+         }
++        let afazerRemoto = ambiente["CUSTTA_MUDANCA_REMOTA"].flatMap { $0.hasPrefix("afazer:") ? String($0.dropFirst(7)) : nil }
+         let transporte = TransporteFalsoApp(dados: dados, semRede: semRede, falhaDeLeitura: falha,
+                                             semLeitura: ambiente["CUSTTA_LEITURA"] == "nunca",
+                                             recusa: ambiente["CUSTTA_GRAVACAO"] == "recusa" ? "permission-denied" : nil,
+-                                            apagarRemoto: remoto)
++                                            apagarRemoto: remoto, afazerRemoto: afazerRemoto)
+         let rede = MonitorDeRede(forcarSemRede: semRede)
+         let marca = MarcaEmMemoria()
+         if ambiente["CUSTTA_MARCA"] == "servidor" { marca.marcarTodas = true }
+```
+
+Em `app-ios/Custta/Falsos/TransporteFalsoApp.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/TransporteFalsoApp.swift
++++ b/app-ios/Custta/Falsos/TransporteFalsoApp.swift
+@@ -9,7 +9,8 @@ import CusttaNucleo
+ /// nunca responde (CUSTTA_LEITURA=nunca: "Carregando suas obras…" para sempre). `recusa` responde toda gravação com
+ /// esse código (CUSTTA_GRAVACAO=recusa: permission-denied, o "Não salvou" que não passa sozinho). `apagarRemoto`
+ /// simula outro aparelho apagando um gasto: um segundo snapshot, sem ele, depois de alguns segundos
+-/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>); com o gasto vazio, a obra inteira.
++/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>); com o gasto vazio, a obra inteira. `afazerRemoto` simula outro
++/// aparelho anotando um afazer numa obra, quando o teste avisa (CUSTTA_MUDANCA_REMOTA=afazer:<obra>).
+ @MainActor
+ final class TransporteFalsoApp: TransporteDados {
+     private final class Nada: Cancelavel { func cancelar() {} }
+@@ -19,37 +20,42 @@ final class TransporteFalsoApp: TransporteDados {
+     private let semLeitura: Bool
+     private let recusa: String?
+     private let apagarRemoto: (obra: String, gasto: String, depois: Double)?
++    private let afazerRemoto: String?
+     /// Quantas gravações chegaram (os testes conferem que abrir o app não grava nada).
+     private(set) var gravacoes = 0
+ 
+     init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil, semLeitura: Bool = false, recusa: String? = nil,
+-         apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil) {
++         apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil, afazerRemoto: String? = nil) {
+         self.dados = dados
+         self.semRede = semRede
+         self.falhaDeLeitura = falhaDeLeitura
+         self.semLeitura = semLeitura
+         self.recusa = recusa
+         self.apagarRemoto = apagarRemoto
++        self.afazerRemoto = afazerRemoto
+     }
+ 
+     func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
+                  aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
+-        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto
++        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto, afazer = afazerRemoto
+         guard !semLeitura else { return Nada() }
+         Task { @MainActor in
+             try? await Task.sleep(for: .milliseconds(200))
+             if let falha { aoFalhar(falha); return }
+             aoReceber(Instantaneo(dados: dados, doCache: semRede, gravacaoPendente: false))
++            // Outro aparelho anota um afazer quando o teste avisa (notify_post de "br.com.custta.falso.mudancaRemota", com a
++            // tela já em uso): o documento que chega é o de antes, com o afazer novo no alto da lista da obra.
++            if let afazer {
++                Task { @MainActor in
++                    await Self.esperarOAviso("br.com.custta.falso.mudancaRemota")
++                    aoReceber(Instantaneo(dados: Self.comAfazerDeOutroAparelho(naObra: afazer, em: dados), doCache: semRede,
++                                          gravacaoPendente: false))
++                }
++            }
+             guard let remoto else { return }
+             // Os segundos contam do aviso do teste (notify_post de "br.com.custta.falso.apagarRemoto", com a folha já
+             // aberta), não da abertura do app: um relógio desde a abertura corria contra o teste, mais lento na CI.
+-            await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
+-                var token: Int32 = 0
+-                notify_register_dispatch("br.com.custta.falso.apagarRemoto", &token, .main) { t in
+-                    notify_cancel(t)
+-                    avisado.resume()
+-                }
+-            }
++            await Self.esperarOAviso("br.com.custta.falso.apagarRemoto")
+             try? await Task.sleep(for: .seconds(remoto.depois))
+             let depois = remoto.gasto.isEmpty ? Self.semAObra(remoto.obra, em: dados) : Self.sem(remoto.gasto, naObra: remoto.obra, em: dados)
+             aoReceber(Instantaneo(dados: depois, doCache: semRede, gravacaoPendente: false))
+@@ -57,6 +63,30 @@ final class TransporteFalsoApp: TransporteDados {
+         return Nada()
+     }
+ 
++    /// Espera o aviso do teste (notify_post), que atravessa do processo do XCUITest ao app no simulador.
++    private static func esperarOAviso(_ nome: String) async {
++        await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
++            var token: Int32 = 0
++            notify_register_dispatch(nome, &token, .main) { t in
++                notify_cancel(t)
++                avisado.resume()
++            }
++        }
++    }
++
++    /// O blob com um afazer novo no alto da lista de uma obra, como outro aparelho o gravaria.
++    private static func comAfazerDeOutroAparelho(naObra obraId: String, em dados: ValorJSON?) -> ValorJSON? {
++        guard case .objeto(var raiz)? = dados, case .lista(let obras)? = raiz["obras"] else { return dados }
++        raiz["obras"] = .lista(obras.map { o in
++            guard case .objeto(var obra) = o, obra["id"] == .texto(obraId) else { return o }
++            var afazeres: [ValorJSON] = []
++            if case .lista(let atuais)? = obra["afazeres"] { afazeres = atuais }
++            obra["afazeres"] = .lista([DadosDeExemplo.afazer("remoto1", "Ver a entrega do gesso", feito: false)] + afazeres)
++            return .objeto(obra)
++        })
++        return .objeto(raiz)
++    }
++
+     /// O blob sem uma obra, como outro aparelho o gravaria.
+     private static func semAObra(_ obraId: String, em dados: ValorJSON?) -> ValorJSON? {
+         guard case .objeto(var raiz)? = dados, case .lista(let obras)? = raiz["obras"] else { return dados }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AfazeresUITests -only-testing:CusttaUITests/BuscaUITests 2>&1 | grep -E "Executed [0-9]+ tests?, with|TEST EXECUTE" | tail -2
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `Executed 26 tests, with 0 failures` (`AfazeresUITests` 15 e `BuscaUITests` 11) e `** TEST EXECUTE SUCCEEDED **`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/MontarFalso.swift \
+  app-ios/Custta/Falsos/TransporteFalsoApp.swift \
+  app-ios/CusttaUITests/Abrir.swift \
+  app-ios/CusttaUITests/AfazeresUITests.swift \
+  app-ios/CusttaUITests/BuscaUITests.swift
+git commit -m "test: mudança de outro aparelho não apaga o afazer em digitação nem tira o foco da busca" -m "O spec pede que uma mudança vinda de outro aparelho não apague o afazer que está sendo digitado nem tire o foco da busca (achado 3): o texto em digitação e o foco moram na tela, e o redesenho que chega do Sincronizador não os recria. Dois testes de tela provam isso com uma escrita remota no meio da digitação: na tela Afazeres, outro aparelho anota um afazer enquanto um é digitado aqui; na obra, com a busca aberta e o teclado à vista, outro aparelho apaga um dos achados. Nos dois, a lista muda, e o texto e o teclado ficam no campo, que continua recebendo o que se digita." -m "O transporte falso ganha o outro aparelho que anota um afazer no alto da lista de uma obra (CUSTTA_MUDANCA_REMOTA=afazer:<obra>). Como o apagar remoto da etapa 2, ele só grava quando o próprio teste avisa, por notify_post, e não por relógio desde a abertura, que corria contra o teste na CI. O aviso do teste passa a ser uma função só, usada pelos dois."
+```

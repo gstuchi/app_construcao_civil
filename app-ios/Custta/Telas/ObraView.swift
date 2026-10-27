@@ -160,7 +160,7 @@ struct ObraView: View {
         .tituloPequenoAoRolar(barra)
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
-        .modifier(RolagemFixaDoTeste())
+        .rolagemFixaDaObraComASonda215()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

@@ -297,15 +297,13 @@ final class BuscaUITests: XCTestCase {
         XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
     }
 
-    // Sonda temporária da :215 no iOS 26, 2ª rodada (sai depois do run): cada variante do menu do mês na maior letra, num
+    // Sonda temporária da :215 no iOS 26, 3ª rodada (sai depois do run): cada variante do menu do mês na maior letra, num
     // teste próprio, porque o app travado encerra o teste. No run 40417236427, o mês posto sem menu não travou, e pelo menu
-    // travou com o Toggle, com o Picker, sem o subtítulo e adiado 0,6 s. A `nenhum` é o controle.
+    // travou com o Toggle, com o Picker, sem o subtítulo e adiado 0,6 s; no 40420755600, adiado 2 s, com o Menu refeito e
+    // com um confirmationDialog também, e sem mudar o mês não travou. A `nenhum` é o controle.
     func testSonda215Nenhum() { sonda215("nenhum") }
-    func testSonda215SemMudanca() { sonda215("semMudanca") }
-    func testSonda215AoFechar() { sonda215("aoFechar") }
-    func testSonda215Id() { sonda215("id") }
-    func testSonda215Adiado2() { sonda215("adiado2") }
-    func testSonda215Dialogo() { sonda215("dialogo") }
+    func testSonda215SemRolagemFixa() { sonda215("semRolagemFixa") }
+    func testSonda215ToqueSemMenu() { sonda215("toqueSemMenu") }
 
     private func sonda215(_ variante: String) {
         let s = { (t: TimeInterval) in String(format: "%.2f", t) }
@@ -317,8 +315,8 @@ final class BuscaUITests: XCTestCase {
         let mes = app.buttons["filtrarPorMes"]
         app.rolarAte(mes, tentativas: 20)
         let toque = Date.now
-        if variante != "direto" {
-            mes.tap()
+        if variante != "direto" { mes.tap() }
+        if !["direto", "toqueSemMenu"].contains(variante) {
             let item = itemDoMenu(app, "Junho de 2023")
             XCTAssertTrue(item.waitForExistence(timeout: 5), "o menu abriu (\(variante))")
             item.tap()

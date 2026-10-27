@@ -136,7 +136,16 @@ struct MenuDoMes: View {
     @State private var dialogo = false
 
     var body: some View {
-        if Sonda215.pedido == "dialogo" {
+        if Sonda215.pedido == "toqueSemMenu" {
+            Button {
+                Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    busca.mes = "2023-06"
+                }
+            } label: { rotulo }
+                .buttonStyle(.plain)
+                .acessibilidadeDoMes(busca)
+        } else if Sonda215.pedido == "dialogo" {
             Button { dialogo = true } label: { rotulo }
                 .buttonStyle(.plain)
                 .acessibilidadeDoMes(busca)
@@ -206,6 +215,16 @@ private extension View {
 /// o mês), `aoFechar` (o mês muda no `onDisappear` do conteúdo do menu), `id` (o `Menu` refeito a cada mês), `adiado2` (o mês
 /// muda 2 s depois do toque) ou `dialogo` (um `confirmationDialog` no lugar do `Menu`). Com `nenhum`, ou sem o argumento (e
 /// em Release), nada muda.
+#if DEBUG
+extension View {
+    /// Sonda da :215, 3ª rodada: com `semRolagemFixa`, a obra só tem a RolagemFixaDoTeste com o `-custta.rolagem`, como as
+    /// folhas de origem (sem o `.scrollPosition`, como em Release).
+    @ViewBuilder func rolagemFixaDaObraComASonda215() -> some View {
+        if Sonda215.pedido == "semRolagemFixa" { rolagemFixaSoComOArgumento() } else { modifier(RolagemFixaDoTeste()) }
+    }
+}
+#endif
+
 @MainActor
 enum Sonda215 {
     #if DEBUG

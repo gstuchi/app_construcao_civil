@@ -16036,7 +16036,7 @@ git commit -m "docs: checklist do aparelho do PR 2 e os tempos da CI" -m "O chec
 
 A parte 3 do mockup, gravando de verdade: a busca e o filtro por mês na lista de lançamentos da obra, com a soma dos achados e os vazios; a linha dos afazeres na obra e a tela Afazeres, com adicionar, marcar e apagar; o achado 3 (a mudança de outro aparelho não apaga o afazer em digitação nem tira o foco da busca); a conferência cruzada dos afazeres; o laudo de leitura das telas novas; e o checklist do aparelho. É a última mutação nova da etapa.
 
-O PR entra em fases, como o PR 2. A fase 1, nesta seção, é o núcleo (Tarefas 37 a 39): as mutações dos afazeres, as regras das telas da busca e dos afazeres e os afazeres pelo `gravar` do app, no molde das Tarefas 11 a 13 do PR 1. Ela não muda tela nem workflow. A fase 2 (as telas, o achado 3, a conferência cruzada, o laudo e o checklist, das Tarefas 40 em diante) entra nesta seção quando fechar o diagnóstico de dois testes de tela da busca no iOS 26 (a rolagem até a pílula com o teclado subindo e a escolha do mês na maior letra), que não tocam o núcleo.
+O PR entra em fases, como o PR 2. A fase 1, nesta seção, é o núcleo (Tarefas 37 a 39): as mutações dos afazeres, as regras das telas da busca e dos afazeres e os afazeres pelo `gravar` do app, no molde das Tarefas 11 a 13 do PR 1. Ela não muda tela nem workflow. A fase 2 (as telas, o achado 3, a conferência cruzada, o laudo e o checklist, das Tarefas 40 em diante) entra nesta seção por tarefa, à medida que cada uma fecha no iOS 26: a busca (Tarefa 40) primeiro, com os consertos da escolha do mês na maior letra e do foco do campo; depois os afazeres, o achado 3, a conferência cruzada e o laudo.
 
 O PR nasce da `origin/main` de 26/10 (`9bbfcfc`, o merge do #85). As fatias foram refeitas sobre ela e conferidas uma a uma: o "ver falhar" de cada tarefa é o dos testes dela sobre o commit anterior, nesta base.
 
@@ -16481,3 +16481,1248 @@ git commit -m "test: afazeres pelo gravar do app" -m "As três mutações dos af
 ```
 
 **Ponto de controle da fase 1 do PR 3:** no Mac, com a Tarefa 39, o build com 0 aviso; o núcleo com 233 testes em 37 suítes; o `CusttaTests` inteiro com 162 testes em 31 suítes; e o `npm run test:unit` com 401. A fase não muda tela nem workflow: nenhuma suíte de tela a rodar no Mac.
+
+### Task 40: Busca e filtro por mês na lista de lançamentos
+
+A lista de lançamentos da obra ganha a busca e o filtro por mês do site, no desenho da parte 2 do mockup (opção A): dois botões redondos de vidro ao lado da pílula "Lançamentos", a lupa e o mês, e a tela não cresce enquanto ninguém busca. A lupa abre o campo "Buscar gasto ou tópico" embaixo da pílula, rola a lista até ela e põe o teclado; o × fecha a busca e limpa o texto, e o "buscar" do teclado só fecha o teclado. A busca é a do núcleo: sem acento e sem diferença de maiúscula, na descrição ou no tópico, com o texto aparado. O mês sai de um `Menu` do sistema, com "Todos os meses" e os meses que têm gasto, e vira um chip com × embaixo da pílula; o mês escolhido fica no chip e no menu mesmo quando fica sem gasto (o achado 1: "Nenhum gasto em março de 2025." e "Ver todos os meses"). Com filtro, a pílula conta "achados/total", o "A vencer" abre sozinho com os achados, cada mês soma só os seus e a "Soma dos achados" dá o total; sem achado, a lista diz por quê, e o botão limpa a busca, o mês ou os dois. Na maior letra, a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira × para fechar.
+
+- **O filtro mora na tela da obra.** A `BuscaDaObra` é `@State` da `ObraView`, e não do modelo: zera ao trocar de obra, como no site, não vai para a nuvem e não depende do estado que chega do Sincronizador.
+- **O menu do mês é o do sistema.** Um `Toggle` por mês (a marca do sistema no escolhido), com a contagem no subtítulo ("6 gastos"): o menu do sistema não tem a coluna à direita do mockup, e um `Picker` com `VStack` ou `.badge` não mostra a contagem. No iOS 26, o subtítulo é desenhado mas não chega ao rótulo do item (sonda do run 40157409790): lá, o teste confere só o título (`rotuloDoItem`).
+- **O que cada botão limpa.** "Limpar a busca", "Limpar o mês" e "Limpar busca e mês" limpam os dois (o nome diz só o que há); "Ver todos os meses" e o × do chip tiram só o mês. Com filtro, o "A vencer" abre sozinho a cada filtro novo, num estado só da busca: fechá-lo na busca não mexe no de sem filtro.
+- **A obra sem gasto** mostra só a pílula, sem o número (o contador do site; o mockup da etapa 2 também não tem o "0"), e sem a lupa e o mês enquanto não houver filtro.
+- **A pílula é um texto só.** A `PilulaDaLista`, a mesma das listas da tela Orçamento, passa a ser um `Text` só, com o número em `numero` e a fala em `falado`: na maior letra ela quebra como texto corrido, como no mockup, em vez do `HStack` de antes, que podia hifenizar o título na AX5. O VoiceOver segue lendo "Por tópico, 14" e, com filtro, "Lançamentos, 12 de 46". A `PilulaDeLancamentos` sai: a obra usa a `PilulaDaLista` com o contador do núcleo.
+- **O "buscar" do teclado fecha o teclado.** O campo quebra linha na maior letra (`axis: .vertical`), e o "buscar" chega como `\n`: sai do texto e tira o foco, como no `CampoDeEntrada`.
+- **A soma dos achados na letra de acessibilidade.** Fora dela, o rótulo e o valor numa linha; sem espaço, o valor desce, numa linha só, e encolhe (`ViewThatFits`). Na letra de acessibilidade, a soma empilha e o valor fica livre para quebrar (na AX5, "R$" numa linha e o número na outra). Com o valor numa linha só (`lineLimit(1)`, encolhendo ou não), escolher o mês parava a thread principal de 45 a 70 s no iOS 26 na maior letra (sondas dos runs 40429944214 e 40435271147); com ele livre, não (runs 40438031467 e 40440188222). É o único lugar em que o dinheiro sai da linha que encolhe, e só na letra de acessibilidade.
+- **A suíte nova roda num job novo.** O `BuscaUITests` roda no `app-etapa3-c`, na mesma forma do `app-etapa3-b` e com teto de 60 min, e o `app` o pula: o `app-etapa3` não cresce mais (58,8 min no run 39813469497), e no `app-etapa3-b` as suítes do PR 3 (~22 min de testes no run 39878786962) o levariam a ~50. A guarda do workflow conta o job novo.
+- **A lupa do site entra no catálogo de ícones** (`node scripts/icones-app-ios.mjs` gera o `lupa.imageset`).
+- **A parte de cima da obra fica fora da pilha preguiçosa.** Do título à soma dos achados, com o campo da busca, as peças ficam num `VStack`, e a `LazyVStack` fica só com o "A vencer" e os meses. No iOS 26, a `LazyVStack` refazia o campo à vista quando o teclado subia: a sonda do foco (run 40508695109) viu o campo sair e voltar, com o foco em `false` no meio, 0,4 s depois de o teclado subir, e numa VM lenta o teclado foi embora durante a digitação (run 40440188222). No estresse da abertura (24 aberturas da busca a partir do topo, de cada lado), a pilha refez o campo à vista uma vez com a obra de antes e nenhuma com o conserto (runs 40513984095 e 40513988088). A tela fica igual, e uma guarda Node fixa a forma (nenhum teste de tela vê isso: no iOS 27, o campo não é refeito).
+- **A busca do teste espera o campo com o texto todo.** Na VM lenta do iOS 26, o `typeText` volta antes de o app ver as últimas letras (run 40432109031: a pílula de "ci" com o "cimen" digitado); o `buscar` espera o campo com o texto inteiro antes de o teste ler a pílula.
+
+**Files:**
+- Create: `app-ios/Custta/Telas/BuscaDaObra.swift`
+- Test (criar): `app-ios/CusttaTests/BuscaDaObraTests.swift`
+- Test (criar): `app-ios/CusttaUITests/BuscaUITests.swift`
+- Modify: `.github/workflows/app-ios.yml`
+- Modify: `app-ios/Custta/Telas/ObraView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
+- Modify: `scripts/icones-app-ios.mjs`
+- Test (alterar): `tests/app-ios.test.cjs`
+- Test (alterar): `tests/workflow.test.cjs`
+- Gerado: `app-ios/Custta/Assets.xcassets/Icones/` (`node scripts/icones-app-ios.mjs`)
+
+**Interfaces:**
+- Consumes: `filtraGastos`, `FiltroGastos`, `contadorLancamentos`, `mesesDoFiltro` e `MesDoFiltro`, `vazioDaBusca` e `VazioDaBusca`, `somaDosAchados` e `SomaDosAchados` (Tarefa 38), `tituloDoMes`, `listaDaObra`, `aparadoJS`, `semAcento` e `moeda` (núcleo); `CartaoDeEstado`, `CartaoDoAVencer`, `ValorEmDinheiro`, `Superficie`, `AlvoDoFoco` e `PilulaDaLista` (app).
+- Produces: `BuscaDaObra` (`aberta`, `texto`, `mes`, `filtro`, `filtrando`, `fechar()` e `limpar()`); `Obra.comOsGastos(_:)`; `CabecalhoDosLancamentos`, `MenuDoMes`, `CampoDaBusca`, `ChipDoMes`, `SomaDosAchadosView` e `VazioDaBuscaView`; `PilulaDaLista(titulo:numero:falado:identificador:)`, com o `init(titulo:quantidade:identificador:)` de antes numa extensão; o job `app-etapa3-c`; identificadores `buscar`, `filtrarPorMes`, `campoDaBusca`, `apagarTextoDaBusca`, `fecharBusca`, `chipDoMes`, `tirarOMes`, `somaDosAchados`, `buscaNadaEncontrado`, `limparFiltro`, `buscaMesSemGasto` e `verTodosOsMeses`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Criar `app-ios/CusttaTests/BuscaDaObraTests.swift`:
+
+```swift
+import Testing
+@testable import Custta
+import CusttaNucleo
+
+/* A busca da lista de lançamentos (etapa 3): a tela decide que está filtrando (o "A vencer" que abre sozinho, a soma, o
+   vazio da busca) pela mesma conta do contador do site, e o × da busca e o botão do vazio limpam o que devem. */
+@MainActor
+struct BuscaDaObraTests {
+    @Test func filtrandoPelaMesmaContaDoContadorDoSite() {
+        let casos: [(texto: String, mes: String)] = [("", ""), ("   ", ""), ("cer", ""), (" cer ", ""), ("Á", ""), ("\u{301}", ""),
+                                                     ("", "2026-03"), ("  ", "2026-03"), ("cer", "2026-03")]
+        for c in casos {
+            let busca = BuscaDaObra()
+            busca.texto = c.texto
+            busca.mes = c.mes
+            let noSite = contadorLancamentos(total: 3, achados: 1, filtro: busca.filtro) == "1/3"
+            #expect(busca.filtrando == noSite, "texto \(c.texto.debugDescription), mês \(c.mes.debugDescription)")
+        }
+    }
+
+    @Test func fecharLimpaOTextoEFicaComOMes() {
+        let busca = BuscaDaObra()
+        busca.aberta = true
+        busca.texto = "cimento"
+        busca.mes = "2026-03"
+        busca.fechar()
+        #expect(!busca.aberta && busca.texto.isEmpty && busca.mes == "2026-03")
+    }
+
+    @Test func limparTiraABuscaEOMesEDeixaOCampoAberto() {
+        let busca = BuscaDaObra()
+        busca.aberta = true
+        busca.texto = "sapatas"
+        busca.mes = "2025-06"
+        busca.limpar()
+        #expect(busca.aberta && busca.texto.isEmpty && busca.mes.isEmpty && !busca.filtrando)
+    }
+
+    /// A lista filtrada agrupa só os achados: cada mês com a soma dos seus e o "A vencer" com os seus.
+    @Test func obraComOsAchadosSomaSoOsAchados() {
+        func gasto(_ id: String, _ data: String, _ valor: Double) -> ValorJSON {
+            .objeto(["id": .texto(id), "valor": .numero(valor), "topico": .texto("outros"), "descricao": .texto(id), "data": .texto(data),
+                     "pagamento": .texto("pix")])
+        }
+        let obra = Obra(arvore: ["id": .texto("o1"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+                                 "gastos": .lista([gasto("a", "2026-09-01", 1_000), gasto("b", "2026-09-02", 2_000), gasto("c", "2026-12-01", 3_000)])])
+        let lista = listaDaObra(obra.comOsGastos([obra.gastos[1], obra.gastos[2]]), hoje: "2026-10-12")
+        #expect(lista.meses.map(\.total) == [2_000])
+        #expect(lista.aVencer?.total == 3_000)
+        #expect(obra.gastos.count == 3, "a obra de verdade não muda")
+    }
+}
+```
+
+Criar `app-ios/CusttaUITests/BuscaUITests.swift`:
+
+```swift
+import XCTest
+
+/* A busca e o filtro por mês da lista de lançamentos (etapa 3, PR 3; mockup da parte 2, seção 3): buscar com e sem acento,
+   pelo tópico e pela descrição, com o texto aparado; o × que fecha e limpa; o mês pelo menu, o chip e o contador; o mês que
+   fica sem gasto e não some (achado 1); "Limpar a busca", "Limpar busca e mês" e "Ver todos os meses"; o filtro que zera ao
+   trocar de obra; a obra sem gasto, só com a pílula; e a lupa que vira × na maior letra. A busca usa a vitrine (os 46
+   lançamentos do mockup; as datas contam de hoje), e o mês, o exemplo (datas fixas: a Casa Alphaville do exemplo tem um
+   gasto em março e outro em junho de 2025). */
+@MainActor
+final class BuscaUITests: XCTestCase {
+    private func abrirObra(_ obra: String = "v1", dados: String = "vitrine", argumentos: [String] = []) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: dados, abrir: "obra:\(obra)", argumentos: argumentos)
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        return app
+    }
+
+    /// A lupa abre o campo já com o teclado; o texto entra nele, e a busca espera o campo com o texto todo.
+    private func buscar(_ app: XCUIApplication, _ texto: String) {
+        let lupa = app.buttons["buscar"]
+        app.rolarAte(lupa)
+        lupa.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "a lupa põe o teclado, sem tocar no campo")
+        let campo = app.textFields["campoDaBusca"]
+        app.digitarComFoco(texto, em: campo)
+        esperarTexto(campo, texto)
+    }
+
+    /// Na VM lenta do iOS 26, o `typeText` volta antes de o app ver as últimas letras (run 40432109031: a pílula de "ci" com o
+    /// "cimen" digitado). Espera até 10 s o campo com o texto dado; a pílula e a lista vêm no mesmo desenho que ele.
+    private func esperarTexto(_ campo: XCUIElement, _ texto: String) {
+        let ate = Date.now.addingTimeInterval(10)
+        while campo.value as? String != texto && Date.now < ate { usleep(200_000) }
+    }
+
+    /// O botão do mês abre o menu do sistema; o mês é tocado pelo título (o subtítulo traz quantos gastos ele tem).
+    private func escolherMes(_ app: XCUIApplication, _ titulo: String) {
+        let mes = app.buttons["filtrarPorMes"]
+        app.rolarAte(mes)
+        mes.tap()
+        let item = itemDoMenu(app, titulo)
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "o menu mostra \(titulo)")
+        item.tap()
+    }
+
+    private func itemDoMenu(_ app: XCUIApplication, _ titulo: String) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", titulo, titulo + ",")).firstMatch
+    }
+
+    /// O rótulo do item do menu para o VoiceOver: no iOS 27, o título e a contagem ("Março de 2025, 0 gastos"). No iOS 26
+    /// (sonda do run 40157409790), o item do `Menu` tem `label` só com o título, `value` e `identifier` vazios e nenhum
+    /// filho com a contagem: o subtítulo é desenhado (o item com contagem tem 60 pt de altura, contra 42 do "Todos os
+    /// meses"), mas não chega à acessibilidade. Lá, o teste confere só o título.
+    private func rotuloDoItem(_ titulo: String, _ contagem: String) -> String {
+        let ios27 = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+        return ProcessInfo.processInfo.isOperatingSystemAtLeast(ios27) ? "\(titulo), \(contagem)" : titulo
+    }
+
+    private func pilula(_ app: XCUIApplication) -> String { app.elemento("lancamentos").label }
+
+    /// "ceramica" acha o tópico Cerâmica (os porcelanatos e o contrapiso) e "Telhas de cerâmica" (descrição): 12 de 46, com a
+    /// soma deles, e o "A vencer" abre sozinho com os 6 que vêm. Com acento, maiúscula e espaço no fim, o mesmo.
+    func testBuscarSemAcentoPeloTopicoEPelaDescricao() {
+        let app = abrirObra()
+        XCTAssertEqual(pilula(app), "Lançamentos, 46")
+        buscar(app, "ceramica")
+        XCTAssertEqual(app.textFields["campoDaBusca"].label, "Buscar gasto ou tópico", "o rótulo do campo para o VoiceOver")
+        XCTAssertLessThan(app.elemento("lancamentos").frame.minY, 200, "a lista rola até a pílula, com o campo embaixo")
+        XCTAssertEqual(pilula(app), "Lançamentos, 12 de 46")
+        XCTAssertEqual(app.elemento("somaDosAchados").label, "Soma dos achados: R$\u{a0}95.120,30")
+        let aVencer = app.elemento("aVencer")
+        XCTAssertEqual(aVencer.value as? String, "aberto", "com filtro, o A vencer abre sozinho")
+        XCTAssertTrue(aVencer.label.hasPrefix("A vencer, R$\u{a0}36.900,00, 6 gastos"), aVencer.label)
+        XCTAssertTrue(app.elemento("gasto-g032").waitForExistence(timeout: 5), "a parcela que vem, de Cerâmica")
+        aVencer.tap()
+        XCTAssertEqual(aVencer.value as? String, "fechado", "fechado à mão na busca")
+
+        app.buttons["apagarTextoDaBusca"].tap()
+        XCTAssertEqual(pilula(app), "Lançamentos, 46", "o × do texto limpa a busca")
+        XCTAssertEqual(aVencer.value as? String, "fechado", "sem filtro, o A vencer como a pessoa o deixou")
+        let campo = app.textFields["campoDaBusca"]
+        app.digitarComFoco("CERÂMICA ", em: campo)
+        esperarTexto(campo, "CERÂMICA ")
+        XCTAssertEqual(pilula(app), "Lançamentos, 12 de 46", "com acento, maiúscula e espaço no fim, o mesmo")
+        XCTAssertEqual(aVencer.value as? String, "aberto", "o filtro novo abre o A vencer de novo")
+        campo.typeText("\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "o \"buscar\" do teclado fecha o teclado")
+        XCTAssertEqual(campo.value as? String, "CERÂMICA ", "e a busca fica")
+        let telhas = app.elemento("gasto-g016")
+        app.rolarAte(telhas)
+        XCTAssertTrue(telhas.exists, "Telhas de cerâmica entra pela descrição")
+        XCTAssertFalse(app.elemento("gasto-g027").exists, "o cimento não entra")
+    }
+
+    /// O × ao lado do campo fecha a busca e limpa o texto: a lista volta inteira, com o "A vencer" fechado como estava.
+    func testOXFechaABuscaELimpaOTexto() {
+        let app = abrirObra()
+        buscar(app, "cimento ")
+        XCTAssertEqual(pilula(app), "Lançamentos, 2 de 46", "o espaço no fim não atrapalha (achado 16)")
+        app.buttons["fecharBusca"].tap()
+        XCTAssertTrue(app.textFields["campoDaBusca"].waitForNonExistence(timeout: 5), "o campo sai")
+        XCTAssertEqual(pilula(app), "Lançamentos, 46")
+        XCTAssertFalse(app.elemento("somaDosAchados").exists)
+        XCTAssertEqual(app.elemento("aVencer").value as? String, "fechado")
+        app.buttons["buscar"].tap()
+        XCTAssertTrue(app.textFields["campoDaBusca"].waitForExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 46", "aberto de novo, o campo vem vazio")
+    }
+
+    /// O menu traz "Todos os meses" e os meses com gasto, do mais novo ao mais antigo, com quantos gastos cada um tem; o mês
+    /// escolhido vira um chip, a pílula conta "achados/total", e o menu fica com ele marcado. O × do chip tira o filtro.
+    func testOMesPeloMenuViraChipEContaOsAchados() {
+        let app = abrirObra("o1", dados: "exemplo")
+        let mes = app.buttons["filtrarPorMes"]
+        app.rolarAte(mes)
+        mes.tap()
+        let todos = itemDoMenu(app, "Todos os meses"), junho = itemDoMenu(app, "Junho de 2025"), marco = itemDoMenu(app, "Março de 2025")
+        XCTAssertTrue(todos.waitForExistence(timeout: 5))
+        XCTAssertEqual(junho.label, rotuloDoItem("Junho de 2025", "1 gasto"))
+        XCTAssertLessThan(junho.frame.minY, marco.frame.minY, "do mais novo ao mais antigo")
+        XCTAssertTrue(todos.isSelected, "sem filtro, a marca em Todos os meses")
+        marco.tap()
+        XCTAssertEqual(app.elemento("chipDoMes").label, "Março de 2025")
+        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 2")
+        XCTAssertEqual(app.elemento("somaDosAchados").label, "Soma dos achados: R$\u{a0}98.000,00")
+        XCTAssertTrue(app.elemento("gasto-g1").exists)
+        XCTAssertFalse(app.elemento("gasto-g2").exists)
+        XCTAssertEqual(mes.value as? String, "Março de 2025")
+        mes.tap()
+        XCTAssertTrue(itemDoMenu(app, "Março de 2025").waitForExistence(timeout: 5))
+        XCTAssertTrue(itemDoMenu(app, "Março de 2025").isSelected, "o menu mantém o mês marcado")
+        itemDoMenu(app, "Março de 2025").tap()
+        app.buttons["tirarOMes"].tap()
+        XCTAssertTrue(app.elemento("chipDoMes").waitForNonExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 2")
+    }
+
+    /// Achado 1: com março escolhido, apagar o último gasto dele não esconde o filtro. O chip continua em março, a lista diz
+    /// "Nenhum gasto em março de 2025." e oferece "Ver todos os meses"; o menu mantém março marcado, com zero.
+    func testMesQueFicaSemGastoNaoSome() {
+        let app = abrirObra("o1", dados: "exemplo")
+        escolherMes(app, "Março de 2025")
+        let linha = app.elemento("gasto-g1")
+        XCTAssertTrue(linha.waitForExistence(timeout: 5))
+        // Acima da cápsula, como nos testes da etapa 2: com a linha do orçamento nos indicadores, a lista começa mais embaixo.
+        app.rolarAte(linha)
+        linha.swipeLeft()
+        app.buttons["apagar-g1"].tap()
+        app.alerts["Apagar este gasto?"].buttons["Apagar"].tap()
+        XCTAssertTrue(app.elemento("buscaMesSemGasto").waitForExistence(timeout: 5))
+        XCTAssertEqual(app.elemento("buscaMesSemGasto").label, "Nenhum gasto em março de 2025.")
+        XCTAssertEqual(app.elemento("chipDoMes").label, "Março de 2025", "o filtro continua à vista")
+        XCTAssertEqual(pilula(app), "Lançamentos, 0 de 1")
+        let mes = app.buttons["filtrarPorMes"]
+        mes.tap()
+        let marco = itemDoMenu(app, "Março de 2025")
+        XCTAssertTrue(marco.waitForExistence(timeout: 5), "o mês sem gasto continua no menu")
+        XCTAssertEqual(marco.label, rotuloDoItem("Março de 2025", "0 gastos"))
+        XCTAssertTrue(marco.isSelected)
+        marco.tap()
+        let verTodos = app.buttons["verTodosOsMeses"]
+        app.rolarAte(verTodos)
+        verTodos.tap()
+        XCTAssertTrue(app.elemento("chipDoMes").waitForNonExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 1")
+        XCTAssertTrue(app.elemento("gasto-g2").exists)
+    }
+
+    /// Nada achado: o texto do site, onde a busca olha e "Limpar a busca", que limpa o texto (o campo fica aberto).
+    func testNadaEncontradoLimpaABusca() {
+        let app = abrirObra()
+        buscar(app, "azulejo")
+        XCTAssertTrue(app.elemento("buscaNadaEncontrado").waitForExistence(timeout: 5))
+        XCTAssertEqual(app.elemento("buscaNadaEncontrado").label, "Nada encontrado com esse filtro.")
+        XCTAssertTrue(app.staticTexts["A busca olha a descrição e o tópico, com ou sem acento."].exists)
+        XCTAssertEqual(pilula(app), "Lançamentos, 0 de 46")
+        let limpar = app.buttons["limparFiltro"]
+        XCTAssertEqual(limpar.label, "Limpar a busca")
+        limpar.tap()
+        XCTAssertEqual(pilula(app), "Lançamentos, 46")
+        XCTAssertTrue(app.textFields["campoDaBusca"].exists, "o campo continua aberto")
+        XCTAssertTrue(app.elemento("aVencer").exists)
+    }
+
+    /// Busca e mês juntos valem em E; o × do chip tira só o mês; sem achado, "Limpar busca e mês" tira os dois.
+    func testBuscaEMesJuntosLimpaOsDois() {
+        let app = abrirObra("o1", dados: "exemplo")
+        escolherMes(app, "Junho de 2025")
+        buscar(app, "laje")
+        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 2", "a laje é de junho")
+        app.buttons["tirarOMes"].tap()
+        XCTAssertTrue(app.elemento("chipDoMes").waitForNonExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 1 de 2", "sem o mês, a busca fica")
+        XCTAssertEqual(app.textFields["campoDaBusca"].value as? String, "laje")
+        escolherMes(app, "Março de 2025")
+        XCTAssertEqual(pilula(app), "Lançamentos, 0 de 2", "a laje não é de março")
+        let limpar = app.buttons["limparFiltro"]
+        XCTAssertTrue(limpar.waitForExistence(timeout: 5))
+        XCTAssertEqual(limpar.label, "Limpar busca e mês")
+        app.rolarAte(limpar)
+        limpar.tap()
+        XCTAssertTrue(app.elemento("chipDoMes").waitForNonExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 2")
+    }
+
+    /// Obra sem gasto: a pílula sem número (o contador do site) e sem a lupa e o mês, que não teriam o que filtrar.
+    func testObraSemGastoSoAPilula() {
+        let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
+        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertEqual(pilula(app), "Lançamentos")
+        XCTAssertFalse(app.buttons["buscar"].exists)
+        XCTAssertFalse(app.buttons["filtrarPorMes"].exists)
+    }
+
+    /// A obra que fica sem gasto segue com a lupa e o mês enquanto há filtro ou busca: com o mês escolhido, e depois, sem o
+    /// mês, com a busca aberta, em que a lupa da maior letra é o × que fecha. Fechada a busca, só a pílula.
+    func testObraQueFicaSemGastoComMesOuBuscaAbertaFicaComOsBotoes() {
+        let app = abrirObra("o4", dados: "exemplo",
+                            argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let lupa = app.buttons["buscar"], mes = app.buttons["filtrarPorMes"]
+        app.rolarAte(mes, tentativas: 20)                 // na maior letra, as 12 roladas do padrão chegam sem folga
+        escolherMes(app, "Junho de 2023")
+        // O chip e a soma dos achados, que o mês põe embaixo dos botões, levam o gasto para baixo da dobra, onde a
+        // LazyVStack pode ainda não o ter criado (no iOS 26 da CI, não tinha): espera o chip e rola até a linha.
+        XCTAssertTrue(app.elemento("chipDoMes").waitForExistence(timeout: 5))
+        let linha = app.elemento("gasto-j1")              // o único gasto da obra
+        app.rolarAte(linha)
+        XCTAssertTrue(linha.exists, "o gasto, depois de rolar")
+        linha.swipeLeft()
+        app.buttons["apagar-j1"].tap()
+        app.alerts["Apagar este gasto?"].buttons["Apagar"].tap()
+        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 5))
+        XCTAssertTrue(lupa.exists, "sem gasto, o mês escolhido segura a lupa")
+        XCTAssertTrue(mes.exists, "e o mês")
+        lupa.tap()
+        // O "buscar" do teclado o fecha, e a busca fica aberta. Com o menu tocado enquanto o teclado subia, o app deixou de
+        // ficar ocioso, e cada passo seguinte esperou 60 s.
+        app.digitarComFoco("\n", em: app.textFields["campoDaBusca"])
+        escolherMes(app, "Todos os meses")
+        XCTAssertTrue(app.elemento("chipDoMes").waitForNonExistence(timeout: 5))
+        XCTAssertTrue(lupa.exists, "sem gasto e sem mês, a busca aberta segura a lupa")
+        XCTAssertTrue(mes.exists, "e o mês")
+        XCTAssertEqual(lupa.label, "Fechar a busca", "na maior letra, a lupa é o × que fecha a busca")
+        lupa.tap()
+        XCTAssertTrue(app.textFields["campoDaBusca"].waitForNonExistence(timeout: 5))
+        XCTAssertFalse(lupa.exists, "sem gasto, sem mês e sem busca, só a pílula")
+    }
+
+    /// O filtro vive só na tela: sai da obra e entra em outra (ou na mesma) sem ele.
+    func testFiltroZeraAoTrocarDeObra() {
+        let app = abrirApp(conta: "senha", dados: "vitrine")
+        let v1 = app.elemento("obra-v1"), v2 = app.elemento("obra-v2")
+        XCTAssertTrue(v1.waitForExistence(timeout: 10))
+        v1.tap()
+        buscar(app, "cimento")
+        XCTAssertEqual(pilula(app), "Lançamentos, 2 de 46")
+        app.navigationBars.buttons["BackButton"].tap()
+        XCTAssertTrue(v2.waitForExistence(timeout: 5))
+        v2.tap()
+        XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 5")
+        XCTAssertFalse(app.textFields["campoDaBusca"].exists)
+        app.navigationBars.buttons["BackButton"].tap()
+        XCTAssertTrue(v1.waitForExistence(timeout: 5))
+        v1.tap()
+        XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
+        XCTAssertEqual(pilula(app), "Lançamentos, 46", "de volta à mesma obra, sem o filtro")
+        XCTAssertFalse(app.textFields["campoDaBusca"].exists)
+    }
+
+    /// Na maior letra a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira ×.
+    func testNaMaiorLetraALupaViraXEOCampoTemALarguraToda() {
+        let app = abrirObra(argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let lupa = app.buttons["buscar"], pilula = app.elemento("lancamentos")
+        app.rolarAte(lupa, tentativas: 20)                // na maior letra, as 12 roladas do padrão não chegam à lupa
+        XCTAssertLessThan(lupa.frame.maxY, app.buttons["aba-obras"].frame.minY, "a lupa acima da cápsula, antes do toque")
+        XCTAssertGreaterThan(lupa.frame.minY, pilula.frame.maxY, "os botões descem para a linha de baixo")
+        XCTAssertEqual(lupa.frame.width, 64, accuracy: 0.5)
+        lupa.tap()
+        let campo = app.textFields["campoDaBusca"]
+        XCTAssertTrue(campo.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["fecharBusca"].exists, "o × ao lado do campo sai")
+        XCTAssertEqual(lupa.label, "Fechar a busca")
+        XCTAssertGreaterThan(campo.frame.width, app.frame.width - 110, "o campo com a largura toda")
+        lupa.tap()
+        XCTAssertTrue(campo.waitForNonExistence(timeout: 5), "a lupa, que virou ×, fecha a busca")
+        XCTAssertEqual(lupa.label, "Buscar gasto ou tópico")
+    }
+}
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -856,6 +856,19 @@ test('lista da folha de origem: as peças são filhas diretas da LazyVStack, com
+                'os cantos de cima do grupo no gasto vêm da peça');
+ });
+ 
++test('obra: o campo da busca fica fora da LazyVStack, que fica só com a lista', () => {
++  // No iOS 26, a LazyVStack refazia o campo da busca à vista quando o teclado subia, e o foco caía (sonda do foco, run
++  // 40508695109; o teclado foi embora no run 40440188222). As peças de cima, do título à soma dos achados, ficam num VStack, e
++  // a pilha preguiçosa só com o A vencer e os meses. Nenhum teste de tela vê isso: no iOS 27, o campo não é refeito.
++  const t = ler('app-ios/Custta/Telas/ObraView.swift');
++  const campo = t.indexOf('CampoDaBusca(');
++  assert.ok(campo > 0, 'o campo da busca na obra');
++  const pilhas = [...t.matchAll(/LazyVStack\(/g)].map(m => m.index);
++  assert.equal(pilhas.length, 1, 'uma LazyVStack só na obra, a da lista');
++  assert.ok(campo < pilhas[0], 'o campo da busca antes da LazyVStack, fora dela');
++  assert.ok(t.indexOf('ForEach(lista.meses)') > pilhas[0], 'os meses dentro da LazyVStack');
++});
++
+ test('folhas de origem: cada folha monta a lista comum, sem lista própria', () => {
+   // A lista da folha de origem (tocar, a volta da edição, o apagar, o foco e o anúncio) mora num lugar só, a ListaDaOrigem,
+   // que o detalhe do tópico também monta: duas cópias divergiriam na primeira correção. A folha dá as peças, a linha de
+```
+
+Em `tests/workflow.test.cjs`:
+
+```diff
+--- a/tests/workflow.test.cjs
++++ b/tests/workflow.test.cjs
+@@ -228,10 +228,10 @@ assert.ok(!/^on:\n(?:.*\n)*?\s{2}push:/m.test(appIos), 'o app nativo não roda e
+ assert.match(appIos, /workflow_dispatch:/, 'o app nativo precisa do botão manual');
+ assert.match(appIos, /resolver_de_novo:/, 'sem o botão de resolver os pacotes Swift do app nativo de novo');
+ assert.match(appIosSemComentario, /- name: Resolver os pacotes Swift de novo\n\s+if: inputs\.resolver_de_novo\n/, 'o passo de resolver de novo só roda no botão (if: inputs.resolver_de_novo)');
+-assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 8, 'build, testes, os testes da etapa 3 (app-etapa3 e app-etapa3-b), os três laudos e auditoria sem assinatura');
++assert.equal((appIosSemComentario.match(/CODE_SIGNING_ALLOWED=NO/g) || []).length, 9, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria sem assinatura');
+ assert.match(appIosSemComentario, /-project app-ios\/Custta\.xcodeproj[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/, 'o app compila em Release sem assinatura');
+ assert.match(appIosSemComentario, /xcodebuild test[\s\S]*-destination "\$DESTINO"/, 'os testes rodam no simulador escolhido pelo script');
+-assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 8, 'build, testes, os testes da etapa 3 (app-etapa3 e app-etapa3-b), os três laudos e auditoria com os pacotes travados');
++assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile/g) || []).length, 9, 'build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria com os pacotes travados');
+ // O laudo de leitura e as auditorias moram nos jobs laudo, laudo-parte3, laudo-etapa3 e auditoria, em paralelo: o app pula
+ // os dois. O laudo roda a leitura; o laudo-parte3 (as leituras da parte 3 da etapa 2), o laudo-etapa3 (as da etapa 3) e o
+ // auditoria rodam as leituras que o laudo pula, e o auditoria também as auditorias, menos as da parte 3 e as da etapa 3,
+@@ -240,6 +240,7 @@ assert.equal((appIosSemComentario.match(/-onlyUsePackageVersionsFromResolvedFile
+ const jobAppIos = nome => (appIosSemComentario.match(new RegExp(`\\n  ${nome}:\\n(?:(?!\\n  \\S)[\\s\\S])*`)) || [''])[0];
+ const jobApp = jobAppIos('app'), jobLaudo = jobAppIos('laudo'), jobParte3 = jobAppIos('laudo-parte3'), jobAuditoria = jobAppIos('auditoria');
+ const jobEtapa3 = jobAppIos('laudo-etapa3'), jobAppEtapa3 = jobAppIos('app-etapa3'), jobAppEtapa3b = jobAppIos('app-etapa3-b');
++const jobAppEtapa3c = jobAppIos('app-etapa3-c');
+ assert.match(jobApp, /-skip-testing:CusttaUITests\/LeituraNoVidroUITests[\s\S]*-skip-testing:CusttaUITests\/AuditoriaUITests/,
+   'o job app pula o laudo e as auditorias');
+ assert.match(jobLaudo, /-only-testing:CusttaUITests\/LeituraNoVidroUITests \\\n/, 'o job laudo roda o laudo de leitura');
+@@ -273,34 +274,36 @@ for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['la
+   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${nome}\\.xcresult"[\\s\\S]*if: failure\\(\\)[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${nome}\\.xcresult`),
+     `o job ${nome} guarda o próprio resultado quando reprova`);
+ }
+-// Os testes de tela da etapa 3 rodam no app-etapa3 e no app-etapa3-b (o app-etapa3 não cresce mais: 55 a 58,8 min), em
+-// paralelo com o app, que passou do teto de 75 min com eles. Cada suíte de tela que o app pula (inteira) roda noutro job,
+-// uma vez só: as leituras e as auditorias nos laudos e no auditoria (teste por teste, acima), e as outras, inteiras, no
+-// app-etapa3 ou no app-etapa3-b, que só rodam o que o app pula. Pega a suíte que sai do app e não entra em nenhum job, e a
+-// que entra num dos dois sem sair do app (roda duas vezes).
++// Os testes de tela da etapa 3 rodam no app-etapa3, no app-etapa3-b e no app-etapa3-c (o app-etapa3 não cresce mais: 55 a
++// 58,8 min; o app-etapa3-b, com as suítes do PR 3, chegaria a ~50), em paralelo com o app, que passou do teto de 75 min com
++// eles. Cada suíte de tela que o app pula (inteira) roda noutro job, uma vez só: as leituras e as auditorias nos laudos e no
++// auditoria (teste por teste, acima), e as outras, inteiras, no app-etapa3, no app-etapa3-b ou no app-etapa3-c, que só rodam
++// o que o app pula. Pega a suíte que sai do app e não entra em nenhum job, a que entra num dos três sem sair do app (roda
++// duas vezes) e a que entra em dois deles.
+ const suitesInteiras = (job, opcao) => [...job.matchAll(new RegExp(`-${opcao}-testing:CusttaUITests/(\\w+)(?![\\w/])`, 'g'))].map(m => m[1]);
+ const suitesQueRodam = job => [...job.matchAll(/-only-testing:CusttaUITests\/(\w+)/g)].map(m => m[1]);
+ assert.ok(!/-skip-testing:CusttaUITests\/\w+\//.test(jobApp), 'o app pula suítes de tela inteiras');
+-for(const [nome, job] of [['app-etapa3', jobAppEtapa3], ['app-etapa3-b', jobAppEtapa3b]]){
++for(const [nome, job] of [['app-etapa3', jobAppEtapa3], ['app-etapa3-b', jobAppEtapa3b], ['app-etapa3-c', jobAppEtapa3c]]){
+   assert.ok(!/-(?:only|skip)-testing:CusttaUITests\/\w+\//.test(job), `o ${nome} roda suítes de tela inteiras`);
+   assert.ok(suitesInteiras(job, 'only').length > 0, `o ${nome} roda só as suítes da etapa 3 (sem -only-testing, rodaria todas)`);
+   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
+ }
+ const puladasNoApp = suitesInteiras(jobApp, 'skip');
+ const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobAuditoria].flatMap(suitesQueRodam))];
+-assert.deepStrictEqual([...nosLaudos, ...suitesInteiras(jobAppEtapa3, 'only'), ...suitesInteiras(jobAppEtapa3b, 'only')].sort(), [...puladasNoApp].sort(),
+-  'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3 ou no app-etapa3-b, uma vez só, e os dois rodam só o que o app pula');
++assert.deepStrictEqual([...nosLaudos, ...[jobAppEtapa3, jobAppEtapa3b, jobAppEtapa3c].flatMap(job => suitesInteiras(job, 'only'))].sort(), [...puladasNoApp].sort(),
++  'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3, no app-etapa3-b ou no app-etapa3-c, uma vez só, e os três rodam só o que o app pula');
+ const telas = readdirSync(join(__dirname, '..', 'app-ios', 'CusttaUITests')).filter(f => f.endsWith('.swift'))
+   .map(f => readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', f), 'utf8')).join('\n');
+ for(const suite of puladasNoApp)
+   assert.match(telas, new RegExp(`\\bclass ${suite}\\b`), `o app-ios.yml divide ${suite}, que não existe no CusttaUITests`);
+ // O resultado sobe também quando o job é cancelado: o run 39710458060 foi cortado no teto e ficou sem xcresult.
+-for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', jobAppEtapa3, 'testes-etapa3'], ['app-etapa3-b', jobAppEtapa3b, 'testes-etapa3-b']])
++for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', jobAppEtapa3, 'testes-etapa3'], ['app-etapa3-b', jobAppEtapa3b, 'testes-etapa3-b'],
++  ['app-etapa3-c', jobAppEtapa3c, 'testes-etapa3-c']])
+   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${resultado}\\.xcresult"[\\s\\S]*\\n\\s+if: failure\\(\\) \\|\\| cancelled\\(\\)\\n[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${resultado}\\.xcresult`),
+     `o job ${nome} guarda o próprio resultado quando reprova e quando é cortado no teto`);
+-assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
+-assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
+-for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
++assert.ok(!/\n    (?:needs|if):/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria rodam em todo PR e em paralelo: nenhum tem if nem espera outro job');
++assert.ok(!/continue-on-error/.test(jobApp + jobAppEtapa3 + jobAppEtapa3b + jobAppEtapa3c + jobLaudo + jobParte3 + jobEtapa3 + jobAuditoria), 'o app, o app-etapa3, o app-etapa3-b, o app-etapa3-c, os laudos e o auditoria são portão: nenhum passa com falha (continue-on-error)');
++for(const job of ['nucleo', 'app', 'app-etapa3', 'app-etapa3-b', 'app-etapa3-c', 'laudo', 'laudo-parte3', 'laudo-etapa3', 'auditoria'])
+   assert.match(jobAppIos(job), /\n    timeout-minutes: \d+\n/, `o job ${job} do app nativo precisa de timeout-minutes (sem ele, um job travado só cai em 6 h)`);
+ // O resultado de cada job sobe com um nome só dele: no mesmo run o upload-artifact não aceita o mesmo nome duas vezes, e dois
+ // jobs reprovados juntos perderiam um dos resultados.
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/workflow.test.cjs tests/app-ios.test.cjs 2>&1 | grep -E "^✖|^ℹ (pass|fail)" | sort -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '\.swift:[0-9]+:[0-9]+: error:' | sed 's/.*error: //' | sort | uniq -c | sort -rn | head -6
+```
+Expected: reprovam `✖ obra: o campo da busca fica fora da LazyVStack, que fica só com a lista` (`o campo da busca na obra`: ele ainda não existe) e `✖ tests/workflow.test.cjs` (a guarda do workflow espera 9 jobs sem assinatura, "build, testes, os testes da etapa 3 (app-etapa3, app-etapa3-b e app-etapa3-c), os três laudos e auditoria", e acha 8); `ℹ pass 62`, `ℹ fail 2`. O `CusttaTests` não compila: `cannot find 'BuscaDaObra' in scope` (3) e `value of type 'Obra' has no member 'comOsGastos'` (1); o resto é cascata da inferência (`cannot infer key path type from context`). Só com os testes de tela no lugar (sem a `BuscaDaObraTests`), o `BuscaUITests` reprova 10 de 10: `Failed to tap "buscar" Button: No matches found` em 4 e `Failed to get matching snapshot` com o mesmo `"buscar"` na da maior letra; `Failed to tap "filtrarPorMes" Button` em 4; e `("Lançamentos, 0") is not equal to ("Lançamentos")` no `testObraSemGastoSoAPilula`.
+
+- [ ] **Step 3: Implementar**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -9,6 +9,8 @@ name: app-ios
+ #   teto de 75 min);
+ # - app-etapa3-b: os testes de tela da etapa 3 que não couberam no app-etapa3 (no PR 2, a suíte do detalhe do tópico), no
+ #   mesmo molde e também em paralelo com o app;
++# - app-etapa3-c: os testes de tela do PR 3 da etapa 3, que não couberam no app-etapa3-b, no mesmo molde e também em
++#   paralelo com o app;
+ # - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
+ #   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
+ #   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da
+@@ -72,9 +74,9 @@ jobs:
+   app:
+     runs-on: macos-26
+     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
+-    # (job app-etapa3): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa lenta, 67 min, com 48,9 de testes
+-    # de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No fim do PR 2 da etapa 3, 60,2 min,
+-    # com 46,2 de testes de tela (run 40125911713).
++    # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
++    # lenta, 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No
++    # fim do PR 2 da etapa 3, 60,2 min, com 46,2 de testes de tela (run 40125911713).
+     timeout-minutes: 90
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+@@ -121,7 +123,7 @@ jobs:
+ 
+       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
+       # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
+-      # testes de tela da etapa 3, no app-etapa3 e no app-etapa3-b.
++      # testes de tela da etapa 3, no app-etapa3, no app-etapa3-b e no app-etapa3-c.
+       - name: Testes de unidade e de tela no simulador
+         run: |
+           set -o pipefail
+@@ -141,6 +143,7 @@ jobs:
+             -skip-testing:CusttaUITests/OrcamentoUITests \
+             -skip-testing:CusttaUITests/FolhasDeOrigemUITests \
+             -skip-testing:CusttaUITests/DetalheDoTopicoUITests \
++            -skip-testing:CusttaUITests/BuscaUITests \
+             CODE_SIGNING_ALLOWED=NO
+ 
+       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
+@@ -160,7 +163,8 @@ jobs:
+     # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
+     # lenta (≈ 51 no run 39799242127). O app, com as mesmas suítes, levou 42 min num run e 67 no outro: cada job pega a
+     # sua VM. O teto vai pela mais lenta: 90, como o do app. Como no laudo-etapa3, cada PR da etapa anota aqui o tempo do
+-    # job; este não cresce mais: a suíte do detalhe do tópico (PR 2) e as de tela do PR 3 vão para o app-etapa3-b.
++    # job; este não cresce mais: a suíte do detalhe do tópico (PR 2) vai para o app-etapa3-b, e as de tela do PR 3, para o
++    # app-etapa3-c.
+     # No fim do PR 2, FolhasDeOrigem 21,3 + Orçamento 18,7 min e 48,3 com o preparo, numa VM lenta (run 40125911713, com
+     # um arrasto perdido do iOS 26); 36,8 no run 40108043199.
+     timeout-minutes: 90
+@@ -205,7 +209,8 @@ jobs:
+   app-etapa3-b:
+     runs-on: macos-26
+     # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
+-    # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests; no PR 3, as suítes de tela dele.
++    # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests. As suítes de tela do PR 3
++    # (~22 min de testes no run 39878786962) o levariam a ~50 min e vão para o app-etapa3-c.
+     # O mesmo preparo do app-etapa3, em paralelo com ele. No fim do PR 2, 21,8 min no run 40125911713: o detalhe, com 16
+     # testes, em 13,4, e o resto é o preparo e o 1º boot (um teste caiu por toque perdido do iOS 26, com os 16 até o fim);
+     # 28 min no 40108043199, com 15. Teto de 60, mais que o dobro numa VM lenta; como no app-etapa3, cada PR da etapa anota
+@@ -247,6 +252,48 @@ jobs:
+           path: ${{ runner.temp }}/testes-etapa3-b.xcresult
+           retention-days: 7
+ 
++  app-etapa3-c:
++    runs-on: macos-26
++    # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
++    # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests. O mesmo preparo do app-etapa3, em paralelo com ele.
++    # Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
++    timeout-minutes: 60
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
++        with:
++          node-version: 22
++
++      - name: Versão do Xcode
++        run: xcodebuild -version
++
++      # Os mesmos serviços falsos do job app, que pula estas suítes.
++      - name: Testes de tela da etapa 3 no simulador (parte c)
++        run: |
++          set -o pipefail
++          DESTINO="$(node scripts/simulador-ios.mjs)"
++          echo "Simulador: $DESTINO"
++          xcodebuild test \
++            -project app-ios/Custta.xcodeproj \
++            -scheme Custta \
++            -destination "$DESTINO" \
++            -derivedDataPath app-ios/build \
++            -skipMacroValidation \
++            -skipPackagePluginValidation \
++            -onlyUsePackageVersionsFromResolvedFile \
++            -resultBundlePath "$RUNNER_TEMP/testes-etapa3-c.xcresult" \
++            -only-testing:CusttaUITests/BuscaUITests \
++            CODE_SIGNING_ALLOWED=NO
++
++      # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
++      - name: Resultado dos testes da etapa 3 (parte c) quando reprovam ou o job é cortado
++        if: failure() || cancelled()
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
++        with:
++          name: testes-etapa3-c-app-ios
++          path: ${{ runner.temp }}/testes-etapa3-c.xcresult
++          retention-days: 7
++
+   laudo:
+     runs-on: macos-26
+     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
+```
+
+Criar `app-ios/Custta/Telas/BuscaDaObra.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* A busca e o filtro por mês da lista de lançamentos (mockup aprovado da etapa 3, parte 2, seção 3, opção A): dois botões
+   redondos de vidro ao lado da pílula "Lançamentos", a lupa e o mês. A lupa abre o campo "Buscar gasto ou tópico" e o
+   teclado; o × fecha a busca e limpa o texto. O mês sai de um Menu do sistema, com "Todos os meses" e os meses que têm
+   gasto, por extenso, com quantos gastos cada um tem, e vira um chip com × embaixo da pílula: o filtro de mês nunca fica
+   escondido (o mês escolhido continua no chip e no menu mesmo sem gasto, o conserto do achado 1). Com filtro, a pílula conta
+   "achados/total", "Soma dos achados" dá o total, e a lista vazia diz por quê, com o botão que limpa. Na maior letra, a
+   pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira × para fechar. */
+
+/// O filtro da lista de lançamentos. Mora na tela da obra, e não no modelo: zera ao trocar de obra (site), não vai para a
+/// nuvem, e o que está sendo digitado não depende do estado que chega do Sincronizador (achado 3).
+@MainActor @Observable
+final class BuscaDaObra {
+    /// O campo à vista (a lupa tocada).
+    var aberta = false
+    var texto = ""
+    /// AAAA-MM; vazio é "Todos os meses".
+    var mes = ""
+
+    var filtro: FiltroGastos { FiltroGastos(texto: texto, mes: mes) }
+
+    /// Busca ou mês valendo, pela mesma conta do `contadorLancamentos`: o texto aparado e sem acento (espaço sozinho não
+    /// filtra) ou um mês escolhido.
+    var filtrando: Bool { !aparadoJS(semAcento(texto)).isEmpty || !mes.isEmpty }
+
+    /// O × do campo: fecha a busca e limpa o texto; o mês fica.
+    func fechar() {
+        aberta = false
+        texto = ""
+    }
+
+    /// O botão do "Nada encontrado com esse filtro." ("Limpar a busca", "Limpar o mês" ou "Limpar busca e mês"): limpa os
+    /// dois, o que vale para os três (o botão só nomeia a busca quando não há mês, e só o mês quando a busca está vazia).
+    func limpar() {
+        texto = ""
+        mes = ""
+    }
+}
+
+extension Obra {
+    /// A mesma obra com só os gastos dados: a lista filtrada agrupa e soma só os achados (cada mês com a soma dos seus, o
+    /// "A vencer" com os seus).
+    func comOsGastos(_ gastos: [Gasto]) -> Obra {
+        var o = self
+        o.gastos = gastos
+        return o
+    }
+}
+
+/// A pílula "Lançamentos" e, ao lado, a lupa e o mês (na maior letra, os botões descem para a linha de baixo, maiores).
+/// Sem gasto e sem filtro, só a pílula: não há o que buscar.
+struct CabecalhoDosLancamentos: View {
+    let contador: String
+    let busca: BuscaDaObra
+    let meses: [MesDoFiltro]
+    let comBotoes: Bool
+    let foco: AccessibilityFocusState<AlvoDoFoco?>.Binding
+    let abrir: () -> Void
+    let fechar: () -> Void
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let falado = contador.isEmpty ? "Lançamentos" : "Lançamentos, \(contador.replacingOccurrences(of: "/", with: " de "))"
+        let pilula = PilulaDaLista(titulo: "Lançamentos", numero: contador, falado: falado, identificador: "lancamentos")
+            .accessibilityFocused(foco, equals: .lancamentos)
+        if !comBotoes {
+            pilula
+        } else if tamanho.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) { pilula; botoes }
+        } else {
+            HStack(spacing: 10) { pilula; Spacer(minLength: 0); botoes }
+        }
+    }
+
+    /// A lupa abre a busca (ou devolve o foco ao campo já aberto); na maior letra, com o campo aberto, ela vira o × que
+    /// fecha, e o × ao lado do campo sai (o campo fica com a largura toda).
+    private var botoes: some View {
+        let fecha = tamanho.isAccessibilitySize && busca.aberta
+        return HStack(spacing: 10) {
+            Button { fecha ? fechar() : abrir() } label: {
+                CirculoDaLista(icone: fecha ? .sistema("xmark") : .catalogo("Icones/lupa"), aceso: busca.aberta)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(fecha ? "Fechar a busca" : "Buscar gasto ou tópico")
+            .accessibilityIdentifier("buscar")
+            MenuDoMes(busca: busca, meses: meses)
+        }
+    }
+}
+
+/// O ícone de um botão redondo: do catálogo do site (a lupa, o calendário) ou do sistema (o ×).
+enum IconeDoCirculo {
+    case catalogo(String)
+    case sistema(String)
+}
+
+/// O botão redondo ao lado da pílula: vidro do conteúdo, 44 pt (64 na maior letra), ícone de 21 (32); aceso, sólido na
+/// marca, com o ícone na cor de sobre a marca (a lupa com a busca aberta, o mês com um mês escolhido).
+struct CirculoDaLista: View {
+    let icone: IconeDoCirculo
+    let aceso: Bool
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        let lado: CGFloat = grande ? 64 : 44
+        let desenho = Group {
+            switch icone {
+            case .catalogo(let nome):
+                Image(decorative: nome).resizable().frame(width: grande ? 32 : 21, height: grande ? 32 : 21)
+            case .sistema(let nome):
+                Image(systemName: nome).font(.system(size: grande ? 26 : 17, weight: .semibold)).accessibilityHidden(true)
+            }
+        }
+        .foregroundStyle(paleta.cor(aceso ? .sobreMarca : .texto))
+        .frame(width: lado, height: lado)
+        Group {
+            if aceso { desenho.background(paleta.cor(.marca), in: .circle) } else { desenho.superficie(.conteudo, em: .circle) }
+        }
+        .contentShape(.circle)
+    }
+}
+
+/// O mês, num Menu do sistema preso ao botão: "Todos os meses" e os meses com gasto, do mais novo ao mais antigo, com os
+/// futuros, por extenso como nos cartões da lista, e quantos gastos cada um tem. A marca fica no escolhido, que continua no
+/// menu mesmo sem gasto. Cada mês é um item que marca (a marca do sistema) com o subtítulo: o menu do sistema não tem a
+/// coluna à direita do mockup para a contagem, e o VoiceOver lê "Outubro de 2026, 6 gastos".
+struct MenuDoMes: View {
+    let busca: BuscaDaObra
+    let meses: [MesDoFiltro]
+
+    var body: some View {
+        Menu {
+            item("", titulo: "Todos os meses", subtitulo: nil)
+            Section {
+                ForEach(meses, id: \.mes) { m in
+                    item(m.mes, titulo: tituloDoMes(m.mes), subtitulo: m.qtd == 1 ? "1 gasto" : "\(m.qtd) gastos")
+                }
+            }
+        } label: {
+            CirculoDaLista(icone: .catalogo("Icones/calendario"), aceso: !busca.mes.isEmpty)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Filtrar por mês")
+        .accessibilityValue(busca.mes.isEmpty ? "Todos os meses" : tituloDoMes(busca.mes))
+        .accessibilityIdentifier("filtrarPorMes")
+    }
+
+    /// Tocar no escolhido não o tira: escolhe de novo o mesmo (tirar é o × do chip ou "Todos os meses").
+    private func item(_ mes: String, titulo: String, subtitulo: String?) -> some View {
+        Toggle(isOn: Binding(get: { busca.mes == mes }, set: { _ in busca.mes = mes })) {
+            Text(titulo)
+            if let subtitulo { Text(subtitulo) }
+        }
+    }
+}
+
+/// O campo da busca, embaixo da pílula: vidro do conteúdo em cápsula, a lupa, o texto e o × que apaga o texto; ao lado, o
+/// × que fecha a busca. Na maior letra o texto quebra linha, a lupa do campo sai e o × de fechar também (a lupa de cima
+/// vira ×). O exemplo é desenhado num Text, que quebra, e o prompt fica no campo, transparente, para o VoiceOver.
+struct CampoDaBusca: View {
+    @Binding var texto: String
+    var foco: FocusState<Bool>.Binding
+    let fechar: () -> Void
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                if !grande {
+                    Image(decorative: "Icones/lupa").resizable().frame(width: 18, height: 18)
+                        .foregroundStyle(paleta.cor(vidro.secundario))
+                }
+                ZStack(alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline)) {
+                    if texto.isEmpty {
+                        Text("Buscar gasto ou tópico")
+                            .foregroundStyle(paleta.cor(vidro.secundario))
+                            .accessibilityHidden(true)
+                            .onTapGesture { foco.wrappedValue = true }
+                    }
+                    TextField("Buscar gasto ou tópico", text: $texto, prompt: Text("Buscar gasto ou tópico").foregroundStyle(.clear),
+                              axis: .vertical)
+                        .foregroundStyle(paleta.cor(.texto))
+                        .textInputAutocapitalization(.never)
+                        .submitLabel(.search)
+                        .focused(foco)
+                        // Com prompt, o título do TextField não vira o rótulo do VoiceOver (o CampoDeEntrada também o põe).
+                        .accessibilityLabel("Buscar gasto ou tópico")
+                        .accessibilityIdentifier("campoDaBusca")
+                        // No campo que quebra linha, o "buscar" do teclado chega como "\n": sai do texto e fecha o teclado.
+                        .onChange(of: texto) { _, novo in
+                            guard novo.contains("\n") else { return }
+                            texto = novo.replacingOccurrences(of: "\n", with: "")
+                            foco.wrappedValue = false
+                        }
+                }
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if !texto.isEmpty {
+                    Button { texto = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: grande ? 30 : 18))
+                            .foregroundStyle(paleta.cor(vidro.secundario))
+                            .frame(width: grande ? 52 : 36, height: grande ? 52 : 44)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Apagar o texto")
+                    .accessibilityIdentifier("apagarTextoDaBusca")
+                }
+            }
+            .padding(EdgeInsets(top: grande ? 8 : 0, leading: grande ? 18 : 14, bottom: grande ? 8 : 0, trailing: grande ? 6 : 4))
+            .frame(minHeight: grande ? 64 : 44)
+            .superficie(.conteudo, em: .rect(cornerRadius: grande ? 32 : 22, style: .continuous))
+            if !grande {
+                Button(action: fechar) { CirculoDaLista(icone: .sistema("xmark"), aceso: false) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Fechar a busca")
+                    .accessibilityIdentifier("fecharBusca")
+            }
+        }
+    }
+}
+
+/// O mês escolhido, num chip de vidro com o calendário, o nome por extenso e o × que tira o filtro (alvo de 44 pt; na
+/// maior letra o nome quebra e o × cresce).
+struct ChipDoMes: View {
+    let mes: String
+    let tirar: () -> Void
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        HStack(spacing: 8) {
+            Image(decorative: "Icones/calendario").resizable().frame(width: grande ? 28 : 18, height: grande ? 28 : 18)
+                .foregroundStyle(paleta.cor(.linkNoVidro))
+            Text(tituloDoMes(mes))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(paleta.cor(.texto))
+                .accessibilityIdentifier("chipDoMes")
+            Button(action: tirar) {
+                Image(systemName: "xmark")
+                    .font(.system(size: grande ? 22 : 14, weight: .semibold))
+                    .foregroundStyle(paleta.cor(vidro.secundario))
+                    .frame(width: grande ? 52 : 36, height: grande ? 52 : 44)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Tirar o filtro do mês")
+            .accessibilityIdentifier("tirarOMes")
+        }
+        .padding(EdgeInsets(top: grande ? 8 : 0, leading: grande ? 16 : 14, bottom: grande ? 8 : 0, trailing: 4))
+        .frame(minHeight: 44)
+        .superficie(.conteudo, em: .rect(cornerRadius: grande ? 26 : 22, style: .continuous))
+    }
+}
+
+/// "Soma dos achados: R$ …" numa pílula de vidro embaixo do filtro; sem espaço, o valor vai para a linha de baixo, numa
+/// linha só, e encolhe para caber. Na letra de acessibilidade, o valor vai para baixo e pode quebrar ("R$" numa linha e o
+/// número na outra): com ele numa linha só (`lineLimit(1)`, encolhendo ou não), escolher o mês parava a thread principal de
+/// 45 a 70 s no iOS 26 na maior letra; com ele livre, não (sondas dos runs 40429944214 e 40435271147).
+struct SomaDosAchadosView: View {
+    let soma: SomaDosAchados
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        Group {
+            if tamanho.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 2) {
+                    rotulo
+                    Text(soma.valor).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(paleta.cor(.texto))
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) { rotulo; valor }
+                    VStack(alignment: .leading, spacing: 2) { rotulo; valor }
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .superficie(.conteudo, em: .rect(cornerRadius: tamanho.isAccessibilitySize ? 22 : 16, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(soma.falado)
+        .accessibilityIdentifier("somaDosAchados")
+    }
+
+    private var rotulo: some View {
+        Text(soma.rotulo).font(.subheadline).foregroundStyle(paleta.cor(vidro.secundario)).fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var valor: some View { ValorEmDinheiro(texto: soma.valor, fonte: .subheadline.weight(.semibold)) }
+}
+
+/// A lista vazia com filtro: o mês que ficou sem gasto ("Ver todos os meses" tira o mês) ou nada achado (o botão limpa o
+/// que filtra).
+struct VazioDaBuscaView: View {
+    let vazio: VazioDaBusca
+    let limpar: () -> Void
+    let verTodos: () -> Void
+
+    var body: some View {
+        switch vazio {
+        case .mesSemGasto(let titulo, let botao):
+            CartaoDeEstado(titulo: titulo, texto: nil, icone: "Icones/calendario", identificador: "buscaMesSemGasto") {
+                Button(botao, action: verTodos).buttonStyle(LinkDaLista()).accessibilityIdentifier("verTodosOsMeses")
+            }
+        case .nadaEncontrado(let titulo, let frase, let botao):
+            CartaoDeEstado(titulo: titulo, texto: frase, icone: "Icones/lupa", identificador: "buscaNadaEncontrado") {
+                Button(botao, action: limpar).buttonStyle(LinkDaLista()).accessibilityIdentifier("limparFiltro")
+            }
+        }
+    }
+}
+
+/// O botão em texto dentro de um cartão de vidro ("Limpar a busca", "Ver todos os meses"): body semibold na cor do link
+/// sobre o vidro, sem sublinhado, com 44 pt de altura (o .lnk do mockup).
+struct LinkDaLista: ButtonStyle {
+    @Environment(\.paleta) private var paleta
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.body.weight(.semibold))
+            .foregroundStyle(paleta.cor(.linkNoVidro))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 44)
+            .contentShape(.rect)
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+```
+
+Em `app-ios/Custta/Telas/ObraView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObraView.swift
++++ b/app-ios/Custta/Telas/ObraView.swift
+@@ -4,7 +4,8 @@ import CusttaNucleo
+ /* A tela da obra (mockup aprovado da etapa 2, partes 1 e 3): o nome no título grande, a pílula da fase e do tempo, os
+    indicadores na opção A, as ações da fase, a pílula "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado
+    no alto; o lápis na barra abre "Editar obra". Entra pelo push do NavigationStack de Obras e volta pelo círculo e pela
+-   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. */
++   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. Na etapa 3, a
++   busca e o mês ao lado da pílula filtram só a lista (BuscaDaObra.swift); indicadores e orçamento ficam com a obra inteira. */
+ struct ObraView: View {
+     let id: String
+     @Binding var caminho: [RotaDeObras]
+@@ -13,6 +14,12 @@ struct ObraView: View {
+     @Environment(\.opcoes) private var opcoes
+     @Environment(\.paleta) private var paleta
+     @State private var aVencerAberto = false
++    /// A busca e o mês da lista: moram aqui, e não no modelo, para zerar ao trocar de obra e para o redesenho que chega
++    /// do Sincronizador não apagar o que está sendo digitado nem tirar o foco do campo.
++    @State private var busca = BuscaDaObra()
++    @FocusState private var buscaEmFoco: Bool
++    /// O "A vencer" com filtro abre sozinho, com os achados, a cada filtro novo; fechá-lo aí não mexe no de sem filtro.
++    @State private var aVencerAbertoNaBusca = true
+     /// A linha arrastada que mostra "Apagar" (uma por vez).
+     @State private var linhaAberta: String?
+     /// "Apagar" tocado na linha: o gasto da pergunta. Fica depois que o alerta fecha, para ele não trocar de texto saindo.
+@@ -50,7 +57,9 @@ struct ObraView: View {
+ 
+     private func conteudo(_ obra: Obra, taxa: Double, topicos: [String: Topico]) -> some View {
+         let hoje = dataLocalISO(.now, fuso: .current)
+-        let lista = listaDaObra(obra, hoje: hoje)
++        let filtrando = busca.filtrando
++        let achados = filtrando ? filtraGastos(obra.gastos, topicos: topicos, filtro: busca.filtro) : obra.gastos
++        let lista = listaDaObra(obra.comOsGastos(achados), hoje: hoje)
+         let acoes = AcoesDaLista(aberta: $linhaAberta, acesos: acesos, novos: novos, foco: $foco,
+                                  tocar: { gasto in
+                                      if linhaAberta != nil { fecharLinha(); return }
+@@ -62,7 +71,10 @@ struct ObraView: View {
+                                  })
+         return ScrollViewReader { leitor in
+             ScrollView {
+-                LazyVStack(alignment: .leading, spacing: 10) {
++                // As peças de cima, do título à soma dos achados, ficam fora da pilha preguiçosa, que fica só com a lista: no
++                // iOS 26, a LazyVStack refazia o campo da busca à vista quando o teclado subia, e o foco caía (sonda do foco,
++                // run 40508695109; o teclado foi embora no run 40440188222).
++                VStack(alignment: .leading, spacing: 10) {
+                     TituloDaObra(nome: obra.nome)
+                     PilulaDaFase(obra: obra, hoje: hoje)
+                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
+@@ -77,18 +89,36 @@ struct ObraView: View {
+                     }
+                         .padding(.top, 2)
+                         .padding(.bottom, 14)
+-                    PilulaDeLancamentos(quantidade: obra.gastos.count)
+-                        .accessibilityFocused($foco, equals: .lancamentos)
++                    CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
++                                            busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
++                                            comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
++                                            abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
++                        .id("lancamentos")
++                    if busca.aberta {
++                        CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
++                    }
++                    if !busca.mes.isEmpty {
++                        ChipDoMes(mes: busca.mes, tirar: tirarOMes)
++                    }
++                    if let soma = somaDosAchados(achados, filtrando: filtrando) {
++                        SomaDosAchadosView(soma: soma)
++                    }
+                     if obra.gastos.isEmpty {
+                         CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
+                                        identificador: "obraSemGastos") { EmptyView() }
++                    } else if achados.isEmpty {
++                        VazioDaBuscaView(vazio: vazioDaBusca(obra.gastos, texto: busca.texto, mes: busca.mes), limpar: limparFiltro,
++                                         verTodos: tirarOMes)
+                     } else {
+-                        if let aVencer = lista.aVencer {
+-                            CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos, lista: acoes)
+-                                .id("aVencer")
+-                        }
+-                        ForEach(lista.meses) { mes in
+-                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
++                        LazyVStack(alignment: .leading, spacing: 10) {
++                            if let aVencer = lista.aVencer {
++                                CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto,
++                                                topicos: topicos, lista: acoes)
++                                    .id("aVencer")
++                            }
++                            ForEach(lista.meses) { mes in
++                                CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
++                            }
+                         }
+                     }
+                 }
+@@ -104,8 +134,10 @@ struct ObraView: View {
+             .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
+         }
+         .scrollIndicators(.hidden)
++        .scrollDismissesKeyboard(.interactively)
+         .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
+         .onChange(of: folhas.aberta) { _, aberta in if aberta != nil { linhaAberta = nil } }
++        .onChange(of: busca.filtrando) { _, agora in if agora { aVencerAbertoNaBusca = true } }
+         .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
+         .onDisappear { linhaAberta = nil }
+         .sensoryFeedback(.success, trigger: folhas.destaque)
+@@ -167,6 +199,45 @@ extension ObraView {
+         if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }
+     }
+ 
++    /// O "A vencer" à vista agora: o da busca, com filtro, ou o de sempre.
++    private var aVencerAbertoAgora: Bool { busca.filtrando ? aVencerAbertoNaBusca : aVencerAberto }
++
++    private func abrirAVencer() {
++        if busca.filtrando { aVencerAbertoNaBusca = true } else { aVencerAberto = true }
++    }
++
++    /// A lupa: abre o campo embaixo da pílula, rola a lista até a pílula e põe o teclado; com o campo aberto, só devolve o
++    /// foco a ele.
++    private func abrirBusca(_ leitor: ScrollViewProxy) {
++        let rolar = !busca.aberta
++        busca.aberta = true
++        Task { @MainActor in
++            if rolar {
++                withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo("lancamentos", anchor: .top) }
++            }
++            buscaEmFoco = true
++        }
++    }
++
++    /// O × da busca (ou a lupa, na maior letra): fecha o campo e limpa o texto; o VoiceOver vai para "Lançamentos".
++    private func fecharBusca() {
++        buscaEmFoco = false
++        busca.fechar()
++        foco = .lancamentos
++    }
++
++    /// O × do chip e o "Ver todos os meses": tira o mês (a busca fica).
++    private func tirarOMes() {
++        busca.mes = ""
++        foco = .lancamentos
++    }
++
++    /// "Limpar a busca", "Limpar o mês" ou "Limpar busca e mês".
++    private func limparFiltro() {
++        busca.limpar()
++        foco = .lancamentos
++    }
++
+     /// Depois de salvar: rola em dois tempos (o cartão, que a LazyVStack cria, e depois a linha), abre o "A vencer" se o
+     /// gasto foi para lá, acende por 2 s e leva o VoiceOver para a linha.
+     private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
+@@ -181,7 +252,7 @@ extension ObraView {
+             // pontos que a LazyVStack ainda não criou), a rolagem parava num mês lá embaixo.
+             if noAVencer {
+                 try? await Task.sleep(for: .milliseconds(80))
+-                aVencerAberto = true
++                abrirAVencer()
+             }
+             try? await Task.sleep(for: .milliseconds(80))
+             withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(primeiro, anchor: .center) }
+@@ -198,7 +269,7 @@ extension ObraView {
+     /// que aconteceu, um depois do outro.
+     private func apagar(_ p: Folhas.PedidoDeApagar, obra: Obra, lista: ListaDaObra) {
+         let saem: Set<String> = p.grupoId.map { g in Set(obra.gastos.filter { $0.grupoId == g }.map(\.id)) } ?? [p.gastoId]
+-        let ordem = (aVencerAberto ? (lista.aVencer?.meses ?? []) : []).flatMap(\.gastos).map(\.id)
++        let ordem = (aVencerAbertoAgora ? (lista.aVencer?.meses ?? []) : []).flatMap(\.gastos).map(\.id)
+             + lista.meses.flatMap(\.gastos).map(\.id)
+         let vizinho = vizinhoDepoisDeApagar(saem, ordem: ordem)
+         // A linha sai aberta, com o "Apagar": fechar antes, fora da transação, a fazia voltar num quadro e só então sair.
+```
+
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -223,33 +223,36 @@ struct IndicadoresDaObraView: View {
+     }
+ }
+ 
+-/// "Lançamentos 46": a pílula de vidro antes da lista, nas medidas do mockup (subheadline, o número em peso médio).
+-struct PilulaDeLancamentos: View {
+-    let quantidade: Int
+-
+-    var body: some View { PilulaDaLista(titulo: "Lançamentos", quantidade: quantidade, identificador: "lancamentos") }
+-}
+-
+-/// A pílula de vidro antes de uma lista ("Lançamentos 46"; na tela Orçamento, "Por tópico 14" e "Gasto por tópico 14"): o
+-/// título em subheadline semibold e o número em peso médio, no secundário.
++/// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`) e, na tela Orçamento, "Por tópico 14" e
++/// "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline semibold e o número em peso médio, no secundário (sem
++/// número, só o título), num texto só: na maior letra a pílula quebra como texto corrido ("Lançamentos" numa linha, "12/46"
++/// na de baixo), como o mockup, que põe título e número no mesmo fluxo; um `HStack` dos dois hifenizaria o título na AX5.
+ struct PilulaDaLista: View {
+     let titulo: String
+-    let quantidade: Int
++    let numero: String
++    let falado: String
+     let identificador: String
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
+ 
+     var body: some View {
+-        HStack(spacing: 4) {                             // um espaço de texto, como no mockup
+-            Text(titulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+-            Text("\(quantidade)").font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
+-        }
+-        .padding(.horizontal, 14)
+-        .padding(.vertical, 6)
+-        .superficie(.conteudo, em: .capsule)
+-        .accessibilityElement(children: .combine)
+-        .accessibilityAddTraits(.isHeader)
+-        .accessibilityIdentifier(identificador)
++        let quanto = Text(numero).font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
++        Text("\(Text(titulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)))\(numero.isEmpty ? "" : " ")\(quanto)")
++            .font(.subheadline)                          // o espaço também: no body da tela, a linha crescia 2,3 pt
++            .padding(.horizontal, 14)
++            .padding(.vertical, 6)
++            .superficie(.conteudo, em: .capsule)
++            .accessibilityElement(children: .ignore)
++            .accessibilityLabel(falado)
++            .accessibilityAddTraits(.isHeader)
++            .accessibilityIdentifier(identificador)
++    }
++}
++
++extension PilulaDaLista {
++    /// O número é uma quantidade, e o VoiceOver lê "Por tópico, 14".
++    init(titulo: String, quantidade: Int, identificador: String) {
++        self.init(titulo: titulo, numero: "\(quantidade)", falado: "\(titulo), \(quantidade)", identificador: identificador)
+     }
+ }
+ 
+```
+
+Em `scripts/icones-app-ios.mjs`:
+
+```diff
+--- a/scripts/icones-app-ios.mjs
++++ b/scripts/icones-app-ios.mjs
+@@ -17,10 +17,10 @@ const PASTA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../app
+ /** Ícones que as telas usam: abas, fases da obra, sair, olho da senha e a seta da dica; na etapa 2, os dos 21 tópicos
+     (TOPICOS do calc.js) e o "etiqueta" dos tópicos próprios, o calendário do "A vencer", o cartão do pagamento, o lápis
+     de editar, o acordo da venda, o voltar das fases e as notas da obra sem gastos; na etapa 3, o triângulo do aviso dos tópicos
+-    na linha do orçamento e o alvo do "Definir orçamento". */
++    na linha do orçamento, o alvo do "Definir orçamento" e a lupa da busca. */
+ export const USADOS = ['predio', 'engrenagem', 'sair', 'guindaste', 'casa', 'check', 'olho', 'olhoFechado', 'setaBaixo',
+   'mapa', 'documento', 'tijolos', 'pa', 'vergalhao', 'raio', 'gota', 'porta', 'ladrilho', 'rolo', 'piscina', 'arvore', 'capacete',
+-  'caixa', 'mais', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas', 'alerta', 'alvo'];
++  'caixa', 'mais', 'etiqueta', 'calendario', 'cartao', 'lapis', 'acordo', 'voltar', 'notas', 'alerta', 'alvo', 'lupa'];
+ 
+ const info = { author: 'xcode', version: 1 };
+ 
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/workflow.test.cjs tests/app-ios.test.cjs 2>&1 | grep -E "^ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | tail -5
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests 2>&1 | grep -E "Test run with" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/BuscaUITests -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/OrcamentoUITests 2>&1 | grep -E "Executed [0-9]+ tests?, with|TEST EXECUTE" | tail -2
+```
+Expected: `ℹ pass 64`, `ℹ fail 0` (o `npm run test:unit` vai a 402, com a guarda nova); sem aviso; `✔ Test run with 166 tests in 32 suites passed` (a `BuscaDaObraTests`, com 4 testes, é suíte nova); `Executed 46 tests, with 0 failures` (`BuscaUITests` 10, `ObraUITests` 7 e `OrcamentoUITests` 29) e `** TEST EXECUTE SUCCEEDED **`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml \
+  app-ios/Custta/Assets.xcassets/Icones/lupa.imageset/Contents.json \
+  app-ios/Custta/Assets.xcassets/Icones/lupa.imageset/lupa.svg \
+  app-ios/Custta/Telas/BuscaDaObra.swift \
+  app-ios/Custta/Telas/ObraView.swift \
+  app-ios/Custta/Telas/PecasDaObra.swift \
+  app-ios/CusttaTests/BuscaDaObraTests.swift \
+  app-ios/CusttaUITests/BuscaUITests.swift \
+  scripts/icones-app-ios.mjs \
+  tests/app-ios.test.cjs \
+  tests/workflow.test.cjs
+git commit -m "feat: busca e filtro por mês na lista de lançamentos do app" -m "A lista de lançamentos da obra ganha a busca e o filtro por mês do site, no desenho aprovado no mockup da etapa 3 (parte 2, opção A): dois botões redondos de vidro ao lado da pílula \"Lançamentos\", a lupa e o mês, e a tela não cresce enquanto ninguém busca. A lupa abre o campo \"Buscar gasto ou tópico\" embaixo da pílula, rola a lista até ela e põe o teclado; o × fecha a busca e limpa o texto, e o \"buscar\" do teclado só o fecha. A busca é a do núcleo, sem acento e sem diferença de maiúscula, na descrição ou no tópico, com o texto aparado." -m "O mês sai de um Menu do sistema, com \"Todos os meses\" e os meses que têm gasto, por extenso, com quantos gastos cada um tem no subtítulo do item (o menu do sistema não tem a coluna à direita do mockup), e vira um chip com × embaixo da pílula. O mês escolhido continua no chip e no menu mesmo quando fica sem gasto, o conserto do achado 1: a lista diz \"Nenhum gasto em março de 2025.\" e oferece \"Ver todos os meses\". Com filtro, a pílula conta \"achados/total\", o \"A vencer\" abre sozinho com os achados, cada mês soma só os seus, e \"Soma dos achados\" dá o total; sem achado, a lista diz por quê e o botão limpa a busca, o mês ou os dois. Na maior letra, a pílula e os botões ocupam duas linhas, o campo fica com a largura toda e a própria lupa vira × para fechar." -m "O filtro mora na tela da obra, e não no modelo: zera ao trocar de obra, como no site, não vai para a nuvem e não depende do estado que chega do Sincronizador. A obra sem gasto mostra só a pílula, agora sem o número, como o contador do site e o mockup da etapa 2. A pílula é a PilulaDaLista, a mesma das listas da tela Orçamento, que passa a ser um texto só: na maior letra ela quebra como texto corrido, igual ao mockup, que põe o título e o número no mesmo fluxo, em vez do HStack de antes, que podia hifenizar o título na AX5; o VoiceOver segue lendo \"Por tópico, 14\" e \"Gasto por tópico, 14\". A lupa do site entra no catálogo de ícones." -m "A suíte nova, BuscaUITests, roda num job novo, o app-etapa3-c, na mesma forma do app-etapa3-b e com teto de 60 min, e o app a pula: o app-etapa3 não cresce mais (58,8 min no run 39813469497), e no app-etapa3-b as suítes do PR 3 (~22 min de testes no run 39878786962) o levariam a ~50 min. A guarda do workflow conta o job novo."
+```

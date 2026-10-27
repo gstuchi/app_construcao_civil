@@ -71,10 +71,7 @@ struct ObraView: View {
                                  })
         return ScrollViewReader { leitor in
             ScrollView {
-                // As peças de cima, do título à soma dos achados, ficam fora da pilha preguiçosa, que fica só com a lista: no
-                // iOS 26, a LazyVStack refazia o campo da busca à vista quando o teclado subia, e o foco caía (sonda do foco,
-                // run 40508695109; o teclado foi embora no run 40440188222).
-                VStack(alignment: .leading, spacing: 10) {
+                LazyVStack(alignment: .leading, spacing: 10) {
                     TituloDaObra(nome: obra.nome)
                     PilulaDaFase(obra: obra, hoje: hoje)
                     IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
@@ -116,15 +113,13 @@ struct ObraView: View {
                         VazioDaBuscaView(vazio: vazioDaBusca(obra.gastos, texto: busca.texto, mes: busca.mes), limpar: limparFiltro,
                                          verTodos: tirarOMes)
                     } else {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            if let aVencer = lista.aVencer {
-                                CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto,
-                                                topicos: topicos, lista: acoes)
-                                    .id("aVencer")
-                            }
-                            ForEach(lista.meses) { mes in
-                                CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
-                            }
+                        if let aVencer = lista.aVencer {
+                            CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto, topicos: topicos,
+                                            lista: acoes)
+                                .id("aVencer")
+                        }
+                        ForEach(lista.meses) { mes in
+                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
                         }
                     }
                 }

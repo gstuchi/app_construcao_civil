@@ -518,6 +518,17 @@ test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 
     'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
 });
 
+test('linha dos afazeres: a seta é a das linhas do Orçamento e do A pagar, para no AX2 e ocupa 18 pt na maior letra', () => {
+  // Sem o teto, a seta sai com ~27 × 46 pt na AX5, num quadro de 22, contra os 17 × 29 do Orçamento e do A pagar. E nenhum
+  // teste de tela vê o símbolo, que fica fora da árvore de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
+  const inicio = t.indexOf('struct LinhaDosAfazeresView');
+  assert.ok(inicio >= 0, 'a LinhaDosAfazeresView');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: grande \? 18 : 14\)\n/,
+    'a seta para no AX2 e ocupa 18 pt na letra de acessibilidade');
+});
+
 test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
   // O mesmo botão do indicador A pagar (D7 do PR 2). Com o quadro ou o contentShape fora do rótulo, o toque e o foco do
   // VoiceOver ficam só no miolo da linha (medido no "Apagar obra" da etapa 2 e no A pagar), e a folga do dedo do SwiftUI

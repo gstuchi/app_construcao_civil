@@ -39,7 +39,10 @@ struct LinhaDosAfazeresView: View {
             Image(systemName: "chevron.right")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(paleta.cor(vidro.secundario))
-                .frame(width: grande ? 22 : 14)
+                // A seta das linhas do Orçamento e do A pagar: para no AX2 e ocupa 18 pt na maior letra (sem o teto, ~27 × 46 pt
+                // na AX5, mais larga que o quadro).
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+                .frame(width: grande ? 18 : 14)
                 .accessibilityHidden(true)
                 .foraDoLaudo()
         }

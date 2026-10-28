@@ -4,7 +4,8 @@ import CusttaNucleo
 /* A tela da obra (mockup aprovado da etapa 2, partes 1 e 3): o nome no título grande, a pílula da fase e do tempo, os
    indicadores na opção A, as ações da fase, a pílula "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado
    no alto; o lápis na barra abre "Editar obra". Entra pelo push do NavigationStack de Obras e volta pelo círculo e pela
-   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. */
+   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. Na etapa 3, a
+   busca e o mês ao lado da pílula filtram só a lista (BuscaDaObra.swift); indicadores e orçamento ficam com a obra inteira. */
 struct ObraView: View {
     let id: String
     @Binding var caminho: [RotaDeObras]
@@ -13,6 +14,12 @@ struct ObraView: View {
     @Environment(\.opcoes) private var opcoes
     @Environment(\.paleta) private var paleta
     @State private var aVencerAberto = false
+    /// A busca e o mês da lista: moram aqui, e não no modelo, para zerar ao trocar de obra e para o redesenho que chega
+    /// do Sincronizador não apagar o que está sendo digitado nem tirar o foco do campo.
+    @State private var busca = BuscaDaObra()
+    @FocusState private var buscaEmFoco: Bool
+    /// O "A vencer" com filtro abre sozinho, com os achados, a cada filtro novo; fechá-lo aí não mexe no de sem filtro.
+    @State private var aVencerAbertoNaBusca = true
     /// A linha arrastada que mostra "Apagar" (uma por vez).
     @State private var linhaAberta: String?
     /// "Apagar" tocado na linha: o gasto da pergunta. Fica depois que o alerta fecha, para ele não trocar de texto saindo.
@@ -50,7 +57,9 @@ struct ObraView: View {
 
     private func conteudo(_ obra: Obra, taxa: Double, topicos: [String: Topico]) -> some View {
         let hoje = dataLocalISO(.now, fuso: .current)
-        let lista = listaDaObra(obra, hoje: hoje)
+        let filtrando = busca.filtrando
+        let achados = filtrando ? filtraGastos(obra.gastos, topicos: topicos, filtro: busca.filtro) : obra.gastos
+        let lista = listaDaObra(obra.comOsGastos(achados), hoje: hoje)
         let acoes = AcoesDaLista(aberta: $linhaAberta, acesos: acesos, novos: novos, foco: $foco,
                                  tocar: { gasto in
                                      if linhaAberta != nil { fecharLinha(); return }
@@ -76,15 +85,37 @@ struct ObraView: View {
                         agir($0, obra: obra)
                     }
                         .padding(.top, 2)
-                        .padding(.bottom, 14)
-                    PilulaDeLancamentos(quantidade: obra.gastos.count)
-                        .accessibilityFocused($foco, equals: .lancamentos)
+                        .padding(.bottom, 2)
+                    // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
+                    NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
+                        LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 14)
+                    CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
+                                            busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
+                                            comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
+                                            abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
+                        .id("lancamentos")
+                    if busca.aberta {
+                        CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
+                    }
+                    if !busca.mes.isEmpty {
+                        ChipDoMes(mes: busca.mes, tirar: tirarOMes)
+                    }
+                    if let soma = somaDosAchados(achados, filtrando: filtrando) {
+                        SomaDosAchadosView(soma: soma)
+                    }
                     if obra.gastos.isEmpty {
                         CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
                                        identificador: "obraSemGastos") { EmptyView() }
+                    } else if achados.isEmpty {
+                        VazioDaBuscaView(vazio: vazioDaBusca(obra.gastos, texto: busca.texto, mes: busca.mes), limpar: limparFiltro,
+                                         verTodos: tirarOMes)
                     } else {
                         if let aVencer = lista.aVencer {
-                            CartaoDoAVencer(grupo: aVencer, aberto: $aVencerAberto, topicos: topicos, lista: acoes)
+                            CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto, topicos: topicos,
+                                            lista: acoes)
                                 .id("aVencer")
                         }
                         ForEach(lista.meses) { mes in
@@ -104,8 +135,10 @@ struct ObraView: View {
             .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
         }
         .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
         .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
         .onChange(of: folhas.aberta) { _, aberta in if aberta != nil { linhaAberta = nil } }
+        .onChange(of: busca.filtrando) { _, agora in if agora { aVencerAbertoNaBusca = true } }
         .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
         .onDisappear { linhaAberta = nil }
         .sensoryFeedback(.success, trigger: folhas.destaque)
@@ -127,7 +160,7 @@ struct ObraView: View {
         .tituloPequenoAoRolar(barra)
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
-        .modifier(RolagemFixaDoTeste())
+        .rolagemFixaSemFolha()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)
@@ -167,6 +200,45 @@ extension ObraView {
         if opcoes.reduzirMovimento { linhaAberta = nil } else { withAnimation(.spring(duration: 0.3, bounce: 0)) { linhaAberta = nil } }
     }
 
+    /// O "A vencer" à vista agora: o da busca, com filtro, ou o de sempre.
+    private var aVencerAbertoAgora: Bool { busca.filtrando ? aVencerAbertoNaBusca : aVencerAberto }
+
+    private func abrirAVencer() {
+        if busca.filtrando { aVencerAbertoNaBusca = true } else { aVencerAberto = true }
+    }
+
+    /// A lupa: abre o campo embaixo da pílula, rola a lista até a pílula e põe o teclado; com o campo aberto, só devolve o
+    /// foco a ele.
+    private func abrirBusca(_ leitor: ScrollViewProxy) {
+        let rolar = !busca.aberta
+        busca.aberta = true
+        Task { @MainActor in
+            if rolar {
+                withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo("lancamentos", anchor: .top) }
+            }
+            buscaEmFoco = true
+        }
+    }
+
+    /// O × da busca (ou a lupa, na maior letra): fecha o campo e limpa o texto; o VoiceOver vai para "Lançamentos".
+    private func fecharBusca() {
+        buscaEmFoco = false
+        busca.fechar()
+        foco = .lancamentos
+    }
+
+    /// O × do chip e o "Ver todos os meses": tira o mês (a busca fica).
+    private func tirarOMes() {
+        busca.mes = ""
+        foco = .lancamentos
+    }
+
+    /// "Limpar a busca", "Limpar o mês" ou "Limpar busca e mês".
+    private func limparFiltro() {
+        busca.limpar()
+        foco = .lancamentos
+    }
+
     /// Depois de salvar: rola em dois tempos (o cartão, que a LazyVStack cria, e depois a linha), abre o "A vencer" se o
     /// gasto foi para lá, acende por 2 s e leva o VoiceOver para a linha.
     private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
@@ -181,7 +253,7 @@ extension ObraView {
             // pontos que a LazyVStack ainda não criou), a rolagem parava num mês lá embaixo.
             if noAVencer {
                 try? await Task.sleep(for: .milliseconds(80))
-                aVencerAberto = true
+                abrirAVencer()
             }
             try? await Task.sleep(for: .milliseconds(80))
             withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(primeiro, anchor: .center) }
@@ -198,7 +270,7 @@ extension ObraView {
     /// que aconteceu, um depois do outro.
     private func apagar(_ p: Folhas.PedidoDeApagar, obra: Obra, lista: ListaDaObra) {
         let saem: Set<String> = p.grupoId.map { g in Set(obra.gastos.filter { $0.grupoId == g }.map(\.id)) } ?? [p.gastoId]
-        let ordem = (aVencerAberto ? (lista.aVencer?.meses ?? []) : []).flatMap(\.gastos).map(\.id)
+        let ordem = (aVencerAbertoAgora ? (lista.aVencer?.meses ?? []) : []).flatMap(\.gastos).map(\.id)
             + lista.meses.flatMap(\.gastos).map(\.id)
         let vizinho = vizinhoDepoisDeApagar(saem, ordem: ordem)
         // A linha sai aberta, com o "Apagar": fechar antes, fora da transação, a fazia voltar num quadro e só então sair.

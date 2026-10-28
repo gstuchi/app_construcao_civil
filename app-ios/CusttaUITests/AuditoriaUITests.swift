@@ -466,7 +466,7 @@ extension AuditoriaUITests {
     /// coluna inteira. Com a coluna no lugar do ViewThatFits, nenhum achado; nem identificador nem .contain dão elemento a ele,
     /// então não há exceção por identificador. O corte com elemento segue reprovando nessas cenas: o "3 vencimentos · a partir
     /// de amanhã" numa linha só reprova depois do arrasto (a mutação da T34). O corte dentro do .ignore da linha do gasto tem a
-    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3.
+    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3-b.
     @MainActor func testFolhasDeOrigemNoMaiorTamanho() throws {
         for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
                                                      ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
@@ -487,7 +487,7 @@ extension AuditoriaUITests {
     }
 
     /// As mesmas folhas no escuro e no claro, com superfícies sólidas: o A pagar, a Cerâmica no topo e rolada, a Estrutura (a
-    /// frase do "passou" no Alerta) e as duas edições (o "Apagar gasto" no Negativo).
+    /// frase do "passou" no Alerta) e as duas edições (o "Apagar gasto" no Negativo). Roda no job laudo-etapa3-b.
     @MainActor func testContrasteDasFolhasDeOrigemNosDoisTemas() throws {
         for tema in temas {
             let combo = ["-custta.tema", tema] + solido + parado

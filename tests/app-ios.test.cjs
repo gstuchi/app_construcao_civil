@@ -422,10 +422,10 @@ test('escurecimento sob o vidro segue o esquema da tela: no claro, nenhum', () =
     'a Superficie passa o esquema da tela ao escurecimento (o ImageRenderer não serve de guarda: o vidro dele varia)');
 });
 
-test('título grande de Obras e de Ajustes e a versão em Ajustes com o halo no escuro', () => {
+test('título grande de Obras, de Ajustes e de Afazeres e a versão em Ajustes com o halo no escuro', () => {
   // O título da barra é do UIKit, branco puro sobre a aurora: no Pro Max, sem o halo, o "Obras" fica em 4,41:1 e a
   // versão, texto solto, em 4,42:1. O laudo de leitura só cobra o portão no Mac; esta guarda vale também na CI.
-  for(const tela of ['ObrasView', 'AjustesView'])
+  for(const tela of ['ObrasView', 'AjustesView', 'AfazeresView'])
     assert.match(ler(`app-ios/Custta/Telas/${tela}.swift`), /\.haloDoTituloDaBarra\(\)/, `${tela}: o halo atrás do título grande`);
   assert.match(ler('app-ios/Custta/Telas/AjustesView.swift'),
     /Text\(Self\.versao\)[^}]*?HaloDoTitulo\(grande: false, opacidade: HaloDoTitulo\.naBarra\)/, 'AjustesView: o halo atrás da versão');
@@ -459,9 +459,10 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
   // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
-  // sistema, em vez de empurrar os botões).
+  // sistema, em vez de empurrar os botões). Na etapa 3, o primeiro pendente na linha dos afazeres da obra para em duas
+  // linhas (quatro na maior letra), como no mockup: o texto inteiro está na tela Afazeres, e o VoiceOver o lê inteiro pela linha.
   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
-    'TituloDaFolha', 'BarraDasTeclas']);
+    'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
@@ -515,6 +516,17 @@ test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 
   const linha = t.slice(inicio, t.indexOf('\n    }\n', inicio));
   assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
     'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+});
+
+test('linha dos afazeres: a seta é a das linhas do Orçamento e do A pagar, para no AX2 e ocupa 18 pt na maior letra', () => {
+  // Sem o teto, a seta sai com ~27 × 46 pt na AX5, num quadro de 22, contra os 17 × 29 do Orçamento e do A pagar. E nenhum
+  // teste de tela vê o símbolo, que fica fora da árvore de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
+  const inicio = t.indexOf('struct LinhaDosAfazeresView');
+  assert.ok(inicio >= 0, 'a LinhaDosAfazeresView');
+  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: grande \? 18 : 14\)\n/,
+    'a seta para no AX2 e ocupa 18 pt na letra de acessibilidade');
 });
 
 test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
@@ -649,6 +661,33 @@ test('folha do orçamento: o teclado físico apaga como a tecla da tela, e a lin
     'a linha ativa volta ao meio quando a letra muda');
 });
 
+test('afazeres: gravação recusada avisa, em cada um dos três jeitos de gravar', () => {
+  // Adicionar, marcar (meio segundo depois do toque) e apagar arrastando gravam pela tela; nenhum teste de tela recusa os
+  // três. Sem o alerta, o toque recusado não faria nada (o achado da T29 no mudar da fase).
+  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
+  const gravacoes = t.match(/modelo\.gravar \{/g)?.length;
+  assert.equal(gravacoes, 3, 'adicionar, alternar e apagar');
+  assert.equal(t.match(/if resultado == \.naoCarregado \{ naoCarregado = true/g)?.length, gravacoes,
+    'cada gravação: antes de ver os dados, o alerta do site');
+  assert.match(t, /\.alert\(modelo\.mensagemDeNaoCarregado, isPresented: \$naoCarregado\)/, 'o alerta na própria tela');
+});
+
+test('afazeres: o + com texto longo avisa, sem ficar calado', () => {
+  // O set do campo corta em 500, então nenhum teste de tela chega ao `.longo` do `adicionar()`. Se um texto longo chegasse
+  // lá, sem o aviso do topo (o toast do site) o + não faria nada ao toque, e o campo ficaria cheio sem dizer por quê.
+  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
+  const i = t.indexOf('private func adicionar()'), j = t.indexOf('private func alternar(');
+  assert.ok(i >= 0 && j > i, 'o adicionar() da AfazeresView');
+  assert.match(t.slice(i, j), /case \.longo\(let mensagem\): modelo\.avisar\(mensagem\)/, 'o .longo vai ao aviso do topo');
+});
+
+test('afazeres: o + tira o texto cru que a tela guarda antes de adicionar', () => {
+  // O naTela (o texto da tela quando o guardado é outro) sai no onChange da volta seguinte. Um onChange perdido numa
+  // rajada o deixaria preso, e o campo mostraria o texto velho depois do +; o XCUITest espera o app ocioso e não chega lá.
+  const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
+  assert.match(t, /Button\(action: \{ naTela = nil; adicionar\(\) \}\)/, 'o + limpa o naTela antes de adicionar');
+});
+
 test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', () => {
   // A folha leva uns 0,4 s descendo depois de gravar, e o segundo toque de um toque duplo ainda chega no botão: sem a
   // guarda, o gasto entrava duas vezes (T22) e a obra nova também, com outro id. Os testes de tela do toque duplo falham
@@ -748,6 +787,41 @@ test('campo de texto que quebra linha: o exemplo desenhado num Text, e o prompt 
     }
   }
   assert.ok(campos >= 2, 'os campos da entrada e o nome da obra');
+});
+
+test('cabeçalhos dos Feitos e do A vencer: a seta para no AX2 e ocupa 18 pt na maior letra', () => {
+  // Sem o teto, a seta sai com 27 × 46 pt na AX5, num quadro de 22, contra 20 × 30 no mockup (conferência do Verniz, PR 3
+  // da etapa 3). No mockup, o "Feitos" é o cabeçalho do "A vencer", e as duas setas ficam iguais na letra de acessibilidade;
+  // na padrão, a dos Feitos ocupa 14 pt e a do A vencer, a largura do símbolo, como antes. Nenhum teste de tela vê o
+  // símbolo, fora da árvore de acessibilidade e do laudo.
+  const seta = /Image\(systemName: aberto \? "chevron\.down" : "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : /.source;
+  for(const [arquivo, peca, padrao] of [['app-ios/Custta/Telas/AfazeresView.swift', 'struct CabecalhoDosFeitos', '14'],
+    ['app-ios/Custta/Telas/PecasDaObra.swift', 'struct LinhaDoAVencer', 'nil']]){
+    const t = ler(arquivo);
+    const inicio = t.indexOf(peca);
+    assert.ok(inicio >= 0, peca);
+    const cab = t.slice(inicio, t.indexOf('\n}\n', inicio));
+    assert.match(cab, new RegExp(seta + padrao + '\\)\\n'), `${peca}: a seta para no AX2 e ocupa 18 pt na letra de acessibilidade`);
+  }
+});
+
+test('campo de texto que quebra linha: o exemplo e o campo pelo alto, nunca pela linha de base', () => {
+  // O TextField com axis: .vertical não dá a linha de base: num ZStack por .firstTextBaseline, o exemplo subia ~10 pt no
+  // campo da busca e no do afazer, e o cursor ficava embaixo dele (conferência do Verniz, PR 3 da etapa 3). Pelo alto, como
+  // o nome da obra, os dois começam na mesma linha, também quando o exemplo quebra na maior letra.
+  let pilhas = 0;
+  for(const f of arquivosSwift('app-ios/Custta')){
+    const t = ler(f);
+    for(const m of t.matchAll(/ZStack\(alignment: ([^{]*)\) \{/g)){
+      let fim = m.index + m[0].length, nivel = 1;
+      for(; nivel > 0 && fim < t.length; fim++) nivel += t[fim] === '{' ? 1 : t[fim] === '}' ? -1 : 0;
+      const corpo = t.slice(m.index, fim);
+      if(!/TextField\([^]*?axis:/.test(corpo)) continue;
+      pilhas++;
+      assert.doesNotMatch(m[1], /firstTextBaseline/, `${f}: exemplo de campo que quebra linha pela linha de base`);
+    }
+  }
+  assert.ok(pilhas >= 3, 'o nome da obra, a busca e o afazer');
 });
 
 test('barra: o botão de vidro (o sair, o lápis, a sincronização) sem o vidro da barra por trás', () => {

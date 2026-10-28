@@ -2,7 +2,7 @@ import XCTest
 
 /// Abre o app com os serviços falsos (Custta/Falsos). Nada de rede nem de Firebase. `abrir: "obra:v1"` já abre a obra;
 /// `folha: "novaObra"` abre uma folha quando os dados chegam; `gravacao: "recusa"` recusa toda gravação; `extra` passa
-/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`).
+/// outras variáveis dos falsos (`CUSTTA_APAGAR_REMOTO`, `CUSTTA_MUDANCA_REMOTA`).
 @MainActor
 func abrirApp(conta: String = "nenhuma", dados: String = "exemplo", rede: String? = nil, leitura: String? = nil,
               limpeza: String? = nil, abrir: String? = nil, marca: String? = nil, folha: String? = nil, gravacao: String? = nil,
@@ -98,6 +98,21 @@ extension XCUIApplication {
         campo.tap()
         if seguro { recusarSenhaForte() }
         campo.typeText(texto)
+    }
+
+    /// Depois de entrar com e-mail e senha, o iOS 27 do simulador oferece guardar a senha numa folha de outro processo
+    /// ("Save Password?", com "Not Now" e "Save"), por cima do meio da tela: o toque seguinte cai nela e não chega ao app (a
+    /// conferência cruzada não abria a obra). Quando ela aparece (até 5 s), "Not Now" a fecha; no iOS 26 ela pode não
+    /// aparecer. O toque se repete até a folha sair, como no `recusarSenhaForte`.
+    func recusarGuardarSenha() {
+        let agoraNao = buttons.matching(NSPredicate(format: "label IN %@", ["Not Now", "Agora Não", "Agora não"])).firstMatch
+        guard agoraNao.waitForExistence(timeout: 5) else { return }
+        for _ in 1...3 {
+            guard agoraNao.exists else { break }
+            agoraNao.tap()
+            _ = agoraNao.waitForNonExistence(timeout: 1.5)
+        }
+        XCTAssertFalse(agoraNao.exists, "a oferta de guardar a senha não fechou")
     }
 
     /// O iOS 27 do simulador oferece uma senha forte ao focar um campo de senha nova (.newPassword), mesmo com o

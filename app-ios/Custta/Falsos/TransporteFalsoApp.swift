@@ -9,7 +9,8 @@ import CusttaNucleo
 /// nunca responde (CUSTTA_LEITURA=nunca: "Carregando suas obras…" para sempre). `recusa` responde toda gravação com
 /// esse código (CUSTTA_GRAVACAO=recusa: permission-denied, o "Não salvou" que não passa sozinho). `apagarRemoto`
 /// simula outro aparelho apagando um gasto: um segundo snapshot, sem ele, depois de alguns segundos
-/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>); com o gasto vazio, a obra inteira.
+/// (CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>); com o gasto vazio, a obra inteira. `afazerRemoto` simula outro
+/// aparelho anotando um afazer numa obra, quando o teste avisa (CUSTTA_MUDANCA_REMOTA=afazer:<obra>).
 @MainActor
 final class TransporteFalsoApp: TransporteDados {
     private final class Nada: Cancelavel { func cancelar() {} }
@@ -19,42 +20,71 @@ final class TransporteFalsoApp: TransporteDados {
     private let semLeitura: Bool
     private let recusa: String?
     private let apagarRemoto: (obra: String, gasto: String, depois: Double)?
+    private let afazerRemoto: String?
     /// Quantas gravações chegaram (os testes conferem que abrir o app não grava nada).
     private(set) var gravacoes = 0
 
     init(dados: ValorJSON?, semRede: Bool, falhaDeLeitura: String? = nil, semLeitura: Bool = false, recusa: String? = nil,
-         apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil) {
+         apagarRemoto: (obra: String, gasto: String, depois: Double)? = nil, afazerRemoto: String? = nil) {
         self.dados = dados
         self.semRede = semRede
         self.falhaDeLeitura = falhaDeLeitura
         self.semLeitura = semLeitura
         self.recusa = recusa
         self.apagarRemoto = apagarRemoto
+        self.afazerRemoto = afazerRemoto
     }
 
     func escutar(uid: String, aoReceber: @escaping @MainActor (Instantaneo) -> Void,
                  aoFalhar: @escaping @MainActor (String) -> Void) -> any Cancelavel {
-        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto
+        let dados = self.dados, semRede = self.semRede, falha = falhaDeLeitura, remoto = apagarRemoto, afazer = afazerRemoto
         guard !semLeitura else { return Nada() }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
             if let falha { aoFalhar(falha); return }
             aoReceber(Instantaneo(dados: dados, doCache: semRede, gravacaoPendente: false))
+            // Outro aparelho anota um afazer quando o teste avisa (notify_post de "br.com.custta.falso.mudancaRemota", com a
+            // tela já em uso): o documento que chega é o de antes, com o afazer novo no alto da lista da obra.
+            if let afazer {
+                Task { @MainActor in
+                    await Self.esperarOAviso("br.com.custta.falso.mudancaRemota")
+                    aoReceber(Instantaneo(dados: Self.comAfazerDeOutroAparelho(naObra: afazer, em: dados), doCache: semRede,
+                                          gravacaoPendente: false))
+                }
+            }
             guard let remoto else { return }
             // Os segundos contam do aviso do teste (notify_post de "br.com.custta.falso.apagarRemoto", com a folha já
             // aberta), não da abertura do app: um relógio desde a abertura corria contra o teste, mais lento na CI.
-            await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
-                var token: Int32 = 0
-                notify_register_dispatch("br.com.custta.falso.apagarRemoto", &token, .main) { t in
-                    notify_cancel(t)
-                    avisado.resume()
-                }
-            }
+            await Self.esperarOAviso("br.com.custta.falso.apagarRemoto")
             try? await Task.sleep(for: .seconds(remoto.depois))
             let depois = remoto.gasto.isEmpty ? Self.semAObra(remoto.obra, em: dados) : Self.sem(remoto.gasto, naObra: remoto.obra, em: dados)
             aoReceber(Instantaneo(dados: depois, doCache: semRede, gravacaoPendente: false))
         }
         return Nada()
+    }
+
+    /// Espera o aviso do teste (notify_post), que atravessa do processo do XCUITest ao app no simulador.
+    private static func esperarOAviso(_ nome: String) async {
+        await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
+            var token: Int32 = 0
+            notify_register_dispatch(nome, &token, .main) { t in
+                notify_cancel(t)
+                avisado.resume()
+            }
+        }
+    }
+
+    /// O blob com um afazer novo no alto da lista de uma obra, como outro aparelho o gravaria.
+    private static func comAfazerDeOutroAparelho(naObra obraId: String, em dados: ValorJSON?) -> ValorJSON? {
+        guard case .objeto(var raiz)? = dados, case .lista(let obras)? = raiz["obras"] else { return dados }
+        raiz["obras"] = .lista(obras.map { o in
+            guard case .objeto(var obra) = o, obra["id"] == .texto(obraId) else { return o }
+            var afazeres: [ValorJSON] = []
+            if case .lista(let atuais)? = obra["afazeres"] { afazeres = atuais }
+            obra["afazeres"] = .lista([DadosDeExemplo.afazer("remoto1", "Ver a entrega do gesso", feito: false)] + afazeres)
+            return .objeto(obra)
+        })
+        return .objeto(raiz)
     }
 
     /// O blob sem uma obra, como outro aparelho o gravaria.
@@ -162,9 +192,12 @@ enum DadosDeExemplo {
             "obras": .lista([
                 obra("v1", "Casa Alphaville", "construcao", inicio: 14, gastos: [],
                      extra: ["orcamento": .objeto(["modo": .texto("total"), "total": .numero(1_200_000)]),
-                             "valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300), "gastos": gastosDaVitrine(hoje: hoje)]),
+                             "valorEstimadoVenda": .numero(1_450_000), "areaM2": .numero(300), "gastos": gastosDaVitrine(hoje: hoje),
+                             "afazeres": afazeresDaVitrine]),
                 obra("v2", "Sobrado Granja Viana", "pronta", inicio: 23,
-                     gastos: [(23, 250_000), (21, 330_000), (18, 310_000), (15, 280_000), (12, 210_000)]),
+                     gastos: [(23, 250_000), (21, 330_000), (18, 310_000), (15, 280_000), (12, 210_000)],
+                     extra: ["afazeres": .lista([afazer("b1", "Entregar as chaves ao corretor", feito: true),
+                                                 afazer("b2", "Pintar o muro da frente", feito: true)])]),
                 obra("v3", "Casa Tamboré 4", "vendida", inicio: 20,
                      gastos: [(20, 210_000), (18, 260_000), (15, 250_000), (12, 256_000)],
                      extra: ["venda": .objeto(["valor": .numero(1_450_000), "data": data(2)])]),

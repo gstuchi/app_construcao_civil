@@ -46,6 +46,9 @@ final class LeituraNoVidroUITests: XCTestCase {
         /// Tela rolada: o texto que passa por baixo da barra é borrado pela borda de rolagem e muda quando é apagado, a
         /// mais de 5 pt das letras; os 140 pt de cima (a borda) ficam de fora, como os de baixo.
         var rolada = false
+        /// Toques depois de a tela abrir e antes do print, os mesmos nos dois (a busca, o mês, os Feitos, a linha arrastada;
+        /// etapa 3, PR 3): o estado a que se chega pelo toque, sem gancho de teste.
+        var toques: (@MainActor (XCUIApplication) -> Void)? = nil
     }
 
     /// A tabela de exceções do laudo: a cena e a figura que sai dos dois prints dela (`foraDoLaudo(_:)` no app, com
@@ -63,11 +66,14 @@ final class LeituraNoVidroUITests: XCTestCase {
         let excecao = Self.excecoes[cena.nome].map { ["-custta.foraDoLaudo", $0] } ?? []
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir, folha: cena.folha,
                            argumentos: cena.argumentos + excecao + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
-        XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 10), "\(cena.nome): a tela não abriu")
+        // Até 30 s: na VM do iOS 26, a thread principal para de 3 a 8 s na abertura, e a cena rolada só fica pronta depois da
+        // rolagem fixa (do "abriu" à frase do fim do A pagar, de 9 a 34 s no run 40590390423; no Mac, ~2 s).
+        XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 30), "\(cena.nome): a tela não abriu")
         if let aba = cena.aba {
             app.abrirAba(aba)
             XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")
         }
+        cena.toques?(app)
         Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
         let foto = XCUIScreen.main.screenshot()
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
@@ -337,8 +343,10 @@ extension LeituraNoVidroUITests {
 
     /// A tela da obra (etapa 2): o topo (título, fase, indicadores) e a lista rolada (o "A vencer" e os cartões dos meses),
     /// no escuro e no claro; mais a maior letra e o Aumentar contraste, no escuro esmeralda. A vendida fica no
-    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 758 pt: a 640 até a etapa 2, e a linha do orçamento da
-    /// vitrine (118 pt, etapa 3) empurrou tudo o que vem depois dos indicadores.
+    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 905 pt: a 640 até a etapa 2; a linha do orçamento da vitrine
+    /// (118 pt, PR 1 da etapa 3) e a linha dos afazeres com o cabeçalho da busca (117 pt, PR 3) empurraram tudo o que vem
+    /// depois deles. A borda de cima fica no vão entre a pílula "Lançamentos" e o "A vencer" (no 18 Pro, 23 pt abaixo da pílula
+    /// e 18 acima do "A vencer"): a 875, os mesmos 758 de antes mais 117, ela cortava a pílula.
     @MainActor func testLeituraDaObra() {
         var cenas: [Cena] = []
         for tema in temas {
@@ -346,7 +354,7 @@ extension LeituraNoVidroUITests {
             cenas += [
                 Cena(nome: "obra, topo, \(tema)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
                      dados: "vitrine", abrir: "obra:v1"),
-                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "758"],
+                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "905"],
                      espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
             ]
         }
@@ -354,7 +362,7 @@ extension LeituraNoVidroUITests {
         cenas += [
             Cena(nome: "obra na maior letra", conta: "senha", argumentos: escuro + maiorLetra, espera: "tituloDaObra", escopo: "tudo",
                  dados: "vitrine", abrir: "obra:v1"),
-            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "758"],
+            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "905"],
                  espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
         ]
         cobrar(cenas)
@@ -364,9 +372,16 @@ extension LeituraNoVidroUITests {
     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, seis rolagens; na
     /// CI, duas.
     @MainActor func testLeituraDaObraRolando() {
-        // 118 pt abaixo das da etapa 2 (200 a 1500), a altura da linha do orçamento da vitrine: o mesmo pedaço da tela de
-        // antes, sem palavra cortada pela borda (a 640 e a 1200, o pedaço de baixo de uma palavra ficava em 4,04 a 4,36).
-        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [518, 1018] : [318, 518, 758, 1018, 1318, 1618]
+        // As da etapa 2 (200 a 1500) desceram 118 pt com a linha do orçamento da vitrine (PR 1 da etapa 3). No PR 3, cada uma
+        // tem a borda de cima no meio de um vão entre duas linhas (de 12 a 23 pt de folga no 18 Pro, em 25/10), sem palavra
+        // cortada pela borda: a 318 fica; a 561 é a 518 mais 43 (a 518 já cortava uma palavra); da terceira em diante, as de
+        // antes mais 117 (a linha dos afazeres e o cabeçalho da busca, que o PR 3 pôs depois das ações) cortavam palavra (a
+        // 1318, a linha de baixo de um gasto em 3,91), e cada uma foi para o vão mais perto. A 318 e a 561 mostram a linha dos
+        // afazeres e a busca embaixo. Da 1101 para baixo, as linhas são as dos cartões dos meses, que mudam com o dia (a
+        // vitrine conta os gastos a partir de hoje): em 26/10, a "Quinzena do pedreiro" de 55 dias atrás passou de agosto para
+        // setembro, e a 1715 ficou com 8 pt de folga embaixo; com o hoje deslocado para 3/11 (o cartão do mês novo nasce com um
+        // gasto só), a 561 e a 1101 seguem num vão, e a 1423 e a 1715 cortam uma palavra pela borda (que passa, de 6,26 a 7,26).
+        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [561, 1101] : [318, 561, 905, 1101, 1423, 1715]
         var cenas: [Cena] = []
         for contraste in [false, true] {
             for y in rolagens {
@@ -399,8 +414,10 @@ extension LeituraNoVidroUITests {
                 folha("folha, tópicos, \(tema)", "topicos", combo, espera: "topico-terreno"),
                 folha("folha, parcela, \(tema)", "editar:g031", combo, espera: "avisoParcela"),
                 folha("folha, repetido, \(tema)", "repetido", combo, espera: "avisoRepetido"),
+                // A 835 põe a borda no vão entre os afazeres e a pílula; a 758 de antes, com a lista 117 pt mais abaixo
+                // desde o PR 3, cortava o cabeçalho dos afazeres.
                 Cena(nome: "obra, linha aberta, \(tema)", conta: "senha",
-                     argumentos: combo + ["-custta.rolagem", "758", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
+                     argumentos: combo + ["-custta.rolagem", "835", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
                      escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
             ]
         }
@@ -616,7 +633,7 @@ extension LeituraNoVidroUITests {
     /// o A pagar no topo e rolado e a edição de um vencimento empurrada; o detalhe da Cerâmica no topo e rolado, a Estrutura (a
     /// frase do "passou" no Alerta, a mais fraca do laudo da letra padrão) e a edição com "Cerâmica"; com Aumentar contraste, o
     /// A pagar e a Cerâmica. As roladas e as edições abrem pelos ganchos da lista das folhas, como no testLeituraDasFolhasDeOrigem.
-    /// Roda no job laudo-etapa3.
+    /// Roda no job laudo-etapa3-b.
     @MainActor func testLeituraDasFolhasDeOrigemNaMaiorLetra() {
         let escuro = ["-custta.tema", "escuro"] + piorMomento
         let grande = escuro + maiorLetra, contraste = escuro + ["-custta.aumentarContraste", "YES"]
@@ -649,6 +666,95 @@ extension LeituraNoVidroUITests {
             Cena(nome: "detalhe, Cerâmica, com Aumentar contraste", conta: "senha", argumentos: contraste, espera: "orcamentoDoTopico",
                  escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest"),
         ])
+    }
+}
+
+extension LeituraNoVidroUITests {
+    /// A busca e os afazeres (etapa 3, PR 3), no escuro e no claro, na Casa Alphaville da vitrine; tudo pelo toque
+    /// (`Cena.toques`), sem gancho novo. A busca: os lançamentos com o campo vazio e o chip do mês de hoje, em repouso (o
+    /// "buscar" do teclado o fecha); o mês de hoje com a soma; "ceramica", com os achados e a soma deles; "azulejo", nada
+    /// achado, com o "Limpar a busca"; e o mês sem gasto, com o "Ver todos os meses" (o mês mais novo tem só a última parcela
+    /// do porcelanato, daqui a 175 dias, em qualquer dia: apagada só ela, o mês fica vazio). A lista fica parada pela rolagem
+    /// fixa da obra, que a segura mesmo depois da lupa (sem ela, a lupa põe a pílula "Lançamentos" sob a borda). A 835 pt, a
+    /// borda de cima fica no vão entre a linha dos afazeres e a pílula (no 18 Pro, 26 pt abaixo de uma e 32 acima da outra),
+    /// acima de tudo o que muda com o dia. As listas curtas não chegam aos 835 e param no fim: no mês sem gasto, a borda fica
+    /// no vão entre os dois últimos indicadores (7 pt abaixo do "Parcelas e gastos futuros" e 24 acima do "Venda estimada");
+    /// no nada achado, o fim a punha sobre o valor da venda estimada, e a 596 pt (7 antes do fim) ela fica no vão entre o
+    /// "Venda estimada" e o valor, a 7 pt de cada um, com o "Limpar a busca" 26 pt acima da faixa de baixo. Nenhuma dessas
+    /// linhas muda com o dia. Os afazeres: a tela com os 3 pendentes (o de 213 caracteres inteiro) e os "Feitos" fechados, os
+    /// "Feitos" abertos, o vazio (a Casa Tamboré) e a linha arrastada com o "Apagar". Ficam de fora: o menu do mês, que é do
+    /// sistema (nem a cor nem o vidro dele são do app); e o texto digitado e o prompt dos campos, que o UIKit desenha e o
+    /// texto apagado não tira (ponto cego do laudo: saem iguais nos dois prints). Roda no job laudo-etapa3-b.
+    @MainActor func testLeituraDaBuscaEDosAfazeres() {
+        let hoje = Self.mesPorExtenso(daqui: 0), maisNovo = Self.mesPorExtenso(daqui: 175)
+        var cenas: [Cena] = []
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
+            func busca(_ nome: String, rolagem: Int = 835, _ toques: @escaping @MainActor (XCUIApplication) -> Void) -> Cena {
+                Cena(nome: "busca, \(nome), \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "\(rolagem)"],
+                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, toques: toques)
+            }
+            cenas += [
+                busca("em repouso") { app in
+                    Self.buscar(app, "")
+                    Self.escolherMes(app, hoje)
+                },
+                busca("mês") { app in Self.escolherMes(app, hoje) },
+                busca("achados") { app in Self.buscar(app, "ceramica") },
+                busca("nada achado", rolagem: 596) { app in Self.buscar(app, "azulejo") },
+                busca("mês sem gasto") { app in
+                    Self.escolherMes(app, maisNovo)
+                    let linha = app.elemento("gasto-g037")
+                    XCTAssertTrue(linha.waitForExistence(timeout: 5), "a última parcela no A vencer, aberto pelo filtro")
+                    linha.swipeLeft()
+                    app.buttons["apagar-g037"].tap()
+                    app.alerts.firstMatch.buttons["Apagar só esta parcela"].tap()
+                    XCTAssertTrue(app.elemento("buscaMesSemGasto").waitForExistence(timeout: 5), "o mês ficou sem gasto")
+                },
+                Cena(nome: "afazeres, \(tema)", conta: "senha", argumentos: combo, espera: "pendentes", escopo: "tudo",
+                     dados: "vitrine", abrir: "afazeres:v1"),
+                Cena(nome: "afazeres, feitos abertos, \(tema)", conta: "senha", argumentos: combo, espera: "pendentes", escopo: "tudo",
+                     dados: "vitrine", abrir: "afazeres:v1", toques: { app in
+                         app.elemento("feitos").tap()
+                         XCTAssertTrue(app.elemento("afazer-a4").waitForExistence(timeout: 5), "os Feitos abertos")
+                     }),
+                Cena(nome: "afazeres vazio, \(tema)", conta: "senha", argumentos: combo, espera: "afazeresVazio", escopo: "tudo",
+                     dados: "vitrine", abrir: "afazeres:v3"),
+                Cena(nome: "afazeres, linha aberta, \(tema)", conta: "senha", argumentos: combo, espera: "pendentes", escopo: "tudo",
+                     dados: "vitrine", abrir: "afazeres:v1", toques: { app in
+                         app.elemento("afazer-a3").swipeLeft()
+                         XCTAssertTrue(app.buttons["apagar-a3"].waitForExistence(timeout: 3), "arrastar mostra Apagar")
+                     }),
+            ]
+        }
+        cobrar(cenas)
+    }
+
+    /// O mês por extenso, como o menu e o chip o mostram ("Outubro de 2026"), daqui a tantos dias: a vitrine conta os gastos a
+    /// partir de hoje, e o mês de hoje sempre tem gasto (o g039, daqui a 3 dias, ou o g027, de 2 dias atrás).
+    private static func mesPorExtenso(daqui dias: Int) -> String {
+        let data = Calendar(identifier: .gregorian).date(byAdding: .day, value: dias, to: .now) ?? .now
+        let formato = DateFormatter()
+        formato.locale = Locale(identifier: "pt_BR")
+        formato.dateFormat = "LLLL 'de' yyyy"
+        let texto = formato.string(from: data)
+        return texto.prefix(1).uppercased() + texto.dropFirst()
+    }
+
+    /// O mês pelo menu do sistema, tocado pelo título (o item traz a contagem no subtítulo), como no BuscaUITests.
+    @MainActor private static func escolherMes(_ app: XCUIApplication, _ titulo: String) {
+        app.buttons["filtrarPorMes"].tap()
+        let item = app.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", titulo, titulo + ",")).firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "o menu mostra \(titulo)")
+        item.tap()
+        XCTAssertTrue(app.elemento("chipDoMes").waitForExistence(timeout: 5), "o chip de \(titulo)")
+    }
+
+    /// A lupa abre o campo com o teclado; o texto entra e o "buscar" do teclado o fecha, com a busca aberta (em repouso).
+    @MainActor private static func buscar(_ app: XCUIApplication, _ texto: String) {
+        app.buttons["buscar"].tap()
+        app.digitarComFoco(texto + "\n", em: app.textFields["campoDaBusca"])
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "o buscar do teclado o fecha")
     }
 }
 

@@ -241,7 +241,7 @@ As três camadas do spec do app nativo, sem pacote novo.
 - **Gráficos e Relatório:** empurrados no caminho de Obras (`RotaDeObras`, ObrasView.swift:5), como a tela Orçamento.
 - **"Vale a pena?":** uma aba nova. Hoje a `Aba` tem `obras` e `ajustes` (CapsulaDeAbas.swift:18-20), e o `PrincipalView` já anota que essa aba chega na etapa 4 (PrincipalView.swift:4).
 - **Barra de soma:** no Selecionar, ela toma o lugar da cápsula de abas, que é um `safeAreaBar` do `PrincipalView` (PrincipalView.swift:29).
-- **Gráficos e anel:** desenhados pelo app, sem Swift Charts, com marcas em `Shape` e o texto em views (conselho, item 1). A troca da linha 67 do spec geral vai ao Giovani.
+- **Gráficos e anel:** desenhados pelo app, sem Swift Charts, com marcas em `Shape` e o texto em views (conselho, item 1). O Giovani aprovou em 29/10 a troca da linha 67 do spec geral.
 - **Telas da análise:** moram em `Custta/Analise/`, ligadas ao resto do app por uma costura só, feita no PR da obra (seção "PRs").
 - **PDF:** tabelas em UIKit fora da thread principal e a página 1 composta em SwiftUI, com a folha de compartilhar do sistema (conselho, item 2).
 - **Teclado de valor:** o `TecladoDeValor` da etapa 3, num campo só (sem ‹ ›).
@@ -253,7 +253,13 @@ As três camadas do spec do app nativo, sem pacote novo.
 2. **O PR 1 vira três**, nesta ordem: (a) os tokens globais sozinhos, com o laudo inteiro provando que nada caiu nas etapas 1 a 3; (b) as peças da identidade; (c) a obra reescrita.
 3. **TestFlight por marco, não por PR.** Um marco junta os PRs que formam uma entrega testável no iPhone.
 
-**O corte (conselho, item 3).** São 11 PRs em 3 marcos. As linhas são de produção, estimadas pela régua dos PRs das etapas 2 e 3, cujos PRs de tela ficaram entre ~1.100 e ~2.100. Os portões estão explicados depois da tabela.
+**Decisões do Giovani (29/10, nas respostas ao conselho).**
+1. **A linha 67 do spec geral:** sai o "Gráficos com Swift Charts", e os três gráficos são desenhados pelo app (conselho, item 1). Ele perguntou se a animação de girar do anel continua; continua, e foi por isso que aprovou a troca.
+2. **As duas sondas na CI,** num ramo `proto/`, só com o job delas: o gerador do PDF fora da thread principal no Swift 6.3.3 e a marcação para leitor de tela no iOS 26.
+3. **Merge no meio do marco sem OK por lado a lado antes.** Com a CI toda verde, a revisão aprovada e nenhum rerun no iOS 26, o Orquestrador mescla, até 5 seguidos; no 5º, manda a ele um resumo com os prints lado a lado (simulador × mockup) de cada PR. Sempre com o OK dele: o 1a (tokens globais), com o antes × depois das telas principais no claro e no escuro, e o TestFlight de cada fecho de marco. Enquanto um PR espera o OK, o time segue no seguinte, empilhado, com no máximo 2 esperando.
+4. **O "Vale a pena?" adiantado,** abrindo o marco 2, **e os 3 marcos** como no conselho.
+
+**O corte (conselho, item 3; aprovado por ele em 29/10).** São 11 PRs em 3 marcos. As linhas são de produção, estimadas pela régua dos PRs das etapas 2 e 3, cujos PRs de tela ficaram entre ~1.100 e ~2.100. Os portões estão explicados depois da tabela.
 
 | Ordem | PR | O que entrega | Linhas (est.) | Portões | Marco | Escondido na `main` até o seguinte |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -293,9 +299,9 @@ As três camadas do spec do app nativo, sem pacote novo.
 **Marcos e espera.**
 - **O build.** O TestFlight sai do merge que fecha o marco, com uma tag (`etapa4-marco-1`, …). Um conserto urgente sai da tag, não da `main` no meio do marco.
 - **A espera.** Dentro do marco, nenhum PR espera build. O 1º PR do marco seguinte pode ser feito durante o teste do Giovani no iPhone, mas só é mesclado depois do OK dele no build.
-- **O OK do meio do marco, recomendação a confirmar com ele:** nos PRs do meio do marco, o OK de merge vem pelo lado a lado (simulador × print do mockup) anexado ao PR, e o iPhone fica para o fecho.
+- **O merge no meio do marco (decisão 3 dele, acima).** Não há OK por lado a lado antes: com os testes passando, o Orquestrador mescla, até 5 seguidos, e o 5º leva a ele o resumo com os prints lado a lado de cada PR. O 1a e o TestFlight de cada fecho esperam o OK dele, e o iPhone fica para o fecho.
 - **O checklist.** Cada marco tem um checklist do aparelho, com VoiceOver, Controle por Voz e a letra máxima. O da etapa fecha no 4b.
-- **Cada PR nasce num worktree novo,** a partir da `origin/main` atualizada.
+- **Cada PR nasce num worktree novo,** a partir da `origin/main` atualizada, ou empilhado sobre o PR que espera o OK dele, com no máximo 2 esperando.
 
 ## Conta
 
@@ -388,9 +394,7 @@ O conselho rodou em 29/10, depois das sete confirmações e do adendo do Giovani
     - O "Ver gastos ›" é um botão de 44 pt que o VoiceOver e o Controle por Voz alcançam.
   - **Dado novo:** quando o dado muda com a tela à vista, o VoiceOver é avisado, além da animação, como pede a HIG.
 - **Laudo das marcas.** Um modo de Debug apaga só as marcas, como o texto apagado apaga o texto. Com ele, o laudo mede a 3:1 os pedaços, as linhas, as barras e a barra empilhada, nos vidros Transparente e Fosco. A `BarraApagada` conta como dado.
-- **Vai ao Giovani: a linha 67 do spec geral.** Ela passa de "Gráficos com Swift Charts" para "Gráficos desenhados em SwiftUI, no visual do Custta, com a acessibilidade dos gráficos do sistema (descritor e gráfico em áudio)". A linha 110 fica: nada de biblioteca de terceiros.
-  - Se ele quiser o Swift Charts onde der, o anel fica próprio de qualquer jeito. A linha e as barras vão ao Swift Charts com a nossa acessibilidade por cima, ao custo medido no arrasto.
-  - Nesse caso entram duas provas no iOS 26: as marcas escondidas não viram achado, e o texto apagado alcança os rótulos dele.
+- **A linha 67 do spec geral (aprovada pelo Giovani em 29/10).** Passou de "Gráficos com Swift Charts" para "Gráficos desenhados em SwiftUI, no visual do Custta, com a acessibilidade dos gráficos do sistema (descritor e gráfico em áudio)". Ele perguntou se a animação de girar do anel continua; continua, e foi por isso que aprovou. A linha 110 fica: nada de biblioteca de terceiros.
 - **Descartado:** a proposta de acessibilidade trocava a lista do anel por um elemento de resumo. A troca não foi medida e mudava a recomendação do Croqui (crítica de fidelidade). O resumo foi para o rótulo do contêiner.
 
 ### 2. PDF: tabelas em UIKit, página 1 à parte
@@ -427,7 +431,7 @@ O conselho rodou em 29/10, depois das sete confirmações e do adendo do Giovani
   - Tinta em cada linha prevista, com descrições longas, na CI. É a prova contra as linhas que sumiam na altura infinita.
   - Uma descrição de 3.000 caracteres.
   - O mesmo PDF com o app no escuro, na letra máxima, com Negrito, Aumentar contraste, Reduzir transparência e o Fosco: igual em texto e em pixels. Nunca em bytes, porque o `/ID` e a data mudam.
-- **Vai ao Giovani: o OK para duas sondas na CI**, num ramo `proto/`, só com o job, como na etapa 3. Uma prova o gerador fora da thread principal no Swift 6.3.3; a outra, a marcação no iOS 26.
+- **Duas sondas na CI (OK do Giovani em 29/10)**, num ramo `proto/`, só com o job, como na etapa 3. Uma prova o gerador fora da thread principal no Swift 6.3.3; a outra, a marcação no iOS 26. O resultado entra no plano do marco 3.
 - **Descartado:**
   - tudo em SwiftUI: é 2,3 vezes mais lento, prende a thread principal, e o `Text` quebra a linha noutro lugar que a paginação;
   - a comparação por bytes: reprova sempre;
@@ -445,11 +449,7 @@ A tabela e as regras estão na seção "PRs". O voto:
   - escopo por lista de arquivos e por rótulo: na dúvida, roda menos; e pôr o rótulo dispara um run novo, que cancela o anterior;
   - um segundo aparelho na CI: o laudo inteiro do Pro Max roda no Mac, no fim de cada PR, como desde 24/10;
   - 12 PRs em 4 marcos: cada PR e cada TestFlight a mais pagam de novo o custo fixo de fechar.
-- **Vão ao Giovani:**
-  - a resposta sobre os jobs, acima;
-  - o OK dos PRs do meio do marco pelo lado a lado anexado ao PR (simulador × print do mockup), com o iPhone só no fecho;
-  - o "Vale a pena?" adiantado para abrir o marco 2;
-  - os 3 marcos.
+- **Respostas do Giovani (29/10, seção "PRs").** O "Vale a pena?" adiantado, abrindo o marco 2, e os 3 marcos foram aprovados. O OK por lado a lado no meio do marco não ficou: com os testes passando, o Orquestrador mescla, e só o 1a e o TestFlight de cada fecho esperam o OK dele.
 
 **Referências que mudariam o voto.** Nenhuma das 8 muda a técnica dos gráficos nem a do PDF.
 - **1:** pode trocar o gesto dos meses: segurar para varrer, ou passos com setas, se o Controle por Voz falhar no aparelho.
@@ -521,7 +521,7 @@ O conselho de 29/10 seguiu sem elas. As que mudariam o voto estão no fim de "De
   - a inspeção dentro do processo;
   - a auditoria e o laudo das marcas no iOS 26;
   - o VoiceOver de verdade no checklist de cada marco.
-- **O PDF.** Os riscos são a descrição longa, a obra com milhares de gastos, a fonte mono no arquivo e o PDF que não pode depender do tema nem da letra. O protótipo mediu tudo isso no iOS 27 (conselho, item 2). Faltam o iPhone, o iOS 26, o Swift 6.3.3 da CI e a marcação, que dependem das sondas.
+- **O PDF.** Os riscos são a descrição longa, a obra com milhares de gastos, a fonte mono no arquivo e o PDF que não pode depender do tema nem da letra. O protótipo mediu tudo isso no iOS 27 (conselho, item 2). Faltam o iPhone, o iOS 26, o Swift 6.3.3 da CI e a marcação, que dependem das sondas aprovadas por ele em 29/10.
 - **O número que encolhe:** o laudo não vê corte; a prova é o teste de largura do plano.
 - **Barra de soma, teclado e cápsula:** busca e Selecionar abertos juntos, na letra máxima, em 375 pt (13 mini).
 - **Mudança de outro aparelho com o Selecionar aberto:** a seleção sobrevive e o gasto que some sai da soma; pede teste com escrita remota pelo emulador, como o achado 3 da etapa 3.

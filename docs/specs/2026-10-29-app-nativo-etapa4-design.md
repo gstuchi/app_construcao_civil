@@ -6,9 +6,9 @@ Data: 2026-10-29. Spec da etapa 4 do app nativo (`docs/specs/2026-10-06-app-nati
 
 A etapa 3 terminou no código com o PR 3 (#88, `bb3ef21`), depois do PR 0 do site (#79), do orçamento (#83), da aparência em Ajustes (#84) e do A pagar com o detalhe do tópico (#85); o plano dela entrou no #82. A main está em `cec9fc0`.
 
-A etapa 4 só lê o estado. Gráficos, Relatório, "Vale a pena?" e PDF fazem contas sobre o que já existe: nenhuma mutação nova, nenhuma chave nova no blob, e as `firestore.rules` não mudam. As gravações que se alcançam pelas telas novas são as das etapas 2 e 3: o "Ver gastos" do anel e as linhas da lista abrem a folha do detalhe do tópico, que edita e apaga gasto, e o + da cápsula abre a folha de gasto novo (seção "Decisões tomadas por recomendação"). O PDF é gerado no aparelho e só sai pela folha de compartilhar do sistema.
+A etapa 4 só lê o estado. Gráficos, Relatório, "Vale a pena?" e PDF fazem contas sobre o que já existe: nenhuma mutação nova, nenhuma chave nova no blob, e as `firestore.rules` não mudam. As gravações que se alcançam pelas telas novas são as das etapas 2 e 3: o "Ver gastos" do anel e as linhas da lista abrem a folha do detalhe do tópico, que edita e apaga gasto, e o + da cápsula abre a folha de gasto novo (confirmação 6 de 29/10, em "Decisões de desenho"). O PDF é gerado no aparelho e só sai pela folha de compartilhar do sistema.
 
-A etapa também traz a identidade nova do Custta, decidida com o Giovani em 28/10: blocos de vidro sobre a aurora, números em SF Mono, o verde de destaque e um bloco sólido por tela. Ela entra na obra e nas telas novas. Os valores dos tokens globais foram aprovados por ele no mockup; levar esses tokens e a cápsula de abas ao app inteiro é recomendação deste spec, a confirmar com ele. O resto do app (lista de obras, folhas, Ajustes, entrar e as telas empurradas da obra que o mockup não desenha, Orçamento e Afazeres) continua com a cara da etapa 3 até uma decisão dele.
+A etapa também traz a identidade nova do Custta, decidida com o Giovani em 28/10: blocos de vidro sobre a aurora, números em SF Mono, o verde de destaque e um bloco sólido por tela. Ela entra na obra e nas telas novas. Os valores dos tokens globais foram aprovados por ele no mockup, e em 29/10 ele aprovou levar esses tokens e a cápsula de abas ao app inteiro. O resto do app (lista de obras, folhas, Ajustes, entrar e as telas empurradas da obra que o mockup não desenha, Orçamento e Afazeres) continua com a cara da etapa 3 até uma decisão dele.
 
 ## Mockup aprovado
 
@@ -23,7 +23,7 @@ Fora do repositório, em `~/Documents/custta-mockups/nativo/etapa4/` (abrir no C
 - Medidas, tokens e o que é obrigatório ou sugestão estão em "Medidas e especificação" e "O que vem do site" do `parte1.html` e em "O que vem do site" do `parte2.html`. Este spec não repete medida: aponta para lá.
 - **O mockup guarda seis restos de versões anteriores**, e o spec segue a versão aprovada:
   - o topo da parte 2 no `LEIA-ME.md` ainda diz "aguardando o ok dele", e o topo do `parte1.html`, que a parte 2 "ainda não começou";
-  - a decisão 4 da parte 2 (o âmbar do claro) ainda diz "preciso do ok", o `SolidoAmbar` do claro está como "proposta" e a nota do quadro `sim-abaixo-claro` diz que ele só decidiu o do escuro; o título da seção diz que as 7 primeiras foram aprovadas em 28/10. O spec trata como aprovado, e a confirmação vai para ele (seção "Riscos");
+  - a decisão 4 da parte 2 (o âmbar do claro) ainda diz "preciso do ok", o `SolidoAmbar` do claro está como "proposta" e a nota do quadro `sim-abaixo-claro` diz que ele só decidiu o do escuro; o título da seção diz que as 7 primeiras foram aprovadas em 28/10. Ele confirmou o âmbar do claro em 29/10;
   - o título pequeno da barra na letra máxima aparece com 20 pt (ajuste 1 e a linha do título nas medidas) e com 22 pt (a linha "Letra máxima" das medidas): vale 20, o da opção C, que ele escolheu;
   - a nota do quadro `graf-evo-claro` diz "Eixos e rótulos em #3B574B", o valor de antes do texto mais escuro do claro;
   - a opção C do `ajustes-titulo.html`, onde ele escolheu o título, diz que a barra fica em 15 pt; as medidas e o CSS do `parte1.html` dizem 16: vale 16;
@@ -33,7 +33,7 @@ O inventário do site para esta etapa, com arquivo e linha conferidos na `cec9fc
 
 ## Decisões de desenho (aprovadas no mockup)
 
-Aqui entra o que o mockup atribui ao Giovani: as duas partes que ele aprovou (o "O que entrou" de cada uma), as 8 decisões do `BRIEF.md` ("brief 1" a "brief 8"), as decisões de cada parte no `LEIA-ME.md`, os 3 ajustes de 28/10 e as mudanças que ele pediu depois. O que o LEIA-ME e os HTML põem em "Decidido pelo Croqui" está em "Decisões tomadas por recomendação".
+Aqui entra o que o mockup atribui ao Giovani: as duas partes que ele aprovou (o "O que entrou" de cada uma), as 8 decisões do `BRIEF.md` ("brief 1" a "brief 8"), as decisões de cada parte no `LEIA-ME.md`, os 3 ajustes de 28/10 e as mudanças que ele pediu depois; no fim, as sete confirmações de 29/10. O que o LEIA-ME e os HTML põem em "Decidido pelo Croqui" está em "Decisões tomadas por recomendação".
 
 **Identidade (brief 1 a 4 e 8; ajustes 1 e 3).**
 - Vidro sobre a aurora, na dose do app: o Transparente; o Fosco, quando escolhido em Ajustes ou com Aumentar contraste; sólido, com Reduzir transparência. Nunca vidro dentro de vidro.
@@ -64,7 +64,7 @@ Aqui entra o que o mockup atribui ao Giovani: as duas partes que ele aprovou (o 
 - **Entrada** (brief 5): cada pedaço sai do topo, dá a volta e assenta no lugar, em 1,2 s, `cubic-bezier(0, 0, .58, 1)`, com 0,1 s entre pedaços e opacidade só no 1º quarto. Com Reduzir movimento, aparece pronto.
 - **Toque C** (brief 5): o pedaço escolhido engrossa e os outros apagam **pela cor** (sem `filter`); o meio mostra nome, valor, % e "Ver gastos ›"; o 2º toque no mesmo pedaço solta. "Outros" mostra quantos tópicos junta, sem "Ver gastos": o caminho são as linhas cinzas da lista.
 - **Evolução** (brief 4; decisão 7): linha do gasto com degradê e o tracejado "no banco já seria". O valor lido fica acima do gráfico. A linha para em hoje (ou na venda), como o site, e o que ficou de fora vira uma frase em âmbar.
-- **Gasto por mês** (brief 4; decisões 5 e 7): barras com o mês escolhido aceso em verde e os outros apagados; as parcelas a vencer tracejadas e hachuradas.
+- **Gasto por mês** (brief 4; decisões 5 e 7): barras com o mês escolhido aceso em verde e os outros apagados; as parcelas a vencer tracejadas e hachuradas; embaixo, média, maior e meses (confirmação 2).
 - **Toque nos gráficos de mês** (decisão 5): tocar ou arrastar o dedo, com o gráfico inteiro como alvo; o mês mais perto do dedo é o escolhido; a seleção fica ao soltar; o valor lido fica acima. **O padrão é este mês**, não o último com gasto, que o site usa e que na Casa Alphaville cairia em abril de 2027, um mês a vencer.
 - **Sem os chips "6 meses / 1 ano / Tudo"** (decisão 6). Passando de 24 meses, aparece "Mostrando os últimos 24 meses.".
 - **Parcelas a vencer** (decisão 7): o Total gasto (R$ 842 mil) inclui R$ 65,5 mil a vencer, e a evolução para em hoje (R$ 777 mil). O gasto por mês mostra as parcelas tracejadas, e a evolução avisa em âmbar quanto ficou de fora.
@@ -82,9 +82,9 @@ Aqui entra o que o mockup atribui ao Giovani: as duas partes que ele aprovou (o 
   - o Selecionar vale sobre o resultado: marcadores só nos achados, soma só dos marcados à vista, o aviso dos marcados que a busca escondeu ("e mais 1 marcado fora da busca") e o atalho "Marcar os N achados" no resumo.
 
 **"Vale a pena?" (parte 2, decisões 4 a 7).**
-- Aba própria: a cápsula volta a ter Obras | Vale a pena? | Ajustes + "+" (o que o + faz nessa aba está em "Decisões tomadas por recomendação").
+- Aba própria: a cápsula passa a ter Obras | Vale a pena? | Ajustes, e o + some nessa aba (confirmação 6).
 - Os campos do site num bloco: **Obra**, **Se eu vender por** (no teclado de valor da etapa 3) e **Daqui a (meses)**, com − e +; a nota do site dentro do bloco.
-- O veredito é o sólido: **verde** "Vale a pena" ou **âmbar** "Rende menos que o banco" (`#FFD98A` no escuro; `#F2C15A`, com texto `#2B1B00`, no claro: decisão 4), com a taxa ao mês, "vendendo daqui a N meses" e "banco paga 1% · rende N× o banco".
+- O veredito é o sólido: **verde** "Vale a pena" ou **âmbar** "Rende menos que o banco" (`#FFD98A` no escuro; `#F2C15A`, com texto `#2B1B00`, no claro: decisão 4, com o claro confirmado em 29/10), com a taxa ao mês, "vendendo daqui a N meses" e "banco paga 1% · rende N× o banco".
 - A **faixa** com o custo, o ponto em que empata com o banco e a venda (a zona hachurada é "acima do banco"), com os 3 valores numa lista embaixo, cada um com o seu marcador (decisão 6).
 - A tabela do site, **pelo bruto × pelo corrigido**, com R$/m² quando a obra tem área, em pares: o rótulo em cima e os dois valores embaixo; na letra máxima, um por linha (decisão 7). O lucro negativo vai em âmbar (nota do quadro `sim-abaixo-baixo`).
 - Estados do site: sem obra elegível ("— crie uma obra com gastos —"), sem preço ("Digite o preço de venda pra ver a conta.") e obra com menos de 1 mês, com a taxa "—" e a frase do site (decisão 5: manter o site). **Achado do Croqui:** nesse caso o veredito sai pelo preço contra o custo corrigido e pode dar "Vale a pena" em verde sem taxa.
@@ -92,15 +92,24 @@ Aqui entra o que o mockup atribui ao Giovani: as duas partes que ele aprovou (o 
 **PDF (brief 7; parte 2, decisões 1 e 2).**
 - Um botão só, "Exportar PDF", no fim dos Gráficos e no fim do Relatório, sem tela de opções. Ele gera o PDF na hora e abre a folha de compartilhar do iOS (arquivo `Custta-Casa-Alphaville.pdf` no exemplo; AirDrop, Mensagens, Salvar em Arquivos, Imprimir), que é desenhada pelo sistema.
 - Papel branco, verde escuro, logo `custta.` no topo e o número da página no rodapé ("página N de M"); números e título em SF Mono. O PDF é papel: não muda com o tema nem com a letra.
-- **Página 1, o resumo:** os 3 números, o anel com as 6 cores, a linha do gasto e do corrigido e o gasto por mês. Na obra vendida, o 3º número é a venda, com o lucro bruto e o acima do banco; sem venda estimada, "—", sem margem inventada.
+- **Página 1, o resumo:** os 3 números (o 1º é o "Total gasto", com "inclui R$ … a vencer" quando houver: confirmação 3), o anel com as 6 cores, a linha do gasto e do corrigido e o gasto por mês. Na obra vendida, o 3º número é a venda, com o lucro bruto e o acima do banco; sem venda estimada, "—", sem margem inventada.
 - **Da página 2 em diante, todos os gastos por tópico** (bruto, corrigido e correção), com a venda e a margem no fim. O cabeçalho da tabela se repete em cada página; um tópico que não cabe quebra entre as linhas, e a página seguinte o retoma com "(continuação)".
 
-**Tokens globais: os valores aprovados.** Levá-los ao app inteiro é recomendação deste spec.
+**Tokens globais: os valores aprovados**, no app inteiro (confirmação 5).
 - O texto mais escuro do claro (28/10): o âmbar de texto `#6F4705` → `#5E3A03` e o secundário `#3B574B` → `#2F4A3F` (o que isso muda no app está na tabela de tokens).
 - O globo a 70% no escuro (28/10).
 - O verde de destaque, as seis cores do anel e a cor própria dos números positivos (`DestaqueNumero`, nas "Mudanças de 29/10 na parte 1", pedidas por ele).
 
 **Contraste medido no mockup.** O pior texto foi 4,56:1 na parte 1 (chip da fase, no claro) e 4,53:1 na parte 2 (valor da tabela do "Vale a pena?", no claro). No escuro, o pior foi 4,99:1 e 5,29:1. A pior marca de gráfico ficou em 3,04:1 (o verde-água, no claro), e o pior texto do PDF em 4,80:1 (número forte, branco no verde). No iPhone o vidro é o do sistema, e a medida que vale é a do laudo do app.
+
+**Confirmadas por ele em 29/10.** Eram recomendação deste spec ou do Croqui, ou o mockup ainda as marcava como proposta; ele aprovou as sete juntas ("aprovo as 7").
+1. **O âmbar do claro:** o sólido `#F2C15A`, com o texto `#2B1B00`.
+2. **Média, maior e meses** embaixo do gasto por mês (vieram do quadro de exploração do Croqui; o site não tem), com a conta deste spec: do 1º gasto até este mês, com os meses zerados e sem as parcelas a vencer.
+3. **Página 1 do PDF: "Total gasto"** no lugar de "Gasto até hoje", com "inclui R$ … a vencer" quando houver. O número tem as parcelas a vencer (parte 1, decisão 7), e "até hoje" o desmentia.
+4. **Os dois alinhamentos do site no PR 0:** o preço acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou, e os meses ficam entre 0 e 120 na conta (seção "PR 0 do site").
+5. **Os tokens globais e a cápsula de abas (borda de 16 pt) no app inteiro:** um só para todas as telas. Trocar só nas telas novas pediria tokens duplicados e faria a cápsula pular de lugar ao trocar de aba (16 pt nas telas novas, 20 nas outras). O laudo inteiro prova que nada caiu (seção "Testes e validação", item 6).
+6. **O + da cápsula:** some na aba "Vale a pena?", como em Ajustes e como o site, que o esconde nessa aba (app.js:153); nos Gráficos e no Relatório, lança gasto na obra, como nas telas Orçamento e Afazeres (o site o esconde nessas telas); no Selecionar, sai junto com a cápsula. O mockup desenhava o + nas três telas.
+7. **A folha do detalhe do tópico fica como na etapa 3**, porque as folhas estão fora desta etapa. O texto a 34 pt do ajuste 3 entra quando as folhas entrarem; nesta etapa, na folha, só o "% da obra" muda, com o "<1%" (seção "Regras: iguais ao site").
 
 ### Tokens: do mockup para o app
 
@@ -121,7 +130,7 @@ Os valores são do mockup. A coluna "No app" é recomendação deste spec: onde 
 | `LinhaBanco` | #B8D4C7 | #2F4A3F | o `SecundarioTransparente` do app (#D6E8E0 e #2B463B), mais forte |
 | `BarraApagada` | #EAFFF6 a 40% | #142B23 a 58% | novo |
 | `GradeGrafico` / `EixoGrafico` | #EAFFF6 a 14% / 30% | #142B23 a 14% / 32% | novos |
-| `AmbarTexto` | #FFD98A | #5E3A03 (era #6F4705) | o `AlertaNoVidro` de hoje, com o claro escurecido (valor aprovado; muda o app inteiro, por recomendação) |
+| `AmbarTexto` | #FFD98A | #5E3A03 (era #6F4705) | o `AlertaNoVidro` de hoje, com o claro escurecido (valor aprovado; no app inteiro pela confirmação 5) |
 | `SecundarioTransparente` do mockup | #B8D4C7 | #2F4A3F (era #3B574B) | o `SecundarioTransparente` do app já é #D6E8E0 e #2B463B, mais escuro no claro que o novo valor: nada muda |
 | `SecundarioForte` (letra máxima) | #D6E8E0 | #2A453A | o `SecundarioTransparente` do app (#D6E8E0 e #2B463B, um passo mais claro que #2A453A no claro); token novo só se o laudo da letra máxima pedir |
 | `AnelApagado` | #123128 | #DCEAE3 | novo |
@@ -180,7 +189,7 @@ O comportamento vem do site de hoje (`app.js`: as portas da obra, `renderGrafico
 
 Como nas etapas 2 e 3, a regra que só existe dentro do `app.js` sobe antes para o `calc.js`, num PR só do site, e entra nos vetores (`scripts/vetores-calc.mjs`), para site e app serem conferidos pelos mesmos casos. A forma é a do PR 0 das etapas 2 e 3:
 - a cópia em Swift e o leitor de cada grupo de vetores entram no mesmo commit da regra, porque o núcleo barra grupo de vetor sem leitor;
-- o comportamento do site não muda (as suítes de browser que abrem o Relatório ou o simulador, `fase3`, `ios`, `mobile`, `nativo`, `vidro` e `xss`, continuam verdes), salvo os alinhamentos abaixo, se ele aprovar;
+- o comportamento do site não muda (as suítes de browser que abrem o Relatório ou o simulador, `fase3`, `ios`, `mobile`, `nativo`, `vidro` e `xss`, continuam verdes), salvo os dois alinhamentos abaixo, que ele aprovou em 29/10;
 - uma subida só do `CACHE` do `sw.js`, no fim.
 
 **As seis regras** (inventário, "Regras que só vivem no app.js", itens 1 a 6; linhas do `app.js` da `cec9fc0`):
@@ -195,7 +204,7 @@ Como nas etapas 2 e 3, a regra que só existe dentro do `app.js` sobe antes para
 | 6 | Simulador: as obras elegíveis e a escolhida, o preço inicial, os meses, a conta (alvo, menos de 1 mês, TIR, acima do banco, veredito, multiplicador) e os textos do cartão e da tabela | 1252-1257, 1267-1312 | `calc.js` |
 
 - O mês escolhido por padrão nos gráficos e a escala dos eixos (inventário, itens 7 e 8) ficam no `app.js`: o app faz diferente, e não há regra a dividir.
-- **Dois alinhamentos recomendados, pendentes com o Giovani.** Subir a regra 6 já com o comportamento do app evita duas cópias diferentes da mesma conta, como os três alinhamentos da etapa 3:
+- **Dois alinhamentos, aprovados pelo Giovani em 29/10 (confirmação 4).** Subir a regra 6 já com o comportamento do app evita duas cópias diferentes da mesma conta, como os três alinhamentos da etapa 3:
   - o preço acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou (no site, a segunda obra herda o preço da primeira: achado 4);
   - os meses ficam entre 0 e 120 na conta (no site, o teto só existe no `<input>`: achado 5).
 
@@ -207,7 +216,7 @@ Como nas etapas 2 e 3, a regra que só existe dentro do `app.js` sobe antes para
 - o mês padrão do gasto por mês: este mês, o da venda na vendida e, fora da série, o último com gasto (é o que o quadro faz);
 - os meses a vencer (depois deste mês ou da venda), as frases do que ficou fora da evolução (a vencer, ou com data depois da venda) e o "Inclui R$ … a vencer." do anel;
 - a parte da obra de cada tópico no Relatório, com 1 casa;
-- média, maior e meses, se ele aprovar a conta;
+- média, maior e meses (confirmação 2);
 - a escala redonda e os rótulos do eixo X;
 - "N de M gastos" por tópico na busca;
 - a paginação do PDF.
@@ -242,7 +251,7 @@ Recomendação, que passa pelo conselho (é a ordem do trabalho): **um bloco da 
 
 | PR | O que entrega | Build |
 | --- | --- | --- |
-| 0 (site) | As seis regras do `app.js` no `calc.js`, com vetores, cópia em Swift e leitores; os dois alinhamentos, se ele aprovar; uma subida do `CACHE`. | — |
+| 0 (site) | As seis regras do `app.js` no `calc.js`, com vetores, cópia em Swift e leitores; os dois alinhamentos; uma subida do `CACHE`. | — |
 | 1 | Identidade e obra: os tokens globais, com o laudo inteiro das etapas 1 a 3; as peças da identidade (bloco, sólido, número em mono, título em SF Mono, grade, placa); a obra em blocos com todos os estados e a barra empilhada. | sim |
 | 2 | Gráficos: o anel com a entrada e o toque C, a lista com a seta para o detalhe do tópico, a evolução, o gasto por mês, o toque e o arrasto, os estados, a letra máxima e o VoiceOver. A porta "Ver gráficos" e a barra passam a abrir. | sim |
 | 3 | Relatório: os blocos por tópico, o Selecionar com a barra de soma, a obra vendida e sem venda, a busca com o Selecionar sobre o resultado. A porta "Relatório" passa a abrir. | sim |
@@ -276,7 +285,7 @@ Os mesmos portões da etapa 3, estendidos:
 6. **Prova de que nada caiu nas telas das etapas 1 a 3:** os tokens globais e a cápsula de abas mudam no PR 1. O laudo inteiro roda nos dois aparelhos, e as tabelas são comparadas palavra por palavra com as do commit anterior: fora das linhas que usam um token mudado, a diferença é zero; nas que usam, o contraste só sobe. A obra, que muda inteira, ganha cenas novas no lugar das antigas.
 7. **Conferência visual:** simulador lado a lado com os prints do mockup, tela a tela.
 8. **Conferência cruzada:** não há mutação nova, e a da etapa 3 continua. Os números das telas novas (os grupos e a soma do Relatório e a conta do simulador) vêm do PR 0 e são conferidos pelos vetores.
-9. **Site:** as suítes de browser continuam verdes no PR 0; os dois alinhamentos, se aprovados, ganham teste de browser conferido por mutação.
+9. **Site:** as suítes de browser continuam verdes no PR 0; os dois alinhamentos ganham teste de browser conferido por mutação.
 10. **Aparelho:** um checklist da etapa 4 no estilo do da etapa 3, testado pelo Giovani a cada build e fechado no PR 4.
 
 ## Para o conselho
@@ -305,7 +314,6 @@ Não vão ao conselho, porque o mockup ou o spec já fixam, ou porque são peque
 
 **Do Croqui, no mockup (rotina; o Giovani pode mudar).**
 - **Tópico pequeno:** piso de 10 pt de arco por pedaço, tirado do maior; o % verdadeiro na lista e no meio ("<1%", onde o site arredonda para 0%); o alvo do toque é o pedaço mais perto do dedo, e a lista é o caminho seguro.
-- **Média, maior e meses** embaixo do gasto por mês (vieram do quadro de exploração; o site não tem): do 1º gasto até este mês, com os meses zerados e sem as parcelas a vencer. **Pede o OK dele:** o Croqui diz que a conta é dele.
 - **Escala dos eixos em números redondos** (R$ 250 mil, 500 mil…); o site usa frações do máximo.
 - **Obra vendida nos Gráficos:** a evolução para na venda ("até a venda"), e o gasto por mês usa o mês da venda no lugar de "este mês".
 - **Contraste:** a cápsula de vidro nos metadados e no contador "Lançamentos"; os chips nos fundos sólidos da etapa 3; o texto verde do claro em `#0E7A41`, o do site; "Marcar como pronta" e o + na Tinta a 100%; a placa (tom chapado, sem desfoque, que não é vidro) atrás do anel e dos gráficos.
@@ -324,18 +332,14 @@ Não vão ao conselho, porque o mockup ou o spec já fixam, ou porque são peque
 **Deste spec.**
 - **PR 0 na forma das etapas 2 e 3:** a cópia em Swift e os leitores no mesmo PR do site, para os dois lados serem conferidos pelos mesmos vetores desde o primeiro commit.
 - **Tokens pelo valor** (tabela de tokens): reaproveitar o token do app que já existe com o mesmo papel e valor igual ou mais forte, e criar só o que falta.
-- **Peças compartilhadas no app inteiro:** os tokens globais e a cápsula de abas são um só para todas as telas. Trocar só nas telas novas pediria tokens duplicados e faria a cápsula pular de lugar ao trocar de aba (16 pt nas telas novas, 20 nas outras). O laudo inteiro prova que nada caiu (seção "Testes e validação", item 6). **Pede o OK dele**, porque mexe em telas que ficam na etapa 3.
 - **Globo:** nunca mais claro que hoje; o plano mede e fica com o mais apagado.
 - **Halo do título:** a regra do app, o menor passo que fecha 4,5:1 no Pro Max (decisão dele de 10/10, Aurora.swift:186-188); o 38% do mockup (62% na letra máxima) é o ponto de partida.
 - **O % do meio do anel sem casa decimal**, como a lista e o detalhe do tópico. O quadro mostra "10,8% da obra" no meio e "11%" na linha, lado a lado; o site arredonda igual nos dois lugares para o número não mudar ao abrir (app.js:1135). Pelo mesmo motivo, o "<1%" da lista vale também no "% da obra" da folha do detalhe, que hoje mostraria "0% da obra" (`Math.round`, calc.js:88). O Relatório fica com a casa decimal do quadro ("38,0%"), porque lá não há outro % ao lado.
 - **Os valores da lista e do meio do anel sem centavos, arredondados ao real.** O quadro corta os centavos (R$ 319.847,85 vira "R$ 319.847"); arredondado, fica R$ 319.848, como o `moneyShort` do site arredonda. O VoiceOver diz o valor com centavos.
-- **PDF, página 1: "Total gasto" no lugar de "Gasto até hoje"**, com "inclui R$ … a vencer" quando houver. O número tem as parcelas a vencer (parte 1, decisão 7), e "até hoje" o desmente. **Pede o OK dele**, porque muda um texto do mockup.
-- **O + da cápsula:** some na aba "Vale a pena?", como em Ajustes e como o site, que o esconde nessa aba (app.js:153); nos Gráficos e no Relatório, lança gasto na obra, como nas telas Orçamento e Afazeres (o site o esconde nessas telas); no Selecionar, sai junto com a cápsula. O mockup desenha o + nas três telas. **Pede o OK dele**, porque o brief põe o + na cápsula da aba "Vale a pena?".
 - **Obra vendida com lucro e "acima do banco" negativo:** prejuízo é o lucro bruto negativo. Com lucro e o acima do banco negativo, o sólido continua o lucro, e o acima do banco aparece com o sinal de menos.
 - **"Mostrando os últimos 24 meses."** só quando a série foi cortada. O quadro mostra o aviso também com exatamente 24 meses.
 - **O mês corrente no gasto por mês** conta inteiro, como o quadro (pago, mesmo com parcela que ainda vence neste mês). A frase da evolução dá o valor exato a vencer.
 - **Nome do arquivo:** `Custta-` e o nome da obra, com espaços trocados por hífen e sem os caracteres que o sistema de arquivos recusa, como no exemplo do mockup (`Custta-Casa-Alphaville.pdf`).
-- **A folha do detalhe do tópico** fica como na etapa 3, porque as folhas estão fora desta etapa. O ajuste 3 cita a folha do detalhe (texto de 30 para 34 pt); isso entra quando as folhas entrarem. **Pede o OK dele**, porque o ajuste 3 é dele e as folhas ficaram fora por decisão dele.
 
 ## Referências que faltam (para o Giovani procurar junto)
 
@@ -351,7 +355,7 @@ Regra dele: ninguém improvisa referência. O Croqui desenhou sem estas e listou
 
 ## Riscos
 
-- **Peças compartilhadas no app inteiro:** o âmbar de texto do claro, o globo, o halo do título e a cápsula de abas mudam telas das etapas 1 a 3. Mitigado pela comparação palavra por palavra do laudo inteiro (seção "Testes e validação", item 6).
+- **Peças compartilhadas no app inteiro** (confirmação 5): o âmbar de texto do claro, o globo, o halo do título e a cápsula de abas mudam telas das etapas 1 a 3. Mitigado pela comparação palavra por palavra do laudo inteiro (seção "Testes e validação", item 6).
 - **A obra reescrita** é a tela mais usada. Os testes de tela das etapas 2 e 3 sobre ela (lista, busca, arrastar, "A vencer", folhas, destaque da linha nova, rolagem) continuam verdes, e as cenas novas entram no laudo.
 - **O anel** (ver "Para o conselho"): o Swift Charts não anima a entrada do mockup, e o desenho próprio custa o VoiceOver dos gráficos.
 - **O PDF:** descrição longa, obra com centenas de gastos, a fonte mono no arquivo e o PDF que não pode depender do tema nem da letra.
@@ -359,16 +363,7 @@ Regra dele: ninguém improvisa referência. O Croqui desenhou sem estas e listou
 - **Barra de soma, teclado e cápsula:** busca e Selecionar abertos juntos, na letra máxima, em 375 pt (13 mini).
 - **Mudança de outro aparelho com o Selecionar aberto:** a seleção sobrevive e o gasto que some sai da soma; pede teste com escrita remota pelo emulador, como o achado 3 da etapa 3.
 - **Tempo da CI.** No último run do `app-ios.yml` (#88, 27/10): `app` em 50 min e `app-etapa3` em 58 (teto de 90); os outros, de 26 a 42 min (teto de 60). As telas novas somam cenas ao laudo e às auditorias; o plano mede e abre jobs da etapa 4, como fez na etapa 3.
-- **Confirmações com ele**, antes do plano:
-  - o âmbar do claro (`#F2C15A`), que o mockup ainda marca como proposta;
-  - a conta de média, maior e meses;
-  - o "Total gasto" na página 1 do PDF;
-  - os dois alinhamentos do site;
-  - os tokens globais e a cápsula de abas no app inteiro;
-  - o + na aba "Vale a pena?";
-  - a folha do detalhe do tópico fora desta etapa.
-
-  As outras recomendações que mexem em detalhe do quadro (o % do meio do anel, os centavos, o "<1%" na folha, o aviso dos 24 meses) seguem se ele não vetar.
+- **Confirmações:** as sete que este spec pedia foram aprovadas por ele em 29/10 (fim de "Decisões de desenho"). As outras recomendações que mexem em detalhe do quadro (o % do meio do anel, os centavos, o "<1%" na folha, o aviso dos 24 meses) seguem se ele não vetar.
 
 ## Fora do escopo
 

@@ -54,6 +54,7 @@ concurrency:
 
 jobs:
   nucleo:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     timeout-minutes: 20
     steps:
@@ -72,6 +73,7 @@ jobs:
         run: swift test --package-path app-ios/CusttaNucleo
 
   app:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
@@ -159,6 +161,7 @@ jobs:
           retention-days: 7
 
   app-etapa3:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
     # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
@@ -210,6 +213,7 @@ jobs:
           retention-days: 7
 
   app-etapa3-b:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
     # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests. As suítes de tela do PR 3
@@ -257,6 +261,7 @@ jobs:
           retention-days: 7
 
   app-etapa3-c:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
     # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
@@ -301,6 +306,7 @@ jobs:
           retention-days: 7
 
   laudo:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
     # 718 s e ~7 min de build e simulador, 54 min; a folha do gasto soma ~1150 s de leitura e ~320 s de auditoria (perto
@@ -363,6 +369,7 @@ jobs:
           retention-days: 7
 
   laudo-parte3:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
     # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
@@ -413,6 +420,7 @@ jobs:
           retention-days: 7
 
   laudo-etapa3:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
@@ -466,6 +474,7 @@ jobs:
           retention-days: 7
 
   laudo-etapa3-b:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # As leituras e as auditorias da etapa 3 que não cabem no laudo-etapa3: ele foi a 52 min no run 40125911713 e a 46 no
     # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
@@ -516,6 +525,7 @@ jobs:
           retention-days: 7
 
   auditoria:
+    if: false  # sonda do PDF (proto/): só o job sonda-pdf roda
     runs-on: macos-26
     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3 e no
     # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
@@ -565,4 +575,109 @@ jobs:
         with:
           name: auditoria-app-ios
           path: ${{ runner.temp }}/auditoria.xcresult
+          retention-days: 7
+
+  # SONDA (ramo proto/etapa4-sondas-pdf; nunca vai à main): o gerador do PDF fora da thread principal, compilado pelo
+  # Swift da CI, e a marcação para leitor de tela no iOS 26 (spec da etapa 4, "PDF: tabelas em UIKit, página 1 à parte").
+  # Compila o Release (onde o Swift 6.3.3 já caiu antes) e o Debug dos testes uma vez; depois roda cada método sozinho
+  # (test-without-building -only-testing), para uma queda não levar os outros, com uma linha "sonda-pdf | passo |
+  # resultado" por passo. O xcresult, os logs e os PDFs vão no artefato sonda-pdf.
+  sonda-pdf:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versões e o simulador
+        run: |
+          mkdir -p "$RUNNER_TEMP/sonda-pdf"
+          xcodebuild -version
+          swift --version
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          UDID="${DESTINO##*id=}"
+          echo "DESTINO=$DESTINO" >> "$GITHUB_ENV"
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          echo "sonda-pdf | xcode | $(xcodebuild -version | tr '\n' ' ')"
+          echo "sonda-pdf | swift | $(swift --version 2>&1 | grep -m1 -i 'swift version')"
+          echo "sonda-pdf | simulador | $(xcrun simctl list devices available | grep "$UDID" | sed 's/^ *//')"
+          xcrun simctl list runtimes | grep -i ios || true
+          # O 1º boot leva uns 6 min: liga agora, para correr junto com as compilações.
+          xcrun simctl boot "$UDID" || true
+
+      - name: Compilar (Release, sem assinatura)
+        run: |
+          LOG="$RUNNER_TEMP/sonda-pdf/compilar-release.log"
+          if xcodebuild -project app-ios/Custta.xcodeproj -scheme Custta -configuration Release -destination 'generic/platform=iOS' \
+              -derivedDataPath app-ios/build -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile \
+              CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= build > "$LOG" 2>&1; then r=0; else r=$?; fi
+          grep -E 'error:|warning:' "$LOG" | grep -v appintentsmetadataprocessor | sort -u | head -80 || true
+          avisos=$(grep -E 'warning:' "$LOG" | grep -c 'SondaPDF' || true)
+          echo "sonda-pdf | compilar-release | código $r; avisos nos arquivos da sonda: $avisos"
+          tail -3 "$LOG"
+          exit $r
+
+      - name: Compilar para os testes (simulador)
+        run: |
+          LOG="$RUNNER_TEMP/sonda-pdf/compilar-testes.log"
+          if xcodebuild build-for-testing -project app-ios/Custta.xcodeproj -scheme Custta -destination "$DESTINO" \
+              -derivedDataPath app-ios/build -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile \
+              CODE_SIGNING_ALLOWED=NO > "$LOG" 2>&1; then r=0; else r=$?; fi
+          grep -E 'error:|warning:' "$LOG" | grep -v appintentsmetadataprocessor | sort -u | head -80 || true
+          avisos=$(grep -E 'warning:' "$LOG" | grep -c 'SondaPDF' || true)
+          echo "sonda-pdf | compilar-testes | código $r; avisos nos arquivos da sonda: $avisos"
+          tail -3 "$LOG"
+          exit $r
+
+      - name: Sondas, um método por vez
+        run: |
+          SAIDA="$RUNNER_TEMP/sonda-pdf"
+          xcrun simctl bootstatus "$UDID" -b > /dev/null 2>&1 || true
+          echo "sonda-pdf | simulador | ligado às $(date -u +%H:%M:%S) UTC"
+          falhas=0
+          # rodar <passo> <passa|cai> <Suíte/método()> [VAR=valor ...]
+          rodar() {
+            passo="$1"; esperado="$2"; metodo="$3"; shift 3
+            log="$SAIDA/$passo.log"
+            inicio=$(date +%s)
+            if env "$@" TEST_RUNNER_SONDA_PDF_SAIDA="$SAIDA" xcodebuild test-without-building -project app-ios/Custta.xcodeproj \
+                -scheme Custta -destination "$DESTINO" -derivedDataPath app-ios/build -skipMacroValidation -skipPackagePluginValidation \
+                -onlyUsePackageVersionsFromResolvedFile -collect-test-diagnostics never -resultBundlePath "$SAIDA/$passo.xcresult" \
+                "-only-testing:CusttaTests/$metodo" > "$log" 2>&1; then codigo=0; else codigo=$?; fi
+            dur=$(( $(date +%s) - inicio ))
+            grep -h 'sonda-pdf |' "$log" | awk '!visto[$0]++' || true
+            grep -h -E 'Test run with|recorded an issue|recorded a known issue|Expectation failed|Restarting after|error:' "$log" | head -8 || true
+            grep -h -m1 'Main Thread Checker:' "$log" | cut -c1-200 || true
+            relatos=$(grep -c 'Main Thread Checker: UI API called on a background thread' "$log" || true)
+            rodou=$(grep -c 'sonda-pdf |' "$log" || true)
+            if [ "$esperado" = passa ]; then
+              if [ "$codigo" = 0 ] && [ "$rodou" -ge 1 ]; then veredito=ok; else veredito=REPROVOU; fi
+            else
+              if [ "$codigo" != 0 ] && [ "$relatos" -ge 1 ]; then veredito=ok; else veredito=REPROVOU; fi
+            fi
+            if [ "$veredito" != ok ]; then falhas=$((falhas + 1)); tail -40 "$log"; fi
+            echo "sonda-pdf | $passo | $veredito (esperado: $esperado; código $codigo; relatos do verificador no log: $relatos; ${dur} s)"
+          }
+          rodar igual-500 passa 'SondaPDFGeradorTests/destacadoIgualAoDaPrincipal500()'
+          rodar igual-5000 passa 'SondaPDFGeradorTests/destacadoIgualAoDaPrincipal5000()'
+          rodar mtc-controle passa 'SondaPDFGeradorTests/controleDoVerificador()'
+          rodar mtc-gerador passa 'SondaPDFGeradorTests/geradorSemAvisoDoVerificador()'
+          rodar mtc-controle-queda cai 'SondaPDFGeradorTests/controleDoVerificador()' TEST_RUNNER_MTC_CRASH_ON_REPORT=1
+          rodar mtc-gerador-queda passa 'SondaPDFGeradorTests/geradorSemAvisoDoVerificador()' TEST_RUNNER_MTC_CRASH_ON_REPORT=1
+          rodar bloqueio-5000 passa 'SondaPDFGeradorTests/bloqueioETempo5000()'
+          rodar marcacao-arvore passa 'SondaPDFMarcacaoTests/arvoreGravada()'
+          rodar marcacao-tabela passa 'SondaPDFMarcacaoTests/tabelaAtravessaPaginas()'
+          rodar marcacao-custo passa 'SondaPDFMarcacaoTests/custoDaMarcacao5000()'
+          rodar marcacao-texto passa 'SondaPDFMarcacaoTests/semMarcacaoMesmoTexto()'
+          echo "sonda-pdf | fim | passos reprovados: $falhas"
+          if [ "$falhas" -gt 0 ]; then exit 1; fi
+
+      - name: Resultado das sondas (xcresult, logs e PDFs)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sonda-pdf
+          path: ${{ runner.temp }}/sonda-pdf
           retention-days: 7

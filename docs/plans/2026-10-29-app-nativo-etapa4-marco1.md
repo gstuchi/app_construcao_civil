@@ -78,6 +78,7 @@ As do Giovani estão no spec, nas seções "Decisões de desenho", "PRs" e "Deci
 | O "<1%" na folha do detalhe | Entra no 1c, que reescreve a obra, de onde a folha abre | Confirmação 7. No 0b, mexeria em tela da etapa 3 num PR sem tela |
 | O "<1%" na lista da tela Orçamento (**a confirmar antes do merge do 1c**) | Se a função da folha também serve à lista, a lista muda junto | Assim o número não muda ao abrir a folha. Mas a tela Orçamento está fora do escopo da etapa |
 | O `gastoPorTopico` em Swift | Perde o `hoje:` e o `taxaMensal:` no 1c | Os dois não mudam o resultado. Tirá-los no PR 0 mexeria no app |
+| A linha de lançamento da obra sem o ícone do pagamento (PR 1b, na obra a partir do 1c) | Segue o mockup aprovado: "Pix" e "Cartão" por extenso, sem o raio e o cartão do sistema que a etapa 3 põe antes deles. As folhas (A pagar e detalhe do tópico) ficam com a linha da etapa 3 | O spec diz só "o valor em mono e o ícone pequeno na 2ª linha"; o mockup (`gastoLinha`, parte1.js:248-252) não tem o ícone. Se o Giovani quiser o ícone de volta, é o parâmetro `iconeDoPagamento` da linha |
 | A CI do marco 1 (decisão do Orquestrador em 29/10, como rotina, informada ao Giovani; muda o portão da tabela para o 0 e o 0b) | Igual à de hoje: o 0 e o 0b rodam os 10 jobs, uns 90 min, e não só os do núcleo. O filtro por superfície e os jobs da etapa 4 entram no 4a | É recomendação deste plano. O spec pede o filtro num PR que já roda tudo, antes do 2a. Pôr o filtro no 0 juntaria um risco de CI ao PR do site, e um PR só de CI seria o 12º. O custo: o 0 e o 0b esperam mais, e um rerun no iOS 26 tira o PR do merge automático |
 | O tempo dos jobs da CI no marco 1 (pedido do Orquestrador em 29/10, depois do #93; a escolha é decisão dele, informada ao Giovani) | Nada muda no `app`: o teto continua em 90 min. O teto do `laudo-etapa3` sobe de 60 para 75 min no PR 0b, numa linha dita no corpo do PR (Tarefa 14; decisão do Orquestrador em 29/10). O `app` só é partido por classe, como foi o `app-etapa3`, se passar de ~140 testes de tela ou de 70 min numa VM normal | O teto do `app` é 90, não 60 (`app-ios.yml`, linha 81). Os 60,1 min da 1ª rodada do #93 reprovaram por um teste instável (`EntradaUITests.testMensagensDoFormulario`, espera de 5 s), não pelo teto. Nos 10 últimos runs com os mesmos 105 testes de tela, o `app` levou de 46,9 a 67,5 min (mediana 58,4). O que varia é a VM, de 22 a 31 s por teste, e os mesmos 101 testes já levaram de 32,3 a 48,9 min. Desde 18/10, o job ganhou só 4 testes de tela (Ajustes, 24/10) e 51 de unidade (+40 s). O marco 1 põe uns 14 testes de tela no `app`: 6 da vitrine e da cápsula, no 1a e no 1b, e uns 8 da obra e da costura, no 1c. A conta dá ~65 min numa VM normal e ~75 na mais lenta já vista, ainda com 15 de folga. Os testes de tela da etapa 4 vão para jobs próprios no 4a, então o `app` para de crescer. O job mais perto do teto é o `laudo-etapa3`: mediana 46, máximo 57,3 de 60, e o marco 1 não lhe acrescenta nada. Partir o `app` agora custaria mais um job de macOS, com ~10 min de preparo, e não mudaria o tempo do run, que depende das 5 vagas (~360 min de job por run) |
 
@@ -3932,6 +3933,3291 @@ git commit -m "ci: teto de 75 min no job laudo-etapa3" -m "O job do laudo das te
 
 ---
 
+## PR 1a (app): os tokens globais da identidade nova
+
+O PR leva ao app inteiro os tokens globais da identidade nova (confirmação 5 de 29/10): os tokens novos do catálogo de cores, sem uso (Tarefa 16); o âmbar de texto do claro mais escuro, #5E3A03 no `AlertaNoVidro` (Tarefa 17); e a cápsula de abas na borda de 16 pt, em vez de 20 (Tarefa 18). O globo e o halo do título, que o spec põe neste PR, foram medidos e não mudam (achados 1 e 2, abaixo). O risco é o das peças compartilhadas: o âmbar muda dois textos da etapa 3 (o aviso dos tópicos na linha do orçamento e o "Passou … do previsto" da tela Orçamento), e a cápsula muda o pé de toda tela de Obras e de Ajustes. A comparação do laudo inteiro, palavra por palavra, prova que nada mais mudou e que o que mudou subiu. Fica escondido na `main` até o PR 1b: os 19 tokens novos, que nenhuma tela usa. Portão da CI: "tudo, com a comparação" (o PR mexe no catálogo de cores e na cápsula). Marco 1. Este PR sempre espera o OK do Giovani, pelos prints antes × depois das telas principais no claro e no escuro (ponto de controle do fim do PR, passo 4), e o time segue no 1b, empilhado, enquanto ele olha.
+
+- **Branch:** `feat/tokens-globais-da-identidade-nova`
+- **Título:** `feat: tokens globais da identidade nova no app inteiro`
+
+### Mapa de arquivos
+
+| Arquivo | Tarefas |
+| --- | --- |
+| `scripts/compara-laudo.mjs` (novo) e `package.json` | 15 (o comparador do laudo palavra por palavra) |
+| `tests/compara-laudo.test.mjs` (novo) | 15 |
+| `scripts/cores-app-ios.mjs` | 16 (os tokens novos e os dois pares sólidos), 17 (o claro do `AlertaNoVidro`) |
+| `app-ios/Custta/Assets.xcassets/Esmeralda/*.colorset` (gerado) | 16 (19 novos), 17 (`AlertaNoVidro`) |
+| `app-ios/Custta/Identidade/Paleta.swift` | 16 |
+| `app-ios/Custta/Identidade/CapsulaDeAbas.swift` | 18 |
+| `app-ios/CusttaTests/CoresTests.swift` | 16, 17 |
+| `app-ios/CusttaTests/OrcamentoTests.swift` e `app-ios/CusttaTests/TelaOrcamentoTests.swift` | 17 (o âmbar do claro nos testes da etapa 3) |
+| `tests/app-ios.test.cjs` | 17 |
+| `app-ios/CusttaUITests/AjustesUITests.swift` | 18 |
+
+Linhas de produção: 29 de Swift (27 no `Paleta.swift`, 2 no `CapsulaDeAbas.swift`), abaixo dos ~50–150 da tabela do spec, porque três tokens do mockup reaproveitam os do app e o globo e o halo não mudam. Fora da conta, como o spec manda: o script das cores (32) e o catálogo gerado (728, os 19 colorsets novos e o do `AlertaNoVidro`).
+
+### Ponto de controle do fim do PR
+
+No Mac, com o produto da ponta do PR e o da `main` de antes dele (o pai do commit da Tarefa 15), cada um compilado no seu DerivedData e copiado com `cp -c`, para os dois simuladores rodarem ao mesmo tempo sem compilar por cima de uma rodada. Tudo fica numa pasta sua, fora do repositório (`P`), e não no `/tmp`, que é o mesmo dos outros agentes do Mac. Antes dos dois builds, ponha nos dois worktrees, o do PR e o da `main`, o teste dos prints do passo 4 (`app-ios/CusttaUITests/PrintsDoPR1aUITests.swift`, fora do commit). Na raiz do worktree do PR:
+
+```bash
+P=<uma pasta sua, fora do repositório>
+UMAX=<udid do seu Pro Max>; U18=<udid do seu 18 Pro>
+# o produto de depois: a ponta do PR
+xcodebuild build-for-testing "${XB[@]}" -derivedDataPath "$P/dd-depois" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+rm -rf "$P/depois"; cp -c -R "$P/dd-depois/Build/Products" "$P/depois"
+# o de antes: a main de antes do PR, num worktree dela e noutro DerivedData
+# (o caminho do git vai por extenso: com caminho em variável, o git cai na guarda do worktree)
+git worktree add --detach <P>/main <o pai do commit da Tarefa 15>
+(cd "$P/main" && xcodebuild build-for-testing "${XB[@]}" -derivedDataPath "$P/dd-antes" 2>&1 | grep -E "error:|TEST BUILD" | tail -1)
+rm -rf "$P/antes"; cp -c -R "$P/dd-antes/Build/Products" "$P/antes"
+# uma rodada: o resultado velho apagado (o xcodebuild recusa um -resultBundlePath que já existe), a barra em 9:41
+# e o app desinstalado (sem isso, o simulador pode ficar com o produto da rodada anterior e comparar antes × antes)
+rodar() {   # rodar <antes|depois> <udid> <nome> <-only-testing…>: o resultado em $P/<nome>.xcresult e o log em $P/<nome>.log
+  local produto=$1 u=$2 nome=$3; shift 3
+  rm -rf "$P/$nome.xcresult"
+  xcrun simctl status_bar "$u" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 >/dev/null 2>&1
+  xcrun simctl uninstall "$u" br.com.custta.app >/dev/null 2>&1
+  xcodebuild test-without-building -xctestrun "$P/$produto"/Custta_*.xctestrun -destination "platform=iOS Simulator,id=$u" \
+    -collect-test-diagnostics never -resultBundlePath "$P/$nome.xcresult" "$@" > "$P/$nome.log" 2>&1
+  grep -E "Executed [0-9]+ test" "$P/$nome.log" | tail -1
+}
+```
+
+Os itens 1 e 2 rodam ao mesmo tempo, cada um no seu terminal, com o mesmo `P`, os udids e o `rodar`:
+
+1. **O laudo inteiro no Pro Max, comparado palavra por palavra com o da `main`** (spec, "Testes e validação", item 6; memória `laudo-inteiro-no-pro-max-no-fim-do-pr`; na CI, só o portão, achado 5). As duas rodadas no mesmo Pro Max, uma depois da outra, e o comparador do PR (Tarefa 15) sobre os dois resultados:
+   ```bash
+   rodar antes "$UMAX" laudo-antes -only-testing:CusttaUITests/LeituraNoVidroUITests
+   rodar depois "$UMAX" laudo-depois -only-testing:CusttaUITests/LeituraNoVidroUITests
+   node scripts/compara-laudo.mjs "$P/laudo-antes.xcresult" "$P/laudo-depois.xcresult" "$P/laudo-cmp" --detalhe > "$P/laudo-cmp.txt"
+   tail -1 "$P/laudo-cmp.txt"
+   ```
+   Expected: as duas rodadas com `Executed 18 tests, with 0 failures` (~53 min cada: 3198 e 3207 s), e a comparação (Pro Max, iOS 27, `767ebe9` × ponta):
+   ```
+   TOTAL: 175 cenas, 3590 palavras, 3555 idênticas, 3 mudadas, 32 deslocadas, 0 sem par, 0 abaixo de 4.5
+   ```
+   - As 3 mudadas são as palavras âmbar do claro (Tarefa 17), e as três sobem: "obra com orçamento por tópico, claro" 6,43 → 7,96 (pior pixel 6,36 → 7,87); "tela Orçamento, topo, claro" 6,42 → 7,95 e 7,24 → 8,96.
+   - As 32 deslocadas são os rótulos da cápsula nas 16 cenas "abas sobre a lista" (Tarefa 18): "Obras" 2 pt à esquerda e "Ajustes" 2 pt à direita (no Pro Max, de x 246 para 248), a mesma cor e o mesmo tamanho. Em 26 delas a nota é a mesma; nas outras 6, muda com a parte da lista que passa por baixo do rótulo (a menor dessas 6 fica em 6,79:1, pior pixel 6,71, e o maior recuo é de 10,91 para 10,25). O rótulo da aba escolhida fica na pílula sólida e tem a mesma nota antes e depois.
+   - As outras 159 cenas, com as telas das etapas 1 a 3 inteiras (obra, folhas, Ajustes, entrar, orçamento, A pagar, afazeres e busca, nos dois temas, na letra padrão e na máxima, com Aumentar contraste), ficam idênticas palavra por palavra.
+2. **Os testes inteiros no 18 Pro** (as auditorias entram aqui, na `AuditoriaUITests`):
+   ```bash
+   rodar depois "$U18" tudo -only-testing:CusttaTests -only-testing:CusttaUITests -skip-testing:CusttaUITests/LeituraNoVidroUITests
+   grep -E "Test run with" "$P/tudo.log"
+   ```
+   Expected: nas telas, `Executed 221 tests, with 1 test skipped and 2 failures`, as duas fora do PR (conferidas); na unidade, `✔ Test run with 171 tests in 33 suites passed`.
+   - `AuditoriaUITests/testContrasteDaObraNosDoisTemas`: `Audit failed to complete in time` (Code=-56), a carga das duas rodadas juntas (memória `portao-nos-dois-simuladores-em-paralelo`). A `AuditoriaUITests` inteira, sozinha, com o mesmo produto (`rodar depois "$U18" auditoria -only-testing:CusttaUITests/AuditoriaUITests`): `Executed 20 tests, with 0 failures`.
+   - `FolhasDeOrigemUITests/testASetaDoIndicadorAbreAFolhaDoAPagar` (FolhasDeOrigemUITests.swift:132): `XCTAssertTrue failed - Novembro de 2026, R$ 13.250,00`. Reprova igual na `main` de antes do PR (`767ebe9`): o teste depende do dia (achado 3).
+3. **Node:** `npm run test:unit 2>&1 | tail -8`. Expected: `ℹ tests 411`, `ℹ pass 411` e `ℹ fail 0` (3 deles são do comparador, Tarefa 15).
+4. **Os prints antes × depois para o OK do Giovani**, no 18 Pro, depois do item 2, com a barra de status em 9:41 e o fundo parado (`-custta.reduzirMovimento YES`): entrar, a lista de obras, a obra (com o orçamento por tópico, onde está o aviso âmbar), a tela Orçamento no topo e rolada, a folha do gasto, Ajustes e a lista vazia (o globo, achado 1), no claro e no escuro, em `$P/prints` (`antes/`, `depois/` e `lado-a-lado/`). A maioria sai do teste de tela fora do commit, posto nos dois worktrees antes dos builds:
+   ```swift
+   import XCTest
+
+   /* FORA DO COMMIT: os prints antes × depois do PR 1a da etapa 4 (as telas principais no claro e no escuro,
+      com o mesmo estado e a mesma rolagem nos dois commits). PRINTS_DIR e PRINTS_ROTULO vêm de TEST_RUNNER_*. */
+   final class PrintsDoPR1aUITests: XCTestCase {
+       override func setUp() { continueAfterFailure = true }
+
+       @MainActor private func gravar(_ app: XCUIApplication, _ nome: String) {
+           let ambiente = ProcessInfo.processInfo.environment
+           guard let dir = ambiente["PRINTS_DIR"], let rotulo = ambiente["PRINTS_ROTULO"] else { return XCTFail("sem PRINTS_DIR") }
+           let pasta = URL(fileURLWithPath: dir).appendingPathComponent(rotulo)
+           try? FileManager.default.createDirectory(at: pasta, withIntermediateDirectories: true)
+           Thread.sleep(forTimeInterval: 2.5)
+           try? XCUIScreen.main.screenshot().pngRepresentation.write(to: pasta.appendingPathComponent("\(nome).png"))
+           app.terminate()
+       }
+
+       @MainActor func testPrints() {
+           for tema in ["escuro", "claro"] {
+               let combo = ["-custta.tema", tema, "-custta.reduzirMovimento", "YES"]
+               var app = abrirApp(conta: "nenhuma", argumentos: combo)
+               XCTAssertTrue(app.textFields["email"].waitForExistence(timeout: 15))
+               gravar(app, "1-entrar-\(tema)")
+
+               app = abrirApp(conta: "senha", dados: "vitrine", argumentos: combo)
+               XCTAssertTrue(app.elemento("obra-v1").waitForExistence(timeout: 15))
+               gravar(app, "2-obras-\(tema)")
+
+               app = abrirApp(conta: "senha", dados: "porTopico", abrir: "obra:v1", argumentos: combo)
+               XCTAssertTrue(app.elemento("indicadorOrcamento").waitForExistence(timeout: 15))
+               gravar(app, "3-obra-\(tema)")
+
+               app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", argumentos: combo + ["-custta.rolagem", "700"])
+               XCTAssertTrue(app.elemento("tituloPequenoDaBarra").waitForExistence(timeout: 15))
+               gravar(app, "4-orcamento-rolado-\(tema)")
+
+               app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: combo + ["-custta.folha", "detalhes"])
+               XCTAssertTrue(app.elemento("linhaTopico").waitForExistence(timeout: 15))
+               gravar(app, "5-folha-do-gasto-\(tema)")
+
+               app = abrirApp(conta: "senha", dados: "vitrine", argumentos: combo)
+               app.abrirAba("ajustes")
+               XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 15))
+               gravar(app, "6-ajustes-\(tema)")
+           }
+           // O globo dentro do app, no escuro, com a aurora parada e quase nada por cima (a medida do brilho dos pontos).
+           let app = abrirApp(conta: "senha", dados: "vazio", argumentos: ["-custta.tema", "escuro", "-custta.reduzirMovimento", "YES"])
+           XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 15))
+           gravar(app, "7-globo-lista-vazia-escuro")
+       }
+   }
+   ```
+   Rodado com os dois produtos (`PRINTS_DIR` e `PRINTS_ROTULO` chegam ao teste pelo prefixo `TEST_RUNNER_`), cada rodada com `Executed 1 test, with 0 failures`:
+   ```bash
+   export TEST_RUNNER_PRINTS_DIR="$P/prints"
+   export TEST_RUNNER_PRINTS_ROTULO=antes; rodar antes "$U18" prints-antes -only-testing:CusttaUITests/PrintsDoPR1aUITests
+   export TEST_RUNNER_PRINTS_ROTULO=depois; rodar depois "$U18" prints-depois -only-testing:CusttaUITests/PrintsDoPR1aUITests
+   ```
+   A tela Orçamento no topo (`4b-…`, onde ficam os "Passou … do previsto") sai do `simctl launch`, com cada produto instalado de novo:
+   ```bash
+   xcrun simctl status_bar "$U18" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+   for rotulo in antes depois; do
+     xcrun simctl uninstall "$U18" br.com.custta.app
+     xcrun simctl install "$U18" "$P/$rotulo/Debug-iphonesimulator/Custta.app"
+     for tema in escuro claro; do
+       SIMCTL_CHILD_CUSTTA_SERVICOS=falsos SIMCTL_CHILD_CUSTTA_CONTA=senha SIMCTL_CHILD_CUSTTA_DADOS=porTopico \
+       SIMCTL_CHILD_CUSTTA_ABRIR=orcamento:v1 xcrun simctl launch --terminate-running-process "$U18" br.com.custta.app \
+         -custta.tema $tema -custta.reduzirMovimento YES > /dev/null
+       sleep 8
+       xcrun simctl io "$U18" screenshot "$P/prints/$rotulo/4b-orcamento-topo-$tema.png" > /dev/null 2>&1
+     done
+   done
+   xcrun simctl terminate "$U18" br.com.custta.app; xcrun simctl uninstall "$U18" br.com.custta.app
+   ```
+   O lado a lado e a contagem saem deste script, salvo fora do repositório (`$P/lado-a-lado.py`) e rodado com `python3 "$P/lado-a-lado.py" "$P/prints"` (sem o `-I`: o PIL fica no site do usuário):
+   ```python
+   """Prints antes × depois do PR 1a: o lado a lado de cada tela e o que mudou (pixels com Δ > 8 e a caixa deles, em pt).
+   Os 34 pt de baixo ficam fora da conta, como no laudo: a barra de início do sistema aparece numa rodada e não noutra.
+   uso: python3 lado-a-lado.py <pasta com antes/ e depois/>"""
+   import os, sys
+   from PIL import Image, ImageChops, ImageDraw
+   base = sys.argv[1]
+   saida = os.path.join(base, 'lado-a-lado')
+   os.makedirs(saida, exist_ok=True)
+   for nome in sorted(os.listdir(os.path.join(base, 'antes'))):
+       a = Image.open(os.path.join(base, 'antes', nome)).convert('RGB')
+       d = Image.open(os.path.join(base, 'depois', nome)).convert('RGB')
+       dif = ImageChops.difference(a, d).convert('L').point(lambda v: 255 if v > 8 else 0)
+       dif = dif.crop((0, 0, dif.width, dif.height - 34 * 3))
+       caixa = dif.getbbox()
+       n = sum(1 for v in dif.getdata() if v)
+       acima = sum(1 for v in dif.crop((0, 0, dif.width, 789 * 3)).getdata() if v)
+       onde = 'nada' if not caixa else f'x {caixa[0]/3:.0f}–{caixa[2]/3:.0f} pt, y {caixa[1]/3:.0f}–{caixa[3]/3:.0f} pt'
+       print(f'{nome}: {n} px com Δ > 8 ({onde}); acima da cápsula: {acima} px')
+       w, h = a.width // 2, a.height // 2
+       lado = Image.new('RGB', (2 * w + 30, h + 60), 'white')
+       lado.paste(a.resize((w, h)), (0, 60)); lado.paste(d.resize((w, h)), (w + 30, 60))
+       t = ImageDraw.Draw(lado)
+       t.text((10, 15), 'antes (main)', fill='black'); t.text((w + 40, 15), 'depois (PR 1a)', fill='black')
+       lado.save(os.path.join(saida, nome))
+   ```
+   Expected (18 Pro, iOS 27; pixels com Δ > 8 em qualquer canal, e a caixa deles em pt, ÷ 3):
+   ```
+   1-entrar-claro.png: 0 px com Δ > 8 (nada); acima da cápsula: 0 px
+   1-entrar-escuro.png: 0 px com Δ > 8 (nada); acima da cápsula: 0 px
+   2-obras-claro.png: 18672 px com Δ > 8 (x 15–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   2-obras-escuro.png: 19188 px com Δ > 8 (x 16–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   3-obra-claro.png: 25356 px com Δ > 8 (x 15–386 pt, y 496–840 pt); acima da cápsula: 7770 px
+   3-obra-escuro.png: 19469 px com Δ > 8 (x 16–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   4-orcamento-rolado-claro.png: 21388 px com Δ > 8 (x 15–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   4-orcamento-rolado-escuro.png: 22553 px com Δ > 8 (x 16–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   4b-orcamento-topo-claro.png: 27164 px com Δ > 8 (x 15–386 pt, y 495–840 pt); acima da cápsula: 10101 px
+   4b-orcamento-topo-escuro.png: 19391 px com Δ > 8 (x 16–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   5-folha-do-gasto-claro.png: 0 px com Δ > 8 (nada); acima da cápsula: 0 px
+   5-folha-do-gasto-escuro.png: 0 px com Δ > 8 (nada); acima da cápsula: 0 px
+   6-ajustes-claro.png: 13478 px com Δ > 8 (x 15–387 pt, y 790–840 pt); acima da cápsula: 0 px
+   6-ajustes-escuro.png: 13823 px com Δ > 8 (x 16–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   7-globo-lista-vazia-escuro.png: 19213 px com Δ > 8 (x 16–386 pt, y 790–840 pt); acima da cápsula: 0 px
+   ```
+   A regra: acima da cápsula (y < 789 pt), 0 px, menos as linhas âmbar do claro na obra (y 496–510 pt) e no topo da tela Orçamento (y 495–507 e 571–583 pt), as palavras mudadas do laudo; a cápsula fica em y 790–840 pt; a entrada, sem cápsula, e a folha do gasto, com a cápsula atrás da folha, não mudam. Os 15 pares (antes à esquerda, depois à direita) vão ao Giovani com o pedido de OK do 1a. O pedido diz também, numa linha, que o secundário do Fosco no claro fica #3B574B (`SecundarioFosco`, `scripts/cores-app-ios.mjs:51`), fora do "#3B574B → #2F4A3F" aprovado para o app inteiro, pela recomendação do spec ("o Fosco fica como está, e o laudo do Fosco confere"). No fim, apague o teste dos prints do worktree do PR e remova o da `main` (`git worktree remove --force <P>/main`).
+
+### Achados que mudam o spec ou uma decisão
+
+1. **O globo não muda** (spec, "Globo": "fica com o mais apagado dos dois"). Medido no print `7-globo-lista-vazia-escuro` do ponto de controle (a lista vazia no escuro, `CUSTTA_DADOS=vazio`, com o fundo parado: o globo aparece abaixo do cartão, sem nada por cima) e no mockup (a aurora e o globo do `parte1.css` sozinhos no Chromium, a 402 × 874 pt em escala 3). Nos dois, na mesma região (x 220–400 pt, y 345–600 pt), o contraste de cada pixel contra a mediana de 31 px em volta (o fundo local, que tira a diferença da aurora), no p99,5. O do app, a 40% no escuro desde 09/10 (Globo.swift:82), dá 2,46:1 (máximo 2,64), antes e depois do PR; o do mockup, a 70% do mesmo desenho (`parte1.css:117`, sobre o `etapa3/globo/esmeralda.png`), 3,93:1 (máximo 4,15). O do app já é o mais apagado dos dois. O mockup da etapa 3 já desenhava o app a 40% (`etapa3/parte1.html:916`); o 70% da etapa 4 foi um passo para baixo a partir do 100% do quadro, e não do app. No claro, os dois ficam a 40%. A tela de entrar fica com o globo inteiro, como hoje: o mockup não a desenha, e o 70% veio do texto sobre o vidro com os pontos atrás, que a entrada não tem. Recomendação: o spec troca "o plano mede" pelo resultado (40% no app escuro, nada muda) e diz que a entrada fica de fora.
+2. **O halo do título não muda neste PR.** O `HaloDoTitulo` atrás do nome da obra (30% no escuro e 10% no claro, Aurora.swift:192-195) segue no menor passo que passa de 4,5 no Pro Max, e o laudo inteiro confirma: nenhuma palavra das cenas da obra mudou. O 38% do mockup (62% na letra máxima) é o ponto de partida do título novo, em SF Mono 600, que só existe a partir do PR 1b (peça) e entra na tela no 1c; a calibração pelo laudo vai junto com ele, onde a cena existe. No claro, o "nenhum" do mockup não serve: sem halo, o nome da obra ficava em 4,40:1 no 17 Pro da CI (decisão de 10/10). Recomendação: na tabela do spec, a linha `HaloTitulo` passa a dizer "calibrado no PR que põe o título novo na tela (1c), a partir de 38%/62% no escuro e 10% no claro".
+3. **Um teste de tela da `main` reprova nos últimos 3 dias de cada mês, inclusive hoje (29/10), em qualquer commit.** `FolhasDeOrigemUITests/testASetaDoIndicadorAbreAFolhaDoAPagar` (linhas 127-131) calcula o total do cabeçalho do mês do 2º vencimento só com o 2º e o 3º (`mes(daquiA: 24)` e `25`), mas o 1º vence em 3 dias (`g039`, VitrineDaObra.swift:46, R$ 4.800,00): de 29 a 31/10, os três caem em novembro e o cabeçalho mostra R$ 13.250,00. Um rerun não resolve: o dia é o mesmo. O conserto é o PR #93, só de teste, que entra antes do PR 0. Até ele entrar, de 29 a 31 de cada mês, o job `app-etapa3` reprova, e o merge espera o dia 1º.
+4. **A régua do spec para o 1a (~50–150 de Swift) ficou grande:** o PR tem 29 linhas de Swift, porque o `DestaqueNumero`, a `LinhaBanco` e o `AmbarTexto` reaproveitam tokens do app e o globo e o halo não mudam. Pela régua do CONVENCOES (tudo em `app-ios/Custta/`), são 757, das quais 728 são o catálogo gerado. Nada a mudar no corte: o 1a continua sozinho porque é o PR que espera o OK do Giovani.
+5. **O laudo é comparado só no Pro Max.** O spec ("Testes e validação", item 6) diz que o laudo inteiro roda nos dois aparelhos e que as tabelas são comparadas palavra por palavra com as do commit anterior. Este plano compara só no Pro Max (iOS 27), no Mac (ponto de controle, item 1). Na CI (iOS 26), o laudo é só portão, e o xcresult só sobe quando reprova (`app-ios.yml`, passo "Resultado do laudo quando reprova", `if: failure()`). Com a CI igual à de hoje no marco 1 (Decisões), recomendação: a diferença fica escrita aqui e na linha 6 do spec ("comparadas no Pro Max; na CI, o portão de 4,5"); no 4a, que já mexe na CI, o `laudo.xcresult` passa a subir sempre, e o iOS 26 também é comparado.
+
+### Task 15: Comparador do laudo de leitura palavra por palavra
+
+Os PRs 1a, 1b e 1c mudam peças compartilhadas, e o spec ("A comparação", na seção "PRs") pede o laudo inteiro de cada um comparado palavra por palavra com o do commit anterior. O comparador:
+- exporta as tabelas do laudo (`*.txt`) dos dois xcresult com o `xcresulttool`, sempre do xcresult de agora: apaga antes a exportação que houver na pasta de saída, para uma rodada refeita nunca ler a da rodada anterior;
+- casa as palavras de cada cena pela caixa (x, y, largura e altura), e para com erro numa cena de nome repetido, que tomaria o lugar da outra;
+- conta, por cena, as palavras idênticas, as mudadas (a mesma caixa com a cor, a nota ou o pior diferente), as deslocadas (a mesma cor, o mesmo y, a mesma largura e a mesma altura, a até 6 pt na horizontal) e as sem par de cada lado;
+- confere todas as palavras de depois contra o portão de 4,5, as sem par também.
+
+Só as cenas com diferença aparecem, e o `--detalhe` lista cada palavra. Ele aceita também pastas já exportadas (com o `manifest.json`), e é assim que o teste o usa, porque o `test:unit` roda no Ubuntu da CI, sem o `xcrun`.
+
+**Files:**
+- Modify: `package.json`
+- Create: `scripts/compara-laudo.mjs`
+- Test (novo): `tests/compara-laudo.test.mjs`
+
+**Interfaces:**
+- Consumes: as tabelas do laudo de leitura, que o `LeituraNoVidroUITests` anexa como "leitura — <cena> (tabela)", com uma linha por palavra (`#RRGGBB  x, y  w× h pt  nota N  pior N`).
+- Produces: `node scripts/compara-laudo.mjs <antes> <depois> <pasta de saída> [--detalhe]`, usado nas Tasks 17 e 18 e no fim de cada PR do app.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes montam duas pastas como as que o `xcresulttool` exporta e conferem a saída inteira, com e sem `--detalhe`. Os casos cobertos: uma palavra idêntica, uma mudada que fica abaixo de 4,5, uma deslocada, uma só de antes, uma só de depois, uma cena que só existe de um lado e uma cena sem diferença, que não aparece na saída. O 3º teste prende a regra de cada classe numa cena só, no limite de cada uma: a nota e o pior contam como mudança, como a cor; a deslocada é a mesma cor, o mesmo y, a mesma largura e a mesma altura, a até 6 pt (a 7 pt, com outra cor, outro y ou outra largura, a palavra fica sem par); a sem par também passa pelo portão; 4,50 passa; a cena só com deslocadas também sai.
+
+Criar `tests/compara-laudo.test.mjs`:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+// Uma pasta como a que o xcresulttool exporta: o manifest.json e uma tabela por cena.
+function laudo(pasta, cenas) {
+  mkdirSync(pasta, { recursive: true });
+  const anexos = Object.entries(cenas).map(([cena, linhas], i) => {
+    writeFileSync(join(pasta, `${i}.txt`), [`Leitura — ${cena} (portão 4.5:1)`, ...linhas].join('\n') + '\n');
+    return { exportedFileName: `${i}.txt`, suggestedHumanReadableName: `leitura — ${cena} (tabela)` };
+  });
+  anexos.push({ exportedFileName: 'print.png', suggestedHumanReadableName: 'leitura — a, claro (print)' });
+  writeFileSync(join(pasta, 'manifest.json'), JSON.stringify([{ attachments: anexos }]));
+}
+
+function compara(...extra) {
+  const base = mkdtempSync(join(tmpdir(), 'compara-laudo-'));
+  laudo(join(base, 'antes'), {
+    'a, claro': [
+      '#111111    10, 20    30× 12 pt  nota  7.00  pior  7.00',
+      '#222222    50, 20    40× 12 pt  nota  5.00  pior  5.00',
+      '#333333   100, 40    20× 10 pt  nota  8.00  pior  8.00',
+      '#555555   300, 80    20× 10 pt  nota  6.00  pior  6.00',
+    ],
+    'c, escuro': ['#111111    10, 20    30× 12 pt  nota  7.00  pior  7.00'],
+    'd, igual': ['#111111    10, 20    30× 12 pt  nota  7.00  pior  7.00'],
+  });
+  laudo(join(base, 'depois'), {
+    'a, claro': [
+      '#111111    10, 20    30× 12 pt  nota  7.00  pior  7.00',
+      '#232323    50, 20    40× 12 pt  nota  4.40  pior  4.40',
+      '#333333   104, 40    20× 10 pt  nota  8.00  pior  8.00',
+      '#444444   200, 60    10× 10 pt  nota  9.00  pior  9.00',
+    ],
+    'b, claro': ['#111111    10, 20    30× 12 pt  nota  7.00  pior  7.00'],
+    'd, igual': ['#111111    10, 20    30× 12 pt  nota  7.00  pior  7.00'],
+  });
+  return execFileSync('node', [join(raiz, 'scripts/compara-laudo.mjs'), join(base, 'antes'), join(base, 'depois'),
+    join(base, 'saida'), ...extra], { encoding: 'utf8' });
+}
+
+test('por cena: idênticas, mudadas, deslocadas, sem par e abaixo do portão; cena sem diferença não sai', () => {
+  assert.equal(compara(), [
+    'a, claro: 4 palavras, 1 idênticas, 1 mudadas, 1 deslocadas, 1 só antes, 1 só depois, 1 abaixo de 4.5',
+    'SÓ DEPOIS: b, claro',
+    'SÓ ANTES: c, escuro',
+    'TOTAL: 2 cenas, 5 palavras, 2 idênticas, 1 mudadas, 1 deslocadas, 2 sem par, 1 abaixo de 4.5',
+    '',
+  ].join('\n'));
+});
+
+test('o detalhe diz cada palavra que mudou, a que sobrou de cada lado e a que ficou abaixo de 4,5', () => {
+  assert.equal(compara('--detalhe'), [
+    'a, claro: 4 palavras, 1 idênticas, 1 mudadas, 1 deslocadas, 1 só antes, 1 só depois, 1 abaixo de 4.5',
+    '   mudou 50,20 40×12: #222222 5.00 (pior 5.00) → #232323 4.40 (pior 4.40)',
+    '   só antes  #555555 300,80 20×10 nota 6.00 pior 6.00',
+    '   só depois #444444 200,60 10×10 nota 9.00 pior 9.00',
+    '   ABAIXO #232323 50,20 40×12 nota 4.40',
+    'SÓ DEPOIS: b, claro',
+    'SÓ ANTES: c, escuro',
+    'TOTAL: 2 cenas, 5 palavras, 2 idênticas, 1 mudadas, 1 deslocadas, 2 sem par, 1 abaixo de 4.5',
+    '',
+  ].join('\n'));
+});
+
+// Cada regra de classe numa cena só: nota e pior contam como mudança; a deslocada é a mesma cor, y, largura e
+// altura a até 6 pt; a sem par também passa pelo portão; 4,50 passa; a cena só com deslocadas também sai.
+test('a regra de cada classe, com o limite de cada uma', () => {
+  const l = (cor, x, y, nota, pior = nota, w = 20) =>
+    `${cor}  ${x}, ${y}  ${w}× 10 pt  nota ${nota.toFixed(2)}  pior ${pior.toFixed(2)}`;
+  const base = mkdtempSync(join(tmpdir(), 'compara-laudo-'));
+  laudo(join(base, 'antes'), {
+    e: [l('#666666', 10, 100, 7), l('#666666', 60, 100, 7), l('#676767', 110, 100, 7), l('#777777', 100, 120, 8),
+      l('#888888', 200, 140, 8), l('#999999', 300, 160, 8), l('#AAAAAA', 10, 200, 8), l('#BBBBBB', 10, 220, 4.5),
+      l('#DDDDDD', 200, 260, 8)],
+    f: [l('#111111', 10, 20, 7)],
+  });
+  laudo(join(base, 'depois'), {
+    e: [l('#666666', 10, 100, 6.5), l('#666666', 60, 100, 7, 6.9), l('#686868', 110, 100, 7),
+      l('#777777', 107, 120, 8), l('#898989', 202, 140, 8), l('#999999', 302, 161, 8), l('#AAAAAA', 16, 200, 7.5),
+      l('#BBBBBB', 10, 220, 4.5), l('#CCCCCC', 10, 240, 4.4), l('#DDDDDD', 202, 260, 8, 8, 22)],
+    f: [l('#111111', 12, 20, 7)],
+  });
+  const saida = execFileSync('node', [join(raiz, 'scripts/compara-laudo.mjs'), join(base, 'antes'),
+    join(base, 'depois'), join(base, 'saida'), '--detalhe'], { encoding: 'utf8' });
+  assert.equal(saida, [
+    'e: 10 palavras, 1 idênticas, 3 mudadas, 1 deslocadas, 4 só antes, 5 só depois, 1 abaixo de 4.5',
+    '   mudou 10,100 20×10: #666666 7.00 (pior 7.00) → #666666 6.50 (pior 6.50)',
+    '   mudou 60,100 20×10: #666666 7.00 (pior 7.00) → #666666 7.00 (pior 6.90)',
+    '   mudou 110,100 20×10: #676767 7.00 (pior 7.00) → #686868 7.00 (pior 7.00)',
+    '   deslocada 10→16,200 20×10: #AAAAAA 8.00 (pior 8.00) → #AAAAAA 7.50 (pior 7.50)',
+    '   só antes  #777777 100,120 20×10 nota 8.00 pior 8.00',
+    '   só antes  #888888 200,140 20×10 nota 8.00 pior 8.00',
+    '   só antes  #999999 300,160 20×10 nota 8.00 pior 8.00',
+    '   só antes  #DDDDDD 200,260 20×10 nota 8.00 pior 8.00',
+    '   só depois #777777 107,120 20×10 nota 8.00 pior 8.00',
+    '   só depois #898989 202,140 20×10 nota 8.00 pior 8.00',
+    '   só depois #999999 302,161 20×10 nota 8.00 pior 8.00',
+    '   só depois #CCCCCC 10,240 20×10 nota 4.40 pior 4.40',
+    '   só depois #DDDDDD 202,260 22×10 nota 8.00 pior 8.00',
+    '   ABAIXO #CCCCCC 10,240 20×10 nota 4.40',
+    'f: 1 palavras, 0 idênticas, 0 mudadas, 1 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5',
+    'TOTAL: 2 cenas, 11 palavras, 1 idênticas, 3 mudadas, 2 deslocadas, 9 sem par, 1 abaixo de 4.5',
+    '',
+  ].join('\n'));
+});
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/compara-laudo.test.mjs 2>&1 | grep -E "^ℹ (pass|fail)|^  code: 'MODULE_NOT_FOUND'" | sort | uniq -c
+```
+Expected (os três testes caem porque o script ainda não existe):
+```
+   3   code: 'MODULE_NOT_FOUND',
+   1 ℹ fail 3
+   1 ℹ pass 0
+```
+
+- [ ] **Step 3: Implementar**
+
+Implemente o script e ponha o teste novo no `test:unit` do `package.json`, que lista os testes um a um.
+
+Em `package.json`:
+
+```diff
+--- a/package.json
++++ b/package.json
+@@ -6,7 +6,7 @@
+   "description": "Custta: aplicação estática sem build no deploy; npm mantém SDK local, testes, Capacitor e a função de cron do servidor.",
+   "scripts": {
+     "test": "npm run test:unit && npm run test:rules",
+-    "test:unit": "node --test tests/calc.test.cjs tests/moeda.test.cjs tests/icons.test.cjs tests/logo-escrito.test.cjs tests/teclado.test.cjs tests/resumo.test.cjs tests/xss.test.cjs tests/headers.test.cjs tests/vercel.test.cjs tests/pwa.test.cjs tests/workflow.test.cjs tests/sync.test.cjs tests/fila.test.mjs tests/diagnostico.test.cjs tests/share.test.cjs tests/conta.test.mjs tests/fuso.test.cjs tests/dados.test.cjs tests/cadastro.test.cjs tests/sentry.test.cjs tests/nativo.test.cjs tests/ios.test.cjs tests/gestos.test.cjs tests/molas.test.mjs tests/vidro.test.cjs tests/build-www.test.mjs tests/capacitor.test.cjs tests/cloud-nativo.test.mjs tests/dialogos.test.cjs tests/push.test.cjs tests/push-cloud.test.mjs tests/enviar.test.cjs tests/cron.test.cjs tests/privacidade.test.cjs tests/screenshots.test.mjs tests/conta-demo.test.mjs tests/docs.test.mjs tests/google-cloud.test.mjs tests/apple-cloud.test.mjs tests/admin-deps.test.cjs tests/pacotes.test.cjs tests/sonda-banco.test.mjs tests/vetores.test.mjs tests/app-ios.test.cjs",
++    "test:unit": "node --test tests/calc.test.cjs tests/moeda.test.cjs tests/icons.test.cjs tests/logo-escrito.test.cjs tests/teclado.test.cjs tests/resumo.test.cjs tests/xss.test.cjs tests/headers.test.cjs tests/vercel.test.cjs tests/pwa.test.cjs tests/workflow.test.cjs tests/sync.test.cjs tests/fila.test.mjs tests/diagnostico.test.cjs tests/share.test.cjs tests/conta.test.mjs tests/fuso.test.cjs tests/dados.test.cjs tests/cadastro.test.cjs tests/sentry.test.cjs tests/nativo.test.cjs tests/ios.test.cjs tests/gestos.test.cjs tests/molas.test.mjs tests/vidro.test.cjs tests/build-www.test.mjs tests/capacitor.test.cjs tests/cloud-nativo.test.mjs tests/dialogos.test.cjs tests/push.test.cjs tests/push-cloud.test.mjs tests/enviar.test.cjs tests/cron.test.cjs tests/privacidade.test.cjs tests/screenshots.test.mjs tests/conta-demo.test.mjs tests/docs.test.mjs tests/google-cloud.test.mjs tests/apple-cloud.test.mjs tests/admin-deps.test.cjs tests/pacotes.test.cjs tests/sonda-banco.test.mjs tests/vetores.test.mjs tests/app-ios.test.cjs tests/compara-laudo.test.mjs",
+     "test:rules": "firebase emulators:exec --only firestore \"node --test tests/rules.test.mjs\"",
+     "rules:deploy": "firebase deploy --only firestore:rules",
+     "vendor:firebase": "node scripts/vendor-firebase.mjs",
+```
+
+Criar `scripts/compara-laudo.mjs`:
+
+```js
+// Compara o laudo de leitura de dois commits, palavra por palavra (spec da etapa 4, "A comparação").
+//
+// uso: node scripts/compara-laudo.mjs <antes> <depois> <pasta de saída> [--detalhe]
+//
+// <antes> e <depois> são os xcresult do laudo (o script exporta só as tabelas, *.txt, para <saída>/antes e
+// <saída>/depois) ou pastas já exportadas, com o manifest.json. As palavras de cada cena casam pela caixa
+// (x, y, largura e altura). Por cena, o script conta as idênticas (cor, nota e pior iguais), as mudadas (a mesma
+// caixa com cor ou nota diferente), as deslocadas (a mesma palavra, que andou até 6 pt na horizontal) e as sem
+// par dos dois lados, e confere as palavras de depois contra o portão de 4,5. Só as cenas com diferença saem.
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const PORTAO = 4.5;
+const LINHA = /^(#[0-9A-Fa-f]{6,8})\s+(-?\d+),\s*(-?\d+)\s+(\d+)×\s*(\d+) pt\s+nota\s+([\d.]+)\s+pior\s+([\d.]+)/;
+
+function exportar(origem, destino) {
+  let pasta = origem;
+  if (origem.replace(/\/+$/, '').endsWith('.xcresult')) {
+    pasta = destino;
+    fs.rmSync(destino, { recursive: true, force: true });   // sempre do xcresult de agora, nunca de uma rodada velha
+    fs.mkdirSync(destino, { recursive: true });
+    execFileSync('xcrun', ['xcresulttool', 'export', 'attachments', '--path', origem, '--output-path', destino,
+      '--filter', '*.txt'], { stdio: 'pipe' });
+  }
+  const manifesto = JSON.parse(fs.readFileSync(path.join(pasta, 'manifest.json'), 'utf8'));
+  const cenas = new Map();
+  for (const teste of manifesto) {
+    for (const anexo of teste.attachments ?? []) {
+      const m = /^leitura — (.*) \(tabela\)/.exec(anexo.suggestedHumanReadableName ?? '');
+      if (!m) continue;
+      if (cenas.has(m[1])) throw new Error(`cena repetida no laudo: ${m[1]}`);
+      const palavras = [];
+      for (const linha of fs.readFileSync(path.join(pasta, anexo.exportedFileName), 'utf8').split('\n')) {
+        const p = LINHA.exec(linha.trim());
+        if (p) palavras.push({ cor: p[1].toUpperCase(), x: +p[2], y: +p[3], w: +p[4], h: +p[5], nota: +p[6], pior: +p[7] });
+      }
+      cenas.set(m[1], palavras);
+    }
+  }
+  return cenas;
+}
+
+const caixa = p => `${p.x},${p.y},${p.w},${p.h}`;
+const igual = (a, b) => caixa(a) === caixa(b) && a.cor === b.cor && a.nota === b.nota && a.pior === b.pior;
+const n2 = v => v.toFixed(2);
+
+function main() {
+  const [antesX, depoisX, saida] = process.argv.slice(2, 5);
+  const detalhe = process.argv.includes('--detalhe');
+  const antes = exportar(antesX, path.join(saida, 'antes'));
+  const depois = exportar(depoisX, path.join(saida, 'depois'));
+  const total = { cenas: 0, palavras: 0, iguais: 0, mudadas: 0, semPar: 0, deslocadas: 0, abaixo: 0 };
+  for (const cena of [...new Set([...antes.keys(), ...depois.keys()])].sort()) {
+    const a = antes.get(cena);
+    const d = depois.get(cena);
+    if (!a || !d) {
+      console.log(`SÓ ${a ? 'ANTES' : 'DEPOIS'}: ${cena}`);
+      continue;
+    }
+    const porCaixaA = new Map();
+    for (const p of a) {
+      if (!porCaixaA.has(caixa(p))) porCaixaA.set(caixa(p), []);
+      porCaixaA.get(caixa(p)).push(p);
+    }
+    let iguais = 0;
+    const mudadas = [];
+    const semParD = [];
+    for (const p of d) {
+      const lista = porCaixaA.get(caixa(p));
+      if (lista && lista.length) {
+        const q = lista.shift();
+        if (igual(q, p)) iguais += 1;
+        else mudadas.push([q, p]);
+      } else {
+        semParD.push(p);
+      }
+    }
+    const semParA = [...porCaixaA.values()].flat();
+    // Segunda passada: a mesma palavra deslocada na horizontal (mesma cor, y, largura e altura; |Δx| ≤ 6 pt).
+    const deslocadas = [];
+    for (const p of [...semParD]) {
+      const q = semParA.find(q => q.cor === p.cor && q.y === p.y && q.w === p.w && q.h === p.h && Math.abs(q.x - p.x) <= 6);
+      if (q) {
+        semParA.splice(semParA.indexOf(q), 1);
+        semParD.splice(semParD.indexOf(p), 1);
+        deslocadas.push([q, p]);
+      }
+    }
+    const abaixo = d.filter(p => p.nota < PORTAO);
+    total.cenas += 1;
+    total.palavras += d.length;
+    total.iguais += iguais;
+    total.mudadas += mudadas.length;
+    total.semPar += semParA.length + semParD.length;
+    total.deslocadas += deslocadas.length;
+    total.abaixo += abaixo.length;
+    if (mudadas.length || semParA.length || semParD.length || abaixo.length || deslocadas.length) {
+      console.log(`${cena}: ${d.length} palavras, ${iguais} idênticas, ${mudadas.length} mudadas, ${deslocadas.length} deslocadas, ` +
+        `${semParA.length} só antes, ${semParD.length} só depois, ${abaixo.length} abaixo de ${PORTAO}`);
+      if (detalhe) {
+        for (const [q, p] of mudadas) {
+          console.log(`   mudou ${q.x},${q.y} ${q.w}×${q.h}: ${q.cor} ${n2(q.nota)} (pior ${n2(q.pior)}) → ${p.cor} ${n2(p.nota)} (pior ${n2(p.pior)})`);
+        }
+        for (const [q, p] of deslocadas) {
+          if (q.cor !== p.cor || q.nota !== p.nota || q.pior !== p.pior) {
+            console.log(`   deslocada ${q.x}→${p.x},${p.y} ${p.w}×${p.h}: ${q.cor} ${n2(q.nota)} (pior ${n2(q.pior)}) → ${p.cor} ${n2(p.nota)} (pior ${n2(p.pior)})`);
+          }
+        }
+        for (const p of semParA) console.log(`   só antes  ${p.cor} ${p.x},${p.y} ${p.w}×${p.h} nota ${n2(p.nota)} pior ${n2(p.pior)}`);
+        for (const p of semParD) console.log(`   só depois ${p.cor} ${p.x},${p.y} ${p.w}×${p.h} nota ${n2(p.nota)} pior ${n2(p.pior)}`);
+        for (const p of abaixo) console.log(`   ABAIXO ${p.cor} ${p.x},${p.y} ${p.w}×${p.h} nota ${n2(p.nota)}`);
+      }
+    }
+  }
+  console.log(`TOTAL: ${total.cenas} cenas, ${total.palavras} palavras, ${total.iguais} idênticas, ${total.mudadas} mudadas, ` +
+    `${total.deslocadas} deslocadas, ${total.semPar} sem par, ${total.abaixo} abaixo de ${PORTAO}`);
+}
+
+main();
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/compara-laudo.test.mjs 2>&1 | grep -E "^ℹ (pass|fail)"
+npm run test:unit 2>&1 | grep -E "^ℹ (pass|fail)"
+```
+Expected: `ℹ pass 3` e `ℹ fail 0`; no `test:unit`, `ℹ pass 410` e `ℹ fail 0`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add package.json scripts/compara-laudo.mjs tests/compara-laudo.test.mjs
+git commit -m "test: comparador do laudo de leitura palavra por palavra" -m "Os PRs 1a, 1b e 1c da etapa 4 mudam peças compartilhadas, e o spec pede o laudo inteiro de cada um comparado palavra por palavra com o do commit anterior. O scripts/compara-laudo.mjs exporta as tabelas dos dois xcresult, casa as palavras de cada cena pela caixa e diz as idênticas, as mudadas, as deslocadas, as sem par e as que ficaram abaixo de 4,5. Ele aceita também pastas já exportadas, que é o que o teste usa, porque o test:unit roda no Ubuntu da CI, sem o xcrun."
+```
+
+### Task 16: Tokens da identidade nova no catálogo de cores
+
+O catálogo ganha os tokens da identidade nova que o app ainda não tinha, com os valores do mockup aprovado (spec, tabela "Tokens: do mockup para o app", coluna "No app" = "novo"): o bloco sólido verde (`DestaqueSolido`, #3AD17E nos dois temas) e o texto sobre ele (`TintaSobreDestaque`, #04100C); o texto verde sobre o vidro (`DestaqueTexto`, #3AD17E e, no claro, o #0E7A41 do site); o sólido âmbar do veredito (`SolidoAmbar`, #FFD98A e, no claro, #F2C15A, confirmação 1 de 29/10) e o texto sobre ele (`TintaSobreAmbar`, #2B1B00); as placas (`Placa`, #04100C a 58% e branco a 66%; `PlacaForte`, a 84% e 92%); as seis cores do anel e da barra (`Grafico1` a `Grafico6`) com o cinza de "Outros" (`GraficoOutros`); e as cores dos gráficos de mês e do anel (`BarraApagada`, `GradeGrafico`, `EixoGrafico`, `AnelApagado`, `AnelSeparador`). A transparência vai no próprio valor (`#RRGGBBAA`), como a `Folha`. Três tokens do mockup não viram token, pela regra do spec ("Tokens pelo valor": o do app fica quando tem o mesmo papel e valor igual ou mais forte): o `DestaqueNumero` é o `PositivoNoVidro` (#8CF0BC e #084A27 contra #8CF0B4 e #0A5530), a `LinhaBanco` é o `SecundarioTransparente` (#D6E8E0 e #2B463B contra #B8D4C7 e #2F4A3F) e o `AmbarTexto` é o `AlertaNoVidro`, cujo claro escurece na tarefa seguinte. O `HaloTitulo` não é cor do catálogo: é a opacidade do `Fundo` no `HaloDoTitulo` (Aurora.swift:185), que se calibra pelo laudo com o título novo (ver o PR). O `SecundarioForte` fica fora até o laudo da letra máxima pedir (spec). Nenhuma tela usa os tokens novos: as peças do PR 1b usam. Os dois pares de texto sobre sólido entram no `PARES_SOLIDOS`, que o `tests/app-ios.test.cjs` confere a 4,5:1 sem Xcode (9,78:1 no verde; 12,34 e 9,97:1 no âmbar, no escuro e no claro).
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/Paleta.swift`
+- Modify: `scripts/cores-app-ios.mjs`
+- Test (alterar): `app-ios/CusttaTests/CoresTests.swift`
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/AnelApagado.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/AnelSeparador.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/BarraApagada.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/DestaqueSolido.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/DestaqueTexto.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/EixoGrafico.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/GradeGrafico.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Grafico1.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Grafico2.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Grafico3.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Grafico4.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Grafico5.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Grafico6.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/GraficoOutros.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/Placa.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/PlacaForte.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/SolidoAmbar.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/TintaSobreAmbar.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/TintaSobreDestaque.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+
+**Interfaces:**
+- Consumes: `Token`, `Paleta.nome(_:_:)` e `Paleta.cor(_:)` (Paleta.swift); `CORES` e `PARES_SOLIDOS` (`scripts/cores-app-ios.mjs`).
+- Produces: `Token.destaqueSolido`, `.tintaSobreDestaque`, `.destaqueTexto`, `.solidoAmbar`, `.tintaSobreAmbar`, `.placa`, `.placaForte`, `.grafico1` a `.grafico6`, `.graficoOutros`, `.barraApagada`, `.gradeGrafico`, `.eixoGrafico`, `.anelApagado` e `.anelSeparador`, lidos por `paleta.cor(_:)`.
+
+- [ ] **Step 1: Escrever os testes**
+
+O teste lê cada token novo do catálogo compilado, nos dois temas, e o compara com a tabela do spec; o `hex` passa a dizer a transparência (`#RRGGBBAA`) quando ela existe.
+
+Em `app-ios/CusttaTests/CoresTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/CoresTests.swift
++++ b/app-ios/CusttaTests/CoresTests.swift
+@@ -25,13 +25,36 @@ struct CoresTests {
+         }
+     }
+ 
+-    /// "#RRGGBB" da cor do catálogo no esquema dado.
++    /// "#RRGGBB" da cor do catálogo no esquema dado; com transparência, "#RRGGBBAA".
+     private func hex(_ token: Token, _ estilo: UIUserInterfaceStyle) -> String {
+         guard let cor = UIColor(named: Paleta.nome(token, .esmeralda), in: .main, compatibleWith: nil)?
+             .resolvedColor(with: UITraitCollection(userInterfaceStyle: estilo)) else { return "" }
+         var (r, g, b, a): (CGFloat, CGFloat, CGFloat, CGFloat) = (0, 0, 0, 0)
+         cor.getRed(&r, green: &g, blue: &b, alpha: &a)
+-        return String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
++        let rgb = String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
++        return a < 1 ? rgb + String(format: "%02X", Int((a * 255).rounded())) : rgb
++    }
++
++    /// A identidade nova da etapa 4, com os valores do mockup aprovado (spec 2026-10-29, "Tokens: do mockup para o app"),
++    /// nos dois temas: só os tokens que o app ainda não tinha. O DestaqueNumero do mockup é o PositivoNoVidro, a LinhaBanco é
++    /// o SecundarioTransparente e o AmbarTexto é o AlertaNoVidro.
++    @Test func tokensDaIdentidadeNova() {
++        let tabela: [(Token, escuro: String, claro: String)] = [
++            (.destaqueSolido, "#3AD17E", "#3AD17E"), (.tintaSobreDestaque, "#04100C", "#04100C"),
++            (.destaqueTexto, "#3AD17E", "#0E7A41"),
++            (.solidoAmbar, "#FFD98A", "#F2C15A"), (.tintaSobreAmbar, "#2B1B00", "#2B1B00"),   // o claro: confirmação 1 de 29/10
++            (.placa, "#04100C94", "#FFFFFFA8"), (.placaForte, "#04100CD6", "#FFFFFFEB"),        // 58% e 66%; 84% e 92%
++            (.grafico1, "#199E70", "#10976A"), (.grafico2, "#3987E5", "#2A78D6"), (.grafico3, "#D55181", "#D14F86"),
++            (.grafico4, "#9085E9", "#6250D6"), (.grafico5, "#D95926", "#DC5A1E"), (.grafico6, "#14A3C7", "#0C86A4"),
++            (.graficoOutros, "#8FA89C", "#5E7A6E"),
++            (.barraApagada, "#EAFFF666", "#142B2394"),                                          // 40% e 58%
++            (.gradeGrafico, "#EAFFF624", "#142B2324"), (.eixoGrafico, "#EAFFF64D", "#142B2352"), // 14%; 30% e 32%
++            (.anelApagado, "#123128", "#DCEAE3"), (.anelSeparador, "#04100C8C", "#FFFFFFBF"),   // 55% e 75%
++        ]
++        for (token, escuro, claro) in tabela {
++            #expect(hex(token, .dark) == escuro, "\(token) no escuro")
++            #expect(hex(token, .light) == claro, "\(token) no claro")
++        }
+     }
+ 
+     /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705; no escuro, #FFD98A.
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error:' | sed 's/^.*CusttaTests\//CusttaTests\//' | head -3
+```
+Expected: o `CusttaTests` não compila:
+```
+CusttaTests/CoresTests.swift:43:15: error: type 'Token' has no member 'destaqueSolido'
+CusttaTests/CoresTests.swift:43:56: error: type 'Token' has no member 'tintaSobreDestaque'
+CusttaTests/CoresTests.swift:44:15: error: type 'Token' has no member 'destaqueTexto'
+```
+
+- [ ] **Step 3: Implementar**
+
+Os tokens entram no fim da tabela, depois dos da etapa 2, com o comentário de onde vêm; os casos do `Token` seguem a mesma ordem. Os valores com transparência saem do percentual do mockup arredondado a 1/255 (58% → `94`, 66% → `A8`, 84% → `D6`, 92% → `EB`, 40% → `66`, 14% → `24`, 30% → `4D`, 32% → `52`, 55% → `8C`, 75% → `BF`).
+
+Em `app-ios/Custta/Identidade/Paleta.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Paleta.swift
++++ b/app-ios/Custta/Identidade/Paleta.swift
+@@ -90,6 +90,33 @@ enum Token: String, CaseIterable, Sendable {
+     case aceso = "Aceso"
+     /// O aro claro das barrinhas de vidro desenhadas na miniatura de cada opção do vidro (Ajustes › Aparência).
+     case aroDaMiniatura = "AroDaMiniatura"
++    /// A identidade nova (etapa 4): o bloco sólido protagonista de cada tela, que não é vidro, e o texto sobre ele; o texto
++    /// verde sobre o vidro; o sólido âmbar do "Rende menos que o banco" e o texto sobre ele.
++    case destaqueSolido = "DestaqueSolido"
++    case tintaSobreDestaque = "TintaSobreDestaque"
++    case destaqueTexto = "DestaqueTexto"
++    case solidoAmbar = "SolidoAmbar"
++    case tintaSobreAmbar = "TintaSobreAmbar"
++    /// A placa, um tom chapado sem desfoque (não é vidro), atrás do anel e dos gráficos; a forte, atrás da barra empilhada
++    /// da obra. Com ela, as marcas ficam a 3:1 com a aurora atrás.
++    case placa = "Placa"
++    case placaForte = "PlacaForte"
++    /// As seis cores do anel e da barra empilhada, do maior tópico para o menor, e o cinza de "Outros".
++    case grafico1 = "Grafico1"
++    case grafico2 = "Grafico2"
++    case grafico3 = "Grafico3"
++    case grafico4 = "Grafico4"
++    case grafico5 = "Grafico5"
++    case grafico6 = "Grafico6"
++    case graficoOutros = "GraficoOutros"
++    /// Os gráficos de mês: os meses não escolhidos e a hachura das parcelas a vencer, a grade e os eixos.
++    case barraApagada = "BarraApagada"
++    case gradeGrafico = "GradeGrafico"
++    case eixoGrafico = "EixoGrafico"
++    /// O anel: o trilho e os pedaços apagados pelo toque (por cor, sem opacidade, para as emendas não virarem bolinhas), e
++    /// o aro na ponta de cada pedaço.
++    case anelApagado = "AnelApagado"
++    case anelSeparador = "AnelSeparador"
+ }
+ 
+ struct Paleta: Equatable, Sendable {
+```
+
+Em `scripts/cores-app-ios.mjs`:
+
+```diff
+--- a/scripts/cores-app-ios.mjs
++++ b/scripts/cores-app-ios.mjs
+@@ -103,6 +103,30 @@ export const CORES = {
+     // Ajustes › Aparência: o aro claro das barrinhas de vidro desenhadas na miniatura de cada opção (no mockup, branco a 70% no
+     // Transparente e a 30% no Fosco, nos dois temas). O vidro de verdade tem o aro do sistema.
+     AroDaMiniatura: ['#FFFFFF', '#FFFFFF'],
++    // Etapa 4 (~/Documents/custta-mockups/nativo/etapa4/, aprovado em 28/10; spec 2026-10-29, "Tokens: do mockup para o
++    // app"): a identidade nova, só o que o app não tinha. O DestaqueNumero do mockup é o PositivoNoVidro, a LinhaBanco é o
++    // SecundarioTransparente e o AmbarTexto é o AlertaNoVidro: o do app tem o mesmo papel e é igual ou mais forte.
++    DestaqueSolido: ['#3AD17E', '#3AD17E'],         // o bloco sólido protagonista de cada tela (não é vidro)
++    TintaSobreDestaque: ['#04100C', '#04100C'],     // o texto sobre ele
++    DestaqueTexto: ['#3AD17E', '#0E7A41'],          // texto verde sobre o vidro; no claro, o --green do site
++    SolidoAmbar: ['#FFD98A', '#F2C15A'],            // o veredito "Rende menos que o banco" (o claro: confirmação 1 de 29/10)
++    TintaSobreAmbar: ['#2B1B00', '#2B1B00'],
++    Placa: ['#04100C94', '#FFFFFFA8'],              // tom chapado, sem desfoque, atrás do anel e dos gráficos (58% e 66%)
++    PlacaForte: ['#04100CD6', '#FFFFFFEB'],         // atrás da barra empilhada da obra (84% e 92%)
++    // As seis cores do anel e da barra empilhada (verde-água, azul, magenta, violeta, laranja e ciano), validadas nos dois
++    // temas a 3:1 contra o vidro, e o cinza de "Outros", neutro de propósito.
++    Grafico1: ['#199E70', '#10976A'],
++    Grafico2: ['#3987E5', '#2A78D6'],
++    Grafico3: ['#D55181', '#D14F86'],
++    Grafico4: ['#9085E9', '#6250D6'],
++    Grafico5: ['#D95926', '#DC5A1E'],
++    Grafico6: ['#14A3C7', '#0C86A4'],
++    GraficoOutros: ['#8FA89C', '#5E7A6E'],
++    BarraApagada: ['#EAFFF666', '#142B2394'],       // os meses não escolhidos e a hachura das parcelas a vencer (40% e 58%)
++    GradeGrafico: ['#EAFFF624', '#142B2324'],       // 14%
++    EixoGrafico: ['#EAFFF64D', '#142B2352'],        // 30% e 32%
++    AnelApagado: ['#123128', '#DCEAE3'],            // o trilho e os pedaços apagados pelo toque: por cor, sem opacidade
++    AnelSeparador: ['#04100C8C', '#FFFFFFBF'],      // o aro de 2,5 pt na ponta de cada pedaço (55% e 75%)
+   },
+ };
+ 
+@@ -117,6 +141,7 @@ export const PARES_SOLIDOS = [
+   ['Texto', 'LinhaDaFolha'], ['SecundarioSolido', 'LinhaDaFolha'], ['SecundarioTransparente', 'LinhaDaFolha'], ['LinkNoVidro', 'LinhaDaFolha'], ['ErroNoVidro', 'LinhaDaFolha'],
+   ['Negativo', 'LinhaDaFolha'], ['Alerta', 'LinhaDaFolha'], ['Texto', 'Tecla'], ['Texto', 'TeclaTocada'], ['Texto', 'SegmentadoEscolhido'],
+   ['SobreApagar', 'Apagar'], ['SobreAlerta', 'Alerta'],
++  ['TintaSobreDestaque', 'DestaqueSolido'], ['TintaSobreAmbar', 'SolidoAmbar'],
+ ];
+ 
+ const info = { author: 'xcode', version: 1 };
+```
+
+Regerar:
+
+```bash
+node scripts/cores-app-ios.mjs
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/CoresTests 2>&1 | grep -E "Test run with"
+```
+Expected: `ℹ pass 68`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 5 tests in 1 suite passed`.
+
+- [ ] **Step 5: Conferir que nenhuma tela usa os tokens novos**
+
+O git do Mac (Apple Git 2.54) não entende o `\b` no `-E`, e a busca com ele dá 0 sempre: o fim do nome vai como `([^A-Za-z0-9_]|$)`. A segunda linha é o controle, com o mesmo padrão sobre um token que tem uso.
+
+Run:
+```bash
+git grep -nE '\.(destaqueSolido|tintaSobreDestaque|destaqueTexto|solidoAmbar|tintaSobreAmbar|placa|placaForte|grafico[1-6]|graficoOutros|barraApagada|gradeGrafico|eixoGrafico|anelApagado|anelSeparador)([^A-Za-z0-9_]|$)' -- app-ios/Custta | wc -l
+git grep -nE '\.(alertaNoVidro)([^A-Za-z0-9_]|$)' -- app-ios/Custta | wc -l
+```
+Expected: `0` e `2` (os dois leitores do `AlertaNoVidro`, PecasDoOrcamento.swift:149 e PecasDaTelaOrcamento.swift:242). Sem uso, as telas das etapas 1 a 3 não mudam; o laudo inteiro do fim do PR confirma.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Assets.xcassets/Esmeralda/AnelApagado.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/AnelSeparador.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/BarraApagada.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/DestaqueSolido.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/DestaqueTexto.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/EixoGrafico.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/GradeGrafico.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Grafico1.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Grafico2.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Grafico3.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Grafico4.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Grafico5.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Grafico6.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/GraficoOutros.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/Placa.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/PlacaForte.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/SolidoAmbar.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/TintaSobreAmbar.colorset/Contents.json app-ios/Custta/Assets.xcassets/Esmeralda/TintaSobreDestaque.colorset/Contents.json app-ios/Custta/Identidade/Paleta.swift app-ios/CusttaTests/CoresTests.swift scripts/cores-app-ios.mjs
+git commit -m "feat: tokens da identidade nova da etapa 4 no catálogo de cores" -m "O catálogo ganha os tokens da identidade nova que o app ainda não tinha, com os valores do mockup aprovado da etapa 4: o bloco sólido verde e o texto sobre ele, o texto verde sobre o vidro, o sólido âmbar do veredito (no claro, #F2C15A com o texto #2B1B00, confirmado pelo Giovani em 29/10), as placas atrás dos gráficos e da barra empilhada, as seis cores do anel com o cinza de \"Outros\" e as cores das barras, da grade, dos eixos e do anel." -m "O DestaqueNumero, a LinhaBanco e o AmbarTexto do mockup não viram token: o app já tem o PositivoNoVidro, o SecundarioTransparente e o AlertaNoVidro, com o mesmo papel e valor igual ou mais forte. Nenhuma tela usa os tokens novos por enquanto; as peças do PR seguinte usam. Os dois pares de texto sobre sólido entram no PARES_SOLIDOS, que confere 4,5:1 sem Xcode."
+```
+
+### Task 17: Âmbar de texto do claro mais escuro no app inteiro
+
+No claro, o `AlertaNoVidro` passa de #6F4705 a #5E3A03, o `AmbarTexto` do mockup da etapa 4: o texto mais escuro do claro, aprovado pelo Giovani em 28/10 (no mockup, o #6F4705 ficava em 3,9:1 no pior ponto da aurora clara), que a confirmação 5 de 29/10 leva ao app inteiro (spec, "Tokens globais: os valores aprovados"). O escuro (#FFD98A) não muda. O token tem dois leitores, os dois da etapa 3: o aviso dos tópicos na linha do orçamento da obra (`AvisoDoOrcamento`, PecasDoOrcamento.swift:149) e o "Passou … do previsto" da tela Orçamento (`FraseDoTopicoNoOrcamento`, PecasDaTelaOrcamento.swift:242). O outro texto que o mockup escureceu, o `SecundarioTransparente` (#3B574B → #2F4A3F), não muda no app: o do app já é #2B463B, mais escuro (spec, tabela de tokens). Uma guarda nova prende a regra do spec "Tokens pelo valor" para os três tokens do mockup que o app já tem: o do app só fica no lugar se tiver contraste igual ou maior contra o vidro de referência do mockup (#10241D no escuro, #DDF3EA no claro, o do validador de paleta do Croqui); com o #6F4705, o `AlertaNoVidro` do claro fica em 7,01:1 contra 8,68:1 do #5E3A03 e reprova.
+
+**Files:**
+- Modify: `scripts/cores-app-ios.mjs`
+- Test (alterar): `app-ios/CusttaTests/CoresTests.swift`
+- Test (alterar): `app-ios/CusttaTests/OrcamentoTests.swift`
+- Test (alterar): `app-ios/CusttaTests/TelaOrcamentoTests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/AlertaNoVidro.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+
+**Interfaces:**
+- Consumes: `Token.alertaNoVidro`; `CORES` (`scripts/cores-app-ios.mjs`).
+- Produces: nada novo (o valor do `AlertaNoVidro` no claro).
+
+- [ ] **Step 1: Escrever os testes**
+
+O `CoresTests` e a guarda do catálogo pedem o claro novo; a guarda nova compara, contra o vidro de referência, o token do app com o do mockup que ele substitui. Os dois testes do âmbar sobre o vidro do orçamento (`OrcamentoTests` e `TelaOrcamentoTests`, da etapa 3) passam a esperar o #5E3A03 no claro.
+
+Em `app-ios/CusttaTests/CoresTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/CoresTests.swift
++++ b/app-ios/CusttaTests/CoresTests.swift
+@@ -57,10 +57,11 @@ struct CoresTests {
+         }
+     }
+ 
+-    /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705; no escuro, #FFD98A.
++    /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #5E3A03, o texto mais escuro do
++    /// claro da etapa 4 (era #6F4705); no escuro, #FFD98A.
+     /// E a decisão 6: no Fosco escuro, o secundário é o do Transparente; no claro, o do Fosco fica.
+     @Test func ambarSobreOVidroESecundarioDoFoscoNoEscuro() {
+-        #expect(hex(.alertaNoVidro, .light) == "#6F4705")
++        #expect(hex(.alertaNoVidro, .light) == "#5E3A03")
+         #expect(hex(.alertaNoVidro, .dark) == "#FFD98A")
+         #expect(hex(.secundarioFosco, .dark) == hex(.secundarioTransparente, .dark))
+         #expect(hex(.secundarioFosco, .light) != hex(.secundarioTransparente, .light))
+```
+
+Em `app-ios/CusttaTests/OrcamentoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/OrcamentoTests.swift
++++ b/app-ios/CusttaTests/OrcamentoTests.swift
+@@ -109,10 +109,10 @@ struct OrcamentoTests {
+         return Dictionary(grouping: opacos, by: { $0 }).max { $0.value.count < $1.value.count }?.key ?? []
+     }
+ 
+-    /// O aviso dos tópicos no âmbar sobre o vidro: #6F4705 no claro (o Alerta do site, #8A5A06, não fechava 4,5:1 sobre a
++    /// O aviso dos tópicos no âmbar sobre o vidro: #5E3A03 no claro (o Alerta do site, #8A5A06, não fechava 4,5:1 sobre a
+     /// aurora clara) e #FFD98A no escuro.
+     @Test func avisoDosTopicosNoAmbarSobreOVidro() throws {
+-        #expect(try corDoTexto(.light) == [0x6F, 0x47, 0x05])
++        #expect(try corDoTexto(.light) == [0x5E, 0x3A, 0x03])
+         #expect(try corDoTexto(.dark) == [0xFF, 0xD9, 0x8A])
+     }
+ }
+```
+
+Em `app-ios/CusttaTests/TelaOrcamentoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/TelaOrcamentoTests.swift
++++ b/app-ios/CusttaTests/TelaOrcamentoTests.swift
+@@ -95,7 +95,7 @@ struct TelaOrcamentoTests {
+         #expect(altura(60, .accessibility5) > altura(1000, .accessibility5), "na letra grande, quebra")
+     }
+ 
+-    /// A frase do "passou" no âmbar sobre o vidro (#6F4705 no claro, #FFD98A no escuro); as outras, fora do âmbar.
++    /// A frase do "passou" no âmbar sobre o vidro (#5E3A03 no claro, #FFD98A no escuro); as outras, fora do âmbar.
+     @MainActor @Test func fraseDoPassouNoAmbarSobreOVidro() throws {
+         func cor(_ alerta: Bool, _ esquema: ColorScheme) throws -> [UInt8] {
+             let r = ImageRenderer(content: FraseDoTopicoNoOrcamento(texto: "Passou R$ 6,2 mil do previsto", alerta: alerta)
+@@ -112,8 +112,8 @@ struct TelaOrcamentoTests {
+             let opacos = stride(from: 0, to: rgba.count, by: 4).filter { rgba[$0 + 3] == 255 }.map { Array(rgba[$0..<$0 + 3]) }
+             return Dictionary(grouping: opacos, by: { $0 }).max { $0.value.count < $1.value.count }?.key ?? []
+         }
+-        #expect(try cor(true, .light) == [0x6F, 0x47, 0x05])
++        #expect(try cor(true, .light) == [0x5E, 0x3A, 0x03])
+         #expect(try cor(true, .dark) == [0xFF, 0xD9, 0x8A])
+-        #expect(try cor(false, .light) != [0x6F, 0x47, 0x05] && cor(false, .dark) != [0xFF, 0xD9, 0x8A], "a frase que não é do passou")
++        #expect(try cor(false, .light) != [0x5E, 0x3A, 0x03] && cor(false, .dark) != [0xFF, 0xD9, 0x8A], "a frase que não é do passou")
+     }
+ }
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -156,10 +156,10 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
+     // topo no Pro Max (faixa que o laudo deixa de fora, porque ali o texto é borrado); no escuro, o próprio Alerta.
+     const alerta = bloco.match(/\bAlerta: \['(#\w+)', '#\w+'\]/)[1];
+     assert.match(bloco, new RegExp(`\\bAlertaEtiqueta: \\['${alerta}', '#7A5410'\\]`), `AlertaEtiqueta da pele ${pele}`);
+-    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705 (o Alerta do site dava
+-    // 3,79–4,15:1 sobre a aurora clara); no escuro, #FFD98A (o Alerta ficava em 3,12:1 no alto da tela Orçamento rolada, na
+-    // maior letra).
+-    assert.match(bloco, /\bAlertaNoVidro: \['#FFD98A', '#6F4705'\]/, `AlertaNoVidro da pele ${pele}`);
++    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #5E3A03, o AmbarTexto do mockup da
++    // etapa 4 (o texto mais escuro do claro, aprovado em 28/10; o #6F4705 da etapa 3 ficava em 3,9:1 no pior ponto da aurora
++    // clara do mockup); no escuro, #FFD98A (o Alerta ficava em 3,12:1 no alto da tela Orçamento rolada, na maior letra).
++    assert.match(bloco, /\bAlertaNoVidro: \['#FFD98A', '#5E3A03'\]/, `AlertaNoVidro da pele ${pele}`);
+     // Decisão 6 da etapa 3: no Fosco escuro, o texto secundário é o do Transparente (o do Fosco ficava abaixo de 4,5:1 em
+     // dois pontos claros da aurora); no claro, o do Fosco fica.
+     const secundario = nome => bloco.match(new RegExp(`\\b${nome}: \\['(#\\w+)', '(#\\w+)'\\]`)).slice(1);
+@@ -224,6 +224,26 @@ test('texto sobre sólido fecha 4,5:1 nos quatro combos', async () => {
+   }
+ });
+ 
++test('token do mockup da etapa 4 que o app já tem: o do app é igual ou mais forte', async () => {
++  // Spec 2026-10-29, "Tokens: do mockup para o app": onde o app já tem um token com o mesmo papel, ele fica no lugar do do
++  // mockup se o valor for igual ou mais forte (o do mockup não clareia o texto que o app já escureceu). Mais forte é mais
++  // contraste contra o vidro de referência do mockup (#10241D no escuro, #DDF3EA no claro). O AmbarTexto do claro ficou
++  // mais escuro em 28/10 (#6F4705 → #5E3A03) e vale no app inteiro (confirmação 5 de 29/10).
++  const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
++  const linear = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
++  const luminancia = hex => [0.2126, 0.7152, 0.0722].reduce((s, peso, i) => s + peso * linear(parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16) / 255), 0);
++  const razao = (a, b) => { const [x, y] = [luminancia(a), luminancia(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
++  const vidro = ['#10241D', '#DDF3EA'];
++  const doMockup = [['DestaqueNumero', 'PositivoNoVidro', '#8CF0B4', '#0A5530'], ['LinhaBanco', 'SecundarioTransparente', '#B8D4C7', '#2F4A3F'],
++    ['AmbarTexto', 'AlertaNoVidro', '#FFD98A', '#5E3A03']];
++  for(const [nome, token, ...valores] of doMockup){
++    for(const [lado, tema] of [[0, 'escuro'], [1, 'claro']]){
++      const app = CORES.Esmeralda[token][lado];
++      assert.ok(razao(app, vidro[lado]) >= razao(valores[lado], vidro[lado]), `${token} no ${tema}: ${app} mais fraco que o ${valores[lado]} do ${nome}`);
++    }
++  }
++});
++
+ test('ícones em dia com o icons.js do site', async () => {
+   execFileSync(process.execPath, ['scripts/icones-app-ios.mjs', '--conferir'], { cwd: RAIZ, stdio: 'pipe' });
+   // O quadro do SVG (viewBox, linha e pontas) e o traço de cada ícone iguais aos do ICON() do site.
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "AssertionError \[|ℹ fail"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/CoresTests -only-testing:CusttaTests/OrcamentoTests -only-testing:CusttaTests/TelaOrcamentoTests 2>&1 | grep -E "Expectation failed|Test run with"
+```
+Expected: duas reprovações no Node (`ℹ fail 2`):
+```
+  AssertionError [ERR_ASSERTION]: AlertaNoVidro da pele Esmeralda
+  AssertionError [ERR_ASSERTION]: AlertaNoVidro no claro: #6F4705 mais fraco que o #5E3A03 do AmbarTexto
+```
+e, compilado, as três suítes reprovam pelo âmbar:
+```
+✘ Test ambarSobreOVidroESecundarioDoFoscoNoEscuro() recorded an issue at CoresTests.swift:64:9: Expectation failed: hex(.alertaNoVidro, .light) == "#5E3A03"
+✘ Test avisoDosTopicosNoAmbarSobreOVidro() recorded an issue at OrcamentoTests.swift:115:9: Expectation failed: try corDoTexto(.light) == [0x5E, 0x3A, 0x03]
+✘ Test fraseDoPassouNoAmbarSobreOVidro() recorded an issue at TelaOrcamentoTests.swift:115:9: Expectation failed: try cor(true, .light) == [0x5E, 0x3A, 0x03]
+✘ Test run with 18 tests in 3 suites failed after 0.215 seconds with 3 issues.
+```
+
+- [ ] **Step 3: Implementar**
+
+Só o valor do claro e o comentário; o catálogo sai do script.
+
+Em `scripts/cores-app-ios.mjs`:
+
+```diff
+--- a/scripts/cores-app-ios.mjs
++++ b/scripts/cores-app-ios.mjs
+@@ -81,11 +81,12 @@ export const CORES = {
+     PositivoNoVidro: ['#8CF0BC', '#084A27'],
+     NegativoNoVidro: ['#FFD2D9', '#8A1538'],
+     // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup: o aviso dos tópicos na linha do orçamento e o
+-    // "Passou … do previsto"): no claro, #6F4705 (o Alerta do site dava 3,79–4,15:1 sobre a aurora clara; este, 5,21–5,71:1).
+-    // No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
++    // "Passou … do previsto"): no claro, #5E3A03, o AmbarTexto do mockup da etapa 4 (o texto mais escuro do claro, aprovado em
++    // 28/10 e no app inteiro pela confirmação 5 de 29/10: o #6F4705 da etapa 3 ficava em 3,9:1 no pior ponto da aurora clara
++    // do mockup; o Alerta do site dava 3,79–4,15:1 sobre a do app). No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
+     // rolada, na maior letra, onde a aurora clareia o vidro (laudo da etapa 3); este, 4,9 ali. Não é o AlertaEtiqueta, que vai
+     // sobre o fundo âmbar das etiquetas.
+-    AlertaNoVidro: ['#FFD98A', '#6F4705'],
++    AlertaNoVidro: ['#FFD98A', '#5E3A03'],
+     // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
+     // sistema e o que vai dentro dela, o arrastar para apagar e a linha que acabou de entrar.
+     Folha: ['#0A1E18E6', '#F4F9F6F0'],              // --folha: fundo da folha (presentationBackground)
+```
+
+Regerar:
+
+```bash
+node scripts/cores-app-ios.mjs
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/CoresTests -only-testing:CusttaTests/OrcamentoTests -only-testing:CusttaTests/TelaOrcamentoTests 2>&1 | grep -E "Test run with"
+```
+Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 18 tests in 3 suites passed`.
+
+- [ ] **Step 5: Comparar o laudo das telas do orçamento com o do commit anterior**
+
+O âmbar mudado aparece em duas telas da etapa 3, e o laudo delas, palavra por palavra, prova que só ele mudou e que subiu. Rode a mesma suíte com o produto do commit anterior e com o desta tarefa, no mesmo simulador, e compare as tabelas com o comparador (`node scripts/compara-laudo.mjs`, Tarefa 15: casa as palavras de cada cena pela caixa e lista as mudadas, as deslocadas e as sem par). Os resultados ficam numa pasta sua, fora do repositório, e não no `/tmp`, que é o mesmo dos outros agentes do Mac. Cada rodada começa apagando o resultado dela, porque o `xcodebuild` recusa um `-resultBundlePath` que já existe; o caminho vai por extenso, porque no zsh um glob sem casamento aborta o comando.
+
+Run:
+```bash
+P=<uma pasta sua, fora do repositório>
+LEITURA=-only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento
+# no commit anterior (git stash ou checkout dele, build-for-testing) e depois neste, cada um no seu resultado:
+rm -rf "$P/orc-antes.xcresult"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never "$LEITURA" -resultBundlePath "$P/orc-antes.xcresult" 2>&1 | grep -E "Executed [0-9]+ test" | tail -1
+rm -rf "$P/orc-depois.xcresult"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never "$LEITURA" -resultBundlePath "$P/orc-depois.xcresult" 2>&1 | grep -E "Executed [0-9]+ test" | tail -1
+node scripts/compara-laudo.mjs "$P/orc-antes.xcresult" "$P/orc-depois.xcresult" "$P/orc-cmp" --detalhe | tail -6
+```
+Expected (18 Pro, iOS 27): as duas rodadas com `Executed 1 test, with 0 failures`, e só as três palavras âmbar do claro mudam, todas para cima:
+```
+obra com orçamento por tópico, claro: 32 palavras, 31 idênticas, 1 mudadas, 0 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5
+   mudou 61,496 222×14: #6F4705 6.96 (pior 6.85) → #5E3A03 8.62 (pior 8.48)
+tela Orçamento, topo, claro: 26 palavras, 24 idênticas, 2 mudadas, 0 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5
+   mudou 88,495 184×13: #6F4705 6.91 (pior 6.77) → #5E3A03 8.56 (pior 8.39)
+   mudou 88,571 185×13: #6F4705 7.66 (pior 7.63) → #5E3A03 9.49 (pior 9.45)
+TOTAL: 12 cenas, 314 palavras, 311 idênticas, 3 mudadas, 0 deslocadas, 0 sem par, 0 abaixo de 4.5
+```
+As outras cenas (as do escuro, a tela Orçamento rolada e a folha das teclas) ficam idênticas. No Pro Max, o laudo inteiro do fim do PR repete a conta em todas as cenas.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Assets.xcassets/Esmeralda/AlertaNoVidro.colorset/Contents.json app-ios/CusttaTests/CoresTests.swift app-ios/CusttaTests/OrcamentoTests.swift app-ios/CusttaTests/TelaOrcamentoTests.swift scripts/cores-app-ios.mjs tests/app-ios.test.cjs
+git commit -m "feat: âmbar de texto do claro mais escuro no app inteiro" -m "No claro, o AlertaNoVidro passa de #6F4705 a #5E3A03, o AmbarTexto do mockup da etapa 4: o texto mais escuro do claro, aprovado pelo Giovani em 28/10, que a confirmação 5 de 29/10 leva ao app inteiro. Muda o aviso dos tópicos na linha do orçamento da obra e o \"Passou … do previsto\" da tela Orçamento, que ganham contraste; o escuro não muda." -m "Uma guarda nova prende a regra do spec para os tokens do mockup que o app já tem (DestaqueNumero, LinhaBanco e AmbarTexto): o do app só fica no lugar se for igual ou mais forte contra o vidro de referência do mockup."
+```
+
+### Task 18: Cápsula de abas na borda de 16 pt em todas as telas
+
+A cápsula de abas e o + passam a ficar a 16 pt das bordas da tela, e não mais a 20 (CapsulaDeAbas.swift:55): é a borda externa de toda forma na grade 16/34 da identidade nova (spec, "Identidade", grade de bordas; ajuste 3 do mockup). O Giovani aprovou em 29/10 levar a cápsula ao app inteiro (confirmação 5): com 16 só nas telas novas, ela pularia de lugar ao trocar de aba (16 nas telas novas, 20 nas outras). A cápsula fica 8 pt mais larga, as duas abas ganham 4 pt cada e o + anda 4 pt para a direita; a altura (62), a margem de 4 pt das abas dentro da cápsula, o vão de 10 até o + e os 22 pt da borda de baixo não mudam. Em Ajustes, sem o +, a cápsula ocupa a largura toda menos 16 de cada lado. Como a cápsula é um `safeAreaBar` do `PrincipalView` (PrincipalView.swift:29), a mudança vale em toda tela de Obras e de Ajustes, inclusive a obra e as telas empurradas.
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/CapsulaDeAbas.swift`
+- Test (alterar): `app-ios/CusttaUITests/AjustesUITests.swift`
+
+**Interfaces:**
+- Consumes: `CapsulaDeAbas` (o `safeAreaBar` do `PrincipalView`); os identificadores `aba-obras`, `aba-ajustes` e `botaoMais`.
+- Produces: nada novo (a borda de 16 pt da cápsula).
+
+- [ ] **Step 1: Escrever os testes**
+
+O teste de tela mede a cápsula pelos quadros das abas e do +, como o `testCapsulaFica22PontosAcimaDaBorda` mede a de baixo: em Obras, a aba da esquerda a 16 + 4 pt da borda e o + a 16 pt da direita; em Ajustes, a aba da direita a 16 + 4 pt.
+
+Em `app-ios/CusttaUITests/AjustesUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AjustesUITests.swift
++++ b/app-ios/CusttaUITests/AjustesUITests.swift
+@@ -79,6 +79,23 @@ final class AjustesUITests: XCTestCase {
+         XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
+         XCTAssertEqual(app.buttons["aba-ajustes"].frame.maxY + 4, base - 22, accuracy: 1)
+     }
++
++    /// A cápsula na borda externa de 16 pt dos dois lados, a da grade 16/34 da etapa 4 (ajuste 3), no app inteiro
++    /// (confirmação 5 de 29/10): em Obras, a cápsula à esquerda e o + à direita; em Ajustes, sem o +, a cápsula na largura
++    /// toda. As abas ficam a 4 pt da borda da cápsula.
++    @MainActor func testCapsulaNaBordaDe16Pontos() {
++        let app = abrirApp(conta: "senha")
++        let obras = app.buttons["aba-obras"], mais = app.buttons["botaoMais"]
++        XCTAssertTrue(obras.waitForExistence(timeout: 10))
++        let largura = app.windows.firstMatch.frame.width
++        XCTAssertEqual(obras.frame.minX - 4, 16, accuracy: 0.5)
++        XCTAssertEqual(mais.frame.maxX, largura - 16, accuracy: 0.5)
++        app.abrirAba("ajustes")
++        XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
++        XCTAssertTrue(mais.waitForNonExistence(timeout: 3), "em Ajustes não há o +")
++        XCTAssertEqual(obras.frame.minX - 4, 16, accuracy: 0.5)
++        XCTAssertEqual(app.buttons["aba-ajustes"].frame.maxX + 4, largura - 16, accuracy: 0.5)
++    }
+     /// Ajustes › Aparência (a escolha do vidro, adiantada da etapa 5 para o TestFlight): tocar Fosco grava a escolha deste
+     /// aparelho e o app passa ao Fosco na hora; a escolha fica ao reabrir; o Transparente volta do mesmo jeito. A prova é
+     /// relativa, pelo print do painel da Conta, logo abaixo (o mesmo conteúdo e o mesmo lugar nas duas doses; só o vidro
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AjustesUITests/testCapsulaNaBordaDe16Pontos 2>&1 | grep -E "error:|Executed"
+```
+Expected: compila (`** TEST BUILD SUCCEEDED **`), e o teste novo reprova na primeira medida, com a cápsula a 20 pt:
+```
+AjustesUITests.swift:91: error: -[CusttaUITests.AjustesUITests testCapsulaNaBordaDe16Pontos] : XCTAssertEqualWithAccuracy failed: ("20.0") is not equal to ("16.0") +/- ("0.5")
+	 Executed 1 test, with 1 failure (0 unexpected) in 5.920 (5.923) seconds
+```
+
+- [ ] **Step 3: Implementar**
+
+Só a borda: o resto da cápsula fica como está.
+
+Em `app-ios/Custta/Identidade/CapsulaDeAbas.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/CapsulaDeAbas.swift
++++ b/app-ios/Custta/Identidade/CapsulaDeAbas.swift
+@@ -52,7 +52,7 @@ struct CapsulaDeAbas: View {
+             }
+         }
+         .dynamicTypeSize(.large)
+-        .padding(.horizontal, 20)
++        .padding(.horizontal, 16)           // a borda externa de toda forma (grade 16/34 da etapa 4), em todas as telas
+         .padding(.bottom, 22)               // da borda da tela (mockup aprovado), como a barra de abas do sistema
+         .animation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.35, bounce: 0), value: mais != nil)
+     }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AjustesUITests 2>&1 | grep -E "error:|Executed"
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `Executed 11 tests, with 0 failures (0 unexpected)` (o teste novo e os 10 de Ajustes, inclusive o `testCapsulaFica22PontosAcimaDaBorda`, que segue com os 22 pt de baixo).
+
+- [ ] **Step 5: Comparar o laudo dos rótulos da cápsula com o do commit anterior**
+
+A cápsula só é medida nas 16 cenas "abas sobre a lista" (escopo `navegacao`), que o `testLeituraNosDoisTemas` roda junto com as 4 de entrar e de Obras; nas outras, a faixa da cápsula fica fora do laudo. Rode essa suíte com o produto do commit anterior e com o desta tarefa, no mesmo simulador, e compare as tabelas com o comparador do PR. Os resultados vão para a mesma pasta sua da Tarefa 17, fora do repositório, e cada rodada começa apagando o resultado dela.
+
+Run:
+```bash
+P=<uma pasta sua, fora do repositório>
+LEITURA=-only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraNosDoisTemas
+# no commit anterior (git stash ou checkout dele, build-for-testing) e depois neste, cada um no seu resultado:
+rm -rf "$P/abas-antes.xcresult"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never "$LEITURA" -resultBundlePath "$P/abas-antes.xcresult" 2>&1 | grep -E "Executed [0-9]+ test" | tail -1
+rm -rf "$P/abas-depois.xcresult"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never "$LEITURA" -resultBundlePath "$P/abas-depois.xcresult" 2>&1 | grep -E "Executed [0-9]+ test" | tail -1
+node scripts/compara-laudo.mjs "$P/abas-antes.xcresult" "$P/abas-depois.xcresult" "$P/abas-cmp" --detalhe | grep -B1 "^   deslocada" | grep -v "^--"
+node scripts/compara-laudo.mjs "$P/abas-antes.xcresult" "$P/abas-depois.xcresult" "$P/abas-cmp" | tail -1
+```
+Expected (18 Pro, iOS 27): as duas rodadas com `Executed 1 test, with 0 failures`. As 4 cenas de entrar e de Obras ficam idênticas; nas 16 cenas "abas sobre a lista", só os dois rótulos andam 2 pt ("Obras" de x 80 para 78 e "Ajustes" de 217 para 219, a mesma cor e o mesmo tamanho), e a nota só muda onde o rótulo passa a ter outra parte da lista por baixo, sempre acima de 4,5:
+```
+abas sobre a lista em 10 pt, escuro: 2 palavras, 0 idênticas, 0 mudadas, 2 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5
+   deslocada 217→219,830 37×10: #EAFFF6 11.34 (pior 11.01) → #EAFFF6 11.22 (pior 10.87)
+abas sobre a lista em 30 pt, claro: 2 palavras, 0 idênticas, 0 mudadas, 2 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5
+   deslocada 217→219,830 37×10: #13261E 9.11 (pior 7.84) → #13261E 8.62 (pior 7.71)
+abas sobre a lista em 30 pt, escuro: 2 palavras, 0 idênticas, 0 mudadas, 2 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5
+   deslocada 217→219,830 37×10: #EAFFF6 6.57 (pior 5.90) → #EAFFF6 6.28 (pior 5.81)
+TOTAL: 20 cenas, 113 palavras, 81 idênticas, 0 mudadas, 32 deslocadas, 0 sem par, 0 abaixo de 4.5
+```
+O rótulo da aba escolhida fica na pílula sólida (`SobreTinta` sobre `Tinta`, 7,32:1 no escuro e 5,25:1 no claro, iguais antes e depois). No Pro Max, o laudo inteiro do fim do PR repete a conta em todas as cenas.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/CapsulaDeAbas.swift app-ios/CusttaUITests/AjustesUITests.swift
+git commit -m "feat: cápsula de abas na borda de 16 pt em todas as telas" -m "A cápsula de abas e o + passam a ficar a 16 pt das bordas da tela, e não mais a 20: é a borda externa de toda forma na grade 16/34 da identidade nova (ajuste 3 do mockup da etapa 4). O Giovani aprovou em 29/10 levar a cápsula ao app inteiro (confirmação 5): com 16 só nas telas novas, ela pularia de lugar ao trocar de aba. A cápsula fica 8 pt mais larga; a altura e os 22 pt da borda de baixo não mudam."
+```
+
+---
+
+## PR 1b (app): as peças da identidade nova, sem tela
+
+O PR traz as peças da identidade nova que a obra (PR 1c) e as telas da análise vão usar, todas sem tela na `main`: a grade de bordas 16/34, o bloco de vidro e o sólido verde e âmbar, com o rótulo, a nota e a etiqueta de dentro deles, e a placa (Tarefa 19); o número mono, com o R$ e os centavos menores na linha do número e o piso de 11 pt, como forma nova do `ValorEmDinheiro` (Tarefa 20); o título em SF Mono, o pequeno da barra e a cápsula de metadados (Tarefa 21); a barra empilhada de tópicos, desenhada em `Shape` com os pedaços do núcleo do PR 0b, e a hachura (Tarefa 22); a linha de lançamento na forma mono (Tarefa 23); e a auditoria das peças na maior letra (Tarefa 24). Para provar o que não tem tela, as peças moram numa vitrine só do Debug (`Falsos/VitrineDasPecas.swift`), empurrada em Obras com `CUSTTA_ABRIR=pecas`, com os números da Casa Alphaville da vitrine (os do mockup): os testes de tela, a auditoria e a conferência visual olham para ela. O risco é o das peças compartilhadas: o `ValorEmDinheiro` (20 usos) ganha a forma mono como opção (`mono: nil` é a de hoje), a `LinhaDeGastoView` (a obra e as folhas) ganha a forma mono pelo `linhaMono` do environment (desligado é a de hoje), o `ObrasView` ganha o gancho de Debug da vitrine, e o catálogo ganha um token (`LuzDoSolido`, o filete do sólido). O laudo inteiro, comparado palavra por palavra com o da ponta do 1a, prova que as telas das etapas 1 a 3 não mudaram. Fica escondido na `main` até o PR 1c: todas as peças (nenhuma tela as usa) e a vitrine, que não vai ao Release. Portão da CI: "tudo, com a comparação" (o `ValorEmDinheiro` e a linha do gasto são compartilhados, e o catálogo muda). Marco 1. São 578 linhas de produção (acréscimos + remoções em `app-ios/Custta/` sem `Falsos/`, pelo `git diff --numstat` da ponta do 1a à do 1b), um pouco abaixo dos ~600–800 da tabela do spec; fora da conta, a vitrine em `Falsos/` (116), o colorset gerado (38) e o script das cores (1).
+
+- **Branch:** `feat/pecas-da-identidade-nova`
+- **Título:** `feat: peças da identidade nova, sem tela`
+
+### Mapa de arquivos
+
+| Arquivo | Tarefas |
+| --- | --- |
+| `app-ios/Custta/Identidade/Blocos.swift` (novo) | 19 |
+| `app-ios/Custta/Identidade/NumeroMono.swift` (novo) | 20, 21 (o `crescendoComALetra`) |
+| `app-ios/Custta/Identidade/Componentes.swift` (`ValorEmDinheiro`) | 20 |
+| `app-ios/Custta/Identidade/Titulos.swift` (novo) | 21 |
+| `app-ios/Custta/Identidade/BarraEmpilhada.swift` (novo) | 22 |
+| `app-ios/Custta/Telas/PecasDaObra.swift` (`LinhaDeGastoView`) | 23 |
+| `app-ios/Custta/Identidade/Paleta.swift`, `scripts/cores-app-ios.mjs` e o colorset `LuzDoSolido` (gerado) | 19 |
+| `app-ios/Custta/Telas/ObrasView.swift` (o gancho `CUSTTA_ABRIR=pecas`, só Debug) | 19 |
+| `app-ios/Custta/Falsos/VitrineDasPecas.swift` (novo, só Debug) | 19 a 23 |
+| `app-ios/CusttaTests/BlocosTests.swift`, `NumeroMonoTests.swift`, `TitulosTests.swift`, `BarraEmpilhadaTests.swift`, `LinhaMonoTests.swift` (novos) | 19 a 23, um por tarefa |
+| `app-ios/CusttaTests/CoresTests.swift` | 19 |
+| `app-ios/CusttaUITests/VitrineUITests.swift` (novo) | 19 a 23 |
+| `app-ios/CusttaUITests/AuditoriaUITests.swift` | 24 |
+| `tests/app-ios.test.cjs` | 20 (a guarda do `ValorEmDinheiro`), 21 (o `TituloPequenoMono` na lista fixa do `lineLimit`) |
+
+### As peças, para o PR 1c
+
+- **Grade** (`Grade`): `externa` 16, `recuo` 18, `interna` 34, `entreBlocos` 12; `raioDoBloco(_:)` (26; 32 na letra de acessibilidade) e `recuoVertical(_:)` (16; 22). A coluna da tela leva `.padding(.horizontal, Grade.externa)`; as peças não têm margem de fora.
+- **Blocos:** `BlocoDeVidro { … }` (o vidro do conteúdo, uma coluna sem espaço entre as linhas); `BlocoSolido(cor: CorDoSolido = .verde) { … }` (`.verde` ou `.ambar`; põe a tinta no `foregroundStyle` e no `tintaDoBloco` do environment); `CabecalhoDoBloco(rotulo:) { etiqueta }` e `CabecalhoDoBloco(rotulo:)` (8 pt acima do número; na letra de acessibilidade, a etiqueta embaixo); `RotuloDoBloco(texto:)`, `NotaDoBloco(texto:)` (2 pt abaixo do número) e `EtiquetaDoSolido(texto:)`, que seguem a tinta do sólido; dentro do vidro, as etiquetas coloridas continuam a `EtiquetaDoIndicador` da etapa 3; `.placa(forte: Bool = false, raio: CGFloat = 12)`.
+- **Número:** `ValorEmDinheiro(_ texto: String, mono: TamanhoDoNumero, cor: Token = .texto)`, com o texto do núcleo (`moeda(…)`, `"−" + moeda(…)`, `linha.valor`); `TamanhoDoNumero` `.principal` (40/56), `.grande` (30/48), `.bloco` (22/40), `.linha` (17/34) e `.miudo` (17/30); dentro do sólido, a tinta dele no lugar da `cor`. `corpoDoTexto(_:)` e `crescendoComALetra(de:ate:corpo:)` servem a outra medida do mockup que vai da letra padrão à máxima.
+- **Título:** `TituloMono(texto:identificador:)` (o identificador padrão é `tituloDaObra`; o halo é o do nome da obra de hoje); `TituloPequenoMono(texto:letra:)` (identificador `tituloPequenoDaBarra`), com a letra lida fora da barra: a tela lê o `@Environment(\.dynamicTypeSize)` e a passa, porque dentro do `ToolbarItem` ela para antes da letra de acessibilidade; `CapsulaDeMetadados { … }` (subheadline no secundário do vidro; uma coluna com 6 pt entre as linhas).
+- **Barra:** `BarraDeTopicos(pedacos: [PedacoDoAnel], topicos: [String: Topico])` (a barra na placa forte, com o identificador `barraDeTopicos` e o rótulo "Gastos por tópico", e a legenda); `BarraEmpilhada(pedacos:)` sozinha; `corDoPedaco(_:)`, `nomeDoPedaco(_:topicos:)` e `fonteDoTexto(_:_:)`; `Hachura(traco:passo:)`, uma `Shape`. Os pedaços saem de `pedacosDoAnel(gastoPorTopico(obra, …))`.
+- **Linha:** `.environment(\.linhaMono, true)` na lista da obra; a `LinhaDeGastoView`, a `LinhaArrastavel` e os identificadores ficam os mesmos.
+
+### Ponto de controle do fim do PR
+
+No Mac, com o produto da ponta do PR e o da ponta do 1a (o commit anterior ao PR), cada um copiado com `cp -c` e rodado pelo seu `.xctestrun`, para os dois simuladores rodarem ao mesmo tempo sem compilar por cima de uma rodada:
+
+1. **O laudo inteiro no Pro Max, comparado palavra por palavra com o da ponta do 1a** (spec, "A comparação"; memória `laudo-inteiro-no-pro-max-no-fim-do-pr`): `-only-testing:CusttaUITests/LeituraNoVidroUITests` nos dois produtos, no mesmo Pro Max, e o comparador (`node scripts/compara-laudo.mjs <antes.xcresult> <depois.xcresult> <pasta> [--detalhe]`, da Tarefa 15) sobre os dois resultados. Este laudo é a prova da linha da etapa 3: o `meta(_:iconeDoPagamento:)` da Tarefa 23 passa por ela (com a fonte e o ícone do Pix e do cartão), e nenhum teste de unidade prende o ícone do pagamento na linha antiga; por isso ele roda com o produto da ponta do PR, e não com o de uma tarefa do meio. Expected: as duas rodadas com `Executed 18 tests, with 0 failures (0 unexpected)` (3.307 s na ponta do 1a e 3.167 s na do 1b), e o comparador: `TOTAL: 175 cenas, 3590 palavras, 3590 idênticas, 0 mudadas, 0 deslocadas, 0 sem par, 0 abaixo de 4.5`. As telas das etapas 1 a 3 não mudaram: a forma de hoje do `ValorEmDinheiro` e da linha do gasto saiu igual, palavra por palavra. (Esses números saíram de um produto anterior ao `meta(_:iconeDoPagamento:)`; com o da ponta, a comparação tem de dar o mesmo.)
+2. **Os testes inteiros no 18 Pro**, ao mesmo tempo: `-only-testing:CusttaTests -only-testing:CusttaUITests -skip-testing:CusttaUITests/LeituraNoVidroUITests` (as auditorias entram aqui, na `AuditoriaUITests`, com a da vitrine). Expected: `Executed 227 tests, with 1 test skipped and 1 failure` nas telas, em 4.474 s, com a `AuditoriaUITests` inteira verde (inclusive a da vitrine) e a `VitrineUITests`. A falha é o `FolhasDeOrigemUITests/testASetaDoIndicadorAbreAFolhaDoAPagar` (achado 3 do PR 1a): 1 failure nos 3 últimos dias do mês; fora deles, 0. O conserto é o PR #93, só de teste, que entra antes do PR 0. Na unidade: `✔ Test run with 194 tests in 38 suites passed`.
+3. **Node:** `npm run test:unit 2>&1 | tail -8`. Expected: `ℹ tests 411`, `ℹ pass 411`, `ℹ fail 0`.
+4. **A vitrine lado a lado com o mockup**, no 18 Pro, com a barra de status em 9:41 e o fundo parado, numa pasta fora do repositório: o alto (título, cápsula, sólido e blocos), a barra de tópicos, os lançamentos e os números, no escuro e no claro, e o alto na letra máxima. Com o app da ponta instalado, cada print abre a vitrine pelo `simctl`:
+   ```bash
+   U=<udid do seu 18 Pro>
+   xcrun simctl status_bar $U override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+   SIMCTL_CHILD_CUSTTA_SERVICOS=falsos SIMCTL_CHILD_CUSTTA_CONTA=senha SIMCTL_CHILD_CUSTTA_DADOS=vitrine SIMCTL_CHILD_CUSTTA_ABRIR=pecas \
+     xcrun simctl launch --terminate-running-process $U br.com.custta.app -custta.reduzirMovimento YES -custta.rolagem 0
+   # rolagens 0, 450, 900 e 1350; no claro, -custta.tema claro; na letra máxima,
+   # -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL
+   sleep 7; xcrun simctl io $U screenshot 1-topo-escuro.png
+   ```
+   Expected: 8 prints do app (o alto, o meio, o fim e os números no escuro; o alto e o meio no claro; o alto na letra máxima nos dois temas) e 6 lado a lado com os do mockup (o alto, a barra de tópicos e os lançamentos no escuro; o alto no claro; o alto na letra máxima, no escuro e no claro). As peças batem com o `parte1-obra-topo`, o `obra-meio` e o `obra-fim`: o sólido com o R$ e os centavos menores na linha do número, a cápsula, a barra com os 7 pedaços e a legenda "Terreno 38%, Estrutura 11%, Cerâmica 9%, Mão de obra 8%, e mais 10 tópicos", a linha mono com o ícone do tópico. Diferenças: na letra máxima, "Casa Alphaville" quebra em duas linhas (achado 7); a data do "começou em" segue o dia de hoje (a vitrine conta as datas de hoje).
+5. **O Release sem a vitrine** (spec, "Escondido na `main`": "o `nm` confere"; memória `release-sem-ganchos-conferir-por-nm`: o `strings` engana). O Release compila para o simulador sem assinar, no DerivedData do produto da ponta (`<dd>`), e o `nm` conta os símbolos da vitrine no binário do Release e, de controle, os da `RaizView`, que vai ao Release; no Debug, a vitrine fica no `Custta.debug.dylib`:
+   ```bash
+   xcodebuild build -project app-ios/Custta.xcodeproj -scheme Custta -configuration Release -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -derivedDataPath <dd> -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile 2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)" | tail -1
+   for s in VitrineDasPecas RaizView; do echo "$s release=$(nm -a <dd>/Build/Products/Release-iphonesimulator/Custta.app/Custta | grep -c $s) debug=$(nm -a <dd>/Build/Products/Debug-iphonesimulator/Custta.app/Custta.debug.dylib | grep -c $s)"; done
+   ```
+   Expected: `** BUILD SUCCEEDED **` e:
+   ```
+   VitrineDasPecas release=0 debug=250
+   RaizView release=90 debug=384
+   ```
+
+### Achados que mudam o spec ou uma decisão
+
+1. **O `@ScaledMetric(relativeTo: .body)` para em 48 na letra máxima, e o corpo do texto é 53.** Medida do mockup que vai da letra padrão à máxima não sai do `@ScaledMetric` (ele chega a 48/17 do valor, não a 53/17): as peças leem o tamanho da fonte (`corpoDoTexto`, `fonteDoTexto`) e crescem por `crescendoComALetra`. **Recomendação:** o 1c usa as mesmas funções para as medidas da letra máxima do mockup (a altura de 72 pt das linhas, os chips de 32 pt, o raio de 32 dos blocos já está na `Grade`).
+2. **A auditoria de tipo dinâmico não prende o número.** Com o número mono fixo (o corpo em 17), com teto no AX2 (`.dynamicTypeSize(...accessibility2)`) ou sem o piso de encolher (`minimumScaleFactor(1)`, o maior valor cortado com reticências), a auditoria da vitrine na maior letra passa; com o título fixo, ela reprova ("Dynamic Type font sizes are unsupported"). **Recomendação:** a prova do número fica nos testes de unidade da Tarefa 20: o `numeroNaTelaCresceACadaPasso`, que mede a largura do número na tela a cada passo da letra (sobe a cada passo e, na máxima, é 56/40 da padrão) e reprova com o corpo fixo em 17 e com o teto no AX2, e a largura do maior valor na letra máxima em 375 pt, como o spec já diz para o corte ("o laudo não vê corte; a prova é o teste de largura"); o 1c repete o teste de largura no sólido da obra montada.
+3. **Número solto reprova a descrição suficiente.** A auditoria acha "Label not human-readable" num elemento só de algarismos ("R$ 842.317,45"), com o mono, com o SF Pro e até num `Text` simples (cinco variantes provadas). **Recomendação:** na obra (1c), cada bloco junta o rótulo, a etiqueta, o número e a nota num elemento (`.accessibilityElement(children: .combine)`), como os indicadores da etapa 3 ("Total gasto, 46 lançamentos, R$ 842.317,45, bruto, sem correção"); por isso a auditoria da vitrine (Tarefa 24) fica sem a descrição suficiente.
+4. **A linha mono sem o ícone do pagamento.** O spec diz só que a linha da obra "ganha o valor em mono e o ícone pequeno na 2ª linha"; o mockup aprovado (`gastoLinha`, parte1.js:248-252; `parte1-obra-fim.png`) também tira o raio e o cartão do sistema que a etapa 3 põe antes de "Pix" e "Cartão". A linha mono segue o mockup; o texto fica por extenso, e a linha das folhas não muda. **Recomendação:** manter; se o Giovani quiser o ícone de volta, é o parâmetro `iconeDoPagamento` do `meta`.
+5. **"Quando não cabe ao lado do nome, desce" sem número no spec.** A linha mono deixa o valor ao lado enquanto sobram 120 pt para o título (cerca de 12 letras do título em body semibold). Num iPhone de 375 pt (307 no cartão), até "−R$ 1.234.567,89" fica ao lado; o de R$ 1 bilhão desce. **Recomendação:** 120 pt, como está.
+6. **Irmão fracionário, duas vezes.** A legenda da barra (o % de largura fracionária ao lado do nome, em 7 de 36 combinações de letra e largura) e a linha mono (o ícone do tópico em tamanho fracionário, na AX2 e AX3) passavam 1/3 de pt da largura e alargavam a coluna inteira da vitrine (o teste da grade pegou 386,5 no lugar de 386). Consertado na própria tarefa (o % numa coluna de largura inteira; o ícone em pontos inteiros), com uma varredura por `sizeThatFits` em todas as letras, em 343, 370 e 408 pt. **Recomendação:** o 1c faz a mesma varredura na obra montada (memória `irmao-fracionario-passa-um-pixel`).
+7. **O título na letra máxima quebra "Casa Alphaville".** O SF Mono semibold do iOS avança ~0,62 em (a linha "Alphaville" mede 252 pt em 44 pt), e o nome não cabe em 370 pt; no mockup (Chromium), coube numa linha. O spec já aceita ("nome comprido quebra em duas linhas"). O app fica com a altura de linha da fonte, e não os 38 pt de linha do CSS no título de 30. **Recomendação:** o Verniz confere no lado a lado da obra (1c); nada muda no spec.
+8. **O halo do título não muda neste PR:** o `TituloMono` usa o do nome da obra de hoje (30% no escuro, 10% no claro); a calibração do mockup (38%, 62% na letra máxima) vai com o título na obra, pelo laudo (nota do 1a).
+9. **Duas medidas sem token exato, resolvidas por token:** a sombra do sólido âmbar no claro é o `Alerta` (#8A5A06) a 22% (o mockup usa um âmbar escuro solto, #A06E0A), e o filete de luz do sólido ganhou o token `LuzDoSolido` (branco a 35%), porque o catálogo não tinha um branco com esse papel.
+10. **O contraste das peças sobre a aurora ainda não tem laudo:** nenhuma cena abre a vitrine; ele é medido quando a obra (1c) entrar no laudo. O texto sobre os sólidos já está no `PARES_SOLIDOS` (Tarefa 16).
+11. **O título pequeno não cresce lendo a letra dentro da barra.** Dentro do `ToolbarItem`, o `dynamicTypeSize` para antes da letra de acessibilidade (memória `pecas-da-folha-na-letra-grande`): lida ali, a letra deixava o título em ~16,5 pt na máxima, e não nos 20 do spec ("na letra máxima, 44 e 20 pt"), e nada pegava (o teste de unidade mede a peça solta, e a auditoria exclui o título pelo identificador). O `TituloPequenoMono(texto:letra:)` recebe a letra de fora da barra, como o `PassoDaFolha` com o `letraGrande`, e a guarda de altura da vitrine (Tarefa 21) prende o crescimento dentro da barra. **Recomendação:** na obra (1c), a tela lê a letra fora da barra e a passa ao título, e o teste de tela da obra repete a guarda de altura.
+
+### Task 19: Grade 16/34, blocos de vidro e sólido e placa
+
+As peças de bloco da identidade nova nascem sem tela (spec, "Identidade" e a linha 1b da tabela de PRs; medidas do `parte1.html`, "Medidas e especificação", e do `parte1.css:165-174` e `:207`). A grade de bordas (`Grade`): toda forma começa a 16 pt da borda da tela e todo texto dentro dela a 34 (os 16 e o recuo de 18), igual à direita, e a letra máxima não muda as bordas; entre blocos, 12 pt. O bloco de vidro (`BlocoDeVidro`) é o vidro do conteúdo (`.superficie(.conteudo, …)`), com cantos de 26 pt e recuo de 16 × 18 pt, que passam a 32 e 22 × 18 na letra de acessibilidade (o mockup só desenha a AX5; da AX1 em diante, os da AX5). O sólido (`BlocoSolido`), um por tela e que não é vidro, é o verde (`DestaqueSolido`, texto `TintaSobreDestaque`) ou o âmbar (`SolidoAmbar`, texto `TintaSobreAmbar`), com a sombra de 36 pt de desfoque a 14 pt para baixo na cor do bloco (20% no escuro e 22% no claro; o mockup usa o `Destaque` no verde e, no âmbar do claro, um âmbar escuro, aqui o `Alerta`) e o filete de luz de 1 pt no topo (o `inset 0 1px 0` branco a 35%), que ganha o token `LuzDoSolido`. Dentro do sólido, o rótulo, a nota e a etiqueta vêm na tinta dele (o mockup troca o `--sec` pela tinta), pelo `tintaDoBloco` do environment; fora, no secundário do vidro. O cabeçalho do bloco põe a etiqueta à direita do rótulo e, na letra de acessibilidade, embaixo dele. A etiqueta do sólido ("46 lançamentos") é a `EtiquetaDoIndicador` (PecasDaObra.swift:55) na tinta sobre ela mesma a 14%, sem mexer na da etapa 3. A placa é o tom chapado do fundo, sem desfoque, atrás das marcas de gráfico (`Placa` a 58% e 66%; a forte, 84% e 92%, atrás da barra empilhada). Hoje a obra tem 20 pt de borda (ObraView.swift:126) e cartões de raio 24 (PecasDaObra.swift:479): a obra muda no PR 1c. As peças aparecem na vitrine, uma tela só do Debug, empurrada em Obras com `CUSTTA_ABRIR=pecas`, com os números da Casa Alphaville da vitrine (os do mockup).
+
+**Files:**
+- Create: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
+- Create: `app-ios/Custta/Identidade/Blocos.swift`
+- Modify: `app-ios/Custta/Identidade/Paleta.swift`
+- Modify: `app-ios/Custta/Telas/ObrasView.swift`
+- Modify: `scripts/cores-app-ios.mjs`
+- Test (novo): `app-ios/CusttaTests/BlocosTests.swift`
+- Test (alterar): `app-ios/CusttaTests/CoresTests.swift`
+- Test (novo): `app-ios/CusttaUITests/VitrineUITests.swift`
+- Gerado: `app-ios/Custta/Assets.xcassets/Esmeralda/LuzDoSolido.colorset/Contents.json` (`node scripts/cores-app-ios.mjs`)
+
+**Interfaces:**
+- Consumes: `.superficie(_:em:)` e `VidroTokens.secundario` (Vidro.swift); os tokens `destaqueSolido`, `tintaSobreDestaque`, `solidoAmbar`, `tintaSobreAmbar`, `placa`, `placaForte`, `destaque` e `alerta`; `indicadoresDaObra(_:taxa:hoje:)` e `DadosDeExemplo.vitrine()` (só na vitrine).
+- Produces: `Grade.externa` (16), `.recuo` (18), `.interna` (34), `.entreBlocos` (12), `Grade.raioDoBloco(_:)` e `Grade.recuoVertical(_:)`; `BlocoDeVidro { … }`; `CorDoSolido` (`.verde`, `.ambar`) e `BlocoSolido(cor:) { … }`; `CabecalhoDoBloco(rotulo:) { etiqueta }` e `CabecalhoDoBloco(rotulo:)`; `RotuloDoBloco(texto:)`, `NotaDoBloco(texto:)` e `EtiquetaDoSolido(texto:)`; `EnvironmentValues.tintaDoBloco: Token?`; `.placa(forte:raio:)`; `Token.luzDoSolido`; `VitrineDasPecas` (Debug) e o `CUSTTA_ABRIR=pecas`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes de unidade prendem por pixel as cores do sólido nos dois temas, com o filete de 1 pt no topo, a tinta do bloco no texto de dentro e as duas placas; o recuo e o raio na letra de acessibilidade; e, por pixel, o canto do sólido, que segue o raio (a 8 pt das duas bordas, dentro da quina de 26 e fora da de 32), porque a função `Grade.raioDoBloco` sozinha não prova que o bloco a usa. O de tela, as bordas de 16 e 34 pt na vitrine, na letra padrão e na máxima.
+
+Criar `app-ios/CusttaTests/BlocosTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+@testable import Custta
+
+/* As peças de bloco da identidade nova (etapa 4, PR 1b) que o print não prova sozinho: as cores do sólido verde e do âmbar
+   nos dois temas, com o filete de luz no topo; a tinta do bloco no rótulo, na nota e na etiqueta de dentro dele; as duas
+   placas; e o recuo e o raio do bloco, que crescem na letra de acessibilidade. */
+@MainActor
+struct BlocosTests {
+    /// Os pixels RGBA (pré-multiplicados) do desenho no esquema dado.
+    private func pixels(_ conteudo: some View, _ esquema: ColorScheme, escala: CGFloat = 1) throws -> (w: Int, h: Int, em: (Int, Int) -> [Int]) {
+        let r = ImageRenderer(content: conteudo.environment(\.paleta, Paleta()).environment(\.colorScheme, esquema))
+        r.scale = escala
+        let imagem = try #require(r.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        let copia = rgba
+        return (w, h, { x, y in (0..<4).map { Int(copia[(y * w + x) * 4 + $0]) } })
+    }
+
+    private func perto(_ a: [Int], _ b: [Int], folga: Int = 2) -> Bool { zip(a, b).allSatisfy { abs($0 - $1) <= folga } }
+
+    /// O fundo do sólido (#3AD17E nos dois temas; o âmbar, #FFD98A e #F2C15A) e o filete de luz de 1 pt no topo, o branco a
+    /// 35% sobre ele; logo abaixo do filete, o fundo de novo.
+    @Test(arguments: [ColorScheme.dark, .light])
+    func solidoVerdeEAmbarComOFileteNoTopo(_ esquema: ColorScheme) throws {
+        let ambar = esquema == .dark ? [0xFF, 0xD9, 0x8A] : [0xF2, 0xC1, 0x5A]
+        for (cor, fundo) in [(CorDoSolido.verde, [0x3A, 0xD1, 0x7E]), (.ambar, ambar)] {
+            let p = try pixels(BlocoSolido(cor: cor) { Color.clear }.frame(width: 100, height: 60), esquema)
+            let filete = fundo.map { Int((Double($0) + Double(255 - $0) * 0.35).rounded()) }
+            #expect(perto(p.em(50, 30), fundo + [0xFF]), "\(cor), o fundo: \(p.em(50, 30))")
+            #expect(perto(p.em(50, 0), filete + [0xFF]), "\(cor), o filete: \(p.em(50, 0))")
+            #expect(perto(p.em(50, 1), fundo + [0xFF]), "\(cor), 1 pt abaixo do filete: \(p.em(50, 1))")
+        }
+    }
+
+    /// A cor mais comum entre os pixels opacos (o miolo das letras).
+    private func corDoTexto(_ conteudo: some View, _ esquema: ColorScheme = .dark) throws -> [Int] {
+        let p = try pixels(conteudo, esquema, escala: 3)
+        var contagem: [[Int]: Int] = [:]
+        for y in 0..<p.h { for x in 0..<p.w { let c = p.em(x, y); if c[3] == 255 { contagem[Array(c[0..<3]), default: 0] += 1 } } }
+        return contagem.max { $0.value < $1.value }?.key ?? []
+    }
+
+    /// Dentro do sólido, o rótulo, a nota e a etiqueta vêm na tinta dele (#04100C no verde, #2B1B00 no âmbar); fora, o rótulo e
+    /// a nota vêm no secundário do vidro.
+    @Test func tintaDoBlocoNoRotuloNaNotaENaEtiqueta() throws {
+        for (tinta, cor) in [(Token.tintaSobreDestaque, [0x04, 0x10, 0x0C]), (.tintaSobreAmbar, [0x2B, 0x1B, 0x00])] {
+            #expect(try corDoTexto(RotuloDoBloco(texto: "Total gasto").environment(\.tintaDoBloco, tinta)) == cor)
+            #expect(try corDoTexto(NotaDoBloco(texto: "bruto, sem correção").environment(\.tintaDoBloco, tinta)) == cor)
+            #expect(try corDoTexto(EtiquetaDoSolido(texto: "46 lançamentos").environment(\.tintaDoBloco, tinta)) == cor)
+        }
+        #expect(try corDoTexto(RotuloDoBloco(texto: "Corrigido pelo banco")) == [0xD6, 0xE8, 0xE0], "o SecundarioTransparente")
+        #expect(try corDoTexto(NotaDoBloco(texto: "Correção até hoje")) == [0xD6, 0xE8, 0xE0])
+    }
+
+    /// A placa, um tom chapado do fundo: 58% no escuro e 66% no claro; a forte, 84% e 92%.
+    @Test func placaEPlacaForte() throws {
+        for (esquema, placa, forte) in [(ColorScheme.dark, 0x94, 0xD6), (.light, 0xA8, 0xEB)] {
+            #expect(try pixels(Color.clear.frame(width: 40, height: 40).placa(), esquema).em(20, 20)[3] == placa)
+            #expect(try pixels(Color.clear.frame(width: 40, height: 40).placa(forte: true), esquema).em(20, 20)[3] == forte)
+        }
+    }
+
+    /// O recuo de cima e de baixo do bloco (16 pt; 22 na letra de acessibilidade) e o raio (26; 32), no vidro e no sólido.
+    @Test func recuoERaioCrescemNaLetraDeAcessibilidade() {
+        func altura<V: View>(_ bloco: V, _ t: DynamicTypeSize) -> CGFloat {
+            UIHostingController(rootView: bloco.dynamicTypeSize(t)).sizeThatFits(in: CGSize(width: 300, height: CGFloat.infinity)).height
+        }
+        for (t, recuo) in [(DynamicTypeSize.large, CGFloat(16)), (.accessibility1, 22), (.accessibility5, 22)] {
+            let (vidro, solido) = (altura(BlocoDeVidro { Color.clear.frame(height: 10) }, t), altura(BlocoSolido { Color.clear.frame(height: 10) }, t))
+            #expect(vidro == 10 + 2 * recuo, "\(t): \(vidro)")
+            #expect(solido == 10 + 2 * recuo, "\(t): \(solido)")
+        }
+        #expect(Grade.raioDoBloco(.large) == 26 && Grade.raioDoBloco(.xxxLarge) == 26 && Grade.raioDoBloco(.accessibility1) == 32)
+        #expect(Grade.externa == 16 && Grade.interna == 34 && Grade.entreBlocos == 12)
+    }
+
+    /// O canto do sólido segue o raio da grade: a 8 pt das duas bordas, dentro da quina de 26 e fora da de 32.
+    @Test func raioDoSolidoCresceNaLetraDeAcessibilidade() throws {
+        for (letra, dentro) in [(DynamicTypeSize.large, true), (.accessibility1, false)] {
+            let p = try pixels(BlocoSolido { Color.clear }.frame(width: 100, height: 100).dynamicTypeSize(letra), .dark)
+            #expect((p.em(8, 8)[3] == 255) == dentro, "\(letra): \(p.em(8, 8))")
+        }
+    }
+}
+```
+
+Em `app-ios/CusttaTests/CoresTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/CoresTests.swift
++++ b/app-ios/CusttaTests/CoresTests.swift
+@@ -50,6 +50,7 @@ struct CoresTests {
+             (.barraApagada, "#EAFFF666", "#142B2394"),                                          // 40% e 58%
+             (.gradeGrafico, "#EAFFF624", "#142B2324"), (.eixoGrafico, "#EAFFF64D", "#142B2352"), // 14%; 30% e 32%
+             (.anelApagado, "#123128", "#DCEAE3"), (.anelSeparador, "#04100C8C", "#FFFFFFBF"),   // 55% e 75%
++            (.luzDoSolido, "#FFFFFF59", "#FFFFFF59"),                                         // o filete do sólido: branco a 35%
+         ]
+         for (token, escuro, claro) in tabela {
+             #expect(hex(token, .dark) == escuro, "\(token) no escuro")
+```
+
+Criar `app-ios/CusttaUITests/VitrineUITests.swift`:
+
+```swift
+import XCTest
+
+/* A vitrine das peças da identidade nova (etapa 4, PR 1b), que só o Debug abre (CUSTTA_ABRIR=pecas, em Obras): as peças
+   sobre a aurora, nas medidas do mockup aprovado, antes de a obra (PR 1c) usá-las. */
+@MainActor
+final class VitrineUITests: XCTestCase {
+    override func setUp() { continueAfterFailure = false }
+
+    private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+
+    private func abrirVitrine(_ argumentos: [String] = []) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas", argumentos: argumentos)
+        XCTAssertTrue(app.elemento("vitrine-solido").waitForExistence(timeout: 10), "a vitrine das peças")
+        return app
+    }
+
+    /// A grade de bordas (ajuste 3 do mockup): os blocos a 16 pt das duas bordas da tela e o texto de dentro a 34, na letra
+    /// padrão e na máxima, que não muda as bordas.
+    func testBlocosNaGradeDeBordas() {
+        for argumentos in [[], maiorLetra] {
+            let app = abrirVitrine(argumentos)
+            let tela = app.frame.width
+            for id in ["vitrine-solido", "vitrine-vidro", "vitrine-ambar"] {
+                let bloco = app.elemento(id).frame
+                XCTAssertEqual(bloco.minX, 16, accuracy: 0.5, "\(id) \(argumentos)")
+                XCTAssertEqual(bloco.maxX, tela - 16, accuracy: 0.5, "\(id) \(argumentos)")
+            }
+            for rotulo in ["Total gasto", "Corrigido pelo banco", "Rende menos que o banco"] {
+                XCTAssertEqual(app.staticTexts[rotulo].frame.minX, 34, accuracy: 0.5, "\(rotulo) \(argumentos)")
+            }
+            app.terminate()
+        }
+    }
+}
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error:' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -3
+```
+Expected: o `CusttaTests` não compila, nos dois arquivos de teste (no `BlocosTests`, o compilador só aponta o primeiro erro):
+```
+CusttaTests/BlocosTests.swift:33:31: error: cannot find 'CorDoSolido' in scope
+CusttaTests/CoresTests.swift:53:15: error: type 'Token' has no member 'luzDoSolido'
+```
+
+- [ ] **Step 3: Implementar**
+
+Os dois blocos empilham o conteúdo numa coluna antes do recuo: num `TupleView` solto, o recuo cairia em cada filho. O filete é a forma menos ela mesma 1 pt abaixo (`subtracting`), que afina nas quinas como o `inset` do CSS. A vitrine vive em `Falsos/` (só Debug) e cresce a cada tarefa do PR.
+
+Criar `app-ios/Custta/Falsos/VitrineDasPecas.swift`:
+
+```swift
+#if DEBUG
+import SwiftUI
+import CusttaNucleo
+
+/* A vitrine das peças da identidade nova (etapa 4, PR 1b), só no Debug: nenhuma tela as usa antes da obra (PR 1c), e aqui
+   os testes de tela e a conferência visual as veem sobre a aurora, nas medidas do mockup aprovado (parte1.html), com os
+   números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
+struct VitrineDasPecas: View {
+    private let estado = Estado.de(DadosDeExemplo.vitrine())
+
+    var body: some View {
+        let casa = estado.obras[0]
+        let hoje = dataLocalISO(.now, fuso: .current)
+        let indicadores = indicadoresDaObra(casa, taxa: estado.config.taxaMensal, hoje: hoje)
+        ScrollView {
+            VStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                BlocoSolido {
+                    CabecalhoDoBloco(rotulo: "Total gasto") { EtiquetaDoSolido(texto: indicadores.etiquetaDoTotal) }
+                    ValorEmDinheiro(texto: indicadores.totalGasto, fonte: .largeTitle.weight(.bold), cor: .tintaSobreDestaque)
+                    NotaDoBloco(texto: "bruto, sem correção")
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-solido")
+                BlocoDeVidro {
+                    CabecalhoDoBloco(rotulo: "Corrigido pelo banco")
+                    ValorEmDinheiro(texto: indicadores.corrigido, fonte: .title2.weight(.bold))
+                    NotaDoBloco(texto: indicadores.notaDoCorrigido)
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-vidro")
+                BlocoSolido(cor: .ambar) {
+                    CabecalhoDoBloco(rotulo: "Rende menos que o banco") { EtiquetaDoSolido(texto: "banco paga 1%") }
+                    NotaDoBloco(texto: "vendendo daqui a 12 meses")
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-ambar")
+                BlocoDeVidro {
+                    CabecalhoDoBloco(rotulo: "Placa e placa forte")
+                    Color.clear.frame(height: 16).padding(8).placa().accessibilityIdentifier("vitrine-placa")
+                    Color.clear.frame(height: 16).padding(8).placa(forte: true).accessibilityIdentifier("vitrine-placaForte")
+                }
+            }
+            .padding(.horizontal, Grade.externa)
+            .padding(.bottom, 98)
+        }
+        .scrollIndicators(.hidden)
+        .bordaDeRolagem(abas: true)
+        .containerBackground(.clear, for: .navigation)
+        .navigationTitle("Peças")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+#endif
+```
+
+Criar `app-ios/Custta/Identidade/Blocos.swift`:
+
+```swift
+import SwiftUI
+
+/* As peças de bloco da identidade nova (etapa 4; mockup aprovado em ~/Documents/custta-mockups/nativo/etapa4/, parte1.css e
+   "Medidas e especificação" do parte1.html): a grade de bordas 16/34, o bloco de vidro de um assunto, o bloco sólido
+   protagonista (verde, ou âmbar no veredito), o rótulo, a nota e a etiqueta de dentro deles, e a placa, um tom chapado sem
+   desfoque que não é vidro. Nenhuma tela as usa ainda: a obra (PR 1c) e as telas da análise. Nunca vidro dentro de vidro:
+   dentro do bloco de vidro, só o sólido e a placa. */
+
+/// A grade de bordas (ajuste 3 do mockup): toda forma (bloco, cápsula, botão, cápsula de abas, voltar) e o título solto
+/// começam a 16 pt da borda da tela; todo texto, chip, ponto ou ícone dentro de uma forma, a 34 (os 16 e o recuo de 18 do
+/// bloco). À direita, o mesmo. A letra máxima não muda as bordas; o texto centralizado é a exceção.
+enum Grade {
+    static let externa: CGFloat = 16
+    static let recuo: CGFloat = 18
+    static let interna: CGFloat = externa + recuo
+    /// O espaço entre dois blocos.
+    static let entreBlocos: CGFloat = 12
+
+    /// O raio dos cantos do bloco e o recuo de cima e de baixo: 26 e 16 pt; 32 e 22 na letra de acessibilidade.
+    static func raioDoBloco(_ tamanho: DynamicTypeSize) -> CGFloat { tamanho.isAccessibilitySize ? 32 : 26 }
+    static func recuoVertical(_ tamanho: DynamicTypeSize) -> CGFloat { tamanho.isAccessibilitySize ? 22 : 16 }
+}
+
+extension EnvironmentValues {
+    /// A tinta do bloco sólido em volta (nil fora dele): o rótulo, a nota, a etiqueta e o número de dentro seguem ela.
+    @Entry var tintaDoBloco: Token? = nil
+}
+
+/// Um assunto por bloco, no vidro do conteúdo, com os cantos e o recuo da grade. Ocupa a largura toda; a borda de 16 pt é
+/// da coluna da tela.
+struct BlocoDeVidro<Conteudo: View>: View {
+    @ViewBuilder let conteudo: Conteudo
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) { conteudo }
+            .padding(.vertical, Grade.recuoVertical(tamanho))
+            .padding(.horizontal, Grade.recuo)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(tamanho)))
+    }
+}
+
+/// O bloco sólido protagonista, um por tela, que não é vidro: o verde (o Total gasto da obra, o total do Relatório, o "Vale
+/// a pena") ou o âmbar (o "Rende menos que o banco"), com o texto escuro, a sombra de 36 pt na cor do bloco (20% no escuro,
+/// 22% no claro) e o filete de luz no topo. Os textos de dentro vêm na tinta do bloco, o secundário também (o mockup troca o
+/// --sec pela tinta). No claro, a sombra do âmbar é o Alerta, mais escuro que o bloco, como o mockup.
+struct BlocoSolido<Conteudo: View>: View {
+    var cor: CorDoSolido = .verde
+    @ViewBuilder let conteudo: Conteudo
+    @Environment(\.paleta) private var paleta
+    @Environment(\.colorScheme) private var esquema
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let escuro = esquema == .dark
+        let (fundo, tinta, sombra): (Token, Token, Token) = switch cor {
+        case .verde: (.destaqueSolido, .tintaSobreDestaque, .destaque)
+        case .ambar: (.solidoAmbar, .tintaSobreAmbar, escuro ? .solidoAmbar : .alerta)
+        }
+        let forma = RoundedRectangle(cornerRadius: Grade.raioDoBloco(tamanho))
+        VStack(alignment: .leading, spacing: 0) { conteudo }
+            .padding(.vertical, Grade.recuoVertical(tamanho))
+            .padding(.horizontal, Grade.recuo)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(paleta.cor(tinta))
+            .environment(\.tintaDoBloco, tinta)
+            .background {
+                forma.fill(paleta.cor(fundo))
+                    .shadow(color: paleta.cor(sombra).opacity(escuro ? 0.20 : 0.22), radius: 18, y: 14)
+                    // O filete: a forma menos ela mesma 1 pt abaixo (o inset 0 1px 0 do mockup), afinando nas quinas.
+                    .overlay { forma.subtracting(forma.offset(y: 1)).fill(paleta.cor(.luzDoSolido)) }
+            }
+    }
+}
+
+/// O alto do bloco: o rótulo e, à direita, a etiqueta; na letra de acessibilidade, a etiqueta embaixo do rótulo (o
+/// .cab-bloco do mockup). 8 pt acima do número.
+struct CabecalhoDoBloco<Etiqueta: View>: View {
+    let rotulo: String
+    @ViewBuilder var etiqueta: Etiqueta
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        let layout = grande ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+        layout {
+            RotuloDoBloco(texto: rotulo)
+            if !grande { Spacer(minLength: 0) }
+            etiqueta
+        }
+        .padding(.bottom, 8)
+    }
+}
+
+extension CabecalhoDoBloco where Etiqueta == EmptyView {
+    init(rotulo: String) { self.init(rotulo: rotulo) { EmptyView() } }
+}
+
+enum CorDoSolido: Sendable { case verde, ambar }
+
+/// O rótulo do bloco ("Total gasto", "Corrigido pelo banco"): subheadline semibold no secundário do vidro; no sólido,
+/// negrito na tinta dele.
+struct RotuloDoBloco: View {
+    let texto: String
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.tintaDoBloco) private var tinta
+
+    var body: some View {
+        Text(texto)
+            .font(.subheadline.weight(tinta == nil ? .semibold : .bold))
+            .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
+    }
+}
+
+/// A nota embaixo do número ("bruto, sem correção", "Correção até hoje: +R$ …"): subheadline no secundário do vidro, ou na
+/// tinta do sólido.
+struct NotaDoBloco: View {
+    let texto: String
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.tintaDoBloco) private var tinta
+
+    var body: some View {
+        Text(texto)
+            .font(.subheadline)
+            .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
+            .padding(.top, 2)
+    }
+}
+
+/// A etiqueta dentro do sólido ("46 lançamentos", "Vendida em 20/06/26"): a tinta do bloco sobre ela mesma a 14%, nas
+/// medidas da `EtiquetaDoIndicador` (footnote semibold, recuo de 10 × 3 e o raio de uma linha, que não come a quina do
+/// texto quando ela quebra na letra grande).
+struct EtiquetaDoSolido: View {
+    let texto: String
+    @Environment(\.paleta) private var paleta
+    @Environment(\.tintaDoBloco) private var tinta
+    @ScaledMetric(relativeTo: .footnote) private var linha: CGFloat = 16
+
+    var body: some View {
+        let cor = paleta.cor(tinta ?? .tintaSobreDestaque)
+        Text(texto)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(cor)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 3)
+            .background(cor.opacity(0.14), in: .rect(cornerRadius: (linha + 6) / 2))
+    }
+}
+
+extension View {
+    /// A placa atrás das marcas de gráfico: um tom chapado do fundo, sem desfoque (não é vidro), para as cores ficarem a 3:1
+    /// com a aurora atrás. A forte (84% no escuro, 92% no claro) vai atrás da barra empilhada da obra; a outra (58% e 66%),
+    /// atrás do anel e dos gráficos de mês.
+    func placa(forte: Bool = false, raio: CGFloat = 12) -> some View { modifier(Placa(forte: forte, raio: raio)) }
+}
+
+private struct Placa: ViewModifier {
+    let forte: Bool
+    let raio: CGFloat
+    @Environment(\.paleta) private var paleta
+
+    func body(content: Content) -> some View {
+        content.background(paleta.cor(forte ? .placaForte : .placa), in: .rect(cornerRadius: raio))
+    }
+}
+```
+
+Em `app-ios/Custta/Identidade/Paleta.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Paleta.swift
++++ b/app-ios/Custta/Identidade/Paleta.swift
+@@ -117,6 +117,8 @@ enum Token: String, CaseIterable, Sendable {
+     /// o aro na ponta de cada pedaço.
+     case anelApagado = "AnelApagado"
+     case anelSeparador = "AnelSeparador"
++    /// O filete de luz no topo do bloco sólido (o inset do mockup, branco a 35%).
++    case luzDoSolido = "LuzDoSolido"
+ }
+ 
+ struct Paleta: Equatable, Sendable {
+```
+
+Em `app-ios/Custta/Telas/ObrasView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObrasView.swift
++++ b/app-ios/Custta/Telas/ObrasView.swift
+@@ -30,6 +30,8 @@ struct ObrasView: View {
+     /// Laudo de leitura (Tarefa 11): a lista parada numa rolagem dada, em pt, para dois prints iguais.
+     @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
+     @State private var posicao = ScrollPosition(edge: .top)
++    /// A vitrine das peças da identidade nova (etapa 4, PR 1b), empurrada com `CUSTTA_ABRIR=pecas`.
++    @State private var vitrine = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] == "pecas"
+     #endif
+ 
+     var body: some View {
+@@ -95,6 +97,9 @@ struct ObrasView: View {
+                 case .afazeres(let id): AfazeresView(obraId: id, caminho: $caminho)
+                 }
+             }
++            #if DEBUG
++            .navigationDestination(isPresented: $vitrine) { VitrineDasPecas() }
++            #endif
+         }
+     }
+ }
+```
+
+Em `scripts/cores-app-ios.mjs`:
+
+```diff
+--- a/scripts/cores-app-ios.mjs
++++ b/scripts/cores-app-ios.mjs
+@@ -128,6 +128,7 @@ export const CORES = {
+     EixoGrafico: ['#EAFFF64D', '#142B2352'],        // 30% e 32%
+     AnelApagado: ['#123128', '#DCEAE3'],            // o trilho e os pedaços apagados pelo toque: por cor, sem opacidade
+     AnelSeparador: ['#04100C8C', '#FFFFFFBF'],      // o aro de 2,5 pt na ponta de cada pedaço (55% e 75%)
++    LuzDoSolido: ['#FFFFFF59', '#FFFFFF59'],        // o filete de luz no topo do bloco sólido (branco a 35%, nos dois temas)
+   },
+ };
+ 
+```
+
+Regerar:
+
+```bash
+node scripts/cores-app-ios.mjs
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/BlocosTests -only-testing:CusttaTests/CoresTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/VitrineUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 10 tests in 2 suites passed`; `Executed 1 test, with 0 failures (0 unexpected)`.
+
+- [ ] **Step 5: Conferir na vitrine**
+
+Run:
+```bash
+U=$CUSTTA_SIMULADOR
+SIMCTL_CHILD_CUSTTA_SERVICOS=falsos SIMCTL_CHILD_CUSTTA_CONTA=senha SIMCTL_CHILD_CUSTTA_DADOS=vitrine SIMCTL_CHILD_CUSTTA_ABRIR=pecas \
+  xcrun simctl launch --terminate-running-process $U br.com.custta.app -custta.reduzirMovimento YES
+sleep 6; xcrun simctl io $U screenshot /tmp/vitrine-1.png
+```
+Expected: a tela "Peças", empurrada sobre Obras: o sólido verde "Total gasto · 46 lançamentos" com R$ 842.317,45 e "bruto, sem correção" no texto escuro, o bloco de vidro "Corrigido pelo banco" (R$ 926.847,69, "Correção até hoje: +R$ 84.530,24"), o sólido âmbar e as duas placas; todos a 16 pt das bordas, o texto a 34. Nenhuma tela do app muda: o `CUSTTA_ABRIR=pecas` só existe no Debug.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Assets.xcassets/Esmeralda/LuzDoSolido.colorset/Contents.json app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Identidade/Blocos.swift app-ios/Custta/Identidade/Paleta.swift app-ios/Custta/Telas/ObrasView.swift app-ios/CusttaTests/BlocosTests.swift app-ios/CusttaTests/CoresTests.swift app-ios/CusttaUITests/VitrineUITests.swift scripts/cores-app-ios.mjs
+git commit -m "feat: grade 16/34, blocos de vidro e sólido e placa da identidade nova" -m "As peças de bloco da identidade nova da etapa 4 nascem sem tela, como o spec pede para o PR 1b: a grade de bordas (16 pt para toda forma, 34 para o texto dentro dela), o bloco de vidro de um assunto, o bloco sólido protagonista, verde ou âmbar, com a sombra na cor dele e o filete de luz no topo, o cabeçalho, o rótulo, a nota e a etiqueta de dentro dos blocos, que seguem a tinta do sólido, e a placa, o tom chapado sem desfoque atrás das marcas de gráfico. O filete ganha um token próprio, LuzDoSolido, branco a 35% nos dois temas. Nenhuma tela usa as peças até a obra do PR 1c: a vitrine, só no Debug e aberta com CUSTTA_ABRIR=pecas, as mostra sobre a aurora para os testes de tela e a conferência visual."
+```
+
+### Task 20: Número mono com o R$ e os centavos menores e piso de 11 pt
+
+O `ValorEmDinheiro` ganha a forma mono da identidade nova (spec, "O número que encolhe" e "Identidade", brief 2; `parte1.css:150-152`): o número em SF Mono 600 com o tracking de −0,035 em, o R$ a 58% do número e os centavos (com a vírgula) a 62%, os dois nunca abaixo de 11 pt (o `max(.58em, min(1em, 11px))` do mockup) e na mesma linha de base dos dígitos, nunca sobrescritos; o R$ com o respiro de 0,22 do tamanho dele. Um texto só, que encolhe para caber até o R$ chegar a 11 pt (`minimumScaleFactor` = 11 ÷ o tamanho do R$), no lugar da metade fixa de hoje (Componentes.swift:294); na linha (17 pt), o R$ já está em 11 e o número não encolhe, e quem não cabe ao lado do nome desce para baixo dele (a linha de lançamento, Tarefa 23). Os tamanhos são os do mockup na letra padrão e na máxima: o principal (o sólido) 40 e 56, o grande 30 e 48, o de bloco 22 e 40, o de linha 17 e 34 e o miúdo (o total do mês) 17 e 30. Entre a padrão e a máxima, o número cresce com o corpo do texto (o tamanho do `body`, de 17 a 53 pt), a cada passo da letra, como o texto do sistema: chega ao tamanho do mockup na máxima sem parar no caminho (um teto pelo `.dynamicTypeSize` pararia no AX2). O corpo vem da fonte (`UIFont.preferredFont(forTextStyle: .body)`), e não do `@ScaledMetric(relativeTo: .body)`, que para em 48 na máxima. O valor chega como o núcleo o escreve ("R$ 842.317,45", "−R$ 4.980,00"): o que vem antes do "R$" é o sinal, no tamanho do número; sem "R$" (o "—"), o texto vai inteiro no tamanho do número. Dentro do sólido, o número vem na tinta dele (`tintaDoBloco`, Tarefa 19), e o VoiceOver lê o texto do núcleo inteiro, num elemento só. Os 20 usos de hoje não mudam: a forma mono só existe com o tamanho dado, e nenhuma tela o dá até o PR 1c; o laudo inteiro do fim do PR confirma.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
+- Modify: `app-ios/Custta/Identidade/Componentes.swift`
+- Create: `app-ios/Custta/Identidade/NumeroMono.swift`
+- Test (novo): `app-ios/CusttaTests/NumeroMonoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/VitrineUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `ValorEmDinheiro(texto:fonte:cor:prefixo:)` (Componentes.swift); `EnvironmentValues.tintaDoBloco` (Tarefa 19); `moeda(_:)` (núcleo, nos testes).
+- Produces: `TamanhoDoNumero` (`.principal`, `.grande`, `.bloco`, `.linha`, `.miudo`; `padrao`, `maximo` e `medidas(corpo:) -> MedidasDoNumero`); `MedidasDoNumero` (`numero`, `moeda`, `centavos`, `fatorMinimo`); `corpoDoTexto(_: DynamicTypeSize) -> CGFloat`; `PartesDoValor` e `partesDoValor(_:) -> PartesDoValor?`; `ValorEmDinheiro(_ texto: String, mono: TamanhoDoNumero, cor: Token = .texto)` e a propriedade `mono: TamanhoDoNumero?`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes de unidade prendem as medidas nas duas pontas, o crescimento a cada passo da letra com o R$ encolhido em 11 pt, o número na tela crescendo a cada passo (a largura natural do mesmo valor sobe a cada passo e, na máxima, é 56/40 da padrão: as medidas sozinhas não provam que a vista as usa, e a auditoria não pega o número parado), as partes do valor do núcleo, o maior valor (R$ 1.000.000.000,00) cabendo nos 307 pt do sólido na letra máxima num iPhone de 375 pt (spec: "teste de largura no maior valor") e, por pixel, o R$ e os centavos na linha de base do número, menores que ele. O de tela confere que o VoiceOver lê o valor inteiro e que o maior valor fica entre as bordas de 34 pt na letra máxima. A guarda Node do `ValorEmDinheiro` passa a conferir as duas formas.
+
+Criar `app-ios/CusttaTests/NumeroMonoTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+import UIKit
+@testable import Custta
+import CusttaNucleo
+
+/* O número mono da identidade nova (etapa 4, PR 1b; spec, "O número que encolhe"): os tamanhos do mockup na letra padrão e
+   na máxima, crescendo a cada passo; o R$ e os centavos a 58% e 62% do número, nunca abaixo de 11 pt; o valor do núcleo
+   partido; o maior valor, que cabe no sólido na letra máxima em 375 pt; e o R$ e os centavos na linha do número. */
+@MainActor
+struct NumeroMonoTests {
+    @Test func medidasNaLetraPadraoENaMaxima() {
+        let principal = TamanhoDoNumero.principal.medidas(corpo: 17)
+        #expect(principal == MedidasDoNumero(numero: 40, moeda: 0.58 * 40, centavos: 0.62 * 40, fatorMinimo: 11 / (0.58 * 40)))
+        let maxima = TamanhoDoNumero.principal.medidas(corpo: 53)
+        #expect(maxima.numero == CGFloat(56) && maxima.fatorMinimo == 11 / (0.58 * CGFloat(56)))
+        // Na linha, 58% do número fica abaixo de 11: o R$ e os centavos em 11, e o número não encolhe.
+        #expect(TamanhoDoNumero.linha.medidas(corpo: 17) == MedidasDoNumero(numero: 17, moeda: 11, centavos: 11, fatorMinimo: 1))
+        #expect(TamanhoDoNumero.allCases.map { $0.medidas(corpo: 17).numero } == [CGFloat(40), 30, 22, 17, 17])
+        #expect(TamanhoDoNumero.allCases.map { $0.medidas(corpo: 53).numero } == [CGFloat(56), 48, 40, 34, 30])
+    }
+
+    /// Da menor letra à máxima, o número cresce a cada passo, como o texto do sistema, e chega ao tamanho do mockup na máxima;
+    /// o R$ encolhido até o fator mínimo fica em 11 pt.
+    @Test func cresceACadaPassoDaLetra() {
+        let passos = DynamicTypeSize.allCases
+        #expect(passos.count == 12 && corpoDoTexto(.large) == 17 && corpoDoTexto(.accessibility5) == 53)
+        for tamanho in TamanhoDoNumero.allCases {
+            let medidas = passos.map { tamanho.medidas(corpo: corpoDoTexto($0)) }
+            #expect(zip(medidas, medidas.dropFirst()).allSatisfy { $0.numero < $1.numero }, "\(tamanho): \(medidas.map(\.numero))")
+            #expect(abs(medidas[3].numero - tamanho.padrao) < 0.01 && abs(medidas[11].numero - tamanho.maximo) < 0.01, "\(tamanho): \(medidas.map(\.numero))")
+            #expect(medidas.allSatisfy { $0.moeda * $0.fatorMinimo >= 11 - 1e-9 }, "\(tamanho): o R$ encolhido")
+        }
+    }
+
+    @Test func partesDoValorDoNucleo() {
+        #expect(partesDoValor(moeda(842_317.45)) == PartesDoValor(sinal: "", inteiro: "842.317", centavos: "45"))
+        #expect(partesDoValor("−" + moeda(4_980)) == PartesDoValor(sinal: "−", inteiro: "4.980", centavos: "00"))
+        #expect(partesDoValor(moeda(-5)) == PartesDoValor(sinal: "-", inteiro: "5", centavos: "00"))
+        #expect(partesDoValor(moeda(.infinity)) == PartesDoValor(sinal: "", inteiro: "∞", centavos: nil))
+        #expect(partesDoValor("—") == nil)
+    }
+
+    /// O maior valor (R$ 1.000.000.000,00) cabe nos 307 pt do sólido na letra máxima num iPhone de 375 pt (os 16 de borda e
+    /// os 18 de recuo dos dois lados), sem chegar ao piso: encolhido, o R$ fica acima de 11 pt e o texto, numa linha.
+    @Test func maiorValorCabeNoSolidoNaLetraMaximaEm375() {
+        let valor = ValorEmDinheiro("R$\u{a0}1.000.000.000,00", mono: .principal).dynamicTypeSize(.accessibility5)
+        let natural = UIHostingController(rootView: valor.fixedSize()).sizeThatFits(in: CGSize(width: 10_000, height: 10_000))
+        let medidas = TamanhoDoNumero.principal.medidas(corpo: 53)
+        let fator = 307 / natural.width
+        #expect(fator < 1 && fator > medidas.fatorMinimo,
+                "fator \(fator): o número em \(medidas.numero * fator) pt e o R$ em \(medidas.moeda * fator) pt")
+        let em307 = UIHostingController(rootView: valor).sizeThatFits(in: CGSize(width: 307, height: 10_000))
+        #expect(em307.width <= 307 && em307.height < natural.height, "\(em307) contra \(natural)")
+    }
+
+    /// Os pés e o alto de cada letra desenhada, da esquerda para a direita (colunas com tinta seguidas).
+    private func letras(_ texto: String) throws -> [(topo: Int, base: Int)] {
+        let r = ImageRenderer(content: ValorEmDinheiro(texto, mono: .principal)
+            .environment(\.paleta, Paleta()).environment(\.colorScheme, .dark))
+        r.scale = 2
+        let imagem = try #require(r.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        let colunas = (0..<w).map { x in (0..<h).filter { rgba[($0 * w + x) * 4 + 3] > 128 } }
+        var saida: [(topo: Int, base: Int)] = []
+        var atual: (topo: Int, base: Int)?
+        for coluna in colunas {
+            if let topo = coluna.first, let base = coluna.last {
+                atual = atual.map { (min($0.topo, topo), max($0.base, base)) } ?? (topo, base)
+            } else if let a = atual {
+                saida.append(a)
+                atual = nil
+            }
+        }
+        if let atual { saida.append(atual) }
+        return saida
+    }
+
+    /// O R$ e os centavos na linha do número, nunca sobrescritos: o pé do "R", o dos "8" grandes e o dos "8" dos centavos na
+    /// mesma linha de base, e o alto do "R" e dos centavos bem abaixo do alto dos dígitos (58% e 62% do tamanho).
+    @Test func moedaECentavosNaLinhaDoNumero() throws {
+        let l = try letras("R$\u{a0}88,88")
+        try #require(l.count == 7, "R, $, 8, 8, a vírgula, 8 e 8: \(l)")
+        let (rs, oito, centavo) = (l[0], l[2], l[5])
+        let altura = oito.base - oito.topo
+        #expect(abs(rs.base - oito.base) <= 1 && abs(centavo.base - oito.base) <= 1, "\(l)")
+        #expect(rs.base - rs.topo < altura * 3 / 4 && centavo.base - centavo.topo < altura * 3 / 4, "\(l)")
+    }
+
+    /// Na tela, o número cresce a cada passo da letra e chega ao tamanho do mockup na máxima: a largura natural do mesmo
+    /// valor sobe a cada passo, e na máxima é 56/40 da padrão. (As medidas acima não provam que a vista as usa.)
+    @Test func numeroNaTelaCresceACadaPasso() {
+        let larguras = DynamicTypeSize.allCases.map { letra in
+            UIHostingController(rootView: ValorEmDinheiro("R$\u{a0}88,88", mono: .principal).dynamicTypeSize(letra).fixedSize())
+                .sizeThatFits(in: CGSize(width: 10_000, height: 10_000)).width
+        }
+        #expect(zip(larguras, larguras.dropFirst()).allSatisfy { $0 < $1 }, "\(larguras)")
+        #expect(abs(larguras[11] / larguras[3] - 56.0 / 40) < 0.03, "\(larguras)")
+    }
+}
+```
+
+Em `app-ios/CusttaUITests/VitrineUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/VitrineUITests.swift
++++ b/app-ios/CusttaUITests/VitrineUITests.swift
+@@ -31,4 +31,16 @@ final class VitrineUITests: XCTestCase {
+             app.terminate()
+         }
+     }
++
++    /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
++    /// fica dentro do bloco, entre as bordas de 34 pt.
++    func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {
++        let app = abrirVitrine(maiorLetra)
++        XCTAssertEqual(app.elemento("vitrine-total").label, "R$\u{a0}842.317,45")
++        let maior = app.elemento("vitrine-maiorValor")
++        app.rolarAte(maior)
++        XCTAssertEqual(maior.label, "R$\u{a0}1.000.000.000,00")
++        XCTAssertEqual(maior.frame.minX, 34, accuracy: 0.5)
++        XCTAssertLessThanOrEqual(maior.frame.maxX, app.frame.width - 34 + 0.5)
++    }
+ }
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -494,10 +494,12 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do
+   // ValorEmDinheiro, que encolhe.
+   for(const f of arquivosSwift('app-ios/Custta/Telas'))
+     assert.doesNotMatch(ler(f), /Text\(moeda\(/, `${f}: dinheiro por extenso num Text; use o ValorEmDinheiro`);
+-  // E o ValorEmDinheiro fica numa linha: sem o lineLimit, num iPhone de 375 pt o valor quebra antes de encolher.
++  // E o ValorEmDinheiro fica numa linha: sem o lineLimit, num iPhone de 375 pt o valor quebra antes de encolher. Na forma
++  // mono da identidade nova (etapa 4), encolhe até o R$ chegar a 11 pt; na de antes, até a metade.
+   const componentes = ler('app-ios/Custta/Identidade/Componentes.swift');
+-  assert.match(componentes.slice(componentes.indexOf('struct ValorEmDinheiro')), /^[^}]*\.lineLimit\(1\)\s*\.minimumScaleFactor\(0\.5\)/,
+-               'o ValorEmDinheiro numa linha, encolhendo até a metade');
++  const inicio = componentes.indexOf('struct ValorEmDinheiro'), valor = componentes.slice(inicio, componentes.indexOf('\n}\n', inicio));
++  assert.match(valor, /\.lineLimit\(1\)\s*\.minimumScaleFactor\(0\.5\)/, 'o ValorEmDinheiro numa linha, encolhendo até a metade');
++  assert.match(valor, /\.lineLimit\(1\)\s*\.minimumScaleFactor\(medidas\.fatorMinimo\)/, 'o número mono numa linha, até o piso de 11 pt');
+ });
+ 
+ test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura fixa', () => {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -m1 "✖ texto"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error:' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -3
+```
+Expected: a guarda reprova `✖ texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do Google, no indicador da barra e no dinheiro` (não há a forma mono); o `CusttaTests` não compila:
+```
+CusttaTests/NumeroMonoTests.swift:13:25: error: cannot find 'TamanhoDoNumero' in scope
+CusttaTests/NumeroMonoTests.swift:14:30: error: cannot find 'MedidasDoNumero' in scope
+CusttaTests/NumeroMonoTests.swift:15:22: error: cannot find 'TamanhoDoNumero' in scope
+```
+
+- [ ] **Step 3: Implementar**
+
+O R$ é um `Text("R")` e um `Text("$")` com `kerning` (o respiro fica só depois do cifrão); tudo vai por interpolação de `Text`, que guarda a fonte, o tracking e o kerning de cada parte. A vitrine passa a mostrar o total e o corrigido em mono e um bloco "Números" com os tamanhos e o maior valor.
+
+Em `app-ios/Custta/Falsos/VitrineDasPecas.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDasPecas.swift
++++ b/app-ios/Custta/Falsos/VitrineDasPecas.swift
+@@ -16,14 +16,14 @@ struct VitrineDasPecas: View {
+             VStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                 BlocoSolido {
+                     CabecalhoDoBloco(rotulo: "Total gasto") { EtiquetaDoSolido(texto: indicadores.etiquetaDoTotal) }
+-                    ValorEmDinheiro(texto: indicadores.totalGasto, fonte: .largeTitle.weight(.bold), cor: .tintaSobreDestaque)
++                    ValorEmDinheiro(indicadores.totalGasto, mono: .principal).accessibilityIdentifier("vitrine-total")
+                     NotaDoBloco(texto: "bruto, sem correção")
+                 }
+                 .accessibilityElement(children: .contain)
+                 .accessibilityIdentifier("vitrine-solido")
+                 BlocoDeVidro {
+                     CabecalhoDoBloco(rotulo: "Corrigido pelo banco")
+-                    ValorEmDinheiro(texto: indicadores.corrigido, fonte: .title2.weight(.bold))
++                    ValorEmDinheiro(indicadores.corrigido, mono: .bloco)
+                     NotaDoBloco(texto: indicadores.notaDoCorrigido)
+                 }
+                 .accessibilityElement(children: .contain)
+@@ -34,6 +34,17 @@ struct VitrineDasPecas: View {
+                 }
+                 .accessibilityElement(children: .contain)
+                 .accessibilityIdentifier("vitrine-ambar")
++                BlocoDeVidro {
++                    CabecalhoDoBloco(rotulo: "Números")
++                    VStack(alignment: .leading, spacing: 6) {
++                        ValorEmDinheiro("R$\u{a0}1.000.000.000,00", mono: .principal).accessibilityIdentifier("vitrine-maiorValor")
++                        ValorEmDinheiro(indicadores.aPagar, mono: .bloco)
++                        ValorEmDinheiro("−R$\u{a0}4.980,00", mono: .linha)
++                        ValorEmDinheiro("R$\u{a0}72.300,00", mono: .miudo)
++                    }
++                }
++                .accessibilityElement(children: .contain)
++                .accessibilityIdentifier("vitrine-numeros")
+                 BlocoDeVidro {
+                     CabecalhoDoBloco(rotulo: "Placa e placa forte")
+                     Color.clear.frame(height: 16).padding(8).placa().accessibilityIdentifier("vitrine-placa")
+```
+
+Em `app-ios/Custta/Identidade/Componentes.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Componentes.swift
++++ b/app-ios/Custta/Identidade/Componentes.swift
+@@ -280,18 +280,30 @@ struct EtiquetaDeFase: View {
+ /// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto ou na que o
+ /// lugar pede (o total do mês vai no secundário do cabeçalho). Com `prefixo`, o "R$" das linhas da folha vem no mesmo
+ /// texto, menor e no secundário: encolhe junto com o número (em dois textos, na letra máxima só o número encolhia e o
+-/// "R$" ficava maior que ele).
++/// "R$" ficava maior que ele). Com `mono`, a forma da identidade nova (NumeroMono.swift): encolhe até o R$ chegar a 11 pt.
+ struct ValorEmDinheiro: View {
+     let texto: String
+     let fonte: Font
+     var cor: Token = .texto
+     var prefixo: Font?
++    var mono: TamanhoDoNumero?
+     @Environment(\.paleta) private var paleta
++    @Environment(\.tintaDoBloco) private var tinta
++    @Environment(\.dynamicTypeSize) private var tamanhoDaLetra
+ 
+     var body: some View {
+-        conteudo
+-            .lineLimit(1)
+-            .minimumScaleFactor(0.5)
++        if let mono {
++            let medidas = mono.medidas(corpo: corpoDoTexto(tamanhoDaLetra))
++            // O VoiceOver lê o valor inteiro do núcleo ("R$ 842.317,45"), num elemento só.
++            textoMono(medidas, cor: paleta.cor(tinta ?? cor))
++                .lineLimit(1)
++                .minimumScaleFactor(medidas.fatorMinimo)
++                .accessibilityLabel(texto)
++        } else {
++            conteudo
++                .lineLimit(1)
++                .minimumScaleFactor(0.5)
++        }
+     }
+ 
+     private var conteudo: Text {
+```
+
+Criar `app-ios/Custta/Identidade/NumeroMono.swift`:
+
+```swift
+import SwiftUI
+
+/* O número da identidade nova (etapa 4, brief 2): SF Mono 600, com o R$ e os centavos menores na linha do número, nunca
+   sobrescritos e nunca abaixo de 11 pt (parte1.css:150-152). É a forma mono do `ValorEmDinheiro` (spec, "O número que
+   encolhe"): um texto só, que encolhe para caber até o R$ chegar a 11 pt, no lugar da metade fixa da forma de antes. */
+
+/// Os tamanhos do número mono, na letra padrão e na máxima (AX5), do mockup (--n-gig, --n-gr, --n-med, --n-pq e --n-ax).
+/// Entre os dois, ele cresce com o corpo do texto, a cada passo da letra, como o texto do sistema: chega ao tamanho do
+/// mockup na máxima sem parar no caminho.
+enum TamanhoDoNumero: Sendable, CaseIterable {
+    /// O número do sólido: 40 pt; 56 na letra máxima.
+    case principal
+    /// 30 e 48.
+    case grande
+    /// O número de um bloco de vidro: 22 e 40.
+    case bloco
+    /// O valor de uma linha (um lançamento, uma lista): 17 e 34.
+    case linha
+    /// O total do mês e os números miúdos: 17 e 30.
+    case miudo
+
+    var padrao: CGFloat {
+        switch self {
+        case .principal: 40
+        case .grande: 30
+        case .bloco: 22
+        case .linha, .miudo: 17
+        }
+    }
+
+    var maximo: CGFloat {
+        switch self {
+        case .principal: 56
+        case .grande: 48
+        case .bloco: 40
+        case .linha: 34
+        case .miudo: 30
+        }
+    }
+
+    /// As medidas no corpo de texto dado (o `body` do Dynamic Type: 17 pt na letra padrão, 53 na máxima).
+    func medidas(corpo: CGFloat) -> MedidasDoNumero {
+        let numero = padrao + (maximo - padrao) * (corpo - 17) / (53 - 17)
+        // O `max(.58em, min(1em, 11px))` do mockup: 58% do número, mas nunca abaixo de 11 pt (salvo número menor que isso).
+        let menor = { (fracao: CGFloat) in max(fracao * numero, min(numero, 11)) }
+        let moeda = menor(0.58)
+        return MedidasDoNumero(numero: numero, moeda: moeda, centavos: menor(0.62), fatorMinimo: min(1, 11 / moeda))
+    }
+}
+
+/// O número, o R$ e os centavos em pontos, e o quanto o texto pode encolher para caber: até o R$, o menor dos três, chegar
+/// a 11 pt. Na linha (17 pt), o R$ já está em 11, e o número não encolhe.
+struct MedidasDoNumero: Equatable, Sendable {
+    let numero: CGFloat
+    let moeda: CGFloat
+    let centavos: CGFloat
+    let fatorMinimo: CGFloat
+}
+
+/// O valor partido para o número mono: o que vem antes do "R$" (o "−" do gasto, o "+" do lucro), os dígitos e os centavos,
+/// sem a vírgula.
+struct PartesDoValor: Equatable, Sendable {
+    let sinal: String
+    let inteiro: String
+    let centavos: String?
+}
+
+/// O corpo do texto (o `body`) no tamanho de letra dado: 17 pt na letra padrão, 53 na máxima. É o tamanho da fonte, e não
+/// o `@ScaledMetric(relativeTo: .body)`, que para em 48 na máxima.
+func corpoDoTexto(_ tamanho: DynamicTypeSize) -> CGFloat {
+    UIFont.preferredFont(forTextStyle: .body, compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(tamanho)))
+        .pointSize
+}
+
+/// As partes de um valor do núcleo ("R$ 842.317,45", "−R$ 4.980,00"); nil sem "R$" (o "—" da venda sem estimativa).
+func partesDoValor(_ texto: String) -> PartesDoValor? {
+    guard let rs = texto.range(of: "R$") else { return nil }
+    let resto = texto[rs.upperBound...].trimmingCharacters(in: .whitespaces)
+    guard let virgula = resto.lastIndex(of: ",") else {
+        return PartesDoValor(sinal: String(texto[..<rs.lowerBound]), inteiro: resto, centavos: nil)
+    }
+    return PartesDoValor(sinal: String(texto[..<rs.lowerBound]), inteiro: String(resto[..<virgula]),
+                         centavos: String(resto[resto.index(after: virgula)...]))
+}
+
+extension ValorEmDinheiro {
+    /// O número mono da identidade nova, no tamanho dado. Dentro do sólido, na tinta dele.
+    init(_ texto: String, mono tamanho: TamanhoDoNumero, cor: Token = .texto) {
+        self.init(texto: texto, fonte: .body, cor: cor, mono: tamanho)
+    }
+
+    /// O sinal e os dígitos no tamanho do número, com o tracking de −0,035 do mockup; o R$ e os centavos menores, na mesma
+    /// linha de base, e o R$ com o respiro de 0,22 do tamanho dele antes dos dígitos.
+    func textoMono(_ medidas: MedidasDoNumero, cor: Color) -> Text {
+        let fonte = { (tamanho: CGFloat) in Font.system(size: tamanho, weight: .semibold, design: .monospaced) }
+        guard let partes = partesDoValor(texto) else {
+            return Text(texto).font(fonte(medidas.numero)).tracking(-0.035 * medidas.numero).foregroundStyle(cor)
+        }
+        let sinal = Text(partes.sinal).font(fonte(medidas.numero))
+        let moeda = Text("\(Text("R"))\(Text("$").kerning(0.22 * medidas.moeda))").font(fonte(medidas.moeda))
+        let digitos = Text(partes.inteiro).font(fonte(medidas.numero)).tracking(-0.035 * medidas.numero)
+        let centavos = Text(partes.centavos.map { ",\($0)" } ?? "").font(fonte(medidas.centavos))
+        return Text("\(sinal)\(moeda)\(digitos)\(centavos)").foregroundStyle(cor)
+    }
+}
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/NumeroMonoTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/VitrineUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 6 tests in 1 suite passed`; `Executed 2 tests, with 0 failures (0 unexpected)`.
+
+- [ ] **Step 5: Conferir na vitrine**
+
+Run: o mesmo do Step 5 da Tarefa 19.
+Expected: o total "R$ 842.317,45" do sólido em mono, o R$ e o ",45" menores na linha do número, como o `parte1-obra-topo.png` do mockup; o corrigido no tamanho de bloco; no bloco "Números", o maior valor numa linha, o "−R$ 4.980,00" da linha (o R$ em 11 pt) e o total do mês.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Identidade/Componentes.swift app-ios/Custta/Identidade/NumeroMono.swift app-ios/CusttaTests/NumeroMonoTests.swift app-ios/CusttaUITests/VitrineUITests.swift tests/app-ios.test.cjs
+git commit -m "feat: número mono com o R\$ e os centavos menores e piso de 11 pt" -m "O ValorEmDinheiro ganha a forma mono da identidade nova (spec, \"O número que encolhe\"): o número em SF Mono 600, com o R\$ e os centavos menores na linha do número (58% e 62% dele, nunca abaixo de 11 pt), num texto só, que encolhe para caber até o R\$ chegar a 11 pt, no lugar da metade fixa da forma de antes. Os cinco tamanhos do mockup (40, 30, 22 e duas vezes 17 pt, e 56, 48, 40, 34 e 30 na letra máxima) crescem com o corpo do texto a cada passo da letra, sem parar no caminho. Dentro do sólido, o número vem na tinta dele, e o VoiceOver lê o valor inteiro do núcleo. Os 20 usos de hoje não mudam: a forma mono só existe com o tamanho dado, e nenhuma tela o dá até o PR 1c."
+```
+
+### Task 21: Título em SF Mono e cápsula de metadados
+
+O título solto da identidade nova (spec, "Identidade", ajuste 1, opção C; `parte1.css:365-366`): SF Mono 600, 30 pt com o tracking de −0,045 em, 44 na letra máxima, em quantas linhas precisar (o nome comprido quebra), a 16 pt da borda. O título pequeno da barra: 16 pt, 20 na letra máxima (vale 20, não os 22 da linha "Letra máxima" das medidas: spec, "Mockup aprovado"), numa linha só, até 236 pt, com o Visualizador de Conteúdo Grande e o identificador `tituloPequenoDaBarra`, como o `TituloPequenoDaBarra` da obra de hoje (ObraView.swift:375), que fica. O pequeno recebe a letra da tela (`TituloPequenoMono(texto:letra:)`), lida fora da barra, como o `PassoDaFolha` faz com o `letraGrande`: dentro do `ToolbarItem`, o `dynamicTypeSize` para antes da letra de acessibilidade (memória `pecas-da-folha-na-letra-grande`), e, com a letra lida ali, o título ficava em ~16,5 pt na máxima, no lugar dos 20. Os dois crescem com o corpo do texto a cada passo da letra, como o número (Tarefa 20): a regra sai do `TamanhoDoNumero` para o `crescendoComALetra(de:ate:corpo:)`. Atrás do título, no escuro, o halo do nome da obra de hoje (`HaloDoTitulo.naObra`, 30%, e 10% no claro; Aurora.swift:192-195): o do mockup (`HaloTitulo`, 38% e 62% na letra máxima) é o ponto de partida da calibração pelo laudo (spec, "Deste spec"), que vai com o título na obra (PR 1c). A cápsula de metadados (ajuste 2; `parte1.css:147-149`): o vidro do conteúdo que abraça o que leva (até a largura toda), a 16 pt da borda, com o texto a 34; uma coluna com 6 pt entre as linhas (8 na letra de acessibilidade), em subheadline no secundário do vidro, cantos de 22 pt e recuo de 10 × 18 × 12 (30 e 16 × 18 × 18 na letra de acessibilidade). O raio é o de uma linha, não o da cápsula da altura toda, para a quina não comer o texto quando ele quebra (memória `capsula-em-texto-que-quebra`). Na obra de hoje, o nome é SF Pro em `largeTitle` (PecasDaObra.swift:19) e a pílula da fase tem raio 24, o texto a 38 pt (PecasDaObra.swift:31-51, raio na 46). Na vitrine, o título e a cápsula vão no alto, como a obra do mockup, e o título pequeno fica na barra.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
+- Modify: `app-ios/Custta/Identidade/NumeroMono.swift`
+- Create: `app-ios/Custta/Identidade/Titulos.swift`
+- Test (novo): `app-ios/CusttaTests/TitulosTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/VitrineUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `corpoDoTexto(_:)` (Tarefa 20); `HaloDoTitulo` (Aurora.swift); `Grade.recuo` e `.superficie(_:em:)`; `EtiquetaDeFase` e `textoDoInicio(_:hoje:)` (só na vitrine).
+- Produces: `crescendoComALetra(de:ate:corpo:) -> CGFloat`; `TituloMono(texto:identificador:)` (identificador padrão `tituloDaObra`); `TituloPequenoMono(texto:letra:)` (a `letra: DynamicTypeSize` é a da tela, lida fora da barra); `CapsulaDeMetadados { … }`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes de unidade medem no layout que o título e o pequeno da barra são do SF Mono (a mesma largura para "i" e "M") e têm a altura de uma linha dele no tamanho do mockup, nas duas pontas da letra; que o nome comprido quebra o título e não o pequeno; e que a cápsula abraça o conteúdo com o recuo do mockup. O de tela confere a grade na vitrine: o título e a cápsula a 16 pt, a fase e o "começou em …" a 34; e o título pequeno dentro da barra, mais de 1,2 vez mais alto na letra máxima que na padrão (o teste de unidade mede a peça solta, fora da barra, e não veria a letra parada; a guarda mede a altura, e não a largura, porque o `.frame(maxWidth: 236)` pode dar ao elemento a largura do quadro). O `TituloPequenoMono` entra na lista fixa da guarda Node do `lineLimit`.
+
+Criar `app-ios/CusttaTests/TitulosTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+import UIKit
+@testable import Custta
+
+/* O título e a cápsula de metadados da identidade nova (etapa 4, PR 1b; ajustes 1 e 2 do mockup): o título em SF Mono 600 de
+   30 pt (44 na letra máxima), que quebra o nome comprido, o pequeno da barra de 16 pt (20), numa linha só, e a cápsula que
+   abraça o conteúdo com o recuo do mockup. Medidos no layout, num UIHostingController em escala 1. */
+@MainActor
+struct TitulosTests {
+    private func medida<V: View>(_ vista: V, _ letra: DynamicTypeSize = .large, largura: CGFloat = 10_000) -> CGSize {
+        UIHostingController(rootView: vista.dynamicTypeSize(letra).environment(\.displayScale, 1))
+            .sizeThatFits(in: CGSize(width: largura, height: 10_000))
+    }
+
+    /// Uma linha do SF Mono semibold no tamanho dado.
+    private func linha(_ tamanho: CGFloat) -> CGFloat { UIFont.monospacedSystemFont(ofSize: tamanho, weight: .semibold).lineHeight }
+
+    /// O título e o pequeno da barra são do SF Mono (a mesma largura para "i" e "M") e têm a altura de uma linha dele no
+    /// tamanho do mockup, na letra padrão e na máxima.
+    @Test func tituloEPequenoDaBarraNoMonoNosTamanhosDoMockup() {
+        let estreito = medida(TituloMono(texto: "iiiiiiii").fixedSize()), largo = medida(TituloMono(texto: "MMMMMMMM").fixedSize())
+        #expect(abs(estreito.width - largo.width) < 0.5, "\(estreito.width) contra \(largo.width)")
+        for (letra, grande, pequeno) in [(DynamicTypeSize.large, CGFloat(30), CGFloat(16)), (.accessibility5, 44, 20)] {
+            #expect(abs(medida(TituloMono(texto: "Casa"), letra).height - linha(grande)) < 1, "\(letra)")
+            #expect(abs(medida(TituloPequenoMono(texto: "Casa", letra: letra), letra).height - linha(pequeno)) < 1, "\(letra)")
+        }
+    }
+
+    /// O nome comprido quebra o título (o mockup: "nome comprido quebra em duas linhas"); o pequeno da barra fica numa linha.
+    @Test func nomeCompridoQuebraOTituloENaoOPequenoDaBarra() {
+        let nome = "Residencial Jardim das Palmeiras, bloco B"
+        #expect(medida(TituloMono(texto: nome), largura: 370).height > 1.8 * linha(30))
+        #expect(abs(medida(TituloPequenoMono(texto: nome, letra: .large), largura: 236).height - linha(16)) < 1)
+    }
+
+    /// A cápsula abraça o conteúdo, com o recuo de 18 dos lados e 10 + 12 em cima e embaixo (16 + 18 na letra de
+    /// acessibilidade).
+    @Test func capsulaAbracaOConteudoComORecuo() {
+        let conteudo = Color.clear.frame(width: 100, height: 20)
+        #expect(medida(CapsulaDeMetadados { conteudo }) == CGSize(width: 136, height: 42))
+        #expect(medida(CapsulaDeMetadados { conteudo }, .accessibility1) == CGSize(width: 136, height: 54))
+    }
+}
+```
+
+Em `app-ios/CusttaUITests/VitrineUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/VitrineUITests.swift
++++ b/app-ios/CusttaUITests/VitrineUITests.swift
+@@ -32,6 +32,27 @@ final class VitrineUITests: XCTestCase {
+         }
+     }
+ 
++    /// O título solto a 16 pt da borda; a cápsula de metadados a 16 e o texto dela (a fase e "começou em …") a 34 (ajuste 2
++    /// do mockup), na letra padrão e na máxima; o título pequeno da barra no nome da obra, maior na letra máxima.
++    func testTituloECapsulaDeMetadadosNaGrade() {
++        var alturas: [CGFloat] = []
++        for argumentos in [[], maiorLetra] {
++            let app = abrirVitrine(argumentos)
++            XCTAssertEqual(app.elemento("vitrine-titulo").frame.minX, 16, accuracy: 0.5, "\(argumentos)")
++            let capsula = app.elemento("vitrine-metadados")
++            XCTAssertEqual(capsula.frame.minX, 16, accuracy: 0.5, "\(argumentos)")
++            // A etiqueta da fase começa a 34; o texto dela, 12 pt para dentro (EtiquetaDeFase).
++            XCTAssertEqual(capsula.staticTexts["Em construção"].frame.minX, 34 + 12, accuracy: 0.5, "\(argumentos)")
++            let inicio = capsula.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'começou em'")).firstMatch
++            XCTAssertEqual(inicio.frame.minX, 34, accuracy: 0.5, "\(argumentos)")
++            XCTAssertEqual(app.elemento("tituloPequenoDaBarra").label, "Casa Alphaville")
++            alturas.append(app.elemento("tituloPequenoDaBarra").frame.height)
++            app.terminate()
++        }
++        // O título da barra lê a letra de fora dela: de 16 pt na padrão a 20 na máxima.
++        XCTAssertGreaterThan(alturas[1] / alturas[0], 1.2, "\(alturas)")
++    }
++
+     /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
+     /// fica dentro do bloco, entre as bordas de 34 pt.
+     func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -478,11 +478,11 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do
+   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
+   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
+   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
+-  // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
++  // e os títulos da barra, o pequeno da obra (também o mono da etapa 4) e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
+   // sistema, em vez de empurrar os botões). Na etapa 3, o primeiro pendente na linha dos afazeres da obra para em duas
+   // linhas (quatro na maior letra), como no mockup: o texto inteiro está na tela Afazeres, e o VoiceOver o lê inteiro pela linha.
+   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
+-    'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
++    'TituloPequenoMono', 'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
+   for(const f of arquivosSwift('app-ios/Custta')){
+     const t = ler(f);
+     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error: cannot find' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -3
+```
+Expected: o `CusttaTests` não compila:
+```
+CusttaTests/TitulosTests.swift:22:31: error: cannot find 'TituloMono' in scope
+CusttaTests/TitulosTests.swift:25:32: error: cannot find 'TituloMono' in scope
+CusttaTests/TitulosTests.swift:26:32: error: cannot find 'TituloPequenoMono' in scope
+```
+
+- [ ] **Step 3: Implementar**
+
+O identificador vem antes do halo, como no `TituloDaObra`: com ele depois, o quadro do VoiceOver iria até a borda do halo. A vitrine lê a letra no `@Environment(\.dynamicTypeSize)` dela, fora da barra, e a passa ao título pequeno.
+
+Em `app-ios/Custta/Falsos/VitrineDasPecas.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDasPecas.swift
++++ b/app-ios/Custta/Falsos/VitrineDasPecas.swift
+@@ -7,6 +7,7 @@ import CusttaNucleo
+    números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
+ struct VitrineDasPecas: View {
+     private let estado = Estado.de(DadosDeExemplo.vitrine())
++    @Environment(\.dynamicTypeSize) private var letra
+ 
+     var body: some View {
+         let casa = estado.obras[0]
+@@ -14,6 +15,14 @@ struct VitrineDasPecas: View {
+         let indicadores = indicadoresDaObra(casa, taxa: estado.config.taxaMensal, hoje: hoje)
+         ScrollView {
+             VStack(alignment: .leading, spacing: Grade.entreBlocos) {
++                TituloMono(texto: casa.nome, identificador: "vitrine-titulo")
++                CapsulaDeMetadados {
++                    EtiquetaDeFase(fase: casa.fase, grande: true)
++                    Text(textoDoInicio(casa, hoje: hoje))
++                }
++                .accessibilityElement(children: .contain)
++                .accessibilityIdentifier("vitrine-metadados")
++                .padding(.bottom, 4)
+                 BlocoSolido {
+                     CabecalhoDoBloco(rotulo: "Total gasto") { EtiquetaDoSolido(texto: indicadores.etiquetaDoTotal) }
+                     ValorEmDinheiro(indicadores.totalGasto, mono: .principal).accessibilityIdentifier("vitrine-total")
+@@ -59,6 +68,7 @@ struct VitrineDasPecas: View {
+         .containerBackground(.clear, for: .navigation)
+         .navigationTitle("Peças")
+         .navigationBarTitleDisplayMode(.inline)
++        .toolbar { ToolbarItem(placement: .principal) { TituloPequenoMono(texto: casa.nome, letra: letra) } }
+     }
+ }
+ #endif
+```
+
+Em `app-ios/Custta/Identidade/NumeroMono.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/NumeroMono.swift
++++ b/app-ios/Custta/Identidade/NumeroMono.swift
+@@ -40,7 +40,7 @@ enum TamanhoDoNumero: Sendable, CaseIterable {
+ 
+     /// As medidas no corpo de texto dado (o `body` do Dynamic Type: 17 pt na letra padrão, 53 na máxima).
+     func medidas(corpo: CGFloat) -> MedidasDoNumero {
+-        let numero = padrao + (maximo - padrao) * (corpo - 17) / (53 - 17)
++        let numero = crescendoComALetra(de: padrao, ate: maximo, corpo: corpo)
+         // O `max(.58em, min(1em, 11px))` do mockup: 58% do número, mas nunca abaixo de 11 pt (salvo número menor que isso).
+         let menor = { (fracao: CGFloat) in max(fracao * numero, min(numero, 11)) }
+         let moeda = menor(0.58)
+@@ -72,6 +72,11 @@ func corpoDoTexto(_ tamanho: DynamicTypeSize) -> CGFloat {
+         .pointSize
+ }
+ 
++/// Um tamanho do mockup que vai do da letra padrão ao da máxima junto com o corpo do texto (de 17 a 53 pt), a cada passo.
++func crescendoComALetra(de padrao: CGFloat, ate maximo: CGFloat, corpo: CGFloat) -> CGFloat {
++    padrao + (maximo - padrao) * (corpo - 17) / (53 - 17)
++}
++
+ /// As partes de um valor do núcleo ("R$ 842.317,45", "−R$ 4.980,00"); nil sem "R$" (o "—" da venda sem estimativa).
+ func partesDoValor(_ texto: String) -> PartesDoValor? {
+     guard let rs = texto.range(of: "R$") else { return nil }
+```
+
+Criar `app-ios/Custta/Identidade/Titulos.swift`:
+
+```swift
+import SwiftUI
+
+/* O título e a cápsula de metadados da identidade nova (etapa 4; ajustes 1 e 2 do mockup aprovado, parte1.css:143-149 e
+   :365-366): o título solto em SF Mono 600 e o pequeno da barra, e a cápsula de vidro com o que fica embaixo do título (a
+   fase e "começou em … · N meses" na obra, o nome da obra nas telas da análise). Nenhuma tela os usa ainda. */
+
+/// O título solto: SF Mono 600, 30 pt com o tracking de −0,045 em (44 na letra máxima, crescendo a cada passo), em quantas
+/// linhas precisar (o nome comprido quebra), a 16 pt da borda. Atrás dele, no escuro, o halo do nome da obra de hoje (30%,
+/// e 10% no claro): o do mockup (38%, 62% na letra máxima) se calibra pelo laudo, na obra (PR 1c).
+struct TituloMono: View {
+    let texto: String
+    var identificador = "tituloDaObra"
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        let tamanho = crescendoComALetra(de: 30, ate: 44, corpo: corpoDoTexto(letra))
+        Text(texto)
+            .font(.system(size: tamanho, weight: .semibold, design: .monospaced))
+            .tracking(-0.045 * tamanho)
+            .foregroundStyle(paleta.cor(.texto))
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier(identificador)    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra, noClaro: HaloDoTitulo.naObraNoClaro) }
+    }
+}
+
+/// O título pequeno da barra no mono: 16 pt (20 na letra máxima, crescendo a cada passo), numa linha só, até 236 pt, como
+/// o `TituloPequenoDaBarra` da obra de hoje, com o Visualizador de Conteúdo Grande.
+struct TituloPequenoMono: View {
+    let texto: String
+    @Environment(\.paleta) private var paleta
+    /// A letra da tela, lida fora da barra: dentro do ToolbarItem, o dynamicTypeSize para antes da letra de acessibilidade.
+    let letra: DynamicTypeSize
+
+    var body: some View {
+        let tamanho = crescendoComALetra(de: 16, ate: 20, corpo: corpoDoTexto(letra))
+        Text(texto)
+            .font(.system(size: tamanho, weight: .semibold, design: .monospaced))
+            .tracking(-0.02 * tamanho)
+            .foregroundStyle(paleta.cor(.texto))
+            .lineLimit(1)
+            .frame(maxWidth: 236)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityShowsLargeContentViewer()
+            .accessibilityIdentifier("tituloPequenoDaBarra")
+    }
+}
+
+/// A cápsula de metadados embaixo do título: o vidro do conteúdo, que abraça o que leva (até a largura toda), a 16 pt da
+/// borda e com o texto a 34; uma coluna com 6 pt entre as linhas, em subheadline no secundário do vidro. Cantos de 22 pt e
+/// recuo de 10 × 18 × 12, que passam a 30 e 16 × 18 × 18 na letra de acessibilidade (8 pt entre as linhas): o raio de uma
+/// linha, e não a cápsula da altura toda, para a quina não comer o texto quando ele quebra.
+struct CapsulaDeMetadados<Conteudo: View>: View {
+    @ViewBuilder let conteudo: Conteudo
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        let grande = letra.isAccessibilitySize
+        VStack(alignment: .leading, spacing: grande ? 8 : 6) { conteudo }
+            .font(.subheadline)
+            .foregroundStyle(paleta.cor(vidro.secundario))
+            .padding(EdgeInsets(top: grande ? 16 : 10, leading: Grade.recuo, bottom: grande ? 18 : 12, trailing: Grade.recuo))
+            .superficie(.conteudo, em: .rect(cornerRadius: grande ? 30 : 22))
+    }
+}
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/TitulosTests -only-testing:CusttaTests/NumeroMonoTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/VitrineUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 9 tests in 2 suites passed`; `Executed 3 tests, with 0 failures (0 unexpected)`.
+
+- [ ] **Step 5: Conferir na vitrine**
+
+Run: o mesmo do Step 5 da Tarefa 19.
+Expected: "Casa Alphaville" em SF Mono no alto e na barra; embaixo, a cápsula com "Em construção" e "começou em … · 14 meses" a 34 pt, como o `parte1-obra-topo.png` do mockup (a data muda com o dia: a vitrine conta as datas de hoje).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Identidade/NumeroMono.swift app-ios/Custta/Identidade/Titulos.swift app-ios/CusttaTests/TitulosTests.swift app-ios/CusttaUITests/VitrineUITests.swift tests/app-ios.test.cjs
+git commit -m "feat: título em SF Mono e cápsula de metadados da identidade nova" -m "O título solto da identidade nova vem em SF Mono 600, de 30 pt com o tracking do mockup a 44 na letra máxima, crescendo a cada passo, e quebra o nome comprido em quantas linhas precisar; o pequeno da barra, de 16 a 20 pt, fica numa linha só, como o da obra de hoje. Atrás do título, o halo do nome da obra continua o de hoje: a calibração do mockup vai com a obra, pelo laudo. A cápsula de metadados é o vidro que abraça o que fica embaixo do título, com o texto a 34 pt e o raio de uma linha, que não come a quina quando o texto quebra. Nenhuma tela os usa até o PR 1c; a vitrine os mostra no alto, como a obra do mockup."
+```
+
+### Task 22: Barra empilhada de tópicos e hachura
+
+A barra empilhada que o Giovani pediu em 29/10 no lugar do mini-anel da obra (spec, "Tela da obra", a barra empilhada; LEIA-ME, "Mudanças de 29/10"; `parte1.css:206-216`), sem tela e sem toque (a porta para os Gráficos chega no PR 2b), desenhada em `Shape`, sem Swift Charts. Os pedaços e as larguras vêm do núcleo (Tarefa 9, `Pedacos.swift`): `pedacosDoAnel` sobre o `gastoPorTopico` (até 7 tópicos, um pedaço por tópico, o 7º em cinza; com 8 ou mais, os 6 maiores e o "Outros"), nas cores `Grafico1` a `Grafico6` e `GraficoOutros`, e `largurasDaBarra` (proporcionais, com o vão de 3 pt e o piso de 8 pt tirado do maior). Cada pedaço é uma cápsula de 16 pt de altura (raio de 8). Na letra de acessibilidade, a barra tem 26 pt, o vão 4 e o piso 12 (`parte1.css:209-210`; o mockup só desenha a AX5, e da AX1 em diante valem os da AX5). A barra vai sobre a placa forte, com 8 pt de recuo e cantos de 12, para as cores ficarem a 3:1 com a aurora atrás. A legenda é uma coluna com os 4 maiores (3 na letra de acessibilidade; `legendaDaBarra` do núcleo): o ponto de 12 pt na cor do pedaço, no meio da primeira linha do nome, o nome inteiro em subheadline (quebra em vez de cortar), o % em SF Mono semibold no secundário (`porcentoDoTopico`, com o "<1%") e "e mais N tópicos" na vertical do nome (22 pt para dentro, o ponto e o vão de 10). O nome é o do tópico; o tópico que o app não conhece aparece pelo id, como na linha do gasto (`linhaDeGasto`, ObraNaTela.swift:115), e o "Outros", como "Outros · N tópicos" (`rotuloDoOutros`). O VoiceOver lê a barra num elemento só, uma imagem com o rótulo "Gastos por tópico" e o valor pedaço a pedaço ("Terreno, 38%; Estrutura, 11%; …", com "menos de 1%" no lugar do "<1%", como o rótulo do mockup). A hachura é a forma a 45° ("/") com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)` do mockup: 2 pt a cada 6 no excesso do orçamento (`parte1.css:187`) e na zona "acima do banco"; 1,5 a cada 4 nas parcelas a vencer do gasto por mês (`parte1.css:300`). Ela não troca as listras do "passou" da etapa 3 (`ListrasDoExcesso`, PecasDoOrcamento.swift:71): quem usa é o gasto por mês (PR 2b) e o "Vale a pena?" (PR 4a). Na vitrine, a barra da Casa Alphaville (14 tópicos: Terreno 38%, Estrutura 11%, Cerâmica 9%, Mão de obra 8% e "e mais 10 tópicos") e duas amostras da hachura; a vitrine ganha o `-custta.rolagem` de Debug, para os prints das peças de baixo.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
+- Create: `app-ios/Custta/Identidade/BarraEmpilhada.swift`
+- Test (novo): `app-ios/CusttaTests/BarraEmpilhadaTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/VitrineUITests.swift`
+
+**Interfaces:**
+- Consumes: `PedacoDoAnel`, `pedacosDoAnel(_:)`, `largurasDaBarra(_:largura:piso:vao:)`, `pisoDaBarra`, `vaoDaBarra`, `porcentoDoTopico(_:total:)`, `rotuloDoOutros(_:)`, `legendaDaBarra(_:quantos:)` e `gastoPorTopico(_:hoje:taxaMensal:)` (núcleo, PR 0b e PR 0); `Topico` e `mapaDeTopicos(_:)`; `.placa(forte:raio:)` (Tarefa 19); `rolagemFixaSoComOArgumento()` (só na vitrine).
+- Produces: `corDoPedaco(_: PedacoDoAnel) -> Token`; `nomeDoPedaco(_:topicos:) -> String`; `fonteDoTexto(_: UIFont.TextStyle, _: DynamicTypeSize) -> UIFont`; `BarraEmpilhada(pedacos:)`; `BarraDeTopicos(pedacos:topicos:)` (a barra na placa e a legenda; identificador `barraDeTopicos` na barra); `Hachura(traco:passo:)`, uma `Shape`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes de unidade prendem as cores dos pedaços com 7 e 8 tópicos e o nome de cada um; por pixel, na linha do meio da barra, cada pedaço na cor e na largura do núcleo, com o vão transparente e o pequeno no piso, na letra padrão e na máxima; a hachura cobrindo um terço do retângulo em listras "/"; e, numa varredura de todos os tamanhos de letra nas larguras de 343, 370 e 408 pt, o bloco com a barra e a legenda sem passar da largura. O de tela confere na vitrine a barra a 34 pt, o rótulo e o valor do VoiceOver, e a legenda com 4 nomes ("e mais 10 tópicos"; 3 e "e mais 11" na letra máxima), a 56 pt.
+
+Criar `app-ios/CusttaTests/BarraEmpilhadaTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+@testable import Custta
+import CusttaNucleo
+
+/* A barra empilhada de tópicos e a hachura da identidade nova (etapa 4, PR 1b): as cores dos pedaços (os 6 maiores nas do
+   anel e o "Outros" em cinza), as larguras do núcleo desenhadas com o vão e o piso, na letra padrão e na de acessibilidade,
+   o nome de cada pedaço e a hachura a 45°, por pixel. */
+@MainActor
+struct BarraEmpilhadaTests {
+    /// Os pedaços de uma obra com um gasto por tópico ("t0", "t1"…), nos valores dados.
+    private func pedacos(_ brutos: [Double]) -> [PedacoDoAnel] {
+        let gastos: [ValorJSON] = brutos.enumerated().map { i, valor in
+            .objeto(["id": .texto("g\(i)"), "valor": .numero(valor), "topico": .texto("t\(i)"), "descricao": .texto(""),
+                     "data": .texto("2026-02-01"), "pagamento": .texto("pix")])
+        }
+        let estado = Estado.de(.objeto(["obras": .lista([.objeto([
+            "id": .texto("o"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+            "gastos": .lista(gastos)])])]))
+        return pedacosDoAnel(gastoPorTopico(estado.obras[0], hoje: "2026-10-29", taxaMensal: 1))
+    }
+
+    @Test func coresDoAnelEOutrosCinza() {
+        let oito = pedacos([800, 700, 600, 500, 400, 300, 200, 100])
+        #expect(oito.map(corDoPedaco) == [.grafico1, .grafico2, .grafico3, .grafico4, .grafico5, .grafico6, .graficoOutros])
+        let sete = pedacos([700, 600, 500, 400, 300, 200, 100])
+        #expect(sete.map(corDoPedaco).last == .graficoOutros && !sete.last!.outros, "o 7º tópico de uma obra com 7, em cinza")
+        let nomes = ["t0": Topico(id: "t0", nome: "Terreno", icone: "casa")]
+        #expect(nomeDoPedaco(oito[0], topicos: nomes) == "Terreno" && nomeDoPedaco(oito[1], topicos: nomes) == "t1")
+        #expect(nomeDoPedaco(oito[6], topicos: nomes) == "Outros · 2 tópicos")
+    }
+
+    /// Os pixels RGBA (pré-multiplicados) do desenho, no escuro, em escala 1.
+    private func pixels(_ conteudo: some View) throws -> (w: Int, h: Int, em: (Int, Int) -> [Int]) {
+        let r = ImageRenderer(content: conteudo.environment(\.paleta, Paleta()).environment(\.colorScheme, .dark))
+        r.scale = 1
+        let imagem = try #require(r.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        let copia = rgba
+        return (w, h, { x, y in (0..<4).map { Int(copia[(y * w + x) * 4 + $0]) } })
+    }
+
+    /// Na linha do meio, cada pedaço na cor dele e nas larguras do núcleo, com o vão transparente entre eles: o pequeno sobe
+    /// ao piso (8 pt; 12 na letra de acessibilidade, com o vão de 4 e 26 pt de altura).
+    @Test(arguments: [DynamicTypeSize.large, .accessibility5])
+    func pedacosNasLargurasDoNucleoComOVao(_ letra: DynamicTypeSize) throws {
+        let tres = pedacos([600, 300, 1])
+        let grande = letra.isAccessibilitySize
+        let (vao, piso, altura) = grande ? (4.0, 12.0, 26) : (3.0, 8.0, 16)
+        let larguras = largurasDaBarra(tres, largura: 300, piso: piso, vao: vao)
+        #expect(larguras[2] == piso)
+        let p = try pixels(BarraEmpilhada(pedacos: tres).frame(width: 300).dynamicTypeSize(letra))
+        #expect(p.w == 300 && p.h == altura)
+        let cores = [[0x19, 0x9E, 0x70], [0x39, 0x87, 0xE5], [0xD5, 0x51, 0x81]]
+        var x = 0.0
+        for (i, largura) in larguras.enumerated() {
+            let meio = Int(x + largura / 2)
+            #expect(p.em(meio, p.h / 2) == cores[i] + [0xFF], "pedaço \(i) em \(meio): \(p.em(meio, p.h / 2))")
+            if i < larguras.count - 1 {
+                let fresta = Int(x + largura + vao / 2)
+                #expect(p.em(fresta, p.h / 2)[3] == 0, "o vão depois do pedaço \(i), em \(fresta)")
+            }
+            x += largura + vao
+        }
+    }
+
+    /// A hachura de 2 pt a cada 6 cobre um terço do retângulo, em listras "/": o pixel de uma linha se repete 1 pt à direita
+    /// na linha de cima.
+    @Test func hachuraA45GrausNoPassoDoMockup() throws {
+        let p = try pixels(Hachura().fill(ambar).frame(width: 120, height: 40))
+        var cheios = 0, iguais = 0, comparados = 0
+        for y in 1..<p.h {
+            for x in 0..<(p.w - 1) {
+                let cheio = p.em(x, y)[3] > 127
+                if cheio { cheios += 1 }
+                comparados += 1
+                if cheio == (p.em(x + 1, y - 1)[3] > 127) { iguais += 1 }
+            }
+        }
+        let fracao = Double(cheios) / Double(comparados)
+        #expect(abs(fracao - 1.0 / 3) < 0.04, "\(fracao)")
+        #expect(Double(iguais) / Double(comparados) > 0.97, "\(iguais) de \(comparados)")
+    }
+
+    private var ambar: Color { Paleta().cor(.alerta) }
+
+    /// A barra e a legenda não passam da largura do bloco em nenhum tamanho de letra, nas larguras dos iPhones: o % é um
+    /// irmão de largura fracionária do nome, e o nome que recebe uma largura fora da grade de pixels arredonda para cima (o
+    /// bloco passava 1/3 de pt na letra máxima).
+    @Test func barraDeTopicosNaoPassaDaLargura() {
+        let estado = Estado.de(DadosDeExemplo.vitrine())
+        let pedacos = pedacosDoAnel(gastoPorTopico(estado.obras[0], hoje: "2026-10-29", taxaMensal: 1))
+        let topicos = mapaDeTopicos(estado.config.topicosProprios)
+        for letra in DynamicTypeSize.allCases {
+            for largura in [CGFloat(343), 370, 408] {
+                let bloco = BlocoDeVidro { BarraDeTopicos(pedacos: pedacos, topicos: topicos) }.dynamicTypeSize(letra)
+                let medida = UIHostingController(rootView: bloco).sizeThatFits(in: CGSize(width: largura, height: 10_000)).width
+                #expect(medida == largura, "\(letra) em \(largura): \(medida)")
+            }
+        }
+    }
+}
+```
+
+Em `app-ios/CusttaUITests/VitrineUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/VitrineUITests.swift
++++ b/app-ios/CusttaUITests/VitrineUITests.swift
+@@ -53,6 +53,26 @@ final class VitrineUITests: XCTestCase {
+         XCTAssertGreaterThan(alturas[1] / alturas[0], 1.2, "\(alturas)")
+     }
+ 
++    /// A barra de tópicos da Casa Alphaville (14 tópicos): a placa a 34 pt e a barra 8 pt para dentro, um elemento só que o
++    /// VoiceOver lê pedaço a pedaço; a legenda com os 4 maiores (3 na letra máxima), o nome a 34 + 12 + 10 pt e "e mais N
++    /// tópicos" na mesma vertical.
++    func testBarraDeTopicosComALegenda() {
++        for (argumentos, mostrados) in [([String](), 4), (maiorLetra, 3)] {
++            let app = abrirVitrine(argumentos)
++            let barra = app.elemento("barraDeTopicos")
++            app.rolarAte(barra)
++            XCTAssertEqual(barra.label, "Gastos por tópico")
++            XCTAssertTrue((barra.value as? String ?? "").hasPrefix("Terreno, 38%; "), "\(barra.value ?? "")")
++            XCTAssertEqual(barra.frame.minX, 34, accuracy: 0.5, "\(argumentos)")
++            let mais = app.staticTexts["e mais \(14 - mostrados) tópicos"]
++            app.rolarAte(mais)
++            XCTAssertTrue(mais.exists, "\(argumentos)")
++            XCTAssertEqual(mais.frame.minX, 56, accuracy: 0.5, "\(argumentos)")
++            XCTAssertEqual(app.staticTexts["Terreno"].frame.minX, 56, accuracy: 0.5, "\(argumentos)")
++            app.terminate()
++        }
++    }
++
+     /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
+     /// fica dentro do bloco, entre as bordas de 34 pt.
+     func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error: cannot find' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -3
+```
+Expected: o `CusttaTests` não compila:
+```
+CusttaTests/BarraEmpilhadaTests.swift:25:26: error: cannot find 'corDoPedaco' in scope
+CusttaTests/BarraEmpilhadaTests.swift:27:26: error: cannot find 'corDoPedaco' in scope
+CusttaTests/BarraEmpilhadaTests.swift:29:17: error: cannot find 'nomeDoPedaco' in scope
+```
+
+- [ ] **Step 3: Implementar**
+
+As larguras saem do `GeometryReader` (no 1º quadro, sem largura, o núcleo dá zero em todos). O ponto da legenda fica no meio da primeira linha do nome pela altura de uma linha da fonte (`fonteDoTexto`), e não pelo `@ScaledMetric`, que não acompanha a fonte na letra máxima (Tarefa 20). O % vai numa coluna de largura inteira, a do "100%" no SF Mono semibold: com a largura fracionária do % ao lado, o nome recebia uma largura fora da grade de pixels e arredondava para cima, e o bloco passava 1/3 de pt em 7 das 36 combinações da varredura (memória `irmao-fracionario-passa-um-pixel`). A hachura é presa ao retângulo (`intersection`).
+
+Em `app-ios/Custta/Falsos/VitrineDasPecas.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDasPecas.swift
++++ b/app-ios/Custta/Falsos/VitrineDasPecas.swift
+@@ -7,6 +7,7 @@ import CusttaNucleo
+    números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
+ struct VitrineDasPecas: View {
+     private let estado = Estado.de(DadosDeExemplo.vitrine())
++    @Environment(\.paleta) private var paleta
+     @Environment(\.dynamicTypeSize) private var letra
+ 
+     var body: some View {
+@@ -43,6 +44,27 @@ struct VitrineDasPecas: View {
+                 }
+                 .accessibilityElement(children: .contain)
+                 .accessibilityIdentifier("vitrine-ambar")
++                BlocoDeVidro {
++                    Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).padding(.bottom, 8)
++                    BarraDeTopicos(pedacos: pedacosDoAnel(gastoPorTopico(casa, hoje: hoje, taxaMensal: estado.config.taxaMensal)),
++                                   topicos: mapaDeTopicos(estado.config.topicosProprios))
++                }
++                .accessibilityElement(children: .contain)
++                .accessibilityIdentifier("vitrine-topicos")
++                BlocoDeVidro {
++                    CabecalhoDoBloco(rotulo: "Hachura: a vencer e o excesso")
++                    HStack(spacing: 12) {
++                        // A barra a vencer do gasto por mês: o contorno tracejado e a hachura de 1,5 a cada 4, na cor apagada.
++                        let forma = UnevenRoundedRectangle(topLeadingRadius: 4, topTrailingRadius: 4)
++                        Hachura(traco: 1.5, passo: 4).fill(paleta.cor(.barraApagada)).clipShape(forma)
++                            .overlay { forma.stroke(paleta.cor(.barraApagada), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])) }
++                            .frame(width: 26, height: 64)
++                        // O excesso do orçamento: 2 a cada 6, no âmbar.
++                        Hachura().fill(paleta.cor(.alerta)).frame(height: 10).clipShape(.capsule)
++                    }
++                    .accessibilityElement(children: .ignore)
++                    .accessibilityIdentifier("vitrine-hachura")
++                }
+                 BlocoDeVidro {
+                     CabecalhoDoBloco(rotulo: "Números")
+                     VStack(alignment: .leading, spacing: 6) {
+@@ -64,6 +86,7 @@ struct VitrineDasPecas: View {
+             .padding(.bottom, 98)
+         }
+         .scrollIndicators(.hidden)
++        .rolagemFixaSoComOArgumento()
+         .bordaDeRolagem(abas: true)
+         .containerBackground(.clear, for: .navigation)
+         .navigationTitle("Peças")
+```
+
+Criar `app-ios/Custta/Identidade/BarraEmpilhada.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* A barra empilhada de tópicos e a hachura da identidade nova (etapa 4; a barra foi pedida pelo Giovani em 29/10, no lugar
+   do mini-anel da obra: parte1.css:206-216 e "Mudanças de 29/10" do LEIA-ME). Desenhadas em Shape, sem Swift Charts. Os
+   pedaços e as larguras vêm do núcleo (Pedacos.swift): os 6 maiores nas cores do anel e o "Outros" em cinza, com o vão e o
+   piso de largura. A barra não tem toque: a porta para os Gráficos chega com eles (PR 2b). */
+
+/// A cor de um pedaço: as seis do anel, do maior para o menor, e o cinza do "Outros" (ou do 7º tópico de uma obra com 7).
+func corDoPedaco(_ pedaco: PedacoDoAnel) -> Token {
+    guard let cor = pedaco.cor else { return .graficoOutros }
+    return [Token.grafico1, .grafico2, .grafico3, .grafico4, .grafico5, .grafico6][cor]
+}
+
+/// O nome de um pedaço na legenda e no VoiceOver: o do tópico (o que o app não conhece aparece pelo id, como na linha do
+/// gasto) ou "Outros · N tópicos".
+func nomeDoPedaco(_ pedaco: PedacoDoAnel, topicos: [String: Topico]) -> String {
+    if pedaco.outros { return rotuloDoOutros(pedaco) }
+    let id = pedaco.topicos.first?.id ?? ""
+    return topicos[id]?.nome ?? (id.isEmpty ? "Outros" : id)
+}
+
+/// A fonte do estilo de texto no tamanho de letra dado (a altura de uma linha e o tamanho dela crescem com a letra).
+func fonteDoTexto(_ estilo: UIFont.TextStyle, _ letra: DynamicTypeSize) -> UIFont {
+    UIFont.preferredFont(forTextStyle: estilo, compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(letra)))
+}
+
+/// A barra: um pedaço por tópico, de cantos redondos, com a largura do núcleo (proporcional, com o piso de 8 pt tirado do
+/// maior) e o vão de 3 pt; 16 pt de altura. Na letra de acessibilidade, 26 pt, vão de 4 e piso de 12 (parte1.css:209-210).
+struct BarraEmpilhada: View {
+    let pedacos: [PedacoDoAnel]
+    @Environment(\.paleta) private var paleta
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        let grande = letra.isAccessibilitySize
+        let (altura, vao, piso): (CGFloat, Double, Double) = grande ? (26, 4, 12) : (16, vaoDaBarra, pisoDaBarra)
+        GeometryReader { geo in
+            let larguras = largurasDaBarra(pedacos, largura: geo.size.width, piso: piso, vao: vao)
+            HStack(spacing: vao) {
+                ForEach(Array(pedacos.enumerated()), id: \.offset) { i, pedaco in
+                    Capsule().fill(paleta.cor(corDoPedaco(pedaco))).frame(width: larguras[i])
+                }
+            }
+        }
+        .frame(height: altura)
+    }
+}
+
+/// O conteúdo do bloco "Gastos por tópico" da obra: a barra sobre a placa forte (8 pt de recuo e cantos de 12, para as cores
+/// ficarem a 3:1 com a aurora atrás) e a legenda numa coluna, com os 4 maiores (3 na letra de acessibilidade): o ponto da
+/// cor, o nome inteiro (quebra em vez de cortar) e o % (o "<1%" do núcleo), e "e mais N tópicos" quando sobram. O VoiceOver
+/// lê a barra inteira num elemento ("Gastos por tópico": cada pedaço com o %).
+struct BarraDeTopicos: View {
+    let pedacos: [PedacoDoAnel]
+    let topicos: [String: Topico]
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        let total = pedacos.reduce(0) { $0 + $1.bruto }
+        let legenda = legendaDaBarra(pedacos, quantos: letra.isAccessibilitySize ? 3 : 4)
+        // O ponto no meio da primeira linha do nome, que cresce com a letra. O % numa coluna de largura inteira, a do "100%":
+        // assim o nome recebe uma largura na grade de pixels (com o % de largura fracionária ao lado, o nome arredondava para
+        // cima, e o bloco passava 1/3 de pt da largura).
+        let fonte = fonteDoTexto(.subheadline, letra)
+        let mono = UIFont.monospacedSystemFont(ofSize: fonte.pointSize, weight: .semibold)
+        let colunaDoPorcento = ("100%" as NSString).size(withAttributes: [.font: mono]).width.rounded(.up)
+        VStack(alignment: .leading, spacing: 4) {
+            BarraEmpilhada(pedacos: pedacos)
+                .padding(8)
+                .placa(forte: true)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Gastos por tópico")
+                .accessibilityValue(pedacos.map { "\(nomeDoPedaco($0, topicos: topicos)), \(porcentoFalado($0.bruto, total: total))" }
+                    .joined(separator: "; "))
+                .accessibilityAddTraits(.isImage)
+                .accessibilityIdentifier("barraDeTopicos")
+                .padding(.top, 2)
+                .padding(.bottom, 8)
+            ForEach(Array(legenda.pedacos.enumerated()), id: \.offset) { _, pedaco in
+                HStack(alignment: .top, spacing: 10) {
+                    Circle().fill(paleta.cor(corDoPedaco(pedaco))).frame(width: 12, height: 12)
+                        .padding(.top, (fonte.lineHeight - 12) / 2)
+                    Text(nomeDoPedaco(pedaco, topicos: topicos))
+                        .foregroundStyle(paleta.cor(.texto))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(porcentoDoTopico(pedaco.bruto, total: total))
+                        .font(.subheadline.monospaced().weight(.semibold))
+                        .foregroundStyle(paleta.cor(vidro.secundario))
+                        .frame(width: colunaDoPorcento, alignment: .trailing)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if let mais = legenda.mais {
+                Text(mais).foregroundStyle(paleta.cor(vidro.secundario)).padding(.leading, 22)
+            }
+        }
+        .font(.subheadline)
+    }
+
+    /// O % falado: o "<1%" vira "menos de 1%", como no rótulo do mockup.
+    private func porcentoFalado(_ bruto: Double, total: Double) -> String {
+        let texto = porcentoDoTopico(bruto, total: total)
+        return texto == "<1%" ? "menos de 1%" : texto
+    }
+}
+
+/// A hachura a 45° ("/") da identidade nova, com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)`
+/// do mockup: 2 pt a cada 6 no excesso do orçamento e na zona "acima do banco"; 1,5 a cada 4 nas parcelas a vencer do gasto
+/// por mês (parte1.css:187 e :300). Uma forma presa ao retângulo: quem usa a preenche na cor e a recorta pela marca.
+struct Hachura: Shape {
+    var traco: CGFloat = 2
+    var passo: CGFloat = 6
+
+    func path(in rect: CGRect) -> Path {
+        // A 45°, a medida de través vale √2 vezes na horizontal.
+        let largura = traco * CGFloat(2).squareRoot(), avanco = passo * CGFloat(2).squareRoot(), h = rect.height
+        var listras = Path()
+        var x = rect.minX - h
+        while x < rect.maxX {
+            listras.move(to: CGPoint(x: x, y: rect.maxY))
+            listras.addLine(to: CGPoint(x: x + largura, y: rect.maxY))
+            listras.addLine(to: CGPoint(x: x + largura + h, y: rect.minY))
+            listras.addLine(to: CGPoint(x: x + h, y: rect.minY))
+            listras.closeSubpath()
+            x += avanco
+        }
+        return listras.intersection(Path(rect))
+    }
+}
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/BarraEmpilhadaTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/VitrineUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 4 tests in 1 suite passed`; `Executed 4 tests, with 0 failures (0 unexpected)`.
+
+- [ ] **Step 5: Conferir na vitrine**
+
+Run: o do Step 5 da Tarefa 19, com `-custta.rolagem 560` depois do `-custta.reduzirMovimento YES`.
+Expected: o bloco "Gastos por tópico" como o do `parte1-obra-meio.png` do mockup: a barra de 7 pedaços sobre a placa forte (verde-água, azul, magenta, violeta, laranja, ciano e o cinza largo do "Outros"), a legenda "Terreno 38%", "Estrutura 11%", "Cerâmica 9%", "Mão de obra 8%" e "e mais 10 tópicos"; embaixo, a hachura das duas amostras.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Identidade/BarraEmpilhada.swift app-ios/CusttaTests/BarraEmpilhadaTests.swift app-ios/CusttaUITests/VitrineUITests.swift
+git commit -m "feat: barra empilhada de tópicos e hachura da identidade nova" -m "A barra empilhada que o Giovani pediu no lugar do mini-anel da obra nasce sem tela e sem toque, desenhada em Shape: um pedaço por tópico, de cantos redondos, com as larguras do núcleo (os 6 maiores nas cores do anel e o \"Outros\" em cinza, o vão de 3 pt e o piso de 8 pt, que passam a 4 e 12 na letra de acessibilidade, com a barra de 26 pt), sobre a placa forte. A legenda fica numa coluna, com os 4 maiores (3 na letra de acessibilidade), o nome inteiro, o % do núcleo numa coluna de largura inteira (com a largura fracionária dele, o nome arredondava para cima e o bloco passava da largura) e \"e mais N tópicos\"; o VoiceOver lê a barra num elemento só, pedaço a pedaço. A hachura a 45° é uma forma, com o traço e o passo do mockup, para as parcelas a vencer, o excesso do orçamento e a zona acima do banco. A vitrine mostra a barra da Casa Alphaville e ganha o gancho da rolagem fixa."
+```
+
+### Task 23: Linha de lançamento com o valor em mono e o ícone na 2ª linha
+
+A linha do gasto ganha a forma mono da identidade nova (spec, "Telas": "A linha de lançamento da obra ganha o valor em mono e o ícone pequeno na 2ª linha; as folhas (A pagar e detalhe do tópico) continuam com a linha da etapa 3"; ajuste 3 do mockup: "lançamentos: o ícone quadrado saiu e título e valor vão de 88 → 34"; `parte1.css:223-237`). Na forma mono, sai o ícone quadrado de 38 pt (PecasDaObra.swift:370-374), e o título e o valor ficam na borda de 34 pt (o recuo de 18 do cartão); embaixo do título, o ícone do tópico (16 pt, 42 na letra máxima, crescendo a cada passo e em pontos inteiros) no começo da linha do tópico, do pagamento e da data, 3 pt abaixo da linha de base (5 na letra máxima), em subheadline no secundário (a etapa 3 usa footnote). O valor vai em mono no tamanho de linha (`ValorEmDinheiro(_:mono: .linha)`, Tarefa 20), ao lado do título e no meio da altura, enquanto sobram 120 pt para o título; quando não cabe ao lado, desce para baixo dele (spec, "O número que encolhe": na linha, o R$ já está em 11 pt e o valor não encolhe). Num iPhone de 375 pt, o cartão tem 307 pt sem o recuo: o "−R$ 1.234.567,89" fica ao lado, e o de R$ 1 bilhão desce. Na letra de acessibilidade, tudo vai numa coluna (título, a linha de baixo e o valor), como o mockup na AX5. O recuo passa a 10 × 18 pt e a altura mínima a 52 (16 × 18 e 72 na letra de acessibilidade). Na linha de baixo, "Pix" e "Cartão" seguem por extenso, sem o ícone do pagamento da etapa 3 (o raio e o cartão do sistema), que o mockup não tem na linha mono (`parte1.js:248-252`, o `gastoLinha`). Ficam como na etapa 3: os "·", a linha de baixo que quebra em vez de cortar (o mockup corta em duas linhas; aqui a guarda só deixa `lineLimit` na lista fixa), o fundo aceso, a etiqueta "novo", o VoiceOver (o rótulo do núcleo e o valor por extenso) e o identificador `gasto-<id>`. A forma vem do `linhaMono` do environment (padrão desligado): a obra a liga no PR 1c, e as folhas do A pagar e do detalhe do tópico, que não o ligam, ficam com a linha da etapa 3. Na vitrine, um cartão com dois lançamentos da Casa Alphaville e um de R$ 1 bilhão, na linha mono.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
+- Test (novo): `app-ios/CusttaTests/LinhaMonoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/VitrineUITests.swift`
+
+**Interfaces:**
+- Consumes: `LinhaDeGastoView(gasto:linha:acesa:novo:)` e `CartaoDaLista`, `LinhaFina` (PecasDaObra.swift); `linhaDeGasto(_:topicos:)` e `listaDaObra(_:hoje:)` (núcleo); `ValorEmDinheiro(_:mono:)`, `corpoDoTexto(_:)` e `crescendoComALetra(de:ate:corpo:)` (Tarefas 20 e 21).
+- Produces: `EnvironmentValues.linhaMono: Bool` (padrão `false`), que liga a forma mono da `LinhaDeGastoView`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes de unidade prendem por pixel onde o valor fica (ao lado do título, ou embaixo dele quando sobrariam menos de 120 pt), com as larguras dos valores que decidem; o valor ao lado inteiro, terminando nos centavos e não em reticências (o de R$ 1 bilhão numa linha de 370 pt); a altura mínima de 52 pt; a linha sem passar da largura do cartão em nenhum tamanho de letra (o ícone fracionário passava 1/3 de pt); o ícone quadrado, que sai da linha mono e fica na da etapa 3; e o ícone do tópico crescendo com a letra (na máxima, a linha de baixo mede o ícone de 42 pt, o vão de 6 e o texto; com o ícone parado em 16, os outros testes e a auditoria passam). O de tela confere na vitrine os três lançamentos de borda a borda do cartão, com 52 pt (72 na letra máxima), lidos como na etapa 3.
+
+Criar `app-ios/CusttaTests/LinhaMonoTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+import UIKit
+@testable import Custta
+import CusttaNucleo
+
+/* A linha do gasto na forma mono da identidade nova (etapa 4, PR 1b): sem o ícone quadrado da etapa 3, com o valor ao lado
+   do título enquanto cabe e embaixo dele quando não cabe, e 52 pt de altura mínima. Medida no layout, num
+   UIHostingController em escala 1, e nos pixels, no escuro. */
+@MainActor
+struct LinhaMonoTests {
+    private func gasto(_ valor: Double) -> Gasto {
+        Estado.de(.objeto(["obras": .lista([.objeto([
+            "id": .texto("o"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+            "gastos": .lista([.objeto(["id": .texto("g"), "valor": .numero(valor), "topico": .texto("x"),
+                                       "descricao": .texto("Cal"), "data": .texto("2026-10-10"), "pagamento": .texto("pix")])]),
+        ])])])).obras[0].gastos[0]
+    }
+
+    private func linha(_ g: Gasto, mono: Bool) -> some View {
+        LinhaDeGastoView(gasto: g, linha: linhaDeGasto(g, topicos: mapaDeTopicos([]))).environment(\.linhaMono, mono)
+    }
+
+    /// Os pixels RGBA (pré-multiplicados) da linha na largura dada, no escuro, em escala 1.
+    private func pixels(_ conteudo: some View) throws -> (w: Int, h: Int, rgba: [UInt8]) {
+        let r = ImageRenderer(content: conteudo.environment(\.paleta, Paleta()).environment(\.colorScheme, .dark))
+        r.scale = 1
+        let imagem = try #require(r.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        return (w, h, rgba)
+    }
+
+    /// Há tinta nos 30 pt antes do recuo da direita? Com o título e a linha de baixo curtos ("Cal"; "x · Pix · 10/10/26"),
+    /// só o valor ao lado do título chega lá; embaixo do título, ele começa no recuo da esquerda e não passa de 190 pt.
+    private func valorAoLado(_ g: Gasto, largura: Int) throws -> Bool {
+        let p = try pixels(linha(g, mono: true).frame(width: CGFloat(largura)))
+        return (0..<p.h).contains { y in ((largura - 48)..<(largura - 18)).contains { x in p.rgba[(y * p.w + x) * 4 + 3] > 128 } }
+    }
+
+    /// A altura da tinta nos 8 pt antes do recuo da direita: os centavos (",00") do valor inteiro têm ~8 pt; as reticências do
+    /// valor cortado, ~3.
+    private func tintaNaPontaDireita(_ g: Gasto, largura: Int) throws -> Int {
+        let p = try pixels(linha(g, mono: true).frame(width: CGFloat(largura)))
+        let linhas = (0..<p.h).filter { y in ((largura - 26)..<(largura - 18)).contains { x in p.rgba[(y * p.w + x) * 4 + 3] > 128 } }
+        return (linhas.last ?? 0) - (linhas.first ?? 0) + 1
+    }
+
+    /// O valor ao lado do título fica inteiro: o de R$ 1 bilhão, numa linha de 370 pt (o cartão num iPhone de 402), cabe ao
+    /// lado e termina nos centavos, sem reticências (a pilha dava ao valor só a metade da linha).
+    @Test func valorAoLadoNaoCorta() throws {
+        #expect(try valorAoLado(gasto(1_000_000_000), largura: 370))
+        #expect(try tintaNaPontaDireita(gasto(1_000_000_000), largura: 370) >= 6)
+        #expect(try tintaNaPontaDireita(gasto(4_980), largura: 370) >= 6)
+    }
+
+    /// O valor fica ao lado do título enquanto sobram 120 pt para o título: numa linha de 280 pt (244 sem o recuo), o comum
+    /// fica ao lado e o de R$ 1 bilhão desce para baixo dele; em 343 pt (o cartão num iPhone de 375; 307 sem o recuo), o de
+    /// R$ 1.234.567,89 fica ao lado e o de R$ 1 bilhão, com mais de 175 pt, ainda desce. A linha tem 52 pt no mínimo.
+    @Test func valorAoLadoDoTituloOuEmbaixoDele() throws {
+        let largura = { (valor: Double) in
+            UIHostingController(rootView: ValorEmDinheiro("−" + moeda(valor), mono: .linha).fixedSize())
+                .sizeThatFits(in: CGSize(width: 1000, height: 1000)).width
+        }
+        #expect(largura(4_980) <= 244 - 12 - 120 && largura(1_234_567.89) <= 307 - 12 - 120 && largura(1_000_000_000) > 307 - 12 - 120,
+                "\(largura(4_980)), \(largura(1_234_567.89)) e \(largura(1_000_000_000))")
+        #expect(try valorAoLado(gasto(4_980), largura: 280))
+        #expect(try !valorAoLado(gasto(1_000_000_000), largura: 280))
+        #expect(try valorAoLado(gasto(1_234_567.89), largura: 343))
+        #expect(try !valorAoLado(gasto(1_000_000_000), largura: 343))
+        let altura = UIHostingController(rootView: linha(gasto(4_980), mono: true).environment(\.displayScale, 1))
+            .sizeThatFits(in: CGSize(width: 1000, height: 10_000)).height
+        #expect(altura >= 52, "\(altura)")
+    }
+
+    /// A linha não passa da largura do cartão em nenhum tamanho de letra, nas larguras dos iPhones, com os lançamentos da
+    /// vitrine e o de R$ 1 bilhão: o ícone do tópico, que cresce com a letra, fica ao lado do texto de baixo.
+    @Test func linhaNaoPassaDaLargura() {
+        let estado = Estado.de(DadosDeExemplo.vitrine())
+        let topicos = mapaDeTopicos(estado.config.topicosProprios)
+        let gastos = Array(estado.obras[0].gastos.prefix(6)) + [gasto(1_000_000_000)]
+        for letra in DynamicTypeSize.allCases {
+            for largura in [CGFloat(343), 370, 408] {
+                for g in gastos {
+                    let vista = LinhaDeGastoView(gasto: g, linha: linhaDeGasto(g, topicos: topicos)).environment(\.linhaMono, true)
+                        .dynamicTypeSize(letra)
+                    let medida = UIHostingController(rootView: vista).sizeThatFits(in: CGSize(width: largura, height: 10_000)).width
+                    #expect(medida == largura, "\(g.id) \(letra) em \(largura): \(medida)")
+                }
+            }
+        }
+    }
+
+    /// O ícone quadrado da etapa 3 (o fundo FantasmaFundo, #0A3F30 no escuro) sai da linha mono; a da etapa 3 continua com ele.
+    @Test func semOIconeQuadrado() throws {
+        func fundosDoIcone(mono: Bool) throws -> Int {
+            let r = ImageRenderer(content: linha(gasto(4_980), mono: mono).frame(width: 343)
+                .environment(\.paleta, Paleta()).environment(\.colorScheme, .dark))
+            r.scale = 1
+            let imagem = try #require(r.cgImage)
+            let (w, h) = (imagem.width, imagem.height)
+            var rgba = [UInt8](repeating: 0, count: w * h * 4)
+            rgba.withUnsafeMutableBytes { bytes in
+                CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                          space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                    .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+            }
+            return stride(from: 0, to: rgba.count, by: 4).filter { rgba[$0] == 0x0A && rgba[$0 + 1] == 0x3F && rgba[$0 + 2] == 0x30 }.count
+        }
+        #expect(try fundosDoIcone(mono: false) > 500)
+        #expect(try fundosDoIcone(mono: true) == 0)
+    }
+
+    /// O ícone do tópico cresce com a letra: na máxima, a linha de baixo mede o ícone de 42 pt, o vão de 6 e o texto.
+    @Test func iconeDoTopicoCresceComALetra() {
+        let g = gasto(4_980), l = linhaDeGasto(g, topicos: mapaDeTopicos([]))
+        func ideal(_ v: some View) -> CGFloat {
+            UIHostingController(rootView: v.dynamicTypeSize(.accessibility5).fixedSize())
+                .sizeThatFits(in: CGSize(width: 10_000, height: 10_000)).width
+        }
+        let texto = ideal(Text([l.topico, l.pagamento, l.data].compactMap { $0 }.joined(separator: " · ")).font(.subheadline))
+        let linhaInteira = ideal(linha(g, mono: true))
+        #expect(abs(linhaInteira - 2 * 18 - 42 - 6 - texto) < 1, "\(linhaInteira) e \(texto)")
+    }
+}
+```
+
+Em `app-ios/CusttaUITests/VitrineUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/VitrineUITests.swift
++++ b/app-ios/CusttaUITests/VitrineUITests.swift
+@@ -73,6 +73,27 @@ final class VitrineUITests: XCTestCase {
+         }
+     }
+ 
++    /// Os lançamentos na linha mono: cada linha um elemento só, de borda a borda do cartão (16 pt), com 52 pt de altura no
++    /// mínimo (72 na letra máxima), lida como na etapa 3 (o título, o tópico, o pagamento e a data; o valor por extenso).
++    func testLancamentosNaLinhaMono() {
++        for (argumentos, minima) in [([String](), CGFloat(52)), (maiorLetra, 72)] {
++            let app = abrirVitrine(argumentos)
++            let cartao = app.elemento("vitrine-lancamentos")
++            app.rolarAte(cartao)
++            let linhas = cartao.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'gasto-'"))
++            XCTAssertEqual(linhas.count, 3, "\(argumentos)")
++            for linha in linhas.allElementsBoundByIndex {
++                XCTAssertEqual(linha.frame.minX, 16, accuracy: 0.5, "\(argumentos)")
++                XCTAssertEqual(linha.frame.maxX, app.frame.width - 16, accuracy: 0.5, "\(argumentos)")
++                XCTAssertGreaterThanOrEqual(linha.frame.height, minima, "\(linha.label) \(argumentos)")
++            }
++            let gigante = app.elemento("gasto-gigante")
++            XCTAssertTrue(gigante.label.hasPrefix("Terreno do condomínio. Terreno, Pix, "), gigante.label)
++            XCTAssertEqual(gigante.value as? String, "R$\u{a0}1.000.000.000,00")
++            app.terminate()
++        }
++    }
++
+     /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
+     /// fica dentro do bloco, entre as bordas de 34 pt.
+     func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error:' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -u | head -3
+```
+Expected: o `CusttaTests` não compila:
+```
+CusttaTests/LinhaMonoTests.swift:21:100: error: cannot convert value of type 'KeyPath<EnvironmentValues, V>' to expected argument type 'WritableKeyPath<EnvironmentValues, V>'
+CusttaTests/LinhaMonoTests.swift:21:100: error: value of type 'EnvironmentValues' has no member 'linhaMono'
+CusttaTests/LinhaMonoTests.swift:90:114: error: cannot convert value of type 'KeyPath<EnvironmentValues, V>' to expected argument type 'WritableKeyPath<EnvironmentValues, V>'
+```
+
+- [ ] **Step 3: Implementar**
+
+A escolha entre o valor ao lado e embaixo é um `ViewThatFits`: na medida ideal, a coluna do título vale 120 pt (`idealWidth`), e a linha fica com o primeiro arranjo que cabe. Ao lado, o valor tem prioridade de layout: sem ela, a pilha dá a ele no máximo a metade da linha, e o de R$ 1 bilhão saía cortado em reticências num iPhone de 402 pt (o teste `valorAoLadoNaoCorta` reprova sem a prioridade). Na letra de acessibilidade, a coluna direto, sem o `ViewThatFits`, que na maior letra deixa o "Text clipped" sem elemento do arranjo descartado na auditoria (T34 da etapa 3). A linha da etapa 3 não muda: o `meta` passa a receber a fonte (footnote nela, subheadline na mono) e se leva o ícone do pagamento (na mono, não), e o recuo e a altura mínima saem do `linhaMono`.
+
+Em `app-ios/Custta/Falsos/VitrineDasPecas.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDasPecas.swift
++++ b/app-ios/Custta/Falsos/VitrineDasPecas.swift
+@@ -7,6 +7,12 @@ import CusttaNucleo
+    números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
+ struct VitrineDasPecas: View {
+     private let estado = Estado.de(DadosDeExemplo.vitrine())
++    private static let gigante = Estado.de(.objeto(["obras": .lista([.objeto([
++        "id": .texto("x"), "nome": .texto("x"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
++        "gastos": .lista([.objeto(["id": .texto("gigante"), "valor": .numero(1_000_000_000), "topico": .texto("terreno"),
++                                   "descricao": .texto("Terreno do condomínio"), "data": .texto("2026-10-01"),
++                                   "pagamento": .texto("pix")])]),
++    ])])])).obras[0].gastos[0]
+     @Environment(\.paleta) private var paleta
+     @Environment(\.dynamicTypeSize) private var letra
+ 
+@@ -51,6 +57,19 @@ struct VitrineDasPecas: View {
+                 }
+                 .accessibilityElement(children: .contain)
+                 .accessibilityIdentifier("vitrine-topicos")
++                // Os lançamentos na linha mono: os dois primeiros do mês mais recente e um de R$ 1 bilhão, que não cabe ao
++                // lado do título (deixaria menos de 120 pt para ele) e desce para baixo dele.
++                let topicos = mapaDeTopicos(estado.config.topicosProprios)
++                let lancamentos = Array(listaDaObra(casa, hoje: hoje).meses.first?.gastos.prefix(2) ?? []) + [Self.gigante]
++                CartaoDaLista {
++                    ForEach(Array(lancamentos.enumerated()), id: \.element.id) { i, gasto in
++                        if i > 0 { LinhaFina().padding(.horizontal, Grade.recuo) }
++                        LinhaDeGastoView(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos))
++                    }
++                }
++                .environment(\.linhaMono, true)
++                .accessibilityElement(children: .contain)
++                .accessibilityIdentifier("vitrine-lancamentos")
+                 BlocoDeVidro {
+                     CabecalhoDoBloco(rotulo: "Hachura: a vencer e o excesso")
+                     HStack(spacing: 12) {
+```
+
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -337,7 +337,8 @@ struct LinhaDoAVencer: View {
+ 
+ /// A linha de um gasto: ícone do tópico (sólido), título e valor, e embaixo o tópico, o pagamento e a data. O valor vem
+ /// sem vermelho, só com o "−"; "Pix" e "Cartão" por extenso. Na letra grande, cada informação numa linha, sem o ícone e
+-/// sem os "·". O VoiceOver lê "Cimento CP-II, 120 sacos. Materiais básicos, Pix, 10 de outubro de 2026" e o valor.
++/// sem os "·". O VoiceOver lê "Cimento CP-II, 120 sacos. Materiais básicos, Pix, 10 de outubro de 2026" e o valor. Com o
++/// `linhaMono` do environment, a forma da identidade nova (etapa 4): a obra a liga no PR 1c; as folhas ficam com esta.
+ struct LinhaDeGastoView: View {
+     let gasto: Gasto
+     let linha: LinhaDeGasto
+@@ -350,13 +351,14 @@ struct LinhaDeGastoView: View {
+     @Environment(\.colorScheme) private var esquema
+     @Environment(\.displayScale) private var escala
+     @Environment(\.dentroDaFolha) private var naFolha
++    @Environment(\.linhaMono) private var mono
+ 
+     var body: some View {
+         Group {
+-            if tamanho.isAccessibilitySize { empilhada } else { normal }
++            if mono { formaMono } else if tamanho.isAccessibilitySize { empilhada } else { normal }
+         }
+-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 18))
+-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
++        .padding(recuo)
++        .frame(maxWidth: .infinity, minHeight: alturaMinima, alignment: .leading)
+         .background(acesa ? paleta.cor(.aceso) : .clear)
+         .contentShape(.rect)
+         .accessibilityElement(children: .ignore)
+@@ -378,11 +380,58 @@ struct LinhaDeGastoView: View {
+                     Spacer(minLength: 0)
+                     valor
+                 }
+-                meta
++                meta(.footnote)
+             }
+         }
+     }
+ 
++    /// 12 × 18 pt e 44 de altura; na linha mono, 10 × 18 e 52 (16 × 18 e 72 na letra de acessibilidade), como o mockup.
++    private var recuo: EdgeInsets {
++        let vertical: CGFloat = mono ? (tamanho.isAccessibilitySize ? 16 : 10) : 12
++        return EdgeInsets(top: vertical, leading: 18, bottom: vertical, trailing: 18)
++    }
++
++    private var alturaMinima: CGFloat { mono ? (tamanho.isAccessibilitySize ? 72 : 52) : 44 }
++
++    /// A linha mono (mockup da etapa 4, parte1.css:223-237): sem o ícone quadrado, o título e o valor na borda de 34 pt; embaixo,
++    /// o ícone pequeno do tópico no começo da linha do tópico, do pagamento e da data, em subheadline, sem o ícone do Pix e do
++    /// cartão (o mockup só tem o do tópico; "Pix" e "Cartão" seguem por extenso). O valor em mono, ao lado
++    /// do título e no meio da altura; quando não cabe ao lado (sobrariam menos de 120 pt para o título), desce para baixo dele,
++    /// como na letra de acessibilidade, onde tudo vai numa coluna.
++    @ViewBuilder private var formaMono: some View {
++        let valor = ValorEmDinheiro(linha.valor, mono: .linha)
++        let coluna = VStack(alignment: .leading, spacing: 6) { textosMono; valor }
++        if tamanho.isAccessibilitySize {
++            coluna
++        } else {
++            ViewThatFits(in: .horizontal) {
++                HStack(spacing: 12) {
++                    textosMono.frame(minWidth: 0, idealWidth: 120, maxWidth: .infinity, alignment: .leading)
++                    // Sem a prioridade, a pilha dá ao valor no máximo a metade da linha e corta o maior com reticências.
++                    valor.layoutPriority(1)
++                }
++                coluna
++            }
++        }
++    }
++
++    /// O título e, embaixo, o ícone do tópico (16 pt; 42 na letra máxima) na linha de base do texto, 3 pt abaixo dela (5). O
++    /// ícone em pontos inteiros: com o tamanho fracionário ao lado, o texto arredondava para cima e a linha passava 1/3 de pt.
++    private var textosMono: some View {
++        let corpo = corpoDoTexto(tamanho)
++        let (icone, descida) = (crescendoComALetra(de: 16, ate: 42, corpo: corpo).rounded(), crescendoComALetra(de: 3, ate: 5, corpo: corpo))
++        return VStack(alignment: .leading, spacing: 2) {
++            titulo
++            HStack(alignment: .firstTextBaseline, spacing: 6) {
++                Image(decorative: iconeDoCatalogo(linha.icone))
++                    .resizable().frame(width: icone, height: icone)
++                    .alignmentGuide(.firstTextBaseline) { $0.height - descida }
++                meta(.subheadline, iconeDoPagamento: false)
++            }
++            .foregroundStyle(paleta.cor(secundario))
++        }
++    }
++
+     private var empilhada: some View {
+         VStack(alignment: .leading, spacing: 4) {
+             titulo
+@@ -413,15 +462,16 @@ struct LinhaDeGastoView: View {
+     /// Tópico · forma de pagamento com o ícone · data, num texto só (quebra sozinho; um "·" solto era um texto de 4 pt
+     /// que a auditoria de contraste do Xcode não conseguia medir). Os ícones do pagamento são os do sistema, que crescem
+     /// com a letra dentro do texto: o raio do Pix ("bolt") e o cartão ("creditcard").
+-    private var meta: some View {
++    private func meta(_ fonte: Font, iconeDoPagamento: Bool = true) -> some View {
+         var partes: [Text] = []
+         if let topico = linha.topico { partes.append(Text(topico)) }
+         if let pagamento = linha.pagamento {
+-            partes.append(Text("\(Image(systemName: pagamento == "Pix" ? "bolt" : "creditcard")) \(pagamento)"))
++            partes.append(iconeDoPagamento ? Text("\(Image(systemName: pagamento == "Pix" ? "bolt" : "creditcard")) \(pagamento)")
++                                           : Text(pagamento))
+         }
+         partes.append(Text(linha.data))
+         let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
+-        return junto.font(.footnote).foregroundStyle(paleta.cor(secundario))
++        return junto.font(fonte).foregroundStyle(paleta.cor(secundario))
+     }
+ 
+     private func detalhe(_ texto: String) -> some View {
+@@ -432,6 +482,11 @@ struct LinhaDeGastoView: View {
+     private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
+ }
+ 
++extension EnvironmentValues {
++    /// A linha do gasto na forma mono da identidade nova (etapa 4).
++    @Entry var linhaMono = false
++}
++
+ /// A etiqueta "novo" da linha que acabou de ser lançada (some com o destaque, em ~2 s).
+ struct EtiquetaNovo: View {
+     @Environment(\.paleta) private var paleta
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/LinhaMonoTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/VitrineUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 5 tests in 1 suite passed`; `Executed 5 tests, with 0 failures (0 unexpected)`.
+
+- [ ] **Step 5: Conferir na vitrine**
+
+Run: o do Step 5 da Tarefa 19, com `-custta.rolagem 900`.
+Expected: o cartão dos lançamentos como os do `parte1-obra-meio.png` do mockup: "Cimento CP-II, 120 sacos" e o "−R$ 4.980,00" em mono à direita, embaixo o ícone pequeno do tópico e "Materiais básicos · Pix · …"; o de R$ 1 bilhão com o valor embaixo do título num iPhone de 375 pt.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Telas/PecasDaObra.swift app-ios/CusttaTests/LinhaMonoTests.swift app-ios/CusttaUITests/VitrineUITests.swift
+git commit -m "feat: linha de lançamento com o valor em mono e o ícone na 2ª linha" -m "A linha do gasto ganha a forma mono da identidade nova (spec, \"Telas\": a linha de lançamento da obra ganha o valor em mono e o ícone pequeno na 2ª linha): sem o ícone quadrado, com o título e o valor na borda de 34 pt e, embaixo, o ícone do tópico no começo da linha do tópico, do pagamento e da data, em subheadline, sem o ícone do Pix e do cartão, como o mockup. O valor em mono fica ao lado do título, no meio da altura, enquanto sobram 120 pt para o título; quando não cabe, desce para baixo dele, como na letra de acessibilidade, onde tudo vai numa coluna. A forma vem do linhaMono do environment, que a obra liga no PR 1c; as folhas do A pagar e do detalhe do tópico ficam com a linha da etapa 3, como o spec pede."
+```
+
+### Task 24: Auditoria da vitrine das peças na maior letra
+
+A auditoria de acessibilidade do Xcode passa pela vitrine das peças na maior letra (AX5), antes de a obra do PR 1c usá-las (spec, "Testes e validação", item 5: as auditorias cobrem as telas novas na letra máxima). São cinco rolagens fixas (0, 900, 1800, 2700 e 3600 pt; a vitrine tem ~4.450 pt na AX5 do 18 Pro), e não arrastos, como na obra (AuditoriaUITests.swift, `testParte3NoMaiorTamanho`: logo depois de um arrasto, a auditoria acha corte que parado não há). Ela confere o tipo dinâmico, o texto cortado e os alvos de 44 pt: o título em SF Mono e a cápsula de metadados, os blocos, o número mono, a barra de tópicos e a linha mono crescem com a letra, nada corta e nada é pequeno demais para o dedo. O título pequeno da barra fica de fora pelo identificador `tituloPequenoDaBarra`, como o da obra de hoje, e a cápsula de abas, como em todas as telas. Com a letra lida fora da barra (Tarefa 21), o título chega a 20 pt na máxima e a auditoria da vitrine já não acha nada nele; quem prova que ele cresce é a guarda de altura do `testTituloECapsulaDeMetadadosNaGrade`, da mesma tarefa. A descrição suficiente fica para a obra: na vitrine, o número fica solto, sem o rótulo do bloco, e a auditoria acha "Label not human-readable" no elemento só de algarismos ("R$ 842.317,45"), com o mono ou sem ele, até num `Text` simples em SF Pro (provado com as cinco variantes); na obra, o rótulo e o número do bloco são um elemento, como nos indicadores da etapa 3 (`IndicadoresDaObraView`). A auditoria não pega tudo: com o número sem crescer (o corpo fixo em 17) ou sem encolher (`minimumScaleFactor(1)`, o maior valor cortado com reticências), ela passa; quem prende isso são os testes de unidade da Tarefa 20: o `numeroNaTelaCresceACadaPasso`, que mede o número na tela a cada passo (reprova com o corpo fixo em 17 e com o teto no AX2), e a largura do maior valor. Com o título num tamanho fixo, ela reprova.
+
+**Files:**
+- Test (alterar): `app-ios/CusttaUITests/AuditoriaUITests.swift`
+
+**Interfaces:**
+- Consumes: `auditar(_:_:corteSemElemento:)`, `maiorLetra` e `parado` (AuditoriaUITests.swift); a vitrine (`CUSTTA_ABRIR=pecas`, Tarefas 19 a 23) e o `-custta.rolagem` dela (Tarefa 22).
+- Produces: `AuditoriaUITests.testVitrineDasPecasNoMaiorTamanho`.
+
+- [ ] **Step 1: Escrever o teste**
+
+Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AuditoriaUITests.swift
++++ b/app-ios/CusttaUITests/AuditoriaUITests.swift
+@@ -151,6 +151,24 @@ final class AuditoriaUITests: XCTestCase {
+         try auditar(app, tiposDeAuditoria)
+     }
+ 
++    /// A vitrine das peças da identidade nova (etapa 4, PR 1b; só no Debug, com CUSTTA_ABRIR=pecas) na maior letra, em
++    /// rolagens fixas (como a obra: logo depois de um arrasto, a auditoria acha corte que parado não há): o título e a cápsula
++    /// de metadados, os blocos, o número mono, a barra de tópicos e a linha mono crescem com a letra e nada corta, e os alvos
++    /// têm 44 pt, antes de a obra (PR 1c) usá-los. O título pequeno da barra é o da obra (`tituloPequenoDaBarra`), que para
++    /// perto de 20 pt. Sem a descrição suficiente: na vitrine, o número fica solto, sem o rótulo do bloco, e a auditoria acha
++    /// "Label not human-readable" num elemento só de algarismos, com ou sem o mono; na obra, o rótulo e o número do bloco são
++    /// um elemento, como os indicadores da etapa 3.
++    @MainActor func testVitrineDasPecasNoMaiorTamanho() throws {
++        for rolagem in [0, 900, 1800, 2700, 3600] {
++            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas",
++                               argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
++            XCTAssertTrue(app.elemento("vitrine-solido").waitForExistence(timeout: 10))
++            Thread.sleep(forTimeInterval: 1.5)
++            try auditar(app, [.dynamicType, .textClipped, .hitRegion])
++            app.terminate()
++        }
++    }
++
+     /// A folha do gasto (etapa 2, PR 2) em cada passo, na maior letra; os detalhes também rolados, e o valor também com o
+     /// número mais largo do visor (13 caracteres, a largura do teto R$ 99.999.999,99), que encolhe para caber.
+     @MainActor func testFolhaDoGastoNoMaiorTamanho() throws {
+```
+
+- [ ] **Step 2: Ver falhar, com o título num tamanho fixo**
+
+Troque, só para ver, `let tamanho = crescendoComALetra(de: 30, ate: 44, corpo: corpoDoTexto(letra))` por `let tamanho: CGFloat = 30` no `TituloMono` (Titulos.swift), compile e rode.
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AuditoriaUITests/testVitrineDasPecasNoMaiorTamanho > /tmp/auditoria-vitrine.log 2>&1
+grep -E "auditoria \|.*reprova" /tmp/auditoria-vitrine.log | sed 's/ (.*//' | sort | uniq -c
+grep -E "Executed [0-9]+ test" /tmp/auditoria-vitrine.log | tail -1
+git checkout -- app-ios/Custta/Identidade/Titulos.swift
+```
+Expected: `** TEST BUILD SUCCEEDED **`, e a auditoria reprova o título na primeira rolagem:
+```
+   1 auditoria | Dynamic Type font sizes are unsupported | 48 "Casa Alphaville" vitrine-titulo
+	 Executed 1 test, with 1 failure (0 unexpected) in 58.180 (58.186) seconds
+```
+
+- [ ] **Step 3: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AuditoriaUITests/testVitrineDasPecasNoMaiorTamanho > /tmp/auditoria-vitrine.log 2>&1
+grep -E "auditoria \|" /tmp/auditoria-vitrine.log | sed 's/ (.*//' | sort | uniq -c
+grep -E "Executed [0-9]+ test" /tmp/auditoria-vitrine.log | tail -1
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; só achados de fora (a cápsula de abas), 5 de cada (um por rolagem), e nenhuma reprovação:
+```
+   5 auditoria | Dynamic Type font sizes are unsupported | 48 "Ajustes"
+   5 auditoria | Dynamic Type font sizes are unsupported | 48 "Obras"
+	 Executed 1 test, with 0 failures (0 unexpected) in 53.035 (53.037) seconds
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add app-ios/CusttaUITests/AuditoriaUITests.swift
+git commit -m "test: auditoria da vitrine das peças na maior letra" -m "A auditoria de acessibilidade passa pela vitrine das peças da identidade nova na maior letra, em cinco rolagens fixas, antes de a obra do PR 1c usá-las: o título e a cápsula de metadados, os blocos, o número mono, a barra de tópicos e a linha mono crescem com a letra, nada corta e os alvos têm 44 pt. O título pequeno da barra fica de fora pelo identificador, como o da obra. A descrição suficiente fica para a obra: na vitrine, o número fica solto, sem o rótulo do bloco, e a auditoria acha \"Label not human-readable\" num elemento só de algarismos, com ou sem o mono."
+```
+
+---
+
 ## Para os planos dos marcos 2 e 3
 
 O que as fatias e as sondas deste marco deixam para os planos seguintes.
@@ -3967,3 +7253,4 @@ O que as fatias e as sondas deste marco deixam para os planos seguintes.
 
 **Para o 4a, da CI (Decisões).**
 - Os testes de tela da etapa 4 vão para jobs próprios, e o `app` para de crescer. Ele termina o marco 1 com uns 119 testes de tela.
+- O `laudo.xcresult` passa a subir sempre, e não só quando reprova. Assim, as tabelas do iOS 26 também são comparadas palavra por palavra com as do commit anterior (spec, "Testes e validação", item 6). No marco 1, a comparação é só no Pro Max (iOS 27), e a CI é o portão de 4,5.

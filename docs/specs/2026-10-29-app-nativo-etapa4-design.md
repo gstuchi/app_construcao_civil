@@ -263,7 +263,7 @@ As três camadas do spec do app nativo, sem pacote novo.
 
 | Ordem | PR | O que entrega | Linhas (est.) | Portões | Marco | Escondido na `main` até o seguinte |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 0 (site) | as seis regras do `app.js` no `calc.js`, com vetores, cópia em Swift e leitores; os dois alinhamentos; uma subida do `CACHE` | ~600–850 | núcleo | — | as regras no núcleo, sem tela |
+| 1 | 0 (site) | as seis regras do `app.js` no `calc.js`, com vetores, cópia em Swift e leitores; os dois alinhamentos; uma subida do `CACHE` | ~600–850 | núcleo | — | nada no site: os dois alinhamentos vão ao ar no merge; no app, as regras ficam no núcleo, sem tela |
 | 2 | 0b (núcleo) | as regras novas do app (pedaços, piso, "<1%", escala, rótulos, mês padrão, a vencer, frases, média, maior e meses, "N de M", parte com 1 casa) e a paginação do PDF | ~450–600 | núcleo | — | regras sem uso |
 | 3 | 1a | os tokens globais, com o âmbar do claro, a cápsula de abas com borda de 16, o globo e o halo do título | ~50–150 de Swift (o catálogo de cores não conta) | tudo, com a comparação | 1 | tokens novos sem uso |
 | 4 | 1b | as peças: bloco, sólido verde e âmbar, número mono com piso de 11 pt, título em SF Mono, grade 16/34, placa, cápsula de metadados, hachura, barra empilhada e linha de lançamento mono | ~600–800 | tudo, com a comparação (`ValorEmDinheiro` tem 20 usos) | 1 | peças sem tela |

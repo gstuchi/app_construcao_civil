@@ -1,6 +1,6 @@
 # Custta nativo, etapa 4: análise
 
-Data: 2026-10-29. Spec da etapa 4 do app nativo (`docs/specs/2026-10-06-app-nativo-design.md`, seção "Etapas"): Gráficos, Relatório, "Vale a pena?" e PDF, e a tela da obra na identidade nova que o mockup desta etapa trouxe. Ele junta o que o Giovani aprovou no mockup do Croqui (duas partes, fechado em 28/10) e as decisões de planejamento que já têm recomendação. As decisões grandes passam antes pelo conselho (seção "Para o conselho"); o plano de implementação, com protótipo, tarefas e código, é escrito depois dele, a partir daqui.
+Data: 2026-10-29. Spec da etapa 4 do app nativo (`docs/specs/2026-10-06-app-nativo-design.md`, seção "Etapas"): Gráficos, Relatório, "Vale a pena?" e PDF, e a tela da obra na identidade nova que o mockup desta etapa trouxe. Ele junta o que o Giovani aprovou no mockup do Croqui (duas partes, fechado em 28/10) e as decisões de planejamento que já têm recomendação. As decisões grandes passaram pelo conselho em 29/10 (seção "Decisões do conselho"); o plano de implementação, com protótipo, tarefas e código, é escrito a partir daqui.
 
 ## Contexto
 
@@ -227,7 +227,7 @@ As três camadas do spec do app nativo, sem pacote novo.
 
 **Núcleo (`CusttaNucleo`).**
 - A cópia das seis regras do PR 0, com os vetores, e as regras novas do app, com teste próprio.
-- A paginação do PDF como conta pura: altura de cada linha, onde a página quebra, o "(continuação)" e o cabeçalho repetido. Assim ela se testa sem tela.
+- A paginação do PDF como conta pura: a altura de cada linha, onde a página quebra, o "(continuação)", o cabeçalho repetido e a descrição maior que uma página, partida entre as linhas do texto. Assim ela se testa sem tela.
 - Nenhuma mutação nova.
 
 **Dados e estado (app).**
@@ -241,25 +241,61 @@ As três camadas do spec do app nativo, sem pacote novo.
 - **Gráficos e Relatório:** empurrados no caminho de Obras (`RotaDeObras`, ObrasView.swift:5), como a tela Orçamento.
 - **"Vale a pena?":** uma aba nova. Hoje a `Aba` tem `obras` e `ajustes` (CapsulaDeAbas.swift:18-20), e o `PrincipalView` já anota que essa aba chega na etapa 4 (PrincipalView.swift:4).
 - **Barra de soma:** no Selecionar, ela toma o lugar da cápsula de abas, que é um `safeAreaBar` do `PrincipalView` (PrincipalView.swift:29).
-- **Gráficos e anel:** a forma técnica vai ao conselho (item 1). O spec do app nativo diz "Gráficos com Swift Charts".
-- **PDF:** a forma vai ao conselho (item 2); a folha de compartilhar é a do sistema.
+- **Gráficos e anel:** desenhados pelo app, sem Swift Charts, com marcas em `Shape` e o texto em views (conselho, item 1). A troca da linha 67 do spec geral vai ao Giovani.
+- **Telas da análise:** moram em `Custta/Analise/`, ligadas ao resto do app por uma costura só, feita no PR da obra (seção "PRs").
+- **PDF:** tabelas em UIKit fora da thread principal e a página 1 composta em SwiftUI, com a folha de compartilhar do sistema (conselho, item 2).
 - **Teclado de valor:** o `TecladoDeValor` da etapa 3, num campo só (sem ‹ ›).
 
 ## PRs
 
-Recomendação, que passa pelo conselho (é a ordem do trabalho): **um bloco da etapa por PR**, cada um com um build no TestFlight que o Giovani testa no iPhone.
+**Decisões do Giovani (29/10, no adendo ao conselho).**
+1. **Corte por risco.** O alvo é de ~500 a 1.000 linhas de código de produção por PR; teste, vetor gerado, `vendor/` e docs não contam. Um PR acima de ~1.000 leva a justificativa escrita no próprio PR.
+2. **O PR 1 vira três**, nesta ordem: (a) os tokens globais sozinhos, com o laudo inteiro provando que nada caiu nas etapas 1 a 3; (b) as peças da identidade; (c) a obra reescrita.
+3. **TestFlight por marco, não por PR.** Um marco junta os PRs que formam uma entrega testável no iPhone.
 
-| PR | O que entrega | Build |
+**O corte (conselho, item 3).** São 11 PRs em 3 marcos. As linhas são de produção, estimadas pela régua dos PRs das etapas 2 e 3, cujos PRs de tela ficaram entre ~1.100 e ~2.100. Os portões estão explicados depois da tabela.
+
+| Ordem | PR | O que entrega | Linhas (est.) | Portões | Marco | Escondido na `main` até o seguinte |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0 (site) | as seis regras do `app.js` no `calc.js`, com vetores, cópia em Swift e leitores; os dois alinhamentos; uma subida do `CACHE` | ~600–850 | núcleo | — | as regras no núcleo, sem tela |
+| 2 | 0b (núcleo) | as regras novas do app (pedaços, piso, "<1%", escala, rótulos, mês padrão, a vencer, frases, média, maior e meses, "N de M", parte com 1 casa) e a paginação do PDF | ~450–600 | núcleo | — | regras sem uso |
+| 3 | 1a | os tokens globais, com o âmbar do claro, a cápsula de abas com borda de 16, o globo e o halo do título | ~50–150 de Swift (o catálogo de cores não conta) | tudo, com a comparação | 1 | tokens novos sem uso |
+| 4 | 1b | as peças: bloco, sólido verde e âmbar, número mono com piso de 11 pt, título em SF Mono, grade 16/34, placa, cápsula de metadados, hachura, barra empilhada e linha de lançamento mono | ~600–800 | tudo, com a comparação (`ValorEmDinheiro` tem 20 usos) | 1 | peças sem tela |
+| 5 | 1c | a obra em blocos, com todos os estados; a costura das telas da análise em `Custta/Analise/` (rota, abertura de Debug e dados falsos, ainda sem destino); o modo de marcas apagadas do laudo | ~1.000–1.200 | tudo, com a comparação | **1, fecha** | a barra empilhada sem toque e sem "Gráficos ›"; nenhuma porta |
+| 6 | 4a | "Vale a pena?": a aba (a cápsula com 3 abas, e o + some nela), campos, veredito, faixa, tabela e estados | ~750–950 | tudo, com a comparação (a cápsula de toda tela) | 2 | nada |
+| 7 | 2a | Gráficos: a tela; o anel, com entrada, toque C, "Ver gastos" e "Outros"; a lista com seta para a folha; os estados | ~700–900 | telas novas | 2 | a tela só abre pelo Debug |
+| 8 | 2b | evolução e gasto por mês (toque, arrasto, vibração, ajustável e descritor, hachura, 24 meses); a barra empilhada da obra passa a abrir os Gráficos | ~850–1.000 | tudo | **2, fecha** | sem o "Exportar PDF"; nenhuma porta |
+| 9 | 3a | Relatório: sólido, cápsula, blocos por tópico, fim (venda e margem), estados; a busca, com o resumo dos achados | ~850–950 | telas novas | 3 | a tela só abre pelo Debug |
+| 10 | 3b | Selecionar: marcadores, tópico com 3 estados, barra de soma no lugar da cápsula, Selecionar sobre a busca, seleção que sobrevive à mudança remota; a fileira de portas da obra aparece | ~650–750 | tudo, com a comparação | 3 | sem o "Exportar PDF" |
+| 11 | 4b | PDF: gerador, página 1, folha de compartilhar, os botões no fim dos Gráficos e do Relatório; o checklist do aparelho da etapa | ~750–950 (mais ~100 da marcação, se a sonda passar) | tudo | **3, fecha** | — |
+
+**Acima de ~1.000.**
+- **O 1c (~1.000 a 1.200).** A obra é uma tela só, e quase metade das linhas é a obra da etapa 3 saindo. Partir o PR deixaria duas identidades na tela mais usada e trocaria duas vezes as cenas da obra no laudo. O que dava para separar (a barra empilhada e a linha mono) já foi para o 1b. Se as fatias do plano passarem de ~1.300, os Lançamentos viram um 1d, com o OK do Giovani, porque foi ele quem fixou os três PRs.
+- **Os outros.** Se o 2b passar de ~1.000, a evolução vira um 2c, que fecha o marco 2. Se o 3a passar, a busca vira um PR entre o 3a e o 3b. Se o 4b passar com a marcação, a marcação vira um PR seguinte, que fecha o marco 3.
+
+**Portões por superfície.** Um job no Ubuntu, que não ocupa vaga de macOS, lê o diff do PR e escolhe o nível. Na dúvida, roda tudo.
+
+| Nível | Quando | O que roda |
 | --- | --- | --- |
-| 0 (site) | As seis regras do `app.js` no `calc.js`, com vetores, cópia em Swift e leitores; os dois alinhamentos; uma subida do `CACHE`. | — |
-| 1 | Identidade e obra: os tokens globais, com o laudo inteiro das etapas 1 a 3; as peças da identidade (bloco, sólido, número em mono, título em SF Mono, grade, placa); a obra em blocos com todos os estados e a barra empilhada. | sim |
-| 2 | Gráficos: o anel com a entrada e o toque C, a lista com a seta para o detalhe do tópico, a evolução, o gasto por mês, o toque e o arrasto, os estados, a letra máxima e o VoiceOver. A porta "Ver gráficos" e a barra passam a abrir. | sim |
-| 3 | Relatório: os blocos por tópico, o Selecionar com a barra de soma, a obra vendida e sem venda, a busca com o Selecionar sobre o resultado. A porta "Relatório" passa a abrir. | sim |
-| 4 | "Vale a pena?" (a aba, os campos, o veredito, a faixa, a tabela e os estados) e o PDF (o botão no fim dos Gráficos e do Relatório e a folha de compartilhar); o checklist do aparelho da etapa 4. | sim |
+| núcleo | o PR só mexe em `CusttaNucleo/`, no site e nos vetores | `nucleo` e um job de unidade (o build Release sem assinatura e os testes de unidade) |
+| telas novas | o PR só mexe em `Custta/Analise/` e nos testes dela | o nível núcleo, mais os jobs da etapa 4 (tela, laudo e auditoria das telas novas, no iOS 26, de até ~45 min cada) |
+| tudo | qualquer outro arquivo do app, o catálogo de cores, os testes compartilhados (laudo e auditoria) ou o workflow; e sempre o PR que fecha o marco | todos os jobs |
 
-- **Por que esse corte:** o PR 1 concentra o risco que mexe no app inteiro (os tokens) e as peças que todos os outros usam; o PR 2 traz os gráficos que a página 1 do PDF desenha; o PR 3 traz os grupos do relatório e a busca; o PR 4 junta o "Vale a pena?", que é independente, e o PDF, que depende do 2 e do 3.
-- No build do PR 1, a barra de tópicos aparece sem toque e sem o "Gráficos ›", e as portas ficam de fora até as telas delas chegarem: botão que não abre nada confunde no teste do aparelho. É o mesmo cuidado das linhas da tela Orçamento, que no PR 1 da etapa 3 vieram sem chevron e sem toque.
-- **Ordem:** o PR 1 pode começar quando o PR 0 entrar em revisão; cada PR seguinte começa com o OK do Giovani no build do anterior. Cada PR nasce num worktree novo a partir da `origin/main` atualizada.
+- **A comparação.** Todo PR que muda peça compartilhada (tokens, peças, a obra, a cápsula, o `PrincipalView`) compara o laudo inteiro palavra por palavra com o do commit anterior (seção "Testes e validação", item 6).
+- **Onde moram o filtro e os jobs.** O filtro, a guarda dele no `tests/workflow.test.cjs` e os jobs da etapa 4 entram num PR que já roda tudo, antes do 2a. O conjunto inteiro sob demanda sai por `workflow_dispatch`, nunca por rótulo.
+- **O laudo no Pro Max.** O laudo inteiro no Pro Max continua no Mac, no fim de cada PR. Na CI, um aparelho só.
+- **Para encurtar a espera.**
+  - O portão do Mac vale por tarefa, e o push para a CI vai nos pontos de controle, com os consertos juntos, porque cada push cancela o run em curso.
+  - As sondas `proto/` rodam só com o job delas, fora da janela do run do PR.
+
+**Escondido na `main`.** Só por ausência: a porta, o toque, o botão ou a aba entram no PR que completa o destino. Até lá, os testes abrem a tela pelo `CUSTTA_ABRIR=<rota>:<id>` de Debug, que não vai ao Release (o `nm` confere). A `main` fica publicável em qualquer commit.
+
+**Marcos e espera.**
+- **O build.** O TestFlight sai do merge que fecha o marco, com uma tag (`etapa4-marco-1`, …). Um conserto urgente sai da tag, não da `main` no meio do marco.
+- **A espera.** Dentro do marco, nenhum PR espera build. O 1º PR do marco seguinte pode ser feito durante o teste do Giovani no iPhone, mas só é mesclado depois do OK dele no build.
+- **O OK do meio do marco, recomendação a confirmar com ele:** nos PRs do meio do marco, o OK de merge vem pelo lado a lado (simulador × print do mockup) anexado ao PR, e o iPhone fica para o fecho.
+- **O checklist.** Cada marco tem um checklist do aparelho, com VoiceOver, Controle por Voz e a letra máxima. O da etapa fecha no 4b.
+- **Cada PR nasce num worktree novo,** a partir da `origin/main` atualizada.
 
 ## Conta
 
@@ -274,41 +310,161 @@ Os mesmos portões da etapa 3, estendidos:
 3. **Telas (XCUITest):**
    - a obra nos estados (sem orçamento, sem gastos, pronta, vendida com lucro e com prejuízo), as portas só com gastos e a barra que abre os Gráficos;
    - o anel: tocar, tocar de novo, "Outros", "Ver gastos" e a linha que abre a folha; editar um gasto na folha e ver o gráfico mudar atrás;
-   - os gráficos de mês: tocar, arrastar e, com o VoiceOver, o ajustável que troca o mês;
+   - os gráficos de mês: tocar, arrastar e rolar a tela começando no gráfico; o ajustável que troca o mês se prova dentro do processo, porque o `increment()` do XCUITest só existe no macOS;
    - os estados dos Gráficos: 1 gasto, 1 mês, 1 tópico, tópico pequeno, a obra vendida e sem gastos (apagando o último gasto pela folha);
    - o Relatório: abrir e fechar tópico; Selecionar com nenhum, um e vários, e o marcador do tópico nos 3 estados; vendida; sem venda;
    - a busca: com e sem acento, o tópico que abre sozinho, nada encontrado e "Limpar a busca", o Selecionar sobre o resultado, "Marcar os N achados" e o aviso dos marcados fora da busca;
    - o "Vale a pena?": sem obra, sem preço, menos de 1 mês, vale, rende menos, o − e o + nos limites 0 e 120, a troca de obra;
    - "Exportar PDF": a folha do sistema aparece, e o arquivo, lido pelo PDFKit, tem as páginas e os textos esperados.
 4. **Reduzir movimento:** o anel aparece pronto. O XCUITest não vê transiente, então a entrada se prova por vídeo ou por uma rajada de prints.
-5. **Leitura sobre o vidro e acessibilidade:** o laudo de leitura (portão na CI) e as auditorias cobrem as telas novas e a obra nova nos dois temas, na letra padrão e na máxima, no 18 Pro e no Pro Max. As marcas de gráfico (pedaços do anel, linhas, barras e a barra empilhada) entram no laudo com o mínimo de 3:1 do mockup.
+5. **Leitura sobre o vidro e acessibilidade:** o laudo de leitura (portão na CI) e as auditorias cobrem as telas novas e a obra nova nos dois temas, na letra padrão e na máxima, no 18 Pro e no Pro Max. As marcas de gráfico (pedaços do anel, linhas, barras e a barra empilhada) entram no laudo com o mínimo de 3:1 do mockup, por um modo de Debug que apaga só as marcas (conselho, item 1).
 6. **Prova de que nada caiu nas telas das etapas 1 a 3:** os tokens globais e a cápsula de abas mudam no PR 1. O laudo inteiro roda nos dois aparelhos, e as tabelas são comparadas palavra por palavra com as do commit anterior: fora das linhas que usam um token mudado, a diferença é zero; nas que usam, o contraste só sobe. A obra, que muda inteira, ganha cenas novas no lugar das antigas.
 7. **Conferência visual:** simulador lado a lado com os prints do mockup, tela a tela.
 8. **Conferência cruzada:** não há mutação nova, e a da etapa 3 continua. Os números das telas novas (os grupos e a soma do Relatório e a conta do simulador) vêm do PR 0 e são conferidos pelos vetores.
 9. **Site:** as suítes de browser continuam verdes no PR 0; os dois alinhamentos ganham teste de browser conferido por mutação.
 10. **Aparelho:** um checklist da etapa 4 no estilo do da etapa 3, testado pelo Giovani a cada build e fechado no PR 4.
 
-## Para o conselho
+## Decisões do conselho (29/10)
 
-Decisões grandes que o planejador leva ao conselho antes do plano: três subagentes Opus com lentes diferentes (desempenho e bateria; acessibilidade e legibilidade; fidelidade ao mockup, à HIG e ao spec), propostas às cegas, crítica cruzada e o Prumo como presidente. Quando a decisão depende de medida, um protótipo no simulador vem antes.
+O conselho rodou em 29/10, depois das sete confirmações e do adendo do Giovani sobre o tamanho dos PRs (seção "PRs").
+- **Propostas:** três subagentes Opus novos, um por lente, propuseram sozinhos. As lentes: desempenho e bateria; acessibilidade e legibilidade; fidelidade ao mockup, à HIG e ao spec.
+- **Crítica:** três críticos novos, nas mesmas lentes, criticaram às cegas as duas propostas das outras lentes.
+- **Presidência:** o Prumo.
+- **Medidas antes:** dois protótipos no simulador (iOS 27, iPhone 18 Pro), num clone fora do repositório.
 
-1. **Gráficos: Swift Charts × desenho próprio.** O spec do app nativo diz "Gráficos com Swift Charts (rosca, linha e barras)", mas o mockup pede, no anel, o que o Swift Charts não faz de fábrica: cada pedaço sai do topo e gira até o lugar, com atraso por índice; as pontas redondas montam uma na outra, com o aro de 2,5 pt; o piso de 10 pt de arco; o pedaço que engrossa no toque; o apagar por cor opaca. As opções vão de tudo em Swift Charts (`SectorMark`, `LineMark` e `AreaMark`, `BarMark`, `chartXSelection`), passando por linha e barras em Swift Charts com o anel desenhado (`Shape` ou `Canvas`), até tudo desenhado. Pesam:
-   - a fidelidade à entrada e ao toque C (brief 5) e o Reduzir movimento;
-   - o VoiceOver: o Swift Charts dá a descrição do gráfico e o gráfico em áudio; no desenho próprio, o `accessibilityChartDescriptor`, o ajustável que troca o mês e a lista do anel são feitos à mão;
-   - no gasto por mês: o hachurado e o tracejado das parcelas a vencer, a escala redonda, os 4 rótulos fixos mais o do mês escolhido com vão de 8 pt, o arrasto com vibração leve a cada mês e a placa atrás;
-   - o desempenho e a bateria: a entrada só quando a tela abre, o redesenho a cada quadro do arrasto, e a aurora e o globo, que já pausam na rolagem;
-   - a página 1 do PDF, que desenha o anel, a linha e as barras (item 2);
-   - o iOS 26 da CI e o 27 do aparelho.
-2. **PDF: como desenhar e paginar.** Páginas em SwiftUI renderizadas pelo `ImageRenderer` num contexto de PDF; o `UIGraphicsPDFRenderer`, com texto e linhas desenhados; ou a página 1 em SwiftUI (com os gráficos do item 1) e as tabelas desenhadas. Pesam:
-   - a fidelidade às 9 páginas do mockup e o texto selecionável (o contador copia número; o leitor de tela lê);
-   - a paginação por altura de linha (o mockup sugere 15 pt o gasto e 20 pt o tópico), a descrição longa que quebra linha (o limite de 500 caracteres vale só na edição, dados.js:3 e :6, e registro antigo pode passar dele), o cabeçalho repetido e o "(continuação)";
-   - a obra grande (centenas de gastos, dezenas de páginas): tempo, memória e a espera entre o toque e a folha;
-   - o PDF fixo: claro, letra padrão, pt-BR e A4 (595 × 842 pt), sem depender do tema nem da letra do aparelho;
-   - o teste: ler o PDF de volta (páginas e textos) num teste de unidade;
-   - a folha: `ShareLink`, com o arquivo gerado na hora, ou a do UIKit (`UIActivityViewController`), e onde o arquivo mora até sair.
-3. **Corte e ordem dos PRs.** A proposta da seção "PRs" (PR 0; identidade e obra; Gráficos; Relatório; "Vale a pena?" e PDF) contra outras, como os tokens globais num PR próprio antes de tudo, o "Vale a pena?" mais cedo por ser independente, ou o PDF junto do Relatório. Pesam: os tokens mexem no laudo do app inteiro; portas sem destino num build; o PDF depende dos gráficos e dos grupos do relatório; o tempo da CI por PR; o risco de a obra reescrita chegar sozinha a um build.
+**O que as medidas mostraram.**
+- **Anel.** O desenho próprio é um arco por pedaço, girado por `rotationEffect`. Ele gira igual à tira do mockup nos 9 instantes, não perdeu quadro em 5 entradas e custou +0,089 s de CPU acima do fundo. O `SectorMark` do Swift Charts cresce em vez de girar e não faz a ponta que monta nem o aro. Perdeu de 1 a 3 quadros por entrada e custou +0,129 s.
+- **Arrasto no gasto por mês, com o fundo parado.** O desenho próprio perdeu 0 quadro e gastou 0,125 s de CPU. O Swift Charts, com `DragGesture`, perdeu 3 quadros por arrasto (de 0 a 5), com intervalo de até 61 ms, e gastou 0,220 s. O `chartXSelection` e o `chartAngleSelection` não responderam ao toque sintetizado do XCUITest.
+- **Acessibilidade.**
+  - Com a acessibilidade feita à mão (um elemento ajustável com o nosso descritor), o Swift Charts e o desenho próprio empatam, com 1 achado só, o da fonte fixa do protótipo.
+  - Sem nada feito à mão, o Swift Charts deu 21 "Hit area is too small" e rótulos crus ("2025-08", "222.728"). No `SectorMark`, os setores ficaram sem rótulo e sem descritor.
+  - O anel próprio como lista de itens deu 0 achado na letra padrão e na máxima.
+- **PDF, com 5.000 gastos (214 páginas).**
+  - Tempo: as tabelas em UIKit saem em 0,76 s, contra 1,78 s em SwiftUI (3,0 contra 7,7 ms por página). A paginação leva de 121 a 134 ms.
+  - Thread e memória: fora da thread principal, o UIKit a prende só na página 1 (de 9 a 20 ms) e gera o mesmo PDF. A memória fica no máximo 1,8 MB acima da de antes.
+  - Conteúdo: as duas formas dão texto de verdade, 0 imagem e fontes embutidas, e nenhuma das duas marca o PDF.
+  - Linhas sumidas: `draw(with:)` numa altura infinita apaga linhas das descrições longas (38, 166 e 408 linhas com 500, 2.000 e 5.000 gastos). Na altura prevista, não apaga nenhuma.
+  - Quebra de linha: o `Text` do SwiftUI quebra a linha noutro lugar que a medida da paginação em 19 a 28% das descrições longas.
+- **CI, nos runs do #88, pelo GitHub.** Rodam 5 jobs de macOS por vez. Um push com os 10 jobs soma de 330 a 372 min de VM e leva de 79 a 96 min de relógio. O laudo e a auditoria são 53% desses minutos, e os últimos a fechar foram laudos esperando vaga. Um push novo cancela o run em curso (`cancel-in-progress`).
+- **O que não provam:** o iPhone (o simulador roda a 60 Hz, e a CPU é a do Mac), o iOS 26 da CI, o VoiceOver de verdade, o arrasto com o fundo andando e o gráfico dentro de uma tela que rola.
 
-Não vão ao conselho, porque o mockup ou o spec já fixam, ou porque são pequenas: textos, medidas e tokens do mockup; o número em mono que encolhe (resolvido acima, com a prova no plano); a busca do Relatório pela regra da etapa 3; a seleção, a busca e o mês escolhido morando na tela; a barra de soma no lugar da cápsula; a conta.
+**Quem ganhou cada crítica.** Cada crítico comparou duas propostas.
+- **Item 1 e item 2:** a proposta de fidelidade foi a melhor nas duas críticas que a leram. No item 1, a de desempenho ganhou da de acessibilidade; no item 2, a de acessibilidade ganhou da de desempenho.
+- **Item 3:** a proposta de desempenho foi a melhor nas duas críticas que a leram, e a de acessibilidade ganhou da de fidelidade.
+
+| Item | Decisão | Descartado | Por quê |
+| --- | --- | --- | --- |
+| 1. Gráficos | Os três desenhados pelo app, sem Swift Charts: marcas em `Shape`, todo texto em view e a acessibilidade feita à mão | tudo em Swift Charts; o anel próprio com a linha e as barras em Swift Charts; marcas e texto num `Canvas` | foi unânime nas três propostas. O Swift Charts não faz a entrada, a ponta nem o aro, e de fábrica reprova a auditoria. Com a acessibilidade feita à mão, empata no VoiceOver e perde no arrasto (medido). Contra o `Canvas` com texto pesou a crítica de acessibilidade: o texto desenhado ali escapa da auditoria, do teste de largura e do laudo |
+| 2. PDF | Tabelas em UIKit fora da thread principal, na altura prevista; a página 1 composta à parte, em SwiftUI; a paginação no núcleo; a folha do UIKit | tudo em SwiftUI; o `ShareLink`; a página 1 como as views da tela; a marcação prometida sem sonda | as três propostas escolheram as tabelas em UIKit. A crítica de fidelidade mostrou que a página 1 aprovada (`parte2-pdf-1.png`) não é a tela. Duas críticas trouxeram a marcação pela API do iOS 13, e a de desempenho pediu o custo dela medido antes |
+| 3. Corte e ordem | 11 PRs em 3 marcos, com o que pega o app inteiro primeiro; portões de CI por superfície que, na dúvida, rodam tudo | laudo e auditoria só no fecho do marco; escopo por lista de arquivos e por rótulo; um segundo aparelho na CI; 12 PRs em 4 marcos | pesaram três coisas. A regra da proposta de desempenho: o filtro, na dúvida, roda tudo, e a casca muda no PR que fecha o marco. A ordem da de fidelidade: a 3ª aba cedo, para as telas novas nascerem medidas com a cápsula final. A fila de 5 vagas da CI, que a crítica de desempenho mediu |
+
+### 1. Gráficos: desenho próprio nos três
+
+- **Conta pura.** A geometria sai de funções puras que devolvem `Path`. As regras ficam no núcleo, com teste:
+  - os pedaços (6 + "Outros"), o piso de 10 pt e o "<1%";
+  - o pedaço sob um ângulo e o mês sob um x;
+  - a escala redonda e os rótulos do eixo X;
+  - o mês padrão, os meses a vencer e as frases;
+  - a média, o maior e os meses.
+- **Anel.** Um `Shape` de arco por pedaço, com o aro, girado por `rotationEffect` com a curva e o atraso do mockup: é o que o protótipo mediu.
+  - O toque C apaga pela cor (`Color.mix`, iOS 18) e traz o escolhido à frente por `zIndex`, sem `opacity` nem filtro no grupo.
+  - A faixa de toque tem 44 pt ou mais no raio, não só a espessura do traço.
+- **Gráficos de mês.** As marcas ficam em `Shape`, uma camada por estado (pago, a vencer, hachura e escolhido). O protótipo mediu o `Canvas`, então o plano mede o `Shape` com o mesmo medidor. Se o `Shape` perder quadro, as marcas, e só elas, vão para o `Canvas`.
+- **Texto sempre em view.** Rótulos de eixo, leitura e legenda são `Text`, nunca `draw(Text…)` num `Canvas`, e uma guarda Node barra o desvio.
+  - Os rótulos param em 19 pt. Eles ganham uma exceção na auditoria por identificador, como a do título pequeno da barra (AuditoriaUITests.swift:75-87), e um teste de largura em 375 pt na letra máxima.
+  - A leitura acima do gráfico é mono e cresce com a letra.
+- **Entrada.** Só quando a tela é empurrada. Não roda ao voltar da folha nem com dado novo: aí o anel troca sem girar. Um toque encerra a entrada, e a lista aceita toque já no 1º quadro. Com Reduzir movimento, o anel aparece pronto.
+- **Toque e arrasto nos meses.**
+  - O toque escolhe o mês.
+  - O arrasto só assume quando o dedo anda na horizontal, por `UIGestureRecognizerRepresentable`, como o `ArrastoParaApagar` e a `BordaQuePergunta`. Assim a tela rola mesmo quando o dedo começa no gráfico.
+  - Cada mês novo dá uma vibração de seleção.
+  - Durante o arrasto, o fundo para, como na rolagem (`PausasDoFundo.mudou`, Movimento.swift:128).
+  - O protótipo não tinha rolagem, então o plano prova antes a rolagem que começa no gráfico.
+- **VoiceOver.**
+  - **Gráfico de mês:** um elemento ajustável, com o valor do mês escolhido ("outubro de 2026, R$ 29.905,40", ou "…, a vencer"), o descritor (1 série no gasto por mês, 2 na evolução) e rótulos de voz.
+  - **Prova:** o valor falado, o passo e o descritor são conta pura, com teste de unidade. A inspeção dentro do processo, como a do protótipo, fica como teste de fumaça, porque o `increment()` do XCUITest só existe no macOS.
+  - **Anel:** a lista de itens do Croqui (medida, 0 achado), num contêiner cujo rótulo traz o resumo: "Gasto por tópico: R$ 842.317,45 em 14 tópicos; o maior é Terreno, 38%".
+    - Cada item tem o quadro do pedaço. O toque duplo abre o detalhe do tópico, como a linha da lista, e "Outros" diz quantos tópicos junta.
+    - O "Ver gastos ›" é um botão de 44 pt que o VoiceOver e o Controle por Voz alcançam.
+  - **Dado novo:** quando o dado muda com a tela à vista, o VoiceOver é avisado, além da animação, como pede a HIG.
+- **Laudo das marcas.** Um modo de Debug apaga só as marcas, como o texto apagado apaga o texto. Com ele, o laudo mede a 3:1 os pedaços, as linhas, as barras e a barra empilhada, nos vidros Transparente e Fosco. A `BarraApagada` conta como dado.
+- **Vai ao Giovani: a linha 67 do spec geral.** Ela passa de "Gráficos com Swift Charts" para "Gráficos desenhados em SwiftUI, no visual do Custta, com a acessibilidade dos gráficos do sistema (descritor e gráfico em áudio)". A linha 110 fica: nada de biblioteca de terceiros.
+  - Se ele quiser o Swift Charts onde der, o anel fica próprio de qualquer jeito. A linha e as barras vão ao Swift Charts com a nossa acessibilidade por cima, ao custo medido no arrasto.
+  - Nesse caso entram duas provas no iOS 26: as marcas escondidas não viram achado, e o texto apagado alcança os rótulos dele.
+- **Descartado:** a proposta de acessibilidade trocava a lista do anel por um elemento de resumo. A troca não foi medida e mudava a recomendação do Croqui (crítica de fidelidade). O resumo foi para o rótulo do contêiner.
+
+### 2. PDF: tabelas em UIKit, página 1 à parte
+
+- **Página 1.** É composta à parte, como em `parte2-pdf-1.png`:
+  - o anel com a legenda ao lado e nada no meio;
+  - o "Gasto acumulado" sem eixo;
+  - as barras todas `PdfVerde`, com as futuras só no contorno.
+  
+  O desenho usa as marcas do item 1 (a geometria e os `Shape`), não as views da tela. O ambiente é explícito (claro, letra padrão, pt-BR, a paleta do PDF), com fontes fixas. O `ImageRenderer` a desenha na thread principal num PDF de uma página, que entra no arquivo por `drawPDFPage`.
+- **Da página 2 em diante.** O `UIGraphicsPDFRenderer` desenha com `NSAttributedString.draw(with:)`, sempre na altura prevista (`ceil(h) + 1`), nunca na infinita.
+  - Medida e desenho usam a mesma string e a mesma largura.
+  - Roda num `Task.detached`, com uma `autoreleasepool` por página, e escreve direto no arquivo.
+- **Paginação no núcleo.**
+  - Recebe as linhas de texto medidas, pelo mesmo motor do desenho.
+  - Parte a descrição maior que uma página.
+  - Repete o cabeçalho e põe o "(continuação)" sem os totais.
+  - Mantém o fim inteiro numa página e numera "página N de M".
+  - A largura da coluna de valor sai do maior valor.
+- **Botão.**
+  - Fica desabilitado no toque.
+  - Se a geração passar de ~150 ms, vira "Gerando PDF…", com o indicador do sistema e o aviso ao VoiceOver. É um texto novo.
+  - Um erro abre um alerta.
+  - Sair da tela cancela a geração e apaga o arquivo parcial.
+  - O fundo para durante a geração e com a folha aberta, como já para com uma folha aberta (PrincipalView.swift:54).
+- **Folha.** É o `UIActivityViewController`, com a URL do arquivo pronto. O arquivo fica em `tmp/PDF/<uuid>/Custta-<obra>.pdf`, sai ao fechar a folha, e o app varre os restos ao abrir. O `ShareLink` saiu: ele pede a URL antes do toque, ou gera às cegas depois da escolha do destino, sem retorno nem erro.
+- **Leitor de tela.**
+  - O título do documento (`kCGPDFContextTitle`) entra sempre.
+  - A marcação entra se a sonda passar. Ela usa a API do iOS 13 (`CGPDFContextBeginTag`/`EndTag`): documento em pt-BR, títulos, tabela com linhas e células e figura com texto alternativo na página 1.
+  - A sonda confere quatro coisas: a árvore gravada no iOS 26, a tabela atravessando páginas, a leitura pelo VoiceOver da Pré-Visualização e o custo com 5.000 gastos (tempo até +15%, memória e tamanho).
+  - Se a sonda não passar, o PDF sai sem marcação, na mesma forma.
+- **Testes.**
+  - Ler o PDF de volta: páginas, textos, valores inteiros, a ordem da linha e da página 1, 0 imagem, fontes embutidas com `ToUnicode`.
+  - Tinta em cada linha prevista, com descrições longas, na CI. É a prova contra as linhas que sumiam na altura infinita.
+  - Uma descrição de 3.000 caracteres.
+  - O mesmo PDF com o app no escuro, na letra máxima, com Negrito, Aumentar contraste, Reduzir transparência e o Fosco: igual em texto e em pixels. Nunca em bytes, porque o `/ID` e a data mudam.
+- **Vai ao Giovani: o OK para duas sondas na CI**, num ramo `proto/`, só com o job, como na etapa 3. Uma prova o gerador fora da thread principal no Swift 6.3.3; a outra, a marcação no iOS 26.
+- **Descartado:**
+  - tudo em SwiftUI: é 2,3 vezes mais lento, prende a thread principal, e o `Text` quebra a linha noutro lugar que a paginação;
+  - a comparação por bytes: reprova sempre;
+  - a página 1 como as views da tela "em modo papel": não é o desenho aprovado.
+
+### 3. Corte e ordem dos PRs
+
+A tabela e as regras estão na seção "PRs". O voto:
+- **Ordem.** Primeiro vem o que pega o app inteiro: os tokens, as peças, a obra e a 3ª aba (o "Vale a pena?", que muda a cápsula de toda tela). Depois vêm os Gráficos e o Relatório, e por último o PDF, que depende dos dois. Assim os Gráficos e o Relatório nascem medidos com a cápsula final (crítica de acessibilidade).
+- **Escondido na `main`.** Só por ausência, sem chave de liga-desliga. A porta, o toque ou o botão entram no PR que completa o destino. Até lá, a tela só abre pelo `CUSTTA_ABRIR=<rota>:<id>` de Debug (PrincipalView.swift:176-190), e o `nm` confere que ele não vai ao Release. A fileira de portas só aparece com as duas portas com destino, porque o mockup nunca mostra uma porta sozinha. Assim a `main` fica publicável em qualquer commit.
+- **Laudo e auditoria só no fecho do marco: não é seguro, e foi unânime.** O iOS 26 já pegou no laudo e na auditoria o que o Mac não via: a sombra do voltar e achados que só saíram na CI. Adiado, o vermelho cai no PR que fecha o marco, com dois ou três PRs já mesclados e a bisseção a 40–60 min por rodada. A variante segura, com os portões por superfície da seção "PRs", dá quase todo o ganho:
+  - os PRs do meio do marco que só trazem tela nova rodam 5 jobs, uns 45 min por tentativa, contra 13 jobs e 90 min ou mais;
+  - os PRs sem tela rodam 2 jobs, uns 20 min.
+- **Descartado:**
+  - escopo por lista de arquivos e por rótulo: na dúvida, roda menos; e pôr o rótulo dispara um run novo, que cancela o anterior;
+  - um segundo aparelho na CI: o laudo inteiro do Pro Max roda no Mac, no fim de cada PR, como desde 24/10;
+  - 12 PRs em 4 marcos: cada PR e cada TestFlight a mais pagam de novo o custo fixo de fechar.
+- **Vão ao Giovani:**
+  - a resposta sobre os jobs, acima;
+  - o OK dos PRs do meio do marco pelo lado a lado anexado ao PR (simulador × print do mockup), com o iPhone só no fecho;
+  - o "Vale a pena?" adiantado para abrir o marco 2;
+  - os 3 marcos.
+
+**Referências que mudariam o voto.** Nenhuma das 8 muda a técnica dos gráficos nem a do PDF.
+- **1:** pode trocar o gesto dos meses: segurar para varrer, ou passos com setas, se o Controle por Voz falhar no aparelho.
+- **2:** mexe no 6 + "Outros", no 0b e no 2a.
+- **4:** não muda nada. Ele aprovou a tira que gira, e mesmo um anel que só cresce ficaria sem a ponta e sem o aro no Swift Charts.
+- **7:** pode mexer nas colunas, pedir PDF/A (`kCGPDFContextCreatePDFA`, iOS 14) ou reforçar a marcação.
+- **5, 6 e 8:** mudam o tamanho do 3b e do 4a.
+
+Ficam de fora do conselho, porque o mockup ou o spec já fixam ou porque são pequenas:
+- os textos, as medidas e os tokens do mockup;
+- o número em mono que encolhe;
+- a busca do Relatório pela regra da etapa 3;
+- a seleção, a busca e o mês escolhido morando na tela;
+- a barra de soma no lugar da cápsula;
+- a conta.
 
 ## Decisões tomadas por recomendação
 
@@ -327,7 +483,8 @@ Não vão ao conselho, porque o mockup ou o spec já fixam, ou porque são peque
   - o meio do anel ("total gasto · N tópicos · Ver gastos ›") e a leitura da evolução ("outubro de 2026 · até hoje · no banco já seria", no lugar do "out/26 · gasto … · corrigido …" do site);
   - "Fora do gráfico: R$ … a vencer (depois de hoje).", e na vendida a frase do quadro `est-vendida` ("… com data depois da venda.");
   - "Inclui R$ … a vencer.", "Outros · N tópicos", "Lucro da venda · acima do banco" e "e mais N tópicos";
-  - os convites da obra e dos Gráficos sem gastos, os rótulos do gasto por mês e os textos da barra de soma, da faixa e do PDF.
+  - os convites da obra e dos Gráficos sem gastos, os rótulos do gasto por mês e os textos da barra de soma, da faixa e do PDF;
+  - o "Gerando PDF…" do botão, quando a geração passa de ~150 ms (conselho, item 2).
 
 **Deste spec.**
 - **PR 0 na forma das etapas 2 e 3:** a cópia em Swift e os leitores no mesmo PR do site, para os dois lados serem conferidos pelos mesmos vetores desde o primeiro commit.
@@ -353,16 +510,22 @@ Regra dele: ninguém improvisa referência. O Croqui desenhou sem estas e listou
 7. **PDF de relatório de obra:** um exemplo real que contador ou banco aceite (as colunas e os totais que esperam).
 8. **Teclado de valor em campo único:** o da etapa 3 tinha ‹ › para trocar de tópico; aqui há um campo só.
 
+O conselho de 29/10 seguiu sem elas. As que mudariam o voto estão no fim de "Decisões do conselho".
+
 ## Riscos
 
 - **Peças compartilhadas no app inteiro** (confirmação 5): o âmbar de texto do claro, o globo, o halo do título e a cápsula de abas mudam telas das etapas 1 a 3. Mitigado pela comparação palavra por palavra do laudo inteiro (seção "Testes e validação", item 6).
 - **A obra reescrita** é a tela mais usada. Os testes de tela das etapas 2 e 3 sobre ela (lista, busca, arrastar, "A vencer", folhas, destaque da linha nova, rolagem) continuam verdes, e as cenas novas entram no laudo.
-- **O anel** (ver "Para o conselho"): o Swift Charts não anima a entrada do mockup, e o desenho próprio custa o VoiceOver dos gráficos.
-- **O PDF:** descrição longa, obra com centenas de gastos, a fonte mono no arquivo e o PDF que não pode depender do tema nem da letra.
+- **Gráficos desenhados pelo app** (conselho, item 1). A acessibilidade dos gráficos é feita à mão: o ajustável, o descritor, a lista do anel e os rótulos de eixo. As mitigações:
+  - o valor falado, o passo e o descritor em conta pura, com teste;
+  - a inspeção dentro do processo;
+  - a auditoria e o laudo das marcas no iOS 26;
+  - o VoiceOver de verdade no checklist de cada marco.
+- **O PDF.** Os riscos são a descrição longa, a obra com milhares de gastos, a fonte mono no arquivo e o PDF que não pode depender do tema nem da letra. O protótipo mediu tudo isso no iOS 27 (conselho, item 2). Faltam o iPhone, o iOS 26, o Swift 6.3.3 da CI e a marcação, que dependem das sondas.
 - **O número que encolhe:** o laudo não vê corte; a prova é o teste de largura do plano.
 - **Barra de soma, teclado e cápsula:** busca e Selecionar abertos juntos, na letra máxima, em 375 pt (13 mini).
 - **Mudança de outro aparelho com o Selecionar aberto:** a seleção sobrevive e o gasto que some sai da soma; pede teste com escrita remota pelo emulador, como o achado 3 da etapa 3.
-- **Tempo da CI.** No último run do `app-ios.yml` (#88, 27/10): `app` em 50 min e `app-etapa3` em 58 (teto de 90); os outros, de 26 a 42 min (teto de 60). As telas novas somam cenas ao laudo e às auditorias; o plano mede e abre jobs da etapa 4, como fez na etapa 3.
+- **Tempo da CI.** No último run do `app-ios.yml` (#88, 27/10): `app` em 50 min e `app-etapa3` em 58 (teto de 90); os outros, de 26 a 42 min (teto de 60). As telas novas somam cenas ao laudo e às auditorias; o plano mede e abre jobs da etapa 4, como fez na etapa 3. A CI roda 5 jobs de macOS por vez, então cada job a mais soma espera; os portões por superfície (seção "PRs") cortam os jobs dos PRs que só trazem regra ou tela nova.
 - **Confirmações:** as sete que este spec pedia foram aprovadas por ele em 29/10 (fim de "Decisões de desenho"). As outras recomendações que mexem em detalhe do quadro (o % do meio do anel, os centavos, o "<1%" na folha, o aviso dos 24 meses) seguem se ele não vetar.
 
 ## Fora do escopo

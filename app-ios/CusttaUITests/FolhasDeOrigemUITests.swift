@@ -124,12 +124,15 @@ final class FolhasDeOrigemUITests: XCTestCase {
             XCTAssertTrue(linhas[2].label.hasPrefix("Tinta acrílica, parcela 2 de 3. Pintura, Cartão, "), linhas[2].label)
             XCTAssertEqual(linhas[2].value as? String, "R$\u{a0}2.300,00")
         }
-        // Agrupados por mês: o cabeçalho do mês do 2º vencimento, com o total dele (o do 3º, se for o mesmo mês).
+        // Agrupados por mês: o cabeçalho do mês do 2º vencimento, com o total de todos os vencimentos que caem nele (o 1º
+        // também cai nele no começo do mês e nos três últimos dias; o 3º, salvo no dia em que só ele vira o mês).
         let mesDoSegundo = mes(daquiA: 24)
-        let total = mes(daquiA: 25) == mesDoSegundo ? "R$\u{a0}8.450,00" : "R$\u{a0}6.150,00"
+        let vencimentos = [(dias: 3, reais: 4_800), (dias: 24, reais: 6_150), (dias: 25, reais: 2_300)]  // g039, g032, g045
+        let soma = vencimentos.filter { mes(daquiA: $0.dias) == mesDoSegundo }.reduce(0) { $0 + $1.reais }
+        let total = String(format: "R$\u{a0}%d.%03d,00", soma / 1000, soma % 1000)
         let cabecalho = naFolha(app, "mes-\(mesDoSegundo)")
         XCTAssertNotNil(cabecalho, "o cabeçalho do mês")
-        XCTAssertTrue(cabecalho?.label.contains(total) == true, cabecalho?.label ?? "")
+        XCTAssertTrue(cabecalho?.label.contains(total) == true, "\(total) em \(cabecalho?.label ?? "")")
         if let cabecalho, linhas.count == 3 { XCTAssertLessThan(cabecalho.frame.maxY, linhas[1].frame.minY + 1) }
         // A frase do fim: o que vem depois dos 30 dias está no "A vencer" da obra.
         let ponte = app.elemento("ponteDoAPagar")

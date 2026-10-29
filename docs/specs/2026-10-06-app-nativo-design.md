@@ -64,7 +64,7 @@ Cada camada tem um papel só e é testável sem as outras.
 - Navegação do sistema: `TabView` com as três abas (Obras, Vale a pena?, Ajustes) e `NavigationStack` para obra, relatório e gráficos.
 - Sheets, diálogos de confirmação, arrastar para apagar, puxar o sheet e voltar pela borda usam o comportamento do sistema, vestidos com o visual do Custta. `gestos.js` e `ui-confirm.js` não têm equivalente a escrever.
 - **Componentes de identidade, escritos uma vez e reusados em todas as telas:** fundo com aurora (nas cores do skin) e globo; superfície de vidro para cartões, painéis e barras; cápsula de abas com o botão +; título do login escrito à mão; entrada de valor com teclado próprio. Cada um respeita "reduzir movimento", o tema claro e a letra grande, e não pode custar rolagem lisa nem bateria: animação pausa fora da tela e durante a rolagem.
-- Gráficos com Swift Charts (rosca, linha e barras), no visual do Custta.
+- Gráficos desenhados em SwiftUI (rosca, linha e barras), no visual do Custta, com a acessibilidade dos gráficos do sistema (descritor e gráfico em áudio). Até 29/10 dizia Swift Charts; o Giovani trocou depois do conselho da etapa 4 (`docs/specs/2026-10-29-app-nativo-etapa4-design.md`), para manter a animação do anel que gira.
 - Compartilhar e salvar PDF com a folha de compartilhamento do sistema.
 
 ### 3. Dados e sincronização

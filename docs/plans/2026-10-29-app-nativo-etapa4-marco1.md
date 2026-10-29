@@ -79,6 +79,7 @@ As do Giovani estão no spec, nas seções "Decisões de desenho", "PRs" e "Deci
 | O "<1%" na lista da tela Orçamento (**a confirmar antes do merge do 1c**) | Se a função da folha também serve à lista, a lista muda junto | Assim o número não muda ao abrir a folha. Mas a tela Orçamento está fora do escopo da etapa |
 | O `gastoPorTopico` em Swift | Perde o `hoje:` e o `taxaMensal:` no 1c | Os dois não mudam o resultado. Tirá-los no PR 0 mexeria no app |
 | A CI do marco 1 (decisão do Orquestrador em 29/10, como rotina, informada ao Giovani; muda o portão da tabela para o 0 e o 0b) | Igual à de hoje: o 0 e o 0b rodam os 10 jobs, uns 90 min, e não só os do núcleo. O filtro por superfície e os jobs da etapa 4 entram no 4a | É recomendação deste plano. O spec pede o filtro num PR que já roda tudo, antes do 2a. Pôr o filtro no 0 juntaria um risco de CI ao PR do site, e um PR só de CI seria o 12º. O custo: o 0 e o 0b esperam mais, e um rerun no iOS 26 tira o PR do merge automático |
+| O tempo dos jobs da CI no marco 1 (pedido do Orquestrador em 29/10, depois do #93; a escolha é decisão dele, informada ao Giovani) | Nada muda no `app`: o teto continua em 90 min. O teto do `laudo-etapa3` sobe de 60 para 75 min no PR 0b, numa linha dita no corpo do PR (Tarefa 14; decisão do Orquestrador em 29/10). O `app` só é partido por classe, como foi o `app-etapa3`, se passar de ~140 testes de tela ou de 70 min numa VM normal | O teto do `app` é 90, não 60 (`app-ios.yml`, linha 81). Os 60,1 min da 1ª rodada do #93 reprovaram por um teste instável (`EntradaUITests.testMensagensDoFormulario`, espera de 5 s), não pelo teto. Nos 10 últimos runs com os mesmos 105 testes de tela, o `app` levou de 46,9 a 67,5 min (mediana 58,4). O que varia é a VM, de 22 a 31 s por teste, e os mesmos 101 testes já levaram de 32,3 a 48,9 min. Desde 18/10, o job ganhou só 4 testes de tela (Ajustes, 24/10) e 51 de unidade (+40 s). O marco 1 põe uns 14 testes de tela no `app`: 6 da vitrine e da cápsula, no 1a e no 1b, e uns 8 da obra e da costura, no 1c. A conta dá ~65 min numa VM normal e ~75 na mais lenta já vista, ainda com 15 de folga. Os testes de tela da etapa 4 vão para jobs próprios no 4a, então o `app` para de crescer. O job mais perto do teto é o `laudo-etapa3`: mediana 46, máximo 57,3 de 60, e o marco 1 não lhe acrescenta nada. Partir o `app` agora custaria mais um job de macOS, com ~10 min de preparo, e não mudaria o tempo do run, que depende das 5 vagas (~360 min de job por run) |
 
 ## Como entregar
 
@@ -92,8 +93,10 @@ As do Giovani estão no spec, nas seções "Decisões de desenho", "PRs" e "Deci
 - **O PR 0 muda o site no merge:** os dois alinhamentos vão ao ar em custta.com.br. A prévia da Vercel é conferida nos dois viewports antes do merge, como no ponto de controle do PR 0. **Exceção ao merge automático:** o PR 0 espera a resposta do Giovani sobre o preço vazio na obra sem venda estimada (Decisões). As outras pendências "a confirmar" têm prazo na própria linha.
 - **CI no marco 1: igual à de hoje.**
   - Todo PR que mexe no app, no núcleo ou nos vetores roda os 10 jobs do `app-ios.yml`, de 79 a 96 min de relógio, porque a conta tem 5 vagas de macOS.
+  - A única mudança na CI do marco 1 é o teto do `laudo-etapa3`, que sobe de 60 para 75 min no 0b (Decisões).
   - O filtro por superfície, a guarda dele e os jobs da etapa 4 entram no 4a, o primeiro PR do marco 2, que já roda tudo (spec, "Onde moram o filtro e os jobs"). Antes do 2a, que é o primeiro PR que só traz tela nova.
   - O laudo inteiro no Pro Max roda no Mac, no fim de cada PR do app (1a, 1b e 1c).
+  - O tempo do job `app` vai no texto de cada PR do app (1a, 1b e 1c): os minutos e os testes de tela do run. Fica de olho se ele passar de 70 min numa VM normal, ou seja, com menos de 26 s por teste (Decisões).
 - **Fecho do marco 1:**
   - o merge do 1c leva a tag `etapa4-marco-1`;
   - o TestFlight sai da tag, com o OK do Giovani, e o checklist do aparelho do marco 1 vai junto;
@@ -2278,7 +2281,7 @@ git commit -m "chore: nova versão do cache offline para as regras da análise" 
 
 ## PR 0b (núcleo): as regras novas do app e a paginação do PDF
 
-Um PR só do núcleo, em seis commits, com as regras que o app da etapa 4 tem e o site não: os pedaços do anel e da barra empilhada (6 cores e o "Outros"), com o piso de arco e de largura, o pedaço sob o dedo e o "<1%" (Tarefa 9); a escala redonda, os rótulos dos meses e o mês sob o dedo (Tarefa 10); o mês de referência e o padrão, os meses a vencer, as frases do que ficou fora, o aviso dos 24 meses e a média, o maior e os meses (Tarefa 11); a linha do tópico no Relatório, com "N de M gastos" e a parte com 1 casa (Tarefa 12); e a paginação da tabela do PDF, com as colunas pelo maior valor (Tarefa 13). Antes delas, o achado 2 do PR 0: o `confere` dos testes deixa de aceitar infinito contra número, e o contorno do leitor do simulador sai (Tarefa 8, só teste). Nenhuma regra tem vetor do site, porque o site não as tem: cada uma tem teste próprio, conferido por mutação (56 de 56 mortas). O risco é baixo: tudo é conta pura, sem tela, sem gravação e sem mudança nas regras com vetor; o `anoMes` e o `chaveMes` das séries só deixam de ser privados. Na `main`, as regras ficam sem uso até as telas: a barra no PR 1c, os Gráficos no 2a e no 2b, o Relatório e a busca no 3a e o PDF no 4b. Na CI, o PR roda os 10 jobs do `app-ios.yml`, como o PR 0: o nível "núcleo" da tabela do spec depende do filtro por superfície, que o plano recomenda pôr no 4a (a confirmar com o Giovani; ver as Decisões). Um rerun no iOS 26, mesmo num job de tela que este PR não toca, tira o PR do merge automático. No marco 1 deste plano, ele vem depois do 0 e antes do 1a. São 552 linhas de produção (acréscimos + remoções em `CusttaNucleo/Sources/`, pelo `git diff --numstat`), dentro dos ~450–600 da tabela; os testes vão de 243 em 39 suítes para 276 em 44 no `swift test` do núcleo, e o `npm run test:unit` fica em 407.
+Um PR do núcleo, em sete commits, com as regras que o app da etapa 4 tem e o site não: os pedaços do anel e da barra empilhada (6 cores e o "Outros"), com o piso de arco e de largura, o pedaço sob o dedo e o "<1%" (Tarefa 9); a escala redonda, os rótulos dos meses e o mês sob o dedo (Tarefa 10); o mês de referência e o padrão, os meses a vencer, as frases do que ficou fora, o aviso dos 24 meses e a média, o maior e os meses (Tarefa 11); a linha do tópico no Relatório, com "N de M gastos" e a parte com 1 casa (Tarefa 12); e a paginação da tabela do PDF, com as colunas pelo maior valor (Tarefa 13). Por último, uma linha da CI: o teto do job `laudo-etapa3` sobe de 60 para 75 min (Tarefa 14). Antes delas, o achado 2 do PR 0: o `confere` dos testes deixa de aceitar infinito contra número, e o contorno do leitor do simulador sai (Tarefa 8, só teste). Nenhuma regra tem vetor do site, porque o site não as tem: cada uma tem teste próprio, conferido por mutação (56 de 56 mortas). O risco é baixo: tudo é conta pura, sem tela, sem gravação e sem mudança nas regras com vetor; o `anoMes` e o `chaveMes` das séries só deixam de ser privados. Na `main`, as regras ficam sem uso até as telas: a barra no PR 1c, os Gráficos no 2a e no 2b, o Relatório e a busca no 3a e o PDF no 4b. Na CI, o PR roda os 10 jobs do `app-ios.yml`, como o PR 0: o nível "núcleo" da tabela do spec depende do filtro por superfície, que fica para o 4a (decisão do Orquestrador; ver as Decisões). O corpo do PR diz, numa linha, que o PR também sobe o teto do `laudo-etapa3` para 75 min (decisão do Orquestrador em 29/10): é a única mudança fora do núcleo, e o 0b roda todos os jobs e não vai ao site. Um rerun no iOS 26, mesmo num job de tela que este PR não toca, tira o PR do merge automático. No marco 1 deste plano, ele vem depois do 0 e antes do 1a. São 552 linhas de produção (acréscimos + remoções em `CusttaNucleo/Sources/`, pelo `git diff --numstat`), dentro dos ~450–600 da tabela; os testes vão de 243 em 39 suítes para 276 em 44 no `swift test` do núcleo, e o `npm run test:unit` fica em 407.
 
 **Branch:** `feat/regras-novas-do-app-no-nucleo`. **Título:** `feat: regras novas da análise e paginação do PDF no núcleo`.
 
@@ -2294,6 +2297,7 @@ Um PR só do núcleo, em seis commits, com as regras que o app da etapa 4 tem e 
 - `TopicoNoRelatorio.swift` (novo, 12): `contagemDeGastos`, `parteComUmaCasa` e `linhaDoTopicoNoRelatorio`.
 - `PaginacaoDoPDF.swift` (novo, 13): `MedidasDoPDF`, `colunasDoPDF`, `maiorValorDoPDF`, `paginarTabelaDoPDF` e `rodapeDoPDF`.
 - `Series.swift` (10 e 11): o `anoMes` e o `chaveMes` deixam de ser privados.
+- `.github/workflows/app-ios.yml` (14): o teto do job `laudo-etapa3`, de 60 para 75 min, com o porquê no comentário.
 - Testes: `Vetores.swift`, `VetoresTests.swift` e `SimuladorTests.swift` (8); uma suíte nova por tarefa, `PedacosTests` (9), `EixosTests` (10), `MesesDosGraficosTests` (11), `TopicoNoRelatorioTests` (12) e `PaginacaoDoPDFTests` (13).
 
 ### Ponto de controle do fim do PR
@@ -3877,6 +3881,55 @@ git add app-ios/CusttaNucleo/Sources/CusttaNucleo/PaginacaoDoPDF.swift app-ios/C
 git commit -m "feat: paginação da tabela do PDF no núcleo, coluna pelo maior valor" -m "O PDF da etapa 4 desenha a tabela de gastos em UIKit, e a quebra de página sai de uma conta pura no núcleo, que se testa sem tela. Ela recebe a altura de cada linha do texto de cada gasto, medida pelo mesmo motor do desenho, e devolve o que vai em cada página." -m "O tópico nunca fica sozinho no fim da página; o gasto que não cabe passa para a seguinte, que repete o tópico com \"(continuação)\" e sem os totais; a descrição maior que uma página é partida entre as linhas do texto, como a que não cabe na primeira página da tabela, que assim não sai em branco; o fim, com o total e a venda, fica inteiro. O rodapé diz \"página N de M\", contando a página do resumo. As três colunas de valor têm a largura do maior valor da tabela, que em fonte mono é o de texto mais longo, e a descrição fica com o resto."
 ```
 
+### Task 14: Teto de 75 min no job laudo-etapa3
+
+O job `laudo-etapa3` do `app-ios.yml` (as leituras e as auditorias da tela Orçamento e das folhas de origem) tem teto de 60 min (`app-ios.yml:425`). Nos 15 runs de 24 a 29/10, sem cena nova, ele levou 46 min na mediana e chegou a 57,3 (run 40157409790, que reprovou e coletou o diagnóstico): é o job da CI mais perto do teto. O teto passa a 75 min, e o comentário do job registra o porquê, como os outros. Nenhum teste muda: a guarda do `tests/workflow.test.cjs` só cobra que todo job do app nativo tenha `timeout-minutes`. Decisão do Orquestrador em 29/10 (Decisões): a linha entra no 0b, que roda todos os jobs e não vai ao site, e o corpo do PR diz isso.
+
+**Files:**
+- Modify: `.github/workflows/app-ios.yml`
+
+- [ ] **Step 1: Subir o teto**
+
+Em `.github/workflows/app-ios.yml`:
+
+```diff
+--- a/.github/workflows/app-ios.yml
++++ b/.github/workflows/app-ios.yml
+@@ -422,7 +422,9 @@ jobs:
+     # estas três passam para o laudo-etapa3-b (como o app-etapa3-b), que também roda as leituras do PR 3.
+     # No fim do PR 3, sem as três, 46,2 min: o orçamento em 22,9 e a leitura das folhas de origem em 15,0 (run
+     # 40526951027, 2ª tentativa; na 1ª, a VM lenta passou dos 10 s de espera na cena do fim do A pagar).
+-    timeout-minutes: 60
++    # Na etapa 4 (PR 0b), o teto passa de 60 para 75: nos 15 runs de 24 a 29/10, sem cena nova, o job levou 46 min na
++    # mediana e chegou a 57,3 (run 40157409790, que reprovou e coletou o diagnóstico).
++    timeout-minutes: 75
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+```
+
+- [ ] **Step 2: Ver passar**
+
+Run:
+```bash
+node --test tests/workflow.test.cjs 2>&1 | grep -E '^ℹ (pass|fail)'
+npm run test:unit 2>&1 | grep -E '^ℹ (pass|fail)'
+git diff --stat
+```
+Expected: `ℹ pass 1` e `ℹ fail 0` na guarda; `ℹ pass 407` e `ℹ fail 0` no `test:unit`; e só o workflow no diff:
+```
+ .github/workflows/app-ios.yml | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+```
+Na CI do PR, o `laudo-etapa3` aparece com o teto novo e roda como antes.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add .github/workflows/app-ios.yml
+git commit -m "ci: teto de 75 min no job laudo-etapa3" -m "O job do laudo das telas da etapa 3 levou 46 min na mediana dos 15 runs de 24 a 29/10 e chegou a 57,3, a menos de 3 min do teto de 60, sem cena nova. Com 75, uma VM lenta, ou uma reprovação que coleta o diagnóstico, não corta o job antes de ele subir o resultado."
+```
+
 ---
 
 ## Para os planos dos marcos 2 e 3
@@ -3911,3 +3964,6 @@ O que as fatias e as sondas deste marco deixam para os planos seguintes.
 **Da revisão dos PRs 0 e 0b.**
 - O `linhaDeGasto(...).titulo` do núcleo já troca a descrição vazia pelo nome do tópico, com teste. O 3a e o 4b o reusam, em vez de repetir a troca.
 - O 2a vai mostrar valores arredondados ao real (R$ 319.847,85 vira R$ 319.848), e o núcleo ainda não tem essa função. Ela entra no plano do 2a, com teste.
+
+**Para o 4a, da CI (Decisões).**
+- Os testes de tela da etapa 4 vão para jobs próprios, e o `app` para de crescer. Ele termina o marco 1 com uns 119 testes de tela.

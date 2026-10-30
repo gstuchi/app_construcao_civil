@@ -1234,12 +1234,12 @@ function renderRelatorio(){
 /* ===== SERÁ QUE VALE A PENA? ===== */
 function renderSimula(){
   const sel = $('#simObra');
-  const cands = db.obras.filter(o=>o.fase!=='vendida' && o.gastos.length);
-  const cur = sel.value;
-  sel.innerHTML = cands.length
-    ? cands.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')
+  // as obras e a escolhida: calc.js obrasSimulador (o app nativo usa o mesmo)
+  const { elegiveis, escolhida } = OBRA_CALC.obrasSimulador(db.obras, sel.value);
+  sel.innerHTML = elegiveis.length
+    ? elegiveis.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')
     : '<option value="">— crie uma obra com gastos —</option>';
-  if(cands.some(o=>o.id===cur)) sel.value = cur;
+  if(escolhida) sel.value = escolhida;
   simulaCompute();
 }
 
@@ -1249,7 +1249,8 @@ function simulaCompute(){
   if(!o){ out.innerHTML = ''; return; }
 
   const vInp = $('#simValor');
-  if(!vInp.value && o.valorEstimadoVenda && !vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(o.valorEstimadoVenda);
+  // enquanto a pessoa não digitou, o preço acompanha a venda estimada da obra escolhida (vazio sem estimada)
+  if(!vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(OBRA_CALC.precoInicialSimulador(o));
   /* A conta e os textos: calc.js contaSimulador e textosSimulador (o app nativo usa os mesmos). Os meses param em 120 na
      conta, mesmo digitados além do teto do campo. A obra com menos de 1 mês fica sem taxa (o % ao mês explodiria), e a TIR
      passa da taxa do banco exatamente quando a venda passa do corrigido. */

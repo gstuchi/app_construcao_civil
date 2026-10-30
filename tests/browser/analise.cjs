@@ -123,6 +123,17 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     await page.evaluate(()=>{showView('simula');renderSimula();});
     assert.equal(await page.locator('#simObra').inputValue(),'a');
     assert.equal(await page.locator('#simValor').inputValue(),'450.000,00');
+    // As obras: as não vendidas com gastos, na ordem do documento. Enquanto a pessoa não digitou, o preço acompanha a venda
+    // estimada da obra escolhida (achado 4: a segunda obra herdava o preço da primeira); sem estimada, o campo fica vazio
+    assert.deepEqual(await page.$$eval('#simObra option',os=>os.map(o=>[o.value,o.textContent])),
+      [['a','Casa Alphaville'],['p','Pronta Jardins'],['s','Terreno novo'],['z','Obra zerada']]);
+    await page.locator('#simObra').selectOption('p');
+    assert.equal(await page.locator('#simValor').inputValue(),'100.000,00');
+    await page.locator('#simObra').selectOption('s');
+    assert.equal(await page.locator('#simValor').inputValue(),'');
+    assert.equal(texto(await page.locator('#simOut').textContent()),'Digite o preço de venda pra ver a conta.');
+    await page.locator('#simObra').selectOption('a');
+    assert.equal(await page.locator('#simValor').inputValue(),'450.000,00');
     assert.deepEqual(await cartao(),[false,'Vale a pena','8,63% ao mês','vendendo hoje · banco paga 1% · rende 8,6× o banco']);
     assert.deepEqual(await tabela(),[linha('Custo até a venda','R$ 202.400,50','R$ 222.689,91'),linha('Venda','R$ 450.000,00','R$ 450.000,00'),
       linha('Lucro','R$ 247.599,50','R$ 227.310,09','pos','pos','rep-total'),linha('% sobre o custo','122,3%','102,1%','pos','pos'),
@@ -152,9 +163,20 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     // Sem preço, a frase do site e nenhuma conta
     await page.locator('#simValor').fill('0');
     assert.equal(texto(await page.locator('#simOut').textContent()),'Digite o preço de venda pra ver a conta.');
+    // Depois de digitar, o preço fica o digitado, em qualquer obra
+    await page.locator('#simValor').fill('95.000,00');
+    await page.locator('#simObra').selectOption('a');
+    assert.equal(await page.locator('#simValor').inputValue(),'95.000,00');
+    assert.equal((await tabela())[1][2][0],'R$ 95.000,00');
+    // A escolhida continua escolhida ao redesenhar; vendida, cai na primeira elegível
+    await page.locator('#simObra').selectOption('z');
+    await page.evaluate(()=>renderSimula());
+    assert.equal(await page.locator('#simObra').inputValue(),'z');
+    await page.evaluate(()=>{const o=obraById('z');o.fase='vendida';o.venda={valor:1,data:'2026-10-01'};renderSimula();});
+    assert.equal(await page.locator('#simObra').inputValue(),'a');
 
     assert.deepEqual(await page.evaluate(()=>errosAnalise),[]);
     await ctx.close();
-    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos, fim, linha da correção e soma da seleção do relatório; conta e textos do "Vale a pena?"');
+    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos, fim, linha da correção e soma da seleção do relatório; conta, textos, obras e preço do "Vale a pena?"');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -37,6 +37,20 @@ struct SimuladorTests {
         #expect(Double(mesesSimulador) == Vetores.casos("calc.MESES_SIMULADOR")[0].saida.comoNumero)
     }
 
+    @Test func obrasDoSimulador() {
+        for c in Vetores.casos("calc.obrasSimulador") {
+            let r = obrasSimulador(c.args[0].obras, escolhida: c.args[1].comoTexto)
+            confere(.objeto(["elegiveis": .lista(r.elegiveis.map { .objeto(["id": .texto($0.id), "nome": .texto($0.nome)]) }),
+                             "escolhida": r.escolhida.map(ValorJSON.texto) ?? .nulo]), c.saida, .exata, c.caso)
+        }
+    }
+
+    @Test func precoInicial() {
+        for c in Vetores.casos("calc.precoInicialSimulador") {
+            confere(opcional(precoInicialSimulador(c.args[0].obra)), c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func contaDoSimulador() {
         for c in Vetores.casos("calc.contaSimulador") {
             let r = contaSimulador(c.args[0].obra, venda: c.args[1].numero, meses: Int(c.args[2].numero), hoje: c.args[3].comoTexto!,

@@ -1,7 +1,29 @@
 import Foundation
 
-/* O "Vale a pena?", como o calc.js o calcula e escreve (morava no app.js simulaCompute). Conferido pelos vetores do site
-   (SimuladorTests). */
+/* O "Vale a pena?", como o calc.js o calcula e escreve (morava no app.js renderSimula e simulaCompute). Conferido pelos
+   vetores do site (SimuladorTests). */
+
+/// As obras do simulador e a escolhida.
+public struct ObrasDoSimulador: Equatable, Sendable {
+    /// As não vendidas com gastos, na ordem do documento.
+    public let elegiveis: [Obra]
+    /// A escolhida, enquanto elegível; senão, a primeira; nil sem nenhuma.
+    public let escolhida: String?
+}
+
+/// `obrasSimulador` do calc.js.
+public func obrasSimulador(_ obras: [Obra], escolhida: String?) -> ObrasDoSimulador {
+    let elegiveis = obras.filter { $0.fase != .vendida && !$0.gastos.isEmpty }
+    let mantida = elegiveis.contains { $0.id == escolhida } ? escolhida : nil
+    return ObrasDoSimulador(elegiveis: elegiveis, escolhida: mantida ?? elegiveis.first?.id)
+}
+
+/// `precoInicialSimulador` do calc.js: o preço acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou;
+/// nil sem estimada (a zero não conta, como no site).
+public func precoInicialSimulador(_ obra: Obra) -> Double? {
+    guard let estimada = obra.valorEstimadoVenda, estimada != 0 else { return nil }
+    return estimada
+}
 
 /// `MESES_SIMULADOR` do calc.js: os meses da venda vão de 0 a 120 na conta.
 public let mesesSimulador = 120

@@ -299,6 +299,16 @@ resumo('custo zero', 1000, 0);
 
 /* O "Vale a pena?" (app.js simulaCompute): a conta, com os meses de 0 a 120, e os textos do cartão e da tabela. */
 constante('calc.MESES_SIMULADOR', C.MESES_SIMULADOR);
+const obrasSim = calc('obrasSimulador');
+obrasSim('as não vendidas com gastos, na ordem do documento; sem escolha, a primeira', BLOB.obras, '');
+obrasSim('a escolhida continua escolhida', BLOB.obras, 'o4');
+obrasSim('a vendida não é escolhida: cai na primeira', BLOB.obras, 'o2');
+obrasSim('a apagada cai na primeira', BLOB.obras, 'sumiu');
+obrasSim('a ordem é a do documento, não a do nome', [O4, O3, O2, O1], 'o3');
+obrasSim('nenhuma elegível', [O2, O3], 'o2');
+const precoSim = calc('precoInicialSimulador');
+for(const o of BLOB.obras) precoSim(o.nome, o);
+precoSim('venda estimada zero não conta', { ...O4, valorEstimadoVenda: 0 });
 const contaSim = calc('contaSimulador');
 const OBRA_NOVA = obraDe('nova', [gastoDe('n1', 'terreno', 1000, HOJE)], { dataInicio: HOJE });
 contaSim('vale a pena, vendendo hoje', O1, 1250000, 0, HOJE, 1);

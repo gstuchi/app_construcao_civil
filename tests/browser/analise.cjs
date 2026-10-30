@@ -1,4 +1,5 @@
-/* Análise com dados sintéticos: o donut e a legenda da obra e dos Gráficos. Sem contas nem rede.
+/* Análise com dados sintéticos: o donut e a legenda da obra e dos Gráficos e o Relatório. Sem contas nem rede.
+   Hoje fica em 06/10/2026, no fuso de São Paulo (o relógio do Playwright), para os valores corrigidos não mudarem com o dia.
    Precisa de `node tests/browser/servidor.cjs` no ar (porta 8123). */
 const assert=require('node:assert/strict');
 const {chromium}=require('playwright');
@@ -16,7 +17,8 @@ const CASA={id:'a',nome:'Casa Alphaville',dataInicio:'2025-11-10',fase:'construc
 (async()=>{
   const browser=await chromium.launch();
   try{
-    const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:393,height:852}});
+    const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:393,height:852},timezoneId:'America/Sao_Paulo'});
+    await ctx.clock.setFixedTime(new Date('2026-10-06T12:00:00-03:00'));
     await ctx.route('**/cloud.js',r=>r.fulfill({contentType:'text/javascript',body:''}));
     await ctx.route('https://**/*',r=>r.abort());
     await ctx.addInitScript(()=>{
@@ -50,8 +52,28 @@ const CASA={id:'a',nome:'Casa Alphaville',dataInicio:'2025-11-10',fase:'construc
     assert.deepEqual(await page.$$eval('#grafBody .graf-donut circle',cs=>cs.map(c=>c.dataset.top)),
       ['terreno','fundacao','pintura','alvenaria','eletrica','hidraulica','telhado','projeto','outros']);
 
+    // Relatório: um grupo por tópico, do maior bruto para o menor (no empate, o que aparece primeiro nos gastos); no grupo, os
+    // gastos por data e, na mesma data, a ordem do documento; a descrição vazia vira o nome do tópico; o gasto a vencer não corrige
+    await page.evaluate(()=>{showView('relatorio');renderRelatorio();});
+    const linhasDoRelatorio=async()=>(await page.$$eval('#relBody .rep-table tbody tr',trs=>trs.map(tr=>[...tr.children].map(td=>td.textContent))))
+      .map(l=>l.map(texto));
+    assert.deepEqual((await linhasDoRelatorio()).slice(0,21),[
+      ['Terreno','','R$ 150.000,00','R$ 165.942,65','+R$ 15.942,65'],['Terreno','01/12/25','R$ 150.000,00','R$ 165.942,65','+R$ 15.942,65'],
+      ['Fundação','','R$ 20.000,00','R$ 21.767,00','+R$ 1.767,00'],['Sapatas','20/01/26','R$ 20.000,00','R$ 21.767,00','+R$ 1.767,00'],
+      ['Pintura','','R$ 10.000,00','R$ 10.865,06','+R$ 865,06'],['Pintura','15/01/26','R$ 2.500,00','R$ 2.725,33','+R$ 225,33'],
+      ['Massa corrida','15/01/26','R$ 1.500,00','R$ 1.635,20','+R$ 135,20'],['Tinta acrílica','01/02/26','R$ 6.000,00','R$ 6.504,54','+R$ 504,54'],
+      ['Alvenaria','','R$ 10.000,00','R$ 10.901,30','+R$ 901,30'],['Blocos','15/01/26','R$ 10.000,00','R$ 10.901,30','+R$ 901,30'],
+      ['Elétrica','','R$ 5.400,50','R$ 5.837,43','+R$ 436,93'],['Fios','10/02/26','R$ 5.400,50','R$ 5.837,43','+R$ 436,93'],
+      ['Encanamento','','R$ 3.000,00','R$ 3.242,71','+R$ 242,71'],['Tubos','10/02/26','R$ 3.000,00','R$ 3.242,71','+R$ 242,71'],
+      ['Telhado','','R$ 2.500,00','R$ 2.500,00','+R$ 0,00'],['Telhas','03/12/26','R$ 2.500,00','R$ 2.500,00','+R$ 0,00'],
+      ['Documentação','','R$ 1.200,00','R$ 1.312,44','+R$ 112,44'],['Alvará','05/01/26','R$ 1.200,00','R$ 1.312,44','+R$ 112,44'],
+      ['Outros','','R$ 300,00','R$ 321,32','+R$ 21,32'],['Limpeza','10/03/26','R$ 300,00','R$ 321,32','+R$ 21,32'],
+      ['TOTAL','','R$ 202.400,50','R$ 222.689,91','+R$ 20.289,41']]);
+    // cada caixinha leva o id do seu gasto, na ordem das linhas
+    assert.deepEqual(await page.$$eval('#relBody .rel-check',cs=>cs.map(c=>c.dataset.gasto)),['a4','a7','a3','a11','a1','a2','a5','a6','a8','a9','a10']);
+
     assert.deepEqual(await page.evaluate(()=>errosAnalise),[]);
     await ctx.close();
-    console.log('ok - análise: gasto por tópico na obra e nos Gráficos');
+    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos do relatório');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

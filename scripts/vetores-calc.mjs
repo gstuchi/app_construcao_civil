@@ -213,6 +213,18 @@ porTopico('tópico pequeno fica com 0%', obraDe('p', [gastoDe('p1', 'terreno', 1
 porTopico('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50), gastoDe('n3', '3', 50)]));
 porTopico('gastos de valor zero: % zero', obraDe('z', [gastoDe('z1', 'pintura', 0), gastoDe('z2', 'eletrica', 0)]));
 porTopico('a base do % conta a parcela a vencer', obraDe('v', [gastoDe('v1', 'pintura', 50), gastoDe('v2', 'eletrica', 50, '2026-12-01')]));
+/* Relatório da obra (app.js renderRelatorio): os grupos por tópico, os gastos de cada um com o corrigido e os totais. */
+const relatorio = calc('relatorioObra');
+for(const o of BLOB.obras) relatorio(o.nome, o, HOJE, 1);
+relatorio('vendida corrige até a venda, mesmo com outro hoje', O2, '2030-01-01', 1);
+relatorio('taxa com vírgula', O4, HOJE, 0.85);
+relatorio('na mesma data, a ordem do documento, não a do id', obraDe('d', [gastoDe('k3', 'pintura', 300, '2026-02-01'),
+  gastoDe('k2', 'pintura', 100, '2026-01-15'), gastoDe('k1', 'pintura', 200, '2026-01-15')]), HOJE, 1);
+relatorio('empate de bruto: o tópico que aparece primeiro', obraDe('e', [gastoDe('e1', 'pintura', 60, '2026-03-01'),
+  gastoDe('e2', 'alvenaria', 100, '2026-02-01'), gastoDe('e3', 'pintura', 40, '2026-01-01')]), HOJE, 1);
+relatorio('o bruto do grupo soma na ordem do documento', obraDe('s', [gastoDe('s1', 'pintura', 0.1, '2026-03-01'),
+  gastoDe('s2', 'pintura', 0.2, '2026-02-01'), gastoDe('s3', 'pintura', 0.3, '2026-01-01')]), HOJE, 0);
+relatorio('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50)]), HOJE, 1);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);

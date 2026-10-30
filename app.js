@@ -1154,31 +1154,22 @@ function renderRelatorio(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const hoje = todayISO();
-  const fim = (o.venda && o.venda.data) || hoje;
   const tx = taxa();
   const map = TOP_MAP();
 
-  const byTop = {};
-  o.gastos.forEach(g=>{ (byTop[g.topico] = byTop[g.topico] || []).push(g); });
-  const groups = Object.entries(byTop).map(([id,gs])=>({
-    id,
-    gs: [...gs].sort((a,b)=>a.data.localeCompare(b.data)),
-    bruto: gs.reduce((s,g)=>s+g.valor,0),
-    corr:  gs.reduce((s,g)=>s+OBRA_CALC.corrigido(g.valor,g.data,fim,tx),0),
-  })).sort((a,b)=>b.bruto-a.bruto);
-
-  const totB = OBRA_CALC.totalBruto(o);
-  const totC = OBRA_CALC.totalCorrigido(o, tx, hoje);
+  // grupos, gastos com o corrigido e totais: calc.js relatorioObra (o app nativo usa o mesmo)
+  const rel = OBRA_CALC.relatorioObra(o, hoje, tx);
+  const totB = rel.totalBruto;
+  const totC = rel.totalCorrigido;
   const lucro = OBRA_CALC.lucroVenda(o, tx);
   const itensRelatorio = new Map();
 
   let rows = '';
-  groups.forEach(gr=>{
-    const t = map[gr.id] || {nm:gr.id, ic:'etiqueta'};
+  rel.grupos.forEach(gr=>{
+    const t = map[gr.topico] || {nm:gr.topico, ic:'etiqueta'};
     rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
-      <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
-    gr.gs.forEach(g=>{
-      const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
+      <td>${money(gr.bruto)}</td><td>${money(gr.corrigido)}</td><td>+${money(gr.corrigido-gr.bruto)}</td></tr>`;
+    gr.itens.forEach(({gasto:g, corrigido:c})=>{
       itensRelatorio.set(g.id,{g,c});
       const descricao=g.descricao||t.nm;
       rows += `<tr><td class="rt-desc"><label class="rep-pick no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(descricao)}"></label>${escapeHtml(descricao)}</td><td>${fmtData(g.data)}</td>

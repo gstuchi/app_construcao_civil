@@ -98,6 +98,22 @@
     return [...por].sort((a, b) => b[1] - a[1])
       .map(([id, bruto]) => ({ id, bruto, pct: total > 0 ? Math.round(bruto / total * 100) : 0 }));
   }
+  /* ---- relatório da obra (app.js renderRelatorio): morava no app.js; o app nativo confere a cópia pelos vetores ---- */
+  /* A correção vai até a venda ou hoje (fim). Um grupo por tópico, do maior bruto para o menor (no empate, o tópico que
+     aparece primeiro nos gastos); no grupo, os gastos por data (na mesma data, a ordem do documento), cada um com o
+     corrigido até o fim; o bruto e o corrigido do grupo somam os gastos na ordem do documento. E os totais da obra. */
+  function relatorioObra(obra, hojeISO, taxaPct){
+    const fim = fimCorrecao(obra, hojeISO);
+    const por = new Map();
+    obra.gastos.forEach(g => { if(!por.has(g.topico)) por.set(g.topico, []); por.get(g.topico).push(g); });
+    const grupos = [...por].map(([topico, gs]) => ({
+      topico,
+      itens: [...gs].sort((a, b) => a.data.localeCompare(b.data)).map(g => ({ gasto: g, corrigido: corrigido(g.valor, g.data, fim, taxaPct) })),
+      bruto: gs.reduce((s, g) => s + g.valor, 0),
+      corrigido: gs.reduce((s, g) => s + corrigido(g.valor, g.data, fim, taxaPct), 0),
+    })).sort((a, b) => b.bruto - a.bruto);
+    return { fim, grupos, totalBruto: totalBruto(obra), totalCorrigido: totalCorrigido(obra, taxaPct, hojeISO) };
+  }
   function lucroVenda(obra, taxaPct){
     if(!obra.venda) return null;
     return {
@@ -546,7 +562,7 @@
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, gastoPorTopico, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, gastoPorTopico, relatorioObra, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

@@ -225,6 +225,21 @@ relatorio('empate de bruto: o tópico que aparece primeiro', obraDe('e', [gastoD
 relatorio('o bruto do grupo soma na ordem do documento', obraDe('s', [gastoDe('s1', 'pintura', 0.1, '2026-03-01'),
   gastoDe('s2', 'pintura', 0.2, '2026-02-01'), gastoDe('s3', 'pintura', 0.3, '2026-01-01')]), HOJE, 0);
 relatorio('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50)]), HOJE, 1);
+/* O fim do relatório (venda e lucro, ou venda estimada e margem, ou nada) e a linha da correção do cabeçalho. */
+const fimRel = calc('fimRelatorio');
+for(const o of BLOB.obras) fimRel(o.nome, o, HOJE, 1);
+fimRel('vendida não depende de hoje', O2, '2030-01-01', 1);
+fimRel('vendida com prejuízo', { ...O2, venda: { valor: 500000, data: '2025-02-10' } }, HOJE, 1);
+fimRel('venda zero', { ...O2, venda: { valor: 0, data: '2025-02-10' } }, HOJE, 1);
+fimRel('margem negativa', { ...O4, valorEstimadoVenda: 300000 }, HOJE, 1);
+fimRel('margem com outro hoje', O4, '2027-04-06', 1);
+fimRel('venda estimada zero não conta', { ...O4, valorEstimadoVenda: 0 }, HOJE, 1);
+fimRel('taxa com vírgula', O1, HOJE, 0.85);
+fimRel('obra pronta com a venda guardada', { ...O4, venda: { valor: 600000, data: '2026-09-30' } }, HOJE, 1);
+const linhaCorr = calc('linhaCorrecao');
+for(const o of BLOB.obras) linhaCorr(o.nome, o, HOJE, 1);
+for(const taxa of [0.85, 1.5, 20, 1e-7]) linhaCorr(`taxa ${taxa}`, O1, HOJE, taxa);
+linhaCorr('obra pronta com a venda guardada', { ...O4, venda: { valor: 600000, data: '2026-09-30' } }, HOJE, 1);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);

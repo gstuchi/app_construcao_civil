@@ -1161,7 +1161,6 @@ function renderRelatorio(){
   const rel = OBRA_CALC.relatorioObra(o, hoje, tx);
   const totB = rel.totalBruto;
   const totC = rel.totalCorrigido;
-  const lucro = OBRA_CALC.lucroVenda(o, tx);
   const itensRelatorio = new Map();
 
   let rows = '';
@@ -1177,16 +1176,18 @@ function renderRelatorio(){
     });
   });
 
+  // venda e lucro, ou venda estimada e margem, ou nada: calc.js fimRelatorio
+  const fimRel = OBRA_CALC.fimRelatorio(o, hoje, tx);
   let venda = '';
-  if(o.venda && lucro){
+  if(fimRel && fimRel.tipo === 'venda'){
     venda = `
-      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(o.venda.data)}</td><td></td><td colspan="3">${money(o.venda.valor)}</td></tr>
-      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${lucro.bruto>=0?'pos':'neg'}">${money(lucro.bruto)}</td></tr>
-      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${lucro.vsBanco>=0?'pos':'neg'}">${money(lucro.vsBanco)}</td></tr>`;
-  } else if(o.valorEstimadoVenda){
+      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(fimRel.data)}</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
+      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${fimRel.lucroBruto>=0?'pos':'neg'}">${money(fimRel.lucroBruto)}</td></tr>
+      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${fimRel.acimaDoBanco>=0?'pos':'neg'}">${money(fimRel.acimaDoBanco)}</td></tr>`;
+  } else if(fimRel){
     venda = `
-      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(o.valorEstimadoVenda)}</td></tr>
-      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${o.valorEstimadoVenda-totC>=0?'pos':'neg'}">${money(o.valorEstimadoVenda-totC)}</td></tr>`;
+      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
+      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${fimRel.margem>=0?'pos':'neg'}">${money(fimRel.margem)}</td></tr>`;
   }
 
   $('#relBody').innerHTML = `
@@ -1194,7 +1195,7 @@ function renderRelatorio(){
       <h2 class="layout-28">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
       <div class="rep-head">
         ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
-        Correção de ${escapeHtml(String(tx).replace('.',','))}% ao mês, da data de cada gasto até ${o.venda ? `a venda (${fmtData(o.venda.data)})` : `hoje (${fmtData(hoje)})`}.<br>
+        ${escapeHtml(OBRA_CALC.linhaCorrecao(o, hoje, tx))}<br>
         Marque gastos para somar somente itens escolhidos.
       </div>
       <div class="rep-selected hidden" id="relSelected" aria-live="polite">

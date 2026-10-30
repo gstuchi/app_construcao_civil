@@ -11,6 +11,18 @@ extension RelatorioDaObra {
     }
 }
 
+extension FimDoRelatorio {
+    var json: ValorJSON {
+        switch self {
+        case let .venda(valor, data, lucroBruto, acimaDoBanco):
+            .objeto(["tipo": .texto("venda"), "valor": .numero(valor), "data": .texto(data), "lucroBruto": .numero(lucroBruto),
+                     "acimaDoBanco": .numero(acimaDoBanco)])
+        case let .estimada(valor, margem):
+            .objeto(["tipo": .texto("estimada"), "valor": .numero(valor), "margem": .numero(margem)])
+        }
+    }
+}
+
 /* O relatório da obra (calc.js relatorioObra e companhia), conferido contra os vetores do site. */
 struct RelatorioTests {
     @Test func gruposDoRelatorio() {
@@ -22,6 +34,18 @@ struct RelatorioTests {
             confere(.lista(r.grupos.map { .numero($0.bruto) } + [.numero(r.totalBruto)]),
                     .lista((esperado["grupos"]?.comoLista ?? []).map { $0.comoObjeto?["bruto"] ?? .nulo } + [esperado["totalBruto"] ?? .nulo]),
                     .exata, c.caso + " (bruto exato)")
+        }
+    }
+
+    @Test func fimDoRelatorio() {
+        for c in Vetores.casos("calc.fimRelatorio") {
+            confere(fimRelatorio(c.args[0].obra, hoje: c.args[1].comoTexto!, taxa: c.args[2].numero)?.json ?? .nulo, c.saida, .dinheiro, c.caso)
+        }
+    }
+
+    @Test func linhaDaCorrecao() {
+        for c in Vetores.casos("calc.linhaCorrecao") {
+            confere(.texto(linhaCorrecao(c.args[0].obra, hoje: c.args[1].comoTexto!, taxa: c.args[2].numero)), c.saida, .exata, c.caso)
         }
     }
 }

@@ -88,6 +88,16 @@ struct DentroDaObraTests {
         #expect(dicaDoModoTotal == "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
     }
 
+    @Test func gastoPorTopicoComoOSite() {
+        // calc.js gastoPorTopico (o donut e a legenda da obra e dos Gráficos). Exato: o bruto soma os gastos na ordem do
+        // documento, como o site, e o "% da obra" é inteiro.
+        for c in Vetores.casos("calc.gastoPorTopico") {
+            let linhas = gastoPorTopico(c.args[0].obra, hoje: Self.hoje, taxaMensal: 1)
+            confere(.lista(linhas.map { .objeto(["id": .texto($0.id), "bruto": .numero($0.bruto), "pct": .numero($0.pct)]) }),
+                    c.saida, .exata, c.caso)
+        }
+    }
+
     @Test func gastoPorTopicoNoEmpateSegueAOrdemDosGastos() {
         // A legenda do donut do site: o byTop nasce na ordem dos gastos e o sort do JavaScript é estável, então no empate do
         // bruto vem o tópico que aparece primeiro na lista (fundação, pintura, estrutura): não o de id menor nem o de id maior,

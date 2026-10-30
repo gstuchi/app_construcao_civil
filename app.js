@@ -409,9 +409,7 @@ function renderObra(){
       <ul class="list" id="oAfazeres"></ul>
     </div>`;
 
-  const byTop = {};
-  o.gastos.forEach(g=>{ byTop[g.topico]=(byTop[g.topico]||0)+g.valor; });
-  const entries = Object.entries(byTop).sort((a,b)=>b[1]-a[1]);
+  const porTopico = OBRA_CALC.gastoPorTopico(o);
 
   const graficos = `
     <div class="panel"><h2>Gastos por tópico</h2>
@@ -446,7 +444,7 @@ function renderObra(){
   fitNums($('#obraBody'));
   pintaBarrasOrc($('#obraBody'));
 
-  drawDonutObra(entries, bruto);
+  drawDonutObra(porTopico, bruto);
   bindEvoChart(o);
   bindMesChart(o);
   $('#fBusca').addEventListener('input', ()=>{ filtroTexto = $('#fBusca').value; renderGastosFiltrados(obraById(obraAberta)); });
@@ -519,15 +517,16 @@ function afazerRow(o, a){
   return li;
 }
 
-function drawDonutObra(entries, total){
+/* topicos: o gastoPorTopico do calc.js ({id, bruto, pct}, na ordem do donut) */
+function drawDonutObra(topicos, total){
   const svg = $('#oDonut'), leg = $('#oDonutLeg');
   $('#oDonutTotal').textContent = moneyShort(total);
   if(!total){ svg.innerHTML=''; leg.innerHTML = `<div class="layout-37 empty"><p>Sem gastos ainda</p></div>`; return; }
   const cs = getComputedStyle(document.documentElement);
   const R = 15.915, C = 2*Math.PI*R;
   let off = 0, paths = '';
-  entries.forEach(([id,val],i)=>{
-    const len = val/total*C;
+  topicos.forEach(({bruto},i)=>{
+    const len = bruto/total*C;
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
       stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
@@ -536,13 +535,13 @@ function drawDonutObra(entries, total){
   svg.innerHTML = paths;
   leg.innerHTML = '';
   const map = TOP_MAP();
-  entries.slice(0,7).forEach(([id,val],i)=>{
+  topicos.slice(0,7).forEach(({id,bruto,pct},i)=>{
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     leg.appendChild(el('div','row',
       `<span class="dot pie-${i%PIE.length}"></span>
        <span class="nm">${ICON(t.ic)} ${escapeHtml(t.nm)}</span>
-       <span class="vl">${Math.round(val/total*100)}% · ${moneyShort(val)}</span>`));
+       <span class="vl">${pct}% · ${moneyShort(bruto)}</span>`));
   });
 }
 
@@ -1029,27 +1028,27 @@ $('#btnRelVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { s
 $('#btnGrafVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
 
 /* donut + legenda largura cheia (nome completo, % e valor) — reusado
-   pela tela Gráficos e pelo dashboard do início */
-function donutComLegendaHtml(entries, total, size){
+   pela tela Gráficos e pelo dashboard do início. topicos: o gastoPorTopico do calc.js */
+function donutComLegendaHtml(topicos, total, size){
   if(!(total > 0)) return emptyBlock(ICON('recibo'),'Sem gastos ainda.');
   const cs = getComputedStyle(document.documentElement);
   const map = TOP_MAP();
   const R = 15.915, C = 2*Math.PI*R;
   let off = 0, paths = '';
-  entries.forEach(([id,val],i)=>{
-    const len = val/total*C;
+  topicos.forEach(({id,bruto},i)=>{
+    const len = bruto/total*C;
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
       stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"
       data-top="${escapeHtml(id)}"></circle>`;
     off += len;
   });
-  const legenda = entries.map(([id,val],i)=>{
+  const legenda = topicos.map(({id,bruto,pct},i)=>{
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     return `<li data-top="${escapeHtml(id)}"><span class="dot pie-${i%PIE.length}"></span>
       <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
-      <div class="li-val">${Math.round(val/total*100)}% · ${moneyShort(val)}</div></li>`;
+      <div class="li-val">${pct}% · ${moneyShort(bruto)}</div></li>`;
   }).join('');
   return `<div class="graf-donut"><div class="donut donut-${size}">
       <svg viewBox="0 0 36 36" width="${size}" height="${size}">${paths}</svg>
@@ -1057,12 +1056,6 @@ function donutComLegendaHtml(entries, total, size){
     </div></div>
     <ul class="list graf-leg">${legenda}</ul>`;
 }
-const byTopico = gastos => {
-  const by = {};
-  gastos.forEach(g=>{ by[g.topico]=(by[g.topico]||0)+g.valor; });
-  return Object.entries(by).sort((a,b)=>b[1]-a[1]);
-};
-
 /* liga o clique da legenda e das fatias do donut. Separado do helper de HTML
    porque ele devolve string: o bind só existe depois de inserir no DOM —
    mesmo par de bindEvoChart/bindMesChart. Quem não chamar isso fica sem
@@ -1090,7 +1083,7 @@ function renderGraficos(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const bruto = OBRA_CALC.totalBruto(o);
-  const donutLeg = donutComLegendaHtml(byTopico(o.gastos), bruto, 240);
+  const donutLeg = donutComLegendaHtml(OBRA_CALC.gastoPorTopico(o), bruto, 240);
 
   $('#grafBody').innerHTML = `
     <div class="panel">

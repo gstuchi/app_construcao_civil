@@ -201,6 +201,18 @@ resumoTop('meio ponto arredonda para cima, como o donut', { id: 'r', dataInicio:
 resumoTop('a base do % conta a parcela a vencer de outro tópico', { id: 'v', dataInicio: '2026-01-01', gastos: [
   { id: 'v1', valor: 50, topico: 'pintura', descricao: '', data: '2026-01-01', pagamento: 'pix' },
   { id: 'v2', valor: 50, topico: 'eletrica', descricao: '', data: '2026-12-01', pagamento: 'pix' }] }, 'pintura', HOJE, 1);
+/* Gasto por tópico (app.js: o donut e a legenda da obra e dos Gráficos): a ordem e o "% da obra" de cada tópico. */
+const gastoDe = (id, topico, valor, data = '2026-01-01', descricao = '') => ({ id, valor, topico, descricao, data, pagamento: 'pix' });
+const obraDe = (id, gastos, campos = {}) => ({ id, nome: 'Obra', dataInicio: '2026-01-01', fase: 'construcao', gastos, ...campos });
+const porTopico = calc('gastoPorTopico');
+for(const o of BLOB.obras) porTopico(o.nome, o);
+porTopico('empate: o tópico que aparece primeiro, não o de nome menor nem o do último gasto',
+  obraDe('e', [gastoDe('e1', 'pintura', 60), gastoDe('e2', 'alvenaria', 100), gastoDe('e3', 'pintura', 40)]));
+porTopico('meio ponto arredonda para cima: 12,5% vai a 13 e 87,5% a 88', obraDe('m', [gastoDe('m1', 'pintura', 1), gastoDe('m2', 'eletrica', 7)]));
+porTopico('tópico pequeno fica com 0%', obraDe('p', [gastoDe('p1', 'terreno', 1000), gastoDe('p2', 'pintura', 4)]));
+porTopico('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50), gastoDe('n3', '3', 50)]));
+porTopico('gastos de valor zero: % zero', obraDe('z', [gastoDe('z1', 'pintura', 0), gastoDe('z2', 'eletrica', 0)]));
+porTopico('a base do % conta a parcela a vencer', obraDe('v', [gastoDe('v1', 'pintura', 50), gastoDe('v2', 'eletrica', 50, '2026-12-01')]));
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);

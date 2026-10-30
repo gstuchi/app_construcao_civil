@@ -3230,6 +3230,587 @@
         }
       }
     ],
+    "calc.gastoPorTopico": [
+      {
+        "caso": "Casa Alphaville",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          }
+        ],
+        "saida": [
+          {
+            "id": "estrutura",
+            "bruto": 231000,
+            "pct": 67
+          },
+          {
+            "id": "fundacao",
+            "bruto": 98000,
+            "pct": 28
+          },
+          {
+            "id": "hidraulica",
+            "bruto": 12000.5,
+            "pct": 3
+          },
+          {
+            "id": "eletrica",
+            "bruto": 3100,
+            "pct": 1
+          },
+          {
+            "id": "pintura",
+            "bruto": 3000,
+            "pct": 1
+          }
+        ]
+      },
+      {
+        "caso": "Sobrado Centro",
+        "args": [
+          {
+            "id": "o2",
+            "nome": "Sobrado Centro",
+            "dataInicio": "2024-01-15",
+            "fase": "vendida",
+            "venda": {
+              "valor": 980000,
+              "data": "2025-02-10"
+            },
+            "valorEstimadoVenda": 950000,
+            "areaM2": 180,
+            "orcamento": {
+              "modo": "total",
+              "total": 700000
+            },
+            "gastos": [
+              {
+                "id": "h01",
+                "valor": 150000,
+                "topico": "terreno",
+                "descricao": "Terreno",
+                "data": "2024-01-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h02",
+                "valor": 320000.75,
+                "topico": "alvenaria",
+                "descricao": "Blocos e mão de obra",
+                "data": "2024-05-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "h03",
+                "valor": 85000,
+                "topico": "acabamento",
+                "descricao": "Porcelanato",
+                "data": "2024-12-01",
+                "pagamento": "cartao"
+              },
+              {
+                "id": "h04",
+                "valor": 4500,
+                "topico": "outros",
+                "descricao": "Limpeza depois da venda",
+                "data": "2025-03-01",
+                "pagamento": "pix"
+              }
+            ],
+            "afazeres": []
+          }
+        ],
+        "saida": [
+          {
+            "id": "alvenaria",
+            "bruto": 320000.75,
+            "pct": 57
+          },
+          {
+            "id": "terreno",
+            "bruto": 150000,
+            "pct": 27
+          },
+          {
+            "id": "acabamento",
+            "bruto": 85000,
+            "pct": 15
+          },
+          {
+            "id": "outros",
+            "bruto": 4500,
+            "pct": 1
+          }
+        ]
+      },
+      {
+        "caso": "Terreno novo",
+        "args": [
+          {
+            "id": "o3",
+            "nome": "Terreno novo",
+            "dataInicio": "2026-10-01",
+            "fase": "construcao",
+            "gastos": [],
+            "venda": null,
+            "valorEstimadoVenda": null,
+            "areaM2": null,
+            "afazeres": []
+          }
+        ],
+        "saida": []
+      },
+      {
+        "caso": "Pronta Jardins",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          }
+        ],
+        "saida": [
+          {
+            "id": "estrutura",
+            "bruto": 200000,
+            "pct": 54
+          },
+          {
+            "id": "maoobra",
+            "bruto": 165000,
+            "pct": 44
+          },
+          {
+            "id": "c_mgf1abcd",
+            "bruto": 7000,
+            "pct": 2
+          }
+        ]
+      },
+      {
+        "caso": "empate: o tópico que aparece primeiro, não o de nome menor nem o do último gasto",
+        "args": [
+          {
+            "id": "e",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "e1",
+                "valor": 60,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "e2",
+                "valor": 100,
+                "topico": "alvenaria",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "e3",
+                "valor": 40,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "pintura",
+            "bruto": 100,
+            "pct": 50
+          },
+          {
+            "id": "alvenaria",
+            "bruto": 100,
+            "pct": 50
+          }
+        ]
+      },
+      {
+        "caso": "meio ponto arredonda para cima: 12,5% vai a 13 e 87,5% a 88",
+        "args": [
+          {
+            "id": "m",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "m1",
+                "valor": 1,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "m2",
+                "valor": 7,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "eletrica",
+            "bruto": 7,
+            "pct": 88
+          },
+          {
+            "id": "pintura",
+            "bruto": 1,
+            "pct": 13
+          }
+        ]
+      },
+      {
+        "caso": "tópico pequeno fica com 0%",
+        "args": [
+          {
+            "id": "p",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "p1",
+                "valor": 1000,
+                "topico": "terreno",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "p2",
+                "valor": 4,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "terreno",
+            "bruto": 1000,
+            "pct": 100
+          },
+          {
+            "id": "pintura",
+            "bruto": 4,
+            "pct": 0
+          }
+        ]
+      },
+      {
+        "caso": "tópico de id numérico fica na ordem dos gastos",
+        "args": [
+          {
+            "id": "n",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "n1",
+                "valor": 50,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "n2",
+                "valor": 50,
+                "topico": "12",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "n3",
+                "valor": 50,
+                "topico": "3",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "pintura",
+            "bruto": 50,
+            "pct": 33
+          },
+          {
+            "id": "12",
+            "bruto": 50,
+            "pct": 33
+          },
+          {
+            "id": "3",
+            "bruto": 50,
+            "pct": 33
+          }
+        ]
+      },
+      {
+        "caso": "gastos de valor zero: % zero",
+        "args": [
+          {
+            "id": "z",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "z1",
+                "valor": 0,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "z2",
+                "valor": 0,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "pintura",
+            "bruto": 0,
+            "pct": 0
+          },
+          {
+            "id": "eletrica",
+            "bruto": 0,
+            "pct": 0
+          }
+        ]
+      },
+      {
+        "caso": "a base do % conta a parcela a vencer",
+        "args": [
+          {
+            "id": "v",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "v1",
+                "valor": 50,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "v2",
+                "valor": 50,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-12-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "pintura",
+            "bruto": 50,
+            "pct": 50
+          },
+          {
+            "id": "eletrica",
+            "bruto": 50,
+            "pct": 50
+          }
+        ]
+      }
+    ],
     "calc.lucroVenda": [
       {
         "caso": "Casa Alphaville",

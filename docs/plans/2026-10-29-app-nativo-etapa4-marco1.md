@@ -69,14 +69,15 @@ As do Giovani estão no spec, nas seções "Decisões de desenho", "PRs" e "Deci
 | Corte do marco 1 | 0, 0b, 1a, 1b e 1c, nessa ordem; o 1c fecha o marco | Decisões do Giovani de 29/10: corte por risco, o PR 1 em três e o TestFlight por marco |
 | Merge | Automático, com a CI verde, a revisão aprovada e nenhum rerun no iOS 26. O 1a e o TestFlight esperam o OK dele | Decisão 3 dele, 29/10 |
 | Os dois alinhamentos do site | Entram no PR 0: os meses de 0 a 120 (Tarefa 5) e o preço que segue a obra (Tarefa 6) | Confirmação 4 dele, 29/10 |
-| O preço do simulador na obra sem venda estimada (**a confirmar antes do merge do PR 0**) | O campo fica vazio ("Digite o preço de venda pra ver a conta.") | É a leitura do plano para "o preço acompanha a venda estimada". Hoje, a obra herda o preço da anterior. Manter o anterior é uma linha na cola, sem mexer na regra. O PR 0 vai ao ar no merge, então ele espera a resposta |
+| O preço do simulador na obra sem venda estimada (**decidido pelo Giovani em 30/10: campo vazio**) | O campo fica vazio ("Digite o preço de venda pra ver a conta.") | É a leitura do plano para "o preço acompanha a venda estimada". Hoje, a obra herda o preço da anterior. Manter o anterior é uma linha na cola, sem mexer na regra. O PR 0 vai ao ar no merge; por isso a pergunta foi a ele antes do PR |
 | Soma por tópico no site | `Map`, não objeto (Tarefas 1 e 2) | O objeto passava o tópico de id numérico à frente no empate, e o tópico `"__proto__"` derrubava o Relatório. O `Map` faz o empate do spec, que é o que a cópia em Swift já fazia. A tela só muda nesses dois casos, que ela não cria |
 | O `confere` do núcleo | Reprova quando só um lado não é finito (1ª tarefa do 0b) | A tolerância `.continua` deixava passar infinito contra qualquer número. É achado do PR 0 e foi provado no multiplicador da TIR com taxa zero |
-| O tópico fixo "Outros" no anel e na barra (**a confirmar antes do merge do 1c**, o primeiro que mostra a barra) | As fatias seguem o spec: os 6 maiores, quaisquer, e o resto no "Outros" cinza. **Recomendação:** o tópico fixo "Outros" (id `outros`) vai sempre para o pedaço cinza | Com 8 tópicos ou mais, o "Outros" da pessoa pode sair colorido ao lado do "Outros · N tópicos" cinza. A troca muda a regra dos 6 maiores e é pequena no núcleo |
+| O tópico fixo "Outros" no anel e na barra (**decidido pelo Giovani em 30/10: o "Outros" fixo vai sempre para o cinza**; entra no 0b-2) | O tópico fixo "Outros" (id `outros`) vai sempre para o pedaço cinza, por último: com até 6 tópicos comuns, sozinho e com o próprio nome; com 7 ou mais, junto do resto, em "Outros · N tópicos" (N conta o fixo). Os 6 coloridos são os 6 maiores sem ele. Obra com todos os gastos em "Outros" fica com a barra toda cinza | Com 8 tópicos ou mais, o "Outros" da pessoa pode sair colorido ao lado do "Outros · N tópicos" cinza. A troca muda a regra dos 6 maiores e é pequena no núcleo |
 | A parte com 1 casa no Relatório (**a confirmar antes do 3a**) | "<0,1%" abaixo de 0,1% | O spec diz só "1 casa", e o texto não está no mockup. Segue o mesmo princípio do "<1%" |
 | Média, maior e meses; o mês a vencer | Contam desde o 1º gasto. O mês a vencer não depende de este mês estar na série | Assim manda o spec. O mockup contava só os 24 meses à vista |
+| O halo do título mono da obra (PR 1c; **decidido pelo Giovani em 30/10: 20%**) | 20% em todo tamanho | Pela regra dele (o menor passo que fecha 4,5:1 no Pro Max, decisão de 10/10), seria 10%. No Pro Max, "Alphaville" fica em 3,92:1 sem halo, 4,61 com 10% (pior pixel 4,50) e 5,41 com 20%. Mas o iOS 26 da CI mede o nome da obra 0,4 abaixo do Pro Max, e o laudo é portão lá: com 10%, ele reprovaria. Se a CI passar folgada com 20%, o 10% pode ser tentado num PR à parte |
 | O "<1%" na folha do detalhe | Entra no 1c, que reescreve a obra, de onde a folha abre | Confirmação 7. No 0b, mexeria em tela da etapa 3 num PR sem tela |
-| O "<1%" na lista da tela Orçamento (**a confirmar antes do merge do 1c**) | Se a função da folha também serve à lista, a lista muda junto | Assim o número não muda ao abrir a folha. Mas a tela Orçamento está fora do escopo da etapa |
+| O "<1%" na lista da tela Orçamento (**decidido pelo Giovani em 30/10: muda junto**) | Se a função da folha também serve à lista, a lista muda junto | Assim o número não muda ao abrir a folha. Mas a tela Orçamento está fora do escopo da etapa |
 | O `gastoPorTopico` em Swift | Perde o `hoje:` e o `taxaMensal:` no 1c | Os dois não mudam o resultado. Tirá-los no PR 0 mexeria no app |
 | A linha de lançamento da obra sem o ícone do pagamento (PR 1b, na obra a partir do 1c) | Segue o mockup aprovado: "Pix" e "Cartão" por extenso, sem o raio e o cartão do sistema que a etapa 3 põe antes deles. As folhas (A pagar e detalhe do tópico) ficam com a linha da etapa 3 | O spec diz só "o valor em mono e o ícone pequeno na 2ª linha"; o mockup (`gastoLinha`, parte1.js:248-252) não tem o ícone. Se o Giovani quiser o ícone de volta, é o parâmetro `iconeDoPagamento` da linha |
 | A CI do marco 1 (decisão do Orquestrador em 29/10, como rotina, informada ao Giovani; muda o portão da tabela para o 0 e o 0b) | Igual à de hoje: o 0 e o 0b rodam os 10 jobs, uns 90 min, e não só os do núcleo. O filtro por superfície e os jobs da etapa 4 entram no 4a | É recomendação deste plano. O spec pede o filtro num PR que já roda tudo, antes do 2a. Pôr o filtro no 0 juntaria um risco de CI ao PR do site, e um PR só de CI seria o 12º. O custo: o 0 e o 0b esperam mais, e um rerun no iOS 26 tira o PR do merge automático |
@@ -90,8 +91,9 @@ As do Giovani estão no spec, nas seções "Decisões de desenho", "PRs" e "Deci
   - Com a CI toda verde, a revisão aprovada e nenhum rerun no iOS 26, o Orquestrador mescla, até 5 seguidos. No 5º, manda ao Giovani o resumo com os prints lado a lado (simulador × mockup) de cada PR.
   - Sempre esperam o OK dele:
     - o **1a**, com os prints antes × depois das telas principais no claro e no escuro (tarefa do laudo comparado do 1a);
+    - o **1c**, que fecha o marco e refaz a tela da obra, antes do merge e da tag, com os prints lado a lado dos desvios do mockup que ele registra;
     - o **TestFlight do fecho do marco**.
-- **O PR 0 muda o site no merge:** os dois alinhamentos vão ao ar em custta.com.br. A prévia da Vercel é conferida nos dois viewports antes do merge, como no ponto de controle do PR 0. **Exceção ao merge automático:** o PR 0 espera a resposta do Giovani sobre o preço vazio na obra sem venda estimada (Decisões). As outras pendências "a confirmar" têm prazo na própria linha.
+- **O PR 0 muda o site no merge:** os dois alinhamentos vão ao ar em custta.com.br. A prévia da Vercel é conferida nos dois viewports antes do merge, como no ponto de controle do PR 0. As quatro respostas que o PR 0 e o 1c esperavam foram dadas pelo Giovani em 30/10 (Decisões): o preço vazio na obra sem venda estimada, o tópico fixo "Outros" sempre no pedaço cinza, o halo de 20% e o "<1%" da tela Orçamento junto com a folha. Nenhum PR do marco 1 espera mais uma resposta; a pendência "a confirmar" que sobra (o "<0,1%" do Relatório) é do marco 3 e tem prazo na própria linha.
 - **CI no marco 1: igual à de hoje.**
   - Todo PR que mexe no app, no núcleo ou nos vetores roda os 10 jobs do `app-ios.yml`, de 79 a 96 min de relógio, porque a conta tem 5 vagas de macOS.
   - A única mudança na CI do marco 1 é o teto do `laudo-etapa3`, que sobe de 60 para 75 min no 0b (Decisões).
@@ -122,7 +124,7 @@ TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter <su
 
 ## PR 0 (site): as regras da análise nos vetores e o "Vale a pena?" alinhado ao app
 
-Um PR só do site, em sete commits, na forma do PR 0 das etapas 2 e 3. Ele tira do `app.js` as seis regras da análise que o app nativo precisa copiar: o gasto por tópico do donut (Tarefa 1), os grupos, o fim, a linha da correção e a soma da seleção do Relatório (Tarefas 2 a 4) e o "Vale a pena?" (Tarefas 5 e 6). Cada regra entra nos vetores com a cópia e o leitor em Swift no mesmo commit, porque o núcleo barra grupo de vetor sem leitor. O site mostra o mesmo, salvo os dois alinhamentos que o Giovani aprovou em 29/10 (confirmação 4): os meses de 0 a 120 na conta (Tarefa 5) e o preço que acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou (Tarefa 6), cada um com teste de browser que cai com o alinhamento desfeito. Uma subida só do `CACHE`, no fim (Tarefa 7). O risco é baixo: são regras puras, conferidas por vetores, e a cola do `app.js` é presa por uma suíte nova de browser (`tests/browser/analise.cjs`), com o dia fixo pelo relógio do Playwright. Na `main`, nada fica escondido no site: os dois alinhamentos vão ao ar no merge. No app, as regras novas ficam no núcleo, sem tela, até o PR 3a (Relatório) e o 4a ("Vale a pena?"); o `gastoPorTopico` já é usado pela tela Orçamento da etapa 3 e não muda. Na CI, o PR roda os 10 jobs do `app-ios.yml`, de 79 a 96 min de relógio, como hoje roda todo PR que toca o `calc.js`, o núcleo ou os vetores: o nível "núcleo" que a tabela do spec dá a ele depende do filtro por superfície, que o plano recomenda pôr no 4a (a confirmar com o Giovani; ver as Decisões). Um rerun no iOS 26, mesmo num job de tela que este PR não toca, tira o PR do merge automático. O PR abre o marco 1 deste plano (na tabela do spec, o 0 e o 0b vêm antes do 1a, sem marco). São 490 linhas de produção (acréscimos + remoções em `calc.js`, `app.js`, `sw.js` e no núcleo, pelo `git diff --numstat`; 514 somando as tarefas, que reescrevem linhas umas das outras), abaixo dos ~600–850 da tabela. Os vetores vão de 100 grupos e 1015 casos para 110 grupos e 1107 casos; o `swift test` do núcleo, de 233 testes em 37 suítes para 243 em 39; o `npm run test:unit` fica em 407.
+Um PR só do site, em sete commits, na forma do PR 0 das etapas 2 e 3. Ele tira do `app.js` as seis regras da análise que o app nativo precisa copiar: o gasto por tópico do donut (Tarefa 1), os grupos, o fim, a linha da correção e a soma da seleção do Relatório (Tarefas 2 a 4) e o "Vale a pena?" (Tarefas 5 e 6). Cada regra entra nos vetores com a cópia e o leitor em Swift no mesmo commit, porque o núcleo barra grupo de vetor sem leitor. O site mostra o mesmo, salvo os dois alinhamentos que o Giovani aprovou em 29/10 (confirmação 4): os meses de 0 a 120 na conta (Tarefa 5) e o preço que acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou (Tarefa 6), cada um com teste de browser que cai com o alinhamento desfeito. Uma subida só do `CACHE`, no fim (Tarefa 7). O risco é baixo: são regras puras, conferidas por vetores, e a cola do `app.js` é presa por uma suíte nova de browser (`tests/browser/analise.cjs`), com o dia fixo pelo relógio do Playwright. Na `main`, nada fica escondido no site: os dois alinhamentos vão ao ar no merge. No app, as regras novas ficam no núcleo, sem tela, até o PR 3a (Relatório) e o 4a ("Vale a pena?"); o `gastoPorTopico` já é usado pela tela Orçamento da etapa 3 e não muda. Na CI, o PR roda os 10 jobs do `app-ios.yml`, de 79 a 96 min de relógio, como hoje roda todo PR que toca o `calc.js`, o núcleo ou os vetores: o nível "núcleo" que a tabela do spec dá a ele depende do filtro por superfície, que fica para o 4a (decisão do Orquestrador; ver as Decisões). Um rerun no iOS 26, mesmo num job de tela que este PR não toca, tira o PR do merge automático. O PR abre o marco 1 deste plano (na tabela do spec, o 0 e o 0b vêm antes do 1a, sem marco). São 490 linhas de produção (acréscimos + remoções em `calc.js`, `app.js`, `sw.js` e no núcleo, pelo `git diff --numstat`; 514 somando as tarefas, que reescrevem linhas umas das outras), abaixo dos ~600–850 da tabela. Os vetores vão de 100 grupos e 1015 casos para 110 grupos e 1107 casos; o `swift test` do núcleo, de 233 testes em 37 suítes para 243 em 39; o `npm run test:unit` fica em 407.
 
 **Branch:** `feat/regras-da-analise-nos-vetores`. **Título:** `feat: regras da análise nos vetores e o simulador alinhado ao app`.
 
@@ -154,7 +156,7 @@ O Forja começa o PR 0b quando este entra em revisão, empilhado neste ramo (ver
 1. **Soma por tópico em `Map`, não em objeto (Tarefas 1 e 2).** No objeto do site, um tópico de id numérico ("12") passava à frente no empate do donut e do Relatório, e o tópico `"__proto__"` sumia do donut e derrubava o Relatório (`push` em `Object.prototype`). O `Map` faz o que o spec descreve ("no empate, a ordem em que o tópico aparece nos gastos") e o que a cópia em Swift já fazia. Nenhum tópico do site tem id assim (os fixos são palavras, os próprios são `c_` + uid), então nada muda para quem usa. **Recomendação:** aceitar e registrar no spec, na lista do que o site não muda, como "caso inalcançável".
 2. **O `confere` do núcleo deixa passar infinito contra um número (`Vetores.swift`, tolerância `.continua`).** `abs(inf − 0) ≤ 1e-9 × inf` dá verdadeiro, então um multiplicador infinito (TIR ÷ taxa zero) passava contra o 0 do site. A Tarefa 5 contorna no leitor (`isFinite`). **Recomendação:** um menor fora deste PR (entrou no 0b, Tarefa 8): o `confere` reprova quando só um lado não é finito, rodando o `swift test` inteiro para ver que nenhum leitor dependia disso.
 3. **A descrição vazia que vira o nome do tópico fica na cola (Tarefa 2).** O spec lista a regra em "Relatório" ("descrição vazia vira o nome do tópico"), mas a tabela do PR 0 cita só app.js:1164-1178 e 1188, e o nome depende do mapa de tópicos da tela. Sem vetor, o app precisa repetir a troca. **Recomendação:** o plano do PR 3a leva um teste de unidade da linha sem descrição (com tópico próprio e tópico apagado, que cai no id).
-4. **O preço vazio na obra sem estimada (Tarefa 6).** "O preço acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou" foi lido como: a obra sem estimada deixa o campo vazio ("Digite o preço de venda pra ver a conta."), em vez de manter o preço da obra anterior. **Recomendação:** confirmar com o Giovani na revisão do PR; se ele preferir manter o anterior, é uma linha na cola e um passo no `analise.cjs`.
+4. **O preço vazio na obra sem estimada (Tarefa 6).** "O preço acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou" foi lido como: a obra sem estimada deixa o campo vazio ("Digite o preço de venda pra ver a conta."), em vez de manter o preço da obra anterior. **Decidido pelo Giovani em 30/10: o campo fica vazio**, como a fatia faz (Decisões).
 5. **Os sinais da tabela do simulador viram dado da regra (Tarefa 5).** O `textosSimulador` devolve, por linha, `sinalBruto` e `sinalCorrigido` (`'positivo'`, `'negativo'` ou `null`) e o `destaque` do lucro; o site os traduz em `pos`, `neg` e `rep-total`, e o app usa o negativo em âmbar. A marcação muda num detalhe: a célula colorida sem valor perde o `class=""` vazio, sem efeito na tela.
 6. **O `gastoPorTopico` em Swift continua com `hoje:` e `taxaMensal:`, que não mudam o resultado (Tarefa 1).** Tirá-los mexeria no `OrcamentoView` e nos testes do app, e o PR passaria a mudar o app (laudo e comparação). **Recomendação:** limpar no PR 1c, que já mexe na obra.
 7. **Linhas abaixo da estimativa:** 490 contra ~600–850. O PR não precisa de corte.
@@ -2282,13 +2284,13 @@ git commit -m "chore: nova versão do cache offline para as regras da análise" 
 
 ## PR 0b (núcleo): as regras novas do app e a paginação do PDF
 
-Um PR do núcleo, em sete commits, com as regras que o app da etapa 4 tem e o site não: os pedaços do anel e da barra empilhada (6 cores e o "Outros"), com o piso de arco e de largura, o pedaço sob o dedo e o "<1%" (Tarefa 9); a escala redonda, os rótulos dos meses e o mês sob o dedo (Tarefa 10); o mês de referência e o padrão, os meses a vencer, as frases do que ficou fora, o aviso dos 24 meses e a média, o maior e os meses (Tarefa 11); a linha do tópico no Relatório, com "N de M gastos" e a parte com 1 casa (Tarefa 12); e a paginação da tabela do PDF, com as colunas pelo maior valor (Tarefa 13). Por último, uma linha da CI: o teto do job `laudo-etapa3` sobe de 60 para 75 min (Tarefa 14). Antes delas, o achado 2 do PR 0: o `confere` dos testes deixa de aceitar infinito contra número, e o contorno do leitor do simulador sai (Tarefa 8, só teste). Nenhuma regra tem vetor do site, porque o site não as tem: cada uma tem teste próprio, conferido por mutação (56 de 56 mortas). O risco é baixo: tudo é conta pura, sem tela, sem gravação e sem mudança nas regras com vetor; o `anoMes` e o `chaveMes` das séries só deixam de ser privados. Na `main`, as regras ficam sem uso até as telas: a barra no PR 1c, os Gráficos no 2a e no 2b, o Relatório e a busca no 3a e o PDF no 4b. Na CI, o PR roda os 10 jobs do `app-ios.yml`, como o PR 0: o nível "núcleo" da tabela do spec depende do filtro por superfície, que fica para o 4a (decisão do Orquestrador; ver as Decisões). O corpo do PR diz, numa linha, que o PR também sobe o teto do `laudo-etapa3` para 75 min (decisão do Orquestrador em 29/10): é a única mudança fora do núcleo, e o 0b roda todos os jobs e não vai ao site. Um rerun no iOS 26, mesmo num job de tela que este PR não toca, tira o PR do merge automático. No marco 1 deste plano, ele vem depois do 0 e antes do 1a. São 552 linhas de produção (acréscimos + remoções em `CusttaNucleo/Sources/`, pelo `git diff --numstat`), dentro dos ~450–600 da tabela; os testes vão de 243 em 39 suítes para 276 em 44 no `swift test` do núcleo, e o `npm run test:unit` fica em 407.
+Um PR do núcleo, em sete commits, com as regras que o app da etapa 4 tem e o site não: os pedaços do anel e da barra empilhada (6 cores e o "Outros"), com o piso de arco e de largura, o pedaço sob o dedo e o "<1%" (Tarefa 9); a escala redonda, os rótulos dos meses e o mês sob o dedo (Tarefa 10); o mês de referência e o padrão, os meses a vencer, as frases do que ficou fora, o aviso dos 24 meses e a média, o maior e os meses (Tarefa 11); a linha do tópico no Relatório, com "N de M gastos" e a parte com 1 casa (Tarefa 12); e a paginação da tabela do PDF, com as colunas pelo maior valor (Tarefa 13). Por último, uma linha da CI: o teto do job `laudo-etapa3` sobe de 60 para 75 min (Tarefa 14). Antes delas, o achado 2 do PR 0: o `confere` dos testes deixa de aceitar infinito contra número, e o contorno do leitor do simulador sai (Tarefa 8, só teste). Nenhuma regra tem vetor do site, porque o site não as tem: cada uma tem teste próprio, conferido por mutação (66 de 66 mortas). O risco é baixo: tudo é conta pura, sem tela, sem gravação e sem mudança nas regras com vetor; o `anoMes` e o `chaveMes` das séries só deixam de ser privados. Na `main`, as regras ficam sem uso até as telas: a barra no PR 1c, os Gráficos no 2a e no 2b, o Relatório e a busca no 3a e o PDF no 4b. Na CI, o PR roda os 10 jobs do `app-ios.yml`, como o PR 0: o nível "núcleo" da tabela do spec depende do filtro por superfície, que fica para o 4a (decisão do Orquestrador; ver as Decisões). O corpo do PR diz, numa linha, que o PR também sobe o teto do `laudo-etapa3` para 75 min (decisão do Orquestrador em 29/10): é a única mudança fora do núcleo, e o 0b roda todos os jobs e não vai ao site. Um rerun no iOS 26, mesmo num job de tela que este PR não toca, tira o PR do merge automático. No marco 1 deste plano, ele vem depois do 0 e antes do 1a. São 564 linhas de produção (acréscimos + remoções em `CusttaNucleo/Sources/`, pelo `git diff --numstat`), dentro dos ~450–600 da tabela; os testes vão de 243 em 39 suítes para 279 em 44 no `swift test` do núcleo, e o `npm run test:unit` fica em 407.
 
 **Branch:** `feat/regras-novas-do-app-no-nucleo`. **Título:** `feat: regras novas da análise e paginação do PDF no núcleo`.
 
 **De onde o ramo nasce.** O 0b depende do código do 0: a Tarefa 8 altera o `SimuladorTests.swift`, criado na Tarefa 5, e a Tarefa 13 usa o `RelatorioDaObra`, o `relatorioObra`, o `fimRelatorio` e o `duasCasasPtBR` do `Relatorio.swift` (Tarefas 2 a 4). Ele nasce da `main` depois do merge do 0 ou, enquanto o 0 não é mesclado, empilhado no ramo `feat/regras-da-analise-nos-vetores`, com o PR apontando para ele; mesclado o 0, a base do PR vira a `main`, com merge da `main` e sem rebase. Nascido da `main` sem o 0, ele cai já na Tarefa 8.
 
-**Como foi provado.** Cada fatia foi conferida sozinha: os testes da tarefa sobre o commit anterior (o "ver falhar" de cada tarefa é a saída real), o `swift test` inteiro sem aviso e, no fim, o `npm run test:unit`. A mutação trocou um trecho por vez nas regras novas e rodou a suíte da tarefa: 16 de 16 nos pedaços, 8 de 8 nos eixos, 13 de 13 nos meses, 6 de 6 na linha do tópico e 13 de 13 na paginação; os casos que mataram as que viviam entraram na própria tarefa (o dedo tão perto do topo que a fração arredonda para 1, a potência pelo piso do log, a altura do texto de 3 linhas, a linha mínima e o gasto de várias linhas que cabe numa página nova). Os casos da revisão do plano entraram do mesmo jeito: o tópico de R$ 0 (Tarefa 9), a evolução de 25 meses (Tarefa 11) e a 1ª página da tabela que saía vazia (Tarefa 13). Na Tarefa 8, a mutação "sem guarda da taxa zero" do PR 0 continua morrendo sem o contorno do leitor.
+**Como foi provado.** Cada fatia foi conferida sozinha: os testes da tarefa sobre o commit anterior (o "ver falhar" de cada tarefa é a saída real), o `swift test` inteiro sem aviso e, no fim, o `npm run test:unit`. A mutação trocou um trecho por vez nas regras novas e rodou a suíte da tarefa: 26 de 26 nos pedaços (10 delas na regra do tópico fixo "Outros", de 30/10), 8 de 8 nos eixos, 13 de 13 nos meses, 6 de 6 na linha do tópico e 13 de 13 na paginação; os casos que mataram as que viviam entraram na própria tarefa (o dedo tão perto do topo que a fração arredonda para 1, a potência pelo piso do log, a altura do texto de 3 linhas, a linha mínima e o gasto de várias linhas que cabe numa página nova). Os casos da revisão do plano entraram do mesmo jeito: o tópico de R$ 0 (Tarefa 9), a evolução de 25 meses (Tarefa 11) e a 1ª página da tabela que saía vazia (Tarefa 13). Na Tarefa 8, a mutação "sem guarda da taxa zero" do PR 0 continua morrendo sem o contorno do leitor.
 
 ### Mapa de arquivos do PR 0b
 
@@ -2303,12 +2305,12 @@ Um PR do núcleo, em sete commits, com as regras que o app da etapa 4 tem e o si
 
 ### Ponto de controle do fim do PR
 
-Não há tela: o ponto de controle é a CI inteira, os 10 jobs do `app-ios.yml` verdes e sem rerun, e, no Mac, `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo` (276 testes em 44 suítes, nenhum aviso) e `npm run test:unit` (407). Na revisão, vale ler os "Produces" das Tarefas 9 a 13 contra as telas que vão usá-los (1c, 2a, 2b, 3a e 4b): os nomes são os que elas chamam.
+Não há tela: o ponto de controle é a CI inteira, os 10 jobs do `app-ios.yml` verdes e sem rerun, e, no Mac, `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo` (279 testes em 44 suítes, nenhum aviso) e `npm run test:unit` (407). Na revisão, vale ler os "Produces" das Tarefas 9 a 13 contra as telas que vão usá-los (1c, 2a, 2b, 3a e 4b): os nomes são os que elas chamam.
 
 ### Achados que mudam o spec ou uma decisão
 
-1. **O "Outros" do anel bate com o tópico fixo "Outros" (`outros`, Topicos.swift:31).** Numa obra com 8 tópicos ou mais em que o tópico "Outros" está entre os 6 maiores, o anel mostra um "Outros" colorido e o "Outros · N tópicos" cinza. **Recomendação:** com 8 tópicos ou mais, o tópico "Outros" entra sempre no pedaço cinza (e conta entre os N), e os 6 coloridos são os 6 maiores sem ele. Mantém o nome aprovado no mockup e custa umas 3 linhas no `pedacosDoAnel`, com um teste; pede o OK do Giovani, porque muda o "6 maiores".
-2. **O "<1%" da folha do detalhe e da tela Orçamento.** O spec põe o "<1%" também no "% da obra" da folha (confirmação 7), e a lista "Gasto por tópico" da tela Orçamento usa o mesmo texto (`textoDaParteDaObra`, PecasDaTelaOrcamento.swift:58; a folha, DentroDaObra.swift:192). Trocar aqui mudaria duas telas da etapa 3 e mexeria no app (laudo e comparação). **Recomendação:** o PR 1c, o primeiro que mostra o "<1%" (na legenda da barra da obra), troca o `textoDaParteDaObra` para receber o bruto e o total e usar o `porcentoDoTopico`, com teste, nas duas telas.
+1. **Resolvido em 30/10 (decisão do Giovani): o tópico fixo "Outros" vai sempre para o pedaço cinza, com qualquer número de tópicos; a regra está na Tarefa 9.** O achado era: **o "Outros" do anel bate com o tópico fixo "Outros" (`outros`, Topicos.swift:31).** Numa obra com 8 tópicos ou mais em que o tópico "Outros" está entre os 6 maiores, o anel mostra um "Outros" colorido e o "Outros · N tópicos" cinza. A recomendação valia só com 8 tópicos ou mais; a decisão vale para qualquer número. No marco 2, o estado de poucos tópicos dos Gráficos (a obra `a6`, quadro `est-pequeno` do mockup) mostra o "Outros" cinza no fim, e não como a 4ª cor do mockup: o lado a lado do 2a registra a diferença.
+2. **O "<1%" da folha do detalhe e da tela Orçamento.** O spec põe o "<1%" também no "% da obra" da folha (confirmação 7), e a lista "Gasto por tópico" da tela Orçamento usa o mesmo texto (`textoDaParteDaObra`, PecasDaTelaOrcamento.swift:58; a folha, DentroDaObra.swift:192). Trocar aqui mudaria duas telas da etapa 3 e mexeria no app (laudo e comparação). **Decidido pelo Giovani em 30/10: muda junto.** O PR 1c, o primeiro que mostra o "<1%" (na legenda da barra da obra), troca o `textoDaParteDaObra` para receber o bruto e o total e usar o `porcentoDoTopico`, com teste, nas duas telas.
 3. **"<0,1%" no Relatório (Tarefa 12).** O spec só diz "com 1 casa"; um tópico com dinheiro mostraria "0,0%", o engano que o "<1%" corrige no anel. **Recomendação:** manter o "<0,1%", como regra deste PR.
 4. **A média, o maior e os meses contam do 1º gasto (Tarefa 11).** O spec diz "do 1º gasto até este mês" (confirmação 2); o mockup conta só os meses à vista, os últimos 24. Só muda nas obras com mais de 24 meses. **Recomendação:** ficar com o spec, como está.
 5. **O mês a vencer não depende do mês de referência estar na série (Tarefa 11).** O mockup só hachura quando este mês está na série, e a obra só com parcelas futuras sairia sem hachura. **Recomendação:** ficar com o spec ("depois deste mês ou da venda"), como está.
@@ -2441,7 +2443,7 @@ git commit -m "test: confere do núcleo reprova infinito contra número" -m "A t
 
 ### Task 9: Pedaços do anel e da barra, com o piso e o "<1%"
 
-Regra nova do app, sem vetor do site (spec, "Regras novas do app" e "### 1. Gráficos", conta pura), para o anel dos Gráficos (PR 2a), a barra empilhada da obra (PR 1c) e o anel da página 1 do PDF (PR 4b). O site dá uma cor por tópico e repete as 8 do 9º em diante (`PIE[i % PIE.length]`, app.js:8, 530 e 1040); o app tem 6 cores e o "Outros" em cinza. A regra, sobre a lista do `gastoPorTopico` (do maior para o menor): até 7 tópicos, um pedaço por tópico, com as cores 0 a 5 e o 7º em cinza (como o mockup, `parte1.js:57-67`); com 8 ou mais, os 6 maiores e o "Outros", que junta os outros tópicos e soma o bruto deles na ordem. O piso: o pedaço com menos de 10 pt de arco (medidos na circunferência do meio do aro) sobe para 10 pt, e o que ele ganhou sai do maior (no empate, o primeiro, o `indexOf(Math.max(…))` do mockup); na barra, o piso é de 8 pt de largura, depois de tirar os vãos de 3 pt (12 e 4 pt na letra máxima, `parte1.css:209-210`), e a mesma regra vale (o mockup usa o `flex` do CSS, que tira de todos; a diferença não se vê). Quando o maior desceria abaixo do piso, que é quando o piso de todos não cabe, ou sem bruto, ou sem largura, as partes ficam iguais (zero na barra sem largura, o 1º quadro do `GeometryReader`). O tópico de bruto zero (um gasto de R$ 0, que o `positivo` do `dados.js` aceita, como o "Brinde" da suíte de browser do PR 0) fica sem pedaço: parte 0, sem piso, sem largura e sem vão na barra, fora das partes iguais e nunca sob o dedo; só a obra sem bruto nenhum divide tudo igual. É o que o site mostra: ele desenha o arco desse tópico com comprimento 0 (`bruto/total*C`, app.js:529 e 1039), e o piso do spec é para o "tópico pequeno" (spec, "Decisões tomadas por recomendação"), não para o vazio; com o piso, o anel ganharia um pedaço colorido de R$ 0,00 com "0%", tirado do maior. Na legenda, o tópico continua, com "0%", como na legenda do site (decisão da revisão do plano). Os arcos vão do topo no sentido do relógio, e o último termina em 1. O pedaço sob o dedo é o arco que contém o ângulo do ponto (o "pedaço mais perto do dedo" do Croqui); quem decide se o dedo está na faixa de 44 pt é a tela. O % é o `Math.round(bruto / total × 100)` do site (o do detalhe do tópico), sem casa decimal no meio do anel (spec, "Deste spec"), e "<1%" quando o verdadeiro fica entre 0 e 1 (o site mostraria 0% ou 1%); sem total, "0%". Os textos novos: "Outros · N tópicos" e "e mais N tópicos" (com "1 tópico" no singular, que o mockup não trata).
+Regra nova do app, sem vetor do site (spec, "Regras novas do app" e "### 1. Gráficos", conta pura), para o anel dos Gráficos (PR 2a), a barra empilhada da obra (PR 1c) e o anel da página 1 do PDF (PR 4b). O site dá uma cor por tópico e repete as 8 do 9º em diante (`PIE[i % PIE.length]`, app.js:8, 530 e 1040); o app tem 6 cores e o "Outros" em cinza. A regra, sobre a lista do `gastoPorTopico` (do maior para o menor), chamando de comuns os tópicos que não são o fixo "Outros" (id `outros`, o último de `topicosPadrao`): os 6 maiores comuns ganham as cores 0 a 5, na ordem, e o resto vai para um pedaço cinza, sempre por último e na mesma ordem. Com um tópico só, o cinza é o próprio tópico, com o nome dele (`outros: false`); com dois ou mais, é o "Outros", que junta os tópicos e soma o bruto deles na ordem (`outros: true`). Sem o fixo, é o que o mockup faz (`parte1.js:57-67`): até 7 tópicos, um pedaço por tópico, com o 7º em cinza; com 8 ou mais, os 6 maiores e o "Outros". O fixo vai sempre para o cinza, mesmo quando é o maior tópico (decisão do Giovani de 30/10; com os 6 maiores quaisquer, numa obra de 8 tópicos ou mais, o "Outros" da pessoa podia sair colorido ao lado do "Outros · N tópicos" cinza): com até 6 comuns, ele fica sozinho no cinza, e a legenda mostra "Outros", não "Outros · 1 tópico"; com 7 comuns ou mais, ele entra no "Outros" no lugar dele da ordem e conta no N. A obra só com o fixo tem o anel todo cinza. O piso: o pedaço com menos de 10 pt de arco (medidos na circunferência do meio do aro) sobe para 10 pt, e o que ele ganhou sai do maior (no empate, o primeiro, o `indexOf(Math.max(…))` do mockup); na barra, o piso é de 8 pt de largura, depois de tirar os vãos de 3 pt (12 e 4 pt na letra máxima, `parte1.css:209-210`), e a mesma regra vale (o mockup usa o `flex` do CSS, que tira de todos; a diferença não se vê). Quando o maior desceria abaixo do piso, que é quando o piso de todos não cabe, ou sem bruto, ou sem largura, as partes ficam iguais (zero na barra sem largura, o 1º quadro do `GeometryReader`). O tópico de bruto zero (um gasto de R$ 0, que o `positivo` do `dados.js` aceita, como o "Brinde" da suíte de browser do PR 0) fica sem pedaço: parte 0, sem piso, sem largura e sem vão na barra, fora das partes iguais e nunca sob o dedo; só a obra sem bruto nenhum divide tudo igual. É o que o site mostra: ele desenha o arco desse tópico com comprimento 0 (`bruto/total*C`, app.js:529 e 1039), e o piso do spec é para o "tópico pequeno" (spec, "Decisões tomadas por recomendação"), não para o vazio; com o piso, o anel ganharia um pedaço colorido de R$ 0,00 com "0%", tirado do maior. Na legenda, o tópico continua, com "0%", como na legenda do site (decisão da revisão do plano). Os arcos vão do topo no sentido do relógio, e o último termina em 1. O pedaço sob o dedo é o arco que contém o ângulo do ponto (o "pedaço mais perto do dedo" do Croqui); quem decide se o dedo está na faixa de 44 pt é a tela. O % é o `Math.round(bruto / total × 100)` do site (o do detalhe do tópico), sem casa decimal no meio do anel (spec, "Deste spec"), e "<1%" quando o verdadeiro fica entre 0 e 1 (o site mostraria 0% ou 1%); sem total, "0%". O VoiceOver lê o "<1%" como "menos de 1%", como o rótulo do mockup e sem depender do nível de pontuação: o `porcentoFalado` troca o "<1%" de um texto e serve ao % sozinho (a barra, Tarefa 22) e à frase com ele ("<1% da obra" na lista e no detalhe do tópico, Tarefa 26). Os textos novos: "Outros · N tópicos" e "e mais N tópicos" (com "1 tópico" no singular, que o mockup não trata).
 
 **Files:**
 - Create: `app-ios/CusttaNucleo/Sources/CusttaNucleo/Pedacos.swift`
@@ -2449,11 +2451,11 @@ Regra nova do app, sem vetor do site (spec, "Regras novas do app" e "### 1. Grá
 
 **Interfaces:**
 - Consumes: `GastoDoTopico` e `gastoPorTopico(_:hoje:taxaMensal:)` (DentroDaObra.swift), `numeroJS` e `arredondarJS` (já existem).
-- Produces: `coresDoAnel` (6), `pisoDoArco` (10), `pisoDaBarra` (8), `vaoDaBarra` (3); `PedacoDoAnel` (`topicos: [GastoDoTopico]`, `bruto`, `cor: Int?`, `outros: Bool`) e `pedacosDoAnel(_ topicos: [GastoDoTopico]) -> [PedacoDoAnel]`; `ArcoDoPedaco` (`inicio`, `fim`) e `arcosDoAnel(_:circunferencia:piso:) -> [ArcoDoPedaco]`; `fracaoNoAnel(x:y:) -> Double` e `pedacoNoAnel(x:y:arcos:) -> Int?` (x e y a partir do centro, y para baixo); `largurasDaBarra(_:largura:piso:vao:) -> [Double]`; `porcentoDoTopico(_ bruto: Double, total: Double) -> String`; `contagemDeTopicos(_:) -> String`; `rotuloDoOutros(_:) -> String`; `LegendaDaBarra` (`pedacos`, `mais: String?`) e `legendaDaBarra(_:quantos:) -> LegendaDaBarra`. Internas: `temPedaco(_:)` e `partesComPiso(_:comprimento:piso:)`.
+- Produces: `coresDoAnel` (6), `pisoDoArco` (10), `pisoDaBarra` (8), `vaoDaBarra` (3); `PedacoDoAnel` (`topicos: [GastoDoTopico]`, `bruto`, `cor: Int?`, `outros: Bool`) e `pedacosDoAnel(_ topicos: [GastoDoTopico]) -> [PedacoDoAnel]`; `ArcoDoPedaco` (`inicio`, `fim`) e `arcosDoAnel(_:circunferencia:piso:) -> [ArcoDoPedaco]`; `fracaoNoAnel(x:y:) -> Double` e `pedacoNoAnel(x:y:arcos:) -> Int?` (x e y a partir do centro, y para baixo); `largurasDaBarra(_:largura:piso:vao:) -> [Double]`; `porcentoDoTopico(_ bruto: Double, total: Double) -> String`; `porcentoFalado(_ texto: String) -> String`; `contagemDeTopicos(_:) -> String`; `rotuloDoOutros(_:) -> String`; `LegendaDaBarra` (`pedacos`, `mais: String?`) e `legendaDaBarra(_:quantos:) -> LegendaDaBarra`. Internas: `idDoOutrosFixo` ("outros"), `temPedaco(_:)` e `partesComPiso(_:comprimento:piso:)`.
 
 - [ ] **Step 1: Escrever os testes**
 
-Os testes prendem os pedaços com 1, 7, 8 e 14 tópicos (cores, "Outros" e a soma dele na ordem), o piso que sai do maior e o empate do maior, o tópico de bruto zero (sem arco, sem largura e sem vão, fora das partes iguais e nunca sob o dedo), as partes iguais (sem bruto, sem comprimento, piso que não cabe, maior que desceria abaixo do piso, barra sem largura), a barra nas duas letras, o pedaço sob o dedo nos quatro pontos cardeais, na divisa entre dois arcos e tão perto do topo que a fração arredonda para 1, e os textos com o singular.
+Os testes prendem os pedaços com 1, 7, 8 e 14 tópicos (cores, "Outros" e a soma dele na ordem), o fixo "Outros" sempre no cinza (o maior, no meio e o menor, com 3, 7 e 8 tópicos; no meio dos que o "Outros" junta, com 10; sozinho), com o rótulo e o "e mais N tópicos" contando com ele, o piso que sai do maior e o empate do maior, o tópico de bruto zero (sem arco, sem largura e sem vão, fora das partes iguais e nunca sob o dedo), as partes iguais (sem bruto, sem comprimento, piso que não cabe, maior que desceria abaixo do piso, barra sem largura), a barra nas duas letras, o pedaço sob o dedo nos quatro pontos cardeais, na divisa entre dois arcos e tão perto do topo que a fração arredonda para 1, e os textos com o singular e o "menos de 1%" falado (sozinho, na frase e no meio dela). Mutações no clone: sem o tratamento do fixo, com o fixo pelo nome, o fixo no fim do cinza fora da ordem, os 6 primeiros de todos sem o fixo, 7 cores, o "Outros" com 1 ou com 3 tópicos, o cinza primeiro e o falado só no "<1%" sozinho ou sem troca: as 10 morrem.
 
 Criar `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/PedacosTests.swift`:
 
@@ -2462,7 +2464,8 @@ import Testing
 @testable import CusttaNucleo
 
 /* Os pedaços do anel dos Gráficos e da barra empilhada da obra (regra do app, sem vetor do site): até 7 tópicos, um pedaço
-   cada; com 8 ou mais, os 6 maiores e "Outros"; o piso de arco e de largura; o pedaço sob o dedo; o "<1%". */
+   cada; com 8 ou mais, os 6 maiores e "Outros"; o fixo "Outros" sempre no cinza; o piso de arco e de largura; o pedaço sob
+   o dedo; o "<1%" e o "menos de 1%" falado. */
 struct PedacosTests {
     /// Tópicos já na ordem do `gastoPorTopico` (do maior para o menor), com ids t1, t2…
     func topicos(_ brutos: [Double]) -> [GastoDoTopico] {
@@ -2495,6 +2498,54 @@ struct PedacosTests {
         #expect(quatorze[6].topicos.map(\.id) == ["t7", "t8", "t9", "t10", "t11", "t12", "t13", "t14"])
         #expect(quatorze[6].bruto == [8.0, 7, 6, 5, 4, 3, 2, 1].map { $0 * 1000.25 }.reduce(0, +))
         #expect(quatorze[5].topicos.map(\.id) == ["t6"])
+    }
+
+    /// `total` tópicos já na ordem do `gastoPorTopico` (brutos de 10 × `total` a 10), com o fixo "Outros" (id `outros`) na
+    /// posição dada (0 é o maior) e os comuns c1, c2… nas outras.
+    func comOFixo(total: Int, em posicao: Int) -> [GastoDoTopico] {
+        var comum = 0
+        return (0..<total).map { i in
+            let bruto = Double(total - i) * 10
+            if i == posicao { return GastoDoTopico(id: "outros", bruto: bruto, pct: 0) }
+            comum += 1
+            return GastoDoTopico(id: "c\(comum)", bruto: bruto, pct: 0)
+        }
+    }
+
+    @Test func oFixoComAteSeisComunsFicaSozinhoNoCinza() {
+        // O maior, no meio e o menor: os comuns ganham as cores, e o fixo vai para o fim, cinza e com o nome dele.
+        for (total, posicoes) in [(3, [0, 1, 2]), (7, [0, 3, 6])] {
+            for p in posicoes {
+                let pedacos = pedacosDoAnel(comOFixo(total: total, em: p))
+                let comuns = (1..<total).map { ["c\($0)"] }
+                #expect(pedacos.map { $0.topicos.map(\.id) } == comuns + [["outros"]], "\(total) tópicos, o fixo em \(p)")
+                #expect(pedacos.map(\.cor) == Array(0..<total - 1) + [nil], "\(total) tópicos, o fixo em \(p)")
+                #expect(pedacos.allSatisfy { !$0.outros }, "\(total) tópicos, o fixo em \(p)")
+                #expect(pedacos.last?.bruto == Double(total - p) * 10, "\(total) tópicos, o fixo em \(p)")
+            }
+        }
+        // Só o fixo: o anel inteiro cinza.
+        #expect(pedacosDoAnel(comOFixo(total: 1, em: 0)) == [PedacoDoAnel(topicos: comOFixo(total: 1, em: 0), bruto: 10, cor: nil, outros: false)])
+    }
+
+    @Test func oFixoComSeteComunsOuMaisEntraNoOutros() {
+        // 7 comuns + o fixo: os 6 maiores comuns coloridos e, por último, o "Outros" com o 7º comum e o fixo, do maior para o
+        // menor, mesmo quando o fixo é o maior.
+        for (p, juntos) in [(0, ["outros", "c7"]), (3, ["outros", "c7"]), (7, ["c7", "outros"])] {
+            let pedacos = pedacosDoAnel(comOFixo(total: 8, em: p))
+            #expect(pedacos.count == 7, "o fixo em \(p)")
+            #expect(pedacos.prefix(6).map { $0.topicos.map(\.id) } == (1...6).map { ["c\($0)"] }, "o fixo em \(p)")
+            #expect(pedacos.map(\.cor) == [0, 1, 2, 3, 4, 5, nil], "o fixo em \(p)")
+            #expect(pedacos.map(\.outros) == [false, false, false, false, false, false, true], "o fixo em \(p)")
+            #expect(pedacos[6].topicos.map(\.id) == juntos, "o fixo em \(p)")
+            #expect(pedacos[6].bruto == Double(8 - p) * 10 + (p == 7 ? 20 : 10), "o fixo em \(p)")
+            #expect(rotuloDoOutros(pedacos[6]) == "Outros · 2 tópicos", "o fixo em \(p)")
+        }
+        // O fixo no meio dos que o "Outros" junta fica no lugar dele, e conta no rótulo e no "e mais".
+        let dez = pedacosDoAnel(comOFixo(total: 10, em: 7))
+        #expect(dez[6].topicos.map(\.id) == ["c7", "outros", "c8", "c9"])
+        #expect(rotuloDoOutros(dez[6]) == "Outros · 4 tópicos")
+        #expect(legendaDaBarra(dez, quantos: 4).mais == "e mais 6 tópicos")
     }
 
     @Test func pisoDeArcoSaiDoMaior() {
@@ -2568,6 +2619,15 @@ struct PedacosTests {
         #expect(porcentoDoTopico(0, total: 0) == "0%")
     }
 
+    @Test func porcentoFaladoSemOSinal() {
+        // O VoiceOver lê o "<1%" como "menos de 1%", sozinho (a barra) e na frase (a lista e o detalhe do tópico).
+        #expect(porcentoFalado(porcentoDoTopico(4, total: 1000)) == "menos de 1%")
+        #expect(porcentoFalado("<1% da obra") == "menos de 1% da obra")
+        #expect(porcentoFalado("3 gastos · <1% da obra") == "3 gastos · menos de 1% da obra")
+        #expect(porcentoFalado("38%") == "38%")
+        #expect(porcentoFalado("1 gasto · 1% da obra") == "1 gasto · 1% da obra")
+    }
+
     @Test func textosDosTopicos() {
         #expect(contagemDeTopicos(1) == "1 tópico")
         #expect(contagemDeTopicos(14) == "14 tópicos")
@@ -2592,14 +2652,15 @@ TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter Ped
 ```
 Expected: o núcleo não compila:
 ```
-PedacosTests.swift:17:18: error: cannot find 'pedacosDoAnel' in scope
-PedacosTests.swift:18:24: error: cannot find 'PedacoDoAnel' in scope
-PedacosTests.swift:19:20: error: cannot find 'pedacosDoAnel' in scope
+PedacosTests.swift:18:18: error: cannot find 'pedacosDoAnel' in scope
+PedacosTests.swift:19:24: error: cannot find 'PedacoDoAnel' in scope
+PedacosTests.swift:20:20: error: cannot find 'pedacosDoAnel' in scope
 ```
+Com o `Pedacos.swift` da regra de antes (os 6 maiores quaisquer) e o teste `porcentoFaladoSemOSinal` fora do arquivo (sem a função, ele não compila), os dois testes do fixo reprovam, pelo mesmo `TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter PedacosTests 2>&1 | tail -5`: `✘ Test run with 10 tests in 1 suite failed after 0.002 seconds with 18 issues.` Os 3 tópicos com o fixo em qualquer lugar, os 7 e os 8 com ele no 1º ou no 4º e a obra só com ele; os 7 e os 8 com ele no fim e os 10 já davam o mesmo.
 
 - [ ] **Step 3: Implementar**
 
-O `for … where` do piso é um filtro de propósito: todo pedaço pequeno sobe, não só os primeiros. O `max(by:)` devolve o primeiro no empate.
+O cinza é o que sobra dos 6 maiores comuns, tirado por índice e na ordem da entrada; o fixo não precisa de caso à parte. O `for … where` do piso é um filtro de propósito: todo pedaço pequeno sobe, não só os primeiros. O `max(by:)` devolve o primeiro no empate.
 
 Criar `app-ios/CusttaNucleo/Sources/CusttaNucleo/Pedacos.swift`:
 
@@ -2607,11 +2668,15 @@ Criar `app-ios/CusttaNucleo/Sources/CusttaNucleo/Pedacos.swift`:
 import Foundation
 
 /* Os pedaços do anel dos Gráficos e da barra empilhada da obra: regra do app, sem vetor do site (spec da etapa 4, "Regras
-   novas do app"). O site dá uma cor por tópico e repete depois da 8ª; o app tem 6 cores e o "Outros" em cinza. O pedaço
-   pequeno ganha um piso de arco (anel) ou de largura (barra), tirado do maior; o % mostrado é o verdadeiro, com "<1%". */
+   novas do app"). O site dá uma cor por tópico e repete depois da 8ª; o app tem 6 cores e o "Outros" em cinza, onde o
+   tópico fixo "Outros" sempre fica (decisão do Giovani de 30/10). O pedaço pequeno ganha um piso de arco (anel) ou de
+   largura (barra), tirado do maior; o % mostrado é o verdadeiro, com "<1%". */
 
-/// Quantas cores o anel tem. O 7º pedaço é cinza: o "Outros", ou o 7º tópico de uma obra com 7.
+/// Quantas cores o anel tem. O pedaço depois delas é cinza: o "Outros", ou o tópico que fica sozinho no cinza.
 public let coresDoAnel = 6
+
+/// O id do tópico fixo "Outros" (o último de `topicosPadrao`), que vai sempre para o pedaço cinza.
+let idDoOutrosFixo = "outros"
 
 /// O piso de arco do anel, em pontos, medido na circunferência do meio do aro.
 public let pisoDoArco = 10.0
@@ -2627,20 +2692,24 @@ public struct PedacoDoAnel: Equatable, Sendable {
     public let bruto: Double
     /// A cor, de 0 a 5; nil no cinza.
     public let cor: Int?
-    /// O pedaço que junta os tópicos do 7º em diante.
+    /// O pedaço cinza que junta dois tópicos ou mais: os comuns do 7º em diante e o fixo "Outros". Fica sempre por último,
+    /// mesmo quando o fixo é o maior tópico.
     public let outros: Bool
 }
 
-/// Os pedaços, na ordem do `gastoPorTopico`: até 7 tópicos, um pedaço por tópico; com 8 ou mais, os 6 maiores e o "Outros",
-/// com a soma e os tópicos que ele junta.
+/// Os pedaços, sobre a lista do `gastoPorTopico` (do maior para o menor): os 6 maiores tópicos comuns (todos menos o fixo
+/// "Outros"), um por cor; e, por último, o pedaço cinza com o resto, na mesma ordem: o fixo e os comuns do 7º em diante. O
+/// cinza fica no fim mesmo quando o fixo é o maior tópico (decisão do Giovani de 30/10: o "Outros" da pessoa nunca sai
+/// colorido ao lado do "Outros · N tópicos"). Com um tópico só, o cinza é ele mesmo, com o nome dele (o fixo, ou o 7º
+/// de uma obra com 7 comuns e sem o fixo); com dois ou mais, é o "Outros", com a soma e os tópicos que ele junta.
 public func pedacosDoAnel(_ topicos: [GastoDoTopico]) -> [PedacoDoAnel] {
-    let junta = topicos.count > coresDoAnel + 1
-    var pedacos = (junta ? Array(topicos.prefix(coresDoAnel)) : topicos).enumerated().map { i, t in
-        PedacoDoAnel(topicos: [t], bruto: t.bruto, cor: i < coresDoAnel ? i : nil, outros: false)
+    let coloridos = Array(topicos.indices.filter { topicos[$0].id != idDoOutrosFixo }.prefix(coresDoAnel))
+    var pedacos = coloridos.enumerated().map { cor, i in
+        PedacoDoAnel(topicos: [topicos[i]], bruto: topicos[i].bruto, cor: cor, outros: false)
     }
-    if junta {
-        let resto = Array(topicos.dropFirst(coresDoAnel))
-        pedacos.append(PedacoDoAnel(topicos: resto, bruto: resto.reduce(0) { $0 + $1.bruto }, cor: nil, outros: true))
+    let cinza = topicos.indices.filter { !coloridos.contains($0) }.map { topicos[$0] }
+    if !cinza.isEmpty {
+        pedacos.append(PedacoDoAnel(topicos: cinza, bruto: cinza.reduce(0) { $0 + $1.bruto }, cor: nil, outros: cinza.count > 1))
     }
     return pedacos
 }
@@ -2719,6 +2788,10 @@ public func porcentoDoTopico(_ bruto: Double, total: Double) -> String {
     return numeroJS(arredondarJS(pct)) + "%"
 }
 
+/// O texto com o % como o VoiceOver o lê: o "<1%" vira "menos de 1%", como no rótulo do mockup, e a leitura não depende do
+/// nível de pontuação. Serve ao % sozinho (a barra) e à frase com ele ("<1% da obra", na lista e no detalhe do tópico).
+public func porcentoFalado(_ texto: String) -> String { texto.replacingOccurrences(of: "<1%", with: "menos de 1%") }
+
 /// "1 tópico", "14 tópicos".
 public func contagemDeTopicos(_ n: Int) -> String { "\(n) \(n == 1 ? "tópico" : "tópicos")" }
 
@@ -2747,13 +2820,13 @@ Run:
 ```bash
 TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'warning:|Test run with'
 ```
-Expected: `━ Test run with 252 tests in 40 suites passed after 0.228 seconds with 4 known issues.` (`PedacosTests` é nova, com 8), sem nenhum `warning:`.
+Expected: `━ Test run with 255 tests in 40 suites passed after 0.161 seconds with 4 known issues.` (`PedacosTests` é nova, com 11), sem nenhum `warning:`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add app-ios/CusttaNucleo/Sources/CusttaNucleo/Pedacos.swift app-ios/CusttaNucleo/Tests/CusttaNucleoTests/PedacosTests.swift
-git commit -m "feat: pedaços do anel e da barra no núcleo, com o piso e o \"<1%\"" -m "Os Gráficos e a obra da etapa 4 mostram o gasto por tópico em seis cores e um \"Outros\" em cinza; o site repete as oito cores do nono tópico em diante. A regra entra no núcleo com teste próprio, sem vetor do site e ainda sem tela: até 7 tópicos, um pedaço cada (o sétimo cinza); com 8 ou mais, os 6 maiores e o \"Outros\", que soma o resto." -m "O pedaço pequeno ganha um piso de 10 pt de arco no anel e de 8 pt de largura na barra, tirado do maior. O tópico de R\$ 0 fica sem pedaço, como o arco vazio do site: sem piso, sem vão na barra e nunca sob o dedo. A conta diz onde cada arco começa e termina e qual pedaço está sob o dedo. O % é o arredondado do site, com \"<1%\" quando o verdadeiro fica entre 0 e 1%."
+git commit -m "feat: pedaços do anel e da barra no núcleo, com o piso e o \"<1%\"" -m "Os Gráficos e a obra da etapa 4 mostram o gasto por tópico em seis cores e um \"Outros\" em cinza; o site repete as oito cores do nono tópico em diante. A regra entra no núcleo com teste próprio, sem vetor do site e ainda sem tela: até 7 tópicos, um pedaço cada (o sétimo cinza); com 8 ou mais, os 6 maiores e o \"Outros\", que soma o resto." -m "O tópico fixo \"Outros\" fica sempre no cinza, no fim, mesmo quando é o maior (decisão do Giovani de 30/10). As cores vão para os 6 maiores dos outros tópicos; o fixo fica sozinho no cinza, com o nome dele, ou entra no \"Outros · N tópicos\" e conta no N. Assim o \"Outros\" da pessoa nunca sai colorido ao lado do \"Outros\" cinza." -m "O pedaço pequeno ganha um piso de 10 pt de arco no anel e de 8 pt de largura na barra, tirado do maior. O tópico de R\$ 0 fica sem pedaço, como o arco vazio do site: sem piso, sem vão na barra e nunca sob o dedo. A conta diz onde cada arco começa e termina e qual pedaço está sob o dedo. O % é o arredondado do site, com \"<1%\" quando o verdadeiro fica entre 0 e 1%, que o VoiceOver lê \"menos de 1%\" (porcentoFalado)."
 ```
 
 ### Task 10: Escala redonda, rótulos dos meses e o mês sob o dedo
@@ -5037,7 +5110,7 @@ git commit -m "feat: cápsula de abas na borda de 16 pt em todas as telas" -m "A
 
 ## PR 1b (app): as peças da identidade nova, sem tela
 
-O PR traz as peças da identidade nova que a obra (PR 1c) e as telas da análise vão usar, todas sem tela na `main`: a grade de bordas 16/34, o bloco de vidro e o sólido verde e âmbar, com o rótulo, a nota e a etiqueta de dentro deles, e a placa (Tarefa 19); o número mono, com o R$ e os centavos menores na linha do número e o piso de 11 pt, como forma nova do `ValorEmDinheiro` (Tarefa 20); o título em SF Mono, o pequeno da barra e a cápsula de metadados (Tarefa 21); a barra empilhada de tópicos, desenhada em `Shape` com os pedaços do núcleo do PR 0b, e a hachura (Tarefa 22); a linha de lançamento na forma mono (Tarefa 23); e a auditoria das peças na maior letra (Tarefa 24). Para provar o que não tem tela, as peças moram numa vitrine só do Debug (`Falsos/VitrineDasPecas.swift`), empurrada em Obras com `CUSTTA_ABRIR=pecas`, com os números da Casa Alphaville da vitrine (os do mockup): os testes de tela, a auditoria e a conferência visual olham para ela. O risco é o das peças compartilhadas: o `ValorEmDinheiro` (20 usos) ganha a forma mono como opção (`mono: nil` é a de hoje), a `LinhaDeGastoView` (a obra e as folhas) ganha a forma mono pelo `linhaMono` do environment (desligado é a de hoje), o `ObrasView` ganha o gancho de Debug da vitrine, e o catálogo ganha um token (`LuzDoSolido`, o filete do sólido). O laudo inteiro, comparado palavra por palavra com o da ponta do 1a, prova que as telas das etapas 1 a 3 não mudaram. Fica escondido na `main` até o PR 1c: todas as peças (nenhuma tela as usa) e a vitrine, que não vai ao Release. Portão da CI: "tudo, com a comparação" (o `ValorEmDinheiro` e a linha do gasto são compartilhados, e o catálogo muda). Marco 1. São 578 linhas de produção (acréscimos + remoções em `app-ios/Custta/` sem `Falsos/`, pelo `git diff --numstat` da ponta do 1a à do 1b), um pouco abaixo dos ~600–800 da tabela do spec; fora da conta, a vitrine em `Falsos/` (116), o colorset gerado (38) e o script das cores (1).
+O PR traz as peças da identidade nova que a obra (PR 1c) e as telas da análise vão usar, todas sem tela na `main`: a grade de bordas 16/34, o bloco de vidro e o sólido verde e âmbar, com o rótulo, a nota e a etiqueta de dentro deles, e a placa (Tarefa 19); o número mono, com o R$ e os centavos menores na linha do número e o piso de 11 pt, como forma nova do `ValorEmDinheiro` (Tarefa 20); o título em SF Mono, o pequeno da barra e a cápsula de metadados (Tarefa 21); a barra empilhada de tópicos, desenhada em `Shape` com os pedaços do núcleo do PR 0b, e a hachura (Tarefa 22); a linha de lançamento na forma mono (Tarefa 23); e a auditoria das peças na maior letra (Tarefa 24). Para provar o que não tem tela, as peças moram numa vitrine só do Debug (`Falsos/VitrineDasPecas.swift`), empurrada em Obras com `CUSTTA_ABRIR=pecas`, com os números da Casa Alphaville da vitrine (os do mockup): os testes de tela, a auditoria e a conferência visual olham para ela. O risco é o das peças compartilhadas: o `ValorEmDinheiro` (20 usos) ganha a forma mono como opção (`mono: nil` é a de hoje), a `LinhaDeGastoView` (a obra e as folhas) ganha a forma mono pelo `linhaMono` do environment (desligado é a de hoje), o `ObrasView` ganha o gancho de Debug da vitrine, e o catálogo ganha um token (`LuzDoSolido`, o filete do sólido). O laudo inteiro, comparado palavra por palavra com o da ponta do 1a, prova que as telas das etapas 1 a 3 não mudaram. Fica escondido na `main` até o PR 1c: todas as peças (nenhuma tela as usa) e a vitrine, que não vai ao Release. Portão da CI: "tudo, com a comparação" (o `ValorEmDinheiro` e a linha do gasto são compartilhados, e o catálogo muda). Marco 1. São 577 linhas de produção (acréscimos + remoções em `app-ios/Custta/` sem `Falsos/`, pelo `git diff --numstat` da ponta do 1a à do 1b), um pouco abaixo dos ~600–800 da tabela do spec; fora da conta, a vitrine em `Falsos/` (116), o colorset gerado (38) e o script das cores (1).
 
 - **Branch:** `feat/pecas-da-identidade-nova`
 - **Título:** `feat: peças da identidade nova, sem tela`
@@ -5075,7 +5148,7 @@ O PR traz as peças da identidade nova que a obra (PR 1c) e as telas da análise
 No Mac, com o produto da ponta do PR e o da ponta do 1a (o commit anterior ao PR), cada um copiado com `cp -c` e rodado pelo seu `.xctestrun`, para os dois simuladores rodarem ao mesmo tempo sem compilar por cima de uma rodada:
 
 1. **O laudo inteiro no Pro Max, comparado palavra por palavra com o da ponta do 1a** (spec, "A comparação"; memória `laudo-inteiro-no-pro-max-no-fim-do-pr`): `-only-testing:CusttaUITests/LeituraNoVidroUITests` nos dois produtos, no mesmo Pro Max, e o comparador (`node scripts/compara-laudo.mjs <antes.xcresult> <depois.xcresult> <pasta> [--detalhe]`, da Tarefa 15) sobre os dois resultados. Este laudo é a prova da linha da etapa 3: o `meta(_:iconeDoPagamento:)` da Tarefa 23 passa por ela (com a fonte e o ícone do Pix e do cartão), e nenhum teste de unidade prende o ícone do pagamento na linha antiga; por isso ele roda com o produto da ponta do PR, e não com o de uma tarefa do meio. Expected: as duas rodadas com `Executed 18 tests, with 0 failures (0 unexpected)` (3.307 s na ponta do 1a e 3.167 s na do 1b), e o comparador: `TOTAL: 175 cenas, 3590 palavras, 3590 idênticas, 0 mudadas, 0 deslocadas, 0 sem par, 0 abaixo de 4.5`. As telas das etapas 1 a 3 não mudaram: a forma de hoje do `ValorEmDinheiro` e da linha do gasto saiu igual, palavra por palavra. (Esses números saíram de um produto anterior ao `meta(_:iconeDoPagamento:)`; com o da ponta, a comparação tem de dar o mesmo.)
-2. **Os testes inteiros no 18 Pro**, ao mesmo tempo: `-only-testing:CusttaTests -only-testing:CusttaUITests -skip-testing:CusttaUITests/LeituraNoVidroUITests` (as auditorias entram aqui, na `AuditoriaUITests`, com a da vitrine). Expected: `Executed 227 tests, with 1 test skipped and 1 failure` nas telas, em 4.474 s, com a `AuditoriaUITests` inteira verde (inclusive a da vitrine) e a `VitrineUITests`. A falha é o `FolhasDeOrigemUITests/testASetaDoIndicadorAbreAFolhaDoAPagar` (achado 3 do PR 1a): 1 failure nos 3 últimos dias do mês; fora deles, 0. O conserto é o PR #93, só de teste, que entra antes do PR 0. Na unidade: `✔ Test run with 194 tests in 38 suites passed`.
+2. **Os testes inteiros no 18 Pro**, ao mesmo tempo: `-only-testing:CusttaTests -only-testing:CusttaUITests -skip-testing:CusttaUITests/LeituraNoVidroUITests` (as auditorias entram aqui, na `AuditoriaUITests`, com a da vitrine). Expected: `Executed 227 tests, with 1 test skipped and 1 failure` nas telas, em 4.474 s, com a `AuditoriaUITests` inteira verde (inclusive a da vitrine) e a `VitrineUITests`. A falha é o `FolhasDeOrigemUITests/testASetaDoIndicadorAbreAFolhaDoAPagar` (achado 3 do PR 1a): 1 failure nos 3 últimos dias do mês; fora deles, 0. O conserto é o PR #93, só de teste, que entra antes do PR 0. Na unidade: `✔ Test run with 195 tests in 38 suites passed` (conferido em 30/10 na ponta do 1b, `ab36f9f`, com o teste do Negrito da Tarefa 19).
 3. **Node:** `npm run test:unit 2>&1 | tail -8`. Expected: `ℹ tests 411`, `ℹ pass 411`, `ℹ fail 0`.
 4. **A vitrine lado a lado com o mockup**, no 18 Pro, com a barra de status em 9:41 e o fundo parado, numa pasta fora do repositório: o alto (título, cápsula, sólido e blocos), a barra de tópicos, os lançamentos e os números, no escuro e no claro, e o alto na letra máxima. Com o app da ponta instalado, cada print abre a vitrine pelo `simctl`:
    ```bash
@@ -5115,7 +5188,7 @@ No Mac, com o produto da ponta do PR e o da ponta do 1a (o commit anterior ao PR
 
 ### Task 19: Grade 16/34, blocos de vidro e sólido e placa
 
-As peças de bloco da identidade nova nascem sem tela (spec, "Identidade" e a linha 1b da tabela de PRs; medidas do `parte1.html`, "Medidas e especificação", e do `parte1.css:165-174` e `:207`). A grade de bordas (`Grade`): toda forma começa a 16 pt da borda da tela e todo texto dentro dela a 34 (os 16 e o recuo de 18), igual à direita, e a letra máxima não muda as bordas; entre blocos, 12 pt. O bloco de vidro (`BlocoDeVidro`) é o vidro do conteúdo (`.superficie(.conteudo, …)`), com cantos de 26 pt e recuo de 16 × 18 pt, que passam a 32 e 22 × 18 na letra de acessibilidade (o mockup só desenha a AX5; da AX1 em diante, os da AX5). O sólido (`BlocoSolido`), um por tela e que não é vidro, é o verde (`DestaqueSolido`, texto `TintaSobreDestaque`) ou o âmbar (`SolidoAmbar`, texto `TintaSobreAmbar`), com a sombra de 36 pt de desfoque a 14 pt para baixo na cor do bloco (20% no escuro e 22% no claro; o mockup usa o `Destaque` no verde e, no âmbar do claro, um âmbar escuro, aqui o `Alerta`) e o filete de luz de 1 pt no topo (o `inset 0 1px 0` branco a 35%), que ganha o token `LuzDoSolido`. Dentro do sólido, o rótulo, a nota e a etiqueta vêm na tinta dele (o mockup troca o `--sec` pela tinta), pelo `tintaDoBloco` do environment; fora, no secundário do vidro. O cabeçalho do bloco põe a etiqueta à direita do rótulo e, na letra de acessibilidade, embaixo dele. A etiqueta do sólido ("46 lançamentos") é a `EtiquetaDoIndicador` (PecasDaObra.swift:55) na tinta sobre ela mesma a 14%, sem mexer na da etapa 3. A placa é o tom chapado do fundo, sem desfoque, atrás das marcas de gráfico (`Placa` a 58% e 66%; a forte, 84% e 92%, atrás da barra empilhada). Hoje a obra tem 20 pt de borda (ObraView.swift:126) e cartões de raio 24 (PecasDaObra.swift:479): a obra muda no PR 1c. As peças aparecem na vitrine, uma tela só do Debug, empurrada em Obras com `CUSTTA_ABRIR=pecas`, com os números da Casa Alphaville da vitrine (os do mockup).
+As peças de bloco da identidade nova nascem sem tela (spec, "Identidade" e a linha 1b da tabela de PRs; medidas do `parte1.html`, "Medidas e especificação", e do `parte1.css:165-174` e `:207`). A grade de bordas (`Grade`): toda forma começa a 16 pt da borda da tela e todo texto dentro dela a 34 (os 16 e o recuo de 18), igual à direita, e a letra máxima não muda as bordas; entre blocos, 12 pt. O bloco de vidro (`BlocoDeVidro`) é o vidro do conteúdo (`.superficie(.conteudo, …)`), com cantos de 26 pt e recuo de 16 × 18 pt, que passam a 32 e 22 × 18 na letra de acessibilidade (o mockup só desenha a AX5; da AX1 em diante, os da AX5). O sólido (`BlocoSolido`), um por tela e que não é vidro, é o verde (`DestaqueSolido`, texto `TintaSobreDestaque`) ou o âmbar (`SolidoAmbar`, texto `TintaSobreAmbar`), com a sombra de 36 pt de desfoque a 14 pt para baixo na cor do bloco (20% no escuro e 22% no claro; o mockup usa o `Destaque` no verde e, no âmbar do claro, um âmbar escuro, aqui o `Alerta`) e o filete de luz de 1 pt no topo (o `inset 0 1px 0` branco a 35%), que ganha o token `LuzDoSolido`. Dentro do sólido, o rótulo, a nota e a etiqueta vêm na tinta dele (o mockup troca o `--sec` pela tinta), pelo `tintaDoBloco` do environment; fora, no secundário do vidro. O cabeçalho do bloco põe a etiqueta à direita do rótulo e, na letra de acessibilidade, embaixo dele; fora dela, o rótulo ocupa o que sobra por um `frame(maxWidth: .infinity)`, e não por um `Spacer` ao lado: com o Negrito (`legibilityWeight` `.bold`), o `Spacer` arredondava para cima, e o cabeçalho do sólido passava 1/3 pt da largura de dentro dele (372,333 nos 372 do Pro Max, achado 1 da revisão B do PR 1c). A etiqueta do sólido ("46 lançamentos") é a `EtiquetaDoIndicador` (PecasDaObra.swift:55) na tinta sobre ela mesma a 14%, sem mexer na da etapa 3. A placa é o tom chapado do fundo, sem desfoque, atrás das marcas de gráfico (`Placa` a 58% e 66%; a forte, 84% e 92%, atrás da barra empilhada). Hoje a obra tem 20 pt de borda (ObraView.swift:126) e cartões de raio 24 (PecasDaObra.swift:479): a obra muda no PR 1c. As peças aparecem na vitrine, uma tela só do Debug, empurrada em Obras com `CUSTTA_ABRIR=pecas`, com os números da Casa Alphaville da vitrine (os do mockup).
 
 **Files:**
 - Create: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
@@ -5134,7 +5207,7 @@ As peças de bloco da identidade nova nascem sem tela (spec, "Identidade" e a li
 
 - [ ] **Step 1: Escrever os testes**
 
-Os testes de unidade prendem por pixel as cores do sólido nos dois temas, com o filete de 1 pt no topo, a tinta do bloco no texto de dentro e as duas placas; o recuo e o raio na letra de acessibilidade; e, por pixel, o canto do sólido, que segue o raio (a 8 pt das duas bordas, dentro da quina de 26 e fora da de 32), porque a função `Grade.raioDoBloco` sozinha não prova que o bloco a usa. O de tela, as bordas de 16 e 34 pt na vitrine, na letra padrão e na máxima.
+Os testes de unidade prendem por pixel as cores do sólido nos dois temas, com o filete de 1 pt no topo, a tinta do bloco no texto de dentro e as duas placas; o recuo e o raio na letra de acessibilidade; e, por pixel, o canto do sólido, que segue o raio (a 8 pt das duas bordas, dentro da quina de 26 e fora da de 32), porque a função `Grade.raioDoBloco` sozinha não prova que o bloco a usa. A varredura do cabeçalho do sólido com a etiqueta mede por `sizeThatFits`, com e sem o Negrito, em todo tamanho de letra, na escala 3 e na largura de dentro do sólido nos três iPhones (o bloco de 343, 370 e 408 pt menos o `Grade.recuo` de cada lado: 307, 334 e 372). O de tela, as bordas de 16 e 34 pt na vitrine, na letra padrão e na máxima.
 
 Criar `app-ios/CusttaTests/BlocosTests.swift`:
 
@@ -5229,6 +5302,30 @@ struct BlocosTests {
             #expect((p.em(8, 8)[3] == 255) == dentro, "\(letra): \(p.em(8, 8))")
         }
     }
+
+    /// O cabeçalho do sólido com a etiqueta, com e sem o Negrito, em todo tamanho de letra e na largura de dentro do sólido
+    /// nos três iPhones (o bloco de 343, 370 e 408 pt, menos o recuo de 18 de cada lado), na escala 3 deles: nunca passa da
+    /// largura que recebe. Com o Negrito, o rótulo ao lado de um `Spacer` arredondava para cima, e o cabeçalho passava 1/3
+    /// pt (372,333 nos 372 do Pro Max), e o bloco com ele.
+    @Test func cabecalhoDoSolidoNaoPassaDaLargura() {
+        let pares = [("Total gasto", "46 lançamentos"), ("Total gasto", "1 lançamento"), ("Total gasto", "sem gastos"),
+                     ("Rende menos que o banco", "banco paga 1%")]
+        for negrito in [false, true] {
+            for tamanho in DynamicTypeSize.allCases {
+                for bloco in [CGFloat(343), 370, 408] {
+                    let disponivel = bloco - 2 * Grade.recuo
+                    for (rotulo, etiqueta) in pares {
+                        let cabecalho = CabecalhoDoBloco(rotulo: rotulo) { EtiquetaDoSolido(texto: etiqueta) }
+                            .environment(\.tintaDoBloco, .tintaSobreDestaque).dynamicTypeSize(tamanho)
+                            .environment(\.legibilityWeight, negrito ? .bold : .regular).environment(\.displayScale, 3)
+                        let medida = UIHostingController(rootView: cabecalho)
+                            .sizeThatFits(in: CGSize(width: disponivel, height: CGFloat.infinity)).width
+                        #expect(medida <= disponivel, "\(rotulo), \(etiqueta), \(tamanho), negrito \(negrito), a \(disponivel) pt: \(medida)")
+                    }
+                }
+            }
+        }
+    }
 }
 ```
 
@@ -5296,6 +5393,16 @@ Expected: o `CusttaTests` não compila, nos dois arquivos de teste (no `BlocosTe
 ```
 CusttaTests/BlocosTests.swift:33:31: error: cannot find 'CorDoSolido' in scope
 CusttaTests/CoresTests.swift:53:15: error: type 'Token' has no member 'luzDoSolido'
+```
+Com o cabeçalho de antes (o rótulo e um `Spacer(minLength: 0)` ao lado, no lugar do `frame`), a varredura compila e reprova só no Negrito:
+```bash
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/BlocosTests 2>&1 | grep -E "↳ .*negrito .* pt: |Test run with"
+```
+```
+↳ Total gasto, 46 lançamentos, .medium, negrito true, a 372.0 pt: 372.3333333333333
+↳ Rende menos que o banco, banco paga 1%, .xxxLarge, negrito true, a 307.0 pt: 307.3333333333333
+↳ Rende menos que o banco, banco paga 1%, .xxxLarge, negrito true, a 372.0 pt: 372.3333333333333
+✘ Test run with 6 tests in 1 suite failed after 0.229 seconds with 3 issues.
 ```
 
 - [ ] **Step 3: Implementar**
@@ -5450,8 +5557,9 @@ struct CabecalhoDoBloco<Etiqueta: View>: View {
         let grande = tamanho.isAccessibilitySize
         let layout = grande ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
         layout {
-            RotuloDoBloco(texto: rotulo)
-            if !grande { Spacer(minLength: 0) }
+            // O rótulo ocupa o que sobra pelo frame, e não um Spacer ao lado: com o Negrito, o Spacer arredondava para cima,
+            // e o cabeçalho passava 1/3 pt da largura.
+            RotuloDoBloco(texto: rotulo).frame(maxWidth: grande ? nil : .infinity, alignment: .leading)
             etiqueta
         }
         .padding(.bottom, 8)
@@ -5606,7 +5714,7 @@ xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUI
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/BlocosTests -only-testing:CusttaTests/CoresTests 2>&1 | grep -E "Test run with"
 xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/VitrineUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
 ```
-Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 10 tests in 2 suites passed`; `Executed 1 test, with 0 failures (0 unexpected)`.
+Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 11 tests in 2 suites passed`; `Executed 1 test, with 0 failures (0 unexpected)`.
 
 - [ ] **Step 5: Conferir na vitrine**
 
@@ -5623,7 +5731,7 @@ Expected: a tela "Peças", empurrada sobre Obras: o sólido verde "Total gasto �
 
 ```bash
 git add app-ios/Custta/Assets.xcassets/Esmeralda/LuzDoSolido.colorset/Contents.json app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Identidade/Blocos.swift app-ios/Custta/Identidade/Paleta.swift app-ios/Custta/Telas/ObrasView.swift app-ios/CusttaTests/BlocosTests.swift app-ios/CusttaTests/CoresTests.swift app-ios/CusttaUITests/VitrineUITests.swift scripts/cores-app-ios.mjs
-git commit -m "feat: grade 16/34, blocos de vidro e sólido e placa da identidade nova" -m "As peças de bloco da identidade nova da etapa 4 nascem sem tela, como o spec pede para o PR 1b: a grade de bordas (16 pt para toda forma, 34 para o texto dentro dela), o bloco de vidro de um assunto, o bloco sólido protagonista, verde ou âmbar, com a sombra na cor dele e o filete de luz no topo, o cabeçalho, o rótulo, a nota e a etiqueta de dentro dos blocos, que seguem a tinta do sólido, e a placa, o tom chapado sem desfoque atrás das marcas de gráfico. O filete ganha um token próprio, LuzDoSolido, branco a 35% nos dois temas. Nenhuma tela usa as peças até a obra do PR 1c: a vitrine, só no Debug e aberta com CUSTTA_ABRIR=pecas, as mostra sobre a aurora para os testes de tela e a conferência visual."
+git commit -m "feat: grade 16/34, blocos de vidro e sólido e placa da identidade nova" -m "As peças de bloco da identidade nova da etapa 4 nascem sem tela, como o spec pede para o PR 1b: a grade de bordas (16 pt para toda forma, 34 para o texto dentro dela), o bloco de vidro de um assunto, o bloco sólido protagonista, verde ou âmbar, com a sombra na cor dele e o filete de luz no topo, o cabeçalho, o rótulo, a nota e a etiqueta de dentro dos blocos, que seguem a tinta do sólido, e a placa, o tom chapado sem desfoque atrás das marcas de gráfico. O filete ganha um token próprio, LuzDoSolido, branco a 35% nos dois temas. Nenhuma tela usa as peças até a obra do PR 1c: a vitrine, só no Debug e aberta com CUSTTA_ABRIR=pecas, as mostra sobre a aurora para os testes de tela e a conferência visual." -m "No cabeçalho do bloco, o rótulo ocupa o que sobra por um frame, e não por um Spacer ao lado: com o Negrito, o Spacer arredondava para cima, e o cabeçalho do sólido passava 1/3 pt da largura de dentro dele (372,333 nos 372 do Pro Max). A varredura nova prende isso nos três iPhones, com e sem o Negrito, em todo tamanho de letra."
 ```
 
 ### Task 20: Número mono com o R$ e os centavos menores e piso de 11 pt
@@ -6346,7 +6454,7 @@ git commit -m "feat: título em SF Mono e cápsula de metadados da identidade no
 
 ### Task 22: Barra empilhada de tópicos e hachura
 
-A barra empilhada que o Giovani pediu em 29/10 no lugar do mini-anel da obra (spec, "Tela da obra", a barra empilhada; LEIA-ME, "Mudanças de 29/10"; `parte1.css:206-216`), sem tela e sem toque (a porta para os Gráficos chega no PR 2b), desenhada em `Shape`, sem Swift Charts. Os pedaços e as larguras vêm do núcleo (Tarefa 9, `Pedacos.swift`): `pedacosDoAnel` sobre o `gastoPorTopico` (até 7 tópicos, um pedaço por tópico, o 7º em cinza; com 8 ou mais, os 6 maiores e o "Outros"), nas cores `Grafico1` a `Grafico6` e `GraficoOutros`, e `largurasDaBarra` (proporcionais, com o vão de 3 pt e o piso de 8 pt tirado do maior). Cada pedaço é uma cápsula de 16 pt de altura (raio de 8). Na letra de acessibilidade, a barra tem 26 pt, o vão 4 e o piso 12 (`parte1.css:209-210`; o mockup só desenha a AX5, e da AX1 em diante valem os da AX5). A barra vai sobre a placa forte, com 8 pt de recuo e cantos de 12, para as cores ficarem a 3:1 com a aurora atrás. A legenda é uma coluna com os 4 maiores (3 na letra de acessibilidade; `legendaDaBarra` do núcleo): o ponto de 12 pt na cor do pedaço, no meio da primeira linha do nome, o nome inteiro em subheadline (quebra em vez de cortar), o % em SF Mono semibold no secundário (`porcentoDoTopico`, com o "<1%") e "e mais N tópicos" na vertical do nome (22 pt para dentro, o ponto e o vão de 10). O nome é o do tópico; o tópico que o app não conhece aparece pelo id, como na linha do gasto (`linhaDeGasto`, ObraNaTela.swift:115), e o "Outros", como "Outros · N tópicos" (`rotuloDoOutros`). O VoiceOver lê a barra num elemento só, uma imagem com o rótulo "Gastos por tópico" e o valor pedaço a pedaço ("Terreno, 38%; Estrutura, 11%; …", com "menos de 1%" no lugar do "<1%", como o rótulo do mockup). A hachura é a forma a 45° ("/") com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)` do mockup: 2 pt a cada 6 no excesso do orçamento (`parte1.css:187`) e na zona "acima do banco"; 1,5 a cada 4 nas parcelas a vencer do gasto por mês (`parte1.css:300`). Ela não troca as listras do "passou" da etapa 3 (`ListrasDoExcesso`, PecasDoOrcamento.swift:71): quem usa é o gasto por mês (PR 2b) e o "Vale a pena?" (PR 4a). Na vitrine, a barra da Casa Alphaville (14 tópicos: Terreno 38%, Estrutura 11%, Cerâmica 9%, Mão de obra 8% e "e mais 10 tópicos") e duas amostras da hachura; a vitrine ganha o `-custta.rolagem` de Debug, para os prints das peças de baixo.
+A barra empilhada que o Giovani pediu em 29/10 no lugar do mini-anel da obra (spec, "Tela da obra", a barra empilhada; LEIA-ME, "Mudanças de 29/10"; `parte1.css:206-216`), sem tela e sem toque (a porta para os Gráficos chega no PR 2b), desenhada em `Shape`, sem Swift Charts. Os pedaços e as larguras vêm do núcleo (Tarefa 9, `Pedacos.swift`): `pedacosDoAnel` sobre o `gastoPorTopico` (os 6 maiores tópicos comuns, um por cor, e no fim o cinza: o tópico que sobra sozinho ou o "Outros", que junta o resto; o tópico fixo "Outros" vai sempre para o cinza), nas cores `Grafico1` a `Grafico6` e `GraficoOutros`, e `largurasDaBarra` (proporcionais, com o vão de 3 pt e o piso de 8 pt tirado do maior). Cada pedaço é uma cápsula de 16 pt de altura (raio de 8). Na letra de acessibilidade, a barra tem 26 pt, o vão 4 e o piso 12 (`parte1.css:209-210`; o mockup só desenha a AX5, e da AX1 em diante valem os da AX5). A barra vai sobre a placa forte, com 8 pt de recuo e cantos de 12, para as cores ficarem a 3:1 com a aurora atrás. A legenda é uma coluna com os 4 maiores (3 na letra de acessibilidade; `legendaDaBarra` do núcleo): o ponto de 12 pt na cor do pedaço, no meio da primeira linha do nome, o nome inteiro em subheadline (quebra em vez de cortar), o % em SF Mono semibold no secundário (`porcentoDoTopico`, com o "<1%") e "e mais N tópicos" na vertical do nome (22 pt para dentro, o ponto e o vão de 10). O nome é o do tópico; o tópico que o app não conhece aparece pelo id, como na linha do gasto (`linhaDeGasto`, ObraNaTela.swift:115), e o "Outros", como "Outros · N tópicos" (`rotuloDoOutros`). O VoiceOver lê a barra num elemento só, uma imagem com o rótulo "Gastos por tópico" e o valor pedaço a pedaço ("Terreno, 38%; Estrutura, 11%; …", com "menos de 1%" no lugar do "<1%", como o rótulo do mockup, pelo `porcentoFalado` do núcleo). A hachura é a forma a 45° ("/") com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)` do mockup: 2 pt a cada 6 no excesso do orçamento (`parte1.css:187`) e na zona "acima do banco"; 1,5 a cada 4 nas parcelas a vencer do gasto por mês (`parte1.css:300`). Ela não troca as listras do "passou" da etapa 3 (`ListrasDoExcesso`, PecasDoOrcamento.swift:71): quem usa é o gasto por mês (PR 2b) e o "Vale a pena?" (PR 4a). Na vitrine, a barra da Casa Alphaville (14 tópicos: Terreno 38%, Estrutura 11%, Cerâmica 9%, Mão de obra 8% e "e mais 10 tópicos") e duas amostras da hachura; a vitrine ganha o `-custta.rolagem` de Debug, para os prints das peças de baixo.
 
 **Files:**
 - Modify: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
@@ -6355,7 +6463,7 @@ A barra empilhada que o Giovani pediu em 29/10 no lugar do mini-anel da obra (sp
 - Test (alterar): `app-ios/CusttaUITests/VitrineUITests.swift`
 
 **Interfaces:**
-- Consumes: `PedacoDoAnel`, `pedacosDoAnel(_:)`, `largurasDaBarra(_:largura:piso:vao:)`, `pisoDaBarra`, `vaoDaBarra`, `porcentoDoTopico(_:total:)`, `rotuloDoOutros(_:)`, `legendaDaBarra(_:quantos:)` e `gastoPorTopico(_:hoje:taxaMensal:)` (núcleo, PR 0b e PR 0); `Topico` e `mapaDeTopicos(_:)`; `.placa(forte:raio:)` (Tarefa 19); `rolagemFixaSoComOArgumento()` (só na vitrine).
+- Consumes: `PedacoDoAnel`, `pedacosDoAnel(_:)`, `largurasDaBarra(_:largura:piso:vao:)`, `pisoDaBarra`, `vaoDaBarra`, `porcentoDoTopico(_:total:)`, `porcentoFalado(_:)`, `rotuloDoOutros(_:)`, `legendaDaBarra(_:quantos:)` e `gastoPorTopico(_:hoje:taxaMensal:)` (núcleo, PR 0b e PR 0); `Topico` e `mapaDeTopicos(_:)`; `.placa(forte:raio:)` (Tarefa 19); `rolagemFixaSoComOArgumento()` (só na vitrine).
 - Produces: `corDoPedaco(_: PedacoDoAnel) -> Token`; `nomeDoPedaco(_:topicos:) -> String`; `fonteDoTexto(_: UIFont.TextStyle, _: DynamicTypeSize) -> UIFont`; `BarraEmpilhada(pedacos:)`; `BarraDeTopicos(pedacos:topicos:)` (a barra na placa e a legenda; identificador `barraDeTopicos` na barra); `Hachura(traco:passo:)`, uma `Shape`.
 
 - [ ] **Step 1: Escrever os testes**
@@ -6585,10 +6693,12 @@ import CusttaNucleo
 
 /* A barra empilhada de tópicos e a hachura da identidade nova (etapa 4; a barra foi pedida pelo Giovani em 29/10, no lugar
    do mini-anel da obra: parte1.css:206-216 e "Mudanças de 29/10" do LEIA-ME). Desenhadas em Shape, sem Swift Charts. Os
-   pedaços e as larguras vêm do núcleo (Pedacos.swift): os 6 maiores nas cores do anel e o "Outros" em cinza, com o vão e o
-   piso de largura. A barra não tem toque: a porta para os Gráficos chega com eles (PR 2b). */
+   pedaços e as larguras vêm do núcleo (Pedacos.swift): os 6 maiores nas cores do anel e o "Outros" em cinza (onde o tópico
+   fixo "Outros" sempre fica), com o vão e o piso de largura. A barra não tem toque: a porta para os Gráficos chega com eles
+   (PR 2b). */
 
-/// A cor de um pedaço: as seis do anel, do maior para o menor, e o cinza do "Outros" (ou do 7º tópico de uma obra com 7).
+/// A cor de um pedaço: as seis do anel, do maior para o menor, e o cinza do "Outros" (ou do tópico sozinho no cinza: o fixo
+/// "Outros", ou o 7º de uma obra com 7 sem ele).
 func corDoPedaco(_ pedaco: PedacoDoAnel) -> Token {
     guard let cor = pedaco.cor else { return .graficoOutros }
     return [Token.grafico1, .grafico2, .grafico3, .grafico4, .grafico5, .grafico6][cor]
@@ -6655,8 +6765,10 @@ struct BarraDeTopicos: View {
                 .placa(forte: true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Gastos por tópico")
-                .accessibilityValue(pedacos.map { "\(nomeDoPedaco($0, topicos: topicos)), \(porcentoFalado($0.bruto, total: total))" }
-                    .joined(separator: "; "))
+                .accessibilityValue(pedacos.map { pedaco in
+                    // O "<1%" falado como "menos de 1%" (o porcentoFalado do núcleo), como no rótulo do mockup.
+                    "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
+                }.joined(separator: "; "))
                 .accessibilityAddTraits(.isImage)
                 .accessibilityIdentifier("barraDeTopicos")
                 .padding(.top, 2)
@@ -6680,12 +6792,6 @@ struct BarraDeTopicos: View {
             }
         }
         .font(.subheadline)
-    }
-
-    /// O % falado: o "<1%" vira "menos de 1%", como no rótulo do mockup.
-    private func porcentoFalado(_ bruto: Double, total: Double) -> String {
-        let texto = porcentoDoTopico(bruto, total: total)
-        return texto == "<1%" ? "menos de 1%" : texto
     }
 }
 

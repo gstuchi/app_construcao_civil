@@ -7324,6 +7324,3976 @@ git commit -m "test: auditoria da vitrine das peças na maior letra" -m "A audit
 
 ---
 
+## PR 1c (app): a obra em blocos, com a costura das telas da análise
+
+O PR fecha o marco 1. Na primeira parte, ele prepara o caminho das telas da análise sem tela nova: o `gastoPorTopico` do núcleo sem `hoje` e sem taxa, que a barra de tópicos refaz a cada desenho da obra (Tarefa 25); o "<1%" no "% da obra" da folha do detalhe do tópico e da lista da tela Orçamento (Tarefa 26); a costura das telas da análise em `Custta/Analise/`, com a rota, o destino provisório e a abertura de Debug, sem porta (Tarefa 27); e os falsos dos estados da análise (Tarefa 28). Antes da obra nova, a marca `gravado` no rascunho do gasto faz o toque duplo no "Salvar" de dentro da vendida gravar uma vez (Tarefa 29; achado 1). Na segunda, a obra troca a identidade da etapa 3 pela nova, com as peças do PR 1b: o alto em blocos, do título mono ao bloco da venda, com o sólido do Total gasto ou do lucro (Tarefa 30); os afazeres, os gastos por tópico com a barra empilhada (um elemento só para o VoiceOver) e os lançamentos na linha mono (Tarefa 31); o halo do título calibrado pelo laudo e as cenas da obra nova (Tarefa 32); o laudo das marcas, com a barra a 3:1 (Tarefa 33); e o checklist do aparelho do marco 1 (Tarefa 34). O risco é o da obra reescrita, a tela mais usada: os testes de tela das etapas 2 e 3 sobre ela (lista, busca, arrastar, "A vencer", folhas, destaque da linha nova, rolagem e as auditorias) continuam verdes, com os mesmos identificadores, e o laudo inteiro, comparado palavra por palavra com o da ponta do 1b, mostra as cenas da obra mudando, o "<1%" da Pintura na cena "tela Orçamento, só o total, fim" (Tarefa 26) e o resto igual. Fica escondido na `main` até o PR seguinte: a barra de tópicos sem toque e sem "Gráficos ›", nenhuma porta ("Ver gráficos", "Relatório"), as telas da análise só pelo `CUSTTA_ABRIR=graficos:<id>`/`relatorio:<id>` e o `-custta.marcasApagadas`, todos só no Debug (o `nm` do Release confere). Portão da CI: "tudo, com a comparação" (a obra, o `PrincipalView`, as peças e o laudo mudam), e o PR fecha o marco 1: TestFlight com o OK do Giovani e o checklist. **Exceção ao merge automático** (Como entregar): o 1c espera o Giovani antes do merge e da tag. As respostas sobre o tópico fixo "Outros", o "<1%" na tela Orçamento e o halo de 20% vieram dele em 30/10 e já estão nas fatias (Decisões); os desvios do mockup do achado 7 vão a ele nos prints lado a lado do fecho. São 780 linhas de produção (acréscimos + remoções em `app-ios/Custta/` sem `Falsos/` e em `CusttaNucleo/Sources/`, pelo `git diff --numstat` da ponta do 1b à do 1c), abaixo dos ~1.000–1.200 da tabela do spec: a obra da etapa 3 saiu menos do que o spec estimou, porque a lista, os cartões dos meses, o "A vencer", as ações e as folhas ficaram e ganharam a forma nova por opção; fora da conta, os falsos (111), os testes (911) e o checklist (48). Não há o que partir num 1d.
+
+- **Branch:** `feat/obra-em-blocos`
+- **Título:** `feat: obra em blocos da identidade nova e costura das telas da análise`
+
+### Mapa de arquivos
+
+| Arquivo | Tarefas |
+| --- | --- |
+| `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift` (`gastoPorTopico`, `textoDaParteDaObra`) | 25, 26 |
+| `app-ios/Custta/Telas/OrcamentoView.swift` | 25, 26 |
+| `app-ios/Custta/Telas/PecasDaTelaOrcamento.swift`, `FolhaDoTopico.swift` (o "<1%" e o falado) | 26 |
+| `app-ios/Custta/Analise/TelaDaAnalise.swift` (novo), `Telas/PrincipalView.swift`, `Telas/ObrasView.swift` | 27 |
+| `app-ios/Custta/Falsos/VitrineDaAnalise.swift` (novo), `MontarFalso.swift` | 28 |
+| `app-ios/Custta/Falsos/VitrineDasPecas.swift` | 25 |
+| `app-ios/Custta/Telas/FolhaDoGasto.swift` (a marca `gravado`) | 29 |
+| `app-ios/Custta/Telas/BlocosDaObra.swift` (novo: o sólido, os blocos, `solidoDaObra`, `SetaDoBloco`) | 30 |
+| `app-ios/Custta/Telas/ObraView.swift` | 30, 31 |
+| `app-ios/Custta/Telas/PecasDaObra.swift` (sai a `PilulaDaFase` e o `IndicadoresDaObraView`; o mês e o "A vencer" mono) | 30, 31 |
+| `app-ios/Custta/Telas/PecasDoOrcamento.swift` (a linha do orçamento vira bloco) | 30 |
+| `app-ios/Custta/Identidade/Blocos.swift` (`NotaDoBloco` com cor; rótulo e nota com `fixedSize`) | 30 |
+| `app-ios/Custta/Telas/AfazeresView.swift` (os afazeres em bloco) | 31 |
+| `app-ios/Custta/Identidade/BarraEmpilhada.swift` (`faladoDaBarra`; `marcasApagadas`, só Debug) | 31, 33 |
+| `app-ios/Custta/Identidade/Aurora.swift` (`naObraMono`), `Titulos.swift` | 32 |
+| `app-ios/Custta/Telas/RaizView.swift` (`marcasApagadas`, só Debug) | 33 |
+| `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift` | 25, 26 |
+| `app-ios/CusttaTests/BarraEmpilhadaTests.swift` | 25 |
+| `app-ios/CusttaTests/TelaOrcamentoTests.swift` | 25, 26 |
+| `app-ios/CusttaTests/OrcamentoEm375Tests.swift` | 25, 26, 30 |
+| `app-ios/CusttaTests/CosturaDaAnaliseTests.swift` (novo) | 27 |
+| `app-ios/CusttaTests/DadosDeExemploTests.swift` | 28 |
+| `app-ios/CusttaTests/BlocosDaObraTests.swift` (novo), `LinhaDoOrcamentoTests.swift` | 30 |
+| `app-ios/CusttaTests/ListaDaObraTests.swift` (novo) | 31 |
+| `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift` | 26 |
+| `app-ios/CusttaUITests/AnaliseUITests.swift` (novo) | 27, 28 |
+| `app-ios/CusttaUITests/ObraUITests.swift` | 30, 31 |
+| `app-ios/CusttaUITests/OrcamentoUITests.swift`, `AuditoriaUITests.swift` | 30 |
+| `app-ios/CusttaUITests/EstadosUITests.swift` | 31 |
+| `app-ios/CusttaUITests/LeituraNoVidroUITests.swift` | 31, 32, 33 |
+| `app-ios/CusttaUITests/LaudoDeContraste.swift` | 33 |
+| `tests/app-ios.test.cjs` (as guardas das folhas que gravam, da seta dos blocos e do âmbar) | 29, 30, 31 |
+| `docs/plans/2026-10-29-app-nativo-etapa4-checklist-aparelho.md` (novo) | 34 |
+
+### Para os marcos 2 e 3
+
+- **A obra:** `BlocosDaObra(obra:taxa:hoje:abrirAPagar:)` e `solidoDaObra(_:taxa:)`; o bloco dos gastos por tópico é um elemento só para o VoiceOver, com o identificador `gastosPorTopico` e o valor do `faladoDaBarra(_:topicos:)` (a barra continua `barraDeTopicos`, filha dele na árvore do XCUITest; o VoiceOver lê só o bloco). O PR 2b põe o toque no bloco e o "Gráficos ›" (`RotaDeObras.analise(.graficos(id))`), e o 3b, a fileira de portas depois das ações.
+- **O laudo das marcas:** o `marcasApagadas` do environment (só Debug) e o `LaudoDeContraste.medirMarcas(normal:semMarcas:escala:em:)`; o anel, as linhas e as barras dos Gráficos se apagam pelo mesmo environment, e a `BarraApagada` conta como marca.
+- **O checklist:** os marcos 2 e 3 acrescentam as seções deles ao `docs/plans/2026-10-29-app-nativo-etapa4-checklist-aparelho.md`.
+- **O laudo:** toda cena com rolagem fixa tem o `assunto` (o identificador do que ela mede, conferido à vista antes do print; Tarefa 31), e as cenas novas dos Gráficos e do Relatório com rolagem fixa também; a borda de cima num vão nos dois iPhones, como as da obra.
+- **A tela provisória da análise fica em branco se a obra some** (apagada em outro aparelho): o `DestinoDaAnalise` mostra um texto vazio e fica no caminho, e o `caminho` já chega a ele sem uso (só se chega pela abertura de Debug). O 2a, que troca o destino pela tela de verdade, tira a rota como a `AfazeresView` (`caminho.removeAll { $0.obraId == … }`, `AfazeresView.swift:177`).
+- **A auditoria das ações da fase na letra máxima, num PR de teste no 4a** (achado 9): auditar na AX5 numa obra de lista longa, a `a1` dos falsos da análise (a Casa Alphaville vendida, com os 46 gastos, `dados: "analise"`) e uma cópia pronta dela (`copiaDaCasa("a9", ["fase": .texto("pronta")])`, com uma linha no teste de formato), numa rolagem fixa com o "Desfazer venda" e o "Voltar pra construção" à vista: com conteúdo de sobra, a rolagem não passa do fim nos tamanhos menores que a auditoria experimenta. Prova: a mutação `.lineLimit(1)` no rótulo da `PilulaDaAcao` na letra de acessibilidade reprova pelo identificador `acao-…`; se os achados sem elemento do iOS 26 aparecerem, contam só os do `acao-`. O mesmo PR troca os dois `swipeUp` do `testObraNoMaiorTamanho` por rolagens fixas (como a vitrine das peças), para a auditoria na AX5 cobrir a metade de baixo que o 1c mudou: os afazeres, os gastos por tópico, o "A vencer" e os meses mono.
+
+### Ponto de controle do fim do PR
+
+No Mac, com o produto da ponta do PR copiado (`cp -c`) e rodado pelo seu `.xctestrun`, o laudo no Pro Max e os testes no 18 Pro ao mesmo tempo:
+
+1. **O laudo inteiro no Pro Max, comparado palavra por palavra com o da ponta do 1b** (spec, "A comparação"): `-only-testing:CusttaUITests/LeituraNoVidroUITests` e `node scripts/compara-laudo.mjs <antes> <depois> <pasta> --detalhe`. Expected: `Executed 20 tests, with 0 failures (0 unexpected) in 3324.368 (3324.379) seconds` e o comparador: `TOTAL: 163 cenas, 3096 palavras, 2173 idênticas, 4 mudadas, 0 deslocadas, 1843 sem par, 0 abaixo de 4.5`, mais 15 cenas "SÓ DEPOIS" (as 9 cenas novas da obra em blocos, Tarefa 32, e as 6 da obra rolando nas rolagens novas, Tarefa 31) e 12 "SÓ ANTES" (as 12 da obra rolando nas rolagens da etapa 3), e as 4 tabelas das marcas, fora do comparador. Das 163 cenas casadas, 129 ficam idênticas (entrar, Obras, Ajustes, finalizar saída, as folhas, a tela Orçamento, o detalhe, o A pagar e os afazeres); as 34 com diferença são 28 da obra e da busca (topo, lista, linha aberta, busca, pronta, vendidas, orçamento por tópico, maior letra e Aumentar contraste, todas sem par, como o spec prevê) e seis esperadas: "tela Orçamento, só o total, fim", nos dois temas (o "<1% da obra" da Pintura, Tarefa 26: a palavra passa de 66 a 74 pt, com a mesma nota), e "alerta Não salvou", nos dois botões e nos dois temas (o botão do alerta do sistema, desenhado sobre a obra: o "OK" sobe de 8,24 para 9,12:1 no claro e de 5,77 para 6,70 no escuro; o "Tentar de novo" fica em 9,25 e 6,93, eram 9,37 e 6,98). Nas cenas que mudaram de rolagem, o print mostra o assunto à vista (a pronta na maior letra com as três ações, o aviso dos tópicos inteiro, o vazio da busca com o "Limpar a busca", o "A vencer" e os meses na lista), e nenhuma palavra começa na borda de cima; as únicas palavras na borda são de cenas que não mudam desde o 1b ("A pagar, fim", "tela Orçamento, só o total, fim" e "ajustes, na maior letra, rolada", com as mesmas notas). O laudo de antes é o da ponta do 1b (`ab36f9f`), no mesmo Pro Max e no mesmo dia: o 1b não tem cena da vitrine das peças, e a 1b-1 e a 1b-4 não mexem em tela nenhuma de antes do 1c. As cenas roladas também rodam no 18 Pro, a largura da CI (os Steps de laudo das Tarefas 31 e 32).
+2. **Os testes no 18 Pro:** `-only-testing:CusttaTests` e as suítes de tela da obra e das folhas (`ObraUITests`, `AuditoriaUITests`, `OrcamentoUITests`, `GastoUITests`, `FolhasDeOrigemUITests`, `BuscaUITests`, `AfazeresUITests`, `FasesUITests`, `EstadosUITests`, `FolhaDaObraUITests`, `AnaliseUITests`, `DetalheDoTopicoUITests`, `FaltaPoucoUITests` e `VitrineUITests`), com `-skip-testing` só no `testASetaDoIndicadorAbreAFolhaDoAPagar` (cai nos 3 últimos dias do mês, em qualquer commit). Expected: `✔ Test run with 204 tests in 41 suites passed after 15.226 seconds.` e, nas telas, `Executed 201 tests, with 0 failures (0 unexpected) in 4186.230 (4186.343) seconds`, com as 14 classes na contagem por classe (13 da `ObraUITests`, 21 da `AuditoriaUITests`, 29 da `OrcamentoUITests`, 24 da `GastoUITests`, 23 da `FolhasDeOrigemUITests`, 11 da `BuscaUITests`, 15 da `AfazeresUITests`, 9 da `FasesUITests`, 13 da `EstadosUITests`, 15 da `FolhaDaObraUITests`, 3 da `AnaliseUITests`, 17 da `DetalheDoTopicoUITests`, 3 da `FaltaPoucoUITests` e 5 da `VitrineUITests`). O `EstadosUITests/testToqueDuploNoSalvarDaVendidaLancaUmGasto` passa desde a Tarefa 29 (achado 1).
+3. **Node:** `npm run test:unit 2>&1 | tail -8`. Expected: `ℹ tests 411`, `ℹ pass 411`, `ℹ fail 0`.
+4. **O `nm -a` do Release** (como no Step 5 da Tarefa 33 e no Step 6 da 28: o Release do simulador, sem assinar, no mesmo DerivedData, e o `nm -a`, que conta também os símbolos de depuração, no binário do Release e no `Custta.debug.dylib` do Debug). Expected:
+   ```
+   marcasApagadas release=0 debug=60
+   BlocosDaObra release=327 debug=498
+   vitrineDaAnalise release=0 debug=30
+   vitrineDoOrcamento release=0 debug=16
+   RaizView release=90 debug=400
+   ```
+   Os ganchos das marcas apagadas e dos falsos da análise ficam fora do Release; o `BlocosDaObra` e a `RaizView` são o controle (na Tarefa 28, antes das marcas, a `RaizView` dá 90 e 384).
+5. **Os estados da obra lado a lado com o mockup**, no 18 Pro, com a barra de status em 9:41 e o fundo parado: 12 prints e 11 lado a lado, que vão no corpo do PR (o topo, o meio e o fim no escuro; o topo no claro; sem orçamento; sem gastos; pronta; vendida com lucro e com prejuízo; e o topo na letra máxima, no escuro e no claro). Batem com o mockup: o título mono, a cápsula, o sólido (na vendida, "+R$ 537.682,55" e "+R$ 482.871,47 acima do banco", os números do mockup), os blocos, a barra com a legenda e as linhas mono. As diferenças estão no achado 7; a de dado: a vitrine tem o orçamento total, e o mockup, o por tópico.
+
+### Achados que mudam o spec ou uma decisão
+
+1. **O toque duplo no "Salvar" gravava dois gastos com a obra em blocos: resolvido na Tarefa 29.** No `EstadosUITests/testToqueDuploNoSalvarDaVendidaLancaUmGasto` (lançar de dentro da vendida e tocar duas vezes no "Salvar"), a obra ficava com 48 lançamentos e R$ 842.319,45. A janela é antiga (desde 17/10): o `gravar` da folha troca a obra por trás dela e só fecha a folha no turno seguinte, e até lá a guarda da folha aberta deixa passar o segundo toque. Na `main`, ela é curta demais para o `doubleTap()` do teste (20 de 20, 10 delas com 500 gastos a mais, porque a lista é preguiçosa); só a obra em blocos, mais pesada de montar por trás da folha, a abre. A marca `gravado` no rascunho, ligada antes do `navegar(.trocar(obraId))` e lida na guarda da primeira linha do `salvar()`, fecha a janela. A/B na Tarefa 30, 7 rodadas: com a marca, `Executed 7 tests, with 0 failures`; sem ela (o `FolhaDoGasto.swift` da Tarefa 28), `Executed 7 tests, with 6 failures`. A guarda Node das folhas que gravam passa a exigir a marca.
+2. **O halo do título mono fica em 20%, e não no menor passo que fecha.** No laudo do Pro Max, "Alphaville" fica em 3,92:1 sem halo, 4,61 com 10% (pior pixel 4,50), 5,41 com 20% e 5,94 com 30% (na maior letra, 4,20, 4,82, 5,49 e 6,19). Pela regra do app (o menor passo que fecha 4,5:1 no Pro Max, decisão de 10/10), seria 10%; mas o iOS 26 da CI mediu o nome da obra 0,4 abaixo do Pro Max (o claro sem halo, 4,40 contra 4,80; Aurora.swift:193-195), e o laudo é portão lá. O 62% da letra máxima do mockup não é preciso. **Decidido pelo Giovani em 30/10:** 20% em todo tamanho (Tarefa 32); se a CI do PR passar folgada, o 10% pode ser tentado num PR à parte.
+3. **O rótulo do bloco cortava na maior letra do 18 Pro.** A auditoria da obra na AX5 achou "Text clipped" em "A pagar · 30 dias", o rótulo do bloco com a seta ao lado (no Pro Max, mais largo, ela passa); a auditoria da vitrine do 1b não via, porque lá nenhum bloco tem seta. O `RotuloDoBloco` (peça do 1b) ganhou o `fixedSize` vertical, como o rótulo da etapa 3 tinha. **Recomendação:** manter na Tarefa 30; as telas da análise herdam.
+4. **O prejuízo da venda sai do vermelho.** A etapa 3 punha a nota do lucro negativo no `NegativoNoVidro`; o spec pede o lucro da vendida com prejuízo "em âmbar, nunca vermelho". A nota foi para o `AlertaNoVidro`, o âmbar sobre o vidro já medido no laudo, e uma guarda Node prende o âmbar e barra o `negativoNoVidro` nos blocos (o laudo, que só mede contraste, passaria com o vermelho). **Recomendação:** manter; o laudo inteiro mede a cena "obra vendida com prejuízo".
+5. **A obra ficou com 780 linhas, abaixo dos ~1.000–1.200 do spec.** A lista, os cartões dos meses, o "A vencer", as ações e as folhas ficaram e ganharam a forma nova por opção (o `linhaMono` e a seta), e só a `PilulaDaFase` e o `IndicadoresDaObraView` saíram. Não há 1d.
+6. **A obra pronta da Casa Alphaville não entrou nos falsos.** O lado a lado da pronta usa o `v2` da vitrine, outra obra pronta: a tela é a mesma (as ações "Registrar venda" e "Voltar pra construção"). **Recomendação:** não criar o falso.
+7. **Peças da etapa 3 e do 1b ficaram no lugar das medidas do mockup** (nos prints lado a lado do ponto de controle, no corpo do PR): o cabeçalho dos lançamentos é a pílula da etapa 3 ("Lançamentos 46" em subheadline, que abraça o texto; no mockup, "Lançamentos" em title3 negrito com o chip verde "46", até a lupa); o "A vencer" fechado tem a seta para a direita (no mockup, para baixo) e os meses começam com maiúscula ("Outubro de 2026"; no mockup, "outubro de 2026"); os cartões dos meses ficam com o raio 24 (o bloco do mockup tem 26); as pílulas das ações, com 52 pt e o ícone de 20 (54 e 22); e, na letra máxima, a etiqueta do sólido ("46 lançamentos") e o chip da fase saem maiores que no mockup (o footnote do iOS na AX5), e a etiqueta quebra em duas linhas. **Recomendação:** vão ao Giovani nos prints lado a lado do fecho do marco, e o Verniz decide com ele; nenhuma muda a leitura (o laudo passa) nem os testes, e o cabeçalho dos lançamentos é o que mais se vê.
+8. **As marcas da barra passam a 3:1 nos dois vidros.** O pior pedaço é o verde-água no claro, 3,60:1 no Transparente e 3,68 no Fosco (o mockup mediu 3,54); no escuro, o laranja, 4,49. A `BarraApagada` conta como marca quando o gasto por mês chegar (PR 2b), pelo mesmo `marcasApagadas`.
+9. **A auditoria da parte 3 na maior letra não alcança mais o "Desfazer venda" nem a ação de vidro da obra pronta; a cena do laudo delas voltou.** Com a obra em blocos, mais alta, as rolagens fixas do `testParte3NoMaiorTamanho` caem em outras peças (no 18 Pro): a v2 a 1600 na Venda estimada e no "Registrar venda", com o "Voltar pra construção" sob a cápsula; a v3 a 1600 no A pagar e no começo da Venda. Mais fundo, com as duas ações à vista (a v2 a 1850 e a v3 a 2250), a auditoria reprova no 18 Pro: quatro "Dynamic Type font sizes are unsupported" sem elemento na v2 e "Text clipped" nos blocos de cima da v3, que ela vê quando experimenta letras menores e a rolagem passa do fim do alto (a v3 a 700 e a 1300 passa); rolar por arrasto até a ação deu o mesmo. As rolagens ficaram, e o comentário diz onde caem (Tarefa 30). A cena do laudo "obra pronta, ações da fase, na maior letra", que também tinha perdido as ações (a 1100, a tela ficava entre o A pagar e a Venda estimada), voltou a medi-las no 1c: a 1960, com o "Registrar venda" e o "Voltar pra construção" à vista nos dois iPhones e conferidos pelo `assunto` (Tarefa 31). **Decidido pelo Orquestrador em 30/10:** a auditoria das pílulas na AX5 fica para um PR de teste no 4a ("Para os marcos 2 e 3"): as pílulas não mudam neste PR, a coluna ficou 8 pt mais larga (16 de borda contra 20), e uma auditoria nova provada só no iOS 27 é risco de rerun no iOS 26.
+10. **As rolagens fixas do laudo da obra foram refeitas, e cada cena rolada confere o seu assunto** (Tarefa 31; revisão do PR, achado importante). Com a obra em blocos, a lista desceu 283 pt, e as rolagens da etapa 3 passavam no laudo medindo outra coisa: a "busca, nada achado" media os blocos do alto, com o vazio sob a cápsula; a "obra pronta, ações da fase, na maior letra" ficava sem ação nenhuma. Cada uma ganhou a borda de cima num vão nos dois iPhones e o `assunto`, que reprova a cena quando o que ela mede não está à vista. Duas coisas apareceram só no 18 Pro, a largura da CI, que o portão de antes não rodava: a "obra, linha aberta, claro" reprovava (a g027 aberta tem a nota em duas linhas no 18 Pro, e a fatia de um algarismo cortada pela borda do cartão ficava em 2,83:1; a CI, na mesma largura, corria o risco de cair nela), e passou para a g026; e a obra rolando, dentro dos cartões dos meses, não acha vão comum aos dois iPhones nem a todos os dias (no 18 Pro, a nota de alguns gastos quebra em duas linhas; as linhas mudam com o dia), e uma linha cortada pela borda reprovava no véu (4,04 a 4,35:1 no Pro Max, com o hoje deslocado 10 dias). **Recomendação:** a obra rolando fica com as três rolagens de fora dos meses (612, 883 e 1247, que já mostra as linhas dos meses da borda de cima à de baixo; na CI, a 883 e a 1247), e as cenas roladas do laudo rodam também no 18 Pro nos PRs que mexem na obra, como rodaram neste (Tarefa 31).
+
+### Task 25: Gasto por tópico sem hoje e taxa
+
+Achado 6 do PR 0. O `gastoPorTopico` em Swift (DentroDaObra.swift:62) recebe `hoje:` e `taxaMensal:` só para chamar o `resumoTopico` de cada tópico, que corrige cada gasto até o fim da correção; a lista usa só o bruto e o "% da obra", que não dependem de nenhum dos dois, e o `gastoPorTopico` do `calc.js` recebe só a obra. A cópia passa a fazer a conta do site: soma o bruto de cada tópico na ordem do documento (a mesma soma do `resumoTopico`, então o "% da obra" da lista continua igual ao do detalhe do tópico), tira o "% da obra" do `totalBruto` com o `arredondarJS` e ordena do maior bruto para o menor, estável no empate. O resultado não muda: os vetores do PR 0 (`calc.gastoPorTopico`) conferem, e a conta fica mais leve, sem a correção de cada gasto, para a barra empilhada da obra, que a chama a cada desenho. A tela Orçamento (OrcamentoView.swift:37), a vitrine das peças (VitrineDasPecas.swift:55, Tarefa 22) e os testes, inclusive os da barra empilhada (BarraEmpilhadaTests.swift:20 e 98), param de passar os dois parâmetros. Nenhuma tela muda.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/VitrineDasPecas.swift`
+- Modify: `app-ios/Custta/Telas/OrcamentoView.swift`
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`
+- Test (alterar): `app-ios/CusttaTests/BarraEmpilhadaTests.swift`
+- Test (alterar): `app-ios/CusttaTests/OrcamentoEm375Tests.swift`
+- Test (alterar): `app-ios/CusttaTests/TelaOrcamentoTests.swift`
+
+**Interfaces:**
+- Consumes: `totalBruto(_:)` e `arredondarJS(_:)` (núcleo); `ordenadoEstavel(_:_:)` (núcleo).
+- Produces: `gastoPorTopico(_ obra: Obra) -> [GastoDoTopico]` (sem `hoje:` nem `taxaMensal:`), que a barra empilhada da obra e os Gráficos chamam.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os testes chamam o `gastoPorTopico` só com a obra: os do núcleo (o modo total, os vetores do site e o empate pela ordem dos gastos) e os do app (as linhas do "Gasto por tópico" da tela Orçamento e a varredura das larguras em 375 pt).
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+@@ -79,12 +79,12 @@ struct DentroDaObraTests {
+         let o = obra([gasto("e1", "2026-09-01", 3_000, topico: "estrutura"), gasto("x1", "2026-09-02", 1_500, topico: "c_apagado"),
+                       gasto("f1", "2026-09-03", 3_000, topico: "fundacao"), gasto("l1", "2026-09-04", 2_000, topico: "eletrica"),
+                       gasto("l2", "2026-12-04", 2_500, topico: "eletrica")])
+-        let linhas = gastoPorTopico(o, hoje: Self.hoje, taxaMensal: 1)
++        let linhas = gastoPorTopico(o)
+         #expect(linhas.map(\.id) == ["eletrica", "estrutura", "fundacao", "c_apagado"], "do maior para o menor; no empate, a ordem dos gastos")
+         #expect(linhas.map(\.bruto) == [4_500, 3_000, 3_000, 1_500], "o bruto, com o gasto futuro")
+         #expect(linhas.map(\.pct) == [38, 25, 25, 13], "o Math.round do site: 37,5 vai a 38")
+         #expect(textoDaParteDaObra(linhas[0].pct) == "38% da obra")
+-        #expect(gastoPorTopico(obra([]), hoje: Self.hoje, taxaMensal: 1).isEmpty)
++        #expect(gastoPorTopico(obra([])).isEmpty)
+         #expect(dicaDoModoTotal == "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
+     }
+ 
+@@ -92,7 +92,7 @@ struct DentroDaObraTests {
+         // calc.js gastoPorTopico (o donut e a legenda da obra e dos Gráficos). Exato: o bruto soma os gastos na ordem do
+         // documento, como o site, e o "% da obra" é inteiro.
+         for c in Vetores.casos("calc.gastoPorTopico") {
+-            let linhas = gastoPorTopico(c.args[0].obra, hoje: Self.hoje, taxaMensal: 1)
++            let linhas = gastoPorTopico(c.args[0].obra)
+             confere(.lista(linhas.map { .objeto(["id": .texto($0.id), "bruto": .numero($0.bruto), "pct": .numero($0.pct)]) }),
+                     c.saida, .exata, c.caso)
+         }
+@@ -105,7 +105,7 @@ struct DentroDaObraTests {
+         let o = obra([gasto("l1", "2026-09-28", 1_990, topico: "eletrica"), gasto("f1", "2026-09-03", 2_000, topico: "fundacao"),
+                       gasto("p1", "2026-09-20", 1_000, topico: "pintura"), gasto("e1", "2026-09-01", 2_000, topico: "estrutura"),
+                       gasto("p2", "2026-09-25", 1_000, topico: "pintura"), gasto("a1", "2026-09-02", 2_500, topico: "acabamento")])
+-        let linhas = gastoPorTopico(o, hoje: Self.hoje, taxaMensal: 1)
++        let linhas = gastoPorTopico(o)
+         #expect(linhas.map(\.id) == ["acabamento", "fundacao", "pintura", "estrutura", "eletrica"])
+         #expect(linhas.map(\.bruto) == [2_500, 2_000, 2_000, 2_000, 1_990])
+         #expect(linhas.map(\.pct) == [24, 19, 19, 19, 19], "o empate é do bruto, não do % arredondado")
+```
+
+Em `app-ios/CusttaTests/BarraEmpilhadaTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/BarraEmpilhadaTests.swift
++++ b/app-ios/CusttaTests/BarraEmpilhadaTests.swift
+@@ -17,7 +17,7 @@ struct BarraEmpilhadaTests {
+         let estado = Estado.de(.objeto(["obras": .lista([.objeto([
+             "id": .texto("o"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+             "gastos": .lista(gastos)])])]))
+-        return pedacosDoAnel(gastoPorTopico(estado.obras[0], hoje: "2026-10-29", taxaMensal: 1))
++        return pedacosDoAnel(gastoPorTopico(estado.obras[0]))
+     }
+ 
+     @Test func coresDoAnelEOutrosCinza() {
+@@ -95,7 +95,7 @@ struct BarraEmpilhadaTests {
+     /// bloco passava 1/3 de pt na letra máxima).
+     @Test func barraDeTopicosNaoPassaDaLargura() {
+         let estado = Estado.de(DadosDeExemplo.vitrine())
+-        let pedacos = pedacosDoAnel(gastoPorTopico(estado.obras[0], hoje: "2026-10-29", taxaMensal: 1))
++        let pedacos = pedacosDoAnel(gastoPorTopico(estado.obras[0]))
+         let topicos = mapaDeTopicos(estado.config.topicosProprios)
+         for letra in DynamicTypeSize.allCases {
+             for largura in [CGFloat(343), 370, 408] {
+```
+
+Em `app-ios/CusttaTests/OrcamentoEm375Tests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/OrcamentoEm375Tests.swift
++++ b/app-ios/CusttaTests/OrcamentoEm375Tests.swift
+@@ -37,8 +37,7 @@ struct OrcamentoEm375Tests {
+         let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
+         let previstos = linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos).filter(\.abre)
+         let fora = linhasForaDoOrcamento(resumo, topicos: topicos)
+-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa, hoje: dataLocalISO(.now, fuso: .current),
+-                                                             taxaMensal: porTopico.config.taxaMensal), topicos: topicos)
++        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa), topicos: topicos)
+         #expect(!previstos.isEmpty && fora.count == 2 && !porGasto.isEmpty, "as três listas")
+         for linha in previstos + fora + porGasto {
+             #expect(linha.abre, "\(linha.nome) com a seta")
+```
+
+Em `app-ios/CusttaTests/TelaOrcamentoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/TelaOrcamentoTests.swift
++++ b/app-ios/CusttaTests/TelaOrcamentoTests.swift
+@@ -53,7 +53,7 @@ struct TelaOrcamentoTests {
+         #expect(linhasForaDoOrcamento(r, topicos: mapaDeTopicos([])).map(\.abre) == [true], "o fora do orçamento abre")
+         let total = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
+                          gastos: [("terreno", 319_847.85), ("revest", 0), ("c_meu", 2_000)])
+-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([]))
++        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total), topicos: mapaDeTopicos([]))
+         #expect(porGasto.map(\.id) == ["terreno", "c_meu", "revest"])
+         #expect(porGasto.allSatisfy { $0.abre }, "no gasto por tópico, todas abrem, mesmo a de R$ 0,00")
+     }
+@@ -62,7 +62,7 @@ struct TelaOrcamentoTests {
+         let o = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
+                      gastos: [("terreno", 319_847.85), ("revest", 76_700), ("c_meu", 2_000)])
+         let proprio = TopicoProprio(campos: ["id": .texto("c_meu"), "nm": .texto("Gesso"), "ic": .texto("etiqueta")])
+-        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([proprio]))
++        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o), topicos: mapaDeTopicos([proprio]))
+         #expect(linhas.map(\.nome) == ["Terreno", "Cerâmica", "Gesso"])
+         #expect(linhas.map(\.gasto) == ["R$ 320 mil", "R$ 77 mil", "R$ 2 mil"])
+         #expect(linhas.map(\.frase) == ["80% da obra", "19% da obra", "1% da obra"])
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter DentroDaObraTests 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -o 'DentroDaObraTests.swift:[0-9:]* error: missing [^|]*' | sort -t: -k2,2n -u
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error: missing' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -u
+```
+Expected: o núcleo e o `CusttaTests` não compilam (o compilador do app para no primeiro arquivo):
+```
+DentroDaObraTests.swift:82:37: error: missing arguments for parameters 'hoje', 'taxaMensal' in call
+DentroDaObraTests.swift:87:32: error: missing arguments for parameters 'hoje', 'taxaMensal' in call
+DentroDaObraTests.swift:95:41: error: missing arguments for parameters 'hoje', 'taxaMensal' in call
+DentroDaObraTests.swift:108:37: error: missing arguments for parameters 'hoje', 'taxaMensal' in call
+CusttaTests/OrcamentoEm375Tests.swift:40:62: error: missing arguments for parameters 'hoje', 'taxaMensal' in call
+```
+
+- [ ] **Step 3: Implementar**
+
+O dicionário guarda o bruto e o vetor `ids`, a ordem em que cada tópico aparece: é o `Map` do site, que dá o empate pela ordem dos gastos. A soma começa em zero e segue a ordem do documento, como o `(por.get(g.topico) || 0) + g.valor` do `calc.js`, para o bruto sair igual ao do site até o último bit.
+
+Em `app-ios/Custta/Falsos/VitrineDasPecas.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/VitrineDasPecas.swift
++++ b/app-ios/Custta/Falsos/VitrineDasPecas.swift
+@@ -52,7 +52,7 @@ struct VitrineDasPecas: View {
+                 .accessibilityIdentifier("vitrine-ambar")
+                 BlocoDeVidro {
+                     Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).padding(.bottom, 8)
+-                    BarraDeTopicos(pedacos: pedacosDoAnel(gastoPorTopico(casa, hoje: hoje, taxaMensal: estado.config.taxaMensal)),
++                    BarraDeTopicos(pedacos: pedacosDoAnel(gastoPorTopico(casa)),
+                                    topicos: mapaDeTopicos(estado.config.topicosProprios))
+                 }
+                 .accessibilityElement(children: .contain)
+```
+
+Em `app-ios/Custta/Telas/OrcamentoView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/OrcamentoView.swift
++++ b/app-ios/Custta/Telas/OrcamentoView.swift
+@@ -34,7 +34,7 @@ struct OrcamentoView: View {
+ 
+     private func conteudo(_ obra: Obra, _ r: ResumoOrcamento, estado: Estado) -> some View {
+         let topicos = mapaDeTopicos(estado.config.topicosProprios)
+-        let gastos = r.modo == "topicos" ? [] : gastoPorTopico(obra, hoje: dataLocalISO(.now, fuso: .current), taxaMensal: estado.config.taxaMensal)
++        let gastos = r.modo == "topicos" ? [] : gastoPorTopico(obra)
+         return ScrollView {
+             LazyVStack(alignment: .leading, spacing: 10) {
+                 TituloDaObra(nome: "Orçamento", identificador: "tituloDoOrcamento")
+```
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
+@@ -57,14 +57,19 @@ public struct GastoDoTopico: Equatable, Sendable, Identifiable {
+ 
+ /// `gastoPorTopico` do calc.js (o donut e a legenda da obra e dos Gráficos), também o "Gasto por tópico" do modo total: cada
+ /// tópico com gasto, com o bruto e o "% da obra" do resumo do tópico, para o número ser o mesmo que o detalhe mostra ao abrir.
+-/// Do maior bruto para o menor e, no empate, o tópico que aparece primeiro nos gastos (o sort do JavaScript é estável).
+-/// `hoje` e `taxaMensal` não mudam o resultado.
+-public func gastoPorTopico(_ obra: Obra, hoje: String, taxaMensal: Double) -> [GastoDoTopico] {
++/// Do maior bruto para o menor e, no empate, o tópico que aparece primeiro nos gastos (o sort do JavaScript é estável). O
++/// bruto soma os gastos do tópico na ordem do documento, como o `resumoTopico`, e não depende de hoje nem da taxa.
++public func gastoPorTopico(_ obra: Obra) -> [GastoDoTopico] {
+     var ids: [String] = []
+-    for g in obra.gastos where !ids.contains(g.topico) { ids.append(g.topico) }
++    var brutos: [String: Double] = [:]
++    for g in obra.gastos {
++        if brutos[g.topico] == nil { ids.append(g.topico) }
++        brutos[g.topico, default: 0] += g.valor
++    }
++    let total = totalBruto(obra)
+     let linhas = ids.map { id in
+-        let r = resumoTopico(obra, topico: id, hoje: hoje, taxaMensal: taxaMensal)
+-        return GastoDoTopico(id: id, bruto: r.bruto, pct: r.pct)
++        let bruto = brutos[id] ?? 0
++        return GastoDoTopico(id: id, bruto: bruto, pct: total > 0 ? arredondarJS(bruto / total * 100) : 0)
+     }
+     return ordenadoEstavel(linhas) { $0.bruto > $1.bruto }
+ }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter DentroDaObraTests 2>&1 | tail -1
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never '-only-testing:CusttaTests/TelaOrcamentoTests/abreODetalheNasTresListas()' '-only-testing:CusttaTests/TelaOrcamentoTests/gastoPorTopicoComAParteDaObra()' -only-testing:CusttaTests/OrcamentoEm375Tests 2>&1 | grep -E "Test run with"
+```
+Expected: `✔ Test run with 15 tests in 1 suite passed`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 5 tests in 2 suites passed`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/VitrineDasPecas.swift app-ios/Custta/Telas/OrcamentoView.swift app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift app-ios/CusttaTests/BarraEmpilhadaTests.swift app-ios/CusttaTests/OrcamentoEm375Tests.swift app-ios/CusttaTests/TelaOrcamentoTests.swift
+git commit -m "refactor: gasto por tópico sem hoje e taxa no núcleo" -m "O gastoPorTopico em Swift recebia hoje e taxaMensal só para chamar o resumoTopico de cada tópico, que corrige cada gasto até o fim da correção; a lista usa só o bruto e o \"% da obra\", que não dependem de nenhum dos dois. O calc.js recebe só a obra. A cópia passa a somar o bruto de cada tópico na ordem do documento, como o resumoTopico e o site, e a tirar o \"% da obra\" do total bruto, com o mesmo arredondamento: o resultado não muda, e os vetores do PR 0 conferem." -m "A tela Orçamento e os testes param de passar os dois parâmetros. Era o achado 6 do PR 0, deixado para o PR que mexe na obra."
+```
+
+### Task 26: "<1%" no "% da obra" do detalhe do tópico e da tela Orçamento
+
+Confirmação 7 do Giovani (29/10): a folha do detalhe do tópico fica como na etapa 3, e nesta etapa só o "% da obra" muda, com o "<1%" da lista e do anel (spec, "Regras: iguais ao site", gasto por tópico, e "Decisões tomadas por recomendação", o % do meio do anel). Hoje o `detalheDoTopico` monta "N gastos · {pct}% da obra" com o `Math.round` do site (DentroDaObra.swift:197, `resumoTopico`, Correcao.swift:49): um tópico com dinheiro e menos de 1% da obra aparece como "0% da obra" ou "1% da obra". A regra nova é a do `porcentoDoTopico` do PR 0b (Pedacos.swift:118): "<1%" quando o % verdadeiro fica entre 0 e 1, exclusive; o resto continua com o `Math.round` (37,5% vai a 38%), e sem dinheiro, ou sem total, "0%". O `textoDaParteDaObra` (DentroDaObra.swift:78) passa a receber o bruto e o total e devolve o `porcentoDoTopico` com " da obra". A mesma função monta a frase da lista "Gasto por tópico" da tela Orçamento no modo total (PecasDaTelaOrcamento.swift:58), que abre o detalhe: a lista muda junto, para o número não mudar ao abrir a folha, e as duas passam o mesmo bruto (a soma do tópico na ordem do documento) e o mesmo total (`totalBruto(obra)`), o que garante o mesmo texto até no arredondamento. Na Casa Alphaville da vitrine, a Pintura (R$ 6.900,00 de R$ 842.317,45, 0,8%) passa de "1% da obra" para "<1% da obra" na linha e no detalhe; nenhum outro tópico da vitrine fica abaixo de 1%. O `pct` do `GastoDoTopico` e do `ResumoDoTopico` continua o do site, conferido pelos vetores. O VoiceOver lê esse "<1%" como "menos de 1%" na linha e no detalhe, como na barra empilhada (Tarefa 22): o `Text` da frase (`FraseDoTopicoNoOrcamento`, PecasDaTelaOrcamento.swift:240) e o da linha do detalhe (FolhaDoTopico.swift:160) ganham o `.accessibilityLabel` com o `porcentoFalado` do PR 0b, e o texto à vista não muda. Sem isso, o mesmo número seria falado de dois jeitos, e a leitura do "<" dependeria do nível de pontuação do VoiceOver.
+
+**Files:**
+- Modify: `app-ios/Custta/Telas/FolhaDoTopico.swift`
+- Modify: `app-ios/Custta/Telas/OrcamentoView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaTelaOrcamento.swift`
+- Modify: `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`
+- Test (alterar): `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`
+- Test (alterar): `app-ios/CusttaTests/OrcamentoEm375Tests.swift`
+- Test (alterar): `app-ios/CusttaTests/TelaOrcamentoTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`
+
+**Interfaces:**
+- Consumes: `porcentoDoTopico(_:total:)` e `porcentoFalado(_:)` (PR 0b, Pedacos.swift); `totalBruto(_:)`; `gastoPorTopico(_:)` (Tarefa anterior).
+- Produces: `textoDaParteDaObra(_ bruto: Double, total: Double) -> String` e `linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], total: Double, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento]`.
+
+- [ ] **Step 1: Escrever os testes**
+
+No núcleo, o texto nos dois lados do 1% (0,4% e 0,5%, que o site mostraria como 0% e 1%), no 1% exato e sem dinheiro, e a linha do detalhe de dois tópicos pequenos. No app, a frase da lista do modo total ("<1% da obra" para o tópico de 0,5%) e, na tela, a linha da Pintura e o detalhe que ela abre com o mesmo "<1%", que o VoiceOver lê "menos de 1% da obra".
+
+Em `app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
++++ b/app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift
+@@ -83,11 +83,25 @@ struct DentroDaObraTests {
+         #expect(linhas.map(\.id) == ["eletrica", "estrutura", "fundacao", "c_apagado"], "do maior para o menor; no empate, a ordem dos gastos")
+         #expect(linhas.map(\.bruto) == [4_500, 3_000, 3_000, 1_500], "o bruto, com o gasto futuro")
+         #expect(linhas.map(\.pct) == [38, 25, 25, 13], "o Math.round do site: 37,5 vai a 38")
+-        #expect(textoDaParteDaObra(linhas[0].pct) == "38% da obra")
++        #expect(textoDaParteDaObra(linhas[0].bruto, total: 12_000) == "38% da obra")
+         #expect(gastoPorTopico(obra([])).isEmpty)
+         #expect(dicaDoModoTotal == "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
+     }
+ 
++    /// O "% da obra" da lista "Gasto por tópico" e do detalhe do tópico: o `porcentoDoTopico` da etapa 4, com "<1%" quando o
++    /// tópico tem dinheiro e não chega a 1% (o site mostraria 0% ou 1%), sobre o mesmo bruto e o mesmo total nas duas telas.
++    @Test func parteDaObraAbaixoDeUmPorCento() {
++        #expect(textoDaParteDaObra(4, total: 1_000) == "<1% da obra", "o site diria 0%")
++        #expect(textoDaParteDaObra(5, total: 1_000) == "<1% da obra", "o site diria 1%")
++        #expect(textoDaParteDaObra(10, total: 1_000) == "1% da obra")
++        #expect(textoDaParteDaObra(0, total: 1_000) == "0% da obra" && textoDaParteDaObra(0, total: 0) == "0% da obra")
++        let o = obra([gasto("r1", "2026-09-01", 99_100, topico: "revest"), gasto("p1", "2026-09-02", 500, topico: "pintura"),
++                      gasto("d1", "2026-09-03", 400, topico: "projeto")])
++        #expect(detalheDoTopico(o, topico: "pintura", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · <1% da obra")
++        #expect(detalheDoTopico(o, topico: "projeto", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · <1% da obra")
++        #expect(detalheDoTopico(o, topico: "revest", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · 99% da obra")
++    }
++
+     @Test func gastoPorTopicoComoOSite() {
+         // calc.js gastoPorTopico (o donut e a legenda da obra e dos Gráficos). Exato: o bruto soma os gastos na ordem do
+         // documento, como o site, e o "% da obra" é inteiro.
+```
+
+Em `app-ios/CusttaTests/OrcamentoEm375Tests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/OrcamentoEm375Tests.swift
++++ b/app-ios/CusttaTests/OrcamentoEm375Tests.swift
+@@ -37,7 +37,7 @@ struct OrcamentoEm375Tests {
+         let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
+         let previstos = linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos).filter(\.abre)
+         let fora = linhasForaDoOrcamento(resumo, topicos: topicos)
+-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa), topicos: topicos)
++        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa), total: totalBruto(casa), topicos: topicos)
+         #expect(!previstos.isEmpty && fora.count == 2 && !porGasto.isEmpty, "as três listas")
+         for linha in previstos + fora + porGasto {
+             #expect(linha.abre, "\(linha.nome) com a seta")
+```
+
+Em `app-ios/CusttaTests/TelaOrcamentoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/TelaOrcamentoTests.swift
++++ b/app-ios/CusttaTests/TelaOrcamentoTests.swift
+@@ -53,7 +53,7 @@ struct TelaOrcamentoTests {
+         #expect(linhasForaDoOrcamento(r, topicos: mapaDeTopicos([])).map(\.abre) == [true], "o fora do orçamento abre")
+         let total = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
+                          gastos: [("terreno", 319_847.85), ("revest", 0), ("c_meu", 2_000)])
+-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total), topicos: mapaDeTopicos([]))
++        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total), total: totalBruto(total), topicos: mapaDeTopicos([]))
+         #expect(porGasto.map(\.id) == ["terreno", "c_meu", "revest"])
+         #expect(porGasto.allSatisfy { $0.abre }, "no gasto por tópico, todas abrem, mesmo a de R$ 0,00")
+     }
+@@ -62,10 +62,10 @@ struct TelaOrcamentoTests {
+         let o = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
+                      gastos: [("terreno", 319_847.85), ("revest", 76_700), ("c_meu", 2_000)])
+         let proprio = TopicoProprio(campos: ["id": .texto("c_meu"), "nm": .texto("Gesso"), "ic": .texto("etiqueta")])
+-        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o), topicos: mapaDeTopicos([proprio]))
++        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o), total: totalBruto(o), topicos: mapaDeTopicos([proprio]))
+         #expect(linhas.map(\.nome) == ["Terreno", "Cerâmica", "Gesso"])
+         #expect(linhas.map(\.gasto) == ["R$ 320 mil", "R$ 77 mil", "R$ 2 mil"])
+-        #expect(linhas.map(\.frase) == ["80% da obra", "19% da obra", "1% da obra"])
++        #expect(linhas.map(\.frase) == ["80% da obra", "19% da obra", "<1% da obra"], "o Gesso tem 0,5%: o site diria 1%")
+         #expect(linhas.allSatisfy { $0.previsto == nil && $0.item == nil && !$0.fraseEmAlerta })
+     }
+ 
+```
+
+Em `app-ios/CusttaUITests/DetalheDoTopicoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
++++ b/app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
+@@ -176,6 +176,18 @@ final class DetalheDoTopicoUITests: XCTestCase {
+         linhaInteiraEFechar(app, "gastoTopico-terreno", quadro)
+     }
+ 
++    /// No modo total, a Pintura da Casa Alphaville (R$ 6.900,00 de R$ 842.317,45, 0,8%) mostra "<1% da obra" na linha e no
++    /// detalhe que ela abre: o site mostraria "1%" (o `Math.round`), e a confirmação 7 da etapa 4 pede o "<1%" na folha. O
++    /// VoiceOver lê "menos de 1% da obra" nos dois, como na barra empilhada.
++    func testParteAbaixoDeUmPorCentoNaLinhaENoDetalhe() {
++        let app = abrirOrcamento("vitrine")
++        let linha = app.elemento("gastoTopico-pintura")
++        app.rolarAte(linha)
++        XCTAssertTrue(linha.label.contains("menos de 1% da obra"), linha.label)
++        guard abrirPelaLinha(app, "gastoTopico-pintura") != nil else { return }
++        confere(app.elemento("resumoDoTopico"), contem: ["3 gastos · menos de 1% da obra", "R$\u{a0}6.900,00"])
++    }
++
+     func testObraApagadaEmOutroAparelhoFechaODetalhe() {
+         let app = abrirDetalhe("revest", extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
+         notify_post("br.com.custta.falso.apagarRemoto")
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter DentroDaObraTests 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -o 'DentroDaObraTests.swift:[0-9:]* error: [^|]*' | sort -t: -k2,2n -u | head -3
+git stash push -q -- app-ios/CusttaTests app-ios/CusttaNucleo/Tests
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests/testParteAbaixoDeUmPorCentoNaLinhaENoDetalhe 2>&1 | grep -oE 'XCTAssertTrue failed - .*' | head -2
+git stash pop -q
+```
+Expected: o núcleo não compila, e a tela, com os testes de unidade guardados, mostra o "1%" do site na linha e no detalhe:
+```
+DentroDaObraTests.swift:86:60: error: extra argument 'total' in call
+DentroDaObraTests.swift:94:46: error: extra argument 'total' in call
+DentroDaObraTests.swift:95:46: error: extra argument 'total' in call
+** TEST BUILD SUCCEEDED **
+XCTAssertTrue failed - Pintura, R$ 6,9 mil, 1% da obra
+XCTAssertTrue failed - "3 gastos · menos de 1% da obra" em "3 gastos · 1% da obra, R$ 6.900,00, corrigido: R$ 6.904,52"
+```
+
+- [ ] **Step 3: Implementar**
+
+A tela Orçamento monta as linhas uma vez, com o total da obra, em vez de passar os tópicos e montar as linhas dentro do `ForEach`.
+
+Em `app-ios/Custta/Telas/FolhaDoTopico.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoTopico.swift
++++ b/app-ios/Custta/Telas/FolhaDoTopico.swift
+@@ -157,7 +157,9 @@ private struct ResumoDoDetalhe: View {
+                                 .frame(width: 34, height: 34)
+                                 .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 10))
+                         }
++                        // O VoiceOver lê o "<1%" como "menos de 1%", como na barra empilhada e na lista.
+                         Text(detalhe.linha)
++                            .accessibilityLabel(porcentoFalado(detalhe.linha))
+                             .font(.subheadline)
+                             .foregroundStyle(paleta.cor(.secundarioTransparente))
+                             .fixedSize(horizontal: false, vertical: true)
+```
+
+Em `app-ios/Custta/Telas/OrcamentoView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/OrcamentoView.swift
++++ b/app-ios/Custta/Telas/OrcamentoView.swift
+@@ -34,7 +34,7 @@ struct OrcamentoView: View {
+ 
+     private func conteudo(_ obra: Obra, _ r: ResumoOrcamento, estado: Estado) -> some View {
+         let topicos = mapaDeTopicos(estado.config.topicosProprios)
+-        let gastos = r.modo == "topicos" ? [] : gastoPorTopico(obra)
++        let porGasto = r.modo == "topicos" ? [] : linhasDoGastoPorTopico(gastoPorTopico(obra), total: totalBruto(obra), topicos: topicos)
+         return ScrollView {
+             LazyVStack(alignment: .leading, spacing: 10) {
+                 TituloDaObra(nome: "Orçamento", identificador: "tituloDoOrcamento")
+@@ -64,10 +64,10 @@ struct OrcamentoView: View {
+                         }
+                     }
+                 } else {
+-                    PilulaDaLista(titulo: "Gasto por tópico", quantidade: gastos.count, identificador: "gastoPorTopico")
++                    PilulaDaLista(titulo: "Gasto por tópico", quantidade: porGasto.count, identificador: "gastoPorTopico")
+                         .padding(.top, 14)
+                     CartaoDaLista {
+-                        ForEach(Array(linhasDoGastoPorTopico(gastos, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
++                        ForEach(Array(porGasto.enumerated()), id: \.element.id) { i, linha in
+                             if i > 0 { LinhaFina().padding(.leading, 67) }
+                             LinhaDeTopicoNoOrcamento(linha: linha, identificador: "gastoTopico-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
+                         }
+```
+
+Em `app-ios/Custta/Telas/PecasDaTelaOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaTelaOrcamento.swift
++++ b/app-ios/Custta/Telas/PecasDaTelaOrcamento.swift
+@@ -50,12 +50,13 @@ func linhasForaDoOrcamento(_ r: ResumoOrcamento, topicos: [String: Topico]) -> [
+     }
+ }
+ 
+-/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto; todas abrem o detalhe.
+-func linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
++/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto ("<1%" abaixo de 1%), sobre o
++/// `totalBruto` da obra, o mesmo do detalhe que a linha abre; todas abrem o detalhe.
++func linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], total: Double, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
+     gastos.map { g in
+         let t = topico(g.id, topicos)
+         return LinhaDeTopicoDoOrcamento(id: g.id, nome: t.nome, icone: t.icone, gasto: moedaCurtaSemZero(g.bruto), previsto: nil,
+-                                        item: nil, frase: textoDaParteDaObra(g.pct), abre: true)
++                                        item: nil, frase: textoDaParteDaObra(g.bruto, total: total), abre: true)
+     }
+ }
+ 
+@@ -229,7 +230,7 @@ struct LinhaDeTopicoNoOrcamento: View {
+ }
+ 
+ /// A frase do site embaixo da barra ("Faltam R$ 3,3 mil — 96%"; no modo total, "38% da obra"), no secundário; a do
+-/// "passou", em semibold, no âmbar sobre o vidro.
++/// "passou", em semibold, no âmbar sobre o vidro. O VoiceOver lê o "<1%" como "menos de 1%", como na barra empilhada.
+ struct FraseDoTopicoNoOrcamento: View {
+     let texto: String
+     let alerta: Bool
+@@ -238,6 +239,7 @@ struct FraseDoTopicoNoOrcamento: View {
+ 
+     var body: some View {
+         Text(texto)
++            .accessibilityLabel(porcentoFalado(texto))
+             .font(.footnote.weight(alerta ? .semibold : .regular))
+             .foregroundStyle(paleta.cor(alerta ? .alertaNoVidro : vidro.secundario))
+             .fixedSize(horizontal: false, vertical: true)
+```
+
+Em `app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift`:
+
+```diff
+--- a/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
++++ b/app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift
+@@ -74,8 +74,10 @@ public func gastoPorTopico(_ obra: Obra) -> [GastoDoTopico] {
+     return ordenadoEstavel(linhas) { $0.bruto > $1.bruto }
+ }
+ 
+-/// "38% da obra".
+-public func textoDaParteDaObra(_ pct: Double) -> String { "\(numeroJS(pct))% da obra" }
++/// "38% da obra" e, quando o tópico tem dinheiro e não chega a 1%, "<1% da obra" (o `porcentoDoTopico` da barra e do anel da
++/// etapa 4; o site mostraria 0% ou 1%). A lista "Gasto por tópico" e o detalhe do tópico passam o mesmo bruto e o mesmo total
++/// (`totalBruto`), para o número não mudar ao abrir o detalhe.
++public func textoDaParteDaObra(_ bruto: Double, total: Double) -> String { porcentoDoTopico(bruto, total: total) + " da obra" }
+ 
+ /// A dica do fim da tela Orçamento no modo total.
+ public let dicaDoModoTotal = "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\"."
+@@ -174,7 +176,7 @@ public func fraseDoOrcamentoNoDetalhe(_ item: ItemOrcamento) -> FraseDoOrcamento
+ /// A folha do detalhe do tópico.
+ public struct DetalheDoTopico: Equatable, Sendable {
+     public let resumo: ResumoDoTopico
+-    /// "6 gastos · 12% da obra".
++    /// "6 gastos · 12% da obra" ("<1% da obra" abaixo de 1%).
+     public let linha: String
+     /// "corrigido: R$ …".
+     public let corrigido: String
+@@ -194,7 +196,8 @@ public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMens
+     } else {
+         orcamento = .nenhum
+     }
+-    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(textoDaParteDaObra(r.pct))",
++    let parte = textoDaParteDaObra(r.bruto, total: totalBruto(obra))
++    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(parte)",
+                            corrigido: "corrigido: " + moeda(r.corrigido), orcamento: orcamento,
+                            aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
+                            pagos: ordenados.filter { !menorJS(hoje, $0.data) })
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter DentroDaObraTests 2>&1 | tail -1
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never '-only-testing:CusttaTests/TelaOrcamentoTests/abreODetalheNasTresListas()' '-only-testing:CusttaTests/TelaOrcamentoTests/gastoPorTopicoComAParteDaObra()' -only-testing:CusttaTests/OrcamentoEm375Tests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/DetalheDoTopicoUITests -only-testing:CusttaUITests/OrcamentoUITests 2>&1 | grep -E "Executed [0-9]+ tests" | tail -1
+```
+Expected: `✔ Test run with 16 tests in 1 suite passed`; `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 5 tests in 2 suites passed`; `Executed 46 tests, with 0 failures` (os 17 do `DetalheDoTopicoUITests`, com o novo, e os 29 do `OrcamentoUITests`, que inclui a extensão do `FolhaDoOrcamentoUITests.swift`), em ~14 min no 18 Pro (828 s).
+
+- [ ] **Step 5: Conferir o laudo da tela Orçamento**
+
+A cena "tela Orçamento, só o total, fim" (LeituraNoVidroUITests.swift:546) mostra a linha da Pintura, que ganha o "<".
+
+Run:
+```bash
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento 2>&1 | grep -E "^leitura \|" | sort -u | grep -c " 0 abaixo"
+```
+Expected: `12`: as 12 cenas (6 telas, nos dois temas) sem nenhuma palavra abaixo de 4,5:1; a "só o total, fim" com 28 palavras, pior nota 5,64 no escuro e 6,59 no claro, no 18 Pro (~4 min). A comparação palavra por palavra com o commit anterior fica para o laudo inteiro do fim do PR.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Telas/FolhaDoTopico.swift app-ios/Custta/Telas/OrcamentoView.swift app-ios/Custta/Telas/PecasDaTelaOrcamento.swift app-ios/CusttaNucleo/Sources/CusttaNucleo/DentroDaObra.swift app-ios/CusttaNucleo/Tests/CusttaNucleoTests/DentroDaObraTests.swift app-ios/CusttaTests/OrcamentoEm375Tests.swift app-ios/CusttaTests/TelaOrcamentoTests.swift app-ios/CusttaUITests/DetalheDoTopicoUITests.swift
+git commit -m "feat: \"<1%\" no % da obra do detalhe do tópico e da tela Orçamento" -m "O \"% da obra\" da folha do detalhe do tópico arredondava como o site (Math.round): um tópico com dinheiro e menos de 1% da obra aparecia como \"0% da obra\" ou \"1% da obra\". A etapa 4 mostra \"<1%\" no anel e na barra empilhada, e o Giovani confirmou em 29/10 que a folha, nesta etapa, só muda nisso (confirmação 7)." -m "O textoDaParteDaObra passa a receber o bruto e o total e usa o porcentoDoTopico do núcleo. A lista \"Gasto por tópico\" da tela Orçamento, no modo total, usa o mesmo texto e muda junto, sobre o mesmo bruto e o mesmo totalBruto do detalhe, para o número não mudar ao abrir a folha. Na Casa Alphaville da vitrine, a Pintura (0,8%) passa de \"1%\" para \"<1% da obra\" na linha e no detalhe." -m "O VoiceOver lê o \"<1%\" da linha e do detalhe como \"menos de 1%\", pelo porcentoFalado do núcleo, como já fazia na barra empilhada: o mesmo número não é falado de dois jeitos, e o \"<\" não depende do nível de pontuação."
+```
+
+### Task 27: Costura das telas da análise, sem porta, com a abertura de Debug
+
+As telas da análise moram em `Custta/Analise/` e se ligam ao resto do app por uma costura só (spec, "Arquitetura", "Telas"; linha 1c da tabela dos PRs). A tarefa a faz sem destino. Os Gráficos e o Relatório são empurrados no caminho de Obras sobre a obra, como a tela Orçamento (`RotaDeObras`, ObrasView.swift:5): a rota ganha um caso só, `.analise(TelaDaAnalise)`, e o `navigationDestination` de Obras leva ao `DestinoDaAnalise`, a única peça que as telas de verdade trocam (os Gráficos no 2a, o Relatório no 3a), para os PRs delas mexerem só em `Custta/Analise/` e nos testes dela, o portão "telas novas" (spec, "Portões por superfície"). Nenhuma porta entra: a obra continua sem caminho para essas telas até o PR que completa cada destino (a barra empilhada no 2b, a fileira de portas no 3b; spec, "Escondido na `main`"). Até lá, só a abertura de Debug chega a elas: `CUSTTA_ABRIR=graficos:<id>` e `relatorio:<id>` abrem a obra pelo caminho inicial e empurram a tela quando os dados chegam, como um toque na porta, igual ao `afazeres:<id>` de hoje (PrincipalView.swift:162-172), que passa a usar o mesmo gancho. A tela é uma provisória mínima: o título na barra ("Gráficos" ou "Relatório") e o nome da obra. O + da cápsula lança gasto na obra da tela, como nas telas Orçamento e Afazeres (confirmação 6): o `obraId` da rota é o da tela. O "Vale a pena?" não passa por aqui: é uma aba (spec, "Telas"), que chega no 4a com a cápsula de três abas, e o PDF não é tela. O leitor do gancho fica em `#if DEBUG`, e o `nm` do Release confere que ele não vai ao Release.
+
+**Files:**
+- Create: `app-ios/Custta/Analise/TelaDaAnalise.swift`
+- Modify: `app-ios/Custta/Telas/ObrasView.swift`
+- Modify: `app-ios/Custta/Telas/PrincipalView.swift`
+- Test (novo): `app-ios/CusttaTests/CosturaDaAnaliseTests.swift`
+- Test (novo): `app-ios/CusttaUITests/AnaliseUITests.swift`
+
+**Interfaces:**
+- Consumes: `RotaDeObras` e o `navigationDestination` de Obras (ObrasView.swift); `PrincipalView.caminhoInicial` e o gancho dos afazeres (PrincipalView.swift); `abrirApp(conta:dados:abrir:)` (Abrir.swift).
+- Produces: `enum TelaDaAnalise: Hashable, Sendable { case graficos(String); case relatorio(String) }`, com `obraId` e `titulo`; `RotaDeObras.analise(TelaDaAnalise)`; `struct DestinoDaAnalise: View` (`tela:`, `caminho:`), que o 2a e o 3a trocam; em Debug, `TelaDaAnalise(gancho:)`, que lê `graficos:<id>` e `relatorio:<id>`.
+
+- [ ] **Step 1: Escrever os testes**
+
+O de unidade prende o leitor do gancho (só as duas telas, com o id; as outras aberturas e o gancho sem id dão nil) e a obra e o título de cada rota. O de tela abre cada uma pelo gancho, sobre a obra, com o título, o nome da obra e o + que lança gasto, e volta para a obra e dela para Obras.
+
+Criar `app-ios/CusttaTests/CosturaDaAnaliseTests.swift`:
+
+```swift
+import Testing
+@testable import Custta
+
+/* A costura das telas da análise (etapa 4, PR 1c): a abertura de Debug lê do gancho a tela e a obra, só dos Gráficos e do
+   Relatório, e a rota no caminho de Obras leva a obra da tela ao + da cápsula. */
+struct CosturaDaAnaliseTests {
+    @Test func ganchoDeAberturaComATelaEAObra() {
+        #expect(TelaDaAnalise(gancho: "graficos:v1") == .graficos("v1"))
+        #expect(TelaDaAnalise(gancho: "relatorio:o2") == .relatorio("o2"))
+        for outro in ["obra:v1", "orcamento:v1", "afazeres:v1", "valeAPena:v1", "graficos:", "graficos", ":v1", ""] {
+            #expect(TelaDaAnalise(gancho: outro) == nil, "\(outro)")
+        }
+    }
+
+    @Test func rotaComAObraEOTituloDaTela() {
+        #expect(RotaDeObras.analise(.graficos("v1")).obraId == "v1")
+        #expect(RotaDeObras.analise(.relatorio("v3")).obraId == "v3")
+        #expect(TelaDaAnalise.graficos("v1").titulo == "Gráficos" && TelaDaAnalise.relatorio("v1").titulo == "Relatório")
+    }
+}
+```
+
+Criar `app-ios/CusttaUITests/AnaliseUITests.swift`:
+
+```swift
+import XCTest
+
+/* A costura das telas da análise (etapa 4, PR 1c). A obra não tem porta para elas: os Gráficos e o Relatório só abrem pela
+   abertura de Debug (`CUSTTA_ABRIR=graficos:<id>` e `relatorio:<id>`), empurrados sobre a obra quando os dados chegam, como
+   num toque na porta, numa tela provisória com o título na barra e o nome da obra. O voltar leva à obra e, dela, a Obras; o
+   + da cápsula lança gasto na obra da tela (confirmação 6). As telas de verdade trocam a provisória no 2a e no 3a. */
+@MainActor
+final class AnaliseUITests: XCTestCase {
+    /// Abre a tela da análise pelo gancho e confere o título, a obra e o + da cápsula.
+    private func abrir(_ gancho: String, titulo: String, obra: String) -> XCUIApplication {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: gancho)
+        XCTAssertTrue(app.navigationBars[titulo].waitForExistence(timeout: 10), "a tela \(titulo)")
+        XCTAssertEqual(app.elemento("obraDaAnalise").label, obra)
+        XCTAssertEqual(app.buttons["botaoMais"].label, "Lançar gasto", "o + lança gasto na obra da tela")
+        return app
+    }
+
+    func testGraficosAbremSobreAObraEVoltamParaEla() {
+        let app = abrir("graficos:v1", titulo: "Gráficos", obra: "Casa Alphaville")
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5), "o voltar leva à obra")
+        XCTAssertFalse(app.navigationBars["Gráficos"].exists)
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.elemento("obra-v1").waitForExistence(timeout: 5), "e a obra, a Obras")
+    }
+
+    func testRelatorioAbreSobreAObraEVoltaParaEla() {
+        let app = abrir("relatorio:v3", titulo: "Relatório", obra: "Casa Tamboré 4")
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5), "o voltar leva à obra")
+        XCTAssertFalse(app.navigationBars["Relatório"].exists)
+    }
+}
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error:' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -3
+git stash push -u -q -- app-ios/CusttaTests/CosturaDaAnaliseTests.swift
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AnaliseUITests 2>&1 | grep -oE 'XCTAssertTrue failed - .*' | sort -u
+git stash pop -q
+```
+Expected: o `CusttaTests` não compila; sem o teste de unidade, o de tela compila e cai, porque o gancho sem a costura abre a lista de Obras:
+```
+CusttaTests/CosturaDaAnaliseTests.swift:8:17: error: cannot find 'TelaDaAnalise' in scope
+CusttaTests/CosturaDaAnaliseTests.swift:9:17: error: cannot find 'TelaDaAnalise' in scope
+CusttaTests/CosturaDaAnaliseTests.swift:11:21: error: cannot find 'TelaDaAnalise' in scope
+** TEST BUILD SUCCEEDED **
+XCTAssertTrue failed - a tela Gráficos
+XCTAssertTrue failed - a tela Relatório
+```
+
+- [ ] **Step 3: Implementar**
+
+A tela entra no caminho depois dos dados, como os afazeres: empurrada junto com a obra na abertura, ela apareceria antes de os dados chegarem, e a entrada do anel do 2a (que só roda quando a tela é empurrada) não seria a de um toque na porta. O leitor do gancho mora com as telas, em `Custta/Analise/`, para o 2a e o 3a acrescentarem o que precisarem sem sair da pasta.
+
+Criar `app-ios/Custta/Analise/TelaDaAnalise.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* A costura das telas da análise (etapa 4) com o resto do app: elas moram nesta pasta e chegam ao app só por aqui (spec da
+   etapa 4, "Telas"). Gráficos e Relatório são empurrados no caminho de Obras, sobre a obra, como a tela Orçamento
+   (`RotaDeObras.analise`), e o + da cápsula lança gasto nessa obra (confirmação 6). Ainda não há porta: até o PR que completa
+   cada destino (a barra empilhada da obra no 2b, a fileira de portas no 3b), só a abertura de Debug chega a elas
+   (`CUSTTA_ABRIR=graficos:<id>` e `relatorio:<id>`, no PrincipalView), e cada uma é uma tela provisória, que a de verdade
+   troca no `DestinoDaAnalise` (os Gráficos no 2a, o Relatório no 3a). O "Vale a pena?" não passa por aqui: é uma aba, que
+   chega no 4a com a cápsula de três abas. */
+
+/// Uma tela da análise de uma obra, empurrada no caminho de Obras.
+enum TelaDaAnalise: Hashable, Sendable {
+    case graficos(String)
+    case relatorio(String)
+
+    /// A obra da tela: o + da cápsula lança gasto nela, como na tela Orçamento.
+    var obraId: String {
+        switch self {
+        case .graficos(let id), .relatorio(let id): return id
+        }
+    }
+
+    /// O título da barra.
+    var titulo: String {
+        switch self {
+        case .graficos: return "Gráficos"
+        case .relatorio: return "Relatório"
+        }
+    }
+}
+
+/// Para onde cada tela da análise leva no caminho de Obras: a única peça que as telas de verdade trocam fora delas.
+struct DestinoDaAnalise: View {
+    let tela: TelaDaAnalise
+    @Binding var caminho: [RotaDeObras]
+
+    var body: some View {
+        TelaProvisoriaDaAnalise(tela: tela)
+    }
+}
+
+/// A tela provisória, só pela abertura de Debug: o título na barra e o nome da obra.
+struct TelaProvisoriaDaAnalise: View {
+    let tela: TelaDaAnalise
+    @Environment(ModeloApp.self) private var modelo
+    @Environment(\.paleta) private var paleta
+
+    var body: some View {
+        let obra = modelo.sincronizador.estado.obras.first { $0.id == tela.obraId }
+        ScrollView {
+            Text(obra?.nome ?? "")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(paleta.cor(.texto))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .accessibilityIdentifier("obraDaAnalise")
+        }
+        .containerBackground(.clear, for: .navigation)
+        .navigationTitle(tela.titulo)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+#if DEBUG
+extension TelaDaAnalise {
+    /// A tela do gancho de abertura dos testes de tela, do laudo e da conferência visual: `graficos:<id>` ou `relatorio:<id>`;
+    /// nil para as outras aberturas (`obra:`, `orcamento:`, `afazeres:`) e sem o id.
+    init?(gancho: String) {
+        let partes = gancho.split(separator: ":", maxSplits: 1).map(String.init)
+        guard partes.count == 2, !partes[1].isEmpty else { return nil }
+        switch partes[0] {
+        case "graficos": self = .graficos(partes[1])
+        case "relatorio": self = .relatorio(partes[1])
+        default: return nil
+        }
+    }
+}
+#endif
+```
+
+Em `app-ios/Custta/Telas/ObrasView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObrasView.swift
++++ b/app-ios/Custta/Telas/ObrasView.swift
+@@ -8,11 +8,14 @@ enum RotaDeObras: Hashable, Sendable {
+     case orcamento(String)
+     /// A tela "Afazeres" da obra, empurrada pela linha dos afazeres (etapa 3).
+     case afazeres(String)
++    /// Uma tela da análise da obra, Gráficos ou Relatório (etapa 4), empurrada sobre ela: a costura com Custta/Analise.
++    case analise(TelaDaAnalise)
+ 
+-    /// A obra da tela: a própria, ou a dona do orçamento ou dos afazeres (o + da cápsula lança gasto nela).
++    /// A obra da tela: a própria, ou a dona do orçamento, dos afazeres ou da tela da análise (o + da cápsula lança gasto nela).
+     var obraId: String {
+         switch self {
+         case .obra(let id), .orcamento(let id), .afazeres(let id): return id
++        case .analise(let tela): return tela.obraId
+         }
+     }
+ }
+@@ -95,6 +98,7 @@ struct ObrasView: View {
+                 case .obra(let id): ObraView(id: id, caminho: $caminho)
+                 case .orcamento(let id): OrcamentoView(id: id, caminho: $caminho)
+                 case .afazeres(let id): AfazeresView(obraId: id, caminho: $caminho)
++                case .analise(let tela): DestinoDaAnalise(tela: tela, caminho: $caminho)
+                 }
+             }
+             #if DEBUG
+```
+
+Em `app-ios/Custta/Telas/PrincipalView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -56,7 +56,7 @@ struct PrincipalView: View {
+         .modifier(AvisosDoPrincipal(avisoDoMais: $avisoDoMais, folhaAberta: folhas.aberta != nil))
+         #if DEBUG
+         .task { await abrirFolhaDoGancho() }
+-        .task { await abrirAfazeresDoGancho() }
++        .task { await empurrarDoGancho() }
+         // Teste de tela: quantas pontes de fechamento estão vivas (abrir e fechar a folha não pode deixar nenhuma).
+         .overlay(alignment: .topLeading) {
+             if UserDefaults.standard.bool(forKey: "custta.contarPontes") {
+@@ -159,27 +159,35 @@ extension PrincipalView {
+         }
+     }
+ 
+-    /// `CUSTTA_ABRIR=afazeres:<id>`: a obra abre pelo caminho inicial e os afazeres dela são empurrados quando os dados
+-    /// chegam, como num toque na linha. Empurrados junto com a obra na abertura, o título grande "Afazeres" nascia recolhido.
+-    private func abrirAfazeresDoGancho() async {
+-        guard let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("afazeres:") else { return }
++    /// `CUSTTA_ABRIR=afazeres:<id>`, `graficos:<id>` e `relatorio:<id>`: a obra abre pelo caminho inicial, e a tela é empurrada
++    /// sobre ela quando os dados chegam, como num toque na linha ou na porta. Empurrados junto com a obra na abertura, o título
++    /// grande "Afazeres" nascia recolhido.
++    private func empurrarDoGancho() async {
++        guard let rota = Self.empurradaDoGancho else { return }
+         for _ in 0..<50 {
+             guard !modelo.sincronizador.dadosCarregados else { break }
+             try? await Task.sleep(for: .milliseconds(100))
+         }
+         try? await Task.sleep(for: .milliseconds(300))
+-        caminhoDeObras.append(.afazeres(String(abrir.dropFirst(9))))
++        caminhoDeObras.append(rota)
++    }
++
++    /// A tela que o `CUSTTA_ABRIR` empurra sobre a obra: os afazeres ou uma tela da análise (o leitor mora em Custta/Analise).
++    private static var empurradaDoGancho: RotaDeObras? {
++        guard let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] else { return nil }
++        if abrir.hasPrefix("afazeres:") { return .afazeres(String(abrir.dropFirst(9))) }
++        return TelaDaAnalise(gancho: abrir).map { .analise($0) }
+     }
+     #endif
+ 
+     /// O caminho com que Obras abre: vazio; em Debug, `CUSTTA_ABRIR=obra:<id>` abre a obra direto,
+     /// `CUSTTA_ABRIR=orcamento:<id>`, a tela Orçamento dela (testes de tela, laudo de leitura e conferência visual), e
+-    /// `afazeres:<id>`, a obra, com os afazeres dela empurrados depois.
++    /// `afazeres:<id>`, `graficos:<id>` e `relatorio:<id>`, a obra, com a tela empurrada depois.
+     static var caminhoInicial: [RotaDeObras] {
+         #if DEBUG
+         if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] {
+             if abrir.hasPrefix("obra:") { return [.obra(String(abrir.dropFirst(5)))] }
+-            if abrir.hasPrefix("afazeres:") { return [.obra(String(abrir.dropFirst(9)))] }
++            if let empurrada = empurradaDoGancho { return [.obra(empurrada.obraId)] }
+         }
+         if let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"], abrir.hasPrefix("orcamento:") {
+             let id = String(abrir.dropFirst(10))
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/CosturaDaAnaliseTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AnaliseUITests -only-testing:CusttaUITests/AfazeresUITests 2>&1 | grep -E "Executed [0-9]+ tests" | tail -1
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 2 tests in 1 suite passed`; `Executed 17 tests, with 0 failures` (os 2 da costura e os 15 dos afazeres, que passam pelo mesmo gancho), em ~4 min no 18 Pro.
+
+- [ ] **Step 5: Conferir que a abertura de Debug não vai ao Release**
+
+O Release compila para o simulador sem assinar, no mesmo DerivedData do `XB`, e o `nm` procura os nomes do leitor do gancho e do empurrar (só Debug) e, de controle, os da costura, que vão ao Release sem porta (memória `release-sem-ganchos-conferir-por-nm`: o `strings` engana).
+
+Run:
+```bash
+xcodebuild build -project app-ios/Custta.xcodeproj -scheme Custta -configuration Release -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile 2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)" | tail -1
+PROD=$(xcodebuild "${XB[@]}" -showBuildSettings 2>/dev/null | awk -F' = ' '/^ *BUILD_DIR = /{print $2; exit}')
+for s in TelaDaAnaliseO6gancho empurradaDoGancho empurrarDoGancho DestinoDaAnalise RaizView; do echo "$s release=$(nm -a "$PROD/Release-iphonesimulator/Custta.app/Custta" | grep -c $s) debug=$(nm -a "$PROD/Debug-iphonesimulator/Custta.app/Custta.debug.dylib" | grep -c $s)"; done
+```
+Expected: `** BUILD SUCCEEDED **` e:
+```
+TelaDaAnaliseO6gancho release=0 debug=4
+empurradaDoGancho release=0 debug=4
+empurrarDoGancho release=0 debug=18
+DestinoDaAnalise release=135 debug=208
+RaizView release=90 debug=384
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Analise/TelaDaAnalise.swift app-ios/Custta/Telas/ObrasView.swift app-ios/Custta/Telas/PrincipalView.swift app-ios/CusttaTests/CosturaDaAnaliseTests.swift app-ios/CusttaUITests/AnaliseUITests.swift
+git commit -m "feat: costura das telas da análise, sem porta, com a abertura de Debug" -m "Os Gráficos e o Relatório da etapa 4 moram em Custta/Analise e chegam ao app por uma costura só: a rota RotaDeObras.analise, empurrada no caminho de Obras sobre a obra, como a tela Orçamento, e o DestinoDaAnalise, a única peça que as telas de verdade trocam fora da pasta. Assim os PRs 2a e 3a mexem só em Custta/Analise e nos testes dela, o portão \"telas novas\" do spec." -m "Nenhuma porta entra: a obra continua sem caminho para essas telas até o PR que completa cada destino. Até lá, só a abertura de Debug chega a elas: CUSTTA_ABRIR=graficos:<id> e relatorio:<id> abrem a obra e empurram a tela quando os dados chegam, como um toque na porta, numa tela provisória com o título e o nome da obra. Os afazeres passam pelo mesmo gancho. O + da cápsula lança gasto na obra da tela, como pede a confirmação 6. O \"Vale a pena?\" não passa por aqui: é uma aba, que chega no 4a com a cápsula de três abas."
+```
+
+### Task 28: Falsos com as obras dos estados da análise
+
+Os marcos 2 e 3 testam, medem no laudo e conferem lado a lado com o mockup os Gráficos, o Relatório, o "Vale a pena?" e o PDF em estados que a vitrine não tem (spec, "Testes e validação", item 3, e os estados de cada tela em "Decisões de desenho"). O `CUSTTA_DADOS=analise` monta a vitrine de sempre e mais as obras dos estados do mockup aprovado da etapa 4, com os números do `gera-dados-p1.cjs` (que parte do `calc.js` da `cec9fc0`, hoje 12/10/2026), as datas contadas de hoje, como na vitrine (VitrineDaObra.swift:62). A vitrine já tem a Casa Alphaville (`v1`) com 14 tópicos (o anel junta 8 no "Outros"), 13 parcelas a vencer e a venda estimada; o Sobrado Granja Viana (`v2`), pronto e sem venda estimada (o "sem preço" do "Vale a pena?"); e a Casa Tamboré 4 (`v3`), vendida, com 1 tópico. As obras novas, com os nomes e os valores do mockup:
+- `a1`: a Casa Alphaville vendida por R$ 1.380.000,00 há 114 dias (o `est-vendida` e o Relatório e o PDF da vendida): os gastos depois da venda ficam fora da evolução;
+- `a2`: Casa Cotia, sem gastos (o `est-vazio` e a obra sem gastos);
+- `a3`: Terreno Granja, 1 gasto de R$ 120.000,00 (o `est-1-gasto`; apagando o gasto pela folha do tópico, os Gráficos sem gastos);
+- `a4`: Sobrado Vila Nova, 5 gastos neste mês, até hoje, com a venda estimada de R$ 1.100.000,00 e 220 m² (o `est-1-mes` e, no "Vale a pena?", a obra com menos de 1 mês);
+- `a5`: Galpão Jundiaí, 7 gastos, todos em Estrutura (o `est-1-topico`);
+- `a6`: Casa Granja Viana, com Outros (0,25%) e Extras (0,05%) abaixo de 1% (o `est-pequeno`: o piso e o "<1%");
+- `a7`: Casa Morumbi, que o mockup não desenha: 30 meses de gastos, do 30º mês atrás ao mês passado, com 3 meses parados no meio, para o "Mostrando os últimos 24 meses." nos dois gráficos de mês;
+- `a8`: a Casa Alphaville sem a venda estimada (o Relatório e o PDF "sem venda" do mockup).
+
+A Cotia, o Terreno Granja e o Sobrado Vila Nova começam no dia 1º deste mês, e os gastos deles caem neste mês, no dia do mockup sem passar de hoje (no dia 1º, todos caem nele): por dias contados de hoje, a obra de 1 mês teria 2 meses nos dias 1 a 9 (memória `laudo-que-depende-do-dia`). As cópias da Casa Alphaville levam ids próprios nos gastos (`a1g001`…). Um teste de formato prende o que cada obra promete, em seis datas (fim de mês, dia 1º, fim do ano e fevereiro do bissexto), como o dos orçamentos da etapa 3 (memória `variante-de-falso-sem-teste-de-formato`). O "sem obra" do "Vale a pena?" é o `vazio`. Só Debug: o `nm` do Release confere.
+
+**Files:**
+- Modify: `app-ios/Custta/Falsos/MontarFalso.swift`
+- Create: `app-ios/Custta/Falsos/VitrineDaAnalise.swift`
+- Test (alterar): `app-ios/CusttaTests/DadosDeExemploTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/AnaliseUITests.swift`
+
+**Interfaces:**
+- Consumes: `DadosDeExemplo.vitrine(hoje:)` (TransporteFalsoApp.swift) e o `switch` do `CUSTTA_DADOS` (MontarFalso.swift); `TelaDaAnalise` e a abertura `graficos:<id>` (Tarefa anterior).
+- Produces: `DadosDeExemplo.vitrineDaAnalise(hoje: Date = .now) -> ValorJSON`, pelo `CUSTTA_DADOS=analise`, com as obras `v1` a `v3` e `a1` a `a8`.
+
+- [ ] **Step 1: Escrever os testes**
+
+O de formato confere cada obra pelas regras do núcleo (os tópicos, os pedaços, as séries, os cortes de 24 meses, o "<1%", os meses de obra e a venda), as datas das obras de 1 mês (os gastos do Terreno Granja e do Sobrado Vila Nova neste mês, até hoje, e a Casa Cotia, o Terreno Granja e o Sobrado Vila Nova começando no dia 1º) e que os ids dos gastos não se repetem, nas 6 datas; o de tela abre os Gráficos da Casa Morumbi pela abertura de Debug com o `CUSTTA_DADOS=analise`.
+
+Em `app-ios/CusttaTests/DadosDeExemploTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/DadosDeExemploTests.swift
++++ b/app-ios/CusttaTests/DadosDeExemploTests.swift
+@@ -4,7 +4,7 @@ import Testing
+ import CusttaNucleo
+ 
+ /* A vitrine mostra os números do mockup aprovado em qualquer dia (as datas são contadas de hoje), também com os orçamentos
+-   da etapa 3. */
++   da etapa 3 e as obras dos estados da análise da etapa 4. */
+ struct DadosDeExemploTests {
+     static let dias = ["2026-01-31", "2026-03-01", "2026-10-08", "2026-12-31", "2027-02-28", "2028-02-29"]
+ 
+@@ -77,4 +77,71 @@ struct DadosDeExemploTests {
+         let data = Dictionary(uniqueKeysWithValues: diarias.map { ($0.id, $0.data) })
+         #expect(data["d001"] == iso(-1) && data["d100"] == iso(-100) && data["d101"] == iso(1) && data["d120"] == iso(20), "de ontem para trás e de amanhã em diante")
+     }
++
++    /// As obras dos estados da análise (etapa 4, `CUSTTA_DADOS=analise`) sobre a vitrine, em qualquer dia: o que cada uma
++    /// promete às telas dos marcos 2 e 3. No dia 1º, os gastos deste mês caem todos nele, e a obra de 1 mês continua com 1 mês.
++    @Test(arguments: dias)
++    func obrasDosEstadosDaAnalise(_ dia: String) throws {
++        var calendario = Calendar(identifier: .gregorian)
++        calendario.timeZone = .current
++        let partes = dia.split(separator: "-").map { Int($0)! }
++        let hoje = try #require(calendario.date(from: DateComponents(year: partes[0], month: partes[1], day: partes[2], hour: 12)))
++        let iso = dataLocalISO(hoje, fuso: .current)
++        func dias(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .day, value: n, to: hoje)!, fuso: .current) }
++        func meses(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .month, value: n, to: hoje)!, fuso: .current) }
++        let estado = Estado.de(DadosDeExemplo.vitrineDaAnalise(hoje: hoje))
++        #expect(estado.obras.map(\.id) == ["v1", "v2", "v3", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"])
++        #expect(Array(estado.obras.prefix(3)) == Estado.de(DadosDeExemplo.vitrine(hoje: hoje)).obras, "a vitrine de sempre na frente")
++        let obra = Dictionary(uniqueKeysWithValues: estado.obras.map { ($0.id, $0) })
++        let ids = estado.obras.flatMap { $0.gastos.map(\.id) }
++        #expect(Set(ids).count == ids.count, "cada gasto com id próprio")
++        // A Casa Alphaville (v1): 14 tópicos (o anel junta 8 no "Outros") e 13 parcelas a vencer.
++        let casa = try #require(obra["v1"])
++        #expect(gastoPorTopico(casa).count == 14 && pedacosDoAnel(gastoPorTopico(casa)).last?.topicos.count == 8)
++        #expect(listaDaObra(casa, hoje: iso).aVencer?.quantidade == 13)
++        // a1: a Casa Alphaville vendida há 114 dias por R$ 1.380.000,00, com os gastos dela; os depois da venda ficam fora da
++        // evolução.
++        let vendida = try #require(obra["a1"])
++        #expect(vendida.nome == "Casa Alphaville" && vendida.fase == .vendida && vendida.venda == Venda(valor: 1_380_000, data: dias(-114)))
++        #expect(vendida.gastos.map(\.valor) == casa.gastos.map(\.valor) && vendida.gastos.map(\.data) == casa.gastos.map(\.data))
++        #expect(fraseForaDaEvolucao(vendida, hoje: iso)?.hasSuffix("com data depois da venda.") == true)
++        // a2: sem gastos.
++        let cotia = try #require(obra["a2"])
++        #expect(cotia.nome == "Casa Cotia" && cotia.gastos.isEmpty && cotia.fase == .construcao)
++        // a3: 1 gasto, neste mês.
++        let terreno = try #require(obra["a3"])
++        #expect(terreno.nome == "Terreno Granja" && terreno.gastos.map(\.valor) == [120_000])
++        #expect(serieMensal(terreno.gastos).count == 1 && serieEvolucao(terreno, taxa: 1, hoje: iso).count == 1)
++        #expect(terreno.gastos.allSatisfy { $0.data.prefix(7) == iso.prefix(7) && $0.data <= iso }, "neste mês, até hoje")
++        // a4: 5 gastos neste mês, até hoje: 1 mês nos gráficos e menos de 1 mês de obra no "Vale a pena?".
++        let vilaNova = try #require(obra["a4"])
++        #expect(vilaNova.nome == "Sobrado Vila Nova" && vilaNova.gastos.count == 5 && gastoPorTopico(vilaNova).count == 4)
++        #expect(vilaNova.gastos.allSatisfy { $0.data.prefix(7) == iso.prefix(7) && $0.data <= iso }, "neste mês, até hoje")
++        #expect(serieMensal(vilaNova.gastos).count == 1 && serieEvolucao(vilaNova, taxa: 1, hoje: iso).count == 1)
++        #expect(mesesDeObra(vilaNova, hoje: iso) < 1 && vilaNova.valorEstimadoVenda == 1_100_000 && vilaNova.areaM2 == 220)
++        #expect([cotia, terreno, vilaNova].allSatisfy { $0.dataInicio == String(iso.prefix(8)) + "01" }, "no dia 1º deste mês")
++        // a5: 7 gastos, todos em Estrutura.
++        let galpao = try #require(obra["a5"])
++        #expect(galpao.nome == "Galpão Jundiaí" && galpao.gastos.count == 7 && gastoPorTopico(galpao).map(\.id) == ["estrutura"])
++        // a6: Outros e Extras abaixo de 1%.
++        let granja = try #require(obra["a6"])
++        let topicos = gastoPorTopico(granja)
++        #expect(granja.nome == "Casa Granja Viana" && topicos.map(\.id) == ["terreno", "fundacao", "projeto", "outros", "extras"])
++        #expect(topicos.map { porcentoDoTopico($0.bruto, total: totalBruto(granja)) } == ["78%", "17%", "5%", "<1%", "<1%"])
++        // a7: 30 meses de gastos (do 30º mês atrás ao mês passado), com 3 parados: os dois gráficos de mês passam de 24 e
++        // mostram os últimos 24, com os 3 parados entre eles.
++        let morumbi = try #require(obra["a7"])
++        #expect(morumbi.nome == "Casa Morumbi" && morumbi.dataInicio == meses(-30) && morumbi.gastos.count == 27)
++        #expect(morumbi.gastos.first?.data == meses(-30) && morumbi.gastos.last?.data == meses(-1))
++        #expect(gastoPorMesFoiCortado(morumbi.gastos) && evolucaoFoiCortada(morumbi, hoje: iso))
++        let porMes = serieMensal(morumbi.gastos)
++        #expect(porMes.count == 24 && porMes.first?.mes == String(meses(-24).prefix(7)))
++        #expect(porMes.filter { $0.total == 0 }.map(\.mes) == [-20, -19, -18].map { String(meses($0).prefix(7)) }, "3 meses parados, seguidos")
++        #expect(!gastoPorMesFoiCortado(casa.gastos) && !evolucaoFoiCortada(casa, hoje: iso), "a Casa Alphaville cabe em 24")
++        // a8: a Casa Alphaville sem a venda estimada, com os mesmos gastos.
++        let semVenda = try #require(obra["a8"])
++        #expect(semVenda.nome == "Casa Alphaville" && semVenda.fase == .construcao && semVenda.venda == nil)
++        #expect(semVenda.valorEstimadoVenda == nil && casa.valorEstimadoVenda == 1_450_000)
++        #expect(semVenda.gastos.map(\.valor) == casa.gastos.map(\.valor) && semVenda.gastos.map(\.data) == casa.gastos.map(\.data))
++    }
+ }
+```
+
+Em `app-ios/CusttaUITests/AnaliseUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AnaliseUITests.swift
++++ b/app-ios/CusttaUITests/AnaliseUITests.swift
+@@ -3,7 +3,8 @@ import XCTest
+ /* A costura das telas da análise (etapa 4, PR 1c). A obra não tem porta para elas: os Gráficos e o Relatório só abrem pela
+    abertura de Debug (`CUSTTA_ABRIR=graficos:<id>` e `relatorio:<id>`), empurrados sobre a obra quando os dados chegam, como
+    num toque na porta, numa tela provisória com o título na barra e o nome da obra. O voltar leva à obra e, dela, a Obras; o
+-   + da cápsula lança gasto na obra da tela (confirmação 6). As telas de verdade trocam a provisória no 2a e no 3a. */
++   + da cápsula lança gasto na obra da tela (confirmação 6). As obras dos estados da análise (`CUSTTA_DADOS=analise`) abrem
++   pelo mesmo gancho. As telas de verdade trocam a provisória no 2a e no 3a. */
+ @MainActor
+ final class AnaliseUITests: XCTestCase {
+     /// Abre a tela da análise pelo gancho e confere o título, a obra e o + da cápsula.
+@@ -24,6 +25,13 @@ final class AnaliseUITests: XCTestCase {
+         XCTAssertTrue(app.elemento("obra-v1").waitForExistence(timeout: 5), "e a obra, a Obras")
+     }
+ 
++    /// Os falsos da análise (`CUSTTA_DADOS=analise`) chegam pela mesma abertura: os Gráficos da Casa Morumbi, a obra de 30 meses.
++    func testObrasDosEstadosDaAnaliseAbremPeloGancho() {
++        let app = abrirApp(conta: "senha", dados: "analise", abrir: "graficos:a7")
++        XCTAssertTrue(app.navigationBars["Gráficos"].waitForExistence(timeout: 10), "a tela Gráficos")
++        XCTAssertEqual(app.elemento("obraDaAnalise").label, "Casa Morumbi")
++    }
++
+     func testRelatorioAbreSobreAObraEVoltaParaEla() {
+         let app = abrir("relatorio:v3", titulo: "Relatório", obra: "Casa Tamboré 4")
+         app.navigationBars.buttons.firstMatch.tap()
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error:' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -1
+git stash push -q -- app-ios/CusttaTests/DadosDeExemploTests.swift
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AnaliseUITests/testObrasDosEstadosDaAnaliseAbremPeloGancho 2>&1 | grep -oE "No matches found for .*obraDaAnalise[^,]*" | sort -u
+git stash pop -q
+```
+Expected: o `CusttaTests` não compila; sem o teste de formato, o de tela compila e cai, porque sem a variante o app abre a vitrine, onde não há a `a7`, e a tela abre sem o nome da obra:
+```
+CusttaTests/DadosDeExemploTests.swift:92:47: error: type 'DadosDeExemplo' has no member 'vitrineDaAnalise'
+** TEST BUILD SUCCEEDED **
+No matches found for first query match sequence: `Descendants matching type Any` -> `Elements matching predicate '"obraDaAnalise" IN identifiers'`
+```
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Falsos/MontarFalso.swift`:
+
+```diff
+--- a/app-ios/Custta/Falsos/MontarFalso.swift
++++ b/app-ios/Custta/Falsos/MontarFalso.swift
+@@ -9,7 +9,8 @@ import CusttaNucleo
+    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto) |
+                   prejuizo (a vitrine com a vendida no prejuízo) | porTopico, perto, passou, semOrcamento, muitosTopicos,
+                   topicoLongo (os orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift) | avista (a
+-                  vitrine com um vencimento à vista no A pagar)
++                  vitrine com um vencimento à vista no A pagar) | analise (a vitrine e as obras dos estados da análise da
++                  etapa 4: VitrineDaAnalise.swift)
+    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
+    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
+                   não responde: "Carregando suas obras…")
+@@ -49,6 +50,7 @@ extension Composicao {
+         case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
+         case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos", "topicoLongo"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
+         case "avista": DadosDeExemplo.vitrineComVencimentoAVista()
++        case "analise": DadosDeExemplo.vitrineDaAnalise()
+         default: DadosDeExemplo.vitrine()
+         }
+         // CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>: outro aparelho apaga um gasto com o app aberto; sem o gasto
+```
+
+Criar `app-ios/Custta/Falsos/VitrineDaAnalise.swift`:
+
+```swift
+#if DEBUG
+import Foundation
+import CusttaNucleo
+
+/* As obras dos estados do mockup aprovado da etapa 4 (gera-dados-p1.cjs e gera-dados-p2.cjs, de 28 e 29/10/2026) sobre a
+   vitrine, para as telas da análise dos marcos 2 e 3 (Gráficos, Relatório, "Vale a pena?" e PDF), com as datas contadas de
+   hoje, como na vitrine. CUSTTA_DADOS=analise (MontarFalso): a vitrine de sempre (a Casa Alphaville, v1, com 14 tópicos, 13
+   parcelas a vencer e a venda estimada; o Sobrado Granja Viana, v2, pronto e sem venda estimada; a Casa Tamboré 4, v3,
+   vendida, com 1 tópico) e mais:
+   a1  a Casa Alphaville vendida por R$ 1.380.000,00 há 114 dias, com os 46 gastos dela (os depois da venda ficam fora da
+       evolução)
+   a2  Casa Cotia, sem gastos
+   a3  Terreno Granja, 1 gasto de R$ 120.000,00
+   a4  Sobrado Vila Nova, 5 gastos neste mês, até hoje (1 mês; no "Vale a pena?", menos de 1 mês de obra)
+   a5  Galpão Jundiaí, 7 gastos, todos em Estrutura (1 tópico)
+   a6  Casa Granja Viana, com Outros (0,25%) e Extras (0,05%) abaixo de 1% (o piso e o "<1%")
+   a7  Casa Morumbi, 30 meses de gastos, com 3 meses parados no meio (os últimos 24 meses)
+   a8  a Casa Alphaville sem a venda estimada (o Relatório e o PDF sem venda)
+   A Cotia, o Terreno Granja e o Sobrado Vila Nova começam no dia 1º deste mês, e os gastos deles caem neste mês: o dia do
+   mockup, sem passar de hoje (no dia 1º, todos caem nele). */
+extension DadosDeExemplo {
+    static func vitrineDaAnalise(hoje: Date = .now) -> ValorJSON {
+        let base = vitrine(hoje: hoje)
+        guard case .objeto(var raiz) = base, case .lista(let obras) = raiz["obras"], let primeira = obras.first,
+              case .objeto(let casa) = primeira, case .lista(let gastosDaCasa) = casa["gastos"] else { return base }
+        let calendario = Calendar(identifier: .gregorian)
+        func dias(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .day, value: n, to: hoje) ?? hoje, fuso: .current) }
+        func meses(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .month, value: n, to: hoje) ?? hoje, fuso: .current) }
+        let hojeISO = dataLocalISO(hoje, fuso: .current)
+        /// O dia `n` deste mês, sem passar de hoje.
+        func desteMes(_ n: Int) -> String { String(hojeISO.prefix(8)) + String(format: "%02d", min(n, Int(hojeISO.suffix(2)) ?? 1)) }
+        func gasto(_ id: String, _ valor: Double, _ topico: String, _ descricao: String, _ data: String) -> ValorJSON {
+            .objeto(["id": .texto(id), "valor": .numero(valor), "topico": .texto(topico), "descricao": .texto(descricao),
+                     "data": .texto(data), "pagamento": .texto("pix")])
+        }
+        func obra(_ id: String, _ nome: String, inicio: String, gastos: [ValorJSON], extra: [String: ValorJSON] = [:]) -> ValorJSON {
+            var campos: [String: ValorJSON] = ["id": .texto(id), "nome": .texto(nome), "fase": .texto("construcao"),
+                                               "dataInicio": .texto(inicio), "gastos": .lista(gastos)]
+            campos.merge(extra) { _, novo in novo }
+            return .objeto(campos)
+        }
+        /// A Casa Alphaville da vitrine com outro id, e os gastos com ids próprios.
+        func copiaDaCasa(_ id: String, _ mudar: [String: ValorJSON]) -> ValorJSON {
+            var campos = casa
+            campos["id"] = .texto(id)
+            campos["gastos"] = .lista(gastosDaCasa.map { g in
+                guard case .objeto(var copia) = g, let deles = copia["id"]?.comoTexto else { return g }
+                copia["id"] = .texto(id + deles)
+                return .objeto(copia)
+            })
+            campos.merge(mudar) { _, novo in novo }
+            return .objeto(campos)
+        }
+        let morumbi: [(Int, Double, String, String)] = [
+            (30, 250_000, "terreno", "Compra do terreno"), (29, 18_500, "projeto", "Projeto e aprovação"),
+            (28, 42_000, "fundacao", "Estacas e blocos"), (27, 38_600, "fundacao", "Vigas baldrame"),
+            (26, 51_200, "estrutura", "Pilares do térreo"), (25, 47_800, "estrutura", "Laje do térreo"),
+            (24, 29_300, "alvenaria", "Blocos de concreto"), (23, 16_400, "maoobra", "Pedreiro e ajudantes"),
+            (22, 52_300, "estrutura", "Laje do pavimento superior"), (21, 21_100, "alvenaria", "Alvenaria do pavimento superior"),
+            (17, 16_400, "maoobra", "Pedreiro e ajudantes"), (16, 33_900, "telhado", "Madeiramento do telhado"),
+            (15, 18_200, "telhado", "Telhas de cerâmica"), (14, 12_800, "eletrica", "Eletrodutos e caixas"),
+            (13, 10_900, "hidraulica", "Tubulação de água e esgoto"), (12, 16_400, "maoobra", "Pedreiro e ajudantes"),
+            (11, 24_600, "revest", "Reboco interno"), (10, 19_800, "revest", "Contrapiso"),
+            (9, 27_400, "esquadrias", "Janelas de alumínio"), (8, 16_400, "maoobra", "Pedreiro e ajudantes"),
+            (7, 31_200, "revest", "Porcelanato"), (6, 14_900, "eletrica", "Fios e quadro de luz"),
+            (5, 12_300, "hidraulica", "Louças e metais"), (4, 16_400, "maoobra", "Pedreiro e ajudantes"),
+            (3, 22_800, "pintura", "Pintura interna"), (2, 9_800, "pintura", "Pintura externa"),
+            (1, 16_400, "maoobra", "Pedreiro e ajudantes"),
+        ]
+        raiz["obras"] = .lista(obras + [
+            copiaDaCasa("a1", ["fase": .texto("vendida"), "venda": .objeto(["valor": .numero(1_380_000), "data": .texto(dias(-114))])]),
+            obra("a2", "Casa Cotia", inicio: desteMes(1), gastos: []),
+            obra("a3", "Terreno Granja", inicio: desteMes(1), gastos: [gasto("u1", 120_000, "terreno", "Entrada do terreno", desteMes(5))]),
+            obra("a4", "Sobrado Vila Nova", inicio: desteMes(1), gastos: [
+                gasto("m1", 180_000, "terreno", "Entrada do terreno", desteMes(2)),
+                gasto("m2", 18_500, "projeto", "Projeto arquitetônico", desteMes(3)),
+                gasto("m3", 9_800, "maoobra", "Limpeza do terreno", desteMes(6)),
+                gasto("m4", 14_320, "matbasicos", "Cimento, areia e brita", desteMes(8)),
+                gasto("m5", 4_380.5, "projeto", "Taxas e alvará da prefeitura", desteMes(9)),
+            ], extra: ["valorEstimadoVenda": .numero(1_100_000), "areaM2": .numero(220)]),
+            obra("a5", "Galpão Jundiaí", inicio: dias(-224), gastos: [
+                gasto("t1", 52_300, "estrutura", "Pilares e vigas", dias(-210)),
+                gasto("t2", 38_900, "estrutura", "Concreto da laje", dias(-186)),
+                gasto("t3", 12_400.9, "estrutura", "Ferragem da laje", dias(-153)),
+                gasto("t4", 26_900, "estrutura", "Formas e escoramento", dias(-116)),
+                gasto("t5", 31_700.5, "estrutura", "Estrutura metálica da cobertura", dias(-83)),
+                gasto("t6", 24_300, "estrutura", "Vigas de borda", dias(-48)),
+                gasto("t7", 19_600, "estrutura", "Concreto do piso", dias(-6)),
+            ]),
+            obra("a6", "Casa Granja Viana", inicio: dias(-194), gastos: [
+                gasto("p1", 300_000, "terreno", "Terreno", dias(-185)),
+                gasto("p2", 64_200, "fundacao", "Sapatas e baldrames", dias(-126)),
+                gasto("p3", 18_500, "projeto", "Projeto arquitetônico", dias(-160)),
+                gasto("p4", 950, "outros", "Caçamba de entulho", dias(-28)),
+                gasto("p5", 180, "extras", "Cópia de chaves", dias(-9)),
+            ], extra: ["valorEstimadoVenda": .numero(900_000), "areaM2": .numero(180)]),
+            obra("a7", "Casa Morumbi", inicio: meses(-30), gastos: morumbi.enumerated().map { i, g in
+                gasto(String(format: "k%02d", i + 1), g.1, g.2, g.3, meses(-g.0))
+            }),
+            copiaDaCasa("a8", ["valorEstimadoVenda": .nulo]),
+        ])
+        return .objeto(raiz)
+    }
+}
+#endif
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/DadosDeExemploTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AnaliseUITests 2>&1 | grep -E "Executed [0-9]+ tests" | tail -1
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 3 tests in 1 suite passed` (cada um nas 6 datas); `Executed 3 tests, with 0 failures`.
+
+- [ ] **Step 5: Conferir que o teste de formato prende o dia do mês**
+
+Sem o teto de hoje no dia deste mês, a obra de 1 mês ganha gastos no futuro nos primeiros dias do mês (a parcela a vencer muda o gráfico), e o teste cai. O gasto do Terreno Granja fora deste mês (`dias(5)` no lugar de `desteMes(5)`) também cai, só pelo "neste mês, até hoje": as contagens dele dão 1 mesmo com o gasto no futuro, porque a série da evolução vai do mês do 1º gasto até o mês de hoje, ou até o do próprio gasto, se ele vier depois (`Series.swift:36-38`). Sem esse `#expect`, a troca passa: `✔ Test run with 3 tests in 1 suite passed`.
+
+Run:
+```bash
+sed -i '' 's/min(n, Int(hojeISO.suffix(2)) ?? 1)/n/' app-ios/Custta/Falsos/VitrineDaAnalise.swift
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/DadosDeExemploTests 2>&1 | grep -E "Test run with"
+git checkout -- app-ios/Custta/Falsos/VitrineDaAnalise.swift
+sed -i '' 's/"Entrada do terreno", desteMes(5))/"Entrada do terreno", dias(5))/' app-ios/Custta/Falsos/VitrineDaAnalise.swift
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/DadosDeExemploTests 2>&1 | grep -E "Test run with"
+git checkout -- app-ios/Custta/Falsos/VitrineDaAnalise.swift
+```
+Expected: `** TEST BUILD SUCCEEDED **` e `✘ Test run with 3 tests in 1 suite failed after … with 3 issues.`: o "neste mês, até hoje" cai em 2026-03-01 (no Terreno Granja, com o gasto do dia 5, e no Sobrado Vila Nova) e em 2026-10-08 (o gasto do dia 9 do Sobrado Vila Nova passa de hoje); depois, `** TEST BUILD SUCCEEDED **` e `✘ Test run with 3 tests in 1 suite failed after … with 6 issues.`: o "neste mês, até hoje" do Terreno Granja, nas 6 datas. O arquivo volta ao original. Compile de novo antes do passo seguinte.
+
+- [ ] **Step 6: Conferir que os falsos não vão ao Release**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild build -project app-ios/Custta.xcodeproj -scheme Custta -configuration Release -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile 2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)" | tail -1
+PROD=$(xcodebuild "${XB[@]}" -showBuildSettings 2>/dev/null | awk -F' = ' '/^ *BUILD_DIR = /{print $2; exit}')
+for s in vitrineDaAnalise vitrineDoOrcamento RaizView; do echo "$s release=$(nm -a "$PROD/Release-iphonesimulator/Custta.app/Custta" | grep -c $s) debug=$(nm -a "$PROD/Debug-iphonesimulator/Custta.app/Custta.debug.dylib" | grep -c $s)"; done
+```
+Expected: `** TEST BUILD SUCCEEDED **`, `** BUILD SUCCEEDED **` e:
+```
+vitrineDaAnalise release=0 debug=30
+vitrineDoOrcamento release=0 debug=16
+RaizView release=90 debug=384
+```
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app-ios/Custta/Falsos/MontarFalso.swift app-ios/Custta/Falsos/VitrineDaAnalise.swift app-ios/CusttaTests/DadosDeExemploTests.swift app-ios/CusttaUITests/AnaliseUITests.swift
+git commit -m "feat: falsos com as obras dos estados da análise" -m "Os marcos 2 e 3 testam e conferem os Gráficos, o Relatório, o \"Vale a pena?\" e o PDF em estados que a vitrine não tem. O CUSTTA_DADOS=analise monta a vitrine de sempre e mais as obras dos estados do mockup aprovado da etapa 4, com os números do gera-dados-p1.cjs: a Casa Alphaville vendida e sem a venda estimada, uma obra sem gastos, uma com 1 gasto, uma com 1 mês, uma com 1 tópico e uma com tópicos abaixo de 1%. Entra também uma obra com 30 meses de gastos, que o mockup não desenha, para o \"Mostrando os últimos 24 meses.\". A Casa Alphaville da vitrine já tem os 14 tópicos e as parcelas a vencer." -m "As datas contam de hoje, como na vitrine. As obras de 1 mês começam no dia 1º e os gastos delas caem neste mês, sem passar de hoje, para o estado não mudar com o dia do mês. Um teste de formato prende o que cada obra promete às telas, em seis datas, do dia 1º ao fim de fevereiro do ano bissexto."
+```
+
+### Task 29: O toque duplo no "Salvar" da vendida grava um gasto só
+
+O gasto lançado de dentro de uma obra vendida vai para a obra escolhida na linha "Obra" (etapa 3): o `gravar` da folha troca a obra por trás dela (`folhas.navegar(.trocar(obraId))`) e só fecha a folha no turno seguinte, num `Task { @MainActor in folhas.fechar { … } }`, para ela descer com a animação dela (FolhaDoGasto.swift:636-637, desde 17/10). Até esse `Task` rodar, a folha ainda conta como aberta, e a guarda do `salvar()`, que olha a folha aberta (`saida.aberta(folhas, gastoId:)`, FolhaDeOrigem.swift:164-169), deixa passar o segundo toque de um toque duplo, que grava o gasto de novo. A janela é antiga, mas na `main` ela é curta demais para o `doubleTap()` do teste de tela: o `EstadosUITests/testToqueDuploNoSalvarDaVendidaLancaUmGasto` passou 20 de 20 na `main` (`9bda3aa`), 10 deles com 500 gastos a mais na obra que recebe o lançamento, porque a lista é preguiçosa e os gastos a mais quase não pesam na montagem. Só a obra em blocos da Tarefa 30, mais pesada de montar por trás da folha, abre a janela: sem esta tarefa, o teste reprova com ela em 7 de 7 rodadas na ponta de 29/10 e em 6 de 7 na pilha de 30/10 ("Total gasto, 48 lançamentos" em vez de 47), e com a marca passa em 7 de 7 nas duas (no 18 Pro). O rascunho ganha a marca `gravado`, ligada na hora, antes da troca, e o `salvar()` não grava com ela ligada, na mesma guarda da folha aberta. Nos outros caminhos, a folha fecha no mesmo turno, e a guarda dela basta.
+
+**Files:**
+- Modify: `app-ios/Custta/Telas/FolhaDoGasto.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `SaidaDaEdicao.aberta(_:gastoId:)` (FolhaDeOrigem.swift), `Folhas.navegar(_:)` e `Folhas.fechar(depois:)`; o `EstadosUITests/testToqueDuploNoSalvarDaVendidaLancaUmGasto` (etapa 3), que lê a contagem na pílula "Lançamentos".
+- Produces: `RascunhoDoGasto.gravado: Bool`.
+
+- [ ] **Step 1: Escrever os testes**
+
+O teste de tela do toque duplo já existe e não muda. A guarda Node das folhas que gravam passa a exigir a marca na primeira linha do `salvar()` do gasto, junto da folha aberta, e a marca ligada logo antes da troca e do fechamento no turno seguinte.
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -716,7 +716,7 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo',
+   // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
+   // A edição empurrada numa folha de origem (etapa 3) não fecha a folha: a guarda dela é a edição ainda no topo do caminho.
+   const acoes = {
+-    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
++    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard !rascunho\.gravado, saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
+     'app-ios/Custta/Telas/FolhaDaVenda.swift': ['private func confirmar(inicio: String, hoje: String) {', /guard folhas\.aberta != nil else \{ return \}/],
+     'app-ios/Custta/Telas/FolhaDaObra.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
+     'app-ios/Custta/Telas/FolhaDoOrcamento.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
+@@ -731,6 +731,11 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo',
+   assert.match(origem, /case \.folha: folhas\.aberta != nil\n\s*case \.origem\(let origem\): origem\.editando\(gastoId\)/,
+                'a guarda da edição: a folha aberta ou, na origem, a edição no topo do caminho');
+   assert.match(origem, /func editando\(_ gastoId: String\?\) -> Bool \{\n\s*guard let gastoId else \{ return false \}\n\s*return caminho\.last == \.editar\(gastoId\)/);
++  // O gasto lançado de dentro de uma vendida fecha a folha só no turno seguinte, e até lá ela ainda conta como aberta: a
++  // marca do rascunho, ligada antes de trocar a obra por trás da folha, é a guarda (a obra em blocos alarga essa janela).
++  assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
++               /rascunho\.gravado = true\n\s*folhas\.navegar\(\.trocar\(obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar \{/,
++               'a marca na hora, antes da troca e do fechamento no turno seguinte');
+ });
+ 
+ test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo', () => {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+O teste de tela não tem "ver falhar" nesta tarefa: ele passa na tarefa anterior, porque a janela só abre com a obra em blocos, e reprova em 6 ou 7 de 7 rodadas na Tarefa 30 sem esta. Só a guarda Node reprova antes da marca.
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | grep -E "ℹ (pass|fail)|AssertionError"
+```
+Expected:
+```
+ℹ pass 68
+ℹ fail 1
+  AssertionError [ERR_ASSERTION]: app-ios/Custta/Telas/FolhaDoGasto.swift: a guarda do toque duplo na primeira linha da ação
+```
+
+- [ ] **Step 3: Implementar**
+
+A marca entra no ramo da vendida, antes da troca: ligada depois, no `Task`, ela chegaria tarde como a folha. Nenhum `body` lê a marca, e ligá-la não redesenha a folha.
+
+Em `app-ios/Custta/Telas/FolhaDoGasto.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/FolhaDoGasto.swift
++++ b/app-ios/Custta/Telas/FolhaDoGasto.swift
+@@ -42,6 +42,9 @@ final class RascunhoDoGasto {
+     var assinaturaAvisada: String?
+     /// Gasto novo: passou do valor, e fechar passa a perguntar.
+     var passouDoValor = false
++    /// Já gravou, e a folha só desce no turno seguinte (o gasto lançado de dentro de uma vendida): até lá ela ainda conta
++    /// como aberta, e a marca é que segura o segundo toque de um toque duplo.
++    var gravado = false
+     private var inicial: [String] = []
+ 
+     init(obra: Obra, editado: Gasto?, todas: [Obra], proprios: [TopicoProprio], hoje: String, vendida: String? = nil) {
+@@ -578,8 +581,9 @@ struct PassoDosDetalhes: View {
+ 
+     private func salvar() {
+         // O primeiro toque já gravou, e a folha está descendo (ou a edição voltando à folha de origem): o segundo toque de
+-        // um toque duplo não lança de novo.
+-        guard saida.aberta(folhas, gastoId: rascunho.editado?.id) else { return }
++        // um toque duplo não lança de novo. A folha que só fecha no turno seguinte ainda conta como aberta: a marca do
++        // rascunho segura até lá.
++        guard !rascunho.gravado, saida.aberta(folhas, gastoId: rascunho.editado?.id) else { return }
+         foco = nil
+         let entrada = rascunho.entrada
+         switch conferirGasto(entrada, editado: rascunho.editado, hoje: dataLocalISO(.now, fuso: .current)) {
+@@ -633,6 +637,7 @@ struct PassoDosDetalhes: View {
+                 // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, sem
+                 // animação, e a folha desce no turno seguinte, com a animação dela, mostrando o gasto aceso onde ele entrou.
+                 // No mesmo turno, a transação sem animação da troca valia também para a folha, que sumia de uma vez.
++                rascunho.gravado = true
+                 folhas.navegar(.trocar(obraId))
+                 Task { @MainActor in folhas.fechar { folhas.destacar(ids, novo: novo) } }
+                 return
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+node --test tests/app-ios.test.cjs 2>&1 | tail -8 | grep -E "ℹ (pass|fail)"
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/EstadosUITests/testToqueDuploNoSalvarDaVendidaLancaUmGasto -test-iterations 5 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/GastoUITests -only-testing:CusttaUITests/FolhasDeOrigemUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `ℹ pass 69`, `ℹ fail 0`; `** TEST BUILD SUCCEEDED **`, sem aviso; `Executed 5 tests, with 0 failures (0 unexpected)`; `Executed 48 tests, with 1 failure (0 unexpected)` (os 24 de cada classe): a falha é o `FolhasDeOrigemUITests/testASetaDoIndicadorAbreAFolhaDoAPagar` ("Novembro de 2026, R$ 13.250,00"), que cai nos 3 últimos dias do mês em qualquer commit (achado 3 do PR 1a; consertado na `main` pelo #93, só de teste); rodou em 30/10, e fora desses dias dá 0.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Telas/FolhaDoGasto.swift tests/app-ios.test.cjs
+git commit -m "fix: toque duplo no salvar do gasto de dentro da vendida grava uma vez" -m "O gasto lançado de dentro de uma obra vendida vai para outra obra: o gravar troca a obra por trás da folha e só fecha a folha no turno seguinte, para ela descer com a animação dela. Até esse turno, a folha ainda conta como aberta, e a guarda do Salvar, que olha a folha aberta, deixava o segundo toque de um toque duplo gravar o gasto de novo." -m "A janela existe desde 17/10, mas na main ela é curta demais para o toque duplo do teste de tela: ele passou 20 de 20, inclusive com 500 gastos a mais na obra que recebe o lançamento, porque a lista é preguiçosa. A obra em blocos da tarefa seguinte, mais pesada de montar por trás da folha, a abre: sem esta marca, o teste do toque duplo da vendida reprova em 6 ou 7 de 7 rodadas, com 48 lançamentos em vez de 47; com ela, passa em 7 de 7." -m "O rascunho ganha a marca gravado, ligada na hora, antes da troca, e o Salvar não grava com ela ligada. A guarda Node das folhas que gravam passa a exigir a marca na primeira linha do Salvar e ligada antes da troca."
+```
+
+### Task 30: O alto da obra em blocos, do título à venda
+
+A obra troca o alto da etapa 3 pela identidade nova (spec, "Tela da obra"; mockup aprovado, `parte1.js:254-287` e `parte1-obra-topo.png`), com as peças do PR 1b: o nome no `TituloMono`, a `CapsulaDeMetadados` com a etiqueta da fase e "começou em … · N meses", o Total gasto no `BlocoSolido` verde e um `BlocoDeVidro` por assunto, na ordem da etapa 3 (Orçamento, Corrigido pelo banco, A pagar · 30 dias e Venda), com os números no `ValorEmDinheiro(_:mono:)` (`.principal` no Total gasto e no lucro, `.bloco` nos outros). Hoje a obra põe o título grande em SF Pro (`TituloDaObra`, PecasDaObra.swift:12), a pílula da fase (`PilulaDaFase`, :31) e os indicadores num cartão só (`IndicadoresDaObraView`, :86), numa coluna de 20 pt de borda e 10 entre as peças (ObraView.swift:74 e :126). A coluna passa a 16 pt da borda (`Grade.externa`) e 12 entre os blocos (`Grade.entreBlocos`); o título fica 8 pt acima da cápsula e a cápsula, 16 acima do sólido (mockup, `.ob-meta-w`). A regra do sólido (`solidoDaObra`, decisão 4 do mockup): na obra vendida com lucro bruto ≥ 0, o sólido é o "Lucro da venda", com a etiqueta "Vendida em dd/mm/aa", o lucro com o sinal ("+R$ 537.682,55") e "+R$ … acima do banco" (o acima do banco negativo vem com o menos U+2212, spec, "Decisões tomadas por recomendação"), e o Total gasto desce para um bloco de vidro logo depois do Orçamento; com prejuízo (B), o sólido volta a ser o Total gasto, e o lucro fica no bloco da Venda, no âmbar (`alertaNoVidro`) e não no vermelho de antes (`negativoNoVidro`), como o spec pede ("em âmbar, nunca vermelho"). Sem gastos, o sólido mostra R$ 0,00 com "Toque no + para lançar o primeiro gasto." no lugar de "bruto, sem correção" (o texto novo do mockup, `parte1.js:269`); na vendida sem gastos, não: ali o + não lança gasto nessa obra (abre a folha com a linha "Obra", para escolher outra), e o Total gasto, no vidro, fica com o "bruto, sem correção" (`notaDoTotal`). O Orçamento e o A pagar são blocos inteiros que abrem a tela Orçamento e a folha do A pagar, com a seta de 14 pt (`SetaDoBloco`, 20 na letra de acessibilidade) 10 pt depois do texto (`.k-linha` do mockup); o `LinhaDoOrcamento` vira o bloco (só a obra o usa), com "Orçamento" no rótulo do bloco e "sobra"/"passou" no número mono. Cada bloco continua um elemento só para o VoiceOver (`.combine`; achado 3 do PR 1b: o número solto reprova a descrição suficiente), com os mesmos identificadores (`indicadorTotal`, `indicadorOrcamento`, `indicadorCorrigido`, `indicadorAPagar`, `indicadorVenda`, `faseDaObra`, `tituloDaObra`) e o novo `indicadorLucro`; o título pequeno da barra passa ao `TituloPequenoMono` só na obra (a tela Orçamento fica com o de antes), com a letra da tela lida fora da barra, por uma vista de fundo da obra (`LeitorDaLetra`), e guardada na `BarraDaObra` (`barra.letra`), que só o título pequeno lê: dentro do `ToolbarItem`, o `dynamicTypeSize` para antes da letra de acessibilidade (Tarefa 21). A `NotaDoBloco` ganha a cor opcional (o lucro da venda), e ela e o `RotuloDoBloco` ganham o `fixedSize` vertical, para quebrar em vez de cortar na letra grande: sem ele, a auditoria da obra na maior letra (`AuditoriaUITests/testObraNoMaiorTamanho`) acha "Text clipped" em "A pagar · 30 dias", o rótulo do bloco com a seta ao lado, como o rótulo da etapa 3 cortava ("A pagar · 3…").
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/Blocos.swift`
+- Create: `app-ios/Custta/Telas/BlocosDaObra.swift`
+- Modify: `app-ios/Custta/Telas/ObraView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
+- Modify: `app-ios/Custta/Telas/PecasDoOrcamento.swift`
+- Test (novo): `app-ios/CusttaTests/BlocosDaObraTests.swift`
+- Test (alterar): `app-ios/CusttaTests/LinhaDoOrcamentoTests.swift`
+- Test (alterar): `app-ios/CusttaTests/OrcamentoEm375Tests.swift`
+- Test (alterar): `app-ios/CusttaUITests/AuditoriaUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/ObraUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/OrcamentoUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `TituloMono(texto:identificador:)`, `TituloPequenoMono(texto:letra:)`, `CapsulaDeMetadados`, `BlocoSolido`, `BlocoDeVidro`, `CabecalhoDoBloco(rotulo:)`, `EtiquetaDoSolido(texto:)`, `NotaDoBloco(texto:)`, `ValorEmDinheiro(_:mono:cor:)` e `Grade` (PR 1b); `indicadoresDaObra(_:taxa:hoje:)`, `orcamentoObra(_:)`, `lucroVenda(_:taxa:)`, `moeda(_:)`, `dataCurta(_:)` e `textoDoInicio(_:hoje:)` (núcleo); `EtiquetaDoIndicador` e `EtiquetaDeFase` (etapas 2 e 3).
+- Produces: `enum SolidoDaObra { case total; case lucro(valor:etiqueta:nota:) }`; `solidoDaObra(_ obra: Obra, taxa: Double) -> SolidoDaObra`; `notaDoTotal(_ obra: Obra) -> String`; `comSinal(_ valor: Double) -> String`; `BlocosDaObra(obra:taxa:hoje:abrirAPagar:)`; `SetaDoBloco()`; `NotaDoBloco(texto:cor:)`; `TituloDaBarraDaObra(barra:nome:mono:)`, `BarraDaObra.letra`; o identificador `indicadorLucro`.
+
+- [ ] **Step 1: Escrever os testes**
+
+Os de unidade prendem o que o sólido mostra em cada fase (construção e pronta, vendida com prejuízo, com lucro, com lucro zero e com o acima do banco negativo), a nota do Total gasto sem gastos (o convite, menos na vendida), o sinal dos valores e a varredura por `sizeThatFits` dos blocos montados em todos os tamanhos de letra, com e sem o Negrito, em escala 3, nas larguras de 343, 370 e 408 pt, na obra da vitrine, na vendida com lucro, na vendida com prejuízo (a v3 da `vitrineComPrejuizo`) e com o maior valor (R$ 1.000.000.000,00) no sólido (achados 2 e 6 do PR 1b). Com o Negrito, o `CabecalhoDoBloco` de antes do conserto da Tarefa 19 (o `Spacer` ao lado do rótulo) passava 1/3 de pt nos 408, e a varredura o pega. Os de tela conferem a grade (16 pt de borda, a largura da coluna, 12 pt entre os blocos e 16 entre a cápsula e o sólido), a vendida com o lucro no sólido e o Total gasto logo depois do Orçamento, a vendida com prejuízo e o sólido da obra sem gastos; o do orçamento passa a medir o bloco próprio (12 pt abaixo do sólido e a barra com 310 pt nos 370 do bloco). O `LinhaDoOrcamentoTests` da etapa 3 passa a medir a seta nova (o bloco com a seta tem a coluna de texto do bloco sem ela 30 pt mais estreito, os 20 da seta e os 10 do vão, nas larguras de 343, 370 e 408 pt), e as duas guardas Node dos chevrons do Orçamento e do A pagar viram uma, a da `SetaDoBloco` (o teto no AX2, 14 e 20 pt, fora do VoiceOver e do laudo, usada pelos dois blocos). Uma guarda Node nova prende o prejuízo no âmbar: a nota da venda usa `lucroPositivo ? .positivoNoVidro : .alertaNoVidro`, e o `negativoNoVidro` não aparece nos blocos (nenhum teste de tela vê a cor, e o laudo, que mede só o contraste, passa também com o vermelho). O `OrcamentoEm375Tests` da etapa 3 passa a medir o bloco do orçamento nos 343 pt da coluna num iPhone de 375 (375 menos as bordas de 16), e não mais nos 335 da linha de antes. A auditoria aceita o "Text clipped" do `tituloPequenoDaBarra`, pelo identificador do próprio texto (ele não está num `.combine`): o título pequeno mono corta o nome comprido com reticências, como o do sistema, e na maior letra (20 pt) "Sobrado Granja Viana" passa dos 236 pt (`AuditoriaUITests/testParte3NoMaiorTamanho`, no 18 Pro); o título pequeno da etapa 3, em SF Pro e com teto no xxxLarge, cabia. O comentário do `testParte3NoMaiorTamanho` passa a dizer onde as rolagens fixas caem na obra em blocos (no 18 Pro, na maior letra): a v2 a 800 no Corrigido e no A pagar; a v2 a 1600 na Venda estimada e no "Registrar venda", com a ação de vidro sob a cápsula; a v3 a 1600 no A pagar e no começo da Venda. As rolagens ficam: mais fundo, com as duas ações à vista (a v2 a 1850 e a v3 a 2250, ou rolando por arrasto até a ação), a auditoria reprova no 18 Pro, com quatro achados sem elemento na v2 e "Text clipped" nos blocos de cima da v3 (nos tamanhos menores que ela experimenta, a rolagem passa do fim do alto; a v3 a 700 e a 1300 passa). A prova do iOS 26 é a CI do PR.
+
+Criar `app-ios/CusttaTests/BlocosDaObraTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+@testable import Custta
+import CusttaNucleo
+
+/* O alto da obra em blocos (etapa 4, PR 1c): o que o sólido mostra em cada fase (o lucro na vendida com lucro, decisão 4:
+   A; o Total gasto no resto, e na vendida com prejuízo, B), o sinal dos valores, e os blocos montados sem passar da largura
+   em nenhum tamanho de letra, com o maior valor no sólido (o irmão fracionário alargava a coluna inteira; memória
+   `irmao-fracionario-passa-um-pixel`). */
+@MainActor
+struct BlocosDaObraTests {
+    /// Uma obra com um gasto de 100 mil em 01/01/26 e, se vendida, a venda em 01/07/26.
+    private func obra(fase: String = "construcao", venda: Double? = nil, gasto: Double = 100_000) -> Obra {
+        var campos: [String: ValorJSON] = [
+            "id": .texto("o"), "nome": .texto("Casa"), "fase": .texto(fase), "dataInicio": .texto("2026-01-01"),
+            "gastos": .lista([.objeto(["id": .texto("g1"), "valor": .numero(gasto), "topico": .texto("terreno"),
+                                       "descricao": .texto("Terreno"), "data": .texto("2026-01-01"), "pagamento": .texto("pix")])]),
+        ]
+        if let venda { campos["venda"] = .objeto(["valor": .numero(venda), "data": .texto("2026-07-01")]) }
+        return Estado.de(.objeto(["obras": .lista([.objeto(campos)])])).obras[0]
+    }
+
+    @Test func solidoDoTotalForaDaVendidaComLucro() {
+        #expect(solidoDaObra(obra(), taxa: 1) == .total)
+        #expect(solidoDaObra(obra(fase: "pronta"), taxa: 1) == .total)
+        // Com prejuízo (B), o sólido volta a ser o Total gasto.
+        #expect(solidoDaObra(obra(fase: "vendida", venda: 80_000), taxa: 0) == .total)
+    }
+
+    @Test func solidoDoLucroNaVendida() {
+        // Sem correção, o acima do banco é o próprio lucro.
+        #expect(solidoDaObra(obra(fase: "vendida", venda: 150_000), taxa: 0)
+            == .lucro(valor: "+R$\u{a0}50.000,00", etiqueta: "Vendida em 01/07/26", nota: "+R$\u{a0}50.000,00 acima do banco"))
+        // Lucro zero conta como lucro, como o `>= 0` do mockup.
+        #expect(solidoDaObra(obra(fase: "vendida", venda: 100_000), taxa: 0)
+            == .lucro(valor: "+R$\u{a0}0,00", etiqueta: "Vendida em 01/07/26", nota: "+R$\u{a0}0,00 acima do banco"))
+        // Com lucro e o acima do banco negativo (10% ao mês por 6 meses passa dos 50 mil), o sólido continua o lucro, e o
+        // acima do banco vem com o menos.
+        guard case let .lucro(valor, _, nota) = solidoDaObra(obra(fase: "vendida", venda: 150_000), taxa: 10) else {
+            Issue.record("o sólido devia ser o lucro"); return
+        }
+        #expect(valor == "+R$\u{a0}50.000,00")
+        #expect(nota.hasPrefix("\u{2212}R$\u{a0}") && nota.hasSuffix(" acima do banco"), "\(nota)")
+    }
+
+    /// Sem gastos, o Total gasto convida a lançar o primeiro pelo +, menos na vendida: o + de lá não lança nela (abre a folha
+    /// com a linha "Obra", para escolher outra).
+    @Test func notaDoTotalSemGastos() {
+        var semGastos = obra()
+        semGastos.gastos = []
+        #expect(notaDoTotal(semGastos) == "Toque no + para lançar o primeiro gasto.")
+        #expect(notaDoTotal(obra()) == "bruto, sem correção")
+        var vendida = obra(fase: "vendida", venda: 150_000)
+        vendida.gastos = []
+        #expect(notaDoTotal(vendida) == "bruto, sem correção", "a vendida sem gastos não convida a lançar nela")
+    }
+
+    @Test func valorComSinal() {
+        #expect(comSinal(1234.5) == "+R$\u{a0}1.234,50")
+        #expect(comSinal(-1234.5) == "\u{2212}R$\u{a0}1.234,50")
+        #expect(comSinal(0) == "+R$\u{a0}0,00")
+    }
+
+    /// Os blocos montados não passam da largura da coluna em nenhum tamanho de letra, com e sem o Negrito, nas larguras dos
+    /// iPhones (375, 402 e 440 pt menos as bordas de 16), em escala 3: na obra da vitrine, na vendida com lucro, na vendida com
+    /// prejuízo (a v3 da vitrine com prejuízo: o Total gasto no sólido e o lucro no âmbar) e com o maior valor no sólido. Com
+    /// o Negrito, o rótulo do sólido ao lado da etiqueta passava 1/3 de pt nos 408 (o `CabecalhoDoBloco` do PR 1b).
+    @Test func blocosNaoPassamDaLargura() {
+        let vitrine = Estado.de(DadosDeExemplo.vitrine()).obras[0]
+        var vendida = vitrine
+        vendida.fase = .vendida
+        vendida.venda = Venda(valor: 1_380_000, data: "2026-07-01")
+        let prejuizo = Estado.de(DadosDeExemplo.vitrineComPrejuizo()).obras[2]
+        let obras = [vitrine, vendida, prejuizo, obra(gasto: 1_000_000_000)]
+        for negrito in [false, true] {
+            for (i, obra) in obras.enumerated() {
+                for letra in DynamicTypeSize.allCases {
+                    for largura in [CGFloat(343), 370, 408] {
+                        let blocos = BlocosDaObra(obra: obra, taxa: 1, hoje: "2026-10-12") {}.dynamicTypeSize(letra)
+                            .environment(\.legibilityWeight, negrito ? .bold : .regular).environment(\.displayScale, 3)
+                        let medida = UIHostingController(rootView: blocos).sizeThatFits(in: CGSize(width: largura, height: 20_000)).width
+                        #expect(medida == largura, "obra \(i), \(letra), negrito \(negrito), em \(largura): \(medida)")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+Em `app-ios/CusttaTests/LinhaDoOrcamentoTests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/LinhaDoOrcamentoTests.swift
++++ b/app-ios/CusttaTests/LinhaDoOrcamentoTests.swift
+@@ -3,9 +3,9 @@ import SwiftUI
+ @testable import Custta
+ import CusttaNucleo
+ 
+-/* A linha do orçamento na obra, na maior letra (conferência do Verniz contra o mockup da etapa 3, PR 1): o chevron ocupa só os
+-   18 pt dele, e a coluna de texto fica com os 306 pt do mockup no 18 Pro, com "80% usado de" numa linha. Medida num
+-   UIHostingController em escala 1, na largura da linha na tela (o iPhone menos os 20 de cada lado). */
++/* O bloco do orçamento na obra, na maior letra (conferência do Verniz contra o mockup da etapa 3, PR 1; o bloco da etapa 4,
++   PR 1c): a seta ocupa só os 20 pt dela, 10 pt depois do texto. Medido num UIHostingController em escala 1, na largura do
++   bloco na tela (o iPhone menos os 16 de cada lado). */
+ @MainActor
+ struct LinhaDoOrcamentoTests {
+     private func altura(_ resumo: ResumoOrcamento, comSeta: Bool, _ largura: CGFloat) -> CGFloat {
+@@ -14,18 +14,19 @@ struct LinhaDoOrcamentoTests {
+             .sizeThatFits(in: CGSize(width: largura, height: CGFloat.infinity)).height
+     }
+ 
+-    /// Com a seta, a coluna de texto é a da linha sem seta 22 pt mais estreita: os 18 do chevron e os 4 do vão. Sem o quadro,
+-    /// o símbolo cresce com a letra e reserva cerca de 6 pt além do traço: no 18 Pro a coluna caía para 284, e o "de" de
+-    /// "80% usado de" ficava sozinho numa linha (o orçamento por tópico da vitrine). Nas três larguras de iPhone: 375, 402 e 440.
+-    @Test(arguments: [CGFloat(335), 362, 400]) func chevronOcupaOsDezoitoDoMockup(largura: CGFloat) throws {
++    /// Com a seta, a coluna de texto é a do bloco sem seta 30 pt mais estreito: os 20 da seta e os 10 do vão (o .k-linha do
++    /// mockup). Sem o quadro, o símbolo cresce com a letra e reserva cerca de 6 pt além do traço: no 18 Pro a coluna caía, e o
++    /// "de" de "80% usado de" ficava sozinho numa linha (o orçamento por tópico da vitrine). Nas três larguras de iPhone: 375,
++    /// 402 e 440.
++    @Test(arguments: [CGFloat(343), 370, 408]) func setaOcupaOsVinteDoMockup(largura: CGFloat) throws {
+         let dados = [DadosDeExemplo.vitrine(), DadosDeExemplo.vitrineDoOrcamento("porTopico"), DadosDeExemplo.vitrineDoOrcamento("perto"),
+                      DadosDeExemplo.vitrineDoOrcamento("passou")]
+         for (i, base) in dados.enumerated() {
+             let casa = try #require(Estado.de(base).obras.first { $0.id == "v1" })
+             let resumo = try #require(orcamentoObra(casa))
+             let comSeta = altura(resumo, comSeta: true, largura)
+-            let semSeta = altura(resumo, comSeta: false, largura - 22)
+-            #expect(comSeta == semSeta, "vitrine \(i): com a seta, \(comSeta); sem ela e 22 pt mais estreita, \(semSeta)")
++            let semSeta = altura(resumo, comSeta: false, largura - 30)
++            #expect(comSeta == semSeta, "vitrine \(i): com a seta, \(comSeta); sem ela e 30 pt mais estreito, \(semSeta)")
+         }
+     }
+ }
+```
+
+Em `app-ios/CusttaTests/OrcamentoEm375Tests.swift`:
+
+```diff
+--- a/app-ios/CusttaTests/OrcamentoEm375Tests.swift
++++ b/app-ios/CusttaTests/OrcamentoEm375Tests.swift
+@@ -5,7 +5,8 @@ import CusttaNucleo
+ 
+ /* O orçamento num iPhone de 375 pt (etapa 3, PR 1; as linhas com a seta, do PR 2), na maior letra, com e sem Texto em
+    negrito: nenhuma peça passa da largura. O laudo e as auditorias rodam no 18 Pro (402) e no Pro Max (440); 375 só aqui, num UIHostingController em escala
+-   1, com a largura de cada peça na tela (375 menos os 20 de cada lado; na folha, a linha já traz o recuo dela). */
++   1, com a largura de cada peça na tela: o bloco do orçamento na obra, 375 menos as bordas de 16 (etapa 4); as peças da
++   tela Orçamento, 375 menos os 20 de cada lado; na folha, a linha já traz o recuo dela. */
+ @MainActor
+ struct OrcamentoEm375Tests {
+     private let porTopico = Estado.de(DadosDeExemplo.vitrineDoOrcamento("porTopico"))
+@@ -19,7 +20,7 @@ struct OrcamentoEm375Tests {
+     @Test(arguments: [false, true]) func telaDaObraEOrcamentoCabemEm375(negrito: Bool) throws {
+         let casa = try #require(porTopico.obras.first { $0.id == "v1" })
+         let resumo = try #require(orcamentoObra(casa))
+-        #expect(largura(LinhaDoOrcamento(resumo: resumo, comSeta: true), 335, negrito: negrito) <= 335, "a linha do orçamento")
++        #expect(largura(LinhaDoOrcamento(resumo: resumo, comSeta: true), 343, negrito: negrito) <= 343, "o bloco do orçamento")
+         #expect(largura(CartaoDoOrcamento(resumo: resumo), 335, negrito: negrito) <= 335, "o cartão")
+         let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
+         for linha in linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos) + linhasForaDoOrcamento(resumo, topicos: topicos) {
+```
+
+Em `app-ios/CusttaUITests/AuditoriaUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/AuditoriaUITests.swift
++++ b/app-ios/CusttaUITests/AuditoriaUITests.swift
+@@ -72,6 +72,11 @@ final class AuditoriaUITests: XCTestCase {
+             switch achado.auditType {
+             case .dynamicType where noTotal && achado.compactDescription.contains("partially"), .textClipped where noTotal:
+                 fora = true
++            // O título pequeno da obra em SF Mono (etapa 4): numa linha só, até 236 pt, ele corta o nome comprido com reticências,
++            // como o título pequeno do sistema, em vez de empurrar o voltar e o lápis; na maior letra (20 pt), "Sobrado Granja
++            // Viana" passa dos 236. O nome inteiro está no título grande, no VoiceOver e no Visualizador de Conteúdo Grande.
++            case .textClipped where elemento.identifier == "tituloPequenoDaBarra":
++                fora = true
+             case .dynamicType:
+                 // Os títulos das barras param perto de 22 pt, como os do sistema (mockup da etapa 2), com o Visualizador de
+                 // Conteúdo Grande: o pequeno da obra e o das folhas (na maior letra o nome da obra sai da barra da folha e
+@@ -340,12 +345,16 @@ final class AuditoriaUITests: XCTestCase {
+         }
+     }
+ 
+-    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta (com as duas ações da fase, a sólida e a de vidro)
+-    /// e a vendida (a venda com o lucro e o "Desfazer venda") em rolagens fixas, a lista vazia, as folhas da obra (nova
+-    /// e editar), a da venda e a do gasto lançado de dentro de uma vendida. Na obra, rolagem fixa e não o arrasto:
+-    /// logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam (triagem em
+-    /// 0, 400 e 800 pt, na v1 e na v2). A vendida fica sem os 800 pt: ali estão os indicadores, os mesmos da v2 a 800, e no
+-    /// iOS 26 eles davam sete achados sem elemento enquanto a auditoria trocava o tamanho da letra (CI, 17/10; no Mac passam).
++    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta e a vendida em rolagens fixas, a lista vazia, as folhas
++    /// da obra (nova e editar), a da venda e a do gasto lançado de dentro de uma vendida. Na obra, rolagem fixa e não o
++    /// arrasto: logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam
++    /// (triagem em 0, 400 e 800 pt, na v1 e na v2). A vendida fica sem os 800 pt: no iOS 26, os blocos de lá davam sete
++    /// achados sem elemento enquanto a auditoria trocava o tamanho da letra (CI, 17/10; no Mac passam).
++    /// Com a obra em blocos (etapa 4), mais alta, as rolagens caem em outras peças (18 Pro): a v2 a 800, no Corrigido e no
++    /// A pagar; a v2 a 1600, na Venda estimada e no "Registrar venda", com a ação de vidro sob a cápsula; a v3 a 1600, no
++    /// A pagar e no começo da Venda. Mais fundo não dá: a auditoria troca o tamanho da letra, e nos menores a rolagem passa
++    /// do fim do alto. Com as duas ações à vista, a v2 a 1850 deu quatro achados sem elemento, e a v3 a 2250 (a venda e o
++    /// "Desfazer venda") deu "Text clipped" nos blocos de cima; rolar por arrasto até a ação deu o mesmo.
+     @MainActor func testParte3NoMaiorTamanho() throws {
+         var app: XCUIApplication
+         for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 1600), ("v3", 0), ("v3", 1600)] {
+```
+
+Em `app-ios/CusttaUITests/ObraUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/ObraUITests.swift
++++ b/app-ios/CusttaUITests/ObraUITests.swift
+@@ -98,6 +98,60 @@ final class ObraUITests: XCTestCase {
+     func testObraSemGastos() {
+         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
+         XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+-        XCTAssertTrue(app.elemento("indicadorTotal").label.contains("sem gastos"))
++        let total = app.elemento("indicadorTotal").label
++        XCTAssertTrue(total.contains("sem gastos") && total.contains("R$\u{a0}0,00"), total)
++        // Etapa 4: o sólido com R$ 0,00 convida a lançar o primeiro gasto.
++        XCTAssertTrue(total.contains("Toque no + para lançar o primeiro gasto."), total)
++    }
++
++    /// Etapa 4 (PR 1c): o alto em blocos, na grade 16/34. O título, a cápsula e os blocos a 16 pt da borda; os blocos na
++    /// largura da coluna, 12 pt um do outro, na ordem do mockup (o sólido do Total gasto, Orçamento, Corrigido, A pagar e
++    /// Venda) e a cápsula 16 pt acima do sólido.
++    func testOAltoEmBlocosNaGrade() {
++        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
++        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
++        let largura = app.windows.firstMatch.frame.width
++        let ids = ["indicadorTotal", "indicadorOrcamento", "indicadorCorrigido", "indicadorAPagar", "indicadorVenda"]
++        let quadros = ids.map { app.elemento($0).frame }
++        for (id, quadro) in zip(ids, quadros) {
++            XCTAssertEqual(quadro.minX, 16, accuracy: 0.5, "\(id) na borda de 16 pt")
++            XCTAssertEqual(quadro.width, largura - 32, accuracy: 0.5, "\(id) na largura da coluna")
++        }
++        for i in 1..<quadros.count {
++            XCTAssertEqual(quadros[i].minY - quadros[i - 1].maxY, 12, accuracy: 0.5, "\(ids[i]) 12 pt abaixo de \(ids[i - 1])")
++        }
++        let titulo = app.elemento("tituloDaObra").frame, fase = app.elemento("faseDaObra").frame
++        XCTAssertEqual(titulo.minX, 16, accuracy: 0.5, "o título solto na borda de 16 pt")
++        XCTAssertEqual(fase.minX, 16, accuracy: 0.5, "a cápsula na borda de 16 pt")
++        XCTAssertEqual(quadros[0].minY - fase.maxY, 16, accuracy: 0.5, "a cápsula 16 pt acima do sólido")
++        XCTAssertFalse(app.elemento("indicadorLucro").exists, "fora da vendida, o sólido é o Total gasto")
++    }
++
++    /// A vendida com lucro (decisão 4: A): o sólido é o lucro da venda, e o Total gasto desce para o vidro, logo depois do
++    /// Orçamento, com os mesmos números.
++    func testVendidaComLucroNoSolido() {
++        let app = abrirApp(conta: "senha", dados: "analise", abrir: "obra:a1")
++        let lucro = app.elemento("indicadorLucro")
++        XCTAssertTrue(lucro.waitForExistence(timeout: 10))
++        XCTAssertTrue(lucro.label.hasPrefix("Lucro da venda, Vendida em ") && lucro.label.contains(", +R$\u{a0}")
++                      && lucro.label.hasSuffix(" acima do banco"), lucro.label)
++        let fase = app.elemento("faseDaObra").frame, orcamento = app.elemento("indicadorOrcamento").frame
++        let total = app.elemento("indicadorTotal")
++        XCTAssertEqual(lucro.frame.minY - fase.maxY, 16, accuracy: 0.5, "o lucro é o sólido, logo abaixo da cápsula")
++        XCTAssertEqual(orcamento.minY - lucro.frame.maxY, 12, accuracy: 0.5, "o Orçamento logo depois do sólido")
++        XCTAssertEqual(total.frame.minY - orcamento.maxY, 12, accuracy: 0.5, "o Total gasto logo depois do Orçamento")
++        XCTAssertTrue(total.label.contains("R$\u{a0}842.317,45") && total.label.contains("46 lançamentos"), total.label)
++        XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.380.000,00"))
++    }
++
++    /// Com prejuízo (B), o sólido volta a ser o Total gasto, e o lucro negativo fica no bloco da venda.
++    func testVendidaComPrejuizoNoTotal() {
++        let app = abrirApp(conta: "senha", dados: "prejuizo", abrir: "obra:v3")
++        let total = app.elemento("indicadorTotal")
++        XCTAssertTrue(total.waitForExistence(timeout: 10))
++        XCTAssertFalse(app.elemento("indicadorLucro").exists, "com prejuízo, nada de lucro no sólido")
++        XCTAssertEqual(total.frame.minY - app.elemento("faseDaObra").frame.maxY, 16, accuracy: 0.5, "o Total gasto é o sólido")
++        let venda = app.elemento("indicadorVenda").label
++        XCTAssertTrue(venda.contains("R$\u{a0}800.000,00") && venda.contains("lucro -R$"), venda)
+     }
+ }
+```
+
+Em `app-ios/CusttaUITests/OrcamentoUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/OrcamentoUITests.swift
++++ b/app-ios/CusttaUITests/OrcamentoUITests.swift
+@@ -39,18 +39,20 @@ final class OrcamentoUITests: XCTestCase {
+         }
+     }
+ 
+-    /// A primeira linha do grupo dos indicadores: logo abaixo do Total gasto, que não sai do lugar, e antes do Corrigido.
++    /// O primeiro bloco depois do sólido: logo abaixo do Total gasto, que não sai do lugar, e antes do Corrigido (etapa 4:
++    /// um bloco de vidro por assunto).
+     func testALinhaVemLogoAbaixoDoTotalGasto() {
+         let (app, _) = linha("porTopico")
+         let total = app.elemento("indicadorTotal").frame, orcamento = app.elemento("indicadorOrcamento").frame
+         let corrigido = app.elemento("indicadorCorrigido").frame
+-        // O grupo começa 10 pt abaixo do Total gasto, e a linha inteira é o botão que abre a tela Orçamento: o quadro dela começa
+-        // no alto e na borda do grupo, 18 pt antes do texto do Corrigido (o quadro de uma linha sem toque começa no texto).
+-        XCTAssertEqual(orcamento.minY - total.maxY, 10, accuracy: 1, "a primeira linha do grupo, logo abaixo do Total gasto")
+-        XCTAssertLessThanOrEqual(orcamento.maxY, corrigido.minY, "antes do Corrigido")
+-        XCTAssertEqual(orcamento.minX + 18, corrigido.minX, accuracy: 0.5, "no mesmo grupo")
+-        // Na letra padrão, o chevron no quadro de 9 pt do mockup: a barra com os 315,1 pt dele.
+-        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 315.1, accuracy: 0.5, "a largura da barra")
++        // O bloco começa 12 pt abaixo do sólido, e o bloco inteiro é o botão que abre a tela Orçamento: o quadro dele é o do
++        // bloco, na mesma borda do Corrigido, o bloco seguinte.
++        XCTAssertEqual(orcamento.minY - total.maxY, 12, accuracy: 0.5, "o primeiro bloco, logo abaixo do Total gasto")
++        XCTAssertEqual(corrigido.minY - orcamento.maxY, 12, accuracy: 0.5, "antes do Corrigido")
++        XCTAssertEqual(orcamento.minX, corrigido.minX, accuracy: 0.5, "na mesma borda")
++        // Na letra padrão, o recuo de 18 dos dois lados e a seta de 14 pt, 10 pt depois da barra (mockup, .k-linha): a barra
++        // com 310 pt nos 370 do bloco.
++        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 310, accuracy: 0.5, "a largura da barra")
+     }
+ 
+     /// A largura da barra da linha do orçamento, por pixel (o VoiceOver junta a linha num elemento só): a corrida mais longa
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -516,28 +516,30 @@ test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura f
+   assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
+ });
+ 
+-test('linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
+-  // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
+-  // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
+-  // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+-  const t = ler('app-ios/Custta/Telas/PecasDoOrcamento.swift');
+-  const inicio = t.indexOf('struct LinhaDoOrcamento');
+-  assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
+-  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+-    'o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+-});
+-
+-test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
+-  // Os dois chevrons do cartão dos indicadores são o mesmo .k-chev do mockup. Sem o teto, o do A pagar sai com ~27 × 46 pt
+-  // na AX5, contra os 17 × 29 do Orçamento. E nenhum teste de tela vê o símbolo, que fica fora da árvore de acessibilidade
+-  // (accessibilityHidden) e do laudo (foraDoLaudo).
+-  const t = ler('app-ios/Custta/Telas/PecasDaObra.swift');
+-  const inicio = t.indexOf('private var aPagar: some View');
+-  assert.ok(inicio >= 0, 'a linha do A pagar');
+-  const linha = t.slice(inicio, t.indexOf('\n    }\n', inicio));
+-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
+-    'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
++test('bloco da venda da obra: o lucro em verde e o prejuízo em âmbar, nunca no vermelho', () => {
++  // O spec pede o prejuízo "em âmbar, nunca vermelho". Nenhum teste de tela vê a cor: o laudo mede só o contraste, e o
++  // vermelho de antes (negativoNoVidro) também passa nele.
++  const t = ler('app-ios/Custta/Telas/BlocosDaObra.swift');
++  assert.match(t, /corDaNota: lucroPositivo \? \.positivoNoVidro : \.alertaNoVidro\)/, 'a nota do lucro no verde e a do prejuízo no âmbar');
++  assert.doesNotMatch(t, /negativoNoVidro/, 'nada no vermelho nos blocos da obra');
++});
++
++test('seta dos blocos da obra: para no AX2 e ocupa os 20 pt do mockup na maior letra e os 14 na letra padrão', () => {
++  // O .chev do mockup da etapa 4 (14 × 20 pt; 20 × 36 na letra máxima), nos blocos do Orçamento e do A pagar. Sem o teto, o
++  // símbolo sai com ~27 × 46 pt na AX5, mais largo que o quadro. Nenhum teste de tela vê o símbolo, que fica fora da árvore
++  // de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
++  const t = ler('app-ios/Custta/Telas/BlocosDaObra.swift');
++  const inicio = t.indexOf('struct SetaDoBloco');
++  assert.ok(inicio >= 0, 'a SetaDoBloco');
++  const seta = t.slice(inicio, t.indexOf('\n}\n', inicio));
++  assert.match(seta, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: letra\.isAccessibilitySize \? 20 : 14\)\n/,
++    'a seta para no AX2 e ocupa 20 pt na letra de acessibilidade e 14 na padrão');
++  assert.match(seta, /\.accessibilityHidden\(true\)\n\s*\.foraDoLaudo\(\)/, 'fora do VoiceOver e do laudo');
++  const orcamento = ler('app-ios/Custta/Telas/PecasDoOrcamento.swift');
++  const linha = orcamento.slice(orcamento.indexOf('struct LinhaDoOrcamento'));
++  assert.match(linha.slice(0, linha.indexOf('\n}\n')), /if comSeta \{ SetaDoBloco\(\) \}/, 'o bloco do Orçamento usa a seta');
++  const aPagar = t.slice(t.indexOf('private func aPagar('));
++  assert.match(aPagar.slice(0, aPagar.indexOf('\n    }\n')), /SetaDoBloco\(\)/, 'o bloco do A pagar usa a seta');
+ });
+ 
+ test('linha dos afazeres: a seta é a das linhas do Orçamento e do A pagar, para no AX2 e ocupa 18 pt na maior letra', () => {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E '^/.*error: ' | sed 's/^.*CusttaTests\//CusttaTests\//' | sort -t: -k2,2n -u | head -3
+```
+Expected: o `CusttaTests` não compila:
+```
+CusttaTests/BlocosDaObraTests.swift:24:17: error: cannot find 'solidoDaObra' in scope
+CusttaTests/BlocosDaObraTests.swift:25:17: error: cannot find 'solidoDaObra' in scope
+CusttaTests/BlocosDaObraTests.swift:27:17: error: cannot find 'solidoDaObra' in scope
+```
+
+- [ ] **Step 3: Implementar**
+
+Os blocos moram num arquivo novo, `Telas/BlocosDaObra.swift`, e entram na obra num `VStack` só, filho da `LazyVStack` da tela (o alto é sempre criado). A ordem dos blocos na vendida com lucro segue o `indicadores()` do mockup: o lucro, o Orçamento, o Total gasto no vidro, o Corrigido, o A pagar e a Venda. O método que monta um bloco de vidro não pode se chamar `vidro`: a tela já lê o `@Environment(\.vidro)`. Sai da `PecasDaObra.swift` a obra da etapa 3 que nenhuma outra tela usa (a `PilulaDaFase` e o `IndicadoresDaObraView`); o `TituloDaObra` e a `EtiquetaDoIndicador` ficam, porque a tela Orçamento e as folhas os usam.
+
+Em `app-ios/Custta/Identidade/Blocos.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Blocos.swift
++++ b/app-ios/Custta/Identidade/Blocos.swift
+@@ -112,6 +112,9 @@ struct RotuloDoBloco: View {
+         Text(texto)
+             .font(.subheadline.weight(tinta == nil ? .semibold : .bold))
+             .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
++            // Na letra grande, num bloco com a seta ao lado, o rótulo recebia menos altura que as linhas dele e cortava
++            // ("A pagar · 30 dias" na AX5): a altura ideal para a largura dada resolve.
++            .fixedSize(horizontal: false, vertical: true)
+     }
+ }
+ 
+@@ -119,6 +122,8 @@ struct RotuloDoBloco: View {
+ /// tinta do sólido.
+ struct NotaDoBloco: View {
+     let texto: String
++    /// Outra cor no vidro (o lucro da venda no verde ou no âmbar); no sólido vale a tinta dele.
++    var cor: Token? = nil
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
+     @Environment(\.tintaDoBloco) private var tinta
+@@ -126,7 +131,8 @@ struct NotaDoBloco: View {
+     var body: some View {
+         Text(texto)
+             .font(.subheadline)
+-            .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
++            .foregroundStyle(paleta.cor(tinta ?? cor ?? vidro.secundario))
++            .fixedSize(horizontal: false, vertical: true)
+             .padding(.top, 2)
+     }
+ }
+```
+
+Criar `app-ios/Custta/Telas/BlocosDaObra.swift`:
+
+```swift
+import SwiftUI
+import CusttaNucleo
+
+/* O alto da obra na identidade nova (etapa 4, PR 1c; mockup aprovado, parte1.js:254-287 e parte1-obra-topo.png): o bloco
+   sólido protagonista e um bloco de vidro por assunto, na ordem da etapa 3 (Orçamento, Corrigido pelo banco, A pagar ·
+   30 dias, Venda). Na vendida com lucro (decisão 4: A), o sólido é o lucro e o Total gasto desce para um bloco de vidro
+   logo depois do Orçamento; com prejuízo (B), o sólido volta a ser o Total gasto e o lucro fica no bloco da venda, em
+   âmbar, nunca vermelho. Os textos e as contas são os do site (indicadoresDaObra, orcamentoObra, lucroVenda). Cada bloco é
+   um elemento só para o VoiceOver: o número solto reprova a descrição suficiente da auditoria. */
+
+/// O que o sólido da obra mostra: o Total gasto ou, na vendida com lucro, o lucro da venda.
+enum SolidoDaObra: Equatable {
+    case total
+    /// "+R$ 537.682,55", "Vendida em 20/06/26" e "+R$ 482.871,47 acima do banco" (o acima do banco negativo leva o "−").
+    case lucro(valor: String, etiqueta: String, nota: String)
+}
+
+/// A vendida com lucro bruto (zero conta como lucro, como o `>= 0` do mockup) põe o lucro no sólido; o resto, o Total gasto.
+func solidoDaObra(_ obra: Obra, taxa: Double) -> SolidoDaObra {
+    guard obra.fase == .vendida, let venda = obra.venda, let lucro = lucroVenda(obra, taxa: taxa), lucro.bruto >= 0 else {
+        return .total
+    }
+    return .lucro(valor: comSinal(lucro.bruto), etiqueta: "Vendida em \(dataCurta(venda.data))",
+                  nota: "\(comSinal(lucro.vsBanco)) acima do banco")
+}
+
+/// A nota do Total gasto: sem gastos, o convite para lançar o primeiro pelo +; na vendida, não (o + de lá não lança nela:
+/// abre a folha com a linha "Obra", para escolher outra), e fica o "bruto, sem correção".
+func notaDoTotal(_ obra: Obra) -> String {
+    obra.gastos.isEmpty && obra.fase != .vendida ? "Toque no + para lançar o primeiro gasto." : "bruto, sem correção"
+}
+
+/// O valor com o sinal na frente: "+R$ …" ou "−R$ …" (o menos tipográfico, o do gasto).
+func comSinal(_ valor: Double) -> String {
+    valor < 0 ? "\u{2212}" + moeda(-valor) : "+" + moeda(valor)
+}
+
+/// O sólido e os blocos de vidro do alto da obra, 12 pt um do outro.
+struct BlocosDaObra: View {
+    let obra: Obra
+    let taxa: Double
+    let hoje: String
+    /// O bloco "A pagar · 30 dias": a folha dele.
+    let abrirAPagar: () -> Void
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        let indicadores = indicadoresDaObra(obra, taxa: taxa, hoje: hoje)
+        let solido = solidoDaObra(obra, taxa: taxa)
+        VStack(spacing: Grade.entreBlocos) {
+            switch solido {
+            case .total: total(indicadores, solido: true)
+            case let .lucro(valor, etiqueta, nota): lucro(valor: valor, etiqueta: etiqueta, nota: nota)
+            }
+            if let orcamento = orcamentoObra(obra) {
+                NavigationLink(value: RotaDeObras.orcamento(obra.id)) { LinhaDoOrcamento(resumo: orcamento, comSeta: true) }
+                    .buttonStyle(.plain)
+                    // O Controle por Voz chama pelo nome do bloco ("Tocar Orçamento"), não pelo rótulo inteiro.
+                    .accessibilityInputLabels(["Orçamento"])
+            }
+            if solido != .total { total(indicadores, solido: false) }
+            blocoDeVidro(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido)
+                .accessibilityIdentifier("indicadorCorrigido")
+            aPagar(indicadores)
+            venda(indicadores.venda)
+        }
+    }
+
+    /// O Total gasto: no sólido, ou no vidro logo depois do Orçamento quando o sólido é o lucro. Sem gastos, o R$ 0,00 com o
+    /// convite para lançar o primeiro.
+    private func total(_ indicadores: IndicadoresDaObra, solido: Bool) -> some View {
+        let nota = notaDoTotal(obra)
+        return Group {
+            if solido {
+                BlocoSolido {
+                    CabecalhoDoBloco(rotulo: "Total gasto") { EtiquetaDoSolido(texto: indicadores.etiquetaDoTotal) }
+                    ValorEmDinheiro(indicadores.totalGasto, mono: .principal)
+                    NotaDoBloco(texto: nota)
+                }
+            } else {
+                BlocoDeVidro {
+                    CabecalhoDoBloco(rotulo: "Total gasto") {
+                        EtiquetaDoIndicador(texto: indicadores.etiquetaDoTotal, cor: obra.gastos.isEmpty ? .neutro : .marca)
+                    }
+                    ValorEmDinheiro(indicadores.totalGasto, mono: .principal)
+                    NotaDoBloco(texto: nota)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("indicadorTotal")
+    }
+
+    private func lucro(valor: String, etiqueta: String, nota: String) -> some View {
+        BlocoSolido {
+            CabecalhoDoBloco(rotulo: "Lucro da venda") { EtiquetaDoSolido(texto: etiqueta) }
+            ValorEmDinheiro(valor, mono: .principal)
+            NotaDoBloco(texto: nota)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("indicadorLucro")
+    }
+
+    /// Um bloco de vidro com o rótulo, a etiqueta, o número e a nota, num elemento só.
+    private func blocoDeVidro(rotulo: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
+                       corDaNota: Token? = nil) -> some View {
+        BlocoDeVidro { miolo(rotulo: rotulo, etiqueta: etiqueta, valor: valor, nota: nota, corDaNota: corDaNota) }
+            .accessibilityElement(children: .combine)
+    }
+
+    private func miolo(rotulo: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
+                       corDaNota: Token? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            CabecalhoDoBloco(rotulo: rotulo) {
+                if let etiqueta { EtiquetaDoIndicador(texto: etiqueta.0, cor: etiqueta.1) }
+            }
+            // O "—" de valor nenhum (venda sem estimativa) vai no secundário, como no mockup.
+            ValorEmDinheiro(valor, mono: .bloco, cor: valor == "—" ? vidro.secundario : .texto)
+            NotaDoBloco(texto: nota, cor: corDaNota)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// "A pagar · 30 dias": o bloco inteiro é o botão da folha dele, com a seta das linhas tocáveis no meio da altura.
+    private func aPagar(_ indicadores: IndicadoresDaObra) -> some View {
+        Button(action: abrirAPagar) {
+            HStack(spacing: 10) {
+                miolo(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
+                      nota: "Parcelas e gastos futuros")
+                SetaDoBloco()
+            }
+            .padding(.vertical, Grade.recuoVertical(letra))
+            .padding(.horizontal, Grade.recuo)
+            .contentShape(.rect)
+            .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(letra)))
+        }
+        .buttonStyle(.plain)
+        // O Controle por Voz chama pelo nome do bloco ("Tocar A pagar"), não pelo rótulo inteiro.
+        .accessibilityInputLabels(["A pagar"])
+        .accessibilityIdentifier("indicadorAPagar")
+    }
+
+    @ViewBuilder private func venda(_ venda: VendaNaTela) -> some View {
+        switch venda {
+        case .vendida(let valor, let etiqueta, let nota, let lucroPositivo):
+            blocoDeVidro(rotulo: "Venda", etiqueta: (etiqueta, .positivo), valor: valor, nota: nota,
+                       corDaNota: lucroPositivo ? .positivoNoVidro : .alertaNoVidro)
+                .accessibilityIdentifier("indicadorVenda")
+        case .estimada(let valor, let nota):
+            blocoDeVidro(rotulo: "Venda estimada", etiqueta: ("estimativa", .positivo), valor: valor, nota: nota)
+                .accessibilityIdentifier("indicadorVenda")
+        case .semEstimativa:
+            blocoDeVidro(rotulo: "Venda estimada", etiqueta: nil, valor: "—", nota: "Toque no lápis para informar o valor")
+                .accessibilityIdentifier("indicadorVenda")
+        }
+    }
+}
+
+/// A seta dos blocos tocáveis (Orçamento, A pagar, Afazeres): 14 pt de largura, no secundário do vidro (o .chev do
+/// mockup); para no AX2 e ocupa 20 pt na letra de acessibilidade. Figura, fora do VoiceOver e do laudo.
+struct SetaDoBloco: View {
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.body.weight(.semibold))
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+            .frame(width: letra.isAccessibilitySize ? 20 : 14)
+            .foregroundStyle(paleta.cor(vidro.secundario))
+            .accessibilityHidden(true)
+            .foraDoLaudo()
+    }
+}
+```
+
+Em `app-ios/Custta/Telas/ObraView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObraView.swift
++++ b/app-ios/Custta/Telas/ObraView.swift
+@@ -1,11 +1,12 @@
+ import SwiftUI
+ import CusttaNucleo
+ 
+-/* A tela da obra (mockup aprovado da etapa 2, partes 1 e 3): o nome no título grande, a pílula da fase e do tempo, os
+-   indicadores na opção A, as ações da fase, a pílula "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado
+-   no alto; o lápis na barra abre "Editar obra". Entra pelo push do NavigationStack de Obras e volta pelo círculo e pela
+-   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. Na etapa 3, a
+-   busca e o mês ao lado da pílula filtram só a lista (BuscaDaObra.swift); indicadores e orçamento ficam com a obra inteira. */
++/* A tela da obra, em blocos na identidade nova (etapa 4, PR 1c; mockup aprovado, parte1.html): o nome no título mono, a
++   cápsula da fase e do tempo, o sólido e os blocos de vidro (BlocosDaObra.swift), as ações da fase, os afazeres, a pílula
++   "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado no alto; o lápis na barra abre "Editar obra". Entra
++   pelo push do NavigationStack de Obras e volta pelo círculo e pela borda (sistema). A obra que some (apagada em outro
++   aparelho) fecha a tela, como o site volta ao Início. Na etapa 3, a busca e o mês ao lado da pílula filtram só a lista
++   (BuscaDaObra.swift); os blocos e o orçamento ficam com a obra inteira. */
+ struct ObraView: View {
+     let id: String
+     @Binding var caminho: [RotaDeObras]
+@@ -71,11 +72,18 @@ struct ObraView: View {
+                                  })
+         return ScrollViewReader { leitor in
+             ScrollView {
+-                LazyVStack(alignment: .leading, spacing: 10) {
+-                    TituloDaObra(nome: obra.nome)
+-                    PilulaDaFase(obra: obra, hoje: hoje)
+-                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
+-                                          rotaDoOrcamento: .orcamento(obra.id)) {
++                LazyVStack(alignment: .leading, spacing: Grade.entreBlocos) {
++                    // O título solto e a cápsula com a fase e o tempo: 8 pt entre eles e 16 até o sólido (mockup, .ob-meta-w).
++                    TituloMono(texto: obra.nome)
++                        .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
++                    CapsulaDeMetadados {
++                        EtiquetaDeFase(fase: obra.fase, grande: true)
++                        Text(textoDoInicio(obra, hoje: hoje))
++                    }
++                    .accessibilityElement(children: .combine)
++                    .accessibilityIdentifier("faseDaObra")
++                    .padding(.bottom, 4)
++                    BlocosDaObra(obra: obra, taxa: taxa, hoje: hoje) {
+                         // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
+                         if linhaAberta != nil { fecharLinha(); return }
+                         folhas.aberta = .aPagar(obraId: obra.id)
+@@ -84,8 +92,6 @@ struct ObraView: View {
+                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
+                         agir($0, obra: obra)
+                     }
+-                        .padding(.top, 2)
+-                        .padding(.bottom, 2)
+                     // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
+                     NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
+                         LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
+@@ -123,7 +129,7 @@ struct ObraView: View {
+                         }
+                     }
+                 }
+-                .padding(.horizontal, 20)
++                .padding(.horizontal, Grade.externa)
+                 // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
+                 // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
+                 .padding(.bottom, 98)
+@@ -158,6 +164,7 @@ struct ObraView: View {
+         }
+         .pausaOFundo(enquanto: desfazendo)
+         .tituloPequenoAoRolar(barra)
++        .background { LeitorDaLetra(barra: barra) }
+         #if DEBUG
+         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
+         .rolagemFixaSemFolha()
+@@ -168,7 +175,7 @@ struct ObraView: View {
+         .navigationTitle(obra.nome)
+         .navigationBarTitleDisplayMode(.inline)
+         .toolbar {
+-            ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: obra.nome) }
++            ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: obra.nome, mono: true) }
+             ToolbarItem(placement: .topBarTrailing) { IndicadorDeSincronizacao() }
+                 .sharedBackgroundVisibility(.hidden)
+             ToolbarItem(placement: .topBarTrailing) { BotaoDeEditarObra { folhas.aberta = .editarObra(obraId: obra.id) } }
+@@ -340,6 +347,23 @@ struct LinhaDaLista: View {
+ @MainActor @Observable
+ final class BarraDaObra {
+     var tituloVisivel = false
++    /// A letra da tela, para o título pequeno mono: dentro do ToolbarItem, o dynamicTypeSize para antes da letra de
++    /// acessibilidade. Mora aqui, e não num @Environment da ObraView: só o título pequeno se refaz quando a letra muda (a
++    /// obra inteira refeita pesava a troca por trás da folha; o toque duplo é segurado pela marca `gravado` do rascunho
++    /// do gasto, na FolhaDoGasto).
++    var letra: DynamicTypeSize = .large
++}
++
++/// Lê a letra da tela fora da barra e a guarda na BarraDaObra: só o título pequeno se refaz quando ela muda.
++private struct LeitorDaLetra: View {
++    let barra: BarraDaObra
++    @Environment(\.dynamicTypeSize) private var letra
++
++    var body: some View {
++        Color.clear
++            .accessibilityHidden(true)
++            .onChange(of: letra, initial: true) { _, nova in if barra.letra != nova { barra.letra = nova } }
++    }
+ }
+ 
+ extension View {
+@@ -358,11 +382,17 @@ extension View {
+ struct TituloDaBarraDaObra: View {
+     let barra: BarraDaObra
+     let nome: String
++    /// O título pequeno em SF Mono da identidade nova (a obra, desde a etapa 4), na letra da tela, lida fora da barra
++    /// (`barra.letra`); a tela Orçamento fica com o de antes.
++    var mono = false
+     @Environment(ModeloApp.self) private var modelo
+ 
+     var body: some View {
+         if barra.tituloVisivel && indicador(modelo.sincronizador.estadoSinc) == nil {
+-            TituloPequenoDaBarra(nome: nome).transition(.opacity)
++            Group {
++                if mono { TituloPequenoMono(texto: nome, letra: barra.letra) } else { TituloPequenoDaBarra(nome: nome) }
++            }
++            .transition(.opacity)
+         } else {
+             Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
+         }
+```
+
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -1,10 +1,10 @@
+ import SwiftUI
+ import CusttaNucleo
+ 
+-/* As peças da tela da obra (mockup aprovado da etapa 2, parte 1): o título com o nome, a pílula da fase e do tempo,
+-   os indicadores na opção A, a pílula "Lançamentos", o "A vencer", o cabeçalho do mês e a linha do gasto. Medidas do
+-   mockup: margem de 20, cartões de raio 24 e recuo interno de 18 em tudo, para o texto de cima e o de baixo começarem
+-   na mesma vertical. Nenhum token novo; nunca vidro dentro de vidro (o que fica dentro de um cartão é sólido). */
++/* As peças da tela da obra (mockup aprovado da etapa 2, parte 1): o título com o nome (hoje, o da tela Orçamento; a obra
++   usa o título mono da etapa 4), a etiqueta dos blocos, a pílula "Lançamentos", o "A vencer", o cabeçalho do mês e a
++   linha do gasto. Medidas do mockup: cartões de raio 24 e recuo interno de 18 em tudo, para o texto de cima e o de baixo
++   começarem na mesma vertical. Nunca vidro dentro de vidro (o que fica dentro de um cartão é sólido). */
+ 
+ /// O nome da obra no título grande, em quantas linhas precisar (o título grande do sistema corta nome longo), com o
+ /// halo atrás do bloco inteiro no escuro, como o título grande de Obras. Nas alturas do mockup: 6 pt acima do início da
+@@ -26,30 +26,6 @@ struct TituloDaObra: View {
+     }
+ }
+ 
+-/// Fase e tempo numa pílula de vidro: um cartão baixo de raio 24 com a etiqueta da fase e "começou em… · N meses", a 16 pt
+-/// do total gasto, como no mockup (6 além do espaço da pilha).
+-struct PilulaDaFase: View {
+-    let obra: Obra
+-    let hoje: String
+-    @Environment(\.paleta) private var paleta
+-
+-    var body: some View {
+-        VStack(alignment: .leading, spacing: 8) {
+-            EtiquetaDeFase(fase: obra.fase, grande: true)
+-            Text(textoDoInicio(obra, hoje: hoje))
+-                .font(.subheadline)
+-                .foregroundStyle(paleta.cor(.texto))
+-        }
+-        .padding(.horizontal, 18)
+-        .padding(.vertical, 14)
+-        .frame(maxWidth: .infinity, alignment: .leading)
+-        .superficie(.conteudo, em: .rect(cornerRadius: 24))
+-        .accessibilityElement(children: .combine)
+-        .accessibilityIdentifier("faseDaObra")
+-        .padding(.bottom, 6)
+-    }
+-}
+-
+ /// Uma etiqueta pequena colorida ao lado do rótulo de um indicador ("46 lançamentos", "3 vencimentos", "estimativa"), nas
+ /// medidas do mockup: footnote semibold, recuo de 10 nos lados e 3 em cima e embaixo.
+ struct EtiquetaDoIndicador: View {
+@@ -80,149 +56,6 @@ struct EtiquetaDoIndicador: View {
+     }
+ }
+ 
+-/// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
+-/// só com orçamento), Corrigido, A pagar (a linha inteira abre a folha dele, etapa 3) e Venda. Os textos e as contas são
+-/// os do site (indicadoresDaObra, orcamentoObra).
+-struct IndicadoresDaObraView: View {
+-    let indicadores: IndicadoresDaObra
+-    var orcamento: ResumoOrcamento? = nil
+-    /// Para onde a linha do orçamento leva (a tela Orçamento da obra).
+-    var rotaDoOrcamento: RotaDeObras? = nil
+-    /// A seta do "A pagar · 30 dias": a folha dele.
+-    let abrirAPagar: () -> Void
+-    @Environment(\.paleta) private var paleta
+-    @Environment(\.vidro) private var vidro
+-    @Environment(\.dynamicTypeSize) private var tamanho
+-
+-    /// "N lançamentos" na marca; "sem gastos" neutra, como o chip cinza do mockup.
+-    private var corDoTotal: EtiquetaDoIndicador.Cor { indicadores.etiquetaDoTotal == "sem gastos" ? .neutro : .marca }
+-
+-    var body: some View {
+-        VStack(spacing: 10) {
+-            heroi
+-            VStack(spacing: 0) {
+-                if let orcamento {
+-                    if let rotaDoOrcamento {
+-                        NavigationLink(value: rotaDoOrcamento) { LinhaDoOrcamento(resumo: orcamento, comSeta: true) }
+-                            .buttonStyle(.plain)
+-                            // O Controle por Voz chama pelo nome da linha ("Tocar Orçamento"), não pelo rótulo inteiro.
+-                            .accessibilityInputLabels(["Orçamento"])
+-                    } else {
+-                        LinhaDoOrcamento(resumo: orcamento)
+-                    }
+-                    LinhaFina().padding(.leading, 18)
+-                }
+-                linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
+-                      identificador: "indicadorCorrigido")
+-                LinhaFina().padding(.leading, 18)
+-                aPagar
+-                LinhaFina().padding(.leading, 18)
+-                venda
+-            }
+-            .superficie(.conteudo, em: .rect(cornerRadius: 24))
+-        }
+-    }
+-
+-    /// O "A pagar · 30 dias": a linha inteira é o botão da folha dele, com a seta das linhas tocáveis no meio da altura
+-    /// (o .k-chev do mockup), a mesma do "A vencer". Embaixo, "Parcelas e gastos futuros", como antes.
+-    private var aPagar: some View {
+-        Button(action: abrirAPagar) {
+-            HStack(spacing: 4) {
+-                miolo(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
+-                      nota: "Parcelas e gastos futuros", corDaNota: nil)
+-                Image(systemName: "chevron.right")
+-                    .font(.body.weight(.semibold))
+-                    // O mesmo chevron da linha do Orçamento, no mesmo cartão.
+-                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+-                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
+-                    .foregroundStyle(paleta.cor(vidro.secundario))
+-                    .accessibilityHidden(true)
+-                    .foraDoLaudo()
+-            }
+-            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+-            .contentShape(.rect)
+-        }
+-        .buttonStyle(.plain)
+-        // O Controle por Voz chama pelo nome da linha ("Tocar A pagar"), não pelo rótulo inteiro.
+-        .accessibilityInputLabels(["A pagar"])
+-        .accessibilityIdentifier("indicadorAPagar")
+-    }
+-
+-    private var heroi: some View {
+-        VStack(alignment: .leading, spacing: 6) {
+-            ViewThatFits(in: .horizontal) {
+-                HStack(alignment: .firstTextBaseline) {
+-                    rotulo("Total gasto")
+-                    Spacer(minLength: 8)
+-                    EtiquetaDoIndicador(texto: indicadores.etiquetaDoTotal, cor: corDoTotal)
+-                }
+-                VStack(alignment: .leading, spacing: 6) {
+-                    rotulo("Total gasto")
+-                    EtiquetaDoIndicador(texto: indicadores.etiquetaDoTotal, cor: corDoTotal)
+-                }
+-            }
+-            ValorEmDinheiro(texto: indicadores.totalGasto, fonte: .largeTitle.weight(.bold))
+-            Text("bruto, sem correção").font(.subheadline).foregroundStyle(paleta.cor(vidro.secundario))
+-        }
+-        .padding(.horizontal, 18)
+-        .padding(.vertical, 16)
+-        .frame(maxWidth: .infinity, alignment: .leading)
+-        .superficie(.conteudo, em: .rect(cornerRadius: 24))
+-        .accessibilityElement(children: .combine)
+-        .accessibilityIdentifier("indicadorTotal")
+-    }
+-
+-    @ViewBuilder private var venda: some View {
+-        switch indicadores.venda {
+-        case .vendida(let valor, let etiqueta, let nota, let lucroPositivo):
+-            linha(rotulo: "Venda", etiqueta: (etiqueta, .positivo), valor: valor, nota: nota, identificador: "indicadorVenda",
+-                  corDaNota: lucroPositivo ? .positivoNoVidro : .negativoNoVidro)
+-        case .estimada(let valor, let nota):
+-            linha(rotulo: "Venda estimada", etiqueta: ("estimativa", .positivo), valor: valor, nota: nota, identificador: "indicadorVenda")
+-        case .semEstimativa:
+-            linha(rotulo: "Venda estimada", etiqueta: nil, valor: "—", nota: "Toque no lápis para informar o valor",
+-                  identificador: "indicadorVenda")
+-        }
+-    }
+-
+-    /// Na letra grande, o rótulo ao lado da etiqueta recebia a altura de uma linha e cortava ("A pagar · 3…"): a altura
+-    /// ideal para a largura dada resolve.
+-    private func rotulo(_ texto: String) -> some View {
+-        Text(texto).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
+-    }
+-
+-    private func linha(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
+-                       identificador: String, corDaNota: Token? = nil) -> some View {
+-        miolo(rotulo: texto, etiqueta: etiqueta, valor: valor, nota: nota, corDaNota: corDaNota)
+-            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+-            .accessibilityElement(children: .combine)
+-            .accessibilityIdentifier(identificador)
+-    }
+-
+-    /// O rótulo com a etiqueta, o valor e a nota de uma linha do cartão.
+-    private func miolo(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
+-                       corDaNota: Token?) -> some View {
+-        VStack(alignment: .leading, spacing: 4) {
+-            ViewThatFits(in: .horizontal) {
+-                HStack(alignment: .firstTextBaseline) {
+-                    rotulo(texto)
+-                    Spacer(minLength: 8)
+-                    if let etiqueta { EtiquetaDoIndicador(texto: etiqueta.0, cor: etiqueta.1) }
+-                }
+-                VStack(alignment: .leading, spacing: 6) {
+-                    rotulo(texto)
+-                    if let etiqueta { EtiquetaDoIndicador(texto: etiqueta.0, cor: etiqueta.1) }
+-                }
+-            }
+-            // O "—" de valor nenhum (venda sem estimativa) vai no secundário, como no mockup.
+-            ValorEmDinheiro(texto: valor, fonte: .title2.weight(.bold), cor: valor == "—" ? vidro.secundario : .texto)
+-            Text(nota).font(.subheadline).foregroundStyle(paleta.cor(corDaNota ?? vidro.secundario))
+-                .fixedSize(horizontal: false, vertical: true)
+-        }
+-        .frame(maxWidth: .infinity, alignment: .leading)
+-    }
+-}
+-
+ /// A pílula de vidro antes de uma lista: "Lançamentos 46" na obra (`BuscaDaObra`), "Pendentes 3" nos afazeres
+ /// (`AfazeresView`) e, na tela Orçamento, "Por tópico 14" e "Gasto por tópico 14" (`OrcamentoView`). O título em subheadline
+ /// semibold e o número em peso médio, no secundário (sem número, só o título), num texto só: na maior letra a pílula quebra
+```
+
+Em `app-ios/Custta/Telas/PecasDoOrcamento.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDoOrcamento.swift
++++ b/app-ios/Custta/Telas/PecasDoOrcamento.swift
+@@ -150,9 +150,9 @@ struct AvisoDoOrcamento: View {
+     }
+ }
+ 
+-/// A linha do orçamento nos indicadores: "Orçamento" e o nível do site, quanto sobra (ou passou), a barra, "{pct}% usado de
+-/// {previsto}" e, por tópico, o pior aviso dos tópicos e o que está fora; com a seta, ela abre a tela Orçamento (a linha
+-/// inteira é o botão). Um elemento só para o VoiceOver, como as outras linhas dos indicadores.
++/// O bloco do orçamento na obra (identidade nova, etapa 4; mockup, parte1.js:254-265): "Orçamento" e o nível do site,
++/// quanto sobra (ou passou) no número mono, a barra, "{pct}% usado de {previsto}" e, por tópico, o pior aviso dos tópicos e
++/// o que está fora; com a seta, ele abre a tela Orçamento (o bloco inteiro é o botão). Um elemento só para o VoiceOver.
+ struct LinhaDoOrcamento: View {
+     let resumo: ResumoOrcamento
+     var comSeta = false
+@@ -163,41 +163,28 @@ struct LinhaDoOrcamento: View {
+     var body: some View {
+         let geral = resumo.geral
+         let rodape = rodapeOrc(geral)
+-        HStack(spacing: 4) {
++        HStack(spacing: 10) {
+             conteudo(geral, rodape)
+-            if comSeta {
+-                Image(systemName: "chevron.right")
+-                    .font(.body.weight(.semibold))
+-                    // Na maior letra o chevron para no AX2 e ocupa só os 18 pt dele (18 × 30 do mockup): a coluna de texto fica com os
+-                    // 306 pt e "80% usado de" cabe numa linha (o símbolo sozinho reserva ~6 pt além do traço). Na letra padrão, os 9 pt
+-                    // do mockup (9 × 15): a barra fica com os 315 dele.
+-                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+-                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
+-                    .foregroundStyle(paleta.cor(vidro.secundario))
+-                    .accessibilityHidden(true)
+-                    .foraDoLaudo()
+-            }
++            if comSeta { SetaDoBloco() }
+         }
+-        .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
++        .padding(.vertical, Grade.recuoVertical(tamanho))
++        .padding(.horizontal, Grade.recuo)
+         .contentShape(.rect)
++        .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(tamanho)))
+         .accessibilityElement(children: .combine)
+         .accessibilityIdentifier("indicadorOrcamento")
+     }
+ 
+     private func conteudo(_ geral: ItemOrcamento, _ rodape: RodapeDoOrcamento) -> some View {
+         VStack(alignment: .leading, spacing: 0) {
+-            ViewThatFits(in: .horizontal) {
+-                HStack(alignment: .firstTextBaseline) { rotulo; Spacer(minLength: 8); etiqueta(geral.nivel) }
+-                VStack(alignment: .leading, spacing: 6) { rotulo; etiqueta(geral.nivel) }
+-            }
++            CabecalhoDoBloco(rotulo: "Orçamento") { etiqueta(geral.nivel) }
+             // "sobra R$ …" numa linha; na letra grande, um em cima do outro (mockup).
+             let layout = tamanho.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+-                                                     : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 7))
++                                                     : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
+             layout {
+-                Text(rodape.rotulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(vidro.secundario))
+-                ValorEmDinheiro(texto: rodape.valor, fonte: .title2.weight(.bold))
++                Text(rodape.rotulo).font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
++                ValorEmDinheiro(rodape.valor, mono: .bloco)
+             }
+-            .padding(.top, 2)
+             BarraDoOrcamento(item: geral)
+                 .padding(.top, 9)
+                 .padding(.bottom, 7)
+@@ -211,11 +198,6 @@ struct LinhaDoOrcamento: View {
+         .frame(maxWidth: .infinity, alignment: .leading)
+     }
+ 
+-    private var rotulo: some View {
+-        Text("Orçamento").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+-            .fixedSize(horizontal: false, vertical: true)
+-    }
+-
+     private func etiqueta(_ nivel: NivelOrcamento) -> some View {
+         EtiquetaDoIndicador(texto: nivel.pilula, cor: corDoNivel(nivel))
+     }
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/BlocosDaObraTests -only-testing:CusttaTests/LinhaDoOrcamentoTests -only-testing:CusttaTests/OrcamentoEm375Tests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/OrcamentoUITests/testALinhaVemLogoAbaixoDoTotalGasto 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/AuditoriaUITests/testObraNoMaiorTamanho -only-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+npm run test:unit 2>&1 | grep -E "ℹ (pass|fail)"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/EstadosUITests/testToqueDuploNoSalvarDaVendidaLancaUmGasto -test-iterations 7 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 9 tests in 3 suites passed`; `Executed 11 tests, with 0 failures (0 unexpected)`; `Executed 2 tests, with 0 failures (0 unexpected)` (no 18 Pro, 137 s); `ℹ pass 411`, `ℹ fail 0` (como antes: as duas guardas dos chevrons viraram uma, e entra a do âmbar). Com o `CabecalhoDoBloco` de antes do conserto da Tarefa 19 (o `Spacer` ao lado do rótulo), a varredura reprova só com o Negrito: `✘ Test run with 4 tests in 1 suite failed after 1.175 seconds with 2 issues.`, com "obra 0, .medium, negrito true, em 408.0: 408.3333333333333" (a vitrine) e "obra 2, .large, negrito true, em 408.0: 408.3333333333333" (a vendida com prejuízo). Sem o `obra.fase != .vendida` da `notaDoTotal`, o teste da nota reprova: `✘ Test run with 5 tests in 1 suite failed after 1.005 seconds with 1 issue.`, com `Expectation failed: notaDoTotal(vendida) == "bruto, sem correção"` e `notaDoTotal(vendida) → "Toque no + para lançar o primeiro gasto."`. Trocar o `.alertaNoVidro` da nota da venda por `.negativoNoVidro` derruba a guarda nova: `ℹ fail 1`, "AssertionError [ERR_ASSERTION]: a nota do lucro no verde e a do prejuízo no âmbar". Sem o `fixedSize` do `RotuloDoBloco`, a auditoria da obra na maior letra reprova no 18 Pro com "Text clipped" em "A pagar · 30 dias" (no Pro Max, mais largo, ela passa com e sem ele). No toque duplo, `Executed 7 tests, with 0 failures (0 unexpected)`. Sem a Tarefa 29 (a marca `gravado` no rascunho do gasto), esse teste reprova com a obra em blocos em 6 ou 7 de 7 rodadas (`Executed 7 tests, with 6 failures`, "Total gasto, 48 lançamentos" em vez de 47): a obra, mais pesada de montar por trás da folha, abre a janela do fechamento no turno seguinte.
+
+- [ ] **Step 5: Conferir com o mockup**
+
+Run: abrir a obra da vitrine no 18 Pro, com a barra de status em 9:41 e o fundo parado (`CUSTTA_SERVICOS=falsos CUSTTA_CONTA=senha CUSTTA_DADOS=vitrine CUSTTA_ABRIR=obra:v1` e `-custta.reduzirMovimento YES`, pelo `simctl launch`), e tirar o print.
+Expected: o alto como o `parte1-obra-topo.png`: "Casa Alphaville" no título mono a 16 pt da borda; a cápsula com "Em construção" e "começou em … · 14 meses"; o sólido verde com "Total gasto", "46 lançamentos", R$ 842.317,45 com o R$ e os centavos menores na linha do número e "bruto, sem correção"; os blocos do Orçamento (com a seta), do Corrigido (R$ 926.847,69, "Correção até hoje: +R$ 84.530,24"), do A pagar (R$ 13.250,00, "3 vencimentos", com a seta) e da Venda estimada. Diferença de dado, não de tela: a vitrine tem o orçamento total de R$ 1.200.000,00 ("sobra R$ 357.682,55", 70%), e o mockup, o por tópico.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/Blocos.swift app-ios/Custta/Telas/BlocosDaObra.swift app-ios/Custta/Telas/ObraView.swift app-ios/Custta/Telas/PecasDaObra.swift app-ios/Custta/Telas/PecasDoOrcamento.swift app-ios/CusttaTests/BlocosDaObraTests.swift app-ios/CusttaTests/LinhaDoOrcamentoTests.swift app-ios/CusttaTests/OrcamentoEm375Tests.swift app-ios/CusttaUITests/AuditoriaUITests.swift app-ios/CusttaUITests/ObraUITests.swift app-ios/CusttaUITests/OrcamentoUITests.swift tests/app-ios.test.cjs
+git commit -m "feat: o alto da obra em blocos, do título à venda" -m "A obra troca o alto da etapa 3 pela identidade nova do mockup aprovado da etapa 4: o nome no título mono, a cápsula com a fase e o tempo, o Total gasto no bloco sólido verde e um bloco de vidro por assunto, na ordem de sempre (Orçamento, Corrigido pelo banco, A pagar e Venda), com os números em SF Mono e a coluna na borda de 16 pt." -m "Na obra vendida com lucro, o sólido passa a mostrar o lucro da venda e o acima do banco, e o Total gasto desce para o vidro logo depois do Orçamento (decisão 4, A). Com prejuízo, o sólido volta a ser o Total gasto e o lucro fica no bloco da venda, em âmbar. Sem gastos, o sólido mostra R\$ 0,00 com o convite para lançar o primeiro gasto pelo +; na vendida sem gastos, não, porque o + de lá não lança nela." -m "Cada bloco continua um elemento só para o VoiceOver, com os mesmos identificadores, e os testes das etapas 2 e 3 sobre a obra seguem valendo; o do orçamento passa a medir o bloco próprio."
+```
+
+### Task 31: Afazeres, gastos por tópico e lançamentos da obra na grade nova
+
+Embaixo das ações, a obra passa à identidade nova (spec, "Tela da obra"; mockup, `parte1.js:298-328`, `parte1-obra-meio.png` e `parte1-obra-fim.png`). Os afazeres viram um bloco de vidro com os cantos e o recuo da grade (26 e 16 × 18; 32 e 22 na letra de acessibilidade), sem o ícone do check da etapa 3 (AfazeresView.swift:23-30) e com "Afazeres" em body semibold (o `.afz .t1` do mockup), a etiqueta logo depois do título e a `SetaDoBloco` da Tarefa 30, 12 pt depois do texto (o `.afz{gap:12px}` do mockup, parte1.css:198; nos blocos do alto, 10, o do `.k-linha`). Depois deles, só com gastos, o bloco "Gastos por tópico" (título em body semibold, 8 pt acima da barra) com a `BarraDeTopicos` do PR 1b: a barra empilhada no lugar do mini-anel, sobre a placa forte, e a legenda dos 4 maiores (3 na letra de acessibilidade) com "e mais N tópicos", com os pedaços de `pedacosDoAnel(gastoPorTopico(obra))`. Para o VoiceOver, o bloco é um elemento só, como os outros: "Gastos por tópico", com o valor falado da barra (cada pedaço com o nome e o %, o "<1%" como "menos de 1%"), que sai da `BarraDeTopicos` para a função `faladoDaBarra(_:topicos:)` e serve aos dois; a legenda não é lida de novo. Com o `.contain`, o VoiceOver passava por cinco a sete paradas e dizia o título duas vezes (no texto e na barra), e esconder o título com o `accessibilityHidden` dentro do `.contain` não o tiraria da árvore. O bloco fica sem toque e sem o "Gráficos ›" do mockup, e as portas "Ver gráficos" e "Relatório" não aparecem: entram no PR que completa o destino (spec, tabela dos PRs, linha 1c, "a barra empilhada sem toque e sem 'Gráficos ›'; nenhuma porta"). Os lançamentos ficam 18 pt abaixo do bloco anterior (`.lan-cab`) e passam à linha mono (`.environment(\.linhaMono, true)` na coluna da obra, PR 1b, Tarefa 23): na lista da obra, o total do mês e o do "A vencer" vão no número mono (`.miudo`), o nome do mês em subheadline semibold (`.mes-cab`), na linha de base do total, e o "A vencer" perde o ícone do calendário; nos dois, o título ocupa o que sobra pelo `frame(maxWidth: .infinity)`, e não por um `Spacer` (o "A vencer" com o Negrito passava 1/3 de pt da largura nos três iPhones, como o cabeçalho dos blocos do PR 1b, e o cabeçalho de alguns meses também; nas folhas, o cabeçalho do mês continua centrado e com o `Spacer`, como na etapa 3), e a linha fina entre dois gastos fica nos 18 pt do recuo dos dois lados (antes, 67 pt depois do ícone). As folhas (A pagar, detalhe do tópico), que não estão na coluna da obra, continuam com a linha, o cabeçalho e a linha fina da etapa 3. Hoje a obra põe os afazeres num cartão de raio 24 com o ícone e 14 pt acima dos lançamentos (ObraView.swift:95-100), sem barra de tópicos. Com a obra em blocos (o alto da Tarefa 30 e estes blocos), a lista desce 283 pt, e as rolagens fixas do laudo da obra, calibradas na etapa 3, passam a medir outra coisa ou a cortar palavra pela borda de cima: em 835, o chip "3 pendentes" dos afazeres ficava cortado pela borda, e o pedaço de baixo das letras era medido no véu dela (4,46:1 no claro); em 596, a "busca, nada achado" media os blocos do alto, com o vazio sob a cápsula; em 1100, a "obra pronta, ações da fase, na maior letra" ficava entre o A pagar e a Venda estimada, sem ação nenhuma. Elas são refeitas aqui, com a obra inteira, cada uma com a borda de cima num vão (sem palavra cortada) no 18 Pro, a largura da CI, e no Pro Max, conferido nos quadros da árvore do XCUITest e nas tabelas do laudo. Para isso não voltar, a `Cena` ganha o `assunto`: os identificadores do que ela mede (ou o texto, sem identificador), conferidos à vista antes de cada print, abaixo da barra de status e acima da faixa de baixo (a borda de 140 pt ou a cápsula, a mesma que o laudo deixa de fora); toda cena com rolagem fixa tem o seu, menos as "abas sobre a lista", que medem só a cápsula. As rolagens:
+
+| Cena | Antes | Agora | A borda de cima | Assunto |
+| --- | --- | --- | --- | --- |
+| obra, lista (e com Aumentar contraste) | 905 | 1170 | entre a pílula "Lançamentos" e o "A vencer" | `aVencer` |
+| obra rolando (no Mac; na CI, só a 883 e a 1247) | 318, 561, 905, 1101, 1423, 1715 (na CI, 561 e 1101) | 612, 883, 1247 | entre o A pagar e a Venda; entre os afazeres e os gastos por tópico; entre o "A vencer" e o 1º mês, com as linhas dos meses da borda de cima à de baixo | `gastosPorTopico`, `aVencer`, `gasto-g027` |
+| busca: em repouso, mês, achados | 1118 | 1118 | entre a legenda dos gastos por tópico e a pílula | `campoDaBusca`, `chipDoMes`, `somaDosAchados` |
+| obra, linha aberta | 1118, com a g027 aberta | 1118, com a g026 | entre a legenda dos gastos por tópico e a pílula | `apagar-g026` |
+| busca, nada achado | 596 | 1118 (o fim) | no 18 Pro, entre os afazeres e os gastos por tópico; no Pro Max, entre a ação e os afazeres | `buscaNadaEncontrado`, `limparFiltro` |
+| busca, mês sem gasto | 1118 (o fim) | 804 | entre a ação "Marcar como pronta" e os afazeres (no Pro Max, o fim: no alto da ação, longe da letra) | `buscaMesSemGasto` |
+| obra vendida com lucro / com prejuízo | 400 | 375 / 350 | antes do Corrigido / antes do A pagar | `acao-desfazerVenda` |
+| obra pronta, ações da fase, na maior letra | 1100 | 1977 | no 18 Pro, entre a 1ª e a 2ª linha do "Toque no lápis para informar o valor"; no Pro Max, no alto da pílula do "Registrar venda", 10 pt acima do rótulo | `acao-registrarVenda`, `acao-voltarConstrucao` |
+| obra com orçamento por tópico, na maior letra | 700 | 897 | no 18 Pro, entre o "Orçamento" e a etiqueta; no Pro Max, entre a etiqueta e o "sobra" | o texto "2 tópicos passaram do previsto" |
+| obra pronta, ações da fase; as outras roladas (Ajustes, tela Orçamento, A pagar, detalhe do tópico) | iguais | iguais | já num vão | `acao-registrarVenda` e `acao-voltarConstrucao`, `nomeConta`, `topicoOrc-hidraulica`, `gastoTopico-pintura`, `topicoOrc-fundacao`, `gasto-d117`, `secao-Pagos`, o mês do 1º vencimento, `secao-A vencer` |
+
+As rolagens foram escolhidas nos quadros da árvore do XCUITest de uma sonda (a obra aberta de 400 em 400 pt e, para os meses, com o hoje deslocado de 0 a 30 dias) e conferidas nas tabelas do laudo: nas cenas que mudaram, nenhuma palavra começa na borda (y = 140), nos dois iPhones. Na letra padrão, o alto, os afazeres, os gastos por tópico, a pílula, o "A vencer" e o cabeçalho do primeiro mês ficam iguais nos dois iPhones e em qualquer dia; nos cartões dos meses, não: no 18 Pro, a nota de alguns gastos quebra em duas linhas (a lista desce cada vez mais), e as linhas mudam com o dia (a vitrine conta os gastos a partir de hoje). Por isso a obra rolando fica fora dos cartões dos meses (a 1247 já põe as linhas deles da borda de cima à de baixo): a 1778 e a 1956, num vão nos dois iPhones em 30/10/2026, cortavam uma linha com o hoje deslocado 10 dias, e a parte de baixo dela, medida no véu da borda, ficava em 4,04 a 4,35:1 no Pro Max; a 1609 cortava uma linha no Pro Max e a 2524, no 18 Pro, e na 2524 com o hoje deslocado 5 dias a lista preguiçosa parou em lugares diferentes nos dois prints (55849 pixels longe das letras). A 612, a 883 e a 1247 passam com o hoje deslocado 5 e 15 dias no 18 Pro e 10 e 25 no Pro Max. A linha aberta passa da g027 à g026: aberta, a linha corre 96 pt para a esquerda e a borda do cartão corta o começo das letras; a nota da g027 quebra em duas no 18 Pro, e a fatia de um algarismo da data, na 2ª linha, ficava em 2,83:1 no claro (no Pro Max, passava). Na letra máxima, a obra quebra 162 pt a mais no 18 Pro que no Pro Max, e nenhuma rolagem acha um vão comum fora do "Toque no lápis…" com as duas ações à vista; a 1960 cortava a 1ª linha da frase no 18 Pro (onze pedaços de letra na borda, todos acima de 4,9:1).
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/BarraEmpilhada.swift`
+- Modify: `app-ios/Custta/Telas/AfazeresView.swift`
+- Modify: `app-ios/Custta/Telas/ObraView.swift`
+- Modify: `app-ios/Custta/Telas/PecasDaObra.swift`
+- Test (novo): `app-ios/CusttaTests/ListaDaObraTests.swift`
+- Test (alterar): `app-ios/CusttaUITests/EstadosUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+- Test (alterar): `app-ios/CusttaUITests/ObraUITests.swift`
+- Test (alterar): `tests/app-ios.test.cjs`
+
+**Interfaces:**
+- Consumes: `BlocoDeVidro`, `BarraDeTopicos(pedacos:topicos:)`, `pedacosDoAnel(_:)`, `gastoPorTopico(_:)`, `ValorEmDinheiro(_:mono:)`, o `linhaMono` do environment e `Grade` (PR 1b e Tarefa 25); `SetaDoBloco` (Tarefa 30).
+- Produces: o identificador `gastosPorTopico` (o bloco, um elemento só para o VoiceOver, com o rótulo "Gastos por tópico" e o valor falado da barra; a barra continua `barraDeTopicos`, filha dele na árvore do XCUITest); `faladoDaBarra(_ pedacos: [PedacoDoAnel], topicos: [String: Topico]) -> String`; `SeparadorDaLista()`; o `CabecalhoDoMes` e a `LinhaDoAVencer` com a forma mono pelo `linhaMono`; no laudo, `Cena.assunto: [String]` (identificadores ou o texto, conferidos à vista antes do print por `conferirAssunto(_:_:)`), que as cenas novas com rolagem fixa também levam.
+
+- [ ] **Step 1: Escrever os testes**
+
+A guarda Node da seta dos afazeres passa a pedir a `SetaDoBloco` (e nenhuma outra seta) no lugar do chevron de 14/18 pt da etapa 3. Na tela, os afazeres e os gastos por tópico na grade (16 pt de borda, a largura da coluna, 12 pt entre eles; o teste confere que o bloco existe logo depois de rolar até ele), o rótulo e o valor no `gastosPorTopico`, um elemento só (com o `.contain` de antes, ele ficava sem rótulo e sem valor; o XCUITest continua mostrando a legenda e a barra como filhas do bloco, como mostra o "Total gasto" dentro do `indicadorTotal`, de `.combine`, e o VoiceOver lê só o bloco), a legenda com "e mais 10 tópicos" dentro dele, o bloco que não é botão e os lançamentos depois; o "menos de 1%" no valor falado da Casa Granja Viana (a `a6` dos falsos da análise, Tarefa 28), que tem o Extras e o Outros abaixo de 1% (na Casa Alphaville, a Pintura, com 0,8%, fica dentro do "Outros · 8 tópicos" e não é falada à parte); na obra sem gastos, o bloco não existe e os afazeres sim. Na unidade, a varredura por `sizeThatFits` do "A vencer" fechado, do cabeçalho de cada mês da Casa Alphaville na forma mono e do bloco dos afazeres, com e sem o Negrito, em todo tamanho de letra e em escala 3, nas colunas de 343, 370 e 408 pt (`ListaDaObraTests`): a largura inteira no "A vencer" e nos afazeres (no "A vencer" na letra de acessibilidade, que empilha e abraça o texto, `<=`), e `<=` no cabeçalho do mês, que com um nome longo já empilha no xxxLarge com o Negrito, em 343. No laudo, o `assunto` de cada cena com rolagem fixa e as rolagens novas (a tabela acima). O teste do toque duplo no "Salvar" da vendida (`EstadosUITests`, etapa 2) passa a ler o nome no título pequeno da barra e a contagem na pílula "Lançamentos": a lista rola até a linha nova, e com o bloco dos gastos por tópico o alto sai da lista preguiçosa (sem isso, `tituloDaObra` não é achado). Com a marca `gravado` da Tarefa 29, ele passa.
+
+Criar `app-ios/CusttaTests/ListaDaObraTests.swift`:
+
+```swift
+import Testing
+import SwiftUI
+@testable import Custta
+import CusttaNucleo
+
+/* As peças da lista da obra na grade nova (etapa 4, PR 1c): o "A vencer" fechado e o cabeçalho do mês na forma mono, e o
+   bloco dos afazeres, não passam da largura da coluna em nenhum tamanho de letra, com e sem o Negrito, nas larguras dos
+   iPhones (375, 402 e 440 pt menos as bordas de 16), em escala 3, com o cabeçalho de cada mês da Casa Alphaville. Com o
+   Negrito, o "A vencer" mono passava 1/3 de pt nas três larguras: o Spacer ao lado do título arredondava para cima, como no
+   cabeçalho dos blocos do PR 1b. */
+@MainActor
+struct ListaDaObraTests {
+    /// A largura que a peça ocupa na coluna, na forma mono da lista da obra.
+    private func medida(de peca: AnyView, letra: DynamicTypeSize, negrito: Bool, em coluna: CGFloat) -> CGFloat {
+        UIHostingController(rootView: peca.environment(\.linhaMono, true).dynamicTypeSize(letra)
+            .environment(\.legibilityWeight, negrito ? .bold : .regular).environment(\.displayScale, 3))
+            .sizeThatFits(in: CGSize(width: coluna, height: CGFloat.infinity)).width
+    }
+
+    @Test func pecasDaListaNaoPassamDaLargura() throws {
+        let hoje = Date.now
+        let casa = Estado.de(DadosDeExemplo.vitrine(hoje: hoje)).obras[0]
+        let lista = listaDaObra(casa, hoje: dataLocalISO(hoje, fuso: .current))
+        let aVencer = try #require(lista.aVencer)
+        #expect(!lista.meses.isEmpty)
+        let afazeres = linhaDosAfazeres(casa.afazeres)
+        for negrito in [false, true] {
+            for letra in DynamicTypeSize.allCases {
+                for largura in [CGFloat(343), 370, 408] {
+                    let medir = { (peca: AnyView) in medida(de: peca, letra: letra, negrito: negrito, em: largura) }
+                    let onde = "\(letra), negrito \(negrito), em \(largura)"
+                    let bloco = medir(AnyView(LinhaDosAfazeresView(linha: afazeres)))
+                    #expect(bloco == largura, "afazeres, \(onde): \(bloco)")
+                    // Na letra de acessibilidade, o "A vencer" empilha o título e o total e abraça o texto; fora dela, ocupa a
+                    // coluna inteira.
+                    let linha = medir(AnyView(LinhaDoAVencer(grupo: aVencer, aberto: false)))
+                    if letra.isAccessibilitySize {
+                        #expect(linha <= largura, "A vencer, \(onde): \(linha)")
+                    } else {
+                        #expect(linha == largura, "A vencer, \(onde): \(linha)")
+                    }
+                    // O cabeçalho de um mês de nome longo empilha o total já no xxxLarge com o Negrito, em 343, e abraça o texto.
+                    for mes in lista.meses {
+                        let cabecalho = medir(AnyView(CabecalhoDoMes(mes: mes)))
+                        #expect(cabecalho <= largura, "\(mes.titulo), \(onde): \(cabecalho)")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+Em `app-ios/CusttaUITests/EstadosUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/EstadosUITests.swift
++++ b/app-ios/CusttaUITests/EstadosUITests.swift
+@@ -100,8 +100,10 @@ final class EstadosUITests: XCTestCase {
+         app.buttons["salvarGasto"].doubleTap()
+         XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
+         sleep(1)
+-        XCTAssertEqual(app.elemento("tituloDaObra").label, "Casa Alphaville")
+-        XCTAssertTrue(app.elemento("indicadorTotal").label.contains("47 lançamentos"), app.elemento("indicadorTotal").label)
++        // A lista rolou até a linha nova (o destaque). Com a obra em blocos (etapa 4), o alto fica longe e sai da lista
++        // preguiçosa: o nome vem do título pequeno da barra, e a contagem, da pílula "Lançamentos", logo acima da linha.
++        XCTAssertEqual(app.elemento("tituloPequenoDaBarra").label, "Casa Alphaville")
++        XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
+     }
+ 
+     /// Na maior letra o nome da obra quebra embaixo do rótulo e fica à esquerda, como no mockup (`.f-lin .d` alinhado à
+```
+
+Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -49,6 +49,11 @@ final class LeituraNoVidroUITests: XCTestCase {
+         /// Toques depois de a tela abrir e antes do print, os mesmos nos dois (a busca, o mês, os Feitos, a linha arrastada;
+         /// etapa 3, PR 3): o estado a que se chega pelo toque, sem gancho de teste.
+         var toques: (@MainActor (XCUIApplication) -> Void)? = nil
++        /// O que a cena mede: identificadores (ou o texto, sem identificador) conferidos à vista antes de cada print, abaixo da
++        /// barra de status e acima da faixa de baixo (`conferirAssunto`). Toda cena com rolagem fixa tem o seu: o laudo passa
++        /// com a rolagem medindo outra coisa (com a obra em blocos da etapa 4, a "busca, nada achado" em 596 media os blocos
++        /// do alto, com o vazio sob a cápsula).
++        var assunto: [String] = []
+     }
+ 
+     /// A tabela de exceções do laudo: a cena e a figura que sai dos dois prints dela (`foraDoLaudo(_:)` no app, com
+@@ -75,6 +80,7 @@ final class LeituraNoVidroUITests: XCTestCase {
+         }
+         cena.toques?(app)
+         Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
++        conferirAssunto(cena, app)
+         let foto = XCUIScreen.main.screenshot()
+         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+         let largura = app.frame.width
+@@ -83,6 +89,22 @@ final class LeituraNoVidroUITests: XCTestCase {
+         return (foto, abas, largura, informativo)
+     }
+ 
++    /// O assunto da cena à vista antes do print: abaixo da barra de status e acima da faixa de baixo, a borda de 140 pt ou a
++    /// cápsula de abas, o que vier antes (a mesma de `conferir`). Pelo identificador ou, sem ele, pelo texto (a frase do aviso
++    /// dos tópicos, dentro do bloco do orçamento).
++    @MainActor private func conferirAssunto(_ cena: Cena, _ app: XCUIApplication) {
++        let altura = app.frame.height
++        let capsula = app.buttons["aba-obras"]
++        let fim = min(capsula.exists ? capsula.frame.minY - 10 : altura, altura - 140)
++        for assunto in cena.assunto {
++            let alvo = app.descendants(matching: .any)
++                .matching(NSPredicate(format: "identifier == %@ OR label == %@", assunto, assunto)).firstMatch
++            let quadro = alvo.exists ? alvo.frame : .null
++            XCTAssertTrue(!quadro.isNull && quadro.minY >= Self.barraDeStatus && quadro.maxY <= fim,
++                          "\(cena.nome): \(assunto) fora da vista (\(quadro); a cena mede de \(Int(Self.barraDeStatus)) a \(Int(fim)) pt)")
++        }
++    }
++
+     /// O exemplo da descrição do gasto ("Ex: 50 sacos de cimento") é o único texto fora do portão: o mockup aprovado o
+     /// marca como informativo (parte2.html:1981), no terciário sobre a linha sólida da folha (3,40:1 no escuro esmeralda,
+     /// 3,84 no escuro azul), o mesmo tom do prompt do campo no build 3.1. O laudo não via aquele prompt (quem o desenha é
+@@ -234,7 +256,7 @@ final class LeituraNoVidroUITests: XCTestCase {
+                   ("na maior letra, rolada", escuro + maiorLetra + ["-custta.rolagem", "2000"], true)]
+         cobrar(cenas.map { nome, argumentos, rolada in
+             Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
+-                 aba: "ajustes", rolada: rolada)
++                 aba: "ajustes", rolada: rolada, assunto: rolada ? ["nomeConta"] : [])
+         })
+     }
+ }
+@@ -343,10 +365,11 @@ extension LeituraNoVidroUITests {
+ 
+     /// A tela da obra (etapa 2): o topo (título, fase, indicadores) e a lista rolada (o "A vencer" e os cartões dos meses),
+     /// no escuro e no claro; mais a maior letra e o Aumentar contraste, no escuro esmeralda. A vendida fica no
+-    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 905 pt: a 640 até a etapa 2; a linha do orçamento da vitrine
+-    /// (118 pt, PR 1 da etapa 3) e a linha dos afazeres com o cabeçalho da busca (117 pt, PR 3) empurraram tudo o que vem
+-    /// depois deles. A borda de cima fica no vão entre a pílula "Lançamentos" e o "A vencer" (no 18 Pro, 23 pt abaixo da pílula
+-    /// e 18 acima do "A vencer"): a 875, os mesmos 758 de antes mais 117, ela cortava a pílula.
++    /// testLeituraDaObraVendida (lucro e prejuízo). A lista em 1170 pt: a 640 até a etapa 2 e a 905 na etapa 3, depois da
++    /// linha do orçamento e da linha dos afazeres com o cabeçalho da busca; com a obra em blocos da etapa 4 (o alto, o bloco
++    /// dos afazeres e o dos gastos por tópico), a 905 punha a borda no bloco dos gastos por tópico. A borda de cima fica no vão
++    /// entre a pílula "Lançamentos" e o "A vencer", igual nos dois iPhones (13 pt abaixo do texto da pílula e 20 acima do "A
++    /// vencer"), acima de tudo o que muda com o dia.
+     @MainActor func testLeituraDaObra() {
+         var cenas: [Cena] = []
+         for tema in temas {
+@@ -354,34 +377,37 @@ extension LeituraNoVidroUITests {
+             cenas += [
+                 Cena(nome: "obra, topo, \(tema)", conta: "senha", argumentos: combo, espera: "tituloDaObra", escopo: "tudo",
+                      dados: "vitrine", abrir: "obra:v1"),
+-                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "905"],
+-                     espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
++                Cena(nome: "obra, lista, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "1170"],
++                     espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, assunto: ["aVencer"]),
+             ]
+         }
+         let escuro = ["-custta.tema", "escuro"] + piorMomento
+         cenas += [
+             Cena(nome: "obra na maior letra", conta: "senha", argumentos: escuro + maiorLetra, espera: "tituloDaObra", escopo: "tudo",
+                  dados: "vitrine", abrir: "obra:v1"),
+-            Cena(nome: "obra com Aumentar contraste", conta: "senha", argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "905"],
+-                 espera: "aVencer", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
++            Cena(nome: "obra com Aumentar contraste", conta: "senha",
++                 argumentos: escuro + ["-custta.aumentarContraste", "YES", "-custta.rolagem", "1170"], espera: "aVencer",
++                 escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, assunto: ["aVencer"]),
+         ]
+         cobrar(cenas)
+     }
+ 
+     /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste: o pior
+-    /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, seis rolagens; na
++    /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, três rolagens; na
+     /// CI, duas.
+     @MainActor func testLeituraDaObraRolando() {
+-        // As da etapa 2 (200 a 1500) desceram 118 pt com a linha do orçamento da vitrine (PR 1 da etapa 3). No PR 3, cada uma
+-        // tem a borda de cima no meio de um vão entre duas linhas (de 12 a 23 pt de folga no 18 Pro, em 25/10), sem palavra
+-        // cortada pela borda: a 318 fica; a 561 é a 518 mais 43 (a 518 já cortava uma palavra); da terceira em diante, as de
+-        // antes mais 117 (a linha dos afazeres e o cabeçalho da busca, que o PR 3 pôs depois das ações) cortavam palavra (a
+-        // 1318, a linha de baixo de um gasto em 3,91), e cada uma foi para o vão mais perto. A 318 e a 561 mostram a linha dos
+-        // afazeres e a busca embaixo. Da 1101 para baixo, as linhas são as dos cartões dos meses, que mudam com o dia (a
+-        // vitrine conta os gastos a partir de hoje): em 26/10, a "Quinzena do pedreiro" de 55 dias atrás passou de agosto para
+-        // setembro, e a 1715 ficou com 8 pt de folga embaixo; com o hoje deslocado para 3/11 (o cartão do mês novo nasce com um
+-        // gasto só), a 561 e a 1101 seguem num vão, e a 1423 e a 1715 cortam uma palavra pela borda (que passa, de 6,26 a 7,26).
+-        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [561, 1101] : [318, 561, 905, 1101, 1423, 1715]
++        // Cada rolagem tem a borda de cima num vão entre duas linhas, igual no 18 Pro e no Pro Max e em qualquer dia, e o seu
++        // assunto à vista. Com a obra em blocos da etapa 4, as da etapa 3 (318 a 1715) cortavam palavra ou mostravam outra coisa:
++        // - 612: entre o A pagar e a Venda estimada (os afazeres e os gastos por tópico embaixo);
++        // - 883: entre os afazeres e os gastos por tópico (a pílula, o "A vencer" e o começo dos meses embaixo);
++        // - 1247: entre o "A vencer" e o cabeçalho do primeiro mês, que vem sempre logo depois dele, com as linhas dos meses
++        //   da borda de cima à de baixo.
++        // Nenhuma fica dentro dos cartões dos meses: ali, os dois iPhones se desencontram (no 18 Pro, a nota de alguns gastos
++        // quebra em duas linhas, e a lista desce cada vez mais) e as linhas mudam com o dia (a vitrine conta os gastos a partir
++        // de hoje). A 1778 e a 1956, num vão nos dois em 30/10/2026, cortavam uma linha com o hoje deslocado 10 dias, e a parte
++        // de baixo dela, medida no véu da borda, ficava em 4,04 a 4,35:1 no Pro Max. Na CI, a 883 e a 1247.
++        let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta" ? [883, 1247] : [612, 883, 1247]
++        let assuntos = [612: "gastosPorTopico", 883: "aVencer", 1247: "gasto-g027"]
+         var cenas: [Cena] = []
+         for contraste in [false, true] {
+             for y in rolagens {
+@@ -390,7 +416,7 @@ extension LeituraNoVidroUITests {
+                 // Espera o título pequeno da barra: rolada, a lista já soltou o título grande da árvore.
+                 cenas.append(Cena(nome: "obra rolando \(y), escuro\(contraste ? ", Aumentar contraste" : "")", conta: "senha",
+                                   argumentos: argumentos, espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine",
+-                                  abrir: "obra:v1", rolada: true))
++                                  abrir: "obra:v1", rolada: true, assunto: assuntos[y].map { [$0] } ?? []))
+             }
+         }
+         cobrar(cenas)
+@@ -414,11 +440,14 @@ extension LeituraNoVidroUITests {
+                 folha("folha, tópicos, \(tema)", "topicos", combo, espera: "topico-terreno"),
+                 folha("folha, parcela, \(tema)", "editar:g031", combo, espera: "avisoParcela"),
+                 folha("folha, repetido, \(tema)", "repetido", combo, espera: "avisoRepetido"),
+-                // A 835 põe a borda no vão entre os afazeres e a pílula; a 758 de antes, com a lista 117 pt mais abaixo
+-                // desde o PR 3, cortava o cabeçalho dos afazeres.
++                // A 1118 põe a borda no vão entre a legenda dos gastos por tópico e a pílula "Lançamentos" (32 pt abaixo de uma e
++                // 9 acima da outra), como as cenas da busca; a 835 da etapa 3, com a obra em blocos, cortava o chip "3 pendentes".
++                // A linha aberta é a g026, com a nota numa linha nos dois iPhones: aberta, ela corre 96 pt para a esquerda, e a
++                // borda do cartão corta o começo das letras. Na g027 da etapa 3, a nota quebra em duas no 18 Pro, e a fatia de um
++                // algarismo da data, cortada na 2ª linha, ficava em 2,83:1 no claro.
+                 Cena(nome: "obra, linha aberta, \(tema)", conta: "senha",
+-                     argumentos: combo + ["-custta.rolagem", "835", "-custta.linhaAberta", "g027"], espera: "apagar-g027",
+-                     escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true),
++                     argumentos: combo + ["-custta.rolagem", "1118", "-custta.linhaAberta", "g026"], espera: "apagar-g026",
++                     escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, assunto: ["apagar-g026"]),
+             ]
+         }
+         let escuro = ["-custta.tema", "escuro"] + piorMomento
+@@ -442,7 +471,8 @@ extension LeituraNoVidroUITests {
+             let combo = ["-custta.tema", tema] + piorMomento
+             cenas += [
+                 Cena(nome: "obra pronta, ações da fase, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "250"],
+-                     espera: "acao-voltarConstrucao", escopo: "tudo", dados: "vitrine", abrir: "obra:v2", rolada: true),
++                     espera: "acao-voltarConstrucao", escopo: "tudo", dados: "vitrine", abrir: "obra:v2", rolada: true,
++                     assunto: ["acao-registrarVenda", "acao-voltarConstrucao"]),
+                 Cena(nome: "lista vazia, \(tema)", conta: "senha", argumentos: combo, espera: "obrasVazio", escopo: "tudo", dados: "vazio"),
+                 Cena(nome: "folha da obra nova, \(tema)", conta: "senha", argumentos: combo + ["-custta.folha", "preenchida"],
+                      espera: "nomeDaObra", escopo: "tudo", dados: "vitrine", folha: "novaObra"),
+@@ -466,12 +496,17 @@ extension LeituraNoVidroUITests {
+     @MainActor func testLeituraDaObraVendida() {
+         var cenas: [Cena] = []
+         for tema in temas {
+-            let combo = ["-custta.tema", tema] + piorMomento + ["-custta.rolagem", "400"]
++            let combo = ["-custta.tema", tema] + piorMomento
++            // Na obra em blocos, a borda fica no vão antes do Corrigido (com lucro, o Total gasto desce para o vidro) e antes do
++            // A pagar (com prejuízo, ele fica no sólido), 22 pt abaixo de uma nota e acima de um rótulo; a 400 da etapa 3
++            // cortava o "Corrigido pelo banco" da com lucro.
+             cenas += [
+-                Cena(nome: "obra vendida com lucro, \(tema)", conta: "senha", argumentos: combo, espera: "acao-desfazerVenda",
+-                     escopo: "tudo", dados: "vitrine", abrir: "obra:v3", rolada: true),
+-                Cena(nome: "obra vendida com prejuízo, \(tema)", conta: "senha", argumentos: combo, espera: "acao-desfazerVenda",
+-                     escopo: "tudo", dados: "prejuizo", abrir: "obra:v3", rolada: true),
++                Cena(nome: "obra vendida com lucro, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "375"],
++                     espera: "acao-desfazerVenda", escopo: "tudo", dados: "vitrine", abrir: "obra:v3", rolada: true,
++                     assunto: ["acao-desfazerVenda"]),
++                Cena(nome: "obra vendida com prejuízo, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "350"],
++                     espera: "acao-desfazerVenda", escopo: "tudo", dados: "prejuizo", abrir: "obra:v3", rolada: true,
++                     assunto: ["acao-desfazerVenda"]),
+             ]
+         }
+         cobrar(cenas)
+@@ -480,9 +515,15 @@ extension LeituraNoVidroUITests {
+     @MainActor func testLeituraDaParte3NaMaiorLetra() {
+         let escuro = ["-custta.tema", "escuro"] + piorMomento + maiorLetra
+         cobrar([
+-            // Espera o lápis da barra: rolada a 1100 pt em 300 ms, o título sai da pilha preguiçosa antes da espera achar.
+-            Cena(nome: "obra pronta, ações da fase, na maior letra", conta: "senha", argumentos: escuro + ["-custta.rolagem", "1100"],
+-                 espera: "editarObra", escopo: "tudo", dados: "vitrine", abrir: "obra:v2", rolada: true),
++            // Espera o lápis da barra: rolada, o título sai da pilha preguiçosa antes da espera achar. A 1977 pt, as ações à vista
++            // nos dois iPhones (a 1100 da etapa 3, a obra em blocos punha a tela entre o A pagar e a Venda estimada, sem ação
++            // nenhuma). A obra quebra 162 pt a mais no 18 Pro, e nenhuma rolagem acha um vão comum fora do "Toque no lápis para
++            // informar o valor": no 18 Pro (a largura da CI), a borda fica entre a 1ª e a 2ª linha dessa frase (6 pt abaixo da
++            // perna do "p" e 9 acima da linha de baixo; a 1960 cortava a 1ª linha); no Pro Max, no alto do "Registrar venda", 10
++            // pt acima do rótulo.
++            Cena(nome: "obra pronta, ações da fase, na maior letra", conta: "senha", argumentos: escuro + ["-custta.rolagem", "1977"],
++                 espera: "editarObra", escopo: "tudo", dados: "vitrine", abrir: "obra:v2", rolada: true,
++                 assunto: ["acao-registrarVenda", "acao-voltarConstrucao"]),
+             Cena(nome: "lista vazia na maior letra", conta: "senha", argumentos: escuro, espera: "obrasVazio", escopo: "tudo", dados: "vazio"),
+             Cena(nome: "folha da obra nova na maior letra", conta: "senha", argumentos: escuro + ["-custta.folha", "preenchida"],
+                  espera: "nomeDaObra", escopo: "tudo", dados: "vitrine", folha: "novaObra"),
+@@ -540,11 +581,13 @@ extension LeituraNoVidroUITests {
+                      espera: "cartaoDoOrcamento", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1"),
+                 // Espera o título pequeno da barra: rolada, a lista já soltou o título grande da árvore.
+                 Cena(nome: "tela Orçamento, rolada, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "700"],
+-                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", rolada: true),
++                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", rolada: true,
++                     assunto: ["topicoOrc-hidraulica"]),
+                 // 8 pt antes do fim: no fim, a borda de cima cortava o "5% da obra" do Telhado (o laudo mede a parte de baixo
+                 // de uma palavra que entra no véu); aqui ela fica entre o nome do Telhado e o percentual, e a dica ainda aparece.
+                 Cena(nome: "tela Orçamento, só o total, fim, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "606"],
+-                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "orcamento:v1", rolada: true),
++                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "orcamento:v1", rolada: true,
++                     assunto: ["gastoTopico-pintura"]),
+                 Cena(nome: "folha do orçamento, por tópico, digitando, \(tema)", conta: "senha",
+                      argumentos: combo + ["-custta.folha", "teclas:eletrica"], espera: "barraDasTeclas-nome", escopo: "tudo",
+                      dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1"),
+@@ -561,9 +604,13 @@ extension LeituraNoVidroUITests {
+         let escuro = ["-custta.tema", "escuro"] + piorMomento
+         let grande = escuro + maiorLetra, contraste = escuro + ["-custta.aumentarContraste", "YES"]
+         cobrar([
+-            // O triângulo do aviso sai dos dois prints desta cena (a tabela de exceções, `excecoes`); a frase dele fica.
+-            Cena(nome: "obra com orçamento por tópico, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "700"],
+-                 espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "obra:v1", rolada: true),
++            // O triângulo do aviso sai dos dois prints desta cena (a tabela de exceções, `excecoes`); a frase dele fica. A 897 pt,
++            // o aviso inteiro à vista nos dois iPhones, com a borda num vão: no 18 Pro (a largura da CI), entre o "Orçamento" e a
++            // etiqueta "dentro do previsto"; no Pro Max, onde a obra sobe 102 pt, entre a etiqueta e o "sobra". A 700 da etapa 3,
++            // no 18 Pro, a obra em blocos punha o aviso sob a faixa de baixo.
++            Cena(nome: "obra com orçamento por tópico, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "897"],
++                 espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "obra:v1", rolada: true,
++                 assunto: ["2 tópicos passaram do previsto"]),
+             Cena(nome: "tela Orçamento, topo, na maior letra", conta: "senha", argumentos: grande, espera: "cartaoDoOrcamento",
+                  escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1"),
+             // A 1637 pt, nos dois iPhones, a borda de cima fica no vão entre a Estrutura e a Fundação, sem texto nem barra logo
+@@ -572,7 +619,8 @@ extension LeituraNoVidroUITests {
+             // texto borrado pelo véu logo acima, e o alto dela mudava entre os dois prints (1837 px longe das letras:
+             // CenaNaoDeterministica). De 1615 a 1660, nos dois, nenhum pixel muda longe das letras.
+             Cena(nome: "tela Orçamento, rolada, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "1637"],
+-                 espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", rolada: true),
++                 espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", rolada: true,
++                 assunto: ["topicoOrc-fundacao"]),
+             // Na maior letra, a linha ativa no meio da faixa leva o alto da lista (o segmentado) para baixo da barra da folha,
+             // que borra o que passa por ela: as cenas da folha com as teclas são roladas.
+             Cena(nome: "folha do orçamento, por tópico, digitando, na maior letra", conta: "senha",
+@@ -604,7 +652,8 @@ extension LeituraNoVidroUITests {
+                 // entre duas diárias; a frase do fim cai na faixa de baixo, que o laudo deixa de fora (a da cápsula de abas, que
+                 // segue atrás da folha): a cena mede as linhas que passam pelo meio.
+                 Cena(nome: "A pagar, fim, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "1092"],
+-                     espera: "ponteDoAPagar", escopo: "tudo", dados: "topicoLongo", abrir: "obra:v1", folha: "aPagar:v1", rolada: true),
++                     espera: "ponteDoAPagar", escopo: "tudo", dados: "topicoLongo", abrir: "obra:v1", folha: "aPagar:v1", rolada: true,
++                     assunto: ["gasto-d117"]),
+                 Cena(nome: "A pagar vazio, \(tema)", conta: "senha", argumentos: combo, espera: "aPagarVazio", escopo: "tudo",
+                      dados: "vitrine", abrir: "obra:v2", folha: "aPagar:v2"),
+                 Cena(nome: "A pagar, editar gasto, \(tema)", conta: "senha", argumentos: combo + ["-custta.origem", "editar:g039"],
+@@ -615,7 +664,7 @@ extension LeituraNoVidroUITests {
+                 // A espera não prova a rolagem: a pilha preguiçosa já monta as 16 peças da Cerâmica no topo.
+                 Cena(nome: "detalhe, Cerâmica, rolada, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "500"],
+                      espera: "gasto-g021", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest",
+-                     rolada: true),
++                     rolada: true, assunto: ["secao-Pagos"]),
+                 Cena(nome: "detalhe, Estrutura, passou, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
+                      escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:estrutura"),
+                 Cena(nome: "detalhe, Documentação, fora, \(tema)", conta: "senha", argumentos: combo, espera: "orcamentoDoTopico",
+@@ -645,7 +694,8 @@ extension LeituraNoVidroUITests {
+             // (o mês do primeiro vencimento vem sempre logo depois do resumo); os de baixo, sim (os vencimentos da vitrine mudam de
+             // mês com o dia). A cena mede o cabeçalho do mês e a primeira linha quase inteira.
+             Cena(nome: "A pagar, rolado, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "248"],
+-                 espera: "resumoDoAPagar", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1", rolada: true),
++                 espera: "resumoDoAPagar", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1", rolada: true,
++                 assunto: [Self.idDoMes(daqui: 3)]),
+             Cena(nome: "A pagar, editar gasto, na maior letra", conta: "senha", argumentos: grande + ["-custta.origem", "editar:g039"],
+                  espera: "salvarGasto", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", folha: "aPagar:v1"),
+             Cena(nome: "detalhe, Cerâmica, topo, na maior letra", conta: "senha", argumentos: grande, espera: "orcamentoDoTopico",
+@@ -656,7 +706,7 @@ extension LeituraNoVidroUITests {
+             // a cena rolada da letra padrão.
+             Cena(nome: "detalhe, Cerâmica, rolada, na maior letra", conta: "senha", argumentos: grande + ["-custta.rolagem", "628"],
+                  espera: "orcamentoDoTopico", escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:revest",
+-                 rolada: true),
++                 rolada: true, assunto: ["secao-A vencer"]),
+             Cena(nome: "detalhe, Estrutura, passou, na maior letra", conta: "senha", argumentos: grande, espera: "orcamentoDoTopico",
+                  escopo: "tudo", dados: "porTopico", abrir: "orcamento:v1", folha: "topico:v1:estrutura"),
+             Cena(nome: "detalhe, editar gasto, na maior letra", conta: "senha", argumentos: grande + ["-custta.origem", "editar:g021"],
+@@ -673,36 +723,42 @@ extension LeituraNoVidroUITests {
+     /// A busca e os afazeres (etapa 3, PR 3), no escuro e no claro, na Casa Alphaville da vitrine; tudo pelo toque
+     /// (`Cena.toques`), sem gancho novo. A busca: os lançamentos com o campo vazio e o chip do mês de hoje, em repouso (o
+     /// "buscar" do teclado o fecha); o mês de hoje com a soma; "ceramica", com os achados e a soma deles; "azulejo", nada
+-    /// achado, com o "Limpar a busca"; e o mês sem gasto, com o "Ver todos os meses" (o mês mais novo tem só a última parcela
+-    /// do porcelanato, daqui a 175 dias, em qualquer dia: apagada só ela, o mês fica vazio). A lista fica parada pela rolagem
+-    /// fixa da obra, que a segura mesmo depois da lupa (sem ela, a lupa põe a pílula "Lançamentos" sob a borda). A 835 pt, a
+-    /// borda de cima fica no vão entre a linha dos afazeres e a pílula (no 18 Pro, 26 pt abaixo de uma e 32 acima da outra),
+-    /// acima de tudo o que muda com o dia. As listas curtas não chegam aos 835 e param no fim: no mês sem gasto, a borda fica
+-    /// no vão entre os dois últimos indicadores (7 pt abaixo do "Parcelas e gastos futuros" e 24 acima do "Venda estimada");
+-    /// no nada achado, o fim a punha sobre o valor da venda estimada, e a 596 pt (7 antes do fim) ela fica no vão entre o
+-    /// "Venda estimada" e o valor, a 7 pt de cada um, com o "Limpar a busca" 26 pt acima da faixa de baixo. Nenhuma dessas
+-    /// linhas muda com o dia. Os afazeres: a tela com os 3 pendentes (o de 213 caracteres inteiro) e os "Feitos" fechados, os
+-    /// "Feitos" abertos, o vazio (a Casa Tamboré) e a linha arrastada com o "Apagar". Ficam de fora: o menu do mês, que é do
+-    /// sistema (nem a cor nem o vidro dele são do app); e o texto digitado e o prompt dos campos, que o UIKit desenha e o
+-    /// texto apagado não tira (ponto cego do laudo: saem iguais nos dois prints). Roda no job laudo-etapa3-b.
++    /// achado, com o "Limpar a busca"; e o mês sem gasto, com o "Ver todos os meses" (o mês mais novo tem só a última
++    /// parcela do porcelanato, daqui a 175 dias, em qualquer dia: apagada só ela, o mês fica vazio). A lista fica parada
++    /// pela rolagem fixa da obra, que a segura mesmo depois da lupa (sem ela, a lupa põe a pílula "Lançamentos" sob a
++    /// borda). A 1118 pt, a borda de cima fica no vão entre a legenda dos gastos por tópico e a pílula (32 pt abaixo de uma
++    /// e 9 acima da outra, nos dois iPhones), acima de tudo o que muda com o dia. As listas curtas param antes: no nada
++    /// achado, a 1118 vai até o fim, com a borda num vão (no 18 Pro, entre os afazeres e o "Gastos por tópico"; no Pro Max,
++    /// mais alto, entre a ação "Marcar como pronta" e os afazeres) e o "Limpar a busca" à vista nos dois; no mês sem gasto,
++    /// mais curto, o fim cortava o "Afazeres" no 18 Pro, e a 804 pt a borda fica entre a ação e os afazeres (no Pro Max, a
++    /// 804 passa do fim, que a põe no alto da ação, longe da letra). Nenhuma dessas linhas muda com o dia. Os afazeres: a
++    /// tela com os 3 pendentes (o de 213 caracteres inteiro) e os "Feitos" fechados, os "Feitos" abertos, o vazio (a Casa
++    /// Tamboré) e a linha arrastada com o "Apagar". Ficam de fora: o menu do mês, que é do sistema (nem a cor nem o vidro
++    /// dele são do app); e o texto digitado e o prompt dos campos, que o UIKit desenha e o texto apagado não tira (ponto
++    /// cego do laudo: saem iguais nos dois prints). Roda no job laudo-etapa3-b.
+     @MainActor func testLeituraDaBuscaEDosAfazeres() {
+         let hoje = Self.mesPorExtenso(daqui: 0), maisNovo = Self.mesPorExtenso(daqui: 175)
+         var cenas: [Cena] = []
+         for tema in temas {
+             let combo = ["-custta.tema", tema] + piorMomento
+-            func busca(_ nome: String, rolagem: Int = 835, _ toques: @escaping @MainActor (XCUIApplication) -> Void) -> Cena {
++            // A pílula "Lançamentos" logo abaixo da borda de rolagem, como na etapa 3 (835): a obra em blocos da etapa 4 desceu a
++            // lista 283 pt. Em 835, o chip "3 pendentes" dos afazeres ficava cortado pela borda, e o pedaço de baixo da letra
++            // era medido no véu dela (4,46:1 no claro); em 596, o vazio do nada achado ficava sob a cápsula.
++            func busca(_ nome: String, rolagem: Int = 1118, assunto: [String],
++                       _ toques: @escaping @MainActor (XCUIApplication) -> Void) -> Cena {
+                 Cena(nome: "busca, \(nome), \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "\(rolagem)"],
+-                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, toques: toques)
++                     espera: "tituloPequenoDaBarra", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true, toques: toques,
++                     assunto: assunto)
+             }
+             cenas += [
+-                busca("em repouso") { app in
++                busca("em repouso", assunto: ["campoDaBusca", "chipDoMes"]) { app in
+                     Self.buscar(app, "")
+                     Self.escolherMes(app, hoje)
+                 },
+-                busca("mês") { app in Self.escolherMes(app, hoje) },
+-                busca("achados") { app in Self.buscar(app, "ceramica") },
+-                busca("nada achado", rolagem: 596) { app in Self.buscar(app, "azulejo") },
+-                busca("mês sem gasto") { app in
++                busca("mês", assunto: ["chipDoMes", "somaDosAchados"]) { app in Self.escolherMes(app, hoje) },
++                busca("achados", assunto: ["campoDaBusca", "somaDosAchados"]) { app in Self.buscar(app, "ceramica") },
++                busca("nada achado", assunto: ["buscaNadaEncontrado", "limparFiltro"]) { app in Self.buscar(app, "azulejo") },
++                busca("mês sem gasto", rolagem: 804, assunto: ["buscaMesSemGasto"]) { app in
+                     Self.escolherMes(app, maisNovo)
+                     let linha = app.elemento("gasto-g037")
+                     XCTAssertTrue(linha.waitForExistence(timeout: 5), "a última parcela no A vencer, aberto pelo filtro")
+@@ -741,6 +797,16 @@ extension LeituraNoVidroUITests {
+         return texto.prefix(1).uppercased() + texto.dropFirst()
+     }
+ 
++    /// O identificador do cartão de um mês (`mes-AAAA-MM`) daqui a tantos dias: o do primeiro vencimento da vitrine no A pagar
++    /// (o g039, daqui a 3 dias).
++    private static func idDoMes(daqui dias: Int) -> String {
++        let data = Calendar(identifier: .gregorian).date(byAdding: .day, value: dias, to: .now) ?? .now
++        let formato = DateFormatter()
++        formato.locale = Locale(identifier: "en_US_POSIX")
++        formato.dateFormat = "yyyy-MM"
++        return "mes-" + formato.string(from: data)
++    }
++
+     /// O mês pelo menu do sistema, tocado pelo título (o item traz a contagem no subtítulo), como no BuscaUITests.
+     @MainActor private static func escolherMes(_ app: XCUIApplication, _ titulo: String) {
+         app.buttons["filtrarPorMes"].tap()
+```
+
+Em `app-ios/CusttaUITests/ObraUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/ObraUITests.swift
++++ b/app-ios/CusttaUITests/ObraUITests.swift
+@@ -144,6 +144,52 @@ final class ObraUITests: XCTestCase {
+         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.380.000,00"))
+     }
+ 
++    /// Embaixo das ações, os afazeres e os gastos por tópico, blocos de vidro na grade, 12 pt um do outro: o bloco dos gastos
++    /// por tópico é um elemento só no VoiceOver, com o título e os pedaços no rótulo e no valor (a legenda, dentro dele, não
++    /// é lida de novo), sem toque (a porta para os Gráficos chega com eles); depois, os lançamentos.
++    func testAfazeresEGastosPorTopicoEmBlocos() {
++        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
++        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
++        let largura = app.windows.firstMatch.frame.width
++        let topicos = app.elemento("gastosPorTopico")
++        app.rolarAte(topicos)
++        XCTAssertTrue(topicos.exists, "o bloco dos gastos por tópico")
++        let afazeres = app.elemento("linhaDosAfazeres").frame, bloco = topicos.frame
++        for (nome, quadro) in [("afazeres", afazeres), ("gastos por tópico", bloco)] {
++            XCTAssertEqual(quadro.minX, 16, accuracy: 0.5, "\(nome) na borda de 16 pt")
++            XCTAssertEqual(quadro.width, largura - 32, accuracy: 0.5, "\(nome) na largura da coluna")
++        }
++        XCTAssertEqual(bloco.minY - afazeres.maxY, 12, accuracy: 0.5, "os gastos por tópico 12 pt abaixo dos afazeres")
++        XCTAssertEqual(topicos.label, "Gastos por tópico")
++        XCTAssertTrue((topicos.value as? String ?? "").hasPrefix("Terreno, 38%; Estrutura, 11%; Cerâmica, 9%; Mão de obra, 8%"),
++                      "\(topicos.value ?? "")")
++        // O VoiceOver lê só o bloco. O XCUITest mostra os textos de dentro como filhos dele, como os do `indicadorTotal`
++        // (.combine) e o dos afazeres (.ignore); com o .contain de antes, o bloco não tinha rótulo nem valor.
++        XCTAssertTrue(topicos.staticTexts["e mais 10 tópicos"].exists, "a legenda dentro do bloco")
++        XCTAssertFalse(app.buttons["gastosPorTopico"].exists, "o bloco não é botão")
++        XCTAssertGreaterThan(app.elemento("lancamentos").frame.minY, bloco.maxY, "os lançamentos depois")
++    }
++
++    /// O "<1%" falado como "menos de 1%" no bloco: a Casa Granja Viana tem o Outros (R$ 950,00) e o Extras (R$ 180,00) abaixo
++    /// de 1% da obra. Na Casa Alphaville, a Pintura (0,8%) fica dentro do "Outros · 8 tópicos".
++    func testGastosPorTopicoFalaMenosDeUmPorcento() {
++        let app = abrirApp(conta: "senha", dados: "analise", abrir: "obra:a6")
++        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
++        let topicos = app.elemento("gastosPorTopico")
++        app.rolarAte(topicos)
++        XCTAssertTrue(topicos.exists, "o bloco dos gastos por tópico")
++        let valor = topicos.value as? String ?? ""
++        XCTAssertTrue(valor.hasSuffix("Extras, menos de 1%; Outros, menos de 1%") && !valor.contains("<"), valor)
++    }
++
++    /// Sem gastos, somem os gastos por tópico (como as portas do site).
++    func testSemGastosSemGastosPorTopico() {
++        let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
++        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
++        XCTAssertFalse(app.elemento("gastosPorTopico").exists)
++        XCTAssertTrue(app.elemento("linhaDosAfazeres").exists)
++    }
++
+     /// Com prejuízo (B), o sólido volta a ser o Total gasto, e o lucro negativo fica no bloco da venda.
+     func testVendidaComPrejuizoNoTotal() {
+         let app = abrirApp(conta: "senha", dados: "prejuizo", abrir: "obra:v3")
+```
+
+Em `tests/app-ios.test.cjs`:
+
+```diff
+--- a/tests/app-ios.test.cjs
++++ b/tests/app-ios.test.cjs
+@@ -542,15 +542,16 @@ test('seta dos blocos da obra: para no AX2 e ocupa os 20 pt do mockup na maior l
+   assert.match(aPagar.slice(0, aPagar.indexOf('\n    }\n')), /SetaDoBloco\(\)/, 'o bloco do A pagar usa a seta');
+ });
+ 
+-test('linha dos afazeres: a seta é a das linhas do Orçamento e do A pagar, para no AX2 e ocupa 18 pt na maior letra', () => {
+-  // Sem o teto, a seta sai com ~27 × 46 pt na AX5, num quadro de 22, contra os 17 × 29 do Orçamento e do A pagar. E nenhum
+-  // teste de tela vê o símbolo, que fica fora da árvore de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
++test('bloco dos afazeres: a seta é a dos blocos do Orçamento e do A pagar', () => {
++  // A mesma seta dos blocos tocáveis da obra (a SetaDoBloco, com o teto no AX2 e os 20 pt do mockup na letra máxima). Sem o
++  // teto, ela sai com ~27 × 46 pt na AX5, mais larga que o quadro; nenhum teste de tela vê o símbolo, fora da árvore de
++  // acessibilidade e do laudo.
+   const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
+   const inicio = t.indexOf('struct LinhaDosAfazeresView');
+   assert.ok(inicio >= 0, 'a LinhaDosAfazeresView');
+   const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
+-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: grande \? 18 : 14\)\n/,
+-    'a seta para no AX2 e ocupa 18 pt na letra de acessibilidade');
++  assert.match(linha, /SetaDoBloco\(\)/, 'a seta dos blocos');
++  assert.doesNotMatch(linha, /chevron\.right/, 'nenhuma outra seta');
+ });
+ 
+ test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | grep -v appintents | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/ObraUITests/testAfazeresEGastosPorTopicoEmBlocos -only-testing:CusttaUITests/ObraUITests/testGastosPorTopicoFalaMenosDeUmPorcento -only-testing:CusttaUITests/ObraUITests/testSemGastosSemGastosPorTopico 2>&1 | grep -E "error: -\[|Executed [0-9]+ test" | sed 's/^.*\] : //' | sed -n '1p;$p'
+```
+Expected: compila, e o teste da grade e o do "menos de 1%" reprovam logo depois de rolar, porque o bloco não existe (o da obra sem gastos já passa):
+```
+** TEST BUILD SUCCEEDED **
+XCTAssertTrue failed - o bloco dos gastos por tópico
+	 Executed 3 tests, with 4 failures (0 unexpected) in 72.307 (72.311) seconds
+```
+
+- [ ] **Step 3: Implementar**
+
+O bloco "Gastos por tópico" lê `gastoPorTopico(obra)` a cada desenho da obra; ele soma só o bruto, sem corrigir gasto a gasto (Tarefa 25, achado 6 da primeira parte). A forma mono do cabeçalho do mês e do "A vencer" vem do mesmo `linhaMono` da linha, para as folhas, que usam o `CabecalhoDoMes` (ListaDaOrigem.swift:72), ficarem como estão. O `.id("lancamentos")` vem antes do recuo de 6 pt: a lupa rola até a pílula (`scrollTo("lancamentos", anchor: .top)`), como na etapa 3, e não até os 6 pt de cima dela.
+
+Em `app-ios/Custta/Identidade/BarraEmpilhada.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/BarraEmpilhada.swift
++++ b/app-ios/Custta/Identidade/BarraEmpilhada.swift
+@@ -75,10 +75,7 @@ struct BarraDeTopicos: View {
+                 .placa(forte: true)
+                 .accessibilityElement(children: .ignore)
+                 .accessibilityLabel("Gastos por tópico")
+-                .accessibilityValue(pedacos.map { pedaco in
+-                    // O "<1%" falado como "menos de 1%" (o porcentoFalado do núcleo), como no rótulo do mockup.
+-                    "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
+-                }.joined(separator: "; "))
++                .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
+                 .accessibilityAddTraits(.isImage)
+                 .accessibilityIdentifier("barraDeTopicos")
+                 .padding(.top, 2)
+@@ -105,6 +102,16 @@ struct BarraDeTopicos: View {
+     }
+ }
+ 
++/// O que o VoiceOver diz da barra: cada pedaço com o nome e o % da obra, separados por ponto e vírgula, com o "<1%" falado
++/// como "menos de 1%" (o `porcentoFalado` do núcleo), como no rótulo do mockup. Serve à barra e ao bloco "Gastos por
++/// tópico" da obra, que é um elemento só.
++func faladoDaBarra(_ pedacos: [PedacoDoAnel], topicos: [String: Topico]) -> String {
++    let total = pedacos.reduce(0) { $0 + $1.bruto }
++    return pedacos.map { pedaco in
++        "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
++    }.joined(separator: "; ")
++}
++
+ /// A hachura a 45° ("/") da identidade nova, com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)`
+ /// do mockup: 2 pt a cada 6 no excesso do orçamento e na zona "acima do banco"; 1,5 a cada 4 nas parcelas a vencer do gasto
+ /// por mês (parte1.css:187 e :300). Uma forma presa ao retângulo: quem usa a preenche na cor e a recorta pela marca.
+```
+
+Em `app-ios/Custta/Telas/AfazeresView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/AfazeresView.swift
++++ b/app-ios/Custta/Telas/AfazeresView.swift
+@@ -18,38 +18,24 @@ struct LinhaDosAfazeresView: View {
+     @Environment(\.dynamicTypeSize) private var tamanho
+ 
+     var body: some View {
+-        let grande = tamanho.isAccessibilitySize
+-        HStack(spacing: 11) {
+-            if !grande {
+-                Image(decorative: "Icones/check")
+-                    .resizable().frame(width: 20, height: 20)
+-                    .foregroundStyle(paleta.cor(.marca))
+-                    .frame(width: 38, height: 38)
+-                    .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 11))
+-                    .frame(maxHeight: .infinity, alignment: .top)
+-            }
++        // Na identidade nova (etapa 4; mockup, .afz): um bloco de vidro, sem o ícone, com "Afazeres" em body semibold e a seta
++        // dos blocos tocáveis, 12 pt depois do texto (o gap do .afz; nos blocos do alto, 10, o do .k-linha).
++        HStack(spacing: 12) {
+             VStack(alignment: .leading, spacing: 3) {
+                 ViewThatFits(in: .horizontal) {
+-                    HStack(alignment: .firstTextBaseline) { titulo; Spacer(minLength: 10); etiqueta }
++                    HStack(alignment: .firstTextBaseline, spacing: 8) { titulo; etiqueta; Spacer(minLength: 0) }
+                     VStack(alignment: .leading, spacing: 4) { titulo; etiqueta }
+                 }
+                 PrimeiroPendente(texto: textoDeBaixo, cortado: pendente)
+             }
+             .frame(maxWidth: .infinity, alignment: .leading)
+-            Image(systemName: "chevron.right")
+-                .font(.body.weight(.semibold))
+-                .foregroundStyle(paleta.cor(vidro.secundario))
+-                // A seta das linhas do Orçamento e do A pagar: para no AX2 e ocupa 18 pt na maior letra (sem o teto, ~27 × 46 pt
+-                // na AX5, mais larga que o quadro).
+-                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+-                .frame(width: grande ? 18 : 14)
+-                .accessibilityHidden(true)
+-                .foraDoLaudo()
++            SetaDoBloco()
+         }
+-        .padding(EdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 14))
++        .padding(.vertical, Grade.recuoVertical(tamanho))
++        .padding(.horizontal, Grade.recuo)
+         .frame(maxWidth: .infinity, alignment: .leading)
+         .contentShape(.rect)
+-        .superficie(.conteudo, em: .rect(cornerRadius: 24))
++        .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(tamanho)))
+         .accessibilityElement(children: .ignore)
+         .accessibilityLabel("Afazeres")
+         .accessibilityValue(falado)
+@@ -58,7 +44,7 @@ struct LinhaDosAfazeresView: View {
+     }
+ 
+     private var titulo: some View {
+-        Text("Afazeres").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
++        Text("Afazeres").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+             .fixedSize(horizontal: false, vertical: true)
+     }
+ 
+```
+
+Em `app-ios/Custta/Telas/ObraView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/ObraView.swift
++++ b/app-ios/Custta/Telas/ObraView.swift
+@@ -92,17 +92,36 @@ struct ObraView: View {
+                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
+                         agir($0, obra: obra)
+                     }
+-                    // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
++                    // Os afazeres, 12 abaixo das ações, em todas as fases.
+                     NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
+                         LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
+                     }
+                     .buttonStyle(.plain)
+-                    .padding(.bottom, 14)
++                    // Os gastos por tópico, só com gastos: a barra empilhada no lugar do mini-anel (pedida em 29/10), sem toque
++                    // e sem "Gráficos ›" até os Gráficos chegarem (PR 2b).
++                    if !obra.gastos.isEmpty {
++                        let pedacos = pedacosDoAnel(gastoPorTopico(obra))
++                        // Um elemento só para o VoiceOver, como os outros blocos: o título e os pedaços com o %, sem a
++                        // legenda, que repetiria os maiores. Com o .contain, o título vinha duas vezes (no texto e na barra),
++                        // e esconder um filho dentro dele não o tira da árvore.
++                        BlocoDeVidro {
++                            Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
++                                .padding(.bottom, 8)
++                            BarraDeTopicos(pedacos: pedacos, topicos: topicos)
++                        }
++                        .accessibilityElement(children: .ignore)
++                        .accessibilityLabel("Gastos por tópico")
++                        .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
++                        .accessibilityIdentifier("gastosPorTopico")
++                    }
++                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id vem antes do recuo: a lupa rola até a pílula, e não
++                    // até os 6 pt de cima dela.
+                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
+                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
+                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
+                                             abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
+                         .id("lancamentos")
++                        .padding(.top, 6)
+                     if busca.aberta {
+                         CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
+                     }
+@@ -130,6 +149,8 @@ struct ObraView: View {
+                     }
+                 }
+                 .padding(.horizontal, Grade.externa)
++                // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
++                .environment(\.linhaMono, true)
+                 // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
+                 // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
+                 .padding(.bottom, 98)
+@@ -461,7 +482,7 @@ struct CartaoDoAVencer: View {
+ 
+     @ViewBuilder private func linhas(_ mes: MesDeGastos) -> some View {
+         ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
+-            if i > 0 { LinhaFina().padding(.leading, 67) }
++            if i > 0 { SeparadorDaLista() }
+             LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
+         }
+     }
+@@ -478,10 +499,20 @@ struct CartaoDoMes: View {
+         CartaoDaLista {
+             CabecalhoDoMes(mes: mes)
+             ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
+-                if i > 0 { LinhaFina().padding(.leading, 67) }
++                if i > 0 { SeparadorDaLista() }
+                 LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
+             }
+             Color.clear.frame(height: 6)
+         }
+     }
+ }
++
++/// A linha fina entre dois gastos de um cartão: depois do ícone, na linha da etapa 3; na mono, nos 18 pt do recuo dos dois
++/// lados, como na vitrine das peças.
++struct SeparadorDaLista: View {
++    @Environment(\.linhaMono) private var mono
++
++    var body: some View {
++        if mono { LinhaFina().padding(.horizontal, Grade.recuo) } else { LinhaFina().padding(.leading, 67) }
++    }
++}
+```
+
+Em `app-ios/Custta/Telas/PecasDaObra.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/PecasDaObra.swift
++++ b/app-ios/Custta/Telas/PecasDaObra.swift
+@@ -97,13 +97,22 @@ struct CabecalhoDoMes: View {
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
+     @Environment(\.dentroDaFolha) private var naFolha
++    /// Na lista da obra da etapa 4 (mockup, .mes-cab): o nome em subheadline e o total no número mono, na cor do texto.
++    @Environment(\.linhaMono) private var mono
+ 
+     var body: some View {
+         ViewThatFits(in: .horizontal) {
+-            HStack { titulo; Spacer(minLength: 8); total }
++            // Na linha mono, o nome e o total na mesma linha de base, e o nome ocupa o que sobra pelo frame, e não por um
++            // Spacer: com ele, a linha passava 1/3 pt da largura em alguns meses, como o "A vencer". Nas folhas, centrados e
++            // com o Spacer, como na etapa 3.
++            if mono {
++                HStack(alignment: .firstTextBaseline, spacing: 8) { titulo.frame(maxWidth: .infinity, alignment: .leading); total }
++            } else {
++                HStack { titulo; Spacer(minLength: 8); total }
++            }
+             VStack(alignment: .leading, spacing: 2) { titulo; total }
+         }
+-        .font(.footnote.weight(.semibold))
++        .font(mono ? .subheadline.weight(.semibold) : .footnote.weight(.semibold))
+         .foregroundStyle(paleta.cor(secundario))
+         // Na folha, o .f-grupo .mes-cab do mockup: 16 dos lados, como as linhas da folha, e 2 embaixo.
+         .padding(naFolha ? EdgeInsets(top: 12, leading: 16, bottom: 2, trailing: 16) : EdgeInsets(top: 12, leading: 18, bottom: 6, trailing: 18))
+@@ -115,8 +124,9 @@ struct CabecalhoDoMes: View {
+     /// O secundário do vidro; na folha, o da folha.
+     private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
+     private var titulo: some View { Text(mes.titulo) }
+-    private var total: some View {
+-        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: secundario)
++    @ViewBuilder private var total: some View {
++        if mono { ValorEmDinheiro(moeda(mes.total), mono: .miudo) }
++        else { ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: secundario) }
+     }
+ }
+ 
+@@ -127,11 +137,13 @@ struct LinhaDoAVencer: View {
+     @Environment(\.paleta) private var paleta
+     @Environment(\.vidro) private var vidro
+     @Environment(\.dynamicTypeSize) private var tamanho
++    /// Na lista da obra da etapa 4 (mockup): sem o ícone, e o total no número mono.
++    @Environment(\.linhaMono) private var mono
+     @ScaledMetric(relativeTo: .body) private var icone: CGFloat = 38
+ 
+     var body: some View {
+         HStack(alignment: .top, spacing: 12) {
+-            if !tamanho.isAccessibilitySize {
++            if !tamanho.isAccessibilitySize && !mono {
+                 Image(decorative: "Icones/calendario")
+                     .resizable().frame(width: icone * 0.55, height: icone * 0.55)
+                     .foregroundStyle(paleta.cor(.alertaEtiqueta))
+@@ -140,14 +152,15 @@ struct LinhaDoAVencer: View {
+             }
+             VStack(alignment: .leading, spacing: 2) {
+                 ViewThatFits(in: .horizontal) {
+-                    HStack(alignment: .firstTextBaseline) {
+-                        Text("A vencer").font(.body.weight(.semibold))
+-                        Spacer(minLength: 8)
+-                        ValorEmDinheiro(texto: moeda(grupo.total), fonte: .body.weight(.semibold))
++                    // O título ocupa o que sobra pelo frame, e não um Spacer ao lado: com o Negrito, o Spacer arredondava
++                    // para cima, e a linha passava 1/3 pt da largura, como o cabeçalho dos blocos (PR 1b).
++                    HStack(alignment: .firstTextBaseline, spacing: 8) {
++                        Text("A vencer").font(.body.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
++                        total
+                     }
+                     VStack(alignment: .leading, spacing: 2) {
+                         Text("A vencer").font(.body.weight(.semibold))
+-                        ValorEmDinheiro(texto: moeda(grupo.total), fonte: .body.weight(.semibold))
++                        total
+                     }
+                 }
+                 .foregroundStyle(paleta.cor(.texto))
+@@ -166,6 +179,11 @@ struct LinhaDoAVencer: View {
+         .padding(EdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 16))
+         .contentShape(.rect)
+     }
++
++    @ViewBuilder private var total: some View {
++        if mono { ValorEmDinheiro(moeda(grupo.total), mono: .miudo) }
++        else { ValorEmDinheiro(texto: moeda(grupo.total), fonte: .body.weight(.semibold)) }
++    }
+ }
+ 
+ /// A linha de um gasto: ícone do tópico (sólido), título e valor, e embaixo o tópico, o pagamento e a data. O valor vem
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run:
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaTests/ListaDaObraTests -only-testing:CusttaTests/BarraEmpilhadaTests 2>&1 | grep -E "Test run with"
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/ObraUITests -only-testing:CusttaUITests/AfazeresUITests -only-testing:CusttaUITests/GastoUITests -only-testing:CusttaUITests/BuscaUITests 2>&1 | grep -E "error:|Executed [0-9]+ test" | tail -1
+npm run test:unit 2>&1 | grep -E "ℹ (pass|fail)"
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso; `✔ Test run with 5 tests in 2 suites passed`; `Executed 63 tests, with 0 failures (0 unexpected)` (os 13 da `ObraUITests`, os 15 da `AfazeresUITests`, os 24 da `GastoUITests` e os 11 da `BuscaUITests`, que dependem da altura da obra: o destaque da linha nova, a rolagem até o gasto salvo e até o "A vencer", o arrastar e a lupa que rola até os lançamentos; ~27 min no 18 Pro. Rodado em duas vezes, com a mesma produção: as quatro classes, com os 50 das três últimas sem falha, e a `ObraUITests` de novo depois de o teste da grade passar a ler a legenda dentro do bloco, `Executed 13 tests, with 0 failures (0 unexpected)`); `ℹ pass 411`, `ℹ fail 0`. Com o `Spacer` de antes no "A vencer", a varredura reprova só com o Negrito, nas letras pequena e média, nas três larguras: `✘ Test run with 1 test in 1 suite failed after 0.246 seconds with 6 issues.`, com "A vencer, medium, negrito true, em 408.0: 408.3333333333333". Com o `Spacer` de antes no cabeçalho do mês mono, a varredura de todos os meses reprova em três (os meses mudam com o dia; em 30/10/2026): `✘ Test run with 1 test in 1 suite failed after 0.622 seconds with 3 issues.`, com "Junho de 2026, xSmall, negrito false, em 408.0: 408.3333333333333", "Maio de 2026, xSmall, negrito false, em 408.0: 408.3333333333333" e "Abril de 2026, xSmall, negrito true, em 408.0: 408.3333333333333" (o primeiro mês, o único que a varredura media antes, passava). Com o bloco em `.contain`, o teste da grade cai no rótulo (`XCTAssertEqual failed: ("") is not equal to ("Gastos por tópico")`) e no valor, e o do "menos de 1%", no valor vazio.
+
+- [ ] **Step 5: Conferir com o mockup**
+
+Run: o do Step 5 da Tarefa 30, com `-custta.rolagem 750` e, depois, `-custta.rolagem 1000`.
+Expected: o meio e o fim como o `parte1-obra-meio.png` e o `parte1-obra-fim.png`: "Marcar como pronta"; o bloco dos afazeres ("Afazeres", "3 pendentes" e o primeiro pendente, com a seta); "Gastos por tópico" com a barra de 7 pedaços na placa forte e a legenda "Terreno 38%", "Estrutura 11%", "Cerâmica 9%", "Mão de obra 8%" e "e mais 10 tópicos"; a pílula "Lançamentos 46" com a lupa e o mês; o "A vencer" sem o ícone, com R$ 65.500,00 no mono; e os meses com o total no mono e as linhas mono, com a linha fina nos 18 pt. Diferenças que ficam: sem o "Gráficos ›" e sem as portas (escondidos até os Gráficos), e a pílula "Lançamentos" abraça o texto, como na etapa 3 (no mockup ela vai até a lupa).
+
+- [ ] **Step 6: Conferir o laudo das cenas roladas**
+
+Run (no Pro Max, como na Tarefa 32, e de novo no simulador de sempre, o 18 Pro, a largura da CI; os 12 testes com cena de rolagem fixa):
+```bash
+T=(); for t in EmAjustes DaObra DaObraRolando DaFolhaDoGasto DaParte3 DaObraVendida DaParte3NaMaiorLetra DoOrcamento DoOrcamentoNaMaiorLetra DasFolhasDeOrigem DasFolhasDeOrigemNaMaiorLetra DaBuscaEDosAfazeres; do T+=(-only-testing:CusttaUITests/LeituraNoVidroUITests/testLeitura$t); done
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never "${T[@]}" 2>&1 | grep -E "^leitura \| (obra, lista|obra com Aumentar|obra rolando|obra, linha|obra vendida com|obra pronta, ações da fase, na maior|obra com orçamento por tópico, na maior|busca, nada|busca, mês sem)|Executed [0-9]+ test" | tail -22
+```
+Expected, no Pro Max (as cenas que mudaram de rolagem):
+```
+leitura | busca, nada achado, escuro | 18 palavras, 0 abaixo | pior nota 5.04
+leitura | busca, mês sem gasto, escuro | 18 palavras, 0 abaixo | pior nota 5.45
+leitura | busca, nada achado, claro | 18 palavras, 0 abaixo | pior nota 5.91
+leitura | busca, mês sem gasto, claro | 18 palavras, 0 abaixo | pior nota 5.25
+leitura | obra, lista, escuro | 53 palavras, 0 abaixo | pior nota 5.87
+leitura | obra, lista, claro | 53 palavras, 0 abaixo | pior nota 6.46
+leitura | obra com Aumentar contraste | 53 palavras, 0 abaixo | pior nota 5.34
+leitura | obra vendida com lucro, escuro | 19 palavras, 0 abaixo | pior nota 5.78
+leitura | obra vendida com prejuízo, escuro | 22 palavras, 0 abaixo | pior nota 5.19
+leitura | obra vendida com lucro, claro | 19 palavras, 0 abaixo | pior nota 4.56
+leitura | obra vendida com prejuízo, claro | 22 palavras, 0 abaixo | pior nota 4.56
+leitura | obra com orçamento por tópico, na maior letra | 35 palavras, 0 abaixo | pior nota 5.19
+leitura | obra, linha aberta, escuro | 51 palavras, 0 abaixo | pior nota 5.51
+leitura | obra, linha aberta, claro | 51 palavras, 0 abaixo | pior nota 5.50
+leitura | obra rolando 612, escuro | 26 palavras, 0 abaixo | pior nota 5.78
+leitura | obra rolando 883, escuro | 43 palavras, 0 abaixo | pior nota 4.92
+leitura | obra rolando 1247, escuro | 54 palavras, 0 abaixo | pior nota 5.49
+leitura | obra rolando 612, escuro, Aumentar contraste | 26 palavras, 0 abaixo | pior nota 5.90
+leitura | obra rolando 883, escuro, Aumentar contraste | 43 palavras, 0 abaixo | pior nota 5.91
+leitura | obra rolando 1247, escuro, Aumentar contraste | 54 palavras, 0 abaixo | pior nota 6.07
+leitura | obra pronta, ações da fase, na maior letra | 16 palavras, 0 abaixo | pior nota 6.40
+	 Executed 12 tests, with 0 failures (0 unexpected) in 2608.705 (2608.713) seconds
+```
+Rodado em três vezes nos dois iPhones, com a mesma produção: os 12 testes (no 18 Pro, `Executed 12 tests, with 1 failure (0 unexpected) in 2593.933 (2593.943) seconds`, pela g027, abaixo), e de novo o `testLeituraDaFolhaDoGasto` depois da troca da linha aberta para a g026 (`Executed 1 test, with 0 failures (0 unexpected) in 348.313 (348.318) seconds` no 18 Pro, 355.030 no Pro Max) e o `testLeituraDaObraRolando` com o `testLeituraDaParte3NaMaiorLetra` depois da pronta a 1977 (`Executed 2 tests, with 0 failures (0 unexpected) in 268.480 (268.484) seconds` no 18 Pro, 271.419 no Pro Max, ainda com a 1778 e a 1956 na obra rolando, que saíram depois, pelo dia); na primeira vez, a g027 reprovava no 18 Pro (`obra, linha aberta, claro: texto #2B463B em 16,369 (4×11 pt) fica em 2.83:1 (pior pixel 2.76:1)`). Nenhuma palavra começa na borda (y = 140) nas tabelas das cenas que mudaram, nos dois iPhones. Com a rolagem de antes da "busca, nada achado" (596), o laudo da busca passa nas notas e cai pelo `assunto`, nos dois temas e nos dois prints de cada cena:
+```
+XCTAssertTrue failed - busca, nada achado, escuro: buscaNadaEncontrado fora da vista ((88.5, 865.6666666666665, 263.0, 20.333333333333144); a cena mede de 70 a 816 pt)
+XCTAssertTrue failed - busca, nada achado, escuro: limparFiltro fora da vista ((147.66666666666666, 949.9999999999997, 144.66666666666666, 44.0); a cena mede de 70 a 816 pt)
+	 Executed 1 test, with 8 failures (0 unexpected) in 480.805 (480.807) seconds
+```
+(No Pro Max; a cena em si fica em `19 palavras, 0 abaixo | pior nota 5.87`, medindo os blocos do alto.)
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/BarraEmpilhada.swift app-ios/Custta/Telas/AfazeresView.swift app-ios/Custta/Telas/ObraView.swift app-ios/Custta/Telas/PecasDaObra.swift app-ios/CusttaTests/ListaDaObraTests.swift app-ios/CusttaUITests/EstadosUITests.swift app-ios/CusttaUITests/LeituraNoVidroUITests.swift app-ios/CusttaUITests/ObraUITests.swift tests/app-ios.test.cjs
+git commit -m "feat: afazeres, gastos por tópico e lançamentos da obra na grade nova" -m "Embaixo das ações, a obra passa à identidade nova do mockup aprovado: os afazeres num bloco de vidro, sem o ícone e com a seta dos blocos tocáveis; o bloco \"Gastos por tópico\", só com gastos, com a barra empilhada no lugar do mini-anel e a legenda dos 4 maiores; e os lançamentos na linha mono, com o total do mês e o do \"A vencer\" no número mono e a linha fina nos 18 pt do recuo." -m "O bloco dos gastos por tópico é um elemento só para o VoiceOver, como os outros blocos: o título e cada pedaço com o %, sem a legenda, que repetiria os maiores. Com o Negrito, o \"A vencer\" e o cabeçalho do mês na linha mono não passam mais da largura: o título ocupa o que sobra pelo frame, e não um Spacer." -m "Com a obra em blocos, a lista desce, e as rolagens fixas do laudo da obra são refeitas, com a borda de cima num vão nos dois iPhones. Cada cena com rolagem fixa ganha o seu assunto, conferido à vista antes do print: o laudo passava com a rolagem medindo outra coisa." -m "A barra fica sem toque e sem o \"Gráficos ›\" até os Gráficos chegarem, e as folhas continuam com a linha da etapa 3."
+```
+
+### Task 32: Halo do título da obra calibrado pelo laudo, e as cenas da obra em blocos
+
+O halo atrás do título mono da obra, que o PR 1a não mudou (nota do PR 1a; achado 8 do PR 1b), se calibra agora, com o título na obra, pela regra do app: o menor passo que fecha 4,5:1 no Pro Max (decisão do Giovani em 10/10, Aurora.swift:186-188), partindo dos 38% do mockup (62% na letra máxima; spec, "Decisões tomadas por recomendação", halo do título). Hoje o `TituloMono` usa o halo do nome da obra da etapa 2 (`HaloDoTitulo.naObra`, 30% no escuro, e `naObraNoClaro`, 10% no claro), o mesmo do `TituloDaObra` da tela Orçamento, que não muda. Medido no laudo do Pro Max (`testLeituraDaObra`, as cenas "obra, topo, escuro" e "obra na maior letra"), o pior ponto de "Alphaville" fica em 3,92:1 sem halo (reprova), 4,61 com 10% (pior pixel 4,50), 5,41 com 20% e 5,94 com 30%; na maior letra, 4,20, 4,82, 5,49 e 6,19. O menor passo que fecha é o 10%, mas sem folga: o iOS 26 da CI mediu o nome da obra 0,4 abaixo do Pro Max (o claro sem halo, 4,40:1 no iPhone 17 Pro da CI e 4,80 no Pro Max; Aurora.swift:193-195), e o laudo é portão lá. Fica 20% (`HaloDoTitulo.naObraMono`; decidido pelo Giovani em 30/10, Decisões), em todo tamanho de letra (o 62% da letra máxima do mockup não é preciso: 5,49 com 20%); o claro continua com os 10% do nome da obra (sem halo, reprovava na CI), e lá o título fica em 7,14. Junto, o laudo ganha as cenas da obra em blocos que as de antes não abrem (spec, "Testes e validação", item 5): o bloco "Gastos por tópico" (a legenda da barra), a obra sem gastos (o sólido com o convite), a sem orçamento (as ações com "Definir orçamento") e o sólido do lucro na vendida, nos dois temas, e o sólido do lucro na maior letra. As duas roladas têm a borda de cima num vão, igual nos dois iPhones, e o `assunto` da Tarefa 31: a dos gastos por tópico a 804 pt, entre a ação "Marcar como pronta" e os afazeres (a 750 cortava a ação pela borda), com o `gastosPorTopico`; a da sem orçamento a 350, entre o Corrigido e o A pagar (a 400 deixava a borda 1 pt acima do valor do A pagar), com o `definirOrcamento`.
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/Aurora.swift`
+- Modify: `app-ios/Custta/Identidade/Titulos.swift`
+- Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+
+**Interfaces:**
+- Consumes: `HaloDoTitulo(grande:opacidade:noClaro:)` e `naObraNoClaro` (Aurora.swift); `TituloMono` (PR 1b); os identificadores `gastosPorTopico`, `obraSemGastos`, `definirOrcamento` e `indicadorLucro` (Tarefas 30 e 31); as variantes dos falsos `vitrine`, `exemplo` e `semOrcamento`.
+- Produces: `HaloDoTitulo.naObraMono` (0,20); `LeituraNoVidroUITests.testLeituraDaObraEmBlocos()`.
+
+- [ ] **Step 1: Escrever as cenas**
+
+As cenas novas, no molde das outras do laudo (dois prints, um com o texto apagado, e o portão de 4,5:1 em cada palavra).
+
+Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -392,6 +392,34 @@ extension LeituraNoVidroUITests {
+         cobrar(cenas)
+     }
+ 
++    /// A obra em blocos da etapa 4 (PR 1c), nos estados do mockup que as cenas de antes não abrem: o bloco "Gastos por
++    /// tópico" (a legenda da barra empilhada), a obra sem gastos (o sólido com o convite), a sem orçamento (o "Definir
++    /// orçamento" nas ações) e o sólido do lucro na vendida, nos dois temas; e o sólido do lucro na maior letra. As roladas
++    /// com a borda num vão, igual nos dois iPhones: a dos gastos por tópico entre a ação "Marcar como pronta" e os afazeres (a
++    /// 750 cortava a ação), e a da sem orçamento entre o Corrigido e o A pagar (a 400, 1 pt acima do valor do A pagar).
++    @MainActor func testLeituraDaObraEmBlocos() {
++        var cenas: [Cena] = []
++        for tema in temas {
++            let combo = ["-custta.tema", tema] + piorMomento
++            cenas += [
++                Cena(nome: "obra, gastos por tópico, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "804"],
++                     espera: "gastosPorTopico", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true,
++                     assunto: ["gastosPorTopico"]),
++                Cena(nome: "obra sem gastos, \(tema)", conta: "senha", argumentos: combo, espera: "obraSemGastos", escopo: "tudo",
++                     abrir: "obra:o3"),
++                Cena(nome: "obra sem orçamento, ações, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "350"],
++                     espera: "definirOrcamento", escopo: "tudo", dados: "semOrcamento", abrir: "obra:v1", rolada: true,
++                     assunto: ["definirOrcamento"]),
++                Cena(nome: "obra vendida, sólido do lucro, \(tema)", conta: "senha", argumentos: combo, espera: "indicadorLucro",
++                     escopo: "tudo", dados: "vitrine", abrir: "obra:v3"),
++            ]
++        }
++        let escuro = ["-custta.tema", "escuro"] + piorMomento
++        cenas.append(Cena(nome: "obra vendida, sólido do lucro, na maior letra", conta: "senha", argumentos: escuro + maiorLetra,
++                          espera: "indicadorLucro", escopo: "tudo", dados: "vitrine", abrir: "obra:v3"))
++        cobrar(cenas)
++    }
++
+     /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste: o pior
+     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, três rolagens; na
+     /// CI, duas.
+```
+
+- [ ] **Step 2: Implementar**
+
+O valor novo é só do título mono: o `naObra` continua no `TituloDaObra` da tela Orçamento. O `naObraMono` entra com os 20% que o Step 3 mede contra os outros passos.
+
+Em `app-ios/Custta/Identidade/Aurora.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Aurora.swift
++++ b/app-ios/Custta/Identidade/Aurora.swift
+@@ -193,6 +193,11 @@ struct HaloDoTitulo: View {
+     /// No claro, atrás do nome da obra: na tela de 402 pt a aurora azul cai mais escura sob a primeira palavra (sem halo,
+     /// 4,40:1 no iPhone 17 Pro da CI, 4,80:1 no Pro Max).
+     nonisolated static let naObraNoClaro = 0.10
++    /// Atrás do título mono da obra (etapa 4, PR 1c), no escuro: o mockup partia de 38% (62% na letra de acessibilidade). No
++    /// laudo do Pro Max, "Alphaville" fica em 3,92:1 sem halo, 4,61 com 10% (pior pixel 4,50), 5,41 com 20% e 5,94 com 30%;
++    /// na maior letra, 4,20, 4,82, 5,49 e 6,19. Fica 20%: o 10%, o menor passo que fecha, não deixa folga para o iOS 26 da
++    /// CI, que mediu 0,4 abaixo do Pro Max no nome da obra (naObraNoClaro). No claro, o mesmo 10% do nome da obra.
++    nonisolated static let naObraMono = 0.20
+     let grande: Bool
+     var opacidade = HaloDoTitulo.naEntrada
+     var noClaro = 0.0
+```
+
+Em `app-ios/Custta/Identidade/Titulos.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/Titulos.swift
++++ b/app-ios/Custta/Identidade/Titulos.swift
+@@ -5,8 +5,8 @@ import SwiftUI
+    fase e "começou em … · N meses" na obra, o nome da obra nas telas da análise). Nenhuma tela os usa ainda. */
+ 
+ /// O título solto: SF Mono 600, 30 pt com o tracking de −0,045 em (44 na letra máxima, crescendo a cada passo), em quantas
+-/// linhas precisar (o nome comprido quebra), a 16 pt da borda. Atrás dele, no escuro, o halo do nome da obra de hoje (30%,
+-/// e 10% no claro): o do mockup (38%, 62% na letra máxima) se calibra pelo laudo, na obra (PR 1c).
++/// linhas precisar (o nome comprido quebra), a 16 pt da borda. Atrás dele, o halo calibrado pelo laudo da obra (PR 1c): 20%
++/// no escuro, em todo tamanho de letra, e 10% no claro (`HaloDoTitulo.naObraMono`).
+ struct TituloMono: View {
+     let texto: String
+     var identificador = "tituloDaObra"
+@@ -22,7 +22,7 @@ struct TituloMono: View {
+             .accessibilityAddTraits(.isHeader)
+             .accessibilityIdentifier(identificador)    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
+             .frame(maxWidth: .infinity, alignment: .leading)
+-            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra, noClaro: HaloDoTitulo.naObraNoClaro) }
++            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObraMono, noClaro: HaloDoTitulo.naObraNoClaro) }
+     }
+ }
+ 
+```
+
+- [ ] **Step 3: Medir o halo**
+
+Run (no Pro Max: `export CUSTTA_SIMULADOR=<udid do Pro Max>` e o `DESTINO` e o `XB` de novo, como no cabeçalho; trocando o valor do `naObraMono` do Step 2 por 0 (sem halo), 0,10, 0,20 e 0,30, um build para cada, e voltando aos 0,20 no fim; as tabelas saem do xcresult com `xcrun xcresulttool export attachments --path <xcresult> --output-path <pasta> --filter '*.txt'`):
+```bash
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObra -resultBundlePath halo.xcresult 2>&1 | grep -E "Executed [0-9]+ test" | tail -1
+```
+Expected: sem halo, `Executed 1 test, with 2 failures`, com "Alphaville" em 3,92:1 no topo e 4,20 na maior letra; com 10%, 20% e 30%, `Executed 1 test, with 0 failures`, com "Alphaville" em 4,61, 5,41 e 5,94 no topo e 4,82, 5,49 e 6,19 na maior letra.
+
+- [ ] **Step 4: Ver passar**
+
+Run (o build no simulador de sempre; as cenas no Pro Max, como no Step 3):
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObra -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraEmBlocos 2>&1 | grep -E "^leitura \||Executed [0-9]+ test" | tail -16
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso, e
+```
+leitura | obra, topo, escuro | 35 palavras, 0 abaixo | pior nota 5.41
+leitura | obra, lista, escuro | 53 palavras, 0 abaixo | pior nota 5.87
+leitura | obra, topo, claro | 35 palavras, 0 abaixo | pior nota 4.56
+leitura | obra, lista, claro | 53 palavras, 0 abaixo | pior nota 6.46
+leitura | obra na maior letra | 29 palavras, 0 abaixo | pior nota 5.31
+leitura | obra com Aumentar contraste | 53 palavras, 0 abaixo | pior nota 5.34
+leitura | obra, gastos por tópico, escuro | 39 palavras, 0 abaixo | pior nota 4.98
+leitura | obra sem gastos, escuro | 27 palavras, 0 abaixo | pior nota 5.41
+leitura | obra sem orçamento, ações, escuro | 23 palavras, 0 abaixo | pior nota 5.78
+leitura | obra vendida, sólido do lucro, escuro | 42 palavras, 0 abaixo | pior nota 5.40
+leitura | obra, gastos por tópico, claro | 39 palavras, 0 abaixo | pior nota 5.91
+leitura | obra sem gastos, claro | 27 palavras, 0 abaixo | pior nota 5.25
+leitura | obra sem orçamento, ações, claro | 23 palavras, 0 abaixo | pior nota 4.56
+leitura | obra vendida, sólido do lucro, claro | 42 palavras, 0 abaixo | pior nota 4.56
+leitura | obra vendida, sólido do lucro, na maior letra | 36 palavras, 0 abaixo | pior nota 5.23
+	 Executed 2 tests, with 0 failures (0 unexpected) in 288.932 (288.938) seconds
+```
+No 18 Pro, a largura da CI, o `testLeituraDaObraEmBlocos` também passa (`Executed 1 test, with 0 failures (0 unexpected) in 167.197 (167.201) seconds`), sem palavra na borda das duas roladas. Nas cenas de antes da obra, o título fica em 5,41:1 no escuro (era 5,94 com os 30% da etapa 2) e 7,14 no claro; o pior das cenas novas é o texto dos chips verdes no claro (`#0E7A41`: "estimativa", "Vendida", "Vendida em …"), 4,56, o mesmo das cenas de antes e do mockup (4,56 no LEIA-ME).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/Aurora.swift app-ios/Custta/Identidade/Titulos.swift app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+git commit -m "feat: halo do título da obra calibrado pelo laudo e cenas da obra nova" -m "O título mono da obra ganha o halo próprio no escuro, 20%, medido no laudo do Pro Max a partir dos 38% do mockup: sem halo, \"Alphaville\" fica em 3,92:1; com 10%, o menor passo que fecha, em 4,61, sem folga para o iOS 26 da CI, que mede o nome da obra abaixo do Pro Max; com 20%, em 5,41 (5,49 na maior letra). O claro continua com os 10% do nome da obra, e o título da tela Orçamento não muda." -m "O laudo ganha as cenas da obra em blocos que as de antes não abriam: os gastos por tópico, a obra sem gastos, a sem orçamento e o sólido do lucro na vendida, nos dois temas, e o sólido do lucro na maior letra."
+```
+
+### Task 33: Marcas apagadas no laudo e a barra de tópicos a 3:1
+
+O laudo das marcas (spec, "1. Gráficos", "Laudo das marcas"; "Testes e validação", item 5): um modo de Debug apaga só as marcas de gráfico, como o texto apagado apaga o texto (`-custta.textoApagado`, RaizView.swift:29 e Vidro.swift:169-185), e o laudo mede cada marca a 3:1 com o que fica atrás dela, nos vidros Transparente e Fosco. Com `-custta.marcasApagadas YES`, a `RaizView` põe o `marcasApagadas` no environment, e a `BarraEmpilhada` pinta os pedaços com opacidade zero, sem mexer no layout (só no Debug; no Release o valor é a constante `false`, e o environment nem existe). O medidor novo, `LaudoDeContraste.medirMarcas`, segue o `medir` das palavras: os pixels que mudam de um print para o outro, dentro do quadro da barra (`barraDeTopicos`), são a marca; mas cada marca é um grupo de pixels juntos, sem a dilatação de 3 pt das palavras, para o vão de 3 pt entre os pedaços separar as marcas; a cor é a mediana dos pixels que mais mudaram e a nota, o percentil 1 do contraste dela contra o fundo no miolo (o mesmo pixel do print sem marcas e os de 2 px em volta), fora do serrilhado das pontas; longe das marcas (mais de 2 pt), os dois prints têm de ser iguais, ou a cena não é a mesma e o laudo dá erro. O teste novo, `testMarcasDaBarraDeTopicos`, abre a obra da vitrine com a barra à vista (`-custta.rolagem 750`), nos dois temas e nos dois vidros, cobra os 7 pedaços da Casa Alphaville (os 6 maiores e o cinza do "Outros · 8 tópicos") e o portão de 3:1 (`portaoDasMarcas`), e anexa o print anotado e a tabela com o prefixo "marcas", que o comparador do laudo (`scripts/compara-laudo.mjs`, portão de 4,5) não lê. A `BarraApagada` conta como dado (spec): a regra vale para as barras apagadas do gasto por mês quando elas chegarem (PR 2b), que passam a usar o mesmo `marcasApagadas`.
+
+**Files:**
+- Modify: `app-ios/Custta/Identidade/BarraEmpilhada.swift`
+- Modify: `app-ios/Custta/Telas/RaizView.swift`
+- Test (alterar): `app-ios/CusttaUITests/LaudoDeContraste.swift`
+- Test (alterar): `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`
+
+**Interfaces:**
+- Consumes: `BarraEmpilhada` e `BarraDeTopicos` (PR 1b, identificador `barraDeTopicos`); `LaudoDeContraste.medir`, `Retrato`, `Palavra`, `dilatar`, `limiarDaLetra` e `ruido` (etapa 2, Tarefa 11); `abrirApp(conta:dados:abrir:argumentos:)`; `-custta.rolagem`, `-custta.tema` e `-custta.vidro`.
+- Produces: `EnvironmentValues.marcasApagadas` (só Debug) e o argumento `-custta.marcasApagadas`; `LaudoDeContraste.medirMarcas(normal:semMarcas:escala:em:) throws -> [Palavra]`; `LeituraNoVidroUITests.portaoDasMarcas` (3,0) e `testMarcasDaBarraDeTopicos()`; o `anexar(_:_:_:_:portao:tipo:)`. Os PRs 2a e 2b apagam o anel, as linhas e as barras pelo mesmo environment e medem com o mesmo `medirMarcas`.
+
+- [ ] **Step 1: Escrever o medidor e o teste**
+
+O medidor das marcas no `LaudoDeContraste` e o teste das marcas no laudo; o `anexar` ganha o portão e o prefixo do anexo.
+
+Em `app-ios/CusttaUITests/LaudoDeContraste.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LaudoDeContraste.swift
++++ b/app-ios/CusttaUITests/LaudoDeContraste.swift
+@@ -180,6 +180,79 @@ enum LaudoDeContraste {
+         return palavras.sorted { ($0.caixa.minY, $0.caixa.minX) < ($1.caixa.minY, $1.caixa.minX) }
+     }
+ 
++    /// Mede as marcas de gráfico (spec da etapa 4, "Laudo das marcas"): os pixels que mudam do print normal para o print
++    /// com as marcas apagadas (`-custta.marcasApagadas`), dentro das regiões dadas (em pontos). Cada marca é um grupo de
++    /// pixels juntos, sem a dilatação das palavras (o vão de 3 pt entre os pedaços da barra separa as marcas); a cor é a
++    /// mediana dos pixels que mais mudaram, e a nota, o percentil 1 do contraste dela contra o fundo no miolo (o mesmo
++    /// pixel do print sem marcas e os de 2 px em volta), fora do serrilhado das pontas. Longe das marcas (mais de 2 pt), os
++    /// dois prints têm de ser iguais.
++    static func medirMarcas(normal: Retrato, semMarcas: Retrato, escala: CGFloat, em regioes: [CGRect]) throws -> [Palavra] {
++        precondition(normal.largura == semMarcas.largura && normal.altura == semMarcas.altura)
++        let w = normal.largura, h = normal.altura
++        let a = normal.rgba, b = semMarcas.rgba
++        var dentro = [Bool](repeating: false, count: w * h)
++        for r in regioes {
++            let x0 = max(0, Int((r.minX * escala).rounded(.down))), y0 = max(0, Int((r.minY * escala).rounded(.down)))
++            let x1 = min(w, Int((r.maxX * escala).rounded(.up))), y1 = min(h, Int((r.maxY * escala).rounded(.up)))
++            for y in y0..<max(y0, y1) { for x in x0..<max(x0, x1) { dentro[y * w + x] = true } }
++        }
++        var diferenca = [UInt8](repeating: 0, count: w * h)
++        var marca = [Bool](repeating: false, count: w * h)
++        for i in 0..<(w * h) where dentro[i] {
++            let k = i * 4
++            let d = max(abs(Int(a[k]) - Int(b[k])), abs(Int(a[k + 1]) - Int(b[k + 1])), abs(Int(a[k + 2]) - Int(b[k + 2])))
++            diferenca[i] = UInt8(d)
++            marca[i] = d > limiarDaLetra
++        }
++        let perto = dilatar(marca, w, h, rx: Int(2 * escala), ry: Int(2 * escala))
++        var mudou = 0
++        for i in 0..<(w * h) where dentro[i] && !perto[i] && Int(diferenca[i]) > ruido { mudou += 1 }
++        if mudou > max(40, w * h / 5000) { throw CenaNaoDeterministica(pixels: mudou) }
++
++        var visto = [Bool](repeating: false, count: w * h)
++        var marcas: [Palavra] = []
++        for inicio in 0..<(w * h) where marca[inicio] && !visto[inicio] {
++            var pilha = [inicio], membros: [Int] = []
++            visto[inicio] = true
++            while let i = pilha.popLast() {
++                membros.append(i)
++                let x = i % w
++                for v in [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i >= w ? i - w : -1, i < w * (h - 1) ? i + w : -1]
++                where v >= 0 && marca[v] && !visto[v] {
++                    visto[v] = true
++                    pilha.append(v)
++                }
++            }
++            guard membros.count >= 20 else { continue }
++            let fortes = membros.sorted { diferenca[$0] > diferenca[$1] }.prefix(max(1, membros.count / 4))
++            func mediana(_ canal: Int) -> UInt8 { fortes.map { a[$0 * 4 + canal] }.sorted()[fortes.count / 2] }
++            let cor = (r: mediana(0), g: mediana(1), b: mediana(2))
++            let miolo = membros.filter { i in
++                let k = i * 4
++                return max(abs(Int(a[k]) - Int(cor.r)), abs(Int(a[k + 1]) - Int(cor.g)), abs(Int(a[k + 2]) - Int(cor.b))) <= 28
++            }
++            guard miolo.count >= 8 else { continue }
++            let lt = luminancia(cor.r, cor.g, cor.b)
++            var notas: [Double] = []
++            for i in miolo {
++                let x = i % w, y = i / w
++                for (dx, dy) in [(0, 0), (-2, 0), (2, 0), (0, -2), (0, 2)] {
++                    let vx = x + dx, vy = y + dy
++                    guard vx >= 0, vx < w, vy >= 0, vy < h, dentro[vy * w + vx] else { continue }
++                    let v = (vy * w + vx) * 4
++                    notas.append(contraste(lt, luminancia(b[v], b[v + 1], b[v + 2])))
++                }
++            }
++            notas.sort()
++            var x0 = w, y0 = h, x1 = 0, y1 = 0
++            for i in membros { let x = i % w, y = i / w; x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y) }
++            let caixa = CGRect(x: CGFloat(x0) / escala, y: CGFloat(y0) / escala,
++                               width: CGFloat(x1 - x0 + 1) / escala, height: CGFloat(y1 - y0 + 1) / escala)
++            marcas.append(Palavra(caixa: caixa, cor: cor, nota: notas[notas.count / 100], minimo: notas[0]))
++        }
++        return marcas.sorted { ($0.caixa.minY, $0.caixa.minX) < ($1.caixa.minY, $1.caixa.minX) }
++    }
++
+     /// Rótulo que o app não apaga (o botão de um alerta do sistema), medido num print só: o fundo é a própria
+     /// cápsula. `quadro` é o do botão, em pontos; por dentro da borda (6 pt), as letras são os pixels longe da
+     /// cor da cápsula (a mediana do quadro, que o texto não domina). A cor do texto sai do miolo das letras, como
+```
+
+Em `app-ios/CusttaUITests/LeituraNoVidroUITests.swift`:
+
+```diff
+--- a/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
++++ b/app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+@@ -20,6 +20,8 @@ final class LeituraNoVidroUITests: XCTestCase {
+     private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+     private let temas = ["escuro", "claro"]
+     private static let portao = 4.5
++    /// O mínimo das marcas de gráfico (spec da etapa 4, "Laudo das marcas"), o do mockup.
++    private static let portaoDasMarcas = 3.0
+     /// A barra de status fica de fora: a hora muda entre os dois prints.
+     private static let barraDeStatus: CGFloat = 70
+     /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
+@@ -171,7 +173,10 @@ final class LeituraNoVidroUITests: XCTestCase {
+         }
+     }
+ 
+-    @MainActor private func anexar(_ nome: String, _ imagem: UIImage, _ palavras: [LaudoDeContraste.Palavra], _ escala: CGFloat) {
++    /// As marcas saem com o prefixo "marcas" e o portão delas: o comparador do laudo (`scripts/compara-laudo.mjs`) lê só as
++    /// tabelas "leitura — …", com o portão de 4,5.
++    @MainActor private func anexar(_ nome: String, _ imagem: UIImage, _ palavras: [LaudoDeContraste.Palavra], _ escala: CGFloat,
++                                   portao: Double = LeituraNoVidroUITests.portao, tipo: String = "leitura") {
+         let formato = UIGraphicsImageRendererFormat()
+         formato.scale = 1
+         let tamanho = CGSize(width: imagem.size.width * imagem.scale, height: imagem.size.height * imagem.scale)
+@@ -180,7 +185,7 @@ final class LeituraNoVidroUITests: XCTestCase {
+             for p in palavras {
+                 let caixa = CGRect(x: p.caixa.minX * escala, y: p.caixa.minY * escala,
+                                    width: p.caixa.width * escala, height: p.caixa.height * escala).insetBy(dx: -4, dy: -4)
+-                let cor: UIColor = p.nota < Self.portao ? .systemRed : .systemGreen
++                let cor: UIColor = p.nota < portao ? .systemRed : .systemGreen
+                 cor.setStroke()
+                 ctx.cgContext.setLineWidth(4)
+                 ctx.cgContext.stroke(caixa)
+@@ -191,15 +196,15 @@ final class LeituraNoVidroUITests: XCTestCase {
+             }
+         }
+         let foto = XCTAttachment(image: anotada)
+-        foto.name = "leitura — \(nome)"
++        foto.name = "\(tipo) — \(nome)"
+         foto.lifetime = .keepAlways
+         add(foto)
+         let linhas = palavras.map { p in
+             String(format: "%@  %4.0f,%4.0f  %4.0f×%3.0f pt  nota %5.2f  pior %5.2f", p.corHex,
+                    p.caixa.minX, p.caixa.minY, p.caixa.width, p.caixa.height, p.nota, p.minimo)
+         }
+-        let tabela = XCTAttachment(string: "Leitura — \(nome) (portão \(Self.portao):1)\n" + linhas.joined(separator: "\n"))
+-        tabela.name = "leitura — \(nome) (tabela)"
++        let tabela = XCTAttachment(string: "\(tipo == "leitura" ? "Leitura" : "Marcas") — \(nome) (portão \(portao):1)\n" + linhas.joined(separator: "\n"))
++        tabela.name = "\(tipo) — \(nome) (tabela)"
+         tabela.lifetime = .keepAlways
+         add(tabela)
+     }
+@@ -420,6 +425,52 @@ extension LeituraNoVidroUITests {
+         cobrar(cenas)
+     }
+ 
++    /// O laudo das marcas (spec da etapa 4, "Laudo das marcas"): os pedaços da barra empilhada da obra a 3:1 com o que fica
++    /// atrás deles (a placa forte sobre o vidro), nos dois temas e nos vidros Transparente e Fosco. Cada cena sai em dois
++    /// prints, um normal e um com as marcas apagadas (`-custta.marcasApagadas`, só Debug), como o texto apagado; a marca é o
++    /// que muda de um para o outro, dentro do quadro da barra.
++    @MainActor func testMarcasDaBarraDeTopicos() {
++        var falhas: [String] = []
++        for tema in temas {
++            for vidro in ["transparente", "fosco"] {
++                let nome = "marcas, barra de tópicos, \(tema), \(vidro)"
++                let argumentos = ["-custta.tema", tema, "-custta.vidro", vidro, "-custta.rolagem", "750"] + piorMomento
++                func fotografar(apagadas: Bool) -> (XCUIScreenshot, CGRect, CGFloat) {
++                    let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
++                                       argumentos: argumentos + (apagadas ? ["-custta.marcasApagadas", "YES"] : []))
++                    let barra = app.elemento("barraDeTopicos")
++                    XCTAssertTrue(barra.waitForExistence(timeout: 30), "\(nome): a obra não abriu")
++                    Thread.sleep(forTimeInterval: 2)                   // o vidro e a rolagem assentam
++                    let foto = XCUIScreen.main.screenshot()
++                    let quadro = barra.frame, largura = app.frame.width
++                    app.terminate()
++                    return (foto, quadro, largura)
++                }
++                let (normal, quadro, largura) = fotografar(apagadas: false)
++                let (semMarcas, _, _) = fotografar(apagadas: true)
++                let imagem = normal.image.cgImage!
++                let escala = CGFloat(imagem.width) / largura
++                let marcas: [LaudoDeContraste.Palavra]
++                do {
++                    marcas = try LaudoDeContraste.medirMarcas(normal: Retrato(imagem), semMarcas: Retrato(semMarcas.image.cgImage!),
++                                                              escala: escala, em: [quadro])
++                } catch {
++                    XCTFail("\(nome): \(error)")
++                    continue
++                }
++                // Os 7 pedaços da Casa Alphaville: os 6 maiores e o "Outros".
++                XCTAssertEqual(marcas.count, 7, "\(nome): \(marcas.map(\.corHex))")
++                anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
++                Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
++                falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in
++                    "\(nome): marca \(m.corHex) em \(Int(m.caixa.minX)),\(Int(m.caixa.minY)) fica em "
++                        + String(format: "%.2f:1 (pior pixel %.2f:1)", m.nota, m.minimo)
++                }
++            }
++        }
++        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portaoDasMarcas):1:\n" + falhas.joined(separator: "\n"))
++    }
++
+     /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste: o pior
+     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, três rolagens; na
+     /// CI, duas.
+```
+
+- [ ] **Step 2: Ver falhar**
+
+Run (no Pro Max, como na Tarefa 32):
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | grep -v appintents | tail -1
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testMarcasDaBarraDeTopicos 2>&1 | grep -oE 'XCTAssertEqual failed.*|Executed [0-9]+ tests?, with [0-9]+ failures?' | sed -n '1p;$p'
+```
+Expected: compila, e sem o modo de Debug nada muda entre os dois prints: nenhuma marca medida, nas quatro cenas.
+```
+** TEST BUILD SUCCEEDED **
+XCTAssertEqual failed: ("0") is not equal to ("7") - marcas, barra de tópicos, escuro, transparente: []
+Executed 1 test, with 4 failures
+```
+
+- [ ] **Step 3: Implementar**
+
+Em `app-ios/Custta/Identidade/BarraEmpilhada.swift`:
+
+```diff
+--- a/app-ios/Custta/Identidade/BarraEmpilhada.swift
++++ b/app-ios/Custta/Identidade/BarraEmpilhada.swift
+@@ -33,6 +33,11 @@ struct BarraEmpilhada: View {
+     let pedacos: [PedacoDoAnel]
+     @Environment(\.paleta) private var paleta
+     @Environment(\.dynamicTypeSize) private var letra
++    #if DEBUG
++    @Environment(\.marcasApagadas) private var apagadas
++    #else
++    private let apagadas = false
++    #endif
+ 
+     var body: some View {
+         let grande = letra.isAccessibilitySize
+@@ -41,7 +46,7 @@ struct BarraEmpilhada: View {
+             let larguras = largurasDaBarra(pedacos, largura: geo.size.width, piso: piso, vao: vao)
+             HStack(spacing: vao) {
+                 ForEach(Array(pedacos.enumerated()), id: \.offset) { i, pedaco in
+-                    Capsule().fill(paleta.cor(corDoPedaco(pedaco))).frame(width: larguras[i])
++                    Capsule().fill(paleta.cor(corDoPedaco(pedaco)).opacity(apagadas ? 0 : 1)).frame(width: larguras[i])
+                 }
+             }
+         }
+@@ -135,3 +140,12 @@ struct Hachura: Shape {
+         return listras.intersection(Path(rect))
+     }
+ }
++
++#if DEBUG
++extension EnvironmentValues {
++    /// Laudo das marcas (spec da etapa 4, "Laudo das marcas"; só Debug): com `-custta.marcasApagadas YES` as marcas de
++    /// gráfico somem sem mexer no layout, como o texto apagado apaga o texto; os dois prints dão a cor de cada marca e o
++    /// fundo atrás dela (a placa sobre o vidro), e o laudo cobra 3:1.
++    @Entry var marcasApagadas = false
++}
++#endif
+```
+
+Em `app-ios/Custta/Telas/RaizView.swift`:
+
+```diff
+--- a/app-ios/Custta/Telas/RaizView.swift
++++ b/app-ios/Custta/Telas/RaizView.swift
+@@ -27,6 +27,8 @@ struct RaizView: View {
+     /// O globo para pelo "Reduzir movimento".
+     @AppStorage("custta.auroraPiorCaso") private var auroraPiorCaso = false
+     @AppStorage("custta.textoApagado") private var textoApagado = ""
++    /// Laudo das marcas (etapa 4): as marcas de gráfico apagadas, sem mexer no layout (`-custta.marcasApagadas YES`).
++    @AppStorage("custta.marcasApagadas") private var marcasApagadas = false
+     #endif
+ 
+     var body: some View {
+@@ -50,6 +52,7 @@ struct RaizView: View {
+         #if DEBUG
+         .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
+         .environment(\.apagaTextoDaNavegacao, textoApagado == "navegacao")
++        .environment(\.marcasApagadas, marcasApagadas)
+         #endif
+         // O aviso e o "Finalizar saída" ficam por cima de todas as telas; vêm antes do .environment para receber
+         // a mesma paleta.
+```
+
+- [ ] **Step 4: Ver passar**
+
+Run (no Pro Max):
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|warning:|TEST BUILD" | grep -v appintents | tail -3
+xcodebuild test-without-building "${XB[@]}" -collect-test-diagnostics never -only-testing:CusttaUITests/LeituraNoVidroUITests/testMarcasDaBarraDeTopicos 2>&1 | grep -E "^marcas \||Executed [0-9]+ test" | tail -5
+```
+Expected: `** TEST BUILD SUCCEEDED **`, sem aviso, e
+```
+marcas | marcas, barra de tópicos, escuro, transparente | 7 marcas | pior nota 4.49
+marcas | marcas, barra de tópicos, escuro, fosco | 7 marcas | pior nota 4.52
+marcas | marcas, barra de tópicos, claro, transparente | 7 marcas | pior nota 3.60
+marcas | marcas, barra de tópicos, claro, fosco | 7 marcas | pior nota 3.68
+	 Executed 1 test, with 0 failures (0 unexpected) in 74.311 (74.314) seconds
+```
+A cor de cada marca medida é a do token, nos dois temas (no escuro, `#199E70`, `#3987E5`, `#D55181`, `#9085E9`, `#D95926`, `#14A3C7` e o `#8FA89C` do "Outros"; no claro, `#10976A` a `#0C86A4` e `#5E7A6E`). O pior pedaço é o verde-água no claro, 3,60:1 no Transparente e 3,68 no Fosco (o mockup mediu 3,54); no escuro, o laranja, 4,49.
+
+- [ ] **Step 5: Conferir o Release**
+
+O modo de marcas apagadas é só do Debug (memória `release-sem-ganchos-conferir-por-nm`): compilar o Release para o simulador, sem assinar, e contar o símbolo no binário do Release e no `Custta.debug.dylib` do Debug, com um símbolo de produção de controle.
+
+Run (como no Step 6 da Tarefa 28: o Release sem `-derivedDataPath`, no mesmo DerivedData do `XB`, e o `nm -a` nos dois):
+```bash
+xcodebuild build-for-testing "${XB[@]}" 2>&1 | grep -E "error:|TEST BUILD" | tail -1
+xcodebuild build -project app-ios/Custta.xcodeproj -scheme Custta -configuration Release -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -skipMacroValidation -skipPackagePluginValidation -onlyUsePackageVersionsFromResolvedFile 2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)" | tail -1
+PROD=$(xcodebuild "${XB[@]}" -showBuildSettings 2>/dev/null | awk -F' = ' '/^ *BUILD_DIR = /{print $2; exit}')
+for s in marcasApagadas BlocosDaObra; do echo "$s release=$(nm -a "$PROD/Release-iphonesimulator/Custta.app/Custta" | grep -c $s) debug=$(nm -a "$PROD/Debug-iphonesimulator/Custta.app/Custta.debug.dylib" | grep -c $s)"; done
+```
+Expected: `** TEST BUILD SUCCEEDED **`, `** BUILD SUCCEEDED **` e:
+```
+marcasApagadas release=0 debug=60
+BlocosDaObra release=327 debug=498
+```
+O `marcasApagadas` fica fora do Release; o `BlocosDaObra` é o controle. (Com o `nm -a`, que conta também os símbolos de depuração; o `nm` sem ele dava 0 e 30, e 161 e 243.)
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app-ios/Custta/Identidade/BarraEmpilhada.swift app-ios/Custta/Telas/RaizView.swift app-ios/CusttaUITests/LaudoDeContraste.swift app-ios/CusttaUITests/LeituraNoVidroUITests.swift
+git commit -m "test: marcas apagadas no laudo e a barra de tópicos a 3:1" -m "O laudo ganha o modo de Debug que apaga só as marcas de gráfico, como o texto apagado apaga o texto: com -custta.marcasApagadas, a barra empilhada pinta os pedaços sem cor e sem mudar o layout. O medidor das marcas separa cada pedaço pelo vão da barra, lê a cor no miolo e mede o contraste contra a placa que fica atrás, no print sem marcas." -m "O teste novo cobra os 7 pedaços da Casa Alphaville a 3:1, nos dois temas e nos vidros Transparente e Fosco; o pior é o verde-água no claro, 3,60:1. As tabelas das marcas saem com o próprio prefixo, fora do comparador do laudo, que mede texto a 4,5:1."
+```
+
+### Task 34: Checklist do aparelho do marco 1
+
+O checklist que o Giovani roda no iPhone no build do fecho de cada marco da etapa 4 (spec, "Marcos e espera", o checklist: "Cada marco tem um checklist do aparelho, com VoiceOver, Controle por Voz e a letra máxima. O da etapa fecha no 4b"), no estilo do da etapa 3 (Task 21 do plano da etapa 3, `docs/plans/2026-10-19-app-nativo-etapa3-checklist-aparelho.md`), na conta de sempre. O arquivo nasce com a parte de antes do primeiro build (a cópia dos dados e o PR 0 do site no ar) e a seção do marco 1: os tokens globais no app inteiro (o âmbar de texto mais escuro do claro e a cápsula de abas na borda de 16 pt, PR 1a; o globo e o secundário ficam como estavam); a obra em blocos (o título mono, o sólido, um bloco por assunto, os gastos por tópico sem toque e sem portas, com o "Outros" sempre no cinza, a linha mono, a obra sem orçamento, sem gastos e vendida com lucro e com prejuízo, numa "Obra de teste" criada no app e apagada no fim, como pede o spec, "Conta"); a letra máxima; e a acessibilidade, com VoiceOver, Controle por Voz, os dois vidros e Reduzir transparência e Aumentar contraste. Os marcos 2 e 3 completam o mesmo arquivo (o 4b fecha o da etapa).
+
+**Files:**
+- Create: `docs/plans/2026-10-29-app-nativo-etapa4-checklist-aparelho.md`
+
+- [ ] **Step 1: Escrever o checklist**
+
+Criar `docs/plans/2026-10-29-app-nativo-etapa4-checklist-aparelho.md`:
+
+```markdown
+# App nativo, etapa 4: checklist no iPhone
+
+O Giovani roda no iPhone, pelo TestFlight, o build de cada fecho de marco da etapa 4 (marco 1: os PRs 1a, 1b e 1c; marco 2: 4a, 2a e 2b; marco 3: 3a, 3b e 4b), **na conta de sempre**. Cada item que falhar vira tarefa para o Forja, com o passo, o que apareceu e uma captura de tela. Os itens de um marco continuam valendo nos builds seguintes. Os itens que mexem em gasto usam uma obra de teste criada no próprio app ("Obra de teste") e apagada no fim.
+
+## Antes do primeiro build
+
+A etapa não grava nada novo: os caminhos de gravação são os das etapas 2 e 3. Mesmo assim, a cópia vale antes de cada build de marco.
+
+- [ ] No site: Ajustes → Seus dados → Exportar dados completos. Guarde o arquivo (`custta-AAAA-MM-DD.json`) fora do repositório, como cópia de segurança.
+- [ ] O PR 0 do site já está publicado (as seis regras no `calc.js` e os dois alinhamentos do "Vale a pena?").
+
+## Marco 1: os tokens globais e a obra em blocos
+
+**Os tokens, no app inteiro** (PR 1a)
+
+- [ ] No claro, o âmbar dos textos sobre o vidro ficou mais escuro (`#5E3A03`): o aviso dos tópicos na linha do orçamento, o "Passou … do previsto" da tela Orçamento e o prejuízo no bloco da Venda. Diga se algum texto ficou pesado demais.
+- [ ] No escuro, o globo continua como antes (a 40% dentro do app: o 1a mediu, e ele já era mais apagado que o do mockup); nada fica difícil de ler por cima dele.
+- [ ] A cápsula de abas e o + ficam a 16 pt da borda em todas as telas (Obras, a obra, Orçamento, Afazeres, Ajustes) e não pulam de lugar ao trocar de aba.
+
+**A obra em blocos** (PRs 1b e 1c; mockup aprovado, parte 1)
+
+- [ ] Abra a obra de sempre: o nome no título em letra mono (SF Mono), quebrando em duas linhas se for comprido; embaixo, a cápsula com a fase e "começou em … · N meses".
+- [ ] O Total gasto no bloco verde, com o número em mono e o R$ e os centavos menores na mesma linha; "N lançamentos" na etiqueta e "bruto, sem correção" embaixo. Os números são os do site.
+- [ ] Depois, um bloco por assunto, na ordem de antes: Orçamento (com a seta, abre a tela Orçamento), Corrigido pelo banco, A pagar · 30 dias (com a seta, abre a folha do A pagar) e Venda estimada. As ações da fase, os Afazeres, "Gastos por tópico" e os Lançamentos vêm depois; nada da etapa 3 sumiu.
+- [ ] "Gastos por tópico": a barra com um pedaço por tópico (os 6 maiores nas cores e "Outros" em cinza) e a legenda dos 4 maiores com o %, e "e mais N tópicos". Os % batem com a folha do detalhe de cada tópico. A barra não abre nada neste build (os Gráficos chegam no marco 2), e não há "Ver gráficos" nem "Relatório".
+- [ ] Os lançamentos com o valor em mono à direita e o ícone pequeno do tópico na linha de baixo; um título comprido quebra, e o valor desce para baixo do título só quando não cabe ao lado. As folhas (A pagar e detalhe do tópico) continuam com a linha de antes.
+- [ ] Uma obra sem orçamento: o bloco do Orçamento some e "Definir orçamento" aparece nas ações.
+- [ ] Na "Obra de teste", sem gastos: o bloco verde mostra R$ 0,00 e "Toque no + para lançar o primeiro gasto."; somem "Gastos por tópico", a lupa e o mês. Lance um gasto pelo +, no tópico "Outros": a barra de tópicos aparece com ele, toda cinza, e a linha nova acende na lista.
+- [ ] Lance outro gasto na "Obra de teste", menor, em "Terreno": o Terreno sai colorido, e o "Outros" fica cinza, no fim da barra, mesmo sendo o maior.
+- [ ] Marque a "Obra de teste" como pronta, registre uma venda maior que os gastos e confira: o bloco verde vira "Lucro da venda", com "+R$ …", "Vendida em …" e "+R$ … acima do banco", e o Total gasto desce para um bloco de vidro logo abaixo do sólido (depois do Orçamento, se a obra tiver um). Desfaça a venda e registre uma menor que o gasto: o bloco verde volta a ser o Total gasto, e o lucro negativo fica no bloco da Venda, em âmbar (nunca vermelho). Desfaça a venda e apague a "Obra de teste".
+- [ ] Os gestos de antes: arrastar um lançamento para a esquerda mostra "Apagar"; o "A vencer" abre e fecha; a lupa e o mês filtram só a lista; rolar a tela faz o nome passar para a barra, também em mono.
+
+**Texto Maior no máximo** (Ajustes do iPhone → Acessibilidade → Tela e Tamanho do Texto → Texto Maior)
+
+- [ ] O título cresce e quebra em duas linhas (numa obra de nome comprido); a cápsula, os blocos e a etiqueta de cada bloco empilham, sem nada cortado.
+- [ ] O número do bloco verde encolhe só o necessário para caber numa linha, sem reticências, com o R$ e os centavos ainda legíveis; os números dos outros blocos, o mesmo.
+- [ ] Na legenda da barra, 3 tópicos e "e mais N tópicos"; o nome comprido quebra em vez de cortar.
+- [ ] Nos lançamentos, o valor desce para baixo do título e cada informação fica numa linha.
+
+**Acessibilidade**
+
+- [ ] VoiceOver, na obra: cada bloco é um elemento só, lido inteiro ("Total gasto, 46 lançamentos, R$ 842.317,45, bruto, sem correção"); o número é lido como dinheiro, com os centavos. O título é um cabeçalho.
+- [ ] VoiceOver, nos gastos por tópico: o bloco é um elemento só, "Gastos por tópico", com os pedaços e o % de cada um ("Terreno, 38%; Estrutura, 11%; …"; "menos de 1%" no lugar do "<1%"); a legenda não é lida de novo.
+- [ ] VoiceOver, na vendida com lucro: "Lucro da venda, Vendida em …, +R$ …, +R$ … acima do banco". Diga se o "mais" e o "menos" são falados de um jeito que se entende.
+- [ ] VoiceOver, os blocos com seta: dois toques no Orçamento abrem a tela Orçamento e no A pagar abrem a folha dele; o rotor e o gesto de escape continuam como na etapa 3.
+- [ ] Controle por Voz ("Mostrar nomes"): "Tocar Orçamento", "Tocar A pagar", "Tocar Afazeres" e o nome de um lançamento funcionam; os gastos por tópico não aparecem como botão.
+- [ ] No escuro e no claro, nos vidros Transparente e Fosco (Ajustes → Aparência), os pedaços da barra se distinguem da placa atrás e entre si, e o texto da legenda se lê. Com Reduzir transparência, os blocos ficam sólidos e nada some.
+- [ ] Com Aumentar contraste, a obra inteira continua legível, e o bloco verde não muda de cor.
+```
+
+- [ ] **Step 2: Ver passar**
+
+Run: `grep -c '^- \[ \]' docs/plans/2026-10-29-app-nativo-etapa4-checklist-aparelho.md`
+Expected: `26` (os itens do checklist). O `tests/docs.test.mjs` não serve aqui: ele lista os arquivos pelo `git ls-files`, e o checklist só entra no índice no `git add` do Step 3; o teste dos links só olha os `*.md` da raiz e os `docs/*.md`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add docs/plans/2026-10-29-app-nativo-etapa4-checklist-aparelho.md
+git commit -m "docs: checklist do aparelho do marco 1 da etapa 4" -m "O checklist que o Giovani roda no iPhone no build que fecha cada marco da etapa 4, na conta de sempre, no estilo do da etapa 3: antes do primeiro build, a cópia dos dados e o PR 0 do site no ar; e a seção do marco 1, com os tokens globais no app inteiro, a obra em blocos nos estados do mockup (numa obra de teste criada e apagada no próprio app), a letra máxima e a acessibilidade, com VoiceOver, Controle por Voz, os dois vidros, Reduzir transparência e Aumentar contraste. Os marcos 2 e 3 completam o mesmo arquivo."
+```
+
+---
+
 ## Para os planos dos marcos 2 e 3
 
 O que as fatias e as sondas deste marco deixam para os planos seguintes.
@@ -7360,3 +11330,9 @@ O que as fatias e as sondas deste marco deixam para os planos seguintes.
 **Para o 4a, da CI (Decisões).**
 - Os testes de tela da etapa 4 vão para jobs próprios, e o `app` para de crescer. Ele termina o marco 1 com uns 119 testes de tela.
 - O `laudo.xcresult` passa a subir sempre, e não só quando reprova. Assim, as tabelas do iOS 26 também são comparadas palavra por palavra com as do commit anterior (spec, "Testes e validação", item 6). No marco 1, a comparação é só no Pro Max (iOS 27), e a CI é o portão de 4,5.
+
+**Do PR 1c (a costura das telas da análise).**
+- **O "Vale a pena?" não tem rota em `RotaDeObras`, porque é uma aba.** O 4a põe a `Aba.valeAPena` e, junto, o gancho `CUSTTA_ABRIR=valeAPena:<id>`. Os falsos dos estados dele já estão no `CUSTTA_DADOS=analise`, e o "sem obra" no `vazio`.
+- **Os Gráficos (2a) e o Relatório (3a) trocam só o `DestinoDaAnalise(tela:caminho:)`.** A rota (`RotaDeObras.analise(.graficos(id))` e `.relatorio(id)`) e o gancho (`CUSTTA_ABRIR=graficos:<id>` e `relatorio:<id>`) já existem.
+- **Obra que some com a tela aberta.** Hoje, com a obra inexistente ou apagada, a tela provisória abre na raiz, sem nome. As telas de verdade do 2a e do 3a voltam quando a obra some, como a tela Orçamento.
+- **`CUSTTA_FOLHA` sobre as telas da análise.** Ele funciona (sonda, 3 de 3), então os testes do 2a e do 3a abrem folhas sem mexer no `PrincipalView`.

@@ -1168,8 +1168,9 @@ function renderRelatorio(){
     const t = map[gr.topico] || {nm:gr.topico, ic:'etiqueta'};
     rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
       <td>${money(gr.bruto)}</td><td>${money(gr.corrigido)}</td><td>+${money(gr.corrigido-gr.bruto)}</td></tr>`;
-    gr.itens.forEach(({gasto:g, corrigido:c})=>{
-      itensRelatorio.set(g.id,{g,c});
+    gr.itens.forEach(item=>{
+      const {gasto:g, corrigido:c} = item;
+      itensRelatorio.set(g.id,item);
       const descricao=g.descricao||t.nm;
       rows += `<tr><td class="rt-desc"><label class="rep-pick no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(descricao)}"></label>${escapeHtml(descricao)}</td><td>${fmtData(g.data)}</td>
         <td>${money(g.valor)}</td><td>${money(c)}</td><td>+${money(c-g.valor)}</td></tr>`;
@@ -1219,13 +1220,12 @@ function renderRelatorio(){
   const atualizarSelecao=()=>{
     const marcados=[...document.querySelectorAll('.rel-check:checked')]
       .map(c=>itensRelatorio.get(c.dataset.gasto)).filter(Boolean);
-    const bruto=marcados.reduce((s,x)=>s+x.g.valor,0);
-    const corr=marcados.reduce((s,x)=>s+x.c,0);
+    const soma=OBRA_CALC.somaSelecao(marcados,totB);
     $('#relSelected').classList.toggle('hidden',marcados.length===0);
-    $('#relSelQtd').textContent=`${marcados.length} ${marcados.length===1?'item':'itens'}`;
-    $('#relSelBruto').textContent=money(bruto);
-    $('#relSelCorr').textContent=money(corr);
-    $('#relSelPct').textContent=totB>0?(bruto/totB*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'0%';
+    $('#relSelQtd').textContent=soma.quantos;
+    $('#relSelBruto').textContent=money(soma.bruto);
+    $('#relSelCorr').textContent=money(soma.corrigido);
+    $('#relSelPct').textContent=soma.parte;
   };
   document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
   ligarImprimir($('#relPrint'));

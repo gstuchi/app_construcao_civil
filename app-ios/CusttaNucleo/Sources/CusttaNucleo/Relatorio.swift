@@ -1,7 +1,7 @@
 import Foundation
 
-/* O relatório da obra, como o calc.js o monta (morava no app.js renderRelatorio): os grupos, o fim e a linha da correção.
-   Conferido pelos vetores do site (RelatorioTests). */
+/* O relatório da obra, como o calc.js o monta (morava no app.js renderRelatorio): os grupos, o fim, a linha da correção e a
+   soma da seleção. Conferido pelos vetores do site (RelatorioTests). */
 
 /// Um gasto do relatório, com o corrigido até o fim da correção.
 public struct ItemDoRelatorio: Equatable, Sendable {
@@ -71,3 +71,25 @@ public func linhaCorrecao(_ obra: Obra, hoje: String, taxa: Double) -> String {
     let ate = obra.venda.map { "a venda (\(dataCurta($0.data)))" } ?? "hoje (\(dataCurta(hoje)))"
     return "Correção de \(numeroJS(taxa).replacingOccurrences(of: ".", with: ","))% ao mês, da data de cada gasto até \(ate)."
 }
+
+/// A soma da seleção do relatório (e a dos achados da busca).
+public struct SomaDaSelecao: Equatable, Sendable {
+    /// "1 item" ou "N itens".
+    public let quantos: String
+    public let bruto: Double
+    public let corrigido: Double
+    /// A parte do total bruto da obra, com 2 casas ("4,20%"), ou "0%" com o total zero.
+    public let parte: String
+}
+
+/// `somaSelecao` do calc.js: os itens na ordem do relatório (a soma em ponto flutuante segue essa ordem).
+public func somaSelecao(_ itens: [ItemDoRelatorio], totalBruto: Double) -> SomaDaSelecao {
+    let bruto = itens.reduce(0) { $0 + $1.gasto.valor }
+    return SomaDaSelecao(quantos: "\(itens.count) \(itens.count == 1 ? "item" : "itens")", bruto: bruto,
+                         corrigido: itens.reduce(0) { $0 + $1.corrigido },
+                         parte: totalBruto > 0 ? duasCasasPtBR(bruto / totalBruto * 100) + "%" : "0%")
+}
+
+/// `x.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})`: os dígitos e o arredondamento do
+/// `moeda` (o mesmo formatador do ICU), sem o "R$ ".
+func duasCasasPtBR(_ x: Double) -> String { moeda(x).replacingOccurrences(of: "R$\u{00A0}", with: "") }

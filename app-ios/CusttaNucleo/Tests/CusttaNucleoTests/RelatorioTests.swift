@@ -23,6 +23,14 @@ extension FimDoRelatorio {
     }
 }
 
+extension ValorJSON {
+    /// Um item do relatorioObra do site ({gasto, corrigido}).
+    var itemDoRelatorio: ItemDoRelatorio {
+        let o = comoObjeto ?? [:]
+        return ItemDoRelatorio(gasto: Gasto(campos: o["gasto"]?.comoObjeto ?? [:]), corrigido: o["corrigido"]!.numero)
+    }
+}
+
 /* O relatório da obra (calc.js relatorioObra e companhia), conferido contra os vetores do site. */
 struct RelatorioTests {
     @Test func gruposDoRelatorio() {
@@ -40,6 +48,14 @@ struct RelatorioTests {
     @Test func fimDoRelatorio() {
         for c in Vetores.casos("calc.fimRelatorio") {
             confere(fimRelatorio(c.args[0].obra, hoje: c.args[1].comoTexto!, taxa: c.args[2].numero)?.json ?? .nulo, c.saida, .dinheiro, c.caso)
+        }
+    }
+
+    @Test func somaDaSelecao() {
+        for c in Vetores.casos("calc.somaSelecao") {
+            let r = somaSelecao((c.args[0].comoLista ?? []).map(\.itemDoRelatorio), totalBruto: c.args[1].numero)
+            confere(.objeto(["quantos": .texto(r.quantos), "bruto": .numero(r.bruto), "corrigido": .numero(r.corrigido), "parte": .texto(r.parte)]),
+                    c.saida, .dinheiro, c.caso)
         }
     }
 

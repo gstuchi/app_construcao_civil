@@ -6597,6 +6597,420 @@
         "saida": "Correção de 1% ao mês, da data de cada gasto até a venda (30/09/26)."
       }
     ],
+    "calc.somaSelecao": [
+      {
+        "caso": "nenhum",
+        "args": [
+          [],
+          347100.50000000006
+        ],
+        "saida": {
+          "quantos": "0 itens",
+          "bruto": 0,
+          "corrigido": 0,
+          "parte": "0,00%"
+        }
+      },
+      {
+        "caso": "um item",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              "corrigido": 117878.75574995887
+            }
+          ],
+          347100.50000000006
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 98000,
+          "corrigido": 117878.75574995887,
+          "parte": "28,23%"
+        }
+      },
+      {
+        "caso": "dois itens de valores diferentes",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              "corrigido": 271216.5183161852
+            },
+            {
+              "gasto": {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              "corrigido": 13753.02356450835
+            }
+          ],
+          347100.50000000006
+        ],
+        "saida": {
+          "quantos": "2 itens",
+          "bruto": 243000.5,
+          "corrigido": 284969.5418806936,
+          "parte": "70,01%"
+        }
+      },
+      {
+        "caso": "tudo dá 100%",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              "corrigido": 271216.5183161852
+            },
+            {
+              "gasto": {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              "corrigido": 117878.75574995887
+            },
+            {
+              "gasto": {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              "corrigido": 13753.02356450835
+            },
+            {
+              "gasto": {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              "corrigido": 1037.0622868121295
+            },
+            {
+              "gasto": {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              "corrigido": 1033.33
+            },
+            {
+              "gasto": {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              "corrigido": 1033.33
+            },
+            {
+              "gasto": {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              "corrigido": 3438.112636433903
+            }
+          ],
+          347100.50000000006
+        ],
+        "saida": {
+          "quantos": "7 itens",
+          "bruto": 347100.50000000006,
+          "corrigido": 409390.1325538985,
+          "parte": "100,00%"
+        }
+      },
+      {
+        "caso": "vendida: o corrigido vai até a venda",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "h01",
+                "valor": 150000,
+                "topico": "terreno",
+                "descricao": "Terreno",
+                "data": "2024-01-15",
+                "pagamento": "pix"
+              },
+              "corrigido": 170506.52894453396
+            },
+            {
+              "gasto": {
+                "id": "h04",
+                "valor": 4500,
+                "topico": "outros",
+                "descricao": "Limpeza depois da venda",
+                "data": "2025-03-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 4500
+            }
+          ],
+          559500.75
+        ],
+        "saida": {
+          "quantos": "2 itens",
+          "bruto": 154500,
+          "corrigido": 175006.52894453396,
+          "parte": "27,61%"
+        }
+      },
+      {
+        "caso": "total zero",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 0,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 0
+            }
+          ],
+          0
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 0,
+          "corrigido": 0,
+          "parte": "0%"
+        }
+      },
+      {
+        "caso": "um terço",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 1,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 1
+            }
+          ],
+          3
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 1,
+          "corrigido": 1,
+          "parte": "33,33%"
+        }
+      },
+      {
+        "caso": "dois terços",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 2,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 2.5
+            }
+          ],
+          3
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 2,
+          "corrigido": 2.5,
+          "parte": "66,67%"
+        }
+      },
+      {
+        "caso": "meio centésimo sobe: 0,125%",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 1,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 1
+            }
+          ],
+          800
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 1,
+          "corrigido": 1,
+          "parte": "0,13%"
+        }
+      },
+      {
+        "caso": "0,0625% fica em 0,06%",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 1,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 1
+            }
+          ],
+          1600
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 1,
+          "corrigido": 1,
+          "parte": "0,06%"
+        }
+      },
+      {
+        "caso": "99,995% vira 100,00%",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 19999,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 19999
+            }
+          ],
+          20000
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 19999,
+          "corrigido": 19999,
+          "parte": "100,00%"
+        }
+      },
+      {
+        "caso": "0,075% vira 0,08%: arredonda o decimal, não o binário (o toFixed daria 0,07%)",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 3,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 3
+            }
+          ],
+          4000
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 3,
+          "corrigido": 3,
+          "parte": "0,08%"
+        }
+      }
+    ],
     "calc.lucroVenda": [
       {
         "caso": "Casa Alphaville",

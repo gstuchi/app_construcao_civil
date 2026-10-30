@@ -20,6 +20,8 @@ const VENDIDA={id:'v',nome:'Sobrado Centro',dataInicio:'2025-05-01',fase:'vendid
 const PRONTA={id:'p',nome:'Pronta Jardins',dataInicio:'2026-01-05',fase:'pronta',valorEstimadoVenda:100000,
   gastos:[g('p1','estrutura',150000,'2026-02-01','Estrutura')]};
 const SEM_VENDA={id:'s',nome:'Terreno novo',dataInicio:'2026-09-01',fase:'construcao',gastos:[g('s1','terreno',80000,'2026-09-02','Sinal')]};
+/* Total bruto zero: a parte do total da seleção fica em "0%". */
+const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao',gastos:[g('z1','pintura',0,'2026-03-02','Brinde')]};
 
 (async()=>{
   const browser=await chromium.launch();
@@ -38,7 +40,7 @@ const SEM_VENDA={id:'s',nome:'Terreno novo',dataInicio:'2026-09-01',fase:'constr
     await page.goto('http://localhost:8123');
     await page.evaluate(obras=>{document.getElementById('auth')?.classList.add('hidden');document.body.classList.remove('locked');
       db=normaliza({obras,config:{taxaMensal:1,topicosCustom:[]}});
-      dadosCarregados=true;renderAll();openObra('a');},[CASA,VENDIDA,PRONTA,SEM_VENDA]);
+      dadosCarregados=true;renderAll();openObra('a');},[CASA,VENDIDA,PRONTA,SEM_VENDA,ZERADA]);
     const texto=s=>s.replace(/\s+/g,' ').trim();
 
     // Gasto por tópico na obra: do maior para o menor, no empate o que aparece primeiro nos gastos; a legenda para em 7
@@ -98,8 +100,23 @@ const SEM_VENDA={id:'s',nome:'Terreno novo',dataInicio:'2026-09-01',fase:'constr
     assert.deepEqual(await fimDoRelatorio(),[]);
     assert.equal(await linhaDaCorrecao(),'Correção de 1% ao mês, da data de cada gasto até hoje (06/10/26).');
 
+    // Soma da seleção: "N item(ns)", o bruto, o corrigido sem arredondar cada gasto antes e a parte do total com 2 casas
+    const selecao=async()=>page.evaluate(()=>[$('#relSelected').classList.contains('hidden'),
+      ...['#relSelQtd','#relSelBruto','#relSelCorr','#relSelPct'].map(s=>$(s).textContent.replace(/\s+/g,' '))]);
+    await page.evaluate(()=>{openObra('a');showView('relatorio');renderRelatorio();});
+    await page.locator('.rel-check[data-gasto="a1"]').check();
+    await page.locator('.rel-check[data-gasto="a3"]').check();
+    assert.deepEqual(await selecao(),[false,'2 itens','R$ 8.500,00','R$ 9.229,86','4,20%']);
+    await page.locator('.rel-check[data-gasto="a1"]').uncheck();
+    assert.deepEqual(await selecao(),[false,'1 item','R$ 2.500,00','R$ 2.725,33','1,24%']);
+    await page.locator('.rel-check[data-gasto="a3"]').uncheck();
+    assert.equal((await selecao())[0],true);
+    await page.evaluate(()=>{openObra('z');showView('relatorio');renderRelatorio();});
+    await page.locator('.rel-check[data-gasto="z1"]').check();
+    assert.deepEqual(await selecao(),[false,'1 item','R$ 0,00','R$ 0,00','0%']);
+
     assert.deepEqual(await page.evaluate(()=>errosAnalise),[]);
     await ctx.close();
-    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos, fim e linha da correção do relatório');
+    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos, fim, linha da correção e soma da seleção do relatório');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

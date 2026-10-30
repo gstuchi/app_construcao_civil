@@ -7009,6 +7009,31 @@
           "corrigido": 3,
           "parte": "0,08%"
         }
+      },
+      {
+        "caso": "14,375% fica em 14,37%: a conta é bruto / total * 100 (bruto * 100 / total daria 14,38%)",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 23,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 23
+            }
+          ],
+          160
+        ],
+        "saida": {
+          "quantos": "1 item",
+          "bruto": 23,
+          "corrigido": 23,
+          "parte": "14,37%"
+        }
       }
     ],
     "calc.lucroVenda": [
@@ -11281,6 +11306,80 @@
           "acima": 3.0152250474576814,
           "vale": true,
           "multiplicador": 4.045377297932273
+        }
+      },
+      {
+        "caso": "venda igual ao corrigido: só acima dele vale a pena",
+        "args": [
+          {
+            "id": "nova",
+            "nome": "Obra",
+            "dataInicio": "2026-10-06",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "n1",
+                "valor": 1000,
+                "topico": "terreno",
+                "descricao": "",
+                "data": "2026-10-06",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          1000,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 1000,
+          "corrigido": 1000,
+          "novaDemais": true,
+          "tir": null,
+          "acima": null,
+          "vale": false,
+          "multiplicador": 0
+        }
+      },
+      {
+        "caso": "obra com 20 dias até o alvo fica sem taxa (a TIR passaria de 180% ao mês)",
+        "args": [
+          {
+            "id": "vinte",
+            "nome": "Obra",
+            "dataInicio": "2026-09-16",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "v1",
+                "valor": 1000,
+                "topico": "terreno",
+                "descricao": "",
+                "data": "2026-09-16",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          2000,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 2000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 1000,
+          "corrigido": 1006.559085302787,
+          "novaDemais": true,
+          "tir": null,
+          "acima": null,
+          "vale": true,
+          "multiplicador": 0
         }
       }
     ],

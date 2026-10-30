@@ -49,6 +49,19 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
       ['Pintura','5% · R$ 10 mil'],['Alvenaria','5% · R$ 10 mil'],['Elétrica','3% · R$ 5,4 mil'],['Encanamento','1% · R$ 3,0 mil'],
       ['Telhado','1% · R$ 2,5 mil']]);
     assert.equal(await page.locator('#oDonut circle').count(),9);
+    // O anel: cada arco vale bruto/total da volta e começa onde o anterior termina (o texto da legenda não prende a conta do arco)
+    const VOLTA=2*Math.PI*15.915,TOTAL=CASA.gastos.reduce((s,x)=>s+x.valor,0);
+    const ORDEM=['terreno','fundacao','pintura','alvenaria','eletrica','hidraulica','telhado','projeto','outros'];
+    const confereArcos=async sel=>{
+      const arcos=await page.$$eval(sel,cs=>cs.map(c=>[parseFloat(c.getAttribute('stroke-dasharray')),-parseFloat(c.getAttribute('stroke-dashoffset'))]));
+      let ini=0;
+      ORDEM.forEach((id,i)=>{
+        const len=CASA.gastos.filter(x=>x.topico===id).reduce((s,x)=>s+x.valor,0)/TOTAL*VOLTA;
+        assert.ok(Math.abs(arcos[i][0]-len)<1e-6&&Math.abs(arcos[i][1]-ini)<1e-6,`${sel}: arco de ${id} ${arcos[i]} × ${[len,ini]}`);
+        ini+=len;
+      });
+    };
+    await confereArcos('#oDonut circle');
     assert.equal(texto(await page.locator('#oDonutTotal').textContent()),'R$ 202 mil');
 
     // Nos Gráficos: todos os tópicos, na mesma ordem, no anel e na legenda
@@ -58,6 +71,7 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
       ['fundacao','Fundação','10% · R$ 20 mil'],['pintura','Pintura','5% · R$ 10 mil'],['alvenaria','Alvenaria','5% · R$ 10 mil'],
       ['eletrica','Elétrica','3% · R$ 5,4 mil'],['hidraulica','Encanamento','1% · R$ 3,0 mil'],['telhado','Telhado','1% · R$ 2,5 mil'],
       ['projeto','Documentação','1% · R$ 1,2 mil'],['outros','Outros','0% · R$ 300,00']]);
+    await confereArcos('#grafBody .graf-donut circle');
     assert.deepEqual(await page.$$eval('#grafBody .graf-donut circle',cs=>cs.map(c=>c.dataset.top)),
       ['terreno','fundacao','pintura','alvenaria','eletrica','hidraulica','telhado','projeto','outros']);
 
@@ -78,6 +92,14 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
       ['Documentação','','R$ 1.200,00','R$ 1.312,44','+R$ 112,44'],['Alvará','05/01/26','R$ 1.200,00','R$ 1.312,44','+R$ 112,44'],
       ['Outros','','R$ 300,00','R$ 321,32','+R$ 21,32'],['Limpeza','10/03/26','R$ 300,00','R$ 321,32','+R$ 21,32'],
       ['TOTAL','','R$ 202.400,50','R$ 222.689,91','+R$ 20.289,41']]);
+    // a cola passa a taxa da config à regra (com a taxa em 1 do teste ela passaria sem ser vista) e o tópico que não existe mais
+    // aparece pelo id, no grupo e na linha sem descrição
+    await page.evaluate(()=>{db.config.taxaMensal=0.5;renderRelatorio();});
+    assert.deepEqual((await linhasDoRelatorio())[20],['TOTAL','','R$ 202.400,50','R$ 212.323,74','+R$ 9.923,24']);
+    await page.evaluate(()=>{db.config.taxaMensal=1;db.obras[0].gastos.push({id:'x1',valor:100,topico:'c_sumiu',descricao:'',data:'2026-02-01',pagamento:'pix'});renderRelatorio();});
+    assert.deepEqual((await linhasDoRelatorio()).filter(l=>l[0]==='c_sumiu'),
+      [['c_sumiu','','R$ 100,00','R$ 108,41','+R$ 8,41'],['c_sumiu','01/02/26','R$ 100,00','R$ 108,41','+R$ 8,41']]);
+    await page.evaluate(()=>{db.obras[0].gastos.pop();renderRelatorio();});
     // cada caixinha leva o id do seu gasto, na ordem das linhas
     assert.deepEqual(await page.$$eval('#relBody .rel-check',cs=>cs.map(c=>c.dataset.gasto)),['a4','a7','a3','a11','a1','a2','a5','a6','a8','a9','a10']);
 
@@ -93,9 +115,20 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     assert.deepEqual(await fimDoRelatorio(),[[['Venda em 20/05/26',''],['',''],['R$ 230.000,00','']],
       [['Lucro bruto (venda − gasto)',''],['',''],['R$ 15.000,00','pos']],[['Acima do banco (venda − corrigido)',''],['',''],['-R$ 19.420,73','neg']]]);
     assert.equal(await linhaDaCorrecao(),'Correção de 1,5% ao mês, da data de cada gasto até a venda (20/05/26).');
+    // resultado exatamente zero fica "pos" (>= 0): com a taxa em 0 o corrigido é o bruto, e a venda de R$ 215.000 iguala o gasto
+    await page.evaluate(()=>{db.config.taxaMensal=0;db.obras.find(o=>o.id==='v').venda.valor=215000;renderRelatorio();});
+    assert.deepEqual((await fimDoRelatorio()).slice(1).map(l=>l[2]),[['R$ 0,00','pos'],['R$ 0,00','pos']]);
+    // a data da venda vem do blob e entra na linha da correção: sai escapada, sem criar elemento
+    await page.evaluate(()=>{db.obras.find(o=>o.id==='v').venda.data='2026-05-<b>20';renderRelatorio();});
+    assert.equal(await page.locator('#relBody .rep-head b').count(),0);
+    assert.equal(await linhaDaCorrecao(),'Correção de 0% ao mês, da data de cada gasto até a venda (<b>20/05/26).');
+    await page.evaluate(()=>{const v=db.obras.find(o=>o.id==='v').venda;v.valor=230000;v.data='2026-05-20';});
     await page.evaluate(()=>{db.config.taxaMensal=1;openObra('p');showView('relatorio');renderRelatorio();});
     assert.deepEqual(await fimDoRelatorio(),[[['Venda estimada',''],['',''],['R$ 100.000,00','']],
       [['Margem estimada (estimado − corrigido)',''],['',''],['-R$ 62.613,38','neg']]]);
+    await page.evaluate(()=>{db.config.taxaMensal=0;db.obras.find(o=>o.id==='p').valorEstimadoVenda=150000;renderRelatorio();});
+    assert.deepEqual((await fimDoRelatorio()).slice(1).map(l=>l[2]),[['R$ 0,00','pos']]);
+    await page.evaluate(()=>{db.config.taxaMensal=1;db.obras.find(o=>o.id==='p').valorEstimadoVenda=100000;});
     await page.evaluate(()=>{openObra('s');showView('relatorio');renderRelatorio();});
     assert.deepEqual(await fimDoRelatorio(),[]);
     assert.equal(await linhaDaCorrecao(),'Correção de 1% ao mês, da data de cada gasto até hoje (06/10/26).');
@@ -116,8 +149,10 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     assert.deepEqual(await selecao(),[false,'1 item','R$ 0,00','R$ 0,00','0%']);
 
     // "Vale a pena?": o cartão e a tabela da simulação, com a cor pelo sinal no lucro e nas porcentagens
-    const cartao=()=>page.evaluate(()=>{const c=$('#simOut .card.saldo');return c&&[c.classList.contains('saldo-abaixo'),
-      ...['.k-label','.k-val','.k-sub'].map(s=>c.querySelector(s).textContent.replace(/\s+/g,' ').trim())];});
+    const cartao=()=>page.evaluate(()=>{const c=$('#simOut .card.saldo');if(!c)return c;const abaixo=c.classList.contains('saldo-abaixo');
+      const ic=document.createElement('span');ic.innerHTML=ICON(abaixo?'alerta':'check');
+      if(c.querySelector('.k-ic').innerHTML!==ic.innerHTML)throw new Error('o ícone do cartão não é o do veredito');
+      return [abaixo,...['.k-label','.k-val','.k-sub'].map(s=>c.querySelector(s).textContent.replace(/\s+/g,' ').trim())];});
     const tabela=()=>page.$$eval('#simOut .rep-sim tbody tr',trs=>trs.map(tr=>[tr.className,...[...tr.children].map(td=>[td.textContent.replace(/\s+/g,' ').trim(),td.className])]));
     const linha=(rotulo,b,c,cb='',cc='',tr='')=>[tr,[rotulo,''],[b,cb],[c,cc]];
     await page.evaluate(()=>{showView('simula');renderSimula();});

@@ -256,6 +256,7 @@ somaSel('meio centésimo sobe: 0,125%', [itemDe(1)], 800);
 somaSel('0,0625% fica em 0,06%', [itemDe(1)], 1600);
 somaSel('99,995% vira 100,00%', [itemDe(19999)], 20000);
 somaSel('0,075% vira 0,08%: arredonda o decimal, não o binário (o toFixed daria 0,07%)', [itemDe(3)], 4000);
+somaSel('14,375% fica em 14,37%: a conta é bruto / total * 100 (bruto * 100 / total daria 14,38%)', [itemDe(23)], 160);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);
@@ -325,6 +326,8 @@ contaSim('taxa zero não dá multiplicador (a leitura a põe em 1)', O4, 700000,
 contaSim('sem preço', O1, 0, 0, HOJE, 1);
 contaSim('preço negativo', O1, -5, 0, HOJE, 1);
 contaSim('o fim do mês fica no último dia (31/01 + 1 mês)', O4, 610000, 1, '2027-01-31', 1);
+contaSim('venda igual ao corrigido: só acima dele vale a pena', OBRA_NOVA, 1000, 0, HOJE, 1);
+contaSim('obra com 20 dias até o alvo fica sem taxa (a TIR passaria de 180% ao mês)', obraDe('vinte', [gastoDe('v1', 'terreno', 1000, '2026-09-16')], { dataInicio: '2026-09-16' }), 2000, 0, HOJE, 1);
 const textosSim = calc('textosSimulador');
 const CONTA = C.contaSimulador(O1, 1250000, 0, HOJE, 1);
 textosSim('vale a pena, com área', CONTA, 1, 210);

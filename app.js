@@ -1250,51 +1250,29 @@ function simulaCompute(){
 
   const vInp = $('#simValor');
   if(!vInp.value && o.valorEstimadoVenda && !vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(o.valorEstimadoVenda);
-  const venda = parseNum(vInp.value);
-  const meses = Math.max(0, parseInt($('#simMeses').value,10) || 0);
-
-  const alvoISO = OBRA_CALC.addMesesClampado(todayISO(), meses);
-  const bruto = OBRA_CALC.totalBruto(o);
-  const corr  = OBRA_CALC.totalCorrigido(o, taxa(), alvoISO);
-
-  if(venda<=0){
+  /* A conta e os textos: calc.js contaSimulador e textosSimulador (o app nativo usa os mesmos). Os meses param em 120 na
+     conta, mesmo digitados além do teto do campo. A obra com menos de 1 mês fica sem taxa (o % ao mês explodiria), e a TIR
+     passa da taxa do banco exatamente quando a venda passa do corrigido. */
+  const conta = OBRA_CALC.contaSimulador(o, parseNum(vInp.value), parseInt($('#simMeses').value,10) || 0, todayISO(), taxa());
+  if(!conta){
     out.innerHTML = `<div class="panel"><p class="muted-note">Digite o preço de venda pra ver a conta.</p></div>`;
     return;
   }
-  // obra com menos de 1 mês: o % ao mês explode (divide por quase zero) e vira número absurdo
-  const novaDemais = OBRA_CALC.mesesDeObra(o, alvoISO) < 1;
-  // TIR: cada gasto na sua data — passa da taxa do banco exatamente quando venda > corrigido
-  const rate = novaDemais ? null : OBRA_CALC.tirMensal(o.gastos, venda, alvoISO);
-  const acima = OBRA_CALC.rendimentoAcima(rate, taxa());
-  const bate = venda > corr;
-  const mult = (rate!=null && taxa()>0) ? rate/taxa() : 0;
-  const quando = meses===0 ? 'vendendo hoje' : `vendendo daqui a ${meses} ${meses===1?'mês':'meses'}`;
-
-  const rb = OBRA_CALC.resumoVenda(venda, bruto);
-  const rc = OBRA_CALC.resumoVenda(venda, corr);
-  const pct1  = v => v==null ? '—' : v.toFixed(1).replace('.',',')+'%';
-  const taxa2 = v => v==null ? '—' : v.toFixed(2).replace('.',',')+'% a.m.';
-  const din   = v => v==null ? '—' : money(v);
-  const sinal = v => v==null ? '' : (v>=0 ? 'pos' : 'neg');
+  const t = OBRA_CALC.textosSimulador(conta, taxa(), o.areaM2);
+  const cor = s => s ? ` class="${s === 'negativo' ? 'neg' : 'pos'}"` : '';
 
   out.innerHTML = `
-    <div class="card saldo big ${bate?'':'saldo-abaixo'}">
-      <div class="k-label"><span class="k-ic">${ICON(bate?'check':'alerta')}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
-      <div class="layout-45 k-val">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
-      <div class="k-sub">${quando} · banco paga ${escapeHtml(String(taxa()).replace('.',','))}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}${novaDemais ? ' · obra com menos de 1 mês — % ao mês ainda não diz muito' : ''}</div>
+    <div class="card saldo big ${conta.vale?'':'saldo-abaixo'}">
+      <div class="k-label"><span class="k-ic">${ICON(conta.vale?'check':'alerta')}</span> ${t.veredito}</div>
+      <div class="layout-45 k-val">${t.taxa}</div>
+      <div class="k-sub">${escapeHtml(t.detalhes.join(' · '))}</div>
     </div>
     <div class="panel">
       <h2 class="layout-28">${ICON('documento')} Relatório da simulação</h2>
       <div class="rep-scroll"><table class="rep-table rep-sim">
         <thead><tr><th></th><th>Pelo bruto</th><th>Pelo corrigido</th></tr></thead>
         <tbody>
-          <tr><td>Custo até a venda</td><td>${money(bruto)}</td><td>${money(corr)}</td></tr>
-          <tr><td>Venda</td><td>${money(venda)}</td><td>${money(venda)}</td></tr>
-          <tr class="rep-total"><td>Lucro</td><td class="${sinal(rb.lucro)}">${din(rb.lucro)}</td><td class="${sinal(rc.lucro)}">${din(rc.lucro)}</td></tr>
-          <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
-          <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
-          <tr><td>Rendimento ao mês</td><td>${taxa2(rate)}</td><td>${taxa2(acima)}</td></tr>
-          ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${escapeHtml(String(o.areaM2).replace('.',','))} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
+          ${t.tabela.map(l => `<tr${l.destaque ? ' class="rep-total"' : ''}><td>${escapeHtml(l.rotulo)}</td><td${cor(l.sinalBruto)}>${l.bruto}</td><td${cor(l.sinalCorrigido)}>${l.corrigido}</td></tr>`).join('\n          ')}
         </tbody>
       </table></div>
     </div>`;

@@ -8224,6 +8224,2498 @@
         }
       }
     ],
+    "calc.MESES_SIMULADOR": [
+      {
+        "caso": "valor",
+        "args": [],
+        "saida": 120
+      }
+    ],
+    "calc.contaSimulador": [
+      {
+        "caso": "vale a pena, vendendo hoje",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          1250000,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1250000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 347100.50000000006,
+          "corrigido": 409390.1325538985,
+          "novaDemais": false,
+          "tir": 7.977272930897838,
+          "acima": 6.9081910206909125,
+          "vale": true,
+          "multiplicador": 7.977272930897838
+        }
+      },
+      {
+        "caso": "daqui a 1 mês",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          1250000,
+          1,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1250000,
+          "meses": 1,
+          "alvo": "2026-11-06",
+          "bruto": 347100.50000000006,
+          "corrigido": 413542.74357765,
+          "novaDemais": false,
+          "tir": 7.505102305287837,
+          "acima": 6.440695351770143,
+          "vale": true,
+          "multiplicador": 7.505102305287837
+        }
+      },
+      {
+        "caso": "daqui a 120 meses",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          1250000,
+          120,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1250000,
+          "meses": 120,
+          "alvo": "2036-10-06",
+          "bruto": 347100.50000000006,
+          "corrigido": 1351157.7570856193,
+          "novaDemais": false,
+          "tir": 0.9424818260964973,
+          "acima": -0.05694868703318701,
+          "vale": false,
+          "multiplicador": 0.9424818260964973
+        }
+      },
+      {
+        "caso": "121 meses param em 120",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          1250000,
+          121,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1250000,
+          "meses": 120,
+          "alvo": "2036-10-06",
+          "bruto": 347100.50000000006,
+          "corrigido": 1351157.7570856193,
+          "novaDemais": false,
+          "tir": 0.9424818260964973,
+          "acima": -0.05694868703318701,
+          "vale": false,
+          "multiplicador": 0.9424818260964973
+        }
+      },
+      {
+        "caso": "500 meses param em 120",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          1250000,
+          500,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1250000,
+          "meses": 120,
+          "alvo": "2036-10-06",
+          "bruto": 347100.50000000006,
+          "corrigido": 1351157.7570856193,
+          "novaDemais": false,
+          "tir": 0.9424818260964973,
+          "acima": -0.05694868703318701,
+          "vale": false,
+          "multiplicador": 0.9424818260964973
+        }
+      },
+      {
+        "caso": "meses negativos viram 0",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          1250000,
+          -3,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 1250000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 347100.50000000006,
+          "corrigido": 409390.1325538985,
+          "novaDemais": false,
+          "tir": 7.977272930897838,
+          "acima": 6.9081910206909125,
+          "vale": true,
+          "multiplicador": 7.977272930897838
+        }
+      },
+      {
+        "caso": "rende menos que o banco",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          },
+          300000,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 300000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 372000,
+          "corrigido": 401637.77892891853,
+          "novaDemais": false,
+          "tir": -2.7552645742603135,
+          "acima": -3.718083736891409,
+          "vale": false,
+          "multiplicador": -2.7552645742603135
+        }
+      },
+      {
+        "caso": "taxa com vírgula",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          },
+          700000,
+          6,
+          "2026-10-06",
+          0.85
+        ],
+        "saida": {
+          "venda": 700000,
+          "meses": 6,
+          "alvo": "2027-04-06",
+          "bruto": 372000,
+          "corrigido": 417675.82125397795,
+          "novaDemais": false,
+          "tir": 4.727074098795459,
+          "acima": 3.8443967266192036,
+          "vale": true,
+          "multiplicador": 5.561263645641716
+        }
+      },
+      {
+        "caso": "obra com menos de 1 mês até o alvo fica sem taxa",
+        "args": [
+          {
+            "id": "nova",
+            "nome": "Obra",
+            "dataInicio": "2026-10-06",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "n1",
+                "valor": 1000,
+                "topico": "terreno",
+                "descricao": "",
+                "data": "2026-10-06",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          2000,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 2000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 1000,
+          "corrigido": 1000,
+          "novaDemais": true,
+          "tir": null,
+          "acima": null,
+          "vale": true,
+          "multiplicador": 0
+        }
+      },
+      {
+        "caso": "um mês depois a obra nova já tem taxa",
+        "args": [
+          {
+            "id": "nova",
+            "nome": "Obra",
+            "dataInicio": "2026-10-06",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "n1",
+                "valor": 1000,
+                "topico": "terreno",
+                "descricao": "",
+                "data": "2026-10-06",
+                "pagamento": "pix"
+              }
+            ]
+          },
+          2000,
+          1,
+          "2026-10-06",
+          1
+        ],
+        "saida": {
+          "venda": 2000,
+          "meses": 1,
+          "alvo": "2026-11-06",
+          "bruto": 1000,
+          "corrigido": 1010.1849021770508,
+          "novaDemais": false,
+          "tir": 97.5113395478288,
+          "acima": 95.55578173052356,
+          "vale": true,
+          "multiplicador": 97.5113395478288
+        }
+      },
+      {
+        "caso": "taxa zero não dá multiplicador (a leitura a põe em 1)",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          },
+          700000,
+          0,
+          "2026-10-06",
+          0
+        ],
+        "saida": {
+          "venda": 700000,
+          "meses": 0,
+          "alvo": "2026-10-06",
+          "bruto": 372000,
+          "corrigido": 372000,
+          "novaDemais": false,
+          "tir": 8.541857772984585,
+          "acima": 8.541857772984596,
+          "vale": true,
+          "multiplicador": 0
+        }
+      },
+      {
+        "caso": "sem preço",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          0,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": null
+      },
+      {
+        "caso": "preço negativo",
+        "args": [
+          {
+            "id": "o1",
+            "nome": "Casa Alphaville",
+            "dataInicio": "2025-03-10",
+            "fase": "construcao",
+            "valorEstimadoVenda": 1250000,
+            "areaM2": 210,
+            "orcamento": {
+              "modo": "topicos",
+              "topicos": {
+                "fundacao": 90000,
+                "estrutura": 250000,
+                "c_mgf1abcd": 1000
+              }
+            },
+            "gastos": [
+              {
+                "id": "g01",
+                "valor": 98000,
+                "topico": "fundacao",
+                "descricao": "Sapatas e baldrame",
+                "data": "2025-03-20",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g02",
+                "valor": 231000,
+                "topico": "estrutura",
+                "descricao": "Laje do térreo",
+                "data": "2025-06-02",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g03",
+                "valor": 12000.5,
+                "topico": "hidraulica",
+                "descricao": "Tubos e conexões",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g04",
+                "valor": 3000,
+                "topico": "pintura",
+                "descricao": "Tinta acrílica",
+                "data": "2025-08-15",
+                "pagamento": "pix"
+              },
+              {
+                "id": "g05a",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 1,
+                  "de": 3
+                },
+                "valor": 1033.34,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-09-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05b",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 2,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-10-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              },
+              {
+                "id": "g05c",
+                "grupoId": "gr1",
+                "parcela": {
+                  "n": 3,
+                  "de": 3
+                },
+                "valor": 1033.33,
+                "topico": "eletrica",
+                "descricao": "Fios",
+                "data": "2026-11-25",
+                "pagamento": "cartao",
+                "jurosCartao": {
+                  "taxaMensal": 0,
+                  "valorCompra": 3100,
+                  "nParcelas": 3,
+                  "totalCompra": 3100,
+                  "jurosCompra": 0
+                }
+              }
+            ],
+            "afazeres": [
+              {
+                "id": "a1",
+                "texto": "Comprar tinta",
+                "feito": false
+              },
+              {
+                "id": "a2",
+                "texto": "Pagar pedreiro",
+                "feito": true
+              }
+            ],
+            "venda": null
+          },
+          -5,
+          0,
+          "2026-10-06",
+          1
+        ],
+        "saida": null
+      },
+      {
+        "caso": "o fim do mês fica no último dia (31/01 + 1 mês)",
+        "args": [
+          {
+            "id": "o4",
+            "nome": "Pronta Jardins",
+            "dataInicio": "2025-11-01",
+            "fase": "pronta",
+            "valorEstimadoVenda": 610000,
+            "areaM2": 95.5,
+            "orcamento": {
+              "modo": "total",
+              "total": 400000
+            },
+            "gastos": [
+              {
+                "id": "j01",
+                "valor": 200000,
+                "topico": "estrutura",
+                "descricao": "Estrutura",
+                "data": "2026-01-31",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j02",
+                "valor": 165000,
+                "topico": "maoobra",
+                "descricao": "Equipe",
+                "data": "2026-02-28",
+                "pagamento": "pix"
+              },
+              {
+                "id": "j03",
+                "valor": 7000,
+                "topico": "c_mgf1abcd",
+                "descricao": "Automação da garagem",
+                "data": "2026-03-31",
+                "pagamento": "pix"
+              }
+            ],
+            "venda": null,
+            "afazeres": []
+          },
+          610000,
+          1,
+          "2027-01-31",
+          1
+        ],
+        "saida": {
+          "venda": 610000,
+          "meses": 1,
+          "alvo": "2027-02-28",
+          "bruto": 372000,
+          "corrigido": 421133.01282716746,
+          "novaDemais": false,
+          "tir": 4.045377297932273,
+          "acima": 3.0152250474576814,
+          "vale": true,
+          "multiplicador": 4.045377297932273
+        }
+      }
+    ],
+    "calc.textosSimulador": [
+      {
+        "caso": "vale a pena, com área",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": 7.977272930897838,
+            "acima": 6.9081910206909125,
+            "vale": true,
+            "multiplicador": 7.977272930897838
+          },
+          1,
+          210
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "7,98% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%",
+            "rende 8,0× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 840.609,87",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "205,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "67,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "7,98% a.m.",
+              "corrigido": "6,91% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Preço por m² (210 m²)",
+              "bruto": "R$ 5.952,38",
+              "corrigido": "R$ 5.952,38",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "daqui a 1 mês, sem área",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 1,
+            "alvo": "2026-11-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 413542.74357765,
+            "novaDemais": false,
+            "tir": 7.505102305287837,
+            "acima": 6.440695351770143,
+            "vale": true,
+            "multiplicador": 7.505102305287837
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "7,51% ao mês",
+          "detalhes": [
+            "vendendo daqui a 1 mês",
+            "banco paga 1%",
+            "rende 7,5× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 413.542,74",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 836.457,26",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "202,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "66,9%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "7,51% a.m.",
+              "corrigido": "6,44% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "daqui a 120 meses, área zero",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 120,
+            "alvo": "2036-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 1351157.7570856193,
+            "novaDemais": false,
+            "tir": 0.9424818260964973,
+            "acima": -0.05694868703318701,
+            "vale": false,
+            "multiplicador": 0.9424818260964973
+          },
+          1,
+          0
+        ],
+        "saida": {
+          "veredito": "Rende menos que o banco",
+          "taxa": "0,94% ao mês",
+          "detalhes": [
+            "vendendo daqui a 120 meses",
+            "banco paga 1%"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 1.351.157,76",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "-R$ 101.157,76",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "negativo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "-7,5%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "negativo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "-8,1%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "negativo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "0,94% a.m.",
+              "corrigido": "-0,06% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "rende menos, área com vírgula",
+        "args": [
+          {
+            "venda": 300000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 372000,
+            "corrigido": 401637.77892891853,
+            "novaDemais": false,
+            "tir": -2.7552645742603135,
+            "acima": -3.718083736891409,
+            "vale": false,
+            "multiplicador": -2.7552645742603135
+          },
+          1,
+          95.5
+        ],
+        "saida": {
+          "veredito": "Rende menos que o banco",
+          "taxa": "-2,76% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 372.000,00",
+              "corrigido": "R$ 401.637,78",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 300.000,00",
+              "corrigido": "R$ 300.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "-R$ 72.000,00",
+              "corrigido": "-R$ 101.637,78",
+              "sinalBruto": "negativo",
+              "sinalCorrigido": "negativo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "-19,4%",
+              "corrigido": "-25,3%",
+              "sinalBruto": "negativo",
+              "sinalCorrigido": "negativo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "-24,0%",
+              "corrigido": "-33,9%",
+              "sinalBruto": "negativo",
+              "sinalCorrigido": "negativo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "-2,76% a.m.",
+              "corrigido": "-3,72% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Preço por m² (95,5 m²)",
+              "bruto": "R$ 3.141,36",
+              "corrigido": "R$ 3.141,36",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "taxa com vírgula",
+        "args": [
+          {
+            "venda": 700000,
+            "meses": 6,
+            "alvo": "2027-04-06",
+            "bruto": 372000,
+            "corrigido": 417675.82125397795,
+            "novaDemais": false,
+            "tir": 4.727074098795459,
+            "acima": 3.8443967266192036,
+            "vale": true,
+            "multiplicador": 5.561263645641716
+          },
+          0.85,
+          95.5
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "4,73% ao mês",
+          "detalhes": [
+            "vendendo daqui a 6 meses",
+            "banco paga 0,85%",
+            "rende 5,6× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 372.000,00",
+              "corrigido": "R$ 417.675,82",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 700.000,00",
+              "corrigido": "R$ 700.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 328.000,00",
+              "corrigido": "R$ 282.324,18",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "88,2%",
+              "corrigido": "67,6%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "46,9%",
+              "corrigido": "40,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "4,73% a.m.",
+              "corrigido": "3,84% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Preço por m² (95,5 m²)",
+              "bruto": "R$ 7.329,84",
+              "corrigido": "R$ 7.329,84",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "obra com menos de 1 mês: sem taxa e o aviso",
+        "args": [
+          {
+            "venda": 2000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 1000,
+            "corrigido": 1000,
+            "novaDemais": true,
+            "tir": null,
+            "acima": null,
+            "vale": true,
+            "multiplicador": 0
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "—",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%",
+            "obra com menos de 1 mês — % ao mês ainda não diz muito"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 1.000,00",
+              "corrigido": "R$ 1.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 2.000,00",
+              "corrigido": "R$ 2.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 1.000,00",
+              "corrigido": "R$ 1.000,00",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "100,0%",
+              "corrigido": "100,0%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "50,0%",
+              "corrigido": "50,0%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "—",
+              "corrigido": "—",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "multiplicador 1 aparece",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": 1,
+            "acima": 6.9081910206909125,
+            "vale": true,
+            "multiplicador": 1
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "1,00% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%",
+            "rende 1,0× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 840.609,87",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "205,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "67,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "1,00% a.m.",
+              "corrigido": "6,91% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "multiplicador abaixo de 1 some",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": 0.99,
+            "acima": 6.9081910206909125,
+            "vale": true,
+            "multiplicador": 0.99
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "0,99% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 840.609,87",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "205,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "67,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "0,99% a.m.",
+              "corrigido": "6,91% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "multiplicador 2,25 arredonda para 2,3",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": 2.25,
+            "acima": 6.9081910206909125,
+            "vale": true,
+            "multiplicador": 2.25
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "2,25% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%",
+            "rende 2,3× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 840.609,87",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "205,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "67,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "2,25% a.m.",
+              "corrigido": "6,91% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "sem TIR, o multiplicador some",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": null,
+            "acima": null,
+            "vale": true,
+            "multiplicador": 1.5
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "—",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 840.609,87",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "205,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "67,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "—",
+              "corrigido": "—",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "TIR negativa perto de zero: -0,00%",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": -0.004,
+            "acima": -1.0039,
+            "vale": false,
+            "multiplicador": -0.004
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Rende menos que o banco",
+          "taxa": "-0,00% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 902.899,50",
+              "corrigido": "R$ 840.609,87",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "260,1%",
+              "corrigido": "205,3%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "72,2%",
+              "corrigido": "67,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "positivo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "-0,00% a.m.",
+              "corrigido": "-1,00% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "lucro zero fica com a cor do positivo",
+        "args": [
+          {
+            "venda": 347100.50000000006,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 347100.50000000006,
+            "corrigido": 409390.1325538985,
+            "novaDemais": false,
+            "tir": 7.977272930897838,
+            "acima": 6.9081910206909125,
+            "vale": true,
+            "multiplicador": 7.977272930897838
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "7,98% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%",
+            "rende 8,0× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 409.390,13",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 347.100,50",
+              "corrigido": "R$ 347.100,50",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "R$ 0,00",
+              "corrigido": "-R$ 62.289,63",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "negativo",
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "0,0%",
+              "corrigido": "-15,2%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "negativo",
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "0,0%",
+              "corrigido": "-17,9%",
+              "sinalBruto": "positivo",
+              "sinalCorrigido": "negativo",
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "7,98% a.m.",
+              "corrigido": "6,91% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      },
+      {
+        "caso": "custo zero: lucro e porcentagens sem valor",
+        "args": [
+          {
+            "venda": 1250000,
+            "meses": 0,
+            "alvo": "2026-10-06",
+            "bruto": 0,
+            "corrigido": 0,
+            "novaDemais": false,
+            "tir": 7.977272930897838,
+            "acima": 6.9081910206909125,
+            "vale": true,
+            "multiplicador": 7.977272930897838
+          },
+          1,
+          null
+        ],
+        "saida": {
+          "veredito": "Vale a pena",
+          "taxa": "7,98% ao mês",
+          "detalhes": [
+            "vendendo hoje",
+            "banco paga 1%",
+            "rende 8,0× o banco"
+          ],
+          "tabela": [
+            {
+              "rotulo": "Custo até a venda",
+              "bruto": "R$ 0,00",
+              "corrigido": "R$ 0,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Venda",
+              "bruto": "R$ 1.250.000,00",
+              "corrigido": "R$ 1.250.000,00",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Lucro",
+              "bruto": "—",
+              "corrigido": "—",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": true
+            },
+            {
+              "rotulo": "% sobre o custo",
+              "bruto": "—",
+              "corrigido": "—",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "% sobre a venda",
+              "bruto": "—",
+              "corrigido": "—",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            },
+            {
+              "rotulo": "Rendimento ao mês",
+              "bruto": "7,98% a.m.",
+              "corrigido": "6,91% a.m.",
+              "sinalBruto": null,
+              "sinalCorrigido": null,
+              "destaque": false
+            }
+          ]
+        }
+      }
+    ],
     "calc.serieEvolucao": [
       {
         "caso": "Casa Alphaville",

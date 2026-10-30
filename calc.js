@@ -189,6 +189,51 @@
     };
   }
 
+  /* ---- "Vale a pena?" (app.js simulaCompute): morava no app.js; o app nativo confere a cópia pelos vetores ---- */
+  /* Os meses da venda vão de 0 a 120 na conta, como no campo. */
+  const MESES_SIMULADOR = 120;
+  /* Vender a obra por `venda` daqui a `meses` (inteiro), sem gasto novo até lá: o alvo (hoje + meses), o custo bruto e o
+     corrigido até o alvo, a obra com menos de 1 mês até o alvo (fica sem taxa), a TIR, o acima do banco, o veredito (venda
+     acima do corrigido) e o multiplicador (TIR ÷ taxa; 0 sem TIR). null sem preço. */
+  function contaSimulador(obra, venda, meses, hojeISO, taxaPct){
+    if(venda <= 0) return null;
+    const m = Math.min(MESES_SIMULADOR, Math.max(0, meses));
+    const alvo = addMesesClampado(hojeISO, m);
+    const corr = totalCorrigido(obra, taxaPct, alvo);
+    const novaDemais = mesesDeObra(obra, alvo) < 1;
+    const tir = novaDemais ? null : tirMensal(obra.gastos, venda, alvo);
+    return { venda, meses: m, alvo, bruto: totalBruto(obra), corrigido: corr, novaDemais, tir, acima: rendimentoAcima(tir, taxaPct),
+      vale: venda > corr, multiplicador: tir != null && taxaPct > 0 ? tir / taxaPct : 0 };
+  }
+  /* Os textos do cartão e da tabela, da conta acima. Na tabela, o lucro e as duas porcentagens levam a cor pelo sinal
+     (sinalBruto e sinalCorrigido: 'positivo', 'negativo', ou null sem valor); custo, venda, rendimento e R$/m² não têm cor, e
+     o R$/m² só aparece com área. destaque: a linha do lucro. */
+  function textosSimulador(conta, taxaPct, areaM2){
+    const virgula = (v, casas) => v.toFixed(casas).replace('.', ',');
+    const din = v => v == null ? '—' : money(v);
+    const pct1 = v => v == null ? '—' : virgula(v, 1) + '%';
+    const taxa2 = v => v == null ? '—' : virgula(v, 2) + '% a.m.';
+    const sinal = v => v == null ? null : v >= 0 ? 'positivo' : 'negativo';
+    const linha = (rotulo, bruto, corrigido, [sinalBruto, sinalCorrigido] = [null, null], destaque = false) =>
+      ({ rotulo, bruto, corrigido, sinalBruto, sinalCorrigido, destaque });
+    const rb = resumoVenda(conta.venda, conta.bruto), rc = resumoVenda(conta.venda, conta.corrigido);
+    const detalhes = [conta.meses === 0 ? 'vendendo hoje' : `vendendo daqui a ${conta.meses} ${conta.meses === 1 ? 'mês' : 'meses'}`,
+      `banco paga ${String(taxaPct).replace('.', ',')}%`];
+    if(conta.tir != null && conta.multiplicador >= 1) detalhes.push(`rende ${virgula(conta.multiplicador, 1)}× o banco`);
+    if(conta.novaDemais) detalhes.push('obra com menos de 1 mês — % ao mês ainda não diz muito');
+    const tabela = [
+      linha('Custo até a venda', money(conta.bruto), money(conta.corrigido)),
+      linha('Venda', money(conta.venda), money(conta.venda)),
+      linha('Lucro', din(rb.lucro), din(rc.lucro), [sinal(rb.lucro), sinal(rc.lucro)], true),
+      linha('% sobre o custo', pct1(rb.pctCusto), pct1(rc.pctCusto), [sinal(rb.pctCusto), sinal(rc.pctCusto)]),
+      linha('% sobre a venda', pct1(rb.pctVenda), pct1(rc.pctVenda), [sinal(rb.pctVenda), sinal(rc.pctVenda)]),
+      linha('Rendimento ao mês', taxa2(conta.tir), taxa2(conta.acima)),
+    ];
+    if(areaM2 > 0) tabela.push(linha(`Preço por m² (${String(areaM2).replace('.', ',')} m²)`, money(conta.venda / areaM2), money(conta.venda / areaM2)));
+    return { veredito: conta.vale ? 'Vale a pena' : 'Rende menos que o banco', taxa: conta.tir != null ? virgula(conta.tir, 2) + '% ao mês' : '—',
+      detalhes, tabela };
+  }
+
   /* Série mensal acumulada da obra (pro gráfico de evolução):
      um ponto por mês-calendário, do 1º gasto até o fim da correção
      (hoje ou a venda), cortando no fim de cada mês. Máx 24 últimos. */
@@ -587,7 +632,7 @@
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, gastoPorTopico, relatorioObra, fimRelatorio, linhaCorrecao, somaSelecao, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, gastoPorTopico, relatorioObra, fimRelatorio, linhaCorrecao, somaSelecao, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, MESES_SIMULADOR, contaSimulador, textosSimulador, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

@@ -297,6 +297,40 @@ resumo('prejuízo', 800000, 1000000);
 resumo('venda zero', 0, 1000);
 resumo('custo zero', 1000, 0);
 
+/* O "Vale a pena?" (app.js simulaCompute): a conta, com os meses de 0 a 120, e os textos do cartão e da tabela. */
+constante('calc.MESES_SIMULADOR', C.MESES_SIMULADOR);
+const contaSim = calc('contaSimulador');
+const OBRA_NOVA = obraDe('nova', [gastoDe('n1', 'terreno', 1000, HOJE)], { dataInicio: HOJE });
+contaSim('vale a pena, vendendo hoje', O1, 1250000, 0, HOJE, 1);
+contaSim('daqui a 1 mês', O1, 1250000, 1, HOJE, 1);
+contaSim('daqui a 120 meses', O1, 1250000, 120, HOJE, 1);
+contaSim('121 meses param em 120', O1, 1250000, 121, HOJE, 1);
+contaSim('500 meses param em 120', O1, 1250000, 500, HOJE, 1);
+contaSim('meses negativos viram 0', O1, 1250000, -3, HOJE, 1);
+contaSim('rende menos que o banco', O4, 300000, 0, HOJE, 1);
+contaSim('taxa com vírgula', O4, 700000, 6, HOJE, 0.85);
+contaSim('obra com menos de 1 mês até o alvo fica sem taxa', OBRA_NOVA, 2000, 0, HOJE, 1);
+contaSim('um mês depois a obra nova já tem taxa', OBRA_NOVA, 2000, 1, HOJE, 1);
+contaSim('taxa zero não dá multiplicador (a leitura a põe em 1)', O4, 700000, 0, HOJE, 0);
+contaSim('sem preço', O1, 0, 0, HOJE, 1);
+contaSim('preço negativo', O1, -5, 0, HOJE, 1);
+contaSim('o fim do mês fica no último dia (31/01 + 1 mês)', O4, 610000, 1, '2027-01-31', 1);
+const textosSim = calc('textosSimulador');
+const CONTA = C.contaSimulador(O1, 1250000, 0, HOJE, 1);
+textosSim('vale a pena, com área', CONTA, 1, 210);
+textosSim('daqui a 1 mês, sem área', C.contaSimulador(O1, 1250000, 1, HOJE, 1), 1, null);
+textosSim('daqui a 120 meses, área zero', C.contaSimulador(O1, 1250000, 500, HOJE, 1), 1, 0);
+textosSim('rende menos, área com vírgula', C.contaSimulador(O4, 300000, 0, HOJE, 1), 1, 95.5);
+textosSim('taxa com vírgula', C.contaSimulador(O4, 700000, 6, HOJE, 0.85), 0.85, 95.5);
+textosSim('obra com menos de 1 mês: sem taxa e o aviso', C.contaSimulador(OBRA_NOVA, 2000, 0, HOJE, 1), 1, null);
+textosSim('multiplicador 1 aparece', { ...CONTA, tir: 1, multiplicador: 1 }, 1, null);
+textosSim('multiplicador abaixo de 1 some', { ...CONTA, tir: 0.99, multiplicador: 0.99 }, 1, null);
+textosSim('multiplicador 2,25 arredonda para 2,3', { ...CONTA, tir: 2.25, multiplicador: 2.25 }, 1, null);
+textosSim('sem TIR, o multiplicador some', { ...CONTA, tir: null, acima: null, multiplicador: 1.5 }, 1, null);
+textosSim('TIR negativa perto de zero: -0,00%', { ...CONTA, tir: -0.004, acima: -1.0039, vale: false, multiplicador: -0.004 }, 1, null);
+textosSim('lucro zero fica com a cor do positivo', { ...CONTA, venda: CONTA.bruto }, 1, null);
+textosSim('custo zero: lucro e porcentagens sem valor', { ...CONTA, bruto: 0, corrigido: 0 }, 1, null);
+
 /* ---------- séries dos gráficos ---------- */
 const evo = calc('serieEvolucao');
 for(const o of BLOB.obras) evo(o.nome, o, 1, HOJE);

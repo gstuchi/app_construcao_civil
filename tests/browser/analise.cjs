@@ -1,4 +1,4 @@
-/* Análise com dados sintéticos: o donut e a legenda da obra e dos Gráficos e o Relatório. Sem contas nem rede.
+/* Análise com dados sintéticos: o donut e a legenda da obra e dos Gráficos, o Relatório e o "Vale a pena?". Sem contas nem rede.
    Hoje fica em 06/10/2026, no fuso de São Paulo (o relógio do Playwright), para os valores corrigidos não mudarem com o dia.
    Precisa de `node tests/browser/servidor.cjs` no ar (porta 8123). */
 const assert=require('node:assert/strict');
@@ -115,8 +115,46 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     await page.locator('.rel-check[data-gasto="z1"]').check();
     assert.deepEqual(await selecao(),[false,'1 item','R$ 0,00','R$ 0,00','0%']);
 
+    // "Vale a pena?": o cartão e a tabela da simulação, com a cor pelo sinal no lucro e nas porcentagens
+    const cartao=()=>page.evaluate(()=>{const c=$('#simOut .card.saldo');return c&&[c.classList.contains('saldo-abaixo'),
+      ...['.k-label','.k-val','.k-sub'].map(s=>c.querySelector(s).textContent.replace(/\s+/g,' ').trim())];});
+    const tabela=()=>page.$$eval('#simOut .rep-sim tbody tr',trs=>trs.map(tr=>[tr.className,...[...tr.children].map(td=>[td.textContent.replace(/\s+/g,' ').trim(),td.className])]));
+    const linha=(rotulo,b,c,cb='',cc='',tr='')=>[tr,[rotulo,''],[b,cb],[c,cc]];
+    await page.evaluate(()=>{showView('simula');renderSimula();});
+    assert.equal(await page.locator('#simObra').inputValue(),'a');
+    assert.equal(await page.locator('#simValor').inputValue(),'450.000,00');
+    assert.deepEqual(await cartao(),[false,'Vale a pena','8,63% ao mês','vendendo hoje · banco paga 1% · rende 8,6× o banco']);
+    assert.deepEqual(await tabela(),[linha('Custo até a venda','R$ 202.400,50','R$ 222.689,91'),linha('Venda','R$ 450.000,00','R$ 450.000,00'),
+      linha('Lucro','R$ 247.599,50','R$ 227.310,09','pos','pos','rep-total'),linha('% sobre o custo','122,3%','102,1%','pos','pos'),
+      linha('% sobre a venda','55,0%','50,5%','pos','pos'),linha('Rendimento ao mês','8,63% a.m.','7,55% a.m.'),
+      linha('Preço por m² (120 m²)','R$ 3.750,00','R$ 3.750,00')]);
+    // Os meses param em 120 na conta, mesmo digitados além do teto do campo (achado 5); negativos viram hoje
+    await page.locator('#simMeses').fill('200');
+    assert.deepEqual(await cartao(),[true,'Rende menos que o banco','0,62% ao mês','vendendo daqui a 120 meses · banco paga 1%']);
+    assert.deepEqual(await tabela(),[linha('Custo até a venda','R$ 202.400,50','R$ 734.855,94'),linha('Venda','R$ 450.000,00','R$ 450.000,00'),
+      linha('Lucro','R$ 247.599,50','-R$ 284.855,94','pos','neg','rep-total'),linha('% sobre o custo','122,3%','-38,8%','pos','neg'),
+      linha('% sobre a venda','55,0%','-63,3%','pos','neg'),linha('Rendimento ao mês','0,62% a.m.','-0,38% a.m.'),
+      linha('Preço por m² (120 m²)','R$ 3.750,00','R$ 3.750,00')]);
+    for(const meses of ['-2','']){
+      await page.locator('#simMeses').fill(meses);
+      assert.equal((await cartao())[3],'vendendo hoje · banco paga 1% · rende 8,6× o banco');
+    }
+    // Outra obra, com preço e meses digitados e o banco a 1,5%: rende menos, sem área
+    await page.evaluate(()=>{db.config.taxaMensal=1.5;});
+    await page.locator('#simObra').selectOption('p');
+    await page.locator('#simValor').fill('120.000,00');
+    await page.locator('#simMeses').fill('3');
+    assert.deepEqual(await cartao(),[true,'Rende menos que o banco','-1,98% ao mês','vendendo daqui a 3 meses · banco paga 1,5%']);
+    assert.deepEqual(await tabela(),[linha('Custo até a venda','R$ 150.000,00','R$ 177.052,22'),linha('Venda','R$ 120.000,00','R$ 120.000,00'),
+      linha('Lucro','-R$ 30.000,00','-R$ 57.052,22','neg','neg','rep-total'),linha('% sobre o custo','-20,0%','-32,2%','neg','neg'),
+      linha('% sobre a venda','-25,0%','-47,5%','neg','neg'),linha('Rendimento ao mês','-1,98% a.m.','-3,43% a.m.')]);
+    await page.evaluate(()=>{db.config.taxaMensal=1;});
+    // Sem preço, a frase do site e nenhuma conta
+    await page.locator('#simValor').fill('0');
+    assert.equal(texto(await page.locator('#simOut').textContent()),'Digite o preço de venda pra ver a conta.');
+
     assert.deepEqual(await page.evaluate(()=>errosAnalise),[]);
     await ctx.close();
-    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos, fim, linha da correção e soma da seleção do relatório');
+    console.log('ok - análise: gasto por tópico na obra e nos Gráficos; grupos, fim, linha da correção e soma da seleção do relatório; conta e textos do "Vale a pena?"');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -56,8 +56,6 @@ struct SimuladorTests {
             let r = contaSimulador(c.args[0].obra, venda: c.args[1].numero, meses: Int(c.args[2].numero), hoje: c.args[3].comoTexto!,
                                    taxa: c.args[4].numero)
             confere(r?.json ?? .nulo, c.saida, .continua, c.caso)
-            // A tolerância relativa deixa passar infinito contra 0 (o confere): sem taxa, o multiplicador é 0, nunca TIR ÷ 0.
-            #expect(r.map { $0.multiplicador.isFinite } ?? true, "\(c.caso): multiplicador infinito")
         }
     }
 

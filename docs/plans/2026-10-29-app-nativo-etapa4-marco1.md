@@ -3049,7 +3049,7 @@ Run:
 ```bash
 TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'warning:|Test run with'
 ```
-Expected: `━ Test run with 257 tests in 41 suites passed after 0.183 seconds with 4 known issues.` (`EixosTests` é nova, com 5), sem nenhum `warning:`.
+Expected: `━ Test run with 260 tests in 41 suites passed after 0.183 seconds with 4 known issues.` (`EixosTests` é nova, com 5), sem nenhum `warning:`.
 
 - [ ] **Step 5: Commit**
 
@@ -3342,7 +3342,7 @@ Run:
 ```bash
 TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'warning:|Test run with'
 ```
-Expected: `━ Test run with 264 tests in 42 suites passed after 0.190 seconds with 4 known issues.` (`MesesDosGraficosTests` é nova, com 7), sem nenhum `warning:`.
+Expected: `━ Test run with 267 tests in 42 suites passed after 0.190 seconds with 4 known issues.` (`MesesDosGraficosTests` é nova, com 7), sem nenhum `warning:`.
 
 - [ ] **Step 5: Commit**
 
@@ -3489,7 +3489,7 @@ Run:
 ```bash
 TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'warning:|Test run with'
 ```
-Expected: `━ Test run with 268 tests in 43 suites passed after 0.264 seconds with 4 known issues.` (`TopicoNoRelatorioTests` é nova, com 4), sem nenhum `warning:`.
+Expected: `━ Test run with 271 tests in 43 suites passed after 0.264 seconds with 4 known issues.` (`TopicoNoRelatorioTests` é nova, com 4), sem nenhum `warning:`.
 
 - [ ] **Step 5: Commit**
 
@@ -3946,7 +3946,7 @@ Run:
 TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'warning:|Test run with'
 TZ=America/Sao_Paulo swift test --package-path app-ios/CusttaNucleo --filter 'PaginacaoDoPDFTests/obraDe5000Gastos' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep 'Test obraDe5000Gastos() passed'
 ```
-Expected: `━ Test run with 276 tests in 44 suites passed after 0.237 seconds with 4 known issues.` (`PaginacaoDoPDFTests` é nova, com 8), sem nenhum `warning:`; a obra de 5.000 gastos, do relatório à paginação conferida, em debug: `✔ Test obraDe5000Gastos() passed after 0.095 seconds.`
+Expected: `━ Test run with 279 tests in 44 suites passed after 0.237 seconds with 4 known issues.` (`PaginacaoDoPDFTests` é nova, com 8), sem nenhum `warning:`; a obra de 5.000 gastos, do relatório à paginação conferida, em debug: `✔ Test obraDe5000Gastos() passed after 0.095 seconds.`
 
 - [ ] **Step 5: Commit**
 

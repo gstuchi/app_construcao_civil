@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -109,4 +109,36 @@ test('a regra de cada classe, com o limite de cada uma', () => {
     'TOTAL: 2 cenas, 11 palavras, 1 idênticas, 3 mudadas, 2 deslocadas, 9 sem par, 1 abaixo de 4.5',
     '',
   ].join('\n'));
+});
+
+// Cada diferença sozinha numa cena (só a mudada, só a de antes, só a de depois, só a abaixo de 4,5, igual dos dois lados)
+// faz a cena sair; a deslocada de outra altura fica sem par; e a cena repetida num laudo para o script, em vez de tomar o
+// lugar da outra.
+test('cada diferença sozinha faz a cena sair; a deslocada pede a mesma altura; cena repetida é erro', () => {
+  const l = (cor, x, y, nota, h = 10) => `${cor}  ${x}, ${y}  20× ${h} pt  nota ${nota.toFixed(2)}  pior ${nota.toFixed(2)}`;
+  const base = mkdtempSync(join(tmpdir(), 'compara-laudo-'));
+  laudo(join(base, 'antes'), {
+    g: [l('#111111', 10, 20, 7)], h: [l('#111111', 10, 20, 7), l('#222222', 10, 40, 7)], i: [l('#111111', 10, 20, 7)],
+    j: [l('#111111', 10, 20, 4.4)], k: [l('#111111', 10, 20, 7)],
+  });
+  laudo(join(base, 'depois'), {
+    g: [l('#111111', 10, 20, 6)], h: [l('#111111', 10, 20, 7)], i: [l('#111111', 10, 20, 7), l('#222222', 10, 40, 7)],
+    j: [l('#111111', 10, 20, 4.4)], k: [l('#111111', 12, 20, 7, 11)],
+  });
+  const roda = () => execFileSync('node', [join(raiz, 'scripts/compara-laudo.mjs'), join(base, 'antes'), join(base, 'depois'),
+    join(base, 'saida')], { encoding: 'utf8', stdio: 'pipe' });
+  assert.equal(roda(), [
+    'g: 1 palavras, 0 idênticas, 1 mudadas, 0 deslocadas, 0 só antes, 0 só depois, 0 abaixo de 4.5',
+    'h: 1 palavras, 1 idênticas, 0 mudadas, 0 deslocadas, 1 só antes, 0 só depois, 0 abaixo de 4.5',
+    'i: 2 palavras, 1 idênticas, 0 mudadas, 0 deslocadas, 0 só antes, 1 só depois, 0 abaixo de 4.5',
+    'j: 1 palavras, 1 idênticas, 0 mudadas, 0 deslocadas, 0 só antes, 0 só depois, 1 abaixo de 4.5',
+    'k: 1 palavras, 0 idênticas, 0 mudadas, 0 deslocadas, 1 só antes, 1 só depois, 0 abaixo de 4.5',
+    'TOTAL: 5 cenas, 6 palavras, 3 idênticas, 1 mudadas, 0 deslocadas, 4 sem par, 1 abaixo de 4.5',
+    '',
+  ].join('\n'));
+  const manifesto = join(base, 'depois', 'manifest.json');
+  const testes = JSON.parse(readFileSync(manifesto, 'utf8'));
+  testes[0].attachments.push({ exportedFileName: '0.txt', suggestedHumanReadableName: 'leitura — g (tabela)' });
+  writeFileSync(manifesto, JSON.stringify(testes));
+  assert.throws(roda, /cena repetida no laudo: g/);
 });

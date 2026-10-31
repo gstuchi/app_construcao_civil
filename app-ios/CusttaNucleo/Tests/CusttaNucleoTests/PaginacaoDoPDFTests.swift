@@ -189,6 +189,11 @@ struct PaginacaoDoPDFTests {
         let r = paginarTabelaDoPDF(enorme, fim: .venda(valor: 1, data: "2026-06-20", lucroBruto: 1, acimaDoBanco: 1))
         #expect(r.paginas.count == 3)
         confere(r, enorme, fim: .venda(valor: 1, data: "2026-06-20", lucroBruto: 1, acimaDoBanco: 1), MedidasDoPDF())
+        // Uma linha mais alta que a página inteira (texto nenhum do formulário chega a isso) vai sozinha numa página, e o laço
+        // segue: sem a guarda, ele abriria páginas sem fim.
+        #expect(paginarTabelaDoPDF([[linhas(1), linhas(1, de: 700)]], fim: nil).paginas.map(\.itens) == [
+            [.topico(0, continuacao: false), .gasto(topico: 0, gasto: 0, linhas: 0..<1)],
+            [.topico(0, continuacao: true), .gasto(topico: 0, gasto: 1, linhas: 0..<1)], [.fim]])
     }
 
     @Test func obraDe5000Gastos() {

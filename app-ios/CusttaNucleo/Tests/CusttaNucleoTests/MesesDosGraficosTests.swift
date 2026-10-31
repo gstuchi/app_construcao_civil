@@ -117,6 +117,11 @@ struct MesesDosGraficosTests {
         let gastosDaParada: [(data: String, valor: Double)] = parada.gastos.map { ($0.data, $0.valor) }
         #expect(!evolucaoFoiCortada(obra(gastosDaParada, venda: "2024-12-31"), hoje: "2026-10-12"))
         #expect(evolucaoFoiCortada(obra(gastosDaParada, venda: "2025-01-31"), hoje: "2026-10-12"))
+        // Os gastos ficam na ordem em que foram lançados, não na das datas (o gasto antigo lançado depois): o corte vai do
+        // mês mais antigo ao mais novo, não do 1º ao último do documento.
+        let foraDeOrdem = obra([("2026-10-01", 10), ("2024-10-01", 10), ("2025-06-01", 10)])
+        #expect(gastoPorMesFoiCortado(foraDeOrdem.gastos))                            // 2024-10 a 2026-10: 25 meses
+        #expect(evolucaoFoiCortada(foraDeOrdem, hoje: "2026-10-12"))
         #expect(avisoDos24Meses == "Mostrando os últimos 24 meses.")
     }
 }

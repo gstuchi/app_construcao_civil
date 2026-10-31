@@ -41,4 +41,16 @@ struct TitulosTests {
         #expect(medida(CapsulaDeMetadados { conteudo }) == CGSize(width: 136, height: 42))
         #expect(medida(CapsulaDeMetadados { conteudo }, .accessibility1) == CGSize(width: 136, height: 54))
     }
+
+    /// Entre as linhas da cápsula, 6 pt (8 na letra de acessibilidade), e o texto dela em subheadline: medidos pela diferença
+    /// entre a cápsula com uma e com duas linhas, que tira o recuo.
+    @Test func capsulaComSeisPontosEntreAsLinhasEmSubheadline() {
+        for (letra, recuo, espaco) in [(DynamicTypeSize.large, CGFloat(10 + 12), CGFloat(6)), (.accessibility1, 16 + 18, 8)] {
+            let uma = medida(CapsulaDeMetadados { Text("Em construção") }, letra).height
+            let duas = medida(CapsulaDeMetadados { Text("Em construção"); Text("começou em 03/08/25") }, letra).height
+            let linha = medida(Text("começou em 03/08/25").font(.subheadline), letra).height
+            #expect(abs(uma - recuo - linha) < 0.01, "\(letra): \(uma) com a linha de \(linha)")
+            #expect(abs(duas - uma - linha - espaco) < 0.01, "\(letra): \(duas) contra \(uma) com a linha de \(linha)")
+        }
+    }
 }

@@ -59,6 +59,38 @@ struct BlocosTests {
         #expect(try corDoTexto(NotaDoBloco(texto: "Correção até hoje")) == [0xD6, 0xE8, 0xE0])
     }
 
+    /// No sólido de verdade, e não pelo environment posto à mão: o rótulo, a nota e a etiqueta de dentro vêm na tinta que o
+    /// bloco põe, a do âmbar no âmbar (o par do `PARES_SOLIDOS`); sem ela, o rótulo e a nota iam para o secundário do vidro,
+    /// quase branco sobre o verde.
+    @Test(arguments: [CorDoSolido.verde, .ambar])
+    func textoDentroDoSolidoNaTintaDele(_ cor: CorDoSolido) throws {
+        let tinta = cor == .verde ? [0x04, 0x10, 0x0C] : [0x2B, 0x1B, 0x00]
+        let pecas: [(String, AnyView)] = [("o rótulo", AnyView(RotuloDoBloco(texto: "Total gasto"))),
+                                           ("a nota", AnyView(NotaDoBloco(texto: "bruto, sem correção"))),
+                                           ("a etiqueta", AnyView(EtiquetaDoSolido(texto: "46 lançamentos")))]
+        for (nome, peca) in pecas {
+            let p = try pixels(BlocoSolido(cor: cor) { peca }.frame(width: 300), .dark, escala: 3)
+            var naTinta = 0
+            for y in 0..<p.h { for x in 0..<p.w { let c = p.em(x, y); if c[3] == 255 && perto(Array(c[0..<3]), tinta) { naTinta += 1 } } }
+            #expect(naTinta > 100, "\(cor), \(nome): \(naTinta) pixels na tinta")
+        }
+    }
+
+    /// A sombra do sólido, 14 pt abaixo dele, na cor do bloco: o Destaque no verde; no âmbar, ele mesmo no escuro e o Alerta
+    /// no claro, mais escuro que o bloco (achado 9 do PR 1b). Fora do bloco só há a sombra: a cor dela é o pixel sem a
+    /// pré-multiplicação.
+    @Test(arguments: [ColorScheme.dark, .light])
+    func sombraDoSolidoNaCorDoBloco(_ esquema: ColorScheme) throws {
+        let (destaque, ambar) = esquema == .dark ? ([0x3A, 0xD1, 0x7E], [0xFF, 0xD9, 0x8A]) : ([0x17, 0x7A, 0x4A], [0x8A, 0x5A, 0x06])
+        for (cor, sombra) in [(CorDoSolido.verde, destaque), (.ambar, ambar)] {
+            let p = try pixels(BlocoSolido(cor: cor) { Color.clear }.frame(width: 100, height: 60).padding(40), esquema)
+            let c = p.em(90, 104)
+            #expect(c[3] > 20, "\(cor), nada 4 pt abaixo do bloco: \(c)")
+            let rgb = c[0..<3].map { Int((Double($0) * 255 / Double(max(c[3], 1))).rounded()) }
+            #expect(perto(rgb, sombra, folga: 8), "\(cor), a sombra: \(rgb)")
+        }
+    }
+
     /// A placa, um tom chapado do fundo: 58% no escuro e 66% no claro; a forte, 84% e 92%.
     @Test func placaEPlacaForte() throws {
         for (esquema, placa, forte) in [(ColorScheme.dark, 0x94, 0xD6), (.light, 0xA8, 0xEB)] {

@@ -88,6 +88,20 @@ struct BarraEmpilhadaTests {
         #expect(Double(iguais) / Double(comparados) > 0.97, "\(iguais) de \(comparados)")
     }
 
+    /// O % da legenda fica numa linha em todo tamanho de letra: a coluna dele é a do "100%" na fonte da letra. Com uma coluna
+    /// estreita, o % quebra em várias linhas, que a auditoria não acusa (não corta) e a varredura não vê (não alarga). Um
+    /// tópico só, de nome curto: embaixo da barra, a legenda é uma linha.
+    @Test func porcentoDaLegendaNumaLinha() {
+        for letra in DynamicTypeSize.allCases {
+            let altura = UIHostingController(rootView: BarraDeTopicos(pedacos: pedacos([100]), topicos: [:]).dynamicTypeSize(letra))
+                .sizeThatFits(in: CGSize(width: 343, height: 10_000)).height
+            let fonte = fonteDoTexto(.subheadline, letra)
+            let linha = max(fonte.lineHeight, UIFont.monospacedSystemFont(ofSize: fonte.pointSize, weight: .semibold).lineHeight)
+            let barra: CGFloat = letra.isAccessibilitySize ? 26 : 16
+            #expect(abs(altura - (2 + 8 + barra + 8 + 8 + 4) - linha) < 1, "\(letra): \(altura) com a linha de \(linha)")
+        }
+    }
+
     private var ambar: Color { Paleta().cor(.alerta) }
 
     /// A barra e a legenda não passam da largura do bloco em nenhum tamanho de letra, nas larguras dos iPhones: o % é um
@@ -104,5 +118,12 @@ struct BarraEmpilhadaTests {
                 #expect(medida == largura, "\(letra) em \(largura): \(medida)")
             }
         }
+    }
+
+    /// A barra vai sobre a placa forte (84% no escuro), para as cores ficarem a 3:1 com a aurora atrás: no recuo de 8 pt à
+    /// esquerda da barra, a placa forte, e não a comum (58%).
+    @Test func barraDeTopicosSobreAPlacaForte() throws {
+        let p = try pixels(BarraDeTopicos(pedacos: pedacos([300, 200, 100]), topicos: [:]).frame(width: 300))
+        #expect(p.em(4, 18)[3] == 0xD6, "\(p.em(4, 18))")
     }
 }

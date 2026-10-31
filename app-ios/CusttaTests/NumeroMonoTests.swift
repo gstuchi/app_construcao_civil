@@ -103,4 +103,26 @@ struct NumeroMonoTests {
         #expect(zip(larguras, larguras.dropFirst()).allSatisfy { $0 < $1 }, "\(larguras)")
         #expect(abs(larguras[11] / larguras[3] - 56.0 / 40) < 0.03, "\(larguras)")
     }
+
+    /// Dentro do sólido, o número vem na tinta dele, e não na `cor` (a vitrine e a obra do 1c o chamam sem ela): no verde, o
+    /// #04100C; no âmbar, o #2B1B00. Sem a tinta, o texto claro sobre o verde.
+    @Test(arguments: [CorDoSolido.verde, .ambar])
+    func numeroDentroDoSolidoNaTintaDele(_ cor: CorDoSolido) throws {
+        let tinta: [UInt8] = cor == .verde ? [0x04, 0x10, 0x0C] : [0x2B, 0x1B, 0x00]
+        let r = ImageRenderer(content: BlocoSolido(cor: cor) { ValorEmDinheiro("R$\u{a0}842.317,45", mono: .principal) }
+            .frame(width: 343).environment(\.paleta, Paleta()).environment(\.colorScheme, .dark))
+        r.scale = 3
+        let imagem = try #require(r.cgImage)
+        let (w, h) = (imagem.width, imagem.height)
+        var rgba = [UInt8](repeating: 0, count: w * h * 4)
+        rgba.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        let naTinta = stride(from: 0, to: rgba.count, by: 4).filter { i in
+            rgba[i + 3] == 255 && (0..<3).allSatisfy { abs(Int(rgba[i + $0]) - Int(tinta[$0])) <= 2 }
+        }.count
+        #expect(naTinta > 100, "\(cor): \(naTinta) pixels na tinta")
+    }
 }

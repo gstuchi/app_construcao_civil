@@ -25,13 +25,36 @@ struct CoresTests {
         }
     }
 
-    /// "#RRGGBB" da cor do catálogo no esquema dado.
+    /// "#RRGGBB" da cor do catálogo no esquema dado; com transparência, "#RRGGBBAA".
     private func hex(_ token: Token, _ estilo: UIUserInterfaceStyle) -> String {
         guard let cor = UIColor(named: Paleta.nome(token, .esmeralda), in: .main, compatibleWith: nil)?
             .resolvedColor(with: UITraitCollection(userInterfaceStyle: estilo)) else { return "" }
         var (r, g, b, a): (CGFloat, CGFloat, CGFloat, CGFloat) = (0, 0, 0, 0)
         cor.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
+        let rgb = String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
+        return a < 1 ? rgb + String(format: "%02X", Int((a * 255).rounded())) : rgb
+    }
+
+    /// A identidade nova da etapa 4, com os valores do mockup aprovado (spec 2026-10-29, "Tokens: do mockup para o app"),
+    /// nos dois temas: só os tokens que o app ainda não tinha. O DestaqueNumero do mockup é o PositivoNoVidro, a LinhaBanco é
+    /// o SecundarioTransparente e o AmbarTexto é o AlertaNoVidro.
+    @Test func tokensDaIdentidadeNova() {
+        let tabela: [(Token, escuro: String, claro: String)] = [
+            (.destaqueSolido, "#3AD17E", "#3AD17E"), (.tintaSobreDestaque, "#04100C", "#04100C"),
+            (.destaqueTexto, "#3AD17E", "#0E7A41"),
+            (.solidoAmbar, "#FFD98A", "#F2C15A"), (.tintaSobreAmbar, "#2B1B00", "#2B1B00"),   // o claro: confirmação 1 de 29/10
+            (.placa, "#04100C94", "#FFFFFFA8"), (.placaForte, "#04100CD6", "#FFFFFFEB"),        // 58% e 66%; 84% e 92%
+            (.grafico1, "#199E70", "#10976A"), (.grafico2, "#3987E5", "#2A78D6"), (.grafico3, "#D55181", "#D14F86"),
+            (.grafico4, "#9085E9", "#6250D6"), (.grafico5, "#D95926", "#DC5A1E"), (.grafico6, "#14A3C7", "#0C86A4"),
+            (.graficoOutros, "#8FA89C", "#5E7A6E"),
+            (.barraApagada, "#EAFFF666", "#142B2394"),                                          // 40% e 58%
+            (.gradeGrafico, "#EAFFF624", "#142B2324"), (.eixoGrafico, "#EAFFF64D", "#142B2352"), // 14%; 30% e 32%
+            (.anelApagado, "#123128", "#DCEAE3"), (.anelSeparador, "#04100C8C", "#FFFFFFBF"),   // 55% e 75%
+        ]
+        for (token, escuro, claro) in tabela {
+            #expect(hex(token, .dark) == escuro, "\(token) no escuro")
+            #expect(hex(token, .light) == claro, "\(token) no claro")
+        }
     }
 
     /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705; no escuro, #FFD98A.

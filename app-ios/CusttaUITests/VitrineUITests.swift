@@ -73,6 +73,27 @@ final class VitrineUITests: XCTestCase {
         }
     }
 
+    /// Os lançamentos na linha mono: cada linha um elemento só, de borda a borda do cartão (16 pt), com 52 pt de altura no
+    /// mínimo (72 na letra máxima), lida como na etapa 3 (o título, o tópico, o pagamento e a data; o valor por extenso).
+    func testLancamentosNaLinhaMono() {
+        for (argumentos, minima) in [([String](), CGFloat(52)), (maiorLetra, 72)] {
+            let app = abrirVitrine(argumentos)
+            let cartao = app.elemento("vitrine-lancamentos")
+            app.rolarAte(cartao)
+            let linhas = cartao.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'gasto-'"))
+            XCTAssertEqual(linhas.count, 3, "\(argumentos)")
+            for linha in linhas.allElementsBoundByIndex {
+                XCTAssertEqual(linha.frame.minX, 16, accuracy: 0.5, "\(argumentos)")
+                XCTAssertEqual(linha.frame.maxX, app.frame.width - 16, accuracy: 0.5, "\(argumentos)")
+                XCTAssertGreaterThanOrEqual(linha.frame.height, minima, "\(linha.label) \(argumentos)")
+            }
+            let gigante = app.elemento("gasto-gigante")
+            XCTAssertTrue(gigante.label.hasPrefix("Terreno do condomínio. Terreno, Pix, "), gigante.label)
+            XCTAssertEqual(gigante.value as? String, "R$\u{a0}1.000.000.000,00")
+            app.terminate()
+        }
+    }
+
     /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
     /// fica dentro do bloco, entre as bordas de 34 pt.
     func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {

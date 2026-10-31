@@ -7,6 +7,12 @@ import CusttaNucleo
    números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
 struct VitrineDasPecas: View {
     private let estado = Estado.de(DadosDeExemplo.vitrine())
+    private static let gigante = Estado.de(.objeto(["obras": .lista([.objeto([
+        "id": .texto("x"), "nome": .texto("x"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
+        "gastos": .lista([.objeto(["id": .texto("gigante"), "valor": .numero(1_000_000_000), "topico": .texto("terreno"),
+                                   "descricao": .texto("Terreno do condomínio"), "data": .texto("2026-10-01"),
+                                   "pagamento": .texto("pix")])]),
+    ])])])).obras[0].gastos[0]
     @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var letra
 
@@ -51,6 +57,19 @@ struct VitrineDasPecas: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("vitrine-topicos")
+                // Os lançamentos na linha mono: os dois primeiros do mês mais recente e um de R$ 1 bilhão, que não cabe ao
+                // lado do título (deixaria menos de 120 pt para ele) e desce para baixo dele.
+                let topicos = mapaDeTopicos(estado.config.topicosProprios)
+                let lancamentos = Array(listaDaObra(casa, hoje: hoje).meses.first?.gastos.prefix(2) ?? []) + [Self.gigante]
+                CartaoDaLista {
+                    ForEach(Array(lancamentos.enumerated()), id: \.element.id) { i, gasto in
+                        if i > 0 { LinhaFina().padding(.horizontal, Grade.recuo) }
+                        LinhaDeGastoView(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos))
+                    }
+                }
+                .environment(\.linhaMono, true)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-lancamentos")
                 BlocoDeVidro {
                     CabecalhoDoBloco(rotulo: "Hachura: a vencer e o excesso")
                     HStack(spacing: 12) {

@@ -57,10 +57,11 @@ struct CoresTests {
         }
     }
 
-    /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705; no escuro, #FFD98A.
+    /// O âmbar de texto sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #5E3A03, o texto mais escuro do
+    /// claro da etapa 4 (era #6F4705); no escuro, #FFD98A.
     /// E a decisão 6: no Fosco escuro, o secundário é o do Transparente; no claro, o do Fosco fica.
     @Test func ambarSobreOVidroESecundarioDoFoscoNoEscuro() {
-        #expect(hex(.alertaNoVidro, .light) == "#6F4705")
+        #expect(hex(.alertaNoVidro, .light) == "#5E3A03")
         #expect(hex(.alertaNoVidro, .dark) == "#FFD98A")
         #expect(hex(.secundarioFosco, .dark) == hex(.secundarioTransparente, .dark))
         #expect(hex(.secundarioFosco, .light) != hex(.secundarioTransparente, .light))

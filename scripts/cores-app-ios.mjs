@@ -81,11 +81,12 @@ export const CORES = {
     PositivoNoVidro: ['#8CF0BC', '#084A27'],
     NegativoNoVidro: ['#FFD2D9', '#8A1538'],
     // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup: o aviso dos tópicos na linha do orçamento e o
-    // "Passou … do previsto"): no claro, #6F4705 (o Alerta do site dava 3,79–4,15:1 sobre a aurora clara; este, 5,21–5,71:1).
-    // No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
+    // "Passou … do previsto"): no claro, #5E3A03, o AmbarTexto do mockup da etapa 4 (o texto mais escuro do claro, aprovado em
+    // 28/10 e no app inteiro pela confirmação 5 de 29/10: o #6F4705 da etapa 3 ficava em 3,9:1 no pior ponto da aurora clara
+    // do mockup; o Alerta do site dava 3,79–4,15:1 sobre a do app). No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
     // rolada, na maior letra, onde a aurora clareia o vidro (laudo da etapa 3); este, 4,9 ali. Não é o AlertaEtiqueta, que vai
     // sobre o fundo âmbar das etiquetas.
-    AlertaNoVidro: ['#FFD98A', '#6F4705'],
+    AlertaNoVidro: ['#FFD98A', '#5E3A03'],
     // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
     // sistema e o que vai dentro dela, o arrastar para apagar e a linha que acabou de entrar.
     Folha: ['#0A1E18E6', '#F4F9F6F0'],              // --folha: fundo da folha (presentationBackground)

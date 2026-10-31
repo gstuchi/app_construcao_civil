@@ -52,7 +52,7 @@ struct CapsulaDeAbas: View {
             }
         }
         .dynamicTypeSize(.large)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)           // a borda externa de toda forma (grade 16/34 da etapa 4), em todas as telas
         .padding(.bottom, 22)               // da borda da tela (mockup aprovado), como a barra de abas do sistema
         .animation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.35, bounce: 0), value: mais != nil)
     }

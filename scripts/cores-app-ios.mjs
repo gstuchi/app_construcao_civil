@@ -128,6 +128,7 @@ export const CORES = {
     EixoGrafico: ['#EAFFF64D', '#142B2352'],        // 30% e 32%
     AnelApagado: ['#123128', '#DCEAE3'],            // o trilho e os pedaços apagados pelo toque: por cor, sem opacidade
     AnelSeparador: ['#04100C8C', '#FFFFFFBF'],      // o aro de 2,5 pt na ponta de cada pedaço (55% e 75%)
+    LuzDoSolido: ['#FFFFFF59', '#FFFFFF59'],        // o filete de luz no topo do bloco sólido (branco a 35%, nos dois temas)
   },
 };
 

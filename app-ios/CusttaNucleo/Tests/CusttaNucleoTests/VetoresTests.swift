@@ -24,6 +24,8 @@ struct VetoresTests {
         withKnownIssue("infinito contra zero") { confere(.numero(.infinity), .numero(0), .continua, "∞ × 0") }
         withKnownIssue("menos infinito contra número") { confere(.numero(-.infinity), .numero(2.5), .continua, "-∞ × 2,5") }
         withKnownIssue("número contra infinito") { confere(.numero(1e300), .numero(.infinity), .continua, "1e300 × ∞") }
+        // o 1e300 é inteiro e o ramo do inteiro o reprova sozinho; só uma fração prova a guarda do lado esperado
+        withKnownIssue("fração contra infinito") { confere(.numero(2.5), .numero(.infinity), .continua, "2,5 × ∞") }
         withKnownIssue("NaN contra número") { confere(.numero(.nan), .numero(0), .continua, "NaN × 0") }
         confere(.numero(.infinity), .numero(.infinity), .continua, "∞ × ∞")
         confere(.numero(0.1 + 0.2), .numero(0.3), .continua, "a tolerância relativa continua")

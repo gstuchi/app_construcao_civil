@@ -25,6 +25,9 @@ struct TopicoNoRelatorioTests {
         #expect(parteComUmaCasa(10, total: 10_000) == "0,1%")
         #expect(parteComUmaCasa(0, total: 1000) == "0,0%")
         #expect(parteComUmaCasa(0, total: 0) == "0,0%")
+        // A conta é a do site e do mockup, bruto / total * 100: 29 de 400 (7,25% exato) dá 7,249999999999999 em ponto
+        // flutuante e fica 7,2%; bruto * 100 / total daria 7,3%.
+        #expect(parteComUmaCasa(29, total: 400) == "7,2%")
     }
 
     @Test func casasNoFormatoDoSite() {

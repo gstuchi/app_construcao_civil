@@ -21,10 +21,16 @@ struct EixosTests {
         #expect(e.rotulos == ["R$ 250 mil", "R$ 500 mil", "R$ 750 mil", "R$ 1,00 mi"])   // o site daria R$ 233 mil, 465 mil…
         // Na letra máxima, 2 divisões.
         #expect(escalaRedonda(777_000, divisoes: 2).rotulos == ["R$ 500 mil", "R$ 1,00 mi"])
+        // O topo é passo × divisões, não × 4: na letra máxima, R$ 777 mil fecha em R$ 1 milhão.
+        #expect(escalaRedonda(777_000, divisoes: 2).topo == 1_000_000)
         #expect(escalaRedonda(46_000, divisoes: 4).rotulos == ["R$ 12 mil", "R$ 24 mil", "R$ 36 mil", "R$ 48 mil"])
         #expect(escalaRedonda(5_400, divisoes: 4).passo == 1_500)
         // A potência de 10 vem do piso do log: 3.502 fica na casa do milhar (passo 4 mil), não na da dezena de milhar.
         #expect(escalaRedonda(13_600, divisoes: 4).passo == 4_000)
+        // Os passos de 2, 6 e 8, que nenhum caso acima pedia (os outros da lista já têm um): R$ 700 mil, 2,1 mi e 2,6 mi.
+        #expect(escalaRedonda(700_000, divisoes: 4).passo == 200_000)
+        #expect(escalaRedonda(2_100_000, divisoes: 4).passo == 600_000)
+        #expect(escalaRedonda(2_600_000, divisoes: 4).passo == 800_000)
     }
 
     @Test func escalaComFolgaNoTopo() {
@@ -73,5 +79,7 @@ struct EixosTests {
         #expect(mesNoPonto(x: 500, inicio: 40, largura: 220, meses: 12) == 11)
         #expect(mesNoPonto(x: -20, inicio: 40, largura: 220, meses: 12) == 0)
         #expect(mesNoPonto(x: 100, inicio: 40, largura: 220, meses: 1) == 0)
+        // O 1º quadro do GeometryReader tem largura 0: nenhuma das duas contas divide por ela.
+        #expect(mesNoPonto(x: 50, inicio: 40, largura: 0, meses: 12) == 0)
     }
 }

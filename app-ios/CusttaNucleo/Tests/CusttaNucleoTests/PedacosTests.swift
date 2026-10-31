@@ -98,6 +98,8 @@ struct PedacosTests {
         let anel = arcosDoAnel(pedacosDoAnel(topicos([999, 1])), circunferencia: 2 * Double.pi * 100)
         #expect(abs((anel[1].fim - anel[1].inicio) * 2 * Double.pi * 100 - 10) < 1e-9)
         #expect(anel[1].fim == 1)
+        // O último arco fecha em 1 mesmo quando a soma das partes erra no último bit (0,7 + 0,2 + 0,1 dá 0,9999999999999999).
+        #expect(arcosDoAnel(pedacosDoAnel(topicos([7, 2, 1])), circunferencia: 1000).last?.fim == 1)
         // O tópico de bruto zero (um gasto de R$ 0) fica sem arco e sem piso, como o arco de comprimento 0 do site.
         let zero = arcosDoAnel(pedacosDoAnel(topicos([900, 100, 0])), circunferencia: 1000, piso: 10)
         #expect(perto(zero.map(\.inicio), [0, 0.9, 1]))
@@ -129,6 +131,8 @@ struct PedacosTests {
         #expect(largurasDaBarra([], largura: 300).isEmpty)
         // O pedaço de bruto zero fica sem largura e sem vão: 303 − 1 vão de 3 pt = 300 pt para os dois com bruto.
         #expect(perto(largurasDaBarra(pedacosDoAnel(topicos([900, 100, 0])), largura: 303), [270, 30, 0]))
+        // Sem bruto nenhum (gastos de R$ 0), todos têm pedaço, iguais e com o vão entre eles: 103 − 1 vão de 3 pt = 100 pt.
+        #expect(perto(largurasDaBarra(pedacosDoAnel(topicos([0, 0])), largura: 103), [50, 50]))
     }
 
     @Test func pedacoSobODedo() {

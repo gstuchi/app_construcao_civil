@@ -79,6 +79,7 @@ struct PaginacaoDoPDFTests {
         #expect(p.paginas[0].usado == Double(20 + 45 + 20 + 15 + 38 + 58))
         #expect(p.total == 2)
         #expect(rodapeDoPDF(pagina: 2, de: p.total) == "página 2 de 2")
+        #expect(rodapeDoPDF(pagina: 2, de: 5) == "página 2 de 5")
         confere(p, topicos, fim: .estimada(valor: 900_000, margem: 10_000), MedidasDoPDF())
     }
 
@@ -90,6 +91,8 @@ struct PaginacaoDoPDFTests {
         #expect(m.alturaDoFim(.venda(valor: 1, data: "2026-06-20", lucroBruto: 1, acimaDoBanco: 1)) == 76)
         #expect(m.alturaDoFim(.estimada(valor: 1, margem: 1)) == 58)
         #expect(m.alturaDoFim(nil) == 45)
+        // A linha curta fica com a mínima: 8 pt de texto e 3 de respiro dariam 11.
+        #expect(alturaDoGasto(linhas(1, de: 8).linhas[...], m) == 15)
     }
 
     @Test func limiteExato() {
@@ -134,6 +137,21 @@ struct PaginacaoDoPDFTests {
         confere(p, topicos, fim: nil, m)
         // A linha curta fica com a altura mínima (20 pt aqui).
         #expect(paginarTabelaDoPDF([[linhas(1, de: 10)]], fim: nil, medidas: m).paginas[0].usado == Double(20 + 20 + 20))
+        // O que chega exatamente ao fim da página nova (180 pt, os 200 menos o tópico) também vai inteiro: o 2º gasto do tópico
+        // e o 1º do tópico seguinte. Com 190 pt já não cabe nela, e é partido a partir do que sobra na página.
+        let exato = [[linhas(1, de: 40), linhas(9, de: 20)]]
+        let e = paginarTabelaDoPDF(exato, fim: nil, medidas: m)
+        #expect(e.paginas[1].itens.prefix(2) == [.topico(0, continuacao: true), .gasto(topico: 0, gasto: 1, linhas: 0..<9)])
+        confere(e, exato, fim: nil, m)
+        let doOutroTopico = [[linhas(1, de: 40)], [linhas(9, de: 20)]]
+        let o = paginarTabelaDoPDF(doOutroTopico, fim: nil, medidas: m)
+        #expect(o.paginas[1].itens.prefix(2) == [.topico(1, continuacao: false), .gasto(topico: 1, gasto: 0, linhas: 0..<9)])
+        confere(o, doOutroTopico, fim: nil, m)
+        let alto = [[linhas(1, de: 40), linhas(19, de: 10)]]
+        let a = paginarTabelaDoPDF(alto, fim: nil, medidas: m)
+        #expect(a.paginas[0].itens.last == .gasto(topico: 0, gasto: 1, linhas: 0..<14))
+        #expect(a.paginas[1].itens.prefix(2) == [.topico(0, continuacao: true), .gasto(topico: 0, gasto: 1, linhas: 14..<19)])
+        confere(a, alto, fim: nil, m)
         // A exceção é a 1ª página da tabela ainda vazia, menor por causa do subtítulo: 58 linhas (661 pt) cabem numa página
         // nova (673, depois do tópico), mas não nos 643 da 1ª. Abrir outra a deixaria em branco: o gasto é partido ali.
         let quaseUmaPagina = [[linhas(58)]]
@@ -197,6 +215,7 @@ struct PaginacaoDoPDFTests {
         #expect(valorNoPDF(319_847.85) == "319.847,85")
         #expect(correcaoNoPDF(46_338.31) == "+46.338,31")
         #expect(correcaoNoPDF(0) == "+0,00")
+        #expect(correcaoNoPDF(-1234.5) == "-1.234,50")
         let c = colunasDoPDF(larguraDoMaiorValor: 57)
         #expect(c == ColunasDoPDF(gasto: 236.5, data: 63.5, valor: 69, texto: 211.5))       // 595 − 2 × 44 − 63,5 − 3 × 69
         // O título da coluna, se for mais largo que o maior valor, manda.
@@ -209,5 +228,11 @@ struct PaginacaoDoPDFTests {
         let maior = maiorValorDoPDF(r)
         #expect(maior.hasPrefix("+1."))
         #expect(maior.count == 13)
+        // Ou o total, que passa de qualquer tópico, ou o corrigido, quando a correção é pequena: R$ 500 mil e R$ 499 mil de um mês
+        // atrás, a 1% ao mês, dão 999 mil de gasto (10 caracteres), 1.008.844,89 de corrigido (12) e só +9.844,89 de correção (9).
+        let recente = Obra(arvore: ["id": .texto("o1"), "gastos": .lista([
+            .objeto(["id": .texto("a"), "valor": .numero(500_000), "topico": .texto("terreno"), "data": .texto("2026-09-12")]),
+            .objeto(["id": .texto("b"), "valor": .numero(499_000), "topico": .texto("projeto"), "data": .texto("2026-09-12")])])])
+        #expect(maiorValorDoPDF(relatorioObra(recente, hoje: "2026-10-12", taxa: 1)) == "1.008.844,89")
     }
 }

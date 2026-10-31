@@ -35,6 +35,8 @@ struct MesesDosGraficosTests {
         let parada = serieMensal(obra([("2025-01-10", 100), ("2025-03-02", 0)]).gastos)
         #expect(mesPadraoDoGastoPorMes(parada, referencia: "2026-10") == 0)
         #expect(mesPadraoDoGastoPorMes(serie, referencia: "2025-01") == 8)
+        // Sem mês com gasto (tudo zerado), o primeiro, como o Math.max(0, …) do mockup.
+        #expect(mesPadraoDoGastoPorMes(serieMensal(obra([("2025-01-10", 0), ("2025-03-02", 0)]).gastos), referencia: "2026-10") == 0)
         #expect(mesPadraoDoGastoPorMes([], referencia: "2026-10") == nil)
     }
 
@@ -53,6 +55,12 @@ struct MesesDosGraficosTests {
         // No dia do gasto, ele já está no gráfico.
         #expect(fraseForaDaEvolucao(casa, hoje: "2026-11-05") == nil)
         #expect(fraseAVencerDoAnel(casa, hoje: "2026-11-05") == nil)
+        // Só acima de meio centavo, como o mockup: 1 centavo a vencer aparece; 0,4 centavo (poeira de conta) não.
+        let centavo = obra([("2026-11-05", 0.01)]), poeira = obra([("2026-11-05", 0.004)])
+        #expect(fraseForaDaEvolucao(centavo, hoje: "2026-10-12") == "Fora do gráfico: R$\u{00A0}0,01 a vencer (depois de hoje).")
+        #expect(fraseAVencerDoAnel(centavo, hoje: "2026-10-12") == "Inclui R$\u{00A0}0,01 a vencer.")
+        #expect(fraseForaDaEvolucao(poeira, hoje: "2026-10-12") == nil)
+        #expect(fraseAVencerDoAnel(poeira, hoje: "2026-10-12") == nil)
         // Na vendida, o que tem data depois da venda (no mesmo mês também); o anel não fala de "a vencer".
         let vendida = obra([("2026-03-10", 50_000), ("2026-06-20", 1_000), ("2026-06-25", 8_000), ("2026-07-01", 2_000)], venda: "2026-06-20")
         #expect(fraseForaDaEvolucao(vendida, hoje: "2026-10-12") == "Fora do gráfico: R$\u{00A0}10.000,00 com data depois da venda.")
@@ -105,6 +113,10 @@ struct MesesDosGraficosTests {
         #expect(!evolucaoFoiCortada(parada, hoje: "2024-12-31"))                       // 2023-01 a 2024-12: 24 meses
         #expect(evolucaoFoiCortada(parada, hoje: "2025-01-01"))                        // 2023-01 a 2025-01: 25, cortada
         #expect(!evolucaoFoiCortada(obra([]), hoje: "2026-10-12"))
+        // Na vendida ela para na venda: a mesma obra vendida em 12/2024 cabe em 24 meses mesmo em 2026; vendida em 01/2025, não.
+        let gastosDaParada: [(data: String, valor: Double)] = parada.gastos.map { ($0.data, $0.valor) }
+        #expect(!evolucaoFoiCortada(obra(gastosDaParada, venda: "2024-12-31"), hoje: "2026-10-12"))
+        #expect(evolucaoFoiCortada(obra(gastosDaParada, venda: "2025-01-31"), hoje: "2026-10-12"))
         #expect(avisoDos24Meses == "Mostrando os últimos 24 meses.")
     }
 }

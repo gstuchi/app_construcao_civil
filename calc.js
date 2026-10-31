@@ -87,6 +87,58 @@
     return { qtd: gs.length, bruto, corrigido: gs.reduce((s, g) => s + corrigido(g.valor, g.data, fim, taxaPct), 0),
       pct: total > 0 ? Math.round(bruto / total * 100) : 0 };
   }
+  /* Gasto por tópico (o donut e a legenda da obra e dos Gráficos): o bruto de todos os gastos, com as parcelas a vencer, do
+     maior para o menor; no empate, o tópico que aparece primeiro nos gastos (o sort é estável). pct: o "% da obra" da
+     legenda, com o arredondamento do resumoTopico (0 na obra sem gasto). Map, e não objeto: num objeto, o tópico de id
+     numérico ("12") passaria à frente no empate e o "__proto__" sumiria. */
+  function gastoPorTopico(obra){
+    const por = new Map();
+    obra.gastos.forEach(g => por.set(g.topico, (por.get(g.topico) || 0) + g.valor));
+    const total = totalBruto(obra);
+    return [...por].sort((a, b) => b[1] - a[1])
+      .map(([id, bruto]) => ({ id, bruto, pct: total > 0 ? Math.round(bruto / total * 100) : 0 }));
+  }
+  /* ---- relatório da obra (app.js renderRelatorio): morava no app.js; o app nativo confere a cópia pelos vetores ---- */
+  /* A correção vai até a venda ou hoje (fim). Um grupo por tópico, do maior bruto para o menor (no empate, o tópico que
+     aparece primeiro nos gastos); no grupo, os gastos por data (na mesma data, a ordem do documento), cada um com o
+     corrigido até o fim; o bruto e o corrigido do grupo somam os gastos na ordem do documento. E os totais da obra. */
+  function relatorioObra(obra, hojeISO, taxaPct){
+    const fim = fimCorrecao(obra, hojeISO);
+    const por = new Map();
+    obra.gastos.forEach(g => { if(!por.has(g.topico)) por.set(g.topico, []); por.get(g.topico).push(g); });
+    const grupos = [...por].map(([topico, gs]) => ({
+      topico,
+      itens: [...gs].sort((a, b) => a.data.localeCompare(b.data)).map(g => ({ gasto: g, corrigido: corrigido(g.valor, g.data, fim, taxaPct) })),
+      bruto: gs.reduce((s, g) => s + g.valor, 0),
+      corrigido: gs.reduce((s, g) => s + corrigido(g.valor, g.data, fim, taxaPct), 0),
+    })).sort((a, b) => b.bruto - a.bruto);
+    return { fim, grupos, totalBruto: totalBruto(obra), totalCorrigido: totalCorrigido(obra, taxaPct, hojeISO) };
+  }
+  /* O fim do relatório: na obra vendida, a venda, o lucro bruto e o acima do banco; senão, com venda estimada, a estimada e a
+     margem (a estimada menos o corrigido até hoje); sem as duas, null. */
+  function fimRelatorio(obra, hojeISO, taxaPct){
+    if(obra.venda){
+      const l = lucroVenda(obra, taxaPct);
+      return { tipo: 'venda', valor: obra.venda.valor, data: obra.venda.data, lucroBruto: l.bruto, acimaDoBanco: l.vsBanco };
+    }
+    if(obra.valorEstimadoVenda)
+      return { tipo: 'estimada', valor: obra.valorEstimadoVenda, margem: obra.valorEstimadoVenda - totalCorrigido(obra, taxaPct, hojeISO) };
+    return null;
+  }
+  /* A linha da correção no cabeçalho do relatório, com a taxa com vírgula: até a venda (com a data dela) ou até hoje. */
+  const dataCurta = iso => { const [a, m, d] = iso.split('-'); return `${d}/${m}/${a.slice(2)}`; };
+  function linhaCorrecao(obra, hojeISO, taxaPct){
+    const ate = obra.venda ? `a venda (${dataCurta(obra.venda.data)})` : `hoje (${dataCurta(hojeISO)})`;
+    return `Correção de ${String(taxaPct).replace('.', ',')}% ao mês, da data de cada gasto até ${ate}.`;
+  }
+  /* A soma da seleção do relatório (no app, também a dos achados da busca): quantos ("1 item", "N itens"), o bruto, o
+     corrigido e a parte do total bruto da obra com 2 casas no padrão pt-BR ("0%" com o total zero). itens: os do
+     relatorioObra ({gasto, corrigido}), na ordem do relatório. */
+  function somaSelecao(itens, totalBrutoObra){
+    const bruto = itens.reduce((s, x) => s + x.gasto.valor, 0);
+    return { quantos: `${itens.length} ${itens.length === 1 ? 'item' : 'itens'}`, bruto, corrigido: itens.reduce((s, x) => s + x.corrigido, 0),
+      parte: totalBrutoObra > 0 ? (bruto / totalBrutoObra * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%' : '0%' };
+  }
   function lucroVenda(obra, taxaPct){
     if(!obra.venda) return null;
     return {
@@ -135,6 +187,59 @@
       pctCusto: (venda / custo - 1) * 100,
       pctVenda: (venda - custo) / venda * 100,
     };
+  }
+
+  /* ---- "Vale a pena?" (app.js simulaCompute): morava no app.js; o app nativo confere a cópia pelos vetores ---- */
+  /* As obras do simulador: as não vendidas com gastos, na ordem do documento ({id, nome}). A escolhida continua escolhida
+     enquanto for elegível; senão, a primeira (null sem nenhuma). */
+  function obrasSimulador(obras, escolhidaId){
+    const elegiveis = obras.filter(o => o.fase !== 'vendida' && o.gastos.length).map(o => ({ id: o.id, nome: o.nome }));
+    return { elegiveis, escolhida: elegiveis.some(o => o.id === escolhidaId) ? escolhidaId : elegiveis.length ? elegiveis[0].id : null };
+  }
+  /* O preço acompanha a venda estimada da obra escolhida enquanto a pessoa não digitou: null sem estimada (a zero não conta). */
+  const precoInicialSimulador = obra => obra.valorEstimadoVenda || null;
+  /* Os meses da venda vão de 0 a 120 na conta, como no campo. */
+  const MESES_SIMULADOR = 120;
+  /* Vender a obra por `venda` daqui a `meses` (inteiro), sem gasto novo até lá: o alvo (hoje + meses), o custo bruto e o
+     corrigido até o alvo, a obra com menos de 1 mês até o alvo (fica sem taxa), a TIR, o acima do banco, o veredito (venda
+     acima do corrigido) e o multiplicador (TIR ÷ taxa; 0 sem TIR). null sem preço. */
+  function contaSimulador(obra, venda, meses, hojeISO, taxaPct){
+    if(venda <= 0) return null;
+    const m = Math.min(MESES_SIMULADOR, Math.max(0, meses));
+    const alvo = addMesesClampado(hojeISO, m);
+    const corr = totalCorrigido(obra, taxaPct, alvo);
+    const novaDemais = mesesDeObra(obra, alvo) < 1;
+    const tir = novaDemais ? null : tirMensal(obra.gastos, venda, alvo);
+    return { venda, meses: m, alvo, bruto: totalBruto(obra), corrigido: corr, novaDemais, tir, acima: rendimentoAcima(tir, taxaPct),
+      vale: venda > corr, multiplicador: tir != null && taxaPct > 0 ? tir / taxaPct : 0 };
+  }
+  /* Os textos do cartão e da tabela, da conta acima. Na tabela, o lucro e as duas porcentagens levam a cor pelo sinal
+     (sinalBruto e sinalCorrigido: 'positivo', 'negativo', ou null sem valor); custo, venda, rendimento e R$/m² não têm cor, e
+     o R$/m² só aparece com área. destaque: a linha do lucro. */
+  function textosSimulador(conta, taxaPct, areaM2){
+    const virgula = (v, casas) => v.toFixed(casas).replace('.', ',');
+    const din = v => v == null ? '—' : money(v);
+    const pct1 = v => v == null ? '—' : virgula(v, 1) + '%';
+    const taxa2 = v => v == null ? '—' : virgula(v, 2) + '% a.m.';
+    const sinal = v => v == null ? null : v >= 0 ? 'positivo' : 'negativo';
+    const linha = (rotulo, bruto, corrigido, [sinalBruto, sinalCorrigido] = [null, null], destaque = false) =>
+      ({ rotulo, bruto, corrigido, sinalBruto, sinalCorrigido, destaque });
+    const rb = resumoVenda(conta.venda, conta.bruto), rc = resumoVenda(conta.venda, conta.corrigido);
+    const detalhes = [conta.meses === 0 ? 'vendendo hoje' : `vendendo daqui a ${conta.meses} ${conta.meses === 1 ? 'mês' : 'meses'}`,
+      `banco paga ${String(taxaPct).replace('.', ',')}%`];
+    if(conta.tir != null && conta.multiplicador >= 1) detalhes.push(`rende ${virgula(conta.multiplicador, 1)}× o banco`);
+    if(conta.novaDemais) detalhes.push('obra com menos de 1 mês — % ao mês ainda não diz muito');
+    const tabela = [
+      linha('Custo até a venda', money(conta.bruto), money(conta.corrigido)),
+      linha('Venda', money(conta.venda), money(conta.venda)),
+      linha('Lucro', din(rb.lucro), din(rc.lucro), [sinal(rb.lucro), sinal(rc.lucro)], true),
+      linha('% sobre o custo', pct1(rb.pctCusto), pct1(rc.pctCusto), [sinal(rb.pctCusto), sinal(rc.pctCusto)]),
+      linha('% sobre a venda', pct1(rb.pctVenda), pct1(rc.pctVenda), [sinal(rb.pctVenda), sinal(rc.pctVenda)]),
+      linha('Rendimento ao mês', taxa2(conta.tir), taxa2(conta.acima)),
+    ];
+    if(areaM2 > 0) tabela.push(linha(`Preço por m² (${String(areaM2).replace('.', ',')} m²)`, money(conta.venda / areaM2), money(conta.venda / areaM2)));
+    return { veredito: conta.vale ? 'Vale a pena' : 'Rende menos que o banco', taxa: conta.tir != null ? virgula(conta.tir, 2) + '% ao mês' : '—',
+      detalhes, tabela };
   }
 
   /* Série mensal acumulada da obra (pro gráfico de evolução):
@@ -535,7 +640,7 @@
       ? Object.keys(v).sort().reduce((a, c) => { a[c] = v[c]; return a; }, {}) : v);
   }
 
-  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
+  const api = { DIAS_MES, LIMITE_BLOB, AVISO_BLOB, tamanhoBlob, blobCabe, erroEhTerminal, proximoBackoff, dataLocalISO, dataISOValida, dataIgualOuDepois, diasEntre, corrigido, totalBruto, totalCorrigido, resumoTopico, gastoPorTopico, relatorioObra, fimRelatorio, linhaCorrecao, somaSelecao, lucroVenda, mesesDeObra, tirMensal, rendimentoAcima, resumoVenda, obrasSimulador, precoInicialSimulador, MESES_SIMULADOR, contaSimulador, textosSimulador, serieEvolucao, serieMensal, serieEvolucaoAgregada, aPagar, textoVencimentos, gastosRecentes, precoPorM2, filtraGastos, contadorLancamentos, mesesDoFiltro, semAcento, normalizaDescricao, distanciaEdicao, sugestoesDescricao, gastoRepetido, lerTaxaCartao, addMesesClampado, gerarParcelas, parcelamentoCartao, fmtDigitado, fmtCompleto, numParaCampo, parseNum, versaoMaior, TOPICOS, orcamentoObra, ORC_PILULA, larguraBarraOrc, fraseTopicoOrc, rodapeOrc, linhaTopicoOrc, somaTopicosOrc, totalPreenchidoOrc, pecasOrcamento, afazeresEmOrdem, contadorDeAfazeres, money, moneyShort, moneyCurto, fmtMeses, canon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.OBRA_CALC = api;
 })(this);

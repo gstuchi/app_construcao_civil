@@ -409,9 +409,7 @@ function renderObra(){
       <ul class="list" id="oAfazeres"></ul>
     </div>`;
 
-  const byTop = {};
-  o.gastos.forEach(g=>{ byTop[g.topico]=(byTop[g.topico]||0)+g.valor; });
-  const entries = Object.entries(byTop).sort((a,b)=>b[1]-a[1]);
+  const porTopico = OBRA_CALC.gastoPorTopico(o);
 
   const graficos = `
     <div class="panel"><h2>Gastos por tópico</h2>
@@ -446,7 +444,7 @@ function renderObra(){
   fitNums($('#obraBody'));
   pintaBarrasOrc($('#obraBody'));
 
-  drawDonutObra(entries, bruto);
+  drawDonutObra(porTopico, bruto);
   bindEvoChart(o);
   bindMesChart(o);
   $('#fBusca').addEventListener('input', ()=>{ filtroTexto = $('#fBusca').value; renderGastosFiltrados(obraById(obraAberta)); });
@@ -519,15 +517,16 @@ function afazerRow(o, a){
   return li;
 }
 
-function drawDonutObra(entries, total){
+/* topicos: o gastoPorTopico do calc.js ({id, bruto, pct}, na ordem do donut) */
+function drawDonutObra(topicos, total){
   const svg = $('#oDonut'), leg = $('#oDonutLeg');
   $('#oDonutTotal').textContent = moneyShort(total);
   if(!total){ svg.innerHTML=''; leg.innerHTML = `<div class="layout-37 empty"><p>Sem gastos ainda</p></div>`; return; }
   const cs = getComputedStyle(document.documentElement);
   const R = 15.915, C = 2*Math.PI*R;
   let off = 0, paths = '';
-  entries.forEach(([id,val],i)=>{
-    const len = val/total*C;
+  topicos.forEach(({bruto},i)=>{
+    const len = bruto/total*C;
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
       stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
@@ -536,13 +535,13 @@ function drawDonutObra(entries, total){
   svg.innerHTML = paths;
   leg.innerHTML = '';
   const map = TOP_MAP();
-  entries.slice(0,7).forEach(([id,val],i)=>{
+  topicos.slice(0,7).forEach(({id,bruto,pct},i)=>{
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     leg.appendChild(el('div','row',
       `<span class="dot pie-${i%PIE.length}"></span>
        <span class="nm">${ICON(t.ic)} ${escapeHtml(t.nm)}</span>
-       <span class="vl">${Math.round(val/total*100)}% · ${moneyShort(val)}</span>`));
+       <span class="vl">${pct}% · ${moneyShort(bruto)}</span>`));
   });
 }
 
@@ -1029,27 +1028,27 @@ $('#btnRelVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { s
 $('#btnGrafVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { showView('inicio'); renderAll(); } };
 
 /* donut + legenda largura cheia (nome completo, % e valor) — reusado
-   pela tela Gráficos e pelo dashboard do início */
-function donutComLegendaHtml(entries, total, size){
+   pela tela Gráficos e pelo dashboard do início. topicos: o gastoPorTopico do calc.js */
+function donutComLegendaHtml(topicos, total, size){
   if(!(total > 0)) return emptyBlock(ICON('recibo'),'Sem gastos ainda.');
   const cs = getComputedStyle(document.documentElement);
   const map = TOP_MAP();
   const R = 15.915, C = 2*Math.PI*R;
   let off = 0, paths = '';
-  entries.forEach(([id,val],i)=>{
-    const len = val/total*C;
+  topicos.forEach(({id,bruto},i)=>{
+    const len = bruto/total*C;
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
       stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"
       data-top="${escapeHtml(id)}"></circle>`;
     off += len;
   });
-  const legenda = entries.map(([id,val],i)=>{
+  const legenda = topicos.map(({id,bruto,pct},i)=>{
     const t = map[id] || {nm:id, ic:'etiqueta'};
     const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
     return `<li data-top="${escapeHtml(id)}"><span class="dot pie-${i%PIE.length}"></span>
       <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
-      <div class="li-val">${Math.round(val/total*100)}% · ${moneyShort(val)}</div></li>`;
+      <div class="li-val">${pct}% · ${moneyShort(bruto)}</div></li>`;
   }).join('');
   return `<div class="graf-donut"><div class="donut donut-${size}">
       <svg viewBox="0 0 36 36" width="${size}" height="${size}">${paths}</svg>
@@ -1057,12 +1056,6 @@ function donutComLegendaHtml(entries, total, size){
     </div></div>
     <ul class="list graf-leg">${legenda}</ul>`;
 }
-const byTopico = gastos => {
-  const by = {};
-  gastos.forEach(g=>{ by[g.topico]=(by[g.topico]||0)+g.valor; });
-  return Object.entries(by).sort((a,b)=>b[1]-a[1]);
-};
-
 /* liga o clique da legenda e das fatias do donut. Separado do helper de HTML
    porque ele devolve string: o bind só existe depois de inserir no DOM —
    mesmo par de bindEvoChart/bindMesChart. Quem não chamar isso fica sem
@@ -1090,7 +1083,7 @@ function renderGraficos(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const bruto = OBRA_CALC.totalBruto(o);
-  const donutLeg = donutComLegendaHtml(byTopico(o.gastos), bruto, 240);
+  const donutLeg = donutComLegendaHtml(OBRA_CALC.gastoPorTopico(o), bruto, 240);
 
   $('#grafBody').innerHTML = `
     <div class="panel">
@@ -1161,48 +1154,41 @@ function renderRelatorio(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const hoje = todayISO();
-  const fim = (o.venda && o.venda.data) || hoje;
   const tx = taxa();
   const map = TOP_MAP();
 
-  const byTop = {};
-  o.gastos.forEach(g=>{ (byTop[g.topico] = byTop[g.topico] || []).push(g); });
-  const groups = Object.entries(byTop).map(([id,gs])=>({
-    id,
-    gs: [...gs].sort((a,b)=>a.data.localeCompare(b.data)),
-    bruto: gs.reduce((s,g)=>s+g.valor,0),
-    corr:  gs.reduce((s,g)=>s+OBRA_CALC.corrigido(g.valor,g.data,fim,tx),0),
-  })).sort((a,b)=>b.bruto-a.bruto);
-
-  const totB = OBRA_CALC.totalBruto(o);
-  const totC = OBRA_CALC.totalCorrigido(o, tx, hoje);
-  const lucro = OBRA_CALC.lucroVenda(o, tx);
+  // grupos, gastos com o corrigido e totais: calc.js relatorioObra (o app nativo usa o mesmo)
+  const rel = OBRA_CALC.relatorioObra(o, hoje, tx);
+  const totB = rel.totalBruto;
+  const totC = rel.totalCorrigido;
   const itensRelatorio = new Map();
 
   let rows = '';
-  groups.forEach(gr=>{
-    const t = map[gr.id] || {nm:gr.id, ic:'etiqueta'};
+  rel.grupos.forEach(gr=>{
+    const t = map[gr.topico] || {nm:gr.topico, ic:'etiqueta'};
     rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
-      <td>${money(gr.bruto)}</td><td>${money(gr.corr)}</td><td>+${money(gr.corr-gr.bruto)}</td></tr>`;
-    gr.gs.forEach(g=>{
-      const c = OBRA_CALC.corrigido(g.valor, g.data, fim, tx);
-      itensRelatorio.set(g.id,{g,c});
+      <td>${money(gr.bruto)}</td><td>${money(gr.corrigido)}</td><td>+${money(gr.corrigido-gr.bruto)}</td></tr>`;
+    gr.itens.forEach(item=>{
+      const {gasto:g, corrigido:c} = item;
+      itensRelatorio.set(g.id,item);
       const descricao=g.descricao||t.nm;
       rows += `<tr><td class="rt-desc"><label class="rep-pick no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(descricao)}"></label>${escapeHtml(descricao)}</td><td>${fmtData(g.data)}</td>
         <td>${money(g.valor)}</td><td>${money(c)}</td><td>+${money(c-g.valor)}</td></tr>`;
     });
   });
 
+  // venda e lucro, ou venda estimada e margem, ou nada: calc.js fimRelatorio
+  const fimRel = OBRA_CALC.fimRelatorio(o, hoje, tx);
   let venda = '';
-  if(o.venda && lucro){
+  if(fimRel && fimRel.tipo === 'venda'){
     venda = `
-      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(o.venda.data)}</td><td></td><td colspan="3">${money(o.venda.valor)}</td></tr>
-      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${lucro.bruto>=0?'pos':'neg'}">${money(lucro.bruto)}</td></tr>
-      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${lucro.vsBanco>=0?'pos':'neg'}">${money(lucro.vsBanco)}</td></tr>`;
-  } else if(o.valorEstimadoVenda){
+      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(fimRel.data)}</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
+      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${fimRel.lucroBruto>=0?'pos':'neg'}">${money(fimRel.lucroBruto)}</td></tr>
+      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${fimRel.acimaDoBanco>=0?'pos':'neg'}">${money(fimRel.acimaDoBanco)}</td></tr>`;
+  } else if(fimRel){
     venda = `
-      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(o.valorEstimadoVenda)}</td></tr>
-      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${o.valorEstimadoVenda-totC>=0?'pos':'neg'}">${money(o.valorEstimadoVenda-totC)}</td></tr>`;
+      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
+      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${fimRel.margem>=0?'pos':'neg'}">${money(fimRel.margem)}</td></tr>`;
   }
 
   $('#relBody').innerHTML = `
@@ -1210,7 +1196,7 @@ function renderRelatorio(){
       <h2 class="layout-28">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
       <div class="rep-head">
         ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
-        Correção de ${escapeHtml(String(tx).replace('.',','))}% ao mês, da data de cada gasto até ${o.venda ? `a venda (${fmtData(o.venda.data)})` : `hoje (${fmtData(hoje)})`}.<br>
+        ${escapeHtml(OBRA_CALC.linhaCorrecao(o, hoje, tx))}<br>
         Marque gastos para somar somente itens escolhidos.
       </div>
       <div class="rep-selected hidden" id="relSelected" aria-live="polite">
@@ -1234,13 +1220,12 @@ function renderRelatorio(){
   const atualizarSelecao=()=>{
     const marcados=[...document.querySelectorAll('.rel-check:checked')]
       .map(c=>itensRelatorio.get(c.dataset.gasto)).filter(Boolean);
-    const bruto=marcados.reduce((s,x)=>s+x.g.valor,0);
-    const corr=marcados.reduce((s,x)=>s+x.c,0);
+    const soma=OBRA_CALC.somaSelecao(marcados,totB);
     $('#relSelected').classList.toggle('hidden',marcados.length===0);
-    $('#relSelQtd').textContent=`${marcados.length} ${marcados.length===1?'item':'itens'}`;
-    $('#relSelBruto').textContent=money(bruto);
-    $('#relSelCorr').textContent=money(corr);
-    $('#relSelPct').textContent=totB>0?(bruto/totB*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'0%';
+    $('#relSelQtd').textContent=soma.quantos;
+    $('#relSelBruto').textContent=money(soma.bruto);
+    $('#relSelCorr').textContent=money(soma.corrigido);
+    $('#relSelPct').textContent=soma.parte;
   };
   document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
   ligarImprimir($('#relPrint'));
@@ -1249,12 +1234,12 @@ function renderRelatorio(){
 /* ===== SERÁ QUE VALE A PENA? ===== */
 function renderSimula(){
   const sel = $('#simObra');
-  const cands = db.obras.filter(o=>o.fase!=='vendida' && o.gastos.length);
-  const cur = sel.value;
-  sel.innerHTML = cands.length
-    ? cands.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')
+  // as obras e a escolhida: calc.js obrasSimulador (o app nativo usa o mesmo)
+  const { elegiveis, escolhida } = OBRA_CALC.obrasSimulador(db.obras, sel.value);
+  sel.innerHTML = elegiveis.length
+    ? elegiveis.map(o=>`<option value="${escapeHtml(o.id)}">${escapeHtml(o.nome)}</option>`).join('')
     : '<option value="">— crie uma obra com gastos —</option>';
-  if(cands.some(o=>o.id===cur)) sel.value = cur;
+  if(escolhida) sel.value = escolhida;
   simulaCompute();
 }
 
@@ -1264,52 +1249,31 @@ function simulaCompute(){
   if(!o){ out.innerHTML = ''; return; }
 
   const vInp = $('#simValor');
-  if(!vInp.value && o.valorEstimadoVenda && !vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(o.valorEstimadoVenda);
-  const venda = parseNum(vInp.value);
-  const meses = Math.max(0, parseInt($('#simMeses').value,10) || 0);
-
-  const alvoISO = OBRA_CALC.addMesesClampado(todayISO(), meses);
-  const bruto = OBRA_CALC.totalBruto(o);
-  const corr  = OBRA_CALC.totalCorrigido(o, taxa(), alvoISO);
-
-  if(venda<=0){
+  // enquanto a pessoa não digitou, o preço acompanha a venda estimada da obra escolhida (vazio sem estimada)
+  if(!vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(OBRA_CALC.precoInicialSimulador(o));
+  /* A conta e os textos: calc.js contaSimulador e textosSimulador (o app nativo usa os mesmos). Os meses param em 120 na
+     conta, mesmo digitados além do teto do campo. A obra com menos de 1 mês fica sem taxa (o % ao mês explodiria), e a TIR
+     passa da taxa do banco exatamente quando a venda passa do corrigido. */
+  const conta = OBRA_CALC.contaSimulador(o, parseNum(vInp.value), parseInt($('#simMeses').value,10) || 0, todayISO(), taxa());
+  if(!conta){
     out.innerHTML = `<div class="panel"><p class="muted-note">Digite o preço de venda pra ver a conta.</p></div>`;
     return;
   }
-  // obra com menos de 1 mês: o % ao mês explode (divide por quase zero) e vira número absurdo
-  const novaDemais = OBRA_CALC.mesesDeObra(o, alvoISO) < 1;
-  // TIR: cada gasto na sua data — passa da taxa do banco exatamente quando venda > corrigido
-  const rate = novaDemais ? null : OBRA_CALC.tirMensal(o.gastos, venda, alvoISO);
-  const acima = OBRA_CALC.rendimentoAcima(rate, taxa());
-  const bate = venda > corr;
-  const mult = (rate!=null && taxa()>0) ? rate/taxa() : 0;
-  const quando = meses===0 ? 'vendendo hoje' : `vendendo daqui a ${meses} ${meses===1?'mês':'meses'}`;
-
-  const rb = OBRA_CALC.resumoVenda(venda, bruto);
-  const rc = OBRA_CALC.resumoVenda(venda, corr);
-  const pct1  = v => v==null ? '—' : v.toFixed(1).replace('.',',')+'%';
-  const taxa2 = v => v==null ? '—' : v.toFixed(2).replace('.',',')+'% a.m.';
-  const din   = v => v==null ? '—' : money(v);
-  const sinal = v => v==null ? '' : (v>=0 ? 'pos' : 'neg');
+  const t = OBRA_CALC.textosSimulador(conta, taxa(), o.areaM2);
+  const cor = s => s ? ` class="${s === 'negativo' ? 'neg' : 'pos'}"` : '';
 
   out.innerHTML = `
-    <div class="card saldo big ${bate?'':'saldo-abaixo'}">
-      <div class="k-label"><span class="k-ic">${ICON(bate?'check':'alerta')}</span> ${bate?'Vale a pena':'Rende menos que o banco'}</div>
-      <div class="layout-45 k-val">${rate!=null ? rate.toFixed(2).replace('.',',')+'% ao mês' : '—'}</div>
-      <div class="k-sub">${quando} · banco paga ${escapeHtml(String(taxa()).replace('.',','))}%${rate!=null && mult>=1 ? ' · rende '+mult.toFixed(1).replace('.',',')+'× o banco' : ''}${novaDemais ? ' · obra com menos de 1 mês — % ao mês ainda não diz muito' : ''}</div>
+    <div class="card saldo big ${conta.vale?'':'saldo-abaixo'}">
+      <div class="k-label"><span class="k-ic">${ICON(conta.vale?'check':'alerta')}</span> ${t.veredito}</div>
+      <div class="layout-45 k-val">${t.taxa}</div>
+      <div class="k-sub">${escapeHtml(t.detalhes.join(' · '))}</div>
     </div>
     <div class="panel">
       <h2 class="layout-28">${ICON('documento')} Relatório da simulação</h2>
       <div class="rep-scroll"><table class="rep-table rep-sim">
         <thead><tr><th></th><th>Pelo bruto</th><th>Pelo corrigido</th></tr></thead>
         <tbody>
-          <tr><td>Custo até a venda</td><td>${money(bruto)}</td><td>${money(corr)}</td></tr>
-          <tr><td>Venda</td><td>${money(venda)}</td><td>${money(venda)}</td></tr>
-          <tr class="rep-total"><td>Lucro</td><td class="${sinal(rb.lucro)}">${din(rb.lucro)}</td><td class="${sinal(rc.lucro)}">${din(rc.lucro)}</td></tr>
-          <tr><td>% sobre o custo</td><td class="${sinal(rb.pctCusto)}">${pct1(rb.pctCusto)}</td><td class="${sinal(rc.pctCusto)}">${pct1(rc.pctCusto)}</td></tr>
-          <tr><td>% sobre a venda</td><td class="${sinal(rb.pctVenda)}">${pct1(rb.pctVenda)}</td><td class="${sinal(rc.pctVenda)}">${pct1(rc.pctVenda)}</td></tr>
-          <tr><td>Rendimento ao mês</td><td>${taxa2(rate)}</td><td>${taxa2(acima)}</td></tr>
-          ${o.areaM2 > 0 ? `<tr><td>Preço por m² (${escapeHtml(String(o.areaM2).replace('.',','))} m²)</td><td>${money(venda/o.areaM2)}</td><td>${money(venda/o.areaM2)}</td></tr>` : ''}
+          ${t.tabela.map(l => `<tr${l.destaque ? ' class="rep-total"' : ''}><td>${escapeHtml(l.rotulo)}</td><td${cor(l.sinalBruto)}>${l.bruto}</td><td${cor(l.sinalCorrigido)}>${l.corrigido}</td></tr>`).join('\n          ')}
         </tbody>
       </table></div>
     </div>`;

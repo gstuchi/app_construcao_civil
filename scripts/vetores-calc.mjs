@@ -201,6 +201,62 @@ resumoTop('meio ponto arredonda para cima, como o donut', { id: 'r', dataInicio:
 resumoTop('a base do % conta a parcela a vencer de outro tópico', { id: 'v', dataInicio: '2026-01-01', gastos: [
   { id: 'v1', valor: 50, topico: 'pintura', descricao: '', data: '2026-01-01', pagamento: 'pix' },
   { id: 'v2', valor: 50, topico: 'eletrica', descricao: '', data: '2026-12-01', pagamento: 'pix' }] }, 'pintura', HOJE, 1);
+/* Gasto por tópico (app.js: o donut e a legenda da obra e dos Gráficos): a ordem e o "% da obra" de cada tópico. */
+const gastoDe = (id, topico, valor, data = '2026-01-01', descricao = '') => ({ id, valor, topico, descricao, data, pagamento: 'pix' });
+const obraDe = (id, gastos, campos = {}) => ({ id, nome: 'Obra', dataInicio: '2026-01-01', fase: 'construcao', gastos, ...campos });
+const porTopico = calc('gastoPorTopico');
+for(const o of BLOB.obras) porTopico(o.nome, o);
+porTopico('empate: o tópico que aparece primeiro, não o de nome menor nem o do último gasto',
+  obraDe('e', [gastoDe('e1', 'pintura', 60), gastoDe('e2', 'alvenaria', 100), gastoDe('e3', 'pintura', 40)]));
+porTopico('meio ponto arredonda para cima: 12,5% vai a 13 e 87,5% a 88', obraDe('m', [gastoDe('m1', 'pintura', 1), gastoDe('m2', 'eletrica', 7)]));
+porTopico('tópico pequeno fica com 0%', obraDe('p', [gastoDe('p1', 'terreno', 1000), gastoDe('p2', 'pintura', 4)]));
+porTopico('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50), gastoDe('n3', '3', 50)]));
+porTopico('gastos de valor zero: % zero', obraDe('z', [gastoDe('z1', 'pintura', 0), gastoDe('z2', 'eletrica', 0)]));
+porTopico('a base do % conta a parcela a vencer', obraDe('v', [gastoDe('v1', 'pintura', 50), gastoDe('v2', 'eletrica', 50, '2026-12-01')]));
+/* Relatório da obra (app.js renderRelatorio): os grupos por tópico, os gastos de cada um com o corrigido e os totais. */
+const relatorio = calc('relatorioObra');
+for(const o of BLOB.obras) relatorio(o.nome, o, HOJE, 1);
+relatorio('vendida corrige até a venda, mesmo com outro hoje', O2, '2030-01-01', 1);
+relatorio('taxa com vírgula', O4, HOJE, 0.85);
+relatorio('na mesma data, a ordem do documento, não a do id', obraDe('d', [gastoDe('k3', 'pintura', 300, '2026-02-01'),
+  gastoDe('k2', 'pintura', 100, '2026-01-15'), gastoDe('k1', 'pintura', 200, '2026-01-15')]), HOJE, 1);
+relatorio('empate de bruto: o tópico que aparece primeiro', obraDe('e', [gastoDe('e1', 'pintura', 60, '2026-03-01'),
+  gastoDe('e2', 'alvenaria', 100, '2026-02-01'), gastoDe('e3', 'pintura', 40, '2026-01-01')]), HOJE, 1);
+relatorio('o bruto do grupo soma na ordem do documento', obraDe('s', [gastoDe('s1', 'pintura', 0.1, '2026-03-01'),
+  gastoDe('s2', 'pintura', 0.2, '2026-02-01'), gastoDe('s3', 'pintura', 0.3, '2026-01-01')]), HOJE, 0);
+relatorio('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50)]), HOJE, 1);
+/* O fim do relatório (venda e lucro, ou venda estimada e margem, ou nada) e a linha da correção do cabeçalho. */
+const fimRel = calc('fimRelatorio');
+for(const o of BLOB.obras) fimRel(o.nome, o, HOJE, 1);
+fimRel('vendida não depende de hoje', O2, '2030-01-01', 1);
+fimRel('vendida com prejuízo', { ...O2, venda: { valor: 500000, data: '2025-02-10' } }, HOJE, 1);
+fimRel('venda zero', { ...O2, venda: { valor: 0, data: '2025-02-10' } }, HOJE, 1);
+fimRel('margem negativa', { ...O4, valorEstimadoVenda: 300000 }, HOJE, 1);
+fimRel('margem com outro hoje', O4, '2027-04-06', 1);
+fimRel('venda estimada zero não conta', { ...O4, valorEstimadoVenda: 0 }, HOJE, 1);
+fimRel('taxa com vírgula', O1, HOJE, 0.85);
+fimRel('obra pronta com a venda guardada', { ...O4, venda: { valor: 600000, data: '2026-09-30' } }, HOJE, 1);
+const linhaCorr = calc('linhaCorrecao');
+for(const o of BLOB.obras) linhaCorr(o.nome, o, HOJE, 1);
+for(const taxa of [0.85, 1.5, 20, 1e-7]) linhaCorr(`taxa ${taxa}`, O1, HOJE, taxa);
+linhaCorr('obra pronta com a venda guardada', { ...O4, venda: { valor: 600000, data: '2026-09-30' } }, HOJE, 1);
+/* A soma da seleção do relatório: os itens são os do relatorioObra, na ordem do relatório. */
+const somaSel = calc('somaSelecao');
+const itensDoRelatorio = (o, ids) => C.relatorioObra(o, HOJE, 1).grupos.flatMap(gr => gr.itens).filter(x => !ids || ids.includes(x.gasto.id));
+const itemDe = (valor, corrigido = valor) => ({ gasto: gastoDe('i1', 'pintura', valor), corrigido });
+somaSel('nenhum', [], C.totalBruto(O1));
+somaSel('um item', itensDoRelatorio(O1, ['g01']), C.totalBruto(O1));
+somaSel('dois itens de valores diferentes', itensDoRelatorio(O1, ['g02', 'g03']), C.totalBruto(O1));
+somaSel('tudo dá 100%', itensDoRelatorio(O1), C.totalBruto(O1));
+somaSel('vendida: o corrigido vai até a venda', itensDoRelatorio(O2, ['h01', 'h04']), C.totalBruto(O2));
+somaSel('total zero', [itemDe(0)], 0);
+somaSel('um terço', [itemDe(1)], 3);
+somaSel('dois terços', [itemDe(2, 2.5)], 3);
+somaSel('meio centésimo sobe: 0,125%', [itemDe(1)], 800);
+somaSel('0,0625% fica em 0,06%', [itemDe(1)], 1600);
+somaSel('99,995% vira 100,00%', [itemDe(19999)], 20000);
+somaSel('0,075% vira 0,08%: arredonda o decimal, não o binário (o toFixed daria 0,07%)', [itemDe(3)], 4000);
+somaSel('14,375% fica em 14,37%: a conta é bruto / total * 100 (bruto * 100 / total daria 14,38%)', [itemDe(23)], 160);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);
@@ -241,6 +297,52 @@ resumo('lucro', 1250000, 1000000);
 resumo('prejuízo', 800000, 1000000);
 resumo('venda zero', 0, 1000);
 resumo('custo zero', 1000, 0);
+
+/* O "Vale a pena?" (app.js simulaCompute): a conta, com os meses de 0 a 120, e os textos do cartão e da tabela. */
+constante('calc.MESES_SIMULADOR', C.MESES_SIMULADOR);
+const obrasSim = calc('obrasSimulador');
+obrasSim('as não vendidas com gastos, na ordem do documento; sem escolha, a primeira', BLOB.obras, '');
+obrasSim('a escolhida continua escolhida', BLOB.obras, 'o4');
+obrasSim('a vendida não é escolhida: cai na primeira', BLOB.obras, 'o2');
+obrasSim('a apagada cai na primeira', BLOB.obras, 'sumiu');
+obrasSim('a ordem é a do documento, não a do nome', [O4, O3, O2, O1], 'o3');
+obrasSim('nenhuma elegível', [O2, O3], 'o2');
+const precoSim = calc('precoInicialSimulador');
+for(const o of BLOB.obras) precoSim(o.nome, o);
+precoSim('venda estimada zero não conta', { ...O4, valorEstimadoVenda: 0 });
+const contaSim = calc('contaSimulador');
+const OBRA_NOVA = obraDe('nova', [gastoDe('n1', 'terreno', 1000, HOJE)], { dataInicio: HOJE });
+contaSim('vale a pena, vendendo hoje', O1, 1250000, 0, HOJE, 1);
+contaSim('daqui a 1 mês', O1, 1250000, 1, HOJE, 1);
+contaSim('daqui a 120 meses', O1, 1250000, 120, HOJE, 1);
+contaSim('121 meses param em 120', O1, 1250000, 121, HOJE, 1);
+contaSim('500 meses param em 120', O1, 1250000, 500, HOJE, 1);
+contaSim('meses negativos viram 0', O1, 1250000, -3, HOJE, 1);
+contaSim('rende menos que o banco', O4, 300000, 0, HOJE, 1);
+contaSim('taxa com vírgula', O4, 700000, 6, HOJE, 0.85);
+contaSim('obra com menos de 1 mês até o alvo fica sem taxa', OBRA_NOVA, 2000, 0, HOJE, 1);
+contaSim('um mês depois a obra nova já tem taxa', OBRA_NOVA, 2000, 1, HOJE, 1);
+contaSim('taxa zero não dá multiplicador (a leitura a põe em 1)', O4, 700000, 0, HOJE, 0);
+contaSim('sem preço', O1, 0, 0, HOJE, 1);
+contaSim('preço negativo', O1, -5, 0, HOJE, 1);
+contaSim('o fim do mês fica no último dia (31/01 + 1 mês)', O4, 610000, 1, '2027-01-31', 1);
+contaSim('venda igual ao corrigido: só acima dele vale a pena', OBRA_NOVA, 1000, 0, HOJE, 1);
+contaSim('obra com 20 dias até o alvo fica sem taxa (a TIR passaria de 180% ao mês)', obraDe('vinte', [gastoDe('v1', 'terreno', 1000, '2026-09-16')], { dataInicio: '2026-09-16' }), 2000, 0, HOJE, 1);
+const textosSim = calc('textosSimulador');
+const CONTA = C.contaSimulador(O1, 1250000, 0, HOJE, 1);
+textosSim('vale a pena, com área', CONTA, 1, 210);
+textosSim('daqui a 1 mês, sem área', C.contaSimulador(O1, 1250000, 1, HOJE, 1), 1, null);
+textosSim('daqui a 120 meses, área zero', C.contaSimulador(O1, 1250000, 500, HOJE, 1), 1, 0);
+textosSim('rende menos, área com vírgula', C.contaSimulador(O4, 300000, 0, HOJE, 1), 1, 95.5);
+textosSim('taxa com vírgula', C.contaSimulador(O4, 700000, 6, HOJE, 0.85), 0.85, 95.5);
+textosSim('obra com menos de 1 mês: sem taxa e o aviso', C.contaSimulador(OBRA_NOVA, 2000, 0, HOJE, 1), 1, null);
+textosSim('multiplicador 1 aparece', { ...CONTA, tir: 1, multiplicador: 1 }, 1, null);
+textosSim('multiplicador abaixo de 1 some', { ...CONTA, tir: 0.99, multiplicador: 0.99 }, 1, null);
+textosSim('multiplicador 2,25 arredonda para 2,3', { ...CONTA, tir: 2.25, multiplicador: 2.25 }, 1, null);
+textosSim('sem TIR, o multiplicador some', { ...CONTA, tir: null, acima: null, multiplicador: 1.5 }, 1, null);
+textosSim('TIR negativa perto de zero: -0,00%', { ...CONTA, tir: -0.004, acima: -1.0039, vale: false, multiplicador: -0.004 }, 1, null);
+textosSim('lucro zero fica com a cor do positivo', { ...CONTA, venda: CONTA.bruto }, 1, null);
+textosSim('custo zero: lucro e porcentagens sem valor', { ...CONTA, bruto: 0, corrigido: 0 }, 1, null);
 
 /* ---------- séries dos gráficos ---------- */
 const evo = calc('serieEvolucao');

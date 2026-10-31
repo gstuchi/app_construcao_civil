@@ -55,10 +55,10 @@ public struct GastoDoTopico: Equatable, Sendable, Identifiable {
     public let pct: Double
 }
 
-/// O "Gasto por tópico" do modo total: cada tópico com gasto, com o bruto e o "% da obra" do resumo do tópico, para o número
-/// ser o mesmo que o detalhe mostra ao abrir. A ordem é a da legenda do donut do site (renderObra do app.js,
-/// `Object.entries(byTop).sort((a,b)=>b[1]-a[1])`): do maior bruto para o menor e, no empate, o tópico que aparece primeiro
-/// nos gastos, porque o byTop nasce na ordem dos gastos e o sort do JavaScript é estável.
+/// `gastoPorTopico` do calc.js (o donut e a legenda da obra e dos Gráficos), também o "Gasto por tópico" do modo total: cada
+/// tópico com gasto, com o bruto e o "% da obra" do resumo do tópico, para o número ser o mesmo que o detalhe mostra ao abrir.
+/// Do maior bruto para o menor e, no empate, o tópico que aparece primeiro nos gastos (o sort do JavaScript é estável).
+/// `hoje` e `taxaMensal` não mudam o resultado.
 public func gastoPorTopico(_ obra: Obra, hoje: String, taxaMensal: Double) -> [GastoDoTopico] {
     var ids: [String] = []
     for g in obra.gastos where !ids.contains(g.topico) { ids.append(g.topico) }

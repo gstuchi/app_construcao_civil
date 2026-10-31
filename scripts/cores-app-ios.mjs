@@ -81,11 +81,12 @@ export const CORES = {
     PositivoNoVidro: ['#8CF0BC', '#084A27'],
     NegativoNoVidro: ['#FFD2D9', '#8A1538'],
     // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup: o aviso dos tópicos na linha do orçamento e o
-    // "Passou … do previsto"): no claro, #6F4705 (o Alerta do site dava 3,79–4,15:1 sobre a aurora clara; este, 5,21–5,71:1).
-    // No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
+    // "Passou … do previsto"): no claro, #5E3A03, o AmbarTexto do mockup da etapa 4 (o texto mais escuro do claro, aprovado em
+    // 28/10 e no app inteiro pela confirmação 5 de 29/10: o #6F4705 da etapa 3 ficava em 3,9:1 no pior ponto da aurora clara
+    // do mockup; o Alerta do site dava 3,79–4,15:1 sobre a do app). No escuro, um âmbar claro: o Alerta do site (#E0A83A) ficava em 3,12:1 (pior pixel 2,98) no alto da tela Orçamento
     // rolada, na maior letra, onde a aurora clareia o vidro (laudo da etapa 3); este, 4,9 ali. Não é o AlertaEtiqueta, que vai
     // sobre o fundo âmbar das etiquetas.
-    AlertaNoVidro: ['#FFD98A', '#6F4705'],
+    AlertaNoVidro: ['#FFD98A', '#5E3A03'],
     // Etapa 2 (~/Documents/custta-mockups/nativo/etapa2/parte2.html e parte3.html, aprovados em 13/10): a folha do
     // sistema e o que vai dentro dela, o arrastar para apagar e a linha que acabou de entrar.
     Folha: ['#0A1E18E6', '#F4F9F6F0'],              // --folha: fundo da folha (presentationBackground)
@@ -103,6 +104,30 @@ export const CORES = {
     // Ajustes › Aparência: o aro claro das barrinhas de vidro desenhadas na miniatura de cada opção (no mockup, branco a 70% no
     // Transparente e a 30% no Fosco, nos dois temas). O vidro de verdade tem o aro do sistema.
     AroDaMiniatura: ['#FFFFFF', '#FFFFFF'],
+    // Etapa 4 (~/Documents/custta-mockups/nativo/etapa4/, aprovado em 28/10; spec 2026-10-29, "Tokens: do mockup para o
+    // app"): a identidade nova, só o que o app não tinha. O DestaqueNumero do mockup é o PositivoNoVidro, a LinhaBanco é o
+    // SecundarioTransparente e o AmbarTexto é o AlertaNoVidro: o do app tem o mesmo papel e é igual ou mais forte.
+    DestaqueSolido: ['#3AD17E', '#3AD17E'],         // o bloco sólido protagonista de cada tela (não é vidro)
+    TintaSobreDestaque: ['#04100C', '#04100C'],     // o texto sobre ele
+    DestaqueTexto: ['#3AD17E', '#0E7A41'],          // texto verde sobre o vidro; no claro, o --green do site
+    SolidoAmbar: ['#FFD98A', '#F2C15A'],            // o veredito "Rende menos que o banco" (o claro: confirmação 1 de 29/10)
+    TintaSobreAmbar: ['#2B1B00', '#2B1B00'],
+    Placa: ['#04100C94', '#FFFFFFA8'],              // tom chapado, sem desfoque, atrás do anel e dos gráficos (58% e 66%)
+    PlacaForte: ['#04100CD6', '#FFFFFFEB'],         // atrás da barra empilhada da obra (84% e 92%)
+    // As seis cores do anel e da barra empilhada (verde-água, azul, magenta, violeta, laranja e ciano), validadas nos dois
+    // temas a 3:1 contra o vidro, e o cinza de "Outros", neutro de propósito.
+    Grafico1: ['#199E70', '#10976A'],
+    Grafico2: ['#3987E5', '#2A78D6'],
+    Grafico3: ['#D55181', '#D14F86'],
+    Grafico4: ['#9085E9', '#6250D6'],
+    Grafico5: ['#D95926', '#DC5A1E'],
+    Grafico6: ['#14A3C7', '#0C86A4'],
+    GraficoOutros: ['#8FA89C', '#5E7A6E'],
+    BarraApagada: ['#EAFFF666', '#142B2394'],       // os meses não escolhidos e a hachura das parcelas a vencer (40% e 58%)
+    GradeGrafico: ['#EAFFF624', '#142B2324'],       // 14%
+    EixoGrafico: ['#EAFFF64D', '#142B2352'],        // 30% e 32%
+    AnelApagado: ['#123128', '#DCEAE3'],            // o trilho e os pedaços apagados pelo toque: por cor, sem opacidade
+    AnelSeparador: ['#04100C8C', '#FFFFFFBF'],      // o aro de 2,5 pt na ponta de cada pedaço (55% e 75%)
   },
 };
 
@@ -117,6 +142,7 @@ export const PARES_SOLIDOS = [
   ['Texto', 'LinhaDaFolha'], ['SecundarioSolido', 'LinhaDaFolha'], ['SecundarioTransparente', 'LinhaDaFolha'], ['LinkNoVidro', 'LinhaDaFolha'], ['ErroNoVidro', 'LinhaDaFolha'],
   ['Negativo', 'LinhaDaFolha'], ['Alerta', 'LinhaDaFolha'], ['Texto', 'Tecla'], ['Texto', 'TeclaTocada'], ['Texto', 'SegmentadoEscolhido'],
   ['SobreApagar', 'Apagar'], ['SobreAlerta', 'Alerta'],
+  ['TintaSobreDestaque', 'DestaqueSolido'], ['TintaSobreAmbar', 'SolidoAmbar'],
 ];
 
 const info = { author: 'xcode', version: 1 };

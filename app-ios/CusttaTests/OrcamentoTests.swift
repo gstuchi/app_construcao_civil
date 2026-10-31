@@ -109,10 +109,10 @@ struct OrcamentoTests {
         return Dictionary(grouping: opacos, by: { $0 }).max { $0.value.count < $1.value.count }?.key ?? []
     }
 
-    /// O aviso dos tópicos no âmbar sobre o vidro: #6F4705 no claro (o Alerta do site, #8A5A06, não fechava 4,5:1 sobre a
+    /// O aviso dos tópicos no âmbar sobre o vidro: #5E3A03 no claro (o Alerta do site, #8A5A06, não fechava 4,5:1 sobre a
     /// aurora clara) e #FFD98A no escuro.
     @Test func avisoDosTopicosNoAmbarSobreOVidro() throws {
-        #expect(try corDoTexto(.light) == [0x6F, 0x47, 0x05])
+        #expect(try corDoTexto(.light) == [0x5E, 0x3A, 0x03])
         #expect(try corDoTexto(.dark) == [0xFF, 0xD9, 0x8A])
     }
 }

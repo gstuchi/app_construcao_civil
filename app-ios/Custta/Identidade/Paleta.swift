@@ -90,6 +90,33 @@ enum Token: String, CaseIterable, Sendable {
     case aceso = "Aceso"
     /// O aro claro das barrinhas de vidro desenhadas na miniatura de cada opção do vidro (Ajustes › Aparência).
     case aroDaMiniatura = "AroDaMiniatura"
+    /// A identidade nova (etapa 4): o bloco sólido protagonista de cada tela, que não é vidro, e o texto sobre ele; o texto
+    /// verde sobre o vidro; o sólido âmbar do "Rende menos que o banco" e o texto sobre ele.
+    case destaqueSolido = "DestaqueSolido"
+    case tintaSobreDestaque = "TintaSobreDestaque"
+    case destaqueTexto = "DestaqueTexto"
+    case solidoAmbar = "SolidoAmbar"
+    case tintaSobreAmbar = "TintaSobreAmbar"
+    /// A placa, um tom chapado sem desfoque (não é vidro), atrás do anel e dos gráficos; a forte, atrás da barra empilhada
+    /// da obra. Com ela, as marcas ficam a 3:1 com a aurora atrás.
+    case placa = "Placa"
+    case placaForte = "PlacaForte"
+    /// As seis cores do anel e da barra empilhada, do maior tópico para o menor, e o cinza de "Outros".
+    case grafico1 = "Grafico1"
+    case grafico2 = "Grafico2"
+    case grafico3 = "Grafico3"
+    case grafico4 = "Grafico4"
+    case grafico5 = "Grafico5"
+    case grafico6 = "Grafico6"
+    case graficoOutros = "GraficoOutros"
+    /// Os gráficos de mês: os meses não escolhidos e a hachura das parcelas a vencer, a grade e os eixos.
+    case barraApagada = "BarraApagada"
+    case gradeGrafico = "GradeGrafico"
+    case eixoGrafico = "EixoGrafico"
+    /// O anel: o trilho e os pedaços apagados pelo toque (por cor, sem opacidade, para as emendas não virarem bolinhas), e
+    /// o aro na ponta de cada pedaço.
+    case anelApagado = "AnelApagado"
+    case anelSeparador = "AnelSeparador"
 }
 
 struct Paleta: Equatable, Sendable {

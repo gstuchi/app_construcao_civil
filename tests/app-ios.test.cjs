@@ -156,10 +156,10 @@ test('catálogo de cores em dia com scripts/cores-app-ios.mjs e com os tokens da
     // topo no Pro Max (faixa que o laudo deixa de fora, porque ali o texto é borrado); no escuro, o próprio Alerta.
     const alerta = bloco.match(/\bAlerta: \['(#\w+)', '#\w+'\]/)[1];
     assert.match(bloco, new RegExp(`\\bAlertaEtiqueta: \\['${alerta}', '#7A5410'\\]`), `AlertaEtiqueta da pele ${pele}`);
-    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #6F4705 (o Alerta do site dava
-    // 3,79–4,15:1 sobre a aurora clara); no escuro, #FFD98A (o Alerta ficava em 3,12:1 no alto da tela Orçamento rolada, na
-    // maior letra).
-    assert.match(bloco, /\bAlertaNoVidro: \['#FFD98A', '#6F4705'\]/, `AlertaNoVidro da pele ${pele}`);
+    // O texto âmbar sobre o vidro do conteúdo (etapa 3, o --amber-v do mockup): no claro, #5E3A03, o AmbarTexto do mockup da
+    // etapa 4 (o texto mais escuro do claro, aprovado em 28/10; o #6F4705 da etapa 3 ficava em 3,9:1 no pior ponto da aurora
+    // clara do mockup); no escuro, #FFD98A (o Alerta ficava em 3,12:1 no alto da tela Orçamento rolada, na maior letra).
+    assert.match(bloco, /\bAlertaNoVidro: \['#FFD98A', '#5E3A03'\]/, `AlertaNoVidro da pele ${pele}`);
     // Decisão 6 da etapa 3: no Fosco escuro, o texto secundário é o do Transparente (o do Fosco ficava abaixo de 4,5:1 em
     // dois pontos claros da aurora); no claro, o do Fosco fica.
     const secundario = nome => bloco.match(new RegExp(`\\b${nome}: \\['(#\\w+)', '(#\\w+)'\\]`)).slice(1);
@@ -220,6 +220,26 @@ test('texto sobre sólido fecha 4,5:1 nos quatro combos', async () => {
         const razao = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
         assert.ok(razao >= 4.5, `${pele} ${nome}: ${texto} sobre ${fundo} fica em ${razao.toFixed(2)}:1`);
       }
+    }
+  }
+});
+
+test('token do mockup da etapa 4 que o app já tem: o do app é igual ou mais forte', async () => {
+  // Spec 2026-10-29, "Tokens: do mockup para o app": onde o app já tem um token com o mesmo papel, ele fica no lugar do do
+  // mockup se o valor for igual ou mais forte (o do mockup não clareia o texto que o app já escureceu). Mais forte é mais
+  // contraste contra o vidro de referência do mockup (#10241D no escuro, #DDF3EA no claro). O AmbarTexto do claro ficou
+  // mais escuro em 28/10 (#6F4705 → #5E3A03) e vale no app inteiro (confirmação 5 de 29/10).
+  const { CORES } = await import(join(RAIZ, 'scripts/cores-app-ios.mjs'));
+  const linear = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const luminancia = hex => [0.2126, 0.7152, 0.0722].reduce((s, peso, i) => s + peso * linear(parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16) / 255), 0);
+  const razao = (a, b) => { const [x, y] = [luminancia(a), luminancia(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  const vidro = ['#10241D', '#DDF3EA'];
+  const doMockup = [['DestaqueNumero', 'PositivoNoVidro', '#8CF0B4', '#0A5530'], ['LinhaBanco', 'SecundarioTransparente', '#B8D4C7', '#2F4A3F'],
+    ['AmbarTexto', 'AlertaNoVidro', '#FFD98A', '#5E3A03']];
+  for(const [nome, token, ...valores] of doMockup){
+    for(const [lado, tema] of [[0, 'escuro'], [1, 'claro']]){
+      const app = CORES.Esmeralda[token][lado];
+      assert.ok(razao(app, vidro[lado]) >= razao(valores[lado], vidro[lado]), `${token} no ${tema}: ${app} mais fraco que o ${valores[lado]} do ${nome}`);
     }
   }
 });

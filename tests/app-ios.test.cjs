@@ -478,11 +478,11 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
-  // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
+  // e os títulos da barra, o pequeno da obra (também o mono da etapa 4) e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
   // sistema, em vez de empurrar os botões). Na etapa 3, o primeiro pendente na linha dos afazeres da obra para em duas
   // linhas (quatro na maior letra), como no mockup: o texto inteiro está na tela Afazeres, e o VoiceOver o lê inteiro pela linha.
   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
-    'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
+    'TituloPequenoMono', 'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){

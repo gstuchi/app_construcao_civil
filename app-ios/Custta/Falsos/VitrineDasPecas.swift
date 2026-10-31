@@ -7,6 +7,7 @@ import CusttaNucleo
    números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
 struct VitrineDasPecas: View {
     private let estado = Estado.de(DadosDeExemplo.vitrine())
+    @Environment(\.dynamicTypeSize) private var letra
 
     var body: some View {
         let casa = estado.obras[0]
@@ -14,6 +15,14 @@ struct VitrineDasPecas: View {
         let indicadores = indicadoresDaObra(casa, taxa: estado.config.taxaMensal, hoje: hoje)
         ScrollView {
             VStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                TituloMono(texto: casa.nome, identificador: "vitrine-titulo")
+                CapsulaDeMetadados {
+                    EtiquetaDeFase(fase: casa.fase, grande: true)
+                    Text(textoDoInicio(casa, hoje: hoje))
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-metadados")
+                .padding(.bottom, 4)
                 BlocoSolido {
                     CabecalhoDoBloco(rotulo: "Total gasto") { EtiquetaDoSolido(texto: indicadores.etiquetaDoTotal) }
                     ValorEmDinheiro(indicadores.totalGasto, mono: .principal).accessibilityIdentifier("vitrine-total")
@@ -59,6 +68,7 @@ struct VitrineDasPecas: View {
         .containerBackground(.clear, for: .navigation)
         .navigationTitle("Peças")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .principal) { TituloPequenoMono(texto: casa.nome, letra: letra) } }
     }
 }
 #endif

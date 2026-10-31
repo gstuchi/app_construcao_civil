@@ -40,7 +40,7 @@ enum TamanhoDoNumero: Sendable, CaseIterable {
 
     /// As medidas no corpo de texto dado (o `body` do Dynamic Type: 17 pt na letra padrão, 53 na máxima).
     func medidas(corpo: CGFloat) -> MedidasDoNumero {
-        let numero = padrao + (maximo - padrao) * (corpo - 17) / (53 - 17)
+        let numero = crescendoComALetra(de: padrao, ate: maximo, corpo: corpo)
         // O `max(.58em, min(1em, 11px))` do mockup: 58% do número, mas nunca abaixo de 11 pt (salvo número menor que isso).
         let menor = { (fracao: CGFloat) in max(fracao * numero, min(numero, 11)) }
         let moeda = menor(0.58)
@@ -70,6 +70,11 @@ struct PartesDoValor: Equatable, Sendable {
 func corpoDoTexto(_ tamanho: DynamicTypeSize) -> CGFloat {
     UIFont.preferredFont(forTextStyle: .body, compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(tamanho)))
         .pointSize
+}
+
+/// Um tamanho do mockup que vai do da letra padrão ao da máxima junto com o corpo do texto (de 17 a 53 pt), a cada passo.
+func crescendoComALetra(de padrao: CGFloat, ate maximo: CGFloat, corpo: CGFloat) -> CGFloat {
+    padrao + (maximo - padrao) * (corpo - 17) / (53 - 17)
 }
 
 /// As partes de um valor do núcleo ("R$ 842.317,45", "−R$ 4.980,00"); nil sem "R$" (o "—" da venda sem estimativa).

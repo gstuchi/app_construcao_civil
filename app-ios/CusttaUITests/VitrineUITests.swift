@@ -32,6 +32,27 @@ final class VitrineUITests: XCTestCase {
         }
     }
 
+    /// O título solto a 16 pt da borda; a cápsula de metadados a 16 e o texto dela (a fase e "começou em …") a 34 (ajuste 2
+    /// do mockup), na letra padrão e na máxima; o título pequeno da barra no nome da obra, maior na letra máxima.
+    func testTituloECapsulaDeMetadadosNaGrade() {
+        var alturas: [CGFloat] = []
+        for argumentos in [[], maiorLetra] {
+            let app = abrirVitrine(argumentos)
+            XCTAssertEqual(app.elemento("vitrine-titulo").frame.minX, 16, accuracy: 0.5, "\(argumentos)")
+            let capsula = app.elemento("vitrine-metadados")
+            XCTAssertEqual(capsula.frame.minX, 16, accuracy: 0.5, "\(argumentos)")
+            // A etiqueta da fase começa a 34; o texto dela, 12 pt para dentro (EtiquetaDeFase).
+            XCTAssertEqual(capsula.staticTexts["Em construção"].frame.minX, 34 + 12, accuracy: 0.5, "\(argumentos)")
+            let inicio = capsula.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'começou em'")).firstMatch
+            XCTAssertEqual(inicio.frame.minX, 34, accuracy: 0.5, "\(argumentos)")
+            XCTAssertEqual(app.elemento("tituloPequenoDaBarra").label, "Casa Alphaville")
+            alturas.append(app.elemento("tituloPequenoDaBarra").frame.height)
+            app.terminate()
+        }
+        // O título da barra lê a letra de fora dela: de 16 pt na padrão a 20 na máxima.
+        XCTAssertGreaterThan(alturas[1] / alturas[0], 1.2, "\(alturas)")
+    }
+
     /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
     /// fica dentro do bloco, entre as bordas de 34 pt.
     func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {

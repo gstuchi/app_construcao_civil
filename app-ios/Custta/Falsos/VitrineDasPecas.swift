@@ -16,14 +16,14 @@ struct VitrineDasPecas: View {
             VStack(alignment: .leading, spacing: Grade.entreBlocos) {
                 BlocoSolido {
                     CabecalhoDoBloco(rotulo: "Total gasto") { EtiquetaDoSolido(texto: indicadores.etiquetaDoTotal) }
-                    ValorEmDinheiro(texto: indicadores.totalGasto, fonte: .largeTitle.weight(.bold), cor: .tintaSobreDestaque)
+                    ValorEmDinheiro(indicadores.totalGasto, mono: .principal).accessibilityIdentifier("vitrine-total")
                     NotaDoBloco(texto: "bruto, sem correção")
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("vitrine-solido")
                 BlocoDeVidro {
                     CabecalhoDoBloco(rotulo: "Corrigido pelo banco")
-                    ValorEmDinheiro(texto: indicadores.corrigido, fonte: .title2.weight(.bold))
+                    ValorEmDinheiro(indicadores.corrigido, mono: .bloco)
                     NotaDoBloco(texto: indicadores.notaDoCorrigido)
                 }
                 .accessibilityElement(children: .contain)
@@ -34,6 +34,17 @@ struct VitrineDasPecas: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("vitrine-ambar")
+                BlocoDeVidro {
+                    CabecalhoDoBloco(rotulo: "Números")
+                    VStack(alignment: .leading, spacing: 6) {
+                        ValorEmDinheiro("R$\u{a0}1.000.000.000,00", mono: .principal).accessibilityIdentifier("vitrine-maiorValor")
+                        ValorEmDinheiro(indicadores.aPagar, mono: .bloco)
+                        ValorEmDinheiro("−R$\u{a0}4.980,00", mono: .linha)
+                        ValorEmDinheiro("R$\u{a0}72.300,00", mono: .miudo)
+                    }
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-numeros")
                 BlocoDeVidro {
                     CabecalhoDoBloco(rotulo: "Placa e placa forte")
                     Color.clear.frame(height: 16).padding(8).placa().accessibilityIdentifier("vitrine-placa")

@@ -31,4 +31,16 @@ final class VitrineUITests: XCTestCase {
             app.terminate()
         }
     }
+
+    /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
+    /// fica dentro do bloco, entre as bordas de 34 pt.
+    func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {
+        let app = abrirVitrine(maiorLetra)
+        XCTAssertEqual(app.elemento("vitrine-total").label, "R$\u{a0}842.317,45")
+        let maior = app.elemento("vitrine-maiorValor")
+        app.rolarAte(maior)
+        XCTAssertEqual(maior.label, "R$\u{a0}1.000.000.000,00")
+        XCTAssertEqual(maior.frame.minX, 34, accuracy: 0.5)
+        XCTAssertLessThanOrEqual(maior.frame.maxX, app.frame.width - 34 + 0.5)
+    }
 }

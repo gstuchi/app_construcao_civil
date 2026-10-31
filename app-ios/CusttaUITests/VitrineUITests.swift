@@ -53,6 +53,26 @@ final class VitrineUITests: XCTestCase {
         XCTAssertGreaterThan(alturas[1] / alturas[0], 1.2, "\(alturas)")
     }
 
+    /// A barra de tópicos da Casa Alphaville (14 tópicos): a placa a 34 pt e a barra 8 pt para dentro, um elemento só que o
+    /// VoiceOver lê pedaço a pedaço; a legenda com os 4 maiores (3 na letra máxima), o nome a 34 + 12 + 10 pt e "e mais N
+    /// tópicos" na mesma vertical.
+    func testBarraDeTopicosComALegenda() {
+        for (argumentos, mostrados) in [([String](), 4), (maiorLetra, 3)] {
+            let app = abrirVitrine(argumentos)
+            let barra = app.elemento("barraDeTopicos")
+            app.rolarAte(barra)
+            XCTAssertEqual(barra.label, "Gastos por tópico")
+            XCTAssertTrue((barra.value as? String ?? "").hasPrefix("Terreno, 38%; "), "\(barra.value ?? "")")
+            XCTAssertEqual(barra.frame.minX, 34, accuracy: 0.5, "\(argumentos)")
+            let mais = app.staticTexts["e mais \(14 - mostrados) tópicos"]
+            app.rolarAte(mais)
+            XCTAssertTrue(mais.exists, "\(argumentos)")
+            XCTAssertEqual(mais.frame.minX, 56, accuracy: 0.5, "\(argumentos)")
+            XCTAssertEqual(app.staticTexts["Terreno"].frame.minX, 56, accuracy: 0.5, "\(argumentos)")
+            app.terminate()
+        }
+    }
+
     /// O número mono é um elemento só, que o VoiceOver lê inteiro, com o texto do núcleo; o maior valor, na letra máxima,
     /// fica dentro do bloco, entre as bordas de 34 pt.
     func testNumeroMonoLidoInteiroECabeNaLetraMaxima() {

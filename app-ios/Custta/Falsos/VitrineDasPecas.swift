@@ -7,6 +7,7 @@ import CusttaNucleo
    números da Casa Alphaville da vitrine (os do mockup). `CUSTTA_ABRIR=pecas` a empurra em Obras. */
 struct VitrineDasPecas: View {
     private let estado = Estado.de(DadosDeExemplo.vitrine())
+    @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var letra
 
     var body: some View {
@@ -44,6 +45,27 @@ struct VitrineDasPecas: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("vitrine-ambar")
                 BlocoDeVidro {
+                    Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).padding(.bottom, 8)
+                    BarraDeTopicos(pedacos: pedacosDoAnel(gastoPorTopico(casa, hoje: hoje, taxaMensal: estado.config.taxaMensal)),
+                                   topicos: mapaDeTopicos(estado.config.topicosProprios))
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("vitrine-topicos")
+                BlocoDeVidro {
+                    CabecalhoDoBloco(rotulo: "Hachura: a vencer e o excesso")
+                    HStack(spacing: 12) {
+                        // A barra a vencer do gasto por mês: o contorno tracejado e a hachura de 1,5 a cada 4, na cor apagada.
+                        let forma = UnevenRoundedRectangle(topLeadingRadius: 4, topTrailingRadius: 4)
+                        Hachura(traco: 1.5, passo: 4).fill(paleta.cor(.barraApagada)).clipShape(forma)
+                            .overlay { forma.stroke(paleta.cor(.barraApagada), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])) }
+                            .frame(width: 26, height: 64)
+                        // O excesso do orçamento: 2 a cada 6, no âmbar.
+                        Hachura().fill(paleta.cor(.alerta)).frame(height: 10).clipShape(.capsule)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("vitrine-hachura")
+                }
+                BlocoDeVidro {
                     CabecalhoDoBloco(rotulo: "Números")
                     VStack(alignment: .leading, spacing: 6) {
                         ValorEmDinheiro("R$\u{a0}1.000.000.000,00", mono: .principal).accessibilityIdentifier("vitrine-maiorValor")
@@ -64,6 +86,7 @@ struct VitrineDasPecas: View {
             .padding(.bottom, 98)
         }
         .scrollIndicators(.hidden)
+        .rolagemFixaSoComOArgumento()
         .bordaDeRolagem(abas: true)
         .containerBackground(.clear, for: .navigation)
         .navigationTitle("Peças")

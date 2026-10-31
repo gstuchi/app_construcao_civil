@@ -23,7 +23,7 @@ func ordenadoEstavel<T>(_ itens: [T], _ antes: (T, T) -> Bool) -> [T] {
 /// Chave de mês do calc.js: o ano como número, sem completar com zeros.
 private func chaveMes(_ ano: Int, _ mes: Int) -> String { "\(ano)-" + doisDigitos(mes) }
 
-private func anoMes(_ chave: String) -> (Int, Int) {
+func anoMes(_ chave: String) -> (Int, Int) {
     (Int(chave.prefix(4)) ?? 0, Int(chave.dropFirst(5).prefix(2)) ?? 0)
 }
 

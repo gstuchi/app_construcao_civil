@@ -422,7 +422,9 @@ jobs:
     # estas três passam para o laudo-etapa3-b (como o app-etapa3-b), que também roda as leituras do PR 3.
     # No fim do PR 3, sem as três, 46,2 min: o orçamento em 22,9 e a leitura das folhas de origem em 15,0 (run
     # 40526951027, 2ª tentativa; na 1ª, a VM lenta passou dos 10 s de espera na cena do fim do A pagar).
-    timeout-minutes: 60
+    # Na etapa 4 (PR 0b), o teto passa de 60 para 75: nos 15 runs de 24 a 29/10, sem cena nova, o job levou 46 min na
+    # mediana e chegou a 57,3 (run 40157409790, que reprovou e coletou o diagnóstico).
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

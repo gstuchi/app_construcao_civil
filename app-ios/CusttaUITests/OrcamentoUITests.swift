@@ -39,18 +39,20 @@ final class OrcamentoUITests: XCTestCase {
         }
     }
 
-    /// A primeira linha do grupo dos indicadores: logo abaixo do Total gasto, que não sai do lugar, e antes do Corrigido.
+    /// O primeiro bloco depois do sólido: logo abaixo do Total gasto, que não sai do lugar, e antes do Corrigido (etapa 4:
+    /// um bloco de vidro por assunto).
     func testALinhaVemLogoAbaixoDoTotalGasto() {
         let (app, _) = linha("porTopico")
         let total = app.elemento("indicadorTotal").frame, orcamento = app.elemento("indicadorOrcamento").frame
         let corrigido = app.elemento("indicadorCorrigido").frame
-        // O grupo começa 10 pt abaixo do Total gasto, e a linha inteira é o botão que abre a tela Orçamento: o quadro dela começa
-        // no alto e na borda do grupo, 18 pt antes do texto do Corrigido (o quadro de uma linha sem toque começa no texto).
-        XCTAssertEqual(orcamento.minY - total.maxY, 10, accuracy: 1, "a primeira linha do grupo, logo abaixo do Total gasto")
-        XCTAssertLessThanOrEqual(orcamento.maxY, corrigido.minY, "antes do Corrigido")
-        XCTAssertEqual(orcamento.minX + 18, corrigido.minX, accuracy: 0.5, "no mesmo grupo")
-        // Na letra padrão, o chevron no quadro de 9 pt do mockup: a barra com os 315,1 pt dele.
-        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 315.1, accuracy: 0.5, "a largura da barra")
+        // O bloco começa 12 pt abaixo do sólido, e o bloco inteiro é o botão que abre a tela Orçamento: o quadro dele é o do
+        // bloco, na mesma borda do Corrigido, o bloco seguinte.
+        XCTAssertEqual(orcamento.minY - total.maxY, 12, accuracy: 0.5, "o primeiro bloco, logo abaixo do Total gasto")
+        XCTAssertEqual(corrigido.minY - orcamento.maxY, 12, accuracy: 0.5, "antes do Corrigido")
+        XCTAssertEqual(orcamento.minX, corrigido.minX, accuracy: 0.5, "na mesma borda")
+        // Na letra padrão, o recuo de 18 dos dois lados e a seta de 14 pt, 10 pt depois da barra (mockup, .k-linha): a barra
+        // com 310 pt nos 370 do bloco.
+        XCTAssertEqual(larguraDaBarra(app.elemento("indicadorOrcamento")), 310, accuracy: 0.5, "a largura da barra")
     }
 
     /// A largura da barra da linha do orçamento, por pixel (o VoiceOver junta a linha num elemento só): a corrida mais longa

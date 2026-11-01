@@ -1,10 +1,10 @@
 import SwiftUI
 import CusttaNucleo
 
-/* As peças da tela da obra (mockup aprovado da etapa 2, parte 1): o título com o nome, a pílula da fase e do tempo,
-   os indicadores na opção A, a pílula "Lançamentos", o "A vencer", o cabeçalho do mês e a linha do gasto. Medidas do
-   mockup: margem de 20, cartões de raio 24 e recuo interno de 18 em tudo, para o texto de cima e o de baixo começarem
-   na mesma vertical. Nenhum token novo; nunca vidro dentro de vidro (o que fica dentro de um cartão é sólido). */
+/* As peças da tela da obra (mockup aprovado da etapa 2, parte 1): o título com o nome (hoje, o da tela Orçamento; a obra
+   usa o título mono da etapa 4), a etiqueta dos blocos, a pílula "Lançamentos", o "A vencer", o cabeçalho do mês e a
+   linha do gasto. Medidas do mockup: cartões de raio 24 e recuo interno de 18 em tudo, para o texto de cima e o de baixo
+   começarem na mesma vertical. Nunca vidro dentro de vidro (o que fica dentro de um cartão é sólido). */
 
 /// O nome da obra no título grande, em quantas linhas precisar (o título grande do sistema corta nome longo), com o
 /// halo atrás do bloco inteiro no escuro, como o título grande de Obras. Nas alturas do mockup: 6 pt acima do início da
@@ -23,30 +23,6 @@ struct TituloDaObra: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra, noClaro: HaloDoTitulo.naObraNoClaro) }
             .padding(EdgeInsets(top: -6, leading: 0, bottom: -2, trailing: 0))
-    }
-}
-
-/// Fase e tempo numa pílula de vidro: um cartão baixo de raio 24 com a etiqueta da fase e "começou em… · N meses", a 16 pt
-/// do total gasto, como no mockup (6 além do espaço da pilha).
-struct PilulaDaFase: View {
-    let obra: Obra
-    let hoje: String
-    @Environment(\.paleta) private var paleta
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            EtiquetaDeFase(fase: obra.fase, grande: true)
-            Text(textoDoInicio(obra, hoje: hoje))
-                .font(.subheadline)
-                .foregroundStyle(paleta.cor(.texto))
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .superficie(.conteudo, em: .rect(cornerRadius: 24))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("faseDaObra")
-        .padding(.bottom, 6)
     }
 }
 
@@ -77,149 +53,6 @@ struct EtiquetaDoIndicador: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 3)
             .background(paleta.cor(fundo), in: .rect(cornerRadius: (linha + 6) / 2))
-    }
-}
-
-/// Os indicadores na opção A do mockup: o total gasto em destaque e um cartão com o orçamento (etapa 3, a primeira linha,
-/// só com orçamento), Corrigido, A pagar (a linha inteira abre a folha dele, etapa 3) e Venda. Os textos e as contas são
-/// os do site (indicadoresDaObra, orcamentoObra).
-struct IndicadoresDaObraView: View {
-    let indicadores: IndicadoresDaObra
-    var orcamento: ResumoOrcamento? = nil
-    /// Para onde a linha do orçamento leva (a tela Orçamento da obra).
-    var rotaDoOrcamento: RotaDeObras? = nil
-    /// A seta do "A pagar · 30 dias": a folha dele.
-    let abrirAPagar: () -> Void
-    @Environment(\.paleta) private var paleta
-    @Environment(\.vidro) private var vidro
-    @Environment(\.dynamicTypeSize) private var tamanho
-
-    /// "N lançamentos" na marca; "sem gastos" neutra, como o chip cinza do mockup.
-    private var corDoTotal: EtiquetaDoIndicador.Cor { indicadores.etiquetaDoTotal == "sem gastos" ? .neutro : .marca }
-
-    var body: some View {
-        VStack(spacing: 10) {
-            heroi
-            VStack(spacing: 0) {
-                if let orcamento {
-                    if let rotaDoOrcamento {
-                        NavigationLink(value: rotaDoOrcamento) { LinhaDoOrcamento(resumo: orcamento, comSeta: true) }
-                            .buttonStyle(.plain)
-                            // O Controle por Voz chama pelo nome da linha ("Tocar Orçamento"), não pelo rótulo inteiro.
-                            .accessibilityInputLabels(["Orçamento"])
-                    } else {
-                        LinhaDoOrcamento(resumo: orcamento)
-                    }
-                    LinhaFina().padding(.leading, 18)
-                }
-                linha(rotulo: "Corrigido pelo banco", etiqueta: nil, valor: indicadores.corrigido, nota: indicadores.notaDoCorrigido,
-                      identificador: "indicadorCorrigido")
-                LinhaFina().padding(.leading, 18)
-                aPagar
-                LinhaFina().padding(.leading, 18)
-                venda
-            }
-            .superficie(.conteudo, em: .rect(cornerRadius: 24))
-        }
-    }
-
-    /// O "A pagar · 30 dias": a linha inteira é o botão da folha dele, com a seta das linhas tocáveis no meio da altura
-    /// (o .k-chev do mockup), a mesma do "A vencer". Embaixo, "Parcelas e gastos futuros", como antes.
-    private var aPagar: some View {
-        Button(action: abrirAPagar) {
-            HStack(spacing: 4) {
-                miolo(rotulo: "A pagar · 30 dias", etiqueta: (indicadores.etiquetaDoAPagar, .alerta), valor: indicadores.aPagar,
-                      nota: "Parcelas e gastos futuros", corDaNota: nil)
-                Image(systemName: "chevron.right")
-                    .font(.body.weight(.semibold))
-                    // O mesmo chevron da linha do Orçamento, no mesmo cartão.
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
-                    .foregroundStyle(paleta.cor(vidro.secundario))
-                    .accessibilityHidden(true)
-                    .foraDoLaudo()
-            }
-            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        // O Controle por Voz chama pelo nome da linha ("Tocar A pagar"), não pelo rótulo inteiro.
-        .accessibilityInputLabels(["A pagar"])
-        .accessibilityIdentifier("indicadorAPagar")
-    }
-
-    private var heroi: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline) {
-                    rotulo("Total gasto")
-                    Spacer(minLength: 8)
-                    EtiquetaDoIndicador(texto: indicadores.etiquetaDoTotal, cor: corDoTotal)
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    rotulo("Total gasto")
-                    EtiquetaDoIndicador(texto: indicadores.etiquetaDoTotal, cor: corDoTotal)
-                }
-            }
-            ValorEmDinheiro(texto: indicadores.totalGasto, fonte: .largeTitle.weight(.bold))
-            Text("bruto, sem correção").font(.subheadline).foregroundStyle(paleta.cor(vidro.secundario))
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .superficie(.conteudo, em: .rect(cornerRadius: 24))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("indicadorTotal")
-    }
-
-    @ViewBuilder private var venda: some View {
-        switch indicadores.venda {
-        case .vendida(let valor, let etiqueta, let nota, let lucroPositivo):
-            linha(rotulo: "Venda", etiqueta: (etiqueta, .positivo), valor: valor, nota: nota, identificador: "indicadorVenda",
-                  corDaNota: lucroPositivo ? .positivoNoVidro : .negativoNoVidro)
-        case .estimada(let valor, let nota):
-            linha(rotulo: "Venda estimada", etiqueta: ("estimativa", .positivo), valor: valor, nota: nota, identificador: "indicadorVenda")
-        case .semEstimativa:
-            linha(rotulo: "Venda estimada", etiqueta: nil, valor: "—", nota: "Toque no lápis para informar o valor",
-                  identificador: "indicadorVenda")
-        }
-    }
-
-    /// Na letra grande, o rótulo ao lado da etiqueta recebia a altura de uma linha e cortava ("A pagar · 3…"): a altura
-    /// ideal para a largura dada resolve.
-    private func rotulo(_ texto: String) -> some View {
-        Text(texto).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func linha(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
-                       identificador: String, corDaNota: Token? = nil) -> some View {
-        miolo(rotulo: texto, etiqueta: etiqueta, valor: valor, nota: nota, corDaNota: corDaNota)
-            .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier(identificador)
-    }
-
-    /// O rótulo com a etiqueta, o valor e a nota de uma linha do cartão.
-    private func miolo(rotulo texto: String, etiqueta: (String, EtiquetaDoIndicador.Cor)?, valor: String, nota: String,
-                       corDaNota: Token?) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline) {
-                    rotulo(texto)
-                    Spacer(minLength: 8)
-                    if let etiqueta { EtiquetaDoIndicador(texto: etiqueta.0, cor: etiqueta.1) }
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    rotulo(texto)
-                    if let etiqueta { EtiquetaDoIndicador(texto: etiqueta.0, cor: etiqueta.1) }
-                }
-            }
-            // O "—" de valor nenhum (venda sem estimativa) vai no secundário, como no mockup.
-            ValorEmDinheiro(texto: valor, fonte: .title2.weight(.bold), cor: valor == "—" ? vidro.secundario : .texto)
-            Text(nota).font(.subheadline).foregroundStyle(paleta.cor(corDaNota ?? vidro.secundario))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

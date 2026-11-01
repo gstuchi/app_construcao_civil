@@ -5,7 +5,8 @@ import CusttaNucleo
 
 /* O orçamento num iPhone de 375 pt (etapa 3, PR 1; as linhas com a seta, do PR 2), na maior letra, com e sem Texto em
    negrito: nenhuma peça passa da largura. O laudo e as auditorias rodam no 18 Pro (402) e no Pro Max (440); 375 só aqui, num UIHostingController em escala
-   1, com a largura de cada peça na tela (375 menos os 20 de cada lado; na folha, a linha já traz o recuo dela). */
+   1, com a largura de cada peça na tela: o bloco do orçamento na obra, 375 menos as bordas de 16 (etapa 4); as peças da
+   tela Orçamento, 375 menos os 20 de cada lado; na folha, a linha já traz o recuo dela. */
 @MainActor
 struct OrcamentoEm375Tests {
     private let porTopico = Estado.de(DadosDeExemplo.vitrineDoOrcamento("porTopico"))
@@ -19,7 +20,7 @@ struct OrcamentoEm375Tests {
     @Test(arguments: [false, true]) func telaDaObraEOrcamentoCabemEm375(negrito: Bool) throws {
         let casa = try #require(porTopico.obras.first { $0.id == "v1" })
         let resumo = try #require(orcamentoObra(casa))
-        #expect(largura(LinhaDoOrcamento(resumo: resumo, comSeta: true), 335, negrito: negrito) <= 335, "a linha do orçamento")
+        #expect(largura(LinhaDoOrcamento(resumo: resumo, comSeta: true), 343, negrito: negrito) <= 343, "o bloco do orçamento")
         #expect(largura(CartaoDoOrcamento(resumo: resumo), 335, negrito: negrito) <= 335, "o cartão")
         let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
         for linha in linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos) + linhasForaDoOrcamento(resumo, topicos: topicos) {

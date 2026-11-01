@@ -112,6 +112,9 @@ struct RotuloDoBloco: View {
         Text(texto)
             .font(.subheadline.weight(tinta == nil ? .semibold : .bold))
             .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
+            // Na letra grande, num bloco com a seta ao lado, o rótulo recebia menos altura que as linhas dele e cortava
+            // ("A pagar · 30 dias" na AX5): a altura ideal para a largura dada resolve.
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -119,6 +122,8 @@ struct RotuloDoBloco: View {
 /// tinta do sólido.
 struct NotaDoBloco: View {
     let texto: String
+    /// Outra cor no vidro (o lucro da venda no verde ou no âmbar); no sólido vale a tinta dele.
+    var cor: Token? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.tintaDoBloco) private var tinta
@@ -126,7 +131,8 @@ struct NotaDoBloco: View {
     var body: some View {
         Text(texto)
             .font(.subheadline)
-            .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
+            .foregroundStyle(paleta.cor(tinta ?? cor ?? vidro.secundario))
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 2)
     }
 }

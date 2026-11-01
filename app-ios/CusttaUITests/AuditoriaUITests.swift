@@ -72,6 +72,11 @@ final class AuditoriaUITests: XCTestCase {
             switch achado.auditType {
             case .dynamicType where noTotal && achado.compactDescription.contains("partially"), .textClipped where noTotal:
                 fora = true
+            // O título pequeno da obra em SF Mono (etapa 4): numa linha só, até 236 pt, ele corta o nome comprido com reticências,
+            // como o título pequeno do sistema, em vez de empurrar o voltar e o lápis; na maior letra (20 pt), "Sobrado Granja
+            // Viana" passa dos 236. O nome inteiro está no título grande, no VoiceOver e no Visualizador de Conteúdo Grande.
+            case .textClipped where elemento.identifier == "tituloPequenoDaBarra":
+                fora = true
             case .dynamicType:
                 // Os títulos das barras param perto de 22 pt, como os do sistema (mockup da etapa 2), com o Visualizador de
                 // Conteúdo Grande: o pequeno da obra e o das folhas (na maior letra o nome da obra sai da barra da folha e
@@ -340,12 +345,16 @@ final class AuditoriaUITests: XCTestCase {
         }
     }
 
-    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta (com as duas ações da fase, a sólida e a de vidro)
-    /// e a vendida (a venda com o lucro e o "Desfazer venda") em rolagens fixas, a lista vazia, as folhas da obra (nova
-    /// e editar), a da venda e a do gasto lançado de dentro de uma vendida. Na obra, rolagem fixa e não o arrasto:
-    /// logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam (triagem em
-    /// 0, 400 e 800 pt, na v1 e na v2). A vendida fica sem os 800 pt: ali estão os indicadores, os mesmos da v2 a 800, e no
-    /// iOS 26 eles davam sete achados sem elemento enquanto a auditoria trocava o tamanho da letra (CI, 17/10; no Mac passam).
+    /// As telas da etapa 2, parte 3, na maior letra: a obra pronta e a vendida em rolagens fixas, a lista vazia, as folhas
+    /// da obra (nova e editar), a da venda e a do gasto lançado de dentro de uma vendida. Na obra, rolagem fixa e não o
+    /// arrasto: logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam
+    /// (triagem em 0, 400 e 800 pt, na v1 e na v2). A vendida fica sem os 800 pt: no iOS 26, os blocos de lá davam sete
+    /// achados sem elemento enquanto a auditoria trocava o tamanho da letra (CI, 17/10; no Mac passam).
+    /// Com a obra em blocos (etapa 4), mais alta, as rolagens caem em outras peças (18 Pro): a v2 a 800, no Corrigido e no
+    /// A pagar; a v2 a 1600, na Venda estimada e no "Registrar venda", com a ação de vidro sob a cápsula; a v3 a 1600, no
+    /// A pagar e no começo da Venda. Mais fundo não dá: a auditoria troca o tamanho da letra, e nos menores a rolagem passa
+    /// do fim do alto. Com as duas ações à vista, a v2 a 1850 deu quatro achados sem elemento, e a v3 a 2250 (a venda e o
+    /// "Desfazer venda") deu "Text clipped" nos blocos de cima; rolar por arrasto até a ação deu o mesmo.
     @MainActor func testParte3NoMaiorTamanho() throws {
         var app: XCUIApplication
         for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 1600), ("v3", 0), ("v3", 1600)] {

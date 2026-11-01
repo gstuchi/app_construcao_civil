@@ -34,7 +34,7 @@ struct OrcamentoView: View {
 
     private func conteudo(_ obra: Obra, _ r: ResumoOrcamento, estado: Estado) -> some View {
         let topicos = mapaDeTopicos(estado.config.topicosProprios)
-        let gastos = r.modo == "topicos" ? [] : gastoPorTopico(obra)
+        let porGasto = r.modo == "topicos" ? [] : linhasDoGastoPorTopico(gastoPorTopico(obra), total: totalBruto(obra), topicos: topicos)
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
                 TituloDaObra(nome: "Orçamento", identificador: "tituloDoOrcamento")
@@ -64,10 +64,10 @@ struct OrcamentoView: View {
                         }
                     }
                 } else {
-                    PilulaDaLista(titulo: "Gasto por tópico", quantidade: gastos.count, identificador: "gastoPorTopico")
+                    PilulaDaLista(titulo: "Gasto por tópico", quantidade: porGasto.count, identificador: "gastoPorTopico")
                         .padding(.top, 14)
                     CartaoDaLista {
-                        ForEach(Array(linhasDoGastoPorTopico(gastos, topicos: topicos).enumerated()), id: \.element.id) { i, linha in
+                        ForEach(Array(porGasto.enumerated()), id: \.element.id) { i, linha in
                             if i > 0 { LinhaFina().padding(.leading, 67) }
                             LinhaDeTopicoNoOrcamento(linha: linha, identificador: "gastoTopico-\(linha.id)", abrir: { abrirDetalhe(linha.id) })
                         }

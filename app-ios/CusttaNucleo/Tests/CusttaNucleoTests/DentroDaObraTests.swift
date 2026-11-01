@@ -83,9 +83,23 @@ struct DentroDaObraTests {
         #expect(linhas.map(\.id) == ["eletrica", "estrutura", "fundacao", "c_apagado"], "do maior para o menor; no empate, a ordem dos gastos")
         #expect(linhas.map(\.bruto) == [4_500, 3_000, 3_000, 1_500], "o bruto, com o gasto futuro")
         #expect(linhas.map(\.pct) == [38, 25, 25, 13], "o Math.round do site: 37,5 vai a 38")
-        #expect(textoDaParteDaObra(linhas[0].pct) == "38% da obra")
+        #expect(textoDaParteDaObra(linhas[0].bruto, total: 12_000) == "38% da obra")
         #expect(gastoPorTopico(obra([])).isEmpty)
         #expect(dicaDoModoTotal == "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
+    }
+
+    /// O "% da obra" da lista "Gasto por tópico" e do detalhe do tópico: o `porcentoDoTopico` da etapa 4, com "<1%" quando o
+    /// tópico tem dinheiro e não chega a 1% (o site mostraria 0% ou 1%), sobre o mesmo bruto e o mesmo total nas duas telas.
+    @Test func parteDaObraAbaixoDeUmPorCento() {
+        #expect(textoDaParteDaObra(4, total: 1_000) == "<1% da obra", "o site diria 0%")
+        #expect(textoDaParteDaObra(5, total: 1_000) == "<1% da obra", "o site diria 1%")
+        #expect(textoDaParteDaObra(10, total: 1_000) == "1% da obra")
+        #expect(textoDaParteDaObra(0, total: 1_000) == "0% da obra" && textoDaParteDaObra(0, total: 0) == "0% da obra")
+        let o = obra([gasto("r1", "2026-09-01", 99_100, topico: "revest"), gasto("p1", "2026-09-02", 500, topico: "pintura"),
+                      gasto("d1", "2026-09-03", 400, topico: "projeto")])
+        #expect(detalheDoTopico(o, topico: "pintura", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · <1% da obra")
+        #expect(detalheDoTopico(o, topico: "projeto", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · <1% da obra")
+        #expect(detalheDoTopico(o, topico: "revest", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · 99% da obra")
     }
 
     @Test func gastoPorTopicoComoOSite() {

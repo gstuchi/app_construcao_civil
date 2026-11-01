@@ -74,8 +74,10 @@ public func gastoPorTopico(_ obra: Obra) -> [GastoDoTopico] {
     return ordenadoEstavel(linhas) { $0.bruto > $1.bruto }
 }
 
-/// "38% da obra".
-public func textoDaParteDaObra(_ pct: Double) -> String { "\(numeroJS(pct))% da obra" }
+/// "38% da obra" e, quando o tópico tem dinheiro e não chega a 1%, "<1% da obra" (o `porcentoDoTopico` da barra e do anel da
+/// etapa 4; o site mostraria 0% ou 1%). A lista "Gasto por tópico" e o detalhe do tópico passam o mesmo bruto e o mesmo total
+/// (`totalBruto`), para o número não mudar ao abrir o detalhe.
+public func textoDaParteDaObra(_ bruto: Double, total: Double) -> String { porcentoDoTopico(bruto, total: total) + " da obra" }
 
 /// A dica do fim da tela Orçamento no modo total.
 public let dicaDoModoTotal = "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\"."
@@ -174,7 +176,7 @@ public func fraseDoOrcamentoNoDetalhe(_ item: ItemOrcamento) -> FraseDoOrcamento
 /// A folha do detalhe do tópico.
 public struct DetalheDoTopico: Equatable, Sendable {
     public let resumo: ResumoDoTopico
-    /// "6 gastos · 12% da obra".
+    /// "6 gastos · 12% da obra" ("<1% da obra" abaixo de 1%).
     public let linha: String
     /// "corrigido: R$ …".
     public let corrigido: String
@@ -194,7 +196,8 @@ public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMens
     } else {
         orcamento = .nenhum
     }
-    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(textoDaParteDaObra(r.pct))",
+    let parte = textoDaParteDaObra(r.bruto, total: totalBruto(obra))
+    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(parte)",
                            corrigido: "corrigido: " + moeda(r.corrigido), orcamento: orcamento,
                            aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
                            pagos: ordenados.filter { !menorJS(hoje, $0.data) })

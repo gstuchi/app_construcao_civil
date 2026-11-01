@@ -176,6 +176,18 @@ final class DetalheDoTopicoUITests: XCTestCase {
         linhaInteiraEFechar(app, "gastoTopico-terreno", quadro)
     }
 
+    /// No modo total, a Pintura da Casa Alphaville (R$ 6.900,00 de R$ 842.317,45, 0,8%) mostra "<1% da obra" na linha e no
+    /// detalhe que ela abre: o site mostraria "1%" (o `Math.round`), e a confirmação 7 da etapa 4 pede o "<1%" na folha. O
+    /// VoiceOver lê "menos de 1% da obra" nos dois, como na barra empilhada.
+    func testParteAbaixoDeUmPorCentoNaLinhaENoDetalhe() {
+        let app = abrirOrcamento("vitrine")
+        let linha = app.elemento("gastoTopico-pintura")
+        app.rolarAte(linha)
+        XCTAssertTrue(linha.label.contains("menos de 1% da obra"), linha.label)
+        guard abrirPelaLinha(app, "gastoTopico-pintura") != nil else { return }
+        confere(app.elemento("resumoDoTopico"), contem: ["3 gastos · menos de 1% da obra", "R$\u{a0}6.900,00"])
+    }
+
     func testObraApagadaEmOutroAparelhoFechaODetalhe() {
         let app = abrirDetalhe("revest", extra: ["CUSTTA_APAGAR_REMOTO": "v1@0"])
         notify_post("br.com.custta.falso.apagarRemoto")

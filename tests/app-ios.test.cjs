@@ -716,7 +716,7 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
   // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
   // A edição empurrada numa folha de origem (etapa 3) não fecha a folha: a guarda dela é a edição ainda no topo do caminho.
   const acoes = {
-    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard !rascunho\.gravado, saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
     'app-ios/Custta/Telas/FolhaDaVenda.swift': ['private func confirmar(inicio: String, hoje: String) {', /guard folhas\.aberta != nil else \{ return \}/],
     'app-ios/Custta/Telas/FolhaDaObra.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
     'app-ios/Custta/Telas/FolhaDoOrcamento.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
@@ -731,6 +731,11 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
   assert.match(origem, /case \.folha: folhas\.aberta != nil\n\s*case \.origem\(let origem\): origem\.editando\(gastoId\)/,
                'a guarda da edição: a folha aberta ou, na origem, a edição no topo do caminho');
   assert.match(origem, /func editando\(_ gastoId: String\?\) -> Bool \{\n\s*guard let gastoId else \{ return false \}\n\s*return caminho\.last == \.editar\(gastoId\)/);
+  // O gasto lançado de dentro de uma vendida fecha a folha só no turno seguinte, e até lá ela ainda conta como aberta: a
+  // marca do rascunho, ligada antes de trocar a obra por trás da folha, é a guarda (a obra em blocos alarga essa janela).
+  assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
+               /rascunho\.gravado = true\n\s*folhas\.navegar\(\.trocar\(obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar \{/,
+               'a marca na hora, antes da troca e do fechamento no turno seguinte');
 });
 
 test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo', () => {

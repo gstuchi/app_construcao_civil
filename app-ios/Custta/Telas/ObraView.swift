@@ -92,17 +92,36 @@ struct ObraView: View {
                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
                         agir($0, obra: obra)
                     }
-                    // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
+                    // Os afazeres, 12 abaixo das ações, em todas as fases.
                     NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
                         LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
                     }
                     .buttonStyle(.plain)
-                    .padding(.bottom, 14)
+                    // Os gastos por tópico, só com gastos: a barra empilhada no lugar do mini-anel (pedida em 29/10), sem toque
+                    // e sem "Gráficos ›" até os Gráficos chegarem (PR 2b).
+                    if !obra.gastos.isEmpty {
+                        let pedacos = pedacosDoAnel(gastoPorTopico(obra))
+                        // Um elemento só para o VoiceOver, como os outros blocos: o título e os pedaços com o %, sem a
+                        // legenda, que repetiria os maiores. Com o .contain, o título vinha duas vezes (no texto e na barra),
+                        // e esconder um filho dentro dele não o tira da árvore.
+                        BlocoDeVidro {
+                            Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+                                .padding(.bottom, 8)
+                            BarraDeTopicos(pedacos: pedacos, topicos: topicos)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Gastos por tópico")
+                        .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
+                        .accessibilityIdentifier("gastosPorTopico")
+                    }
+                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id vem antes do recuo: a lupa rola até a pílula, e não
+                    // até os 6 pt de cima dela.
                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
                                             abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
                         .id("lancamentos")
+                        .padding(.top, 6)
                     if busca.aberta {
                         CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
                     }
@@ -130,6 +149,8 @@ struct ObraView: View {
                     }
                 }
                 .padding(.horizontal, Grade.externa)
+                // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
+                .environment(\.linhaMono, true)
                 // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
                 // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
                 .padding(.bottom, 98)
@@ -461,7 +482,7 @@ struct CartaoDoAVencer: View {
 
     @ViewBuilder private func linhas(_ mes: MesDeGastos) -> some View {
         ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
-            if i > 0 { LinhaFina().padding(.leading, 67) }
+            if i > 0 { SeparadorDaLista() }
             LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
         }
     }
@@ -478,10 +499,20 @@ struct CartaoDoMes: View {
         CartaoDaLista {
             CabecalhoDoMes(mes: mes)
             ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
-                if i > 0 { LinhaFina().padding(.leading, 67) }
+                if i > 0 { SeparadorDaLista() }
                 LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
             }
             Color.clear.frame(height: 6)
         }
+    }
+}
+
+/// A linha fina entre dois gastos de um cartão: depois do ícone, na linha da etapa 3; na mono, nos 18 pt do recuo dos dois
+/// lados, como na vitrine das peças.
+struct SeparadorDaLista: View {
+    @Environment(\.linhaMono) private var mono
+
+    var body: some View {
+        if mono { LinhaFina().padding(.horizontal, Grade.recuo) } else { LinhaFina().padding(.leading, 67) }
     }
 }

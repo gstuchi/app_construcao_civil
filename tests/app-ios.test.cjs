@@ -542,15 +542,16 @@ test('seta dos blocos da obra: para no AX2 e ocupa os 20 pt do mockup na maior l
   assert.match(aPagar.slice(0, aPagar.indexOf('\n    }\n')), /SetaDoBloco\(\)/, 'o bloco do A pagar usa a seta');
 });
 
-test('linha dos afazeres: a seta é a das linhas do Orçamento e do A pagar, para no AX2 e ocupa 18 pt na maior letra', () => {
-  // Sem o teto, a seta sai com ~27 × 46 pt na AX5, num quadro de 22, contra os 17 × 29 do Orçamento e do A pagar. E nenhum
-  // teste de tela vê o símbolo, que fica fora da árvore de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+test('bloco dos afazeres: a seta é a dos blocos do Orçamento e do A pagar', () => {
+  // A mesma seta dos blocos tocáveis da obra (a SetaDoBloco, com o teto no AX2 e os 20 pt do mockup na letra máxima). Sem o
+  // teto, ela sai com ~27 × 46 pt na AX5, mais larga que o quadro; nenhum teste de tela vê o símbolo, fora da árvore de
+  // acessibilidade e do laudo.
   const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
   const inicio = t.indexOf('struct LinhaDosAfazeresView');
   assert.ok(inicio >= 0, 'a LinhaDosAfazeresView');
   const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: grande \? 18 : 14\)\n/,
-    'a seta para no AX2 e ocupa 18 pt na letra de acessibilidade');
+  assert.match(linha, /SetaDoBloco\(\)/, 'a seta dos blocos');
+  assert.doesNotMatch(linha, /chevron\.right/, 'nenhuma outra seta');
 });
 
 test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {

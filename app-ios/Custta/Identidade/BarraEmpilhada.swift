@@ -75,10 +75,7 @@ struct BarraDeTopicos: View {
                 .placa(forte: true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Gastos por tópico")
-                .accessibilityValue(pedacos.map { pedaco in
-                    // O "<1%" falado como "menos de 1%" (o porcentoFalado do núcleo), como no rótulo do mockup.
-                    "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
-                }.joined(separator: "; "))
+                .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
                 .accessibilityAddTraits(.isImage)
                 .accessibilityIdentifier("barraDeTopicos")
                 .padding(.top, 2)
@@ -103,6 +100,16 @@ struct BarraDeTopicos: View {
         }
         .font(.subheadline)
     }
+}
+
+/// O que o VoiceOver diz da barra: cada pedaço com o nome e o % da obra, separados por ponto e vírgula, com o "<1%" falado
+/// como "menos de 1%" (o `porcentoFalado` do núcleo), como no rótulo do mockup. Serve à barra e ao bloco "Gastos por
+/// tópico" da obra, que é um elemento só.
+func faladoDaBarra(_ pedacos: [PedacoDoAnel], topicos: [String: Topico]) -> String {
+    let total = pedacos.reduce(0) { $0 + $1.bruto }
+    return pedacos.map { pedaco in
+        "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
+    }.joined(separator: "; ")
 }
 
 /// A hachura a 45° ("/") da identidade nova, com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)`

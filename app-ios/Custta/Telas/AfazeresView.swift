@@ -18,38 +18,24 @@ struct LinhaDosAfazeresView: View {
     @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
-        let grande = tamanho.isAccessibilitySize
-        HStack(spacing: 11) {
-            if !grande {
-                Image(decorative: "Icones/check")
-                    .resizable().frame(width: 20, height: 20)
-                    .foregroundStyle(paleta.cor(.marca))
-                    .frame(width: 38, height: 38)
-                    .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 11))
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
+        // Na identidade nova (etapa 4; mockup, .afz): um bloco de vidro, sem o ícone, com "Afazeres" em body semibold e a seta
+        // dos blocos tocáveis, 12 pt depois do texto (o gap do .afz; nos blocos do alto, 10, o do .k-linha).
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline) { titulo; Spacer(minLength: 10); etiqueta }
+                    HStack(alignment: .firstTextBaseline, spacing: 8) { titulo; etiqueta; Spacer(minLength: 0) }
                     VStack(alignment: .leading, spacing: 4) { titulo; etiqueta }
                 }
                 PrimeiroPendente(texto: textoDeBaixo, cortado: pendente)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.right")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(paleta.cor(vidro.secundario))
-                // A seta das linhas do Orçamento e do A pagar: para no AX2 e ocupa 18 pt na maior letra (sem o teto, ~27 × 46 pt
-                // na AX5, mais larga que o quadro).
-                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-                .frame(width: grande ? 18 : 14)
-                .accessibilityHidden(true)
-                .foraDoLaudo()
+            SetaDoBloco()
         }
-        .padding(EdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 14))
+        .padding(.vertical, Grade.recuoVertical(tamanho))
+        .padding(.horizontal, Grade.recuo)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(.rect)
-        .superficie(.conteudo, em: .rect(cornerRadius: 24))
+        .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(tamanho)))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Afazeres")
         .accessibilityValue(falado)
@@ -58,7 +44,7 @@ struct LinhaDosAfazeresView: View {
     }
 
     private var titulo: some View {
-        Text("Afazeres").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+        Text("Afazeres").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
             .fixedSize(horizontal: false, vertical: true)
     }
 

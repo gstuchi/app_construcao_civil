@@ -97,13 +97,22 @@ struct CabecalhoDoMes: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dentroDaFolha) private var naFolha
+    /// Na lista da obra da etapa 4 (mockup, .mes-cab): o nome em subheadline e o total no número mono, na cor do texto.
+    @Environment(\.linhaMono) private var mono
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack { titulo; Spacer(minLength: 8); total }
+            // Na linha mono, o nome e o total na mesma linha de base, e o nome ocupa o que sobra pelo frame, e não por um
+            // Spacer: com ele, a linha passava 1/3 pt da largura em alguns meses, como o "A vencer". Nas folhas, centrados e
+            // com o Spacer, como na etapa 3.
+            if mono {
+                HStack(alignment: .firstTextBaseline, spacing: 8) { titulo.frame(maxWidth: .infinity, alignment: .leading); total }
+            } else {
+                HStack { titulo; Spacer(minLength: 8); total }
+            }
             VStack(alignment: .leading, spacing: 2) { titulo; total }
         }
-        .font(.footnote.weight(.semibold))
+        .font(mono ? .subheadline.weight(.semibold) : .footnote.weight(.semibold))
         .foregroundStyle(paleta.cor(secundario))
         // Na folha, o .f-grupo .mes-cab do mockup: 16 dos lados, como as linhas da folha, e 2 embaixo.
         .padding(naFolha ? EdgeInsets(top: 12, leading: 16, bottom: 2, trailing: 16) : EdgeInsets(top: 12, leading: 18, bottom: 6, trailing: 18))
@@ -115,8 +124,9 @@ struct CabecalhoDoMes: View {
     /// O secundário do vidro; na folha, o da folha.
     private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
     private var titulo: some View { Text(mes.titulo) }
-    private var total: some View {
-        ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: secundario)
+    @ViewBuilder private var total: some View {
+        if mono { ValorEmDinheiro(moeda(mes.total), mono: .miudo) }
+        else { ValorEmDinheiro(texto: moeda(mes.total), fonte: .footnote.weight(.semibold), cor: secundario) }
     }
 }
 
@@ -127,11 +137,13 @@ struct LinhaDoAVencer: View {
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
+    /// Na lista da obra da etapa 4 (mockup): sem o ícone, e o total no número mono.
+    @Environment(\.linhaMono) private var mono
     @ScaledMetric(relativeTo: .body) private var icone: CGFloat = 38
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            if !tamanho.isAccessibilitySize {
+            if !tamanho.isAccessibilitySize && !mono {
                 Image(decorative: "Icones/calendario")
                     .resizable().frame(width: icone * 0.55, height: icone * 0.55)
                     .foregroundStyle(paleta.cor(.alertaEtiqueta))
@@ -140,14 +152,15 @@ struct LinhaDoAVencer: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("A vencer").font(.body.weight(.semibold))
-                        Spacer(minLength: 8)
-                        ValorEmDinheiro(texto: moeda(grupo.total), fonte: .body.weight(.semibold))
+                    // O título ocupa o que sobra pelo frame, e não um Spacer ao lado: com o Negrito, o Spacer arredondava
+                    // para cima, e a linha passava 1/3 pt da largura, como o cabeçalho dos blocos (PR 1b).
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("A vencer").font(.body.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
+                        total
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("A vencer").font(.body.weight(.semibold))
-                        ValorEmDinheiro(texto: moeda(grupo.total), fonte: .body.weight(.semibold))
+                        total
                     }
                 }
                 .foregroundStyle(paleta.cor(.texto))
@@ -165,6 +178,11 @@ struct LinhaDoAVencer: View {
         }
         .padding(EdgeInsets(top: 14, leading: 18, bottom: 14, trailing: 16))
         .contentShape(.rect)
+    }
+
+    @ViewBuilder private var total: some View {
+        if mono { ValorEmDinheiro(moeda(grupo.total), mono: .miudo) }
+        else { ValorEmDinheiro(texto: moeda(grupo.total), fonte: .body.weight(.semibold)) }
     }
 }
 

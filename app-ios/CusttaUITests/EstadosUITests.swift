@@ -100,8 +100,10 @@ final class EstadosUITests: XCTestCase {
         app.buttons["salvarGasto"].doubleTap()
         XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
         sleep(1)
-        XCTAssertEqual(app.elemento("tituloDaObra").label, "Casa Alphaville")
-        XCTAssertTrue(app.elemento("indicadorTotal").label.contains("47 lançamentos"), app.elemento("indicadorTotal").label)
+        // A lista rolou até a linha nova (o destaque). Com a obra em blocos (etapa 4), o alto fica longe e sai da lista
+        // preguiçosa: o nome vem do título pequeno da barra, e a contagem, da pílula "Lançamentos", logo acima da linha.
+        XCTAssertEqual(app.elemento("tituloPequenoDaBarra").label, "Casa Alphaville")
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
     }
 
     /// Na maior letra o nome da obra quebra embaixo do rótulo e fica à esquerda, como no mockup (`.f-lin .d` alinhado à

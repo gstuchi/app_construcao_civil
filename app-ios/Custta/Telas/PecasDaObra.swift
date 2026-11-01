@@ -337,7 +337,8 @@ struct LinhaDoAVencer: View {
 
 /// A linha de um gasto: ícone do tópico (sólido), título e valor, e embaixo o tópico, o pagamento e a data. O valor vem
 /// sem vermelho, só com o "−"; "Pix" e "Cartão" por extenso. Na letra grande, cada informação numa linha, sem o ícone e
-/// sem os "·". O VoiceOver lê "Cimento CP-II, 120 sacos. Materiais básicos, Pix, 10 de outubro de 2026" e o valor.
+/// sem os "·". O VoiceOver lê "Cimento CP-II, 120 sacos. Materiais básicos, Pix, 10 de outubro de 2026" e o valor. Com o
+/// `linhaMono` do environment, a forma da identidade nova (etapa 4): a obra a liga no PR 1c; as folhas ficam com esta.
 struct LinhaDeGastoView: View {
     let gasto: Gasto
     let linha: LinhaDeGasto
@@ -350,13 +351,14 @@ struct LinhaDeGastoView: View {
     @Environment(\.colorScheme) private var esquema
     @Environment(\.displayScale) private var escala
     @Environment(\.dentroDaFolha) private var naFolha
+    @Environment(\.linhaMono) private var mono
 
     var body: some View {
         Group {
-            if tamanho.isAccessibilitySize { empilhada } else { normal }
+            if mono { formaMono } else if tamanho.isAccessibilitySize { empilhada } else { normal }
         }
-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 18))
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .padding(recuo)
+        .frame(maxWidth: .infinity, minHeight: alturaMinima, alignment: .leading)
         .background(acesa ? paleta.cor(.aceso) : .clear)
         .contentShape(.rect)
         .accessibilityElement(children: .ignore)
@@ -378,8 +380,55 @@ struct LinhaDeGastoView: View {
                     Spacer(minLength: 0)
                     valor
                 }
-                meta
+                meta(.footnote)
             }
+        }
+    }
+
+    /// 12 × 18 pt e 44 de altura; na linha mono, 10 × 18 e 52 (16 × 18 e 72 na letra de acessibilidade), como o mockup.
+    private var recuo: EdgeInsets {
+        let vertical: CGFloat = mono ? (tamanho.isAccessibilitySize ? 16 : 10) : 12
+        return EdgeInsets(top: vertical, leading: 18, bottom: vertical, trailing: 18)
+    }
+
+    private var alturaMinima: CGFloat { mono ? (tamanho.isAccessibilitySize ? 72 : 52) : 44 }
+
+    /// A linha mono (mockup da etapa 4, parte1.css:223-237): sem o ícone quadrado, o título e o valor na borda de 34 pt; embaixo,
+    /// o ícone pequeno do tópico no começo da linha do tópico, do pagamento e da data, em subheadline, sem o ícone do Pix e do
+    /// cartão (o mockup só tem o do tópico; "Pix" e "Cartão" seguem por extenso). O valor em mono, ao lado
+    /// do título e no meio da altura; quando não cabe ao lado (sobrariam menos de 120 pt para o título), desce para baixo dele,
+    /// como na letra de acessibilidade, onde tudo vai numa coluna.
+    @ViewBuilder private var formaMono: some View {
+        let valor = ValorEmDinheiro(linha.valor, mono: .linha)
+        let coluna = VStack(alignment: .leading, spacing: 6) { textosMono; valor }
+        if tamanho.isAccessibilitySize {
+            coluna
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    textosMono.frame(minWidth: 0, idealWidth: 120, maxWidth: .infinity, alignment: .leading)
+                    // Sem a prioridade, a pilha dá ao valor no máximo a metade da linha e corta o maior com reticências.
+                    valor.layoutPriority(1)
+                }
+                coluna
+            }
+        }
+    }
+
+    /// O título e, embaixo, o ícone do tópico (16 pt; 42 na letra máxima) na linha de base do texto, 3 pt abaixo dela (5). O
+    /// ícone em pontos inteiros: com o tamanho fracionário ao lado, o texto arredondava para cima e a linha passava 1/3 de pt.
+    private var textosMono: some View {
+        let corpo = corpoDoTexto(tamanho)
+        let (icone, descida) = (crescendoComALetra(de: 16, ate: 42, corpo: corpo).rounded(), crescendoComALetra(de: 3, ate: 5, corpo: corpo))
+        return VStack(alignment: .leading, spacing: 2) {
+            titulo
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(decorative: iconeDoCatalogo(linha.icone))
+                    .resizable().frame(width: icone, height: icone)
+                    .alignmentGuide(.firstTextBaseline) { $0.height - descida }
+                meta(.subheadline, iconeDoPagamento: false)
+            }
+            .foregroundStyle(paleta.cor(secundario))
         }
     }
 
@@ -413,15 +462,16 @@ struct LinhaDeGastoView: View {
     /// Tópico · forma de pagamento com o ícone · data, num texto só (quebra sozinho; um "·" solto era um texto de 4 pt
     /// que a auditoria de contraste do Xcode não conseguia medir). Os ícones do pagamento são os do sistema, que crescem
     /// com a letra dentro do texto: o raio do Pix ("bolt") e o cartão ("creditcard").
-    private var meta: some View {
+    private func meta(_ fonte: Font, iconeDoPagamento: Bool = true) -> some View {
         var partes: [Text] = []
         if let topico = linha.topico { partes.append(Text(topico)) }
         if let pagamento = linha.pagamento {
-            partes.append(Text("\(Image(systemName: pagamento == "Pix" ? "bolt" : "creditcard")) \(pagamento)"))
+            partes.append(iconeDoPagamento ? Text("\(Image(systemName: pagamento == "Pix" ? "bolt" : "creditcard")) \(pagamento)")
+                                           : Text(pagamento))
         }
         partes.append(Text(linha.data))
         let junto = partes.dropFirst().reduce(partes[0]) { Text("\($0) · \($1)") }
-        return junto.font(.footnote).foregroundStyle(paleta.cor(secundario))
+        return junto.font(fonte).foregroundStyle(paleta.cor(secundario))
     }
 
     private func detalhe(_ texto: String) -> some View {
@@ -430,6 +480,11 @@ struct LinhaDeGastoView: View {
 
     /// O secundário do vidro; na folha, o da folha (o .f-grupo do mockup troca o --texto2 pelo --texto2-v).
     private var secundario: Token { naFolha ? .secundarioTransparente : vidro.secundario }
+}
+
+extension EnvironmentValues {
+    /// A linha do gasto na forma mono da identidade nova (etapa 4).
+    @Entry var linhaMono = false
 }
 
 /// A etiqueta "novo" da linha que acabou de ser lançada (some com o destaque, em ~2 s).

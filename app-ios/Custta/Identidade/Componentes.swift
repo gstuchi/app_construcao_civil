@@ -280,18 +280,30 @@ struct EtiquetaDeFase: View {
 /// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto ou na que o
 /// lugar pede (o total do mês vai no secundário do cabeçalho). Com `prefixo`, o "R$" das linhas da folha vem no mesmo
 /// texto, menor e no secundário: encolhe junto com o número (em dois textos, na letra máxima só o número encolhia e o
-/// "R$" ficava maior que ele).
+/// "R$" ficava maior que ele). Com `mono`, a forma da identidade nova (NumeroMono.swift): encolhe até o R$ chegar a 11 pt.
 struct ValorEmDinheiro: View {
     let texto: String
     let fonte: Font
     var cor: Token = .texto
     var prefixo: Font?
+    var mono: TamanhoDoNumero?
     @Environment(\.paleta) private var paleta
+    @Environment(\.tintaDoBloco) private var tinta
+    @Environment(\.dynamicTypeSize) private var tamanhoDaLetra
 
     var body: some View {
-        conteudo
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
+        if let mono {
+            let medidas = mono.medidas(corpo: corpoDoTexto(tamanhoDaLetra))
+            // O VoiceOver lê o valor inteiro do núcleo ("R$ 842.317,45"), num elemento só.
+            textoMono(medidas, cor: paleta.cor(tinta ?? cor))
+                .lineLimit(1)
+                .minimumScaleFactor(medidas.fatorMinimo)
+                .accessibilityLabel(texto)
+        } else {
+            conteudo
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+        }
     }
 
     private var conteudo: Text {

@@ -30,6 +30,8 @@ struct ObrasView: View {
     /// Laudo de leitura (Tarefa 11): a lista parada numa rolagem dada, em pt, para dois prints iguais.
     @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
     @State private var posicao = ScrollPosition(edge: .top)
+    /// A vitrine das peças da identidade nova (etapa 4, PR 1b), empurrada com `CUSTTA_ABRIR=pecas`.
+    @State private var vitrine = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] == "pecas"
     #endif
 
     var body: some View {
@@ -95,6 +97,9 @@ struct ObrasView: View {
                 case .afazeres(let id): AfazeresView(obraId: id, caminho: $caminho)
                 }
             }
+            #if DEBUG
+            .navigationDestination(isPresented: $vitrine) { VitrineDasPecas() }
+            #endif
         }
     }
 }

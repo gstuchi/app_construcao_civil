@@ -50,6 +50,7 @@ struct CoresTests {
             (.barraApagada, "#EAFFF666", "#142B2394"),                                          // 40% e 58%
             (.gradeGrafico, "#EAFFF624", "#142B2324"), (.eixoGrafico, "#EAFFF64D", "#142B2352"), // 14%; 30% e 32%
             (.anelApagado, "#123128", "#DCEAE3"), (.anelSeparador, "#04100C8C", "#FFFFFFBF"),   // 55% e 75%
+            (.luzDoSolido, "#FFFFFF59", "#FFFFFF59"),                                         // o filete do sólido: branco a 35%
         ]
         for (token, escuro, claro) in tabela {
             #expect(hex(token, .dark) == escuro, "\(token) no escuro")

@@ -3809,6 +3809,47 @@
             "pct": 50
           }
         ]
+      },
+      {
+        "caso": "57,5% fica em 57%: a conta é bruto / total * 100 (bruto * 100 / total daria 58%)",
+        "args": [
+          {
+            "id": "o",
+            "nome": "Obra",
+            "dataInicio": "2026-01-01",
+            "fase": "construcao",
+            "gastos": [
+              {
+                "id": "o1",
+                "valor": 23,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              {
+                "id": "o2",
+                "valor": 17,
+                "topico": "eletrica",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              }
+            ]
+          }
+        ],
+        "saida": [
+          {
+            "id": "pintura",
+            "bruto": 23,
+            "pct": 57
+          },
+          {
+            "id": "eletrica",
+            "bruto": 17,
+            "pct": 43
+          }
+        ]
       }
     ],
     "calc.relatorioObra": [
@@ -7033,6 +7074,42 @@
           "bruto": 23,
           "corrigido": 23,
           "parte": "14,37%"
+        }
+      },
+      {
+        "caso": "o corrigido soma os itens sem arredondar cada um: 100,004 + 100,004 dá R$ 200,01, não R$ 200,00",
+        "args": [
+          [
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 100,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 100.004
+            },
+            {
+              "gasto": {
+                "id": "i1",
+                "valor": 100,
+                "topico": "pintura",
+                "descricao": "",
+                "data": "2026-01-01",
+                "pagamento": "pix"
+              },
+              "corrigido": 100.004
+            }
+          ],
+          1000
+        ],
+        "saida": {
+          "quantos": "2 itens",
+          "bruto": 200,
+          "corrigido": 200.008,
+          "parte": "20,00%"
         }
       }
     ],

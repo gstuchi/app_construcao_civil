@@ -478,11 +478,11 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // obra): com o nome da obra preso numa linha, ela passa na maior letra. Ficam numa linha, por decisão, o botão
   // do Google (letra travada, fora da auditoria de tipo dinâmico), o indicador de sincronização da barra, o
   // dinheiro (ValorEmDinheiro e o visor do teclado de valor, mockup da etapa 2: encolhe para caber em vez de quebrar)
-  // e os títulos da barra, o pequeno da obra e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
+  // e os títulos da barra, o pequeno da obra (também o mono da etapa 4) e o da folha, e o nome da linha na barra das teclas encaixadas (cortam como o do
   // sistema, em vez de empurrar os botões). Na etapa 3, o primeiro pendente na linha dos afazeres da obra para em duas
   // linhas (quatro na maior letra), como no mockup: o texto inteiro está na tela Afazeres, e o VoiceOver o lê inteiro pela linha.
   const fixos = new Set(['BotaoGoogle', 'IndicadorDeSincronizacao', 'ValorEmDinheiro', 'VisorDoValor', 'TituloPequenoDaBarra',
-    'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
+    'TituloPequenoMono', 'TituloDaFolha', 'BarraDasTeclas', 'PrimeiroPendente']);
   for(const f of arquivosSwift('app-ios/Custta')){
     const t = ler(f);
     for(const m of t.matchAll(/\.(lineLimit|minimumScaleFactor)\(/g)){
@@ -494,10 +494,12 @@ test('texto cresce com a letra: lineLimit e minimumScaleFactor só no botão do 
   // ValorEmDinheiro, que encolhe.
   for(const f of arquivosSwift('app-ios/Custta/Telas'))
     assert.doesNotMatch(ler(f), /Text\(moeda\(/, `${f}: dinheiro por extenso num Text; use o ValorEmDinheiro`);
-  // E o ValorEmDinheiro fica numa linha: sem o lineLimit, num iPhone de 375 pt o valor quebra antes de encolher.
+  // E o ValorEmDinheiro fica numa linha: sem o lineLimit, num iPhone de 375 pt o valor quebra antes de encolher. Na forma
+  // mono da identidade nova (etapa 4), encolhe até o R$ chegar a 11 pt; na de antes, até a metade.
   const componentes = ler('app-ios/Custta/Identidade/Componentes.swift');
-  assert.match(componentes.slice(componentes.indexOf('struct ValorEmDinheiro')), /^[^}]*\.lineLimit\(1\)\s*\.minimumScaleFactor\(0\.5\)/,
-               'o ValorEmDinheiro numa linha, encolhendo até a metade');
+  const inicio = componentes.indexOf('struct ValorEmDinheiro'), valor = componentes.slice(inicio, componentes.indexOf('\n}\n', inicio));
+  assert.match(valor, /\.lineLimit\(1\)\s*\.minimumScaleFactor\(0\.5\)/, 'o ValorEmDinheiro numa linha, encolhendo até a metade');
+  assert.match(valor, /\.lineLimit\(1\)\s*\.minimumScaleFactor\(medidas\.fatorMinimo\)/, 'o número mono numa linha, até o piso de 11 pt');
 });
 
 test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura fixa', () => {

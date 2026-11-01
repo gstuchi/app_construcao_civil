@@ -117,6 +117,8 @@ enum Token: String, CaseIterable, Sendable {
     /// o aro na ponta de cada pedaço.
     case anelApagado = "AnelApagado"
     case anelSeparador = "AnelSeparador"
+    /// O filete de luz no topo do bloco sólido (o inset do mockup, branco a 35%).
+    case luzDoSolido = "LuzDoSolido"
 }
 
 struct Paleta: Equatable, Sendable {

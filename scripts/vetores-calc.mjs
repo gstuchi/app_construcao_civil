@@ -213,6 +213,7 @@ porTopico('tópico pequeno fica com 0%', obraDe('p', [gastoDe('p1', 'terreno', 1
 porTopico('tópico de id numérico fica na ordem dos gastos', obraDe('n', [gastoDe('n1', 'pintura', 50), gastoDe('n2', '12', 50), gastoDe('n3', '3', 50)]));
 porTopico('gastos de valor zero: % zero', obraDe('z', [gastoDe('z1', 'pintura', 0), gastoDe('z2', 'eletrica', 0)]));
 porTopico('a base do % conta a parcela a vencer', obraDe('v', [gastoDe('v1', 'pintura', 50), gastoDe('v2', 'eletrica', 50, '2026-12-01')]));
+porTopico('57,5% fica em 57%: a conta é bruto / total * 100 (bruto * 100 / total daria 58%)', obraDe('o', [gastoDe('o1', 'pintura', 23), gastoDe('o2', 'eletrica', 17)]));
 /* Relatório da obra (app.js renderRelatorio): os grupos por tópico, os gastos de cada um com o corrigido e os totais. */
 const relatorio = calc('relatorioObra');
 for(const o of BLOB.obras) relatorio(o.nome, o, HOJE, 1);
@@ -257,6 +258,7 @@ somaSel('0,0625% fica em 0,06%', [itemDe(1)], 1600);
 somaSel('99,995% vira 100,00%', [itemDe(19999)], 20000);
 somaSel('0,075% vira 0,08%: arredonda o decimal, não o binário (o toFixed daria 0,07%)', [itemDe(3)], 4000);
 somaSel('14,375% fica em 14,37%: a conta é bruto / total * 100 (bruto * 100 / total daria 14,38%)', [itemDe(23)], 160);
+somaSel('o corrigido soma os itens sem arredondar cada um: 100,004 + 100,004 dá R$ 200,01, não R$ 200,00', [itemDe(100, 100.004), itemDe(100, 100.004)], 1000);
 const lucro = calc('lucroVenda');
 for(const o of BLOB.obras) lucro(o.nome, o, 1);
 lucro('gasto depois da venda entra pelo valor', O2, 2);

@@ -151,6 +151,24 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
     }
 
+    /// A vitrine das peças da identidade nova (etapa 4, PR 1b; só no Debug, com CUSTTA_ABRIR=pecas) na maior letra, em
+    /// rolagens fixas (como a obra: logo depois de um arrasto, a auditoria acha corte que parado não há): o título e a cápsula
+    /// de metadados, os blocos, o número mono, a barra de tópicos e a linha mono crescem com a letra e nada corta, e os alvos
+    /// têm 44 pt, antes de a obra (PR 1c) usá-los. O título pequeno da barra é o da obra (`tituloPequenoDaBarra`), que para
+    /// perto de 20 pt. Sem a descrição suficiente: na vitrine, o número fica solto, sem o rótulo do bloco, e a auditoria acha
+    /// "Label not human-readable" num elemento só de algarismos, com ou sem o mono; na obra, o rótulo e o número do bloco são
+    /// um elemento, como os indicadores da etapa 3.
+    @MainActor func testVitrineDasPecasNoMaiorTamanho() throws {
+        for rolagem in [0, 900, 1800, 2700, 3600] {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas",
+                               argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
+            XCTAssertTrue(app.elemento("vitrine-solido").waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)
+            try auditar(app, [.dynamicType, .textClipped, .hitRegion])
+            app.terminate()
+        }
+    }
+
     /// A folha do gasto (etapa 2, PR 2) em cada passo, na maior letra; os detalhes também rolados, e o valor também com o
     /// número mais largo do visor (13 caracteres, a largura do teto R$ 99.999.999,99), que encolhe para caber.
     @MainActor func testFolhaDoGastoNoMaiorTamanho() throws {

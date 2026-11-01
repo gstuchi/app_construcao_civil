@@ -52,7 +52,7 @@ struct VitrineDasPecas: View {
                 .accessibilityIdentifier("vitrine-ambar")
                 BlocoDeVidro {
                     Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto)).padding(.bottom, 8)
-                    BarraDeTopicos(pedacos: pedacosDoAnel(gastoPorTopico(casa, hoje: hoje, taxaMensal: estado.config.taxaMensal)),
+                    BarraDeTopicos(pedacos: pedacosDoAnel(gastoPorTopico(casa)),
                                    topicos: mapaDeTopicos(estado.config.topicosProprios))
                 }
                 .accessibilityElement(children: .contain)

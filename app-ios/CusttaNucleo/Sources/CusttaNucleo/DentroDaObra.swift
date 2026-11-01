@@ -57,14 +57,19 @@ public struct GastoDoTopico: Equatable, Sendable, Identifiable {
 
 /// `gastoPorTopico` do calc.js (o donut e a legenda da obra e dos Gráficos), também o "Gasto por tópico" do modo total: cada
 /// tópico com gasto, com o bruto e o "% da obra" do resumo do tópico, para o número ser o mesmo que o detalhe mostra ao abrir.
-/// Do maior bruto para o menor e, no empate, o tópico que aparece primeiro nos gastos (o sort do JavaScript é estável).
-/// `hoje` e `taxaMensal` não mudam o resultado.
-public func gastoPorTopico(_ obra: Obra, hoje: String, taxaMensal: Double) -> [GastoDoTopico] {
+/// Do maior bruto para o menor e, no empate, o tópico que aparece primeiro nos gastos (o sort do JavaScript é estável). O
+/// bruto soma os gastos do tópico na ordem do documento, como o `resumoTopico`, e não depende de hoje nem da taxa.
+public func gastoPorTopico(_ obra: Obra) -> [GastoDoTopico] {
     var ids: [String] = []
-    for g in obra.gastos where !ids.contains(g.topico) { ids.append(g.topico) }
+    var brutos: [String: Double] = [:]
+    for g in obra.gastos {
+        if brutos[g.topico] == nil { ids.append(g.topico) }
+        brutos[g.topico, default: 0] += g.valor
+    }
+    let total = totalBruto(obra)
     let linhas = ids.map { id in
-        let r = resumoTopico(obra, topico: id, hoje: hoje, taxaMensal: taxaMensal)
-        return GastoDoTopico(id: id, bruto: r.bruto, pct: r.pct)
+        let bruto = brutos[id] ?? 0
+        return GastoDoTopico(id: id, bruto: bruto, pct: total > 0 ? arredondarJS(bruto / total * 100) : 0)
     }
     return ordenadoEstavel(linhas) { $0.bruto > $1.bruto }
 }

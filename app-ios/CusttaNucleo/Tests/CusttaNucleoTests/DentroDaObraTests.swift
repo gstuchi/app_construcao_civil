@@ -79,12 +79,12 @@ struct DentroDaObraTests {
         let o = obra([gasto("e1", "2026-09-01", 3_000, topico: "estrutura"), gasto("x1", "2026-09-02", 1_500, topico: "c_apagado"),
                       gasto("f1", "2026-09-03", 3_000, topico: "fundacao"), gasto("l1", "2026-09-04", 2_000, topico: "eletrica"),
                       gasto("l2", "2026-12-04", 2_500, topico: "eletrica")])
-        let linhas = gastoPorTopico(o, hoje: Self.hoje, taxaMensal: 1)
+        let linhas = gastoPorTopico(o)
         #expect(linhas.map(\.id) == ["eletrica", "estrutura", "fundacao", "c_apagado"], "do maior para o menor; no empate, a ordem dos gastos")
         #expect(linhas.map(\.bruto) == [4_500, 3_000, 3_000, 1_500], "o bruto, com o gasto futuro")
         #expect(linhas.map(\.pct) == [38, 25, 25, 13], "o Math.round do site: 37,5 vai a 38")
         #expect(textoDaParteDaObra(linhas[0].pct) == "38% da obra")
-        #expect(gastoPorTopico(obra([]), hoje: Self.hoje, taxaMensal: 1).isEmpty)
+        #expect(gastoPorTopico(obra([])).isEmpty)
         #expect(dicaDoModoTotal == "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
     }
 
@@ -92,7 +92,7 @@ struct DentroDaObraTests {
         // calc.js gastoPorTopico (o donut e a legenda da obra e dos Gráficos). Exato: o bruto soma os gastos na ordem do
         // documento, como o site, e o "% da obra" é inteiro.
         for c in Vetores.casos("calc.gastoPorTopico") {
-            let linhas = gastoPorTopico(c.args[0].obra, hoje: Self.hoje, taxaMensal: 1)
+            let linhas = gastoPorTopico(c.args[0].obra)
             confere(.lista(linhas.map { .objeto(["id": .texto($0.id), "bruto": .numero($0.bruto), "pct": .numero($0.pct)]) }),
                     c.saida, .exata, c.caso)
         }
@@ -105,7 +105,7 @@ struct DentroDaObraTests {
         let o = obra([gasto("l1", "2026-09-28", 1_990, topico: "eletrica"), gasto("f1", "2026-09-03", 2_000, topico: "fundacao"),
                       gasto("p1", "2026-09-20", 1_000, topico: "pintura"), gasto("e1", "2026-09-01", 2_000, topico: "estrutura"),
                       gasto("p2", "2026-09-25", 1_000, topico: "pintura"), gasto("a1", "2026-09-02", 2_500, topico: "acabamento")])
-        let linhas = gastoPorTopico(o, hoje: Self.hoje, taxaMensal: 1)
+        let linhas = gastoPorTopico(o)
         #expect(linhas.map(\.id) == ["acabamento", "fundacao", "pintura", "estrutura", "eletrica"])
         #expect(linhas.map(\.bruto) == [2_500, 2_000, 2_000, 2_000, 1_990])
         #expect(linhas.map(\.pct) == [24, 19, 19, 19, 19], "o empate é do bruto, não do % arredondado")

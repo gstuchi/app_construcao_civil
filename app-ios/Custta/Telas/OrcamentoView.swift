@@ -34,7 +34,7 @@ struct OrcamentoView: View {
 
     private func conteudo(_ obra: Obra, _ r: ResumoOrcamento, estado: Estado) -> some View {
         let topicos = mapaDeTopicos(estado.config.topicosProprios)
-        let gastos = r.modo == "topicos" ? [] : gastoPorTopico(obra, hoje: dataLocalISO(.now, fuso: .current), taxaMensal: estado.config.taxaMensal)
+        let gastos = r.modo == "topicos" ? [] : gastoPorTopico(obra)
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 10) {
                 TituloDaObra(nome: "Orçamento", identificador: "tituloDoOrcamento")

@@ -53,7 +53,7 @@ struct TelaOrcamentoTests {
         #expect(linhasForaDoOrcamento(r, topicos: mapaDeTopicos([])).map(\.abre) == [true], "o fora do orçamento abre")
         let total = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
                          gastos: [("terreno", 319_847.85), ("revest", 0), ("c_meu", 2_000)])
-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([]))
+        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total), topicos: mapaDeTopicos([]))
         #expect(porGasto.map(\.id) == ["terreno", "c_meu", "revest"])
         #expect(porGasto.allSatisfy { $0.abre }, "no gasto por tópico, todas abrem, mesmo a de R$ 0,00")
     }
@@ -62,7 +62,7 @@ struct TelaOrcamentoTests {
         let o = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
                      gastos: [("terreno", 319_847.85), ("revest", 76_700), ("c_meu", 2_000)])
         let proprio = TopicoProprio(campos: ["id": .texto("c_meu"), "nm": .texto("Gesso"), "ic": .texto("etiqueta")])
-        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([proprio]))
+        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o), topicos: mapaDeTopicos([proprio]))
         #expect(linhas.map(\.nome) == ["Terreno", "Cerâmica", "Gesso"])
         #expect(linhas.map(\.gasto) == ["R$ 320 mil", "R$ 77 mil", "R$ 2 mil"])
         #expect(linhas.map(\.frase) == ["80% da obra", "19% da obra", "1% da obra"])

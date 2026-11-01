@@ -37,8 +37,7 @@ struct OrcamentoEm375Tests {
         let topicos = mapaDeTopicos(porTopico.config.topicosProprios)
         let previstos = linhasPorTopico(resumo, topicos: topicos, gastos: casa.gastos).filter(\.abre)
         let fora = linhasForaDoOrcamento(resumo, topicos: topicos)
-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa, hoje: dataLocalISO(.now, fuso: .current),
-                                                             taxaMensal: porTopico.config.taxaMensal), topicos: topicos)
+        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(casa), topicos: topicos)
         #expect(!previstos.isEmpty && fora.count == 2 && !porGasto.isEmpty, "as três listas")
         for linha in previstos + fora + porGasto {
             #expect(linha.abre, "\(linha.nome) com a seta")

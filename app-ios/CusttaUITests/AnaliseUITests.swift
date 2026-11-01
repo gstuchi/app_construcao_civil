@@ -3,7 +3,8 @@ import XCTest
 /* A costura das telas da análise (etapa 4, PR 1c). A obra não tem porta para elas: os Gráficos e o Relatório só abrem pela
    abertura de Debug (`CUSTTA_ABRIR=graficos:<id>` e `relatorio:<id>`), empurrados sobre a obra quando os dados chegam, como
    num toque na porta, numa tela provisória com o título na barra e o nome da obra. O voltar leva à obra e, dela, a Obras; o
-   + da cápsula lança gasto na obra da tela (confirmação 6). As telas de verdade trocam a provisória no 2a e no 3a. */
+   + da cápsula lança gasto na obra da tela (confirmação 6). As obras dos estados da análise (`CUSTTA_DADOS=analise`) abrem
+   pelo mesmo gancho. As telas de verdade trocam a provisória no 2a e no 3a. */
 @MainActor
 final class AnaliseUITests: XCTestCase {
     /// Abre a tela da análise pelo gancho e confere o título, a obra e o + da cápsula.
@@ -22,6 +23,13 @@ final class AnaliseUITests: XCTestCase {
         XCTAssertFalse(app.navigationBars["Gráficos"].exists)
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(app.elemento("obra-v1").waitForExistence(timeout: 5), "e a obra, a Obras")
+    }
+
+    /// Os falsos da análise (`CUSTTA_DADOS=analise`) chegam pela mesma abertura: os Gráficos da Casa Morumbi, a obra de 30 meses.
+    func testObrasDosEstadosDaAnaliseAbremPeloGancho() {
+        let app = abrirApp(conta: "senha", dados: "analise", abrir: "graficos:a7")
+        XCTAssertTrue(app.navigationBars["Gráficos"].waitForExistence(timeout: 10), "a tela Gráficos")
+        XCTAssertEqual(app.elemento("obraDaAnalise").label, "Casa Morumbi")
     }
 
     func testRelatorioAbreSobreAObraEVoltaParaEla() {

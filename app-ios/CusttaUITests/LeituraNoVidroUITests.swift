@@ -392,6 +392,34 @@ extension LeituraNoVidroUITests {
         cobrar(cenas)
     }
 
+    /// A obra em blocos da etapa 4 (PR 1c), nos estados do mockup que as cenas de antes não abrem: o bloco "Gastos por
+    /// tópico" (a legenda da barra empilhada), a obra sem gastos (o sólido com o convite), a sem orçamento (o "Definir
+    /// orçamento" nas ações) e o sólido do lucro na vendida, nos dois temas; e o sólido do lucro na maior letra. As roladas
+    /// com a borda num vão, igual nos dois iPhones: a dos gastos por tópico entre a ação "Marcar como pronta" e os afazeres (a
+    /// 750 cortava a ação), e a da sem orçamento entre o Corrigido e o A pagar (a 400, 1 pt acima do valor do A pagar).
+    @MainActor func testLeituraDaObraEmBlocos() {
+        var cenas: [Cena] = []
+        for tema in temas {
+            let combo = ["-custta.tema", tema] + piorMomento
+            cenas += [
+                Cena(nome: "obra, gastos por tópico, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "804"],
+                     espera: "gastosPorTopico", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true,
+                     assunto: ["gastosPorTopico"]),
+                Cena(nome: "obra sem gastos, \(tema)", conta: "senha", argumentos: combo, espera: "obraSemGastos", escopo: "tudo",
+                     abrir: "obra:o3"),
+                Cena(nome: "obra sem orçamento, ações, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "350"],
+                     espera: "definirOrcamento", escopo: "tudo", dados: "semOrcamento", abrir: "obra:v1", rolada: true,
+                     assunto: ["definirOrcamento"]),
+                Cena(nome: "obra vendida, sólido do lucro, \(tema)", conta: "senha", argumentos: combo, espera: "indicadorLucro",
+                     escopo: "tudo", dados: "vitrine", abrir: "obra:v3"),
+            ]
+        }
+        let escuro = ["-custta.tema", "escuro"] + piorMomento
+        cenas.append(Cena(nome: "obra vendida, sólido do lucro, na maior letra", conta: "senha", argumentos: escuro + maiorLetra,
+                          espera: "indicadorLucro", escopo: "tudo", dados: "vitrine", abrir: "obra:v3"))
+        cobrar(cenas)
+    }
+
     /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste: o pior
     /// ponto de um cabeçalho de mês ou de uma linha de baixo pode estar fora do quadro de 640 pt. No Mac, três rolagens; na
     /// CI, duas.

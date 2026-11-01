@@ -5,8 +5,8 @@ import SwiftUI
    fase e "começou em … · N meses" na obra, o nome da obra nas telas da análise). Nenhuma tela os usa ainda. */
 
 /// O título solto: SF Mono 600, 30 pt com o tracking de −0,045 em (44 na letra máxima, crescendo a cada passo), em quantas
-/// linhas precisar (o nome comprido quebra), a 16 pt da borda. Atrás dele, no escuro, o halo do nome da obra de hoje (30%,
-/// e 10% no claro): o do mockup (38%, 62% na letra máxima) se calibra pelo laudo, na obra (PR 1c).
+/// linhas precisar (o nome comprido quebra), a 16 pt da borda. Atrás dele, o halo calibrado pelo laudo da obra (PR 1c): 20%
+/// no escuro, em todo tamanho de letra, e 10% no claro (`HaloDoTitulo.naObraMono`).
 struct TituloMono: View {
     let texto: String
     var identificador = "tituloDaObra"
@@ -22,7 +22,7 @@ struct TituloMono: View {
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier(identificador)    // antes do halo: com ele, o quadro do VoiceOver ia até a borda do halo
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObra, noClaro: HaloDoTitulo.naObraNoClaro) }
+            .background { HaloDoTitulo(grande: false, opacidade: HaloDoTitulo.naObraMono, noClaro: HaloDoTitulo.naObraNoClaro) }
     }
 }
 

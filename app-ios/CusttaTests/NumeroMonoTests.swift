@@ -108,7 +108,7 @@ struct NumeroMonoTests {
     /// #04100C; no âmbar, o #2B1B00. Sem a tinta, o texto claro sobre o verde.
     @Test(arguments: [CorDoSolido.verde, .ambar])
     func numeroDentroDoSolidoNaTintaDele(_ cor: CorDoSolido) throws {
-        let tinta: [UInt8] = cor == .verde ? [0x04, 0x10, 0x0C] : [0x2B, 0x1B, 0x00]
+        let tinta: [Int] = cor == .verde ? [0x04, 0x10, 0x0C] : [0x2B, 0x1B, 0x00]
         let r = ImageRenderer(content: BlocoSolido(cor: cor) { ValorEmDinheiro("R$\u{a0}842.317,45", mono: .principal) }
             .frame(width: 343).environment(\.paleta, Paleta()).environment(\.colorScheme, .dark))
         r.scale = 3
@@ -120,9 +120,15 @@ struct NumeroMonoTests {
                       space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
                 .draw(imagem, in: CGRect(x: 0, y: 0, width: w, height: h))
         }
-        let naTinta = stride(from: 0, to: rgba.count, by: 4).filter { i in
-            rgba[i + 3] == 255 && (0..<3).allSatisfy { abs(Int(rgba[i + $0]) - Int(tinta[$0])) <= 2 }
-        }.count
+        // Em partes, com o tipo de cada uma: num filtro só, o Swift 6.3.3 da CI não checava a conta em tempo razoável.
+        var naTinta = 0
+        for i in stride(from: 0, to: rgba.count, by: 4) where rgba[i + 3] == 255 {
+            let perto: Bool = (0..<3).allSatisfy { (c: Int) -> Bool in
+                let diferenca: Int = Int(rgba[i + c]) - tinta[c]
+                return abs(diferenca) <= 2
+            }
+            if perto { naTinta += 1 }
+        }
         #expect(naTinta > 100, "\(cor): \(naTinta) pixels na tinta")
     }
 }

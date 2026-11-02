@@ -42,6 +42,9 @@ final class RascunhoDoGasto {
     var assinaturaAvisada: String?
     /// Gasto novo: passou do valor, e fechar passa a perguntar.
     var passouDoValor = false
+    /// Já gravou, e a folha só desce no turno seguinte (o gasto lançado de dentro de uma vendida): até lá ela ainda conta
+    /// como aberta, e a marca é que segura o segundo toque de um toque duplo.
+    var gravado = false
     private var inicial: [String] = []
 
     init(obra: Obra, editado: Gasto?, todas: [Obra], proprios: [TopicoProprio], hoje: String, vendida: String? = nil) {
@@ -578,8 +581,9 @@ struct PassoDosDetalhes: View {
 
     private func salvar() {
         // O primeiro toque já gravou, e a folha está descendo (ou a edição voltando à folha de origem): o segundo toque de
-        // um toque duplo não lança de novo.
-        guard saida.aberta(folhas, gastoId: rascunho.editado?.id) else { return }
+        // um toque duplo não lança de novo. A folha que só fecha no turno seguinte ainda conta como aberta: a marca do
+        // rascunho segura até lá.
+        guard !rascunho.gravado, saida.aberta(folhas, gastoId: rascunho.editado?.id) else { return }
         foco = nil
         let entrada = rascunho.entrada
         switch conferirGasto(entrada, editado: rascunho.editado, hoje: dataLocalISO(.now, fuso: .current)) {
@@ -633,6 +637,7 @@ struct PassoDosDetalhes: View {
                 // De dentro de uma vendida, o gasto foi para outra obra: ela toma o lugar da vendida por trás da folha, sem
                 // animação, e a folha desce no turno seguinte, com a animação dela, mostrando o gasto aceso onde ele entrou.
                 // No mesmo turno, a transação sem animação da troca valia também para a folha, que sumia de uma vez.
+                rascunho.gravado = true
                 folhas.navegar(.trocar(obraId))
                 Task { @MainActor in folhas.fechar { folhas.destacar(ids, novo: novo) } }
                 return

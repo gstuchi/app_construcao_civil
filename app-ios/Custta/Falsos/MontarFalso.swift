@@ -9,7 +9,8 @@ import CusttaNucleo
    CUSTTA_DADOS   vitrine (padrão: as obras do mockup) | exemplo (as dos testes) | vazio | limite (as 300 obras do teto) |
                   prejuizo (a vitrine com a vendida no prejuízo) | porTopico, perto, passou, semOrcamento, muitosTopicos,
                   topicoLongo (os orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift) | avista (a
-                  vitrine com um vencimento à vista no A pagar)
+                  vitrine com um vencimento à vista no A pagar) | analise (a vitrine e as obras dos estados da análise da
+                  etapa 4: VitrineDaAnalise.swift)
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
                   não responde: "Carregando suas obras…")
@@ -49,6 +50,7 @@ extension Composicao {
         case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
         case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos", "topicoLongo"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
         case "avista": DadosDeExemplo.vitrineComVencimentoAVista()
+        case "analise": DadosDeExemplo.vitrineDaAnalise()
         default: DadosDeExemplo.vitrine()
         }
         // CUSTTA_APAGAR_REMOTO=<obra>/<gasto>@<segundos>: outro aparelho apaga um gasto com o app aberto; sem o gasto

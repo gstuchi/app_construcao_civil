@@ -150,9 +150,9 @@ struct AvisoDoOrcamento: View {
     }
 }
 
-/// A linha do orçamento nos indicadores: "Orçamento" e o nível do site, quanto sobra (ou passou), a barra, "{pct}% usado de
-/// {previsto}" e, por tópico, o pior aviso dos tópicos e o que está fora; com a seta, ela abre a tela Orçamento (a linha
-/// inteira é o botão). Um elemento só para o VoiceOver, como as outras linhas dos indicadores.
+/// O bloco do orçamento na obra (identidade nova, etapa 4; mockup, parte1.js:254-265): "Orçamento" e o nível do site,
+/// quanto sobra (ou passou) no número mono, a barra, "{pct}% usado de {previsto}" e, por tópico, o pior aviso dos tópicos e
+/// o que está fora; com a seta, ele abre a tela Orçamento (o bloco inteiro é o botão). Um elemento só para o VoiceOver.
 struct LinhaDoOrcamento: View {
     let resumo: ResumoOrcamento
     var comSeta = false
@@ -163,41 +163,28 @@ struct LinhaDoOrcamento: View {
     var body: some View {
         let geral = resumo.geral
         let rodape = rodapeOrc(geral)
-        HStack(spacing: 4) {
+        HStack(spacing: 10) {
             conteudo(geral, rodape)
-            if comSeta {
-                Image(systemName: "chevron.right")
-                    .font(.body.weight(.semibold))
-                    // Na maior letra o chevron para no AX2 e ocupa só os 18 pt dele (18 × 30 do mockup): a coluna de texto fica com os
-                    // 306 pt e "80% usado de" cabe numa linha (o símbolo sozinho reserva ~6 pt além do traço). Na letra padrão, os 9 pt
-                    // do mockup (9 × 15): a barra fica com os 315 dele.
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-                    .frame(width: tamanho.isAccessibilitySize ? 18 : 9)
-                    .foregroundStyle(paleta.cor(vidro.secundario))
-                    .accessibilityHidden(true)
-                    .foraDoLaudo()
-            }
+            if comSeta { SetaDoBloco() }
         }
-        .padding(EdgeInsets(top: 13, leading: 18, bottom: 13, trailing: 16))
+        .padding(.vertical, Grade.recuoVertical(tamanho))
+        .padding(.horizontal, Grade.recuo)
         .contentShape(.rect)
+        .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(tamanho)))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("indicadorOrcamento")
     }
 
     private func conteudo(_ geral: ItemOrcamento, _ rodape: RodapeDoOrcamento) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline) { rotulo; Spacer(minLength: 8); etiqueta(geral.nivel) }
-                VStack(alignment: .leading, spacing: 6) { rotulo; etiqueta(geral.nivel) }
-            }
+            CabecalhoDoBloco(rotulo: "Orçamento") { etiqueta(geral.nivel) }
             // "sobra R$ …" numa linha; na letra grande, um em cima do outro (mockup).
             let layout = tamanho.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
-                                                     : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 7))
+                                                     : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
             layout {
-                Text(rodape.rotulo).font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(vidro.secundario))
-                ValorEmDinheiro(texto: rodape.valor, fonte: .title2.weight(.bold))
+                Text(rodape.rotulo).font(.subheadline.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
+                ValorEmDinheiro(rodape.valor, mono: .bloco)
             }
-            .padding(.top, 2)
             BarraDoOrcamento(item: geral)
                 .padding(.top, 9)
                 .padding(.bottom, 7)
@@ -209,11 +196,6 @@ struct LinhaDoOrcamento: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var rotulo: some View {
-        Text("Orçamento").font(.subheadline.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
-            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func etiqueta(_ nivel: NivelOrcamento) -> some View {

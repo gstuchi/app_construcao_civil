@@ -180,6 +180,79 @@ enum LaudoDeContraste {
         return palavras.sorted { ($0.caixa.minY, $0.caixa.minX) < ($1.caixa.minY, $1.caixa.minX) }
     }
 
+    /// Mede as marcas de gráfico (spec da etapa 4, "Laudo das marcas"): os pixels que mudam do print normal para o print
+    /// com as marcas apagadas (`-custta.marcasApagadas`), dentro das regiões dadas (em pontos). Cada marca é um grupo de
+    /// pixels juntos, sem a dilatação das palavras (o vão de 3 pt entre os pedaços da barra separa as marcas); a cor é a
+    /// mediana dos pixels que mais mudaram, e a nota, o percentil 1 do contraste dela contra o fundo no miolo (o mesmo
+    /// pixel do print sem marcas e os de 2 px em volta), fora do serrilhado das pontas. Longe das marcas (mais de 2 pt), os
+    /// dois prints têm de ser iguais.
+    static func medirMarcas(normal: Retrato, semMarcas: Retrato, escala: CGFloat, em regioes: [CGRect]) throws -> [Palavra] {
+        precondition(normal.largura == semMarcas.largura && normal.altura == semMarcas.altura)
+        let w = normal.largura, h = normal.altura
+        let a = normal.rgba, b = semMarcas.rgba
+        var dentro = [Bool](repeating: false, count: w * h)
+        for r in regioes {
+            let x0 = max(0, Int((r.minX * escala).rounded(.down))), y0 = max(0, Int((r.minY * escala).rounded(.down)))
+            let x1 = min(w, Int((r.maxX * escala).rounded(.up))), y1 = min(h, Int((r.maxY * escala).rounded(.up)))
+            for y in y0..<max(y0, y1) { for x in x0..<max(x0, x1) { dentro[y * w + x] = true } }
+        }
+        var diferenca = [UInt8](repeating: 0, count: w * h)
+        var marca = [Bool](repeating: false, count: w * h)
+        for i in 0..<(w * h) where dentro[i] {
+            let k = i * 4
+            let d = max(abs(Int(a[k]) - Int(b[k])), abs(Int(a[k + 1]) - Int(b[k + 1])), abs(Int(a[k + 2]) - Int(b[k + 2])))
+            diferenca[i] = UInt8(d)
+            marca[i] = d > limiarDaLetra
+        }
+        let perto = dilatar(marca, w, h, rx: Int(2 * escala), ry: Int(2 * escala))
+        var mudou = 0
+        for i in 0..<(w * h) where dentro[i] && !perto[i] && Int(diferenca[i]) > ruido { mudou += 1 }
+        if mudou > max(40, w * h / 5000) { throw CenaNaoDeterministica(pixels: mudou) }
+
+        var visto = [Bool](repeating: false, count: w * h)
+        var marcas: [Palavra] = []
+        for inicio in 0..<(w * h) where marca[inicio] && !visto[inicio] {
+            var pilha = [inicio], membros: [Int] = []
+            visto[inicio] = true
+            while let i = pilha.popLast() {
+                membros.append(i)
+                let x = i % w
+                for v in [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i >= w ? i - w : -1, i < w * (h - 1) ? i + w : -1]
+                where v >= 0 && marca[v] && !visto[v] {
+                    visto[v] = true
+                    pilha.append(v)
+                }
+            }
+            guard membros.count >= 20 else { continue }
+            let fortes = membros.sorted { diferenca[$0] > diferenca[$1] }.prefix(max(1, membros.count / 4))
+            func mediana(_ canal: Int) -> UInt8 { fortes.map { a[$0 * 4 + canal] }.sorted()[fortes.count / 2] }
+            let cor = (r: mediana(0), g: mediana(1), b: mediana(2))
+            let miolo = membros.filter { i in
+                let k = i * 4
+                return max(abs(Int(a[k]) - Int(cor.r)), abs(Int(a[k + 1]) - Int(cor.g)), abs(Int(a[k + 2]) - Int(cor.b))) <= 28
+            }
+            guard miolo.count >= 8 else { continue }
+            let lt = luminancia(cor.r, cor.g, cor.b)
+            var notas: [Double] = []
+            for i in miolo {
+                let x = i % w, y = i / w
+                for (dx, dy) in [(0, 0), (-2, 0), (2, 0), (0, -2), (0, 2)] {
+                    let vx = x + dx, vy = y + dy
+                    guard vx >= 0, vx < w, vy >= 0, vy < h, dentro[vy * w + vx] else { continue }
+                    let v = (vy * w + vx) * 4
+                    notas.append(contraste(lt, luminancia(b[v], b[v + 1], b[v + 2])))
+                }
+            }
+            notas.sort()
+            var x0 = w, y0 = h, x1 = 0, y1 = 0
+            for i in membros { let x = i % w, y = i / w; x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y) }
+            let caixa = CGRect(x: CGFloat(x0) / escala, y: CGFloat(y0) / escala,
+                               width: CGFloat(x1 - x0 + 1) / escala, height: CGFloat(y1 - y0 + 1) / escala)
+            marcas.append(Palavra(caixa: caixa, cor: cor, nota: notas[notas.count / 100], minimo: notas[0]))
+        }
+        return marcas.sorted { ($0.caixa.minY, $0.caixa.minX) < ($1.caixa.minY, $1.caixa.minX) }
+    }
+
     /// Rótulo que o app não apaga (o botão de um alerta do sistema), medido num print só: o fundo é a própria
     /// cápsula. `quadro` é o do botão, em pontos; por dentro da borda (6 pt), as letras são os pixels longe da
     /// cor da cápsula (a mediana do quadro, que o texto não domina). A cor do texto sai do miolo das letras, como

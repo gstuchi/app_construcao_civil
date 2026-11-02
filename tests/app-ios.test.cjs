@@ -516,39 +516,42 @@ test('dica do fim do modo total: cresce com a letra e quebra linha, sem altura f
   assert.doesNotMatch(dica, /\.frame\([^)]*height|\.lineLimit|minimumScaleFactor/, 'sem altura fixa nem limite de linhas');
 });
 
-test('linha do orçamento: o chevron para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
-  // O LinhaDoOrcamentoTests mede os 18 pt da coluna do chevron, mas não o teto: com o quadro de 18, um símbolo que crescesse
-  // até a AX5 passaria do quadro sem mudar a altura da linha. E nenhum teste de tela vê o símbolo, que fica fora da árvore de
-  // acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
-  const t = ler('app-ios/Custta/Telas/PecasDoOrcamento.swift');
-  const inicio = t.indexOf('struct LinhaDoOrcamento');
-  assert.ok(inicio >= 0, 'a LinhaDoOrcamento');
-  const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
-    'o chevron para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+test('bloco da venda da obra: o lucro em verde e o prejuízo em âmbar, nunca no vermelho', () => {
+  // O spec pede o prejuízo "em âmbar, nunca vermelho". Nenhum teste de tela vê a cor: o laudo mede só o contraste, e o
+  // vermelho de antes (negativoNoVidro) também passa nele.
+  const t = ler('app-ios/Custta/Telas/BlocosDaObra.swift');
+  assert.match(t, /corDaNota: lucroPositivo \? \.positivoNoVidro : \.alertaNoVidro\)/, 'a nota do lucro no verde e a do prejuízo no âmbar');
+  assert.doesNotMatch(t, /negativoNoVidro/, 'nada no vermelho nos blocos da obra');
 });
 
-test('linha do A pagar: o chevron é o do Orçamento, para no AX2 e ocupa os 18 pt do mockup na maior letra e os 9 na letra padrão', () => {
-  // Os dois chevrons do cartão dos indicadores são o mesmo .k-chev do mockup. Sem o teto, o do A pagar sai com ~27 × 46 pt
-  // na AX5, contra os 17 × 29 do Orçamento. E nenhum teste de tela vê o símbolo, que fica fora da árvore de acessibilidade
-  // (accessibilityHidden) e do laudo (foraDoLaudo).
-  const t = ler('app-ios/Custta/Telas/PecasDaObra.swift');
-  const inicio = t.indexOf('private var aPagar: some View');
-  assert.ok(inicio >= 0, 'a linha do A pagar');
-  const linha = t.slice(inicio, t.indexOf('\n    }\n', inicio));
-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: tamanho\.isAccessibilitySize \? 18 : 9\)\n/,
-    'o chevron do A pagar é o do Orçamento: para no AX2 e ocupa 18 pt na letra de acessibilidade e 9 na padrão');
+test('seta dos blocos da obra: para no AX2 e ocupa os 20 pt do mockup na maior letra e os 14 na letra padrão', () => {
+  // O .chev do mockup da etapa 4 (14 × 20 pt; 20 × 36 na letra máxima), nos blocos do Orçamento e do A pagar. Sem o teto, o
+  // símbolo sai com ~27 × 46 pt na AX5, mais largo que o quadro. Nenhum teste de tela vê o símbolo, que fica fora da árvore
+  // de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+  const t = ler('app-ios/Custta/Telas/BlocosDaObra.swift');
+  const inicio = t.indexOf('struct SetaDoBloco');
+  assert.ok(inicio >= 0, 'a SetaDoBloco');
+  const seta = t.slice(inicio, t.indexOf('\n}\n', inicio));
+  assert.match(seta, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: letra\.isAccessibilitySize \? 20 : 14\)\n/,
+    'a seta para no AX2 e ocupa 20 pt na letra de acessibilidade e 14 na padrão');
+  assert.match(seta, /\.accessibilityHidden\(true\)\n\s*\.foraDoLaudo\(\)/, 'fora do VoiceOver e do laudo');
+  const orcamento = ler('app-ios/Custta/Telas/PecasDoOrcamento.swift');
+  const linha = orcamento.slice(orcamento.indexOf('struct LinhaDoOrcamento'));
+  assert.match(linha.slice(0, linha.indexOf('\n}\n')), /if comSeta \{ SetaDoBloco\(\) \}/, 'o bloco do Orçamento usa a seta');
+  const aPagar = t.slice(t.indexOf('private func aPagar('));
+  assert.match(aPagar.slice(0, aPagar.indexOf('\n    }\n')), /SetaDoBloco\(\)/, 'o bloco do A pagar usa a seta');
 });
 
-test('linha dos afazeres: a seta é a das linhas do Orçamento e do A pagar, para no AX2 e ocupa 18 pt na maior letra', () => {
-  // Sem o teto, a seta sai com ~27 × 46 pt na AX5, num quadro de 22, contra os 17 × 29 do Orçamento e do A pagar. E nenhum
-  // teste de tela vê o símbolo, que fica fora da árvore de acessibilidade (accessibilityHidden) e do laudo (foraDoLaudo).
+test('bloco dos afazeres: a seta é a dos blocos do Orçamento e do A pagar', () => {
+  // A mesma seta dos blocos tocáveis da obra (a SetaDoBloco, com o teto no AX2 e os 20 pt do mockup na letra máxima). Sem o
+  // teto, ela sai com ~27 × 46 pt na AX5, mais larga que o quadro; nenhum teste de tela vê o símbolo, fora da árvore de
+  // acessibilidade e do laudo.
   const t = ler('app-ios/Custta/Telas/AfazeresView.swift');
   const inicio = t.indexOf('struct LinhaDosAfazeresView');
   assert.ok(inicio >= 0, 'a LinhaDosAfazeresView');
   const linha = t.slice(inicio, t.indexOf('\n}\n', inicio));
-  assert.match(linha, /Image\(systemName: "chevron\.right"\)\n\s*\.font\(\.body\.weight\(\.semibold\)\)\n\s*\.foregroundStyle\(.*\)\n(?:\s*\/\/.*\n)*\s*\.dynamicTypeSize\(\.\.\.DynamicTypeSize\.accessibility2\)\n\s*\.frame\(width: grande \? 18 : 14\)\n/,
-    'a seta para no AX2 e ocupa 18 pt na letra de acessibilidade');
+  assert.match(linha, /SetaDoBloco\(\)/, 'a seta dos blocos');
+  assert.doesNotMatch(linha, /chevron\.right/, 'nenhuma outra seta');
 });
 
 test('linhas da tela Orçamento: a que abre é o botão inteiro, com o quadro e o contentShape no rótulo, e a seta é a do Orçamento', () => {
@@ -716,7 +719,7 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
   // só às vezes sem ela; aqui, a guarda é a primeira linha da ação de cada folha.
   // A edição empurrada numa folha de origem (etapa 3) não fecha a folha: a guarda dela é a edição ainda no topo do caminho.
   const acoes = {
-    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
+    'app-ios/Custta/Telas/FolhaDoGasto.swift': ['private func salvar() {', /guard !rascunho\.gravado, saida\.aberta\(folhas, gastoId: rascunho\.editado\?\.id\) else \{ return \}/],
     'app-ios/Custta/Telas/FolhaDaVenda.swift': ['private func confirmar(inicio: String, hoje: String) {', /guard folhas\.aberta != nil else \{ return \}/],
     'app-ios/Custta/Telas/FolhaDaObra.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
     'app-ios/Custta/Telas/FolhaDoOrcamento.swift': ['private func salvar() {', /guard folhas\.aberta != nil else \{ return \}/],
@@ -731,6 +734,11 @@ test('folhas que gravam: o segundo toque de um toque duplo não grava de novo', 
   assert.match(origem, /case \.folha: folhas\.aberta != nil\n\s*case \.origem\(let origem\): origem\.editando\(gastoId\)/,
                'a guarda da edição: a folha aberta ou, na origem, a edição no topo do caminho');
   assert.match(origem, /func editando\(_ gastoId: String\?\) -> Bool \{\n\s*guard let gastoId else \{ return false \}\n\s*return caminho\.last == \.editar\(gastoId\)/);
+  // O gasto lançado de dentro de uma vendida fecha a folha só no turno seguinte, e até lá ela ainda conta como aberta: a
+  // marca do rascunho, ligada antes de trocar a obra por trás da folha, é a guarda (a obra em blocos alarga essa janela).
+  assert.match(ler('app-ios/Custta/Telas/FolhaDoGasto.swift'),
+               /rascunho\.gravado = true\n\s*folhas\.navegar\(\.trocar\(obraId\)\)\n\s*Task \{ @MainActor in folhas\.fechar \{/,
+               'a marca na hora, antes da troca e do fechamento no turno seguinte');
 });
 
 test('volta à folha de origem: a trava do puxar lida no FolhaDoApp, o voltar escondido por modificador e o Z fixo por passo', () => {

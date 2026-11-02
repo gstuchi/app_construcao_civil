@@ -98,6 +98,106 @@ final class ObraUITests: XCTestCase {
     func testObraSemGastos() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
         XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
-        XCTAssertTrue(app.elemento("indicadorTotal").label.contains("sem gastos"))
+        let total = app.elemento("indicadorTotal").label
+        XCTAssertTrue(total.contains("sem gastos") && total.contains("R$\u{a0}0,00"), total)
+        // Etapa 4: o sólido com R$ 0,00 convida a lançar o primeiro gasto.
+        XCTAssertTrue(total.contains("Toque no + para lançar o primeiro gasto."), total)
+    }
+
+    /// Etapa 4 (PR 1c): o alto em blocos, na grade 16/34. O título, a cápsula e os blocos a 16 pt da borda; os blocos na
+    /// largura da coluna, 12 pt um do outro, na ordem do mockup (o sólido do Total gasto, Orçamento, Corrigido, A pagar e
+    /// Venda) e a cápsula 16 pt acima do sólido.
+    func testOAltoEmBlocosNaGrade() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        let largura = app.windows.firstMatch.frame.width
+        let ids = ["indicadorTotal", "indicadorOrcamento", "indicadorCorrigido", "indicadorAPagar", "indicadorVenda"]
+        let quadros = ids.map { app.elemento($0).frame }
+        for (id, quadro) in zip(ids, quadros) {
+            XCTAssertEqual(quadro.minX, 16, accuracy: 0.5, "\(id) na borda de 16 pt")
+            XCTAssertEqual(quadro.width, largura - 32, accuracy: 0.5, "\(id) na largura da coluna")
+        }
+        for i in 1..<quadros.count {
+            XCTAssertEqual(quadros[i].minY - quadros[i - 1].maxY, 12, accuracy: 0.5, "\(ids[i]) 12 pt abaixo de \(ids[i - 1])")
+        }
+        let titulo = app.elemento("tituloDaObra").frame, fase = app.elemento("faseDaObra").frame
+        XCTAssertEqual(titulo.minX, 16, accuracy: 0.5, "o título solto na borda de 16 pt")
+        XCTAssertEqual(fase.minX, 16, accuracy: 0.5, "a cápsula na borda de 16 pt")
+        XCTAssertEqual(quadros[0].minY - fase.maxY, 16, accuracy: 0.5, "a cápsula 16 pt acima do sólido")
+        XCTAssertFalse(app.elemento("indicadorLucro").exists, "fora da vendida, o sólido é o Total gasto")
+    }
+
+    /// A vendida com lucro (decisão 4: A): o sólido é o lucro da venda, e o Total gasto desce para o vidro, logo depois do
+    /// Orçamento, com os mesmos números.
+    func testVendidaComLucroNoSolido() {
+        let app = abrirApp(conta: "senha", dados: "analise", abrir: "obra:a1")
+        let lucro = app.elemento("indicadorLucro")
+        XCTAssertTrue(lucro.waitForExistence(timeout: 10))
+        XCTAssertTrue(lucro.label.hasPrefix("Lucro da venda, Vendida em ") && lucro.label.contains(", +R$\u{a0}")
+                      && lucro.label.hasSuffix(" acima do banco"), lucro.label)
+        let fase = app.elemento("faseDaObra").frame, orcamento = app.elemento("indicadorOrcamento").frame
+        let total = app.elemento("indicadorTotal")
+        XCTAssertEqual(lucro.frame.minY - fase.maxY, 16, accuracy: 0.5, "o lucro é o sólido, logo abaixo da cápsula")
+        XCTAssertEqual(orcamento.minY - lucro.frame.maxY, 12, accuracy: 0.5, "o Orçamento logo depois do sólido")
+        XCTAssertEqual(total.frame.minY - orcamento.maxY, 12, accuracy: 0.5, "o Total gasto logo depois do Orçamento")
+        XCTAssertTrue(total.label.contains("R$\u{a0}842.317,45") && total.label.contains("46 lançamentos"), total.label)
+        XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.380.000,00"))
+    }
+
+    /// Embaixo das ações, os afazeres e os gastos por tópico, blocos de vidro na grade, 12 pt um do outro: o bloco dos gastos
+    /// por tópico é um elemento só no VoiceOver, com o título e os pedaços no rótulo e no valor (a legenda, dentro dele, não
+    /// é lida de novo), sem toque (a porta para os Gráficos chega com eles); depois, os lançamentos.
+    func testAfazeresEGastosPorTopicoEmBlocos() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        let largura = app.windows.firstMatch.frame.width
+        let topicos = app.elemento("gastosPorTopico")
+        app.rolarAte(topicos)
+        XCTAssertTrue(topicos.exists, "o bloco dos gastos por tópico")
+        let afazeres = app.elemento("linhaDosAfazeres").frame, bloco = topicos.frame
+        for (nome, quadro) in [("afazeres", afazeres), ("gastos por tópico", bloco)] {
+            XCTAssertEqual(quadro.minX, 16, accuracy: 0.5, "\(nome) na borda de 16 pt")
+            XCTAssertEqual(quadro.width, largura - 32, accuracy: 0.5, "\(nome) na largura da coluna")
+        }
+        XCTAssertEqual(bloco.minY - afazeres.maxY, 12, accuracy: 0.5, "os gastos por tópico 12 pt abaixo dos afazeres")
+        XCTAssertEqual(topicos.label, "Gastos por tópico")
+        XCTAssertTrue((topicos.value as? String ?? "").hasPrefix("Terreno, 38%; Estrutura, 11%; Cerâmica, 9%; Mão de obra, 8%"),
+                      "\(topicos.value ?? "")")
+        // O VoiceOver lê só o bloco. O XCUITest mostra os textos de dentro como filhos dele, como os do `indicadorTotal`
+        // (.combine) e o dos afazeres (.ignore); com o .contain de antes, o bloco não tinha rótulo nem valor.
+        XCTAssertTrue(topicos.staticTexts["e mais 10 tópicos"].exists, "a legenda dentro do bloco")
+        XCTAssertFalse(app.buttons["gastosPorTopico"].exists, "o bloco não é botão")
+        XCTAssertGreaterThan(app.elemento("lancamentos").frame.minY, bloco.maxY, "os lançamentos depois")
+    }
+
+    /// O "<1%" falado como "menos de 1%" no bloco: a Casa Granja Viana tem o Outros (R$ 950,00) e o Extras (R$ 180,00) abaixo
+    /// de 1% da obra. Na Casa Alphaville, a Pintura (0,8%) fica dentro do "Outros · 8 tópicos".
+    func testGastosPorTopicoFalaMenosDeUmPorcento() {
+        let app = abrirApp(conta: "senha", dados: "analise", abrir: "obra:a6")
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        let topicos = app.elemento("gastosPorTopico")
+        app.rolarAte(topicos)
+        XCTAssertTrue(topicos.exists, "o bloco dos gastos por tópico")
+        let valor = topicos.value as? String ?? ""
+        XCTAssertTrue(valor.hasSuffix("Extras, menos de 1%; Outros, menos de 1%") && !valor.contains("<"), valor)
+    }
+
+    /// Sem gastos, somem os gastos por tópico (como as portas do site).
+    func testSemGastosSemGastosPorTopico() {
+        let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
+        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertFalse(app.elemento("gastosPorTopico").exists)
+        XCTAssertTrue(app.elemento("linhaDosAfazeres").exists)
+    }
+
+    /// Com prejuízo (B), o sólido volta a ser o Total gasto, e o lucro negativo fica no bloco da venda.
+    func testVendidaComPrejuizoNoTotal() {
+        let app = abrirApp(conta: "senha", dados: "prejuizo", abrir: "obra:v3")
+        let total = app.elemento("indicadorTotal")
+        XCTAssertTrue(total.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.elemento("indicadorLucro").exists, "com prejuízo, nada de lucro no sólido")
+        XCTAssertEqual(total.frame.minY - app.elemento("faseDaObra").frame.maxY, 16, accuracy: 0.5, "o Total gasto é o sólido")
+        let venda = app.elemento("indicadorVenda").label
+        XCTAssertTrue(venda.contains("R$\u{a0}800.000,00") && venda.contains("lucro -R$"), venda)
     }
 }

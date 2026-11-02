@@ -157,7 +157,9 @@ private struct ResumoDoDetalhe: View {
                                 .frame(width: 34, height: 34)
                                 .background(paleta.cor(.fantasmaFundo), in: .rect(cornerRadius: 10))
                         }
+                        // O VoiceOver lê o "<1%" como "menos de 1%", como na barra empilhada e na lista.
                         Text(detalhe.linha)
+                            .accessibilityLabel(porcentoFalado(detalhe.linha))
                             .font(.subheadline)
                             .foregroundStyle(paleta.cor(.secundarioTransparente))
                             .fixedSize(horizontal: false, vertical: true)

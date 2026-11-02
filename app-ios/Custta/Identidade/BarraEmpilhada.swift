@@ -33,6 +33,11 @@ struct BarraEmpilhada: View {
     let pedacos: [PedacoDoAnel]
     @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var letra
+    #if DEBUG
+    @Environment(\.marcasApagadas) private var apagadas
+    #else
+    private let apagadas = false
+    #endif
 
     var body: some View {
         let grande = letra.isAccessibilitySize
@@ -41,7 +46,7 @@ struct BarraEmpilhada: View {
             let larguras = largurasDaBarra(pedacos, largura: geo.size.width, piso: piso, vao: vao)
             HStack(spacing: vao) {
                 ForEach(Array(pedacos.enumerated()), id: \.offset) { i, pedaco in
-                    Capsule().fill(paleta.cor(corDoPedaco(pedaco))).frame(width: larguras[i])
+                    Capsule().fill(paleta.cor(corDoPedaco(pedaco)).opacity(apagadas ? 0 : 1)).frame(width: larguras[i])
                 }
             }
         }
@@ -75,10 +80,7 @@ struct BarraDeTopicos: View {
                 .placa(forte: true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Gastos por tópico")
-                .accessibilityValue(pedacos.map { pedaco in
-                    // O "<1%" falado como "menos de 1%" (o porcentoFalado do núcleo), como no rótulo do mockup.
-                    "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
-                }.joined(separator: "; "))
+                .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
                 .accessibilityAddTraits(.isImage)
                 .accessibilityIdentifier("barraDeTopicos")
                 .padding(.top, 2)
@@ -105,6 +107,16 @@ struct BarraDeTopicos: View {
     }
 }
 
+/// O que o VoiceOver diz da barra: cada pedaço com o nome e o % da obra, separados por ponto e vírgula, com o "<1%" falado
+/// como "menos de 1%" (o `porcentoFalado` do núcleo), como no rótulo do mockup. Serve à barra e ao bloco "Gastos por
+/// tópico" da obra, que é um elemento só.
+func faladoDaBarra(_ pedacos: [PedacoDoAnel], topicos: [String: Topico]) -> String {
+    let total = pedacos.reduce(0) { $0 + $1.bruto }
+    return pedacos.map { pedaco in
+        "\(nomeDoPedaco(pedaco, topicos: topicos)), \(porcentoFalado(porcentoDoTopico(pedaco.bruto, total: total)))"
+    }.joined(separator: "; ")
+}
+
 /// A hachura a 45° ("/") da identidade nova, com o traço e o passo medidos de través, como o `repeating-linear-gradient(-45deg)`
 /// do mockup: 2 pt a cada 6 no excesso do orçamento e na zona "acima do banco"; 1,5 a cada 4 nas parcelas a vencer do gasto
 /// por mês (parte1.css:187 e :300). Uma forma presa ao retângulo: quem usa a preenche na cor e a recorta pela marca.
@@ -128,3 +140,12 @@ struct Hachura: Shape {
         return listras.intersection(Path(rect))
     }
 }
+
+#if DEBUG
+extension EnvironmentValues {
+    /// Laudo das marcas (spec da etapa 4, "Laudo das marcas"; só Debug): com `-custta.marcasApagadas YES` as marcas de
+    /// gráfico somem sem mexer no layout, como o texto apagado apaga o texto; os dois prints dão a cor de cada marca e o
+    /// fundo atrás dela (a placa sobre o vidro), e o laudo cobra 3:1.
+    @Entry var marcasApagadas = false
+}
+#endif

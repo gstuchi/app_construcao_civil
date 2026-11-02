@@ -1,11 +1,12 @@
 import SwiftUI
 import CusttaNucleo
 
-/* A tela da obra (mockup aprovado da etapa 2, partes 1 e 3): o nome no título grande, a pílula da fase e do tempo, os
-   indicadores na opção A, as ações da fase, a pílula "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado
-   no alto; o lápis na barra abre "Editar obra". Entra pelo push do NavigationStack de Obras e volta pelo círculo e pela
-   borda (sistema). A obra que some (apagada em outro aparelho) fecha a tela, como o site volta ao Início. Na etapa 3, a
-   busca e o mês ao lado da pílula filtram só a lista (BuscaDaObra.swift); indicadores e orçamento ficam com a obra inteira. */
+/* A tela da obra, em blocos na identidade nova (etapa 4, PR 1c; mockup aprovado, parte1.html): o nome no título mono, a
+   cápsula da fase e do tempo, o sólido e os blocos de vidro (BlocosDaObra.swift), as ações da fase, os afazeres, a pílula
+   "Lançamentos" e a lista de gastos por mês, com o "A vencer" fechado no alto; o lápis na barra abre "Editar obra". Entra
+   pelo push do NavigationStack de Obras e volta pelo círculo e pela borda (sistema). A obra que some (apagada em outro
+   aparelho) fecha a tela, como o site volta ao Início. Na etapa 3, a busca e o mês ao lado da pílula filtram só a lista
+   (BuscaDaObra.swift); os blocos e o orçamento ficam com a obra inteira. */
 struct ObraView: View {
     let id: String
     @Binding var caminho: [RotaDeObras]
@@ -71,11 +72,18 @@ struct ObraView: View {
                                  })
         return ScrollViewReader { leitor in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    TituloDaObra(nome: obra.nome)
-                    PilulaDaFase(obra: obra, hoje: hoje)
-                    IndicadoresDaObraView(indicadores: indicadoresDaObra(obra, taxa: taxa, hoje: hoje), orcamento: orcamentoObra(obra),
-                                          rotaDoOrcamento: .orcamento(obra.id)) {
+                LazyVStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                    // O título solto e a cápsula com a fase e o tempo: 8 pt entre eles e 16 até o sólido (mockup, .ob-meta-w).
+                    TituloMono(texto: obra.nome)
+                        .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
+                    CapsulaDeMetadados {
+                        EtiquetaDeFase(fase: obra.fase, grande: true)
+                        Text(textoDoInicio(obra, hoje: hoje))
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("faseDaObra")
+                    .padding(.bottom, 4)
+                    BlocosDaObra(obra: obra, taxa: taxa, hoje: hoje) {
                         // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
                         if linhaAberta != nil { fecharLinha(); return }
                         folhas.aberta = .aPagar(obraId: obra.id)
@@ -84,19 +92,36 @@ struct ObraView: View {
                                     definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
                         agir($0, obra: obra)
                     }
-                        .padding(.top, 2)
-                        .padding(.bottom, 2)
-                    // Os afazeres, 12 abaixo das ações e 24 acima dos lançamentos (mockup da etapa 3), em todas as fases.
+                    // Os afazeres, 12 abaixo das ações, em todas as fases.
                     NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
                         LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
                     }
                     .buttonStyle(.plain)
-                    .padding(.bottom, 14)
+                    // Os gastos por tópico, só com gastos: a barra empilhada no lugar do mini-anel (pedida em 29/10), sem toque
+                    // e sem "Gráficos ›" até os Gráficos chegarem (PR 2b).
+                    if !obra.gastos.isEmpty {
+                        let pedacos = pedacosDoAnel(gastoPorTopico(obra))
+                        // Um elemento só para o VoiceOver, como os outros blocos: o título e os pedaços com o %, sem a
+                        // legenda, que repetiria os maiores. Com o .contain, o título vinha duas vezes (no texto e na barra),
+                        // e esconder um filho dentro dele não o tira da árvore.
+                        BlocoDeVidro {
+                            Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+                                .padding(.bottom, 8)
+                            BarraDeTopicos(pedacos: pedacos, topicos: topicos)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Gastos por tópico")
+                        .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
+                        .accessibilityIdentifier("gastosPorTopico")
+                    }
+                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id vem antes do recuo: a lupa rola até a pílula, e não
+                    // até os 6 pt de cima dela.
                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
                                             abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
                         .id("lancamentos")
+                        .padding(.top, 6)
                     if busca.aberta {
                         CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
                     }
@@ -123,7 +148,9 @@ struct ObraView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Grade.externa)
+                // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
+                .environment(\.linhaMono, true)
                 // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
                 // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
                 .padding(.bottom, 98)
@@ -158,6 +185,7 @@ struct ObraView: View {
         }
         .pausaOFundo(enquanto: desfazendo)
         .tituloPequenoAoRolar(barra)
+        .background { LeitorDaLetra(barra: barra) }
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
         .rolagemFixaSemFolha()
@@ -168,7 +196,7 @@ struct ObraView: View {
         .navigationTitle(obra.nome)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: obra.nome) }
+            ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: obra.nome, mono: true) }
             ToolbarItem(placement: .topBarTrailing) { IndicadorDeSincronizacao() }
                 .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .topBarTrailing) { BotaoDeEditarObra { folhas.aberta = .editarObra(obraId: obra.id) } }
@@ -340,6 +368,23 @@ struct LinhaDaLista: View {
 @MainActor @Observable
 final class BarraDaObra {
     var tituloVisivel = false
+    /// A letra da tela, para o título pequeno mono: dentro do ToolbarItem, o dynamicTypeSize para antes da letra de
+    /// acessibilidade. Mora aqui, e não num @Environment da ObraView: só o título pequeno se refaz quando a letra muda (a
+    /// obra inteira refeita pesava a troca por trás da folha; o toque duplo é segurado pela marca `gravado` do rascunho
+    /// do gasto, na FolhaDoGasto).
+    var letra: DynamicTypeSize = .large
+}
+
+/// Lê a letra da tela fora da barra e a guarda na BarraDaObra: só o título pequeno se refaz quando ela muda.
+private struct LeitorDaLetra: View {
+    let barra: BarraDaObra
+    @Environment(\.dynamicTypeSize) private var letra
+
+    var body: some View {
+        Color.clear
+            .accessibilityHidden(true)
+            .onChange(of: letra, initial: true) { _, nova in if barra.letra != nova { barra.letra = nova } }
+    }
 }
 
 extension View {
@@ -358,11 +403,17 @@ extension View {
 struct TituloDaBarraDaObra: View {
     let barra: BarraDaObra
     let nome: String
+    /// O título pequeno em SF Mono da identidade nova (a obra, desde a etapa 4), na letra da tela, lida fora da barra
+    /// (`barra.letra`); a tela Orçamento fica com o de antes.
+    var mono = false
     @Environment(ModeloApp.self) private var modelo
 
     var body: some View {
         if barra.tituloVisivel && indicador(modelo.sincronizador.estadoSinc) == nil {
-            TituloPequenoDaBarra(nome: nome).transition(.opacity)
+            Group {
+                if mono { TituloPequenoMono(texto: nome, letra: barra.letra) } else { TituloPequenoDaBarra(nome: nome) }
+            }
+            .transition(.opacity)
         } else {
             Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
         }
@@ -431,7 +482,7 @@ struct CartaoDoAVencer: View {
 
     @ViewBuilder private func linhas(_ mes: MesDeGastos) -> some View {
         ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
-            if i > 0 { LinhaFina().padding(.leading, 67) }
+            if i > 0 { SeparadorDaLista() }
             LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
         }
     }
@@ -448,10 +499,20 @@ struct CartaoDoMes: View {
         CartaoDaLista {
             CabecalhoDoMes(mes: mes)
             ForEach(Array(mes.gastos.enumerated()), id: \.element.id) { i, gasto in
-                if i > 0 { LinhaFina().padding(.leading, 67) }
+                if i > 0 { SeparadorDaLista() }
                 LinhaDaLista(gasto: gasto, linha: linhaDeGasto(gasto, topicos: topicos), lista: lista)
             }
             Color.clear.frame(height: 6)
         }
+    }
+}
+
+/// A linha fina entre dois gastos de um cartão: depois do ícone, na linha da etapa 3; na mono, nos 18 pt do recuo dos dois
+/// lados, como na vitrine das peças.
+struct SeparadorDaLista: View {
+    @Environment(\.linhaMono) private var mono
+
+    var body: some View {
+        if mono { LinhaFina().padding(.horizontal, Grade.recuo) } else { LinhaFina().padding(.leading, 67) }
     }
 }

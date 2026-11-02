@@ -112,6 +112,9 @@ struct RotuloDoBloco: View {
         Text(texto)
             .font(.subheadline.weight(tinta == nil ? .semibold : .bold))
             .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
+            // Defesa, para quebrar em vez de cortar na letra grande: no 18 Pro, na AX5, o "A pagar · 30 dias" com a seta ao
+            // lado quebra em duas linhas igual sem ele (print idêntico; a auditoria da obra passa), e nenhum teste o prende.
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -119,6 +122,8 @@ struct RotuloDoBloco: View {
 /// tinta do sólido.
 struct NotaDoBloco: View {
     let texto: String
+    /// Outra cor no vidro (o lucro da venda no verde ou no âmbar); no sólido vale a tinta dele.
+    var cor: Token? = nil
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.tintaDoBloco) private var tinta
@@ -126,7 +131,8 @@ struct NotaDoBloco: View {
     var body: some View {
         Text(texto)
             .font(.subheadline)
-            .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
+            .foregroundStyle(paleta.cor(tinta ?? cor ?? vidro.secundario))
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 2)
     }
 }

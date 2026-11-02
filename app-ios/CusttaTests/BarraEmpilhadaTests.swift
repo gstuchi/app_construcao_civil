@@ -17,7 +17,7 @@ struct BarraEmpilhadaTests {
         let estado = Estado.de(.objeto(["obras": .lista([.objeto([
             "id": .texto("o"), "nome": .texto("Casa"), "fase": .texto("construcao"), "dataInicio": .texto("2026-01-01"),
             "gastos": .lista(gastos)])])]))
-        return pedacosDoAnel(gastoPorTopico(estado.obras[0], hoje: "2026-10-29", taxaMensal: 1))
+        return pedacosDoAnel(gastoPorTopico(estado.obras[0]))
     }
 
     @Test func coresDoAnelEOutrosCinza() {
@@ -109,7 +109,7 @@ struct BarraEmpilhadaTests {
     /// bloco passava 1/3 de pt na letra máxima).
     @Test func barraDeTopicosNaoPassaDaLargura() {
         let estado = Estado.de(DadosDeExemplo.vitrine())
-        let pedacos = pedacosDoAnel(gastoPorTopico(estado.obras[0], hoje: "2026-10-29", taxaMensal: 1))
+        let pedacos = pedacosDoAnel(gastoPorTopico(estado.obras[0]))
         let topicos = mapaDeTopicos(estado.config.topicosProprios)
         for letra in DynamicTypeSize.allCases {
             for largura in [CGFloat(343), 370, 408] {

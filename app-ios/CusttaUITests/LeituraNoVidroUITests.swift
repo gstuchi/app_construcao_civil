@@ -822,7 +822,9 @@ extension LeituraNoVidroUITests {
             let combo = ["-custta.tema", tema] + piorMomento
             // A pílula "Lançamentos" logo abaixo da borda de rolagem, como na etapa 3 (835): a obra em blocos da etapa 4 desceu a
             // lista 283 pt. Em 835, o chip "3 pendentes" dos afazeres ficava cortado pela borda, e o pedaço de baixo da letra
-            // era medido no véu dela (4,46:1 no claro); em 596, o vazio do nada achado ficava sob a cápsula.
+            // era medido no véu dela (4,46:1 no claro); em 596, o vazio do nada achado ficava sob a cápsula. Com o mês, a 804, acima
+            // dos afazeres: o filtro do mês corrente encurta a lista (no dia 1º, só as parcelas a vencer, "Lançamentos 3/46"), a
+            // 1118 parava no fim dela e a borda cortava a legenda dos gastos por tópico no 18 Pro ("Estrutura 11%", 10 de 12 pt).
             func busca(_ nome: String, rolagem: Int = 1118, assunto: [String],
                        _ toques: @escaping @MainActor (XCUIApplication) -> Void) -> Cena {
                 Cena(nome: "busca, \(nome), \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "\(rolagem)"],
@@ -830,11 +832,11 @@ extension LeituraNoVidroUITests {
                      assunto: assunto)
             }
             cenas += [
-                busca("em repouso", assunto: ["campoDaBusca", "chipDoMes"]) { app in
+                busca("em repouso", rolagem: 804, assunto: ["campoDaBusca", "chipDoMes"]) { app in
                     Self.buscar(app, "")
                     Self.escolherMes(app, hoje)
                 },
-                busca("mês", assunto: ["chipDoMes", "somaDosAchados"]) { app in Self.escolherMes(app, hoje) },
+                busca("mês", rolagem: 804, assunto: ["chipDoMes", "somaDosAchados"]) { app in Self.escolherMes(app, hoje) },
                 busca("achados", assunto: ["campoDaBusca", "somaDosAchados"]) { app in Self.buscar(app, "ceramica") },
                 busca("nada achado", assunto: ["buscaNadaEncontrado", "limparFiltro"]) { app in Self.buscar(app, "azulejo") },
                 busca("mês sem gasto", rolagem: 804, assunto: ["buscaMesSemGasto"]) { app in

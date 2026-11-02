@@ -112,8 +112,8 @@ struct RotuloDoBloco: View {
         Text(texto)
             .font(.subheadline.weight(tinta == nil ? .semibold : .bold))
             .foregroundStyle(paleta.cor(tinta ?? vidro.secundario))
-            // Na letra grande, num bloco com a seta ao lado, o rótulo recebia menos altura que as linhas dele e cortava
-            // ("A pagar · 30 dias" na AX5): a altura ideal para a largura dada resolve.
+            // Defesa, para quebrar em vez de cortar na letra grande: no 18 Pro, na AX5, o "A pagar · 30 dias" com a seta ao
+            // lado quebra em duas linhas igual sem ele (print idêntico; a auditoria da obra passa), e nenhum teste o prende.
             .fixedSize(horizontal: false, vertical: true)
     }
 }

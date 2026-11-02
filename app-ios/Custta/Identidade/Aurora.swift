@@ -194,7 +194,7 @@ struct HaloDoTitulo: View {
     /// 4,40:1 no iPhone 17 Pro da CI, 4,80:1 no Pro Max).
     nonisolated static let naObraNoClaro = 0.10
     /// Atrás do título mono da obra (etapa 4, PR 1c), no escuro: o mockup partia de 38% (62% na letra de acessibilidade). No
-    /// laudo do Pro Max, "Alphaville" fica em 3,92:1 sem halo, 4,61 com 10% (pior pixel 4,50), 5,41 com 20% e 5,94 com 30%;
+    /// laudo do Pro Max, "Alphaville" fica em 3,92:1 sem halo, 4,61 com 10% (pior pixel 4,50), 5,41 com 20% e 6,46 com 30%;
     /// na maior letra, 4,20, 4,82, 5,49 e 6,19. Fica 20%: o 10%, o menor passo que fecha, não deixa folga para o iOS 26 da
     /// CI, que mediu 0,4 abaixo do Pro Max no nome da obra (naObraNoClaro). No claro, o mesmo 10% do nome da obra.
     nonisolated static let naObraMono = 0.20

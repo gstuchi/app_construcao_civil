@@ -125,6 +125,17 @@ struct DentroDaObraTests {
         #expect(linhas.map(\.pct) == [24, 19, 19, 19, 19], "o empate é do bruto, não do % arredondado")
     }
 
+    @Test func gastoPorTopicoSomaNaOrdemDosGastosESemRelogio() {
+        // O bruto soma o tópico na ordem do documento, como o site, até o último bit: 0,1 + 0,2 + 0,3 dá 0,6000000000000001
+        // (de trás para a frente, 0,6). Sem hoje, o gasto de qualquer data conta, mesmo o de 2099 (o l2 de 04/12/2026 do
+        // modo total deixa de ser futuro em dezembro).
+        let o = obra([gasto("a", "2026-09-01", 0.1, topico: "pintura"), gasto("b", "2099-12-31", 0.2, topico: "pintura"),
+                      gasto("c", "2026-09-03", 0.3, topico: "pintura"), gasto("d", "2099-12-31", 0.4, topico: "eletrica")])
+        let linhas = gastoPorTopico(o)
+        #expect(linhas.map(\.id) == ["pintura", "eletrica"])
+        #expect(linhas.map(\.bruto) == [0.6000000000000001, 0.4])
+    }
+
     @Test func aPagarPorMesComOQueVemDepois() {
         let o = obra([gasto("g2", "2026-10-20", 2_000.25), gasto("g0", "2026-10-12", 500), gasto("g1", "2026-10-13", 1_500),
                       gasto("g5", "2026-12-05", 6_000), gasto("g3", "2026-11-11", 3_000), gasto("g4", "2026-11-12", 4_000),

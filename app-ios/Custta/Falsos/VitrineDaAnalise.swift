@@ -25,7 +25,7 @@ extension DadosDeExemplo {
               case .objeto(let casa) = primeira, case .lista(let gastosDaCasa) = casa["gastos"] else { return base }
         let calendario = Calendar(identifier: .gregorian)
         func dias(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .day, value: n, to: hoje) ?? hoje, fuso: .current) }
-        func meses(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .month, value: n, to: hoje) ?? hoje, fuso: .current) }
+        func meses(_ n: Int) -> String { DadosDeExemplo.meses(n, de: hoje) }
         let hojeISO = dataLocalISO(hoje, fuso: .current)
         /// O dia `n` deste mês, sem passar de hoje.
         func desteMes(_ n: Int) -> String { String(hojeISO.prefix(8)) + String(format: "%02d", min(n, Int(hojeISO.suffix(2)) ?? 1)) }

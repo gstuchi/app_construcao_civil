@@ -88,7 +88,15 @@ struct DadosDeExemploTests {
         let hoje = try #require(calendario.date(from: DateComponents(year: partes[0], month: partes[1], day: partes[2], hour: 12)))
         let iso = dataLocalISO(hoje, fuso: .current)
         func dias(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .day, value: n, to: hoje)!, fuso: .current) }
-        func meses(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .month, value: n, to: hoje)!, fuso: .current) }
+        // O mês pelo dia 1º (que todo mês tem) e o dia preso ao fim dele: a conta de mês do Calendar a partir do dia 29 a 31
+        // erra o bissexto no iOS 26 quando o mês fica negativo (swift-foundation #1708).
+        func meses(_ n: Int) -> String {
+            let c = calendario.dateComponents([.year, .month, .day], from: hoje)
+            let primeiro = calendario.date(from: DateComponents(year: c.year, month: c.month, day: 1, hour: 12))!
+            let alvo = calendario.date(byAdding: .month, value: n, to: primeiro)!
+            let dia = min(c.day!, calendario.range(of: .day, in: .month, for: alvo)!.count)
+            return dataLocalISO(calendario.date(byAdding: .day, value: dia - 1, to: alvo)!, fuso: .current)
+        }
         let estado = Estado.de(DadosDeExemplo.vitrineDaAnalise(hoje: hoje))
         #expect(estado.obras.map(\.id) == ["v1", "v2", "v3", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"])
         #expect(Array(estado.obras.prefix(3)) == Estado.de(DadosDeExemplo.vitrine(hoje: hoje)).obras, "a vitrine de sempre na frente")
@@ -143,5 +151,27 @@ struct DadosDeExemploTests {
         #expect(semVenda.nome == "Casa Alphaville" && semVenda.fase == .construcao && semVenda.venda == nil)
         #expect(semVenda.valorEstimadoVenda == nil && casa.valorEstimadoVenda == 1_450_000)
         #expect(semVenda.gastos.map(\.valor) == casa.gastos.map(\.valor) && semVenda.gastos.map(\.data) == casa.gastos.map(\.data))
+    }
+
+    /// A conta de mês para trás dos falsos no fim do mês: o dia que o mês não tem fica no último dele, sem transbordar para 1º de
+    /// março. No iOS 26, a do Calendar levava 29/02/2028 − 24 meses a 01/03/2026 (swift-foundation #1708): dois gastos da Casa
+    /// Morumbi da análise em março e fevereiro de 2026 parado (job app da CI do #99). As datas aqui são escritas, não contadas.
+    @Test func mesesParaTrasNoFimDoMes() throws {
+        var calendario = Calendar(identifier: .gregorian)
+        calendario.timeZone = .current
+        func dia(_ a: Int, _ m: Int, _ d: Int) throws -> Date {
+            try #require(calendario.date(from: DateComponents(year: a, month: m, day: d, hour: 12)))
+        }
+        let bissexto = try dia(2028, 2, 29), fimDeJaneiro = try dia(2028, 1, 31)
+        let analise = Estado.de(DadosDeExemplo.vitrineDaAnalise(hoje: bissexto))
+        let morumbi = try #require(analise.obras.first { $0.id == "a7" })
+        let datas = Set(morumbi.gastos.map(\.data))
+        #expect(morumbi.dataInicio == "2025-08-29")
+        #expect(datas.isSuperset(of: ["2025-08-29", "2026-01-29", "2026-02-28", "2027-01-29", "2027-02-28", "2028-01-29"]))
+        #expect(!datas.contains("2026-03-01") && !datas.contains("2027-03-01"), "nada em 1º de março")
+        // A vitrine pelo mesmo caminho: no 31/01/2028, a 1ª etapa do Sobrado Granja Viana, de 23 meses atrás, fica em 28/02/2026.
+        let vitrine = Estado.de(DadosDeExemplo.vitrine(hoje: fimDeJaneiro))
+        let sobrado = try #require(vitrine.obras.first { $0.id == "v2" })
+        #expect(sobrado.dataInicio == "2026-02-28" && sobrado.gastos.contains { $0.data == "2026-02-28" })
     }
 }

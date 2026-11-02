@@ -167,15 +167,27 @@ enum DadosDeExemplo {
         "config": .objeto(["taxaMensal": .numero(1), "topicosCustom": .lista([])]),
     ])
 
+    /// `hoje` mais `n` meses (para trás, se negativo), em AAAA-MM-DD no fuso do aparelho; o dia que o mês não tem fica no
+    /// último dele (29/02/2028 − 24 meses = 28/02/2026). A conta é de inteiros, sem o Calendar: o do iOS 26 erra o ano do
+    /// bissexto quando o mês fica negativo (swift-foundation #1708; o do iOS 27 acerta) e levava 29/02/2028 − 24 meses a
+    /// 01/03/2026, com fevereiro sem gasto na Casa Morumbi da análise (job app da CI do #99).
+    static func meses(_ n: Int, de hoje: Date) -> String {
+        let hojeISO = dataLocalISO(hoje, fuso: .current)
+        let partes = hojeISO.split(separator: "-").compactMap { Int($0) }
+        guard partes.count == 3 else { return hojeISO }
+        let total = partes[0] * 12 + partes[1] - 1 + n
+        let ano = total / 12, mes = total % 12 + 1
+        let bissexto = ano % 4 == 0 && (ano % 100 != 0 || ano % 400 == 0)
+        let ultimo = mes == 2 ? (bissexto ? 29 : 28) : [4, 6, 9, 11].contains(mes) ? 30 : 31
+        return String(format: "%04d-%02d-%02d", ano, mes, min(partes[2], ultimo))
+    }
+
     /// As três obras do mockup aprovado (Casa Alphaville, Sobrado Granja Viana e Casa Tamboré 4), com as
     /// datas contadas a partir de hoje: a lista mostra sempre os números do mockup (14 meses, R$ 842 mil,
     /// R$ 927 mil corrigido, 70% do orçamento…), para comparar o simulador com ele lado a lado. A Casa
     /// Alphaville tem os 46 lançamentos da tela da obra do mockup da etapa 2 (VitrineDaObra.swift).
     static func vitrine(hoje: Date = .now) -> ValorJSON {
-        let calendario = Calendar(identifier: .gregorian)
-        func data(_ mesesAtras: Int) -> ValorJSON {
-            .texto(dataLocalISO(calendario.date(byAdding: .month, value: -mesesAtras, to: hoje) ?? hoje, fuso: .current))
-        }
+        func data(_ mesesAtras: Int) -> ValorJSON { .texto(meses(-mesesAtras, de: hoje)) }
         func obra(_ id: String, _ nome: String, _ fase: String, inicio: Int, gastos: [(Int, Double)],
                   extra: [String: ValorJSON] = [:]) -> ValorJSON {
             var campos: [String: ValorJSON] = [

@@ -350,14 +350,17 @@ final class AuditoriaUITests: XCTestCase {
     /// arrasto: logo depois do arrasto, a auditoria marcava "Text clipped" nos indicadores da v2, que parados não cortam
     /// (triagem em 0, 400 e 800 pt, na v1 e na v2). A vendida fica sem os 800 pt: no iOS 26, os blocos de lá davam sete
     /// achados sem elemento enquanto a auditoria trocava o tamanho da letra (CI, 17/10; no Mac passam).
-    /// Com a obra em blocos (etapa 4), mais alta, as rolagens caem em outras peças (18 Pro): a v2 a 800, no Corrigido e no
-    /// A pagar; a v2 a 1600, na Venda estimada e no "Registrar venda", com a ação de vidro sob a cápsula; a v3 a 1600, no
-    /// A pagar e no começo da Venda. Mais fundo não dá: a auditoria troca o tamanho da letra, e nos menores a rolagem passa
-    /// do fim do alto. Com as duas ações à vista, a v2 a 1850 deu quatro achados sem elemento, e a v3 a 2250 (a venda e o
-    /// "Desfazer venda") deu "Text clipped" nos blocos de cima; rolar por arrasto até a ação deu o mesmo.
+    /// Com a obra em blocos (etapa 4), mais alta, a v2 a 800 cai no Corrigido e no A pagar (18 Pro). No meio da obra não dá:
+    /// a auditoria troca o tamanho da letra, nos menores o conteúdo fica mais curto que a rolagem fixa, a lista salta, e os
+    /// blocos que estavam à vista saem da janela da LazyVStack. A auditoria acusa "Dynamic Type font sizes are unsupported"
+    /// sem elemento, com o texto crescendo a cada passo de letra (sonda de 02/11, iOS 27: a v2 e a v3 a 1600 com os blocos
+    /// soltos, e a v3 a 2000 também com o VStack de antes; a v2 a 1850 já dava o mesmo). Por isso a v2 e a
+    /// v3 ficam no topo e no fim (99999, que a rolagem fixa leva ao fim em toda letra), onde a janela fica nas mesmas peças.
+    /// As peças do meio (blocos, número mono, cabeçalhos) seguem na maior letra na testVitrineDasPecasNoMaiorTamanho.
+    /// Prova no PR #99.
     @MainActor func testParte3NoMaiorTamanho() throws {
         var app: XCUIApplication
-        for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 1600), ("v3", 0), ("v3", 1600)] {
+        for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 99_999), ("v3", 0), ("v3", 99_999)] {
             app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)",
                            argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))

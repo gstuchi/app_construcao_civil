@@ -50,4 +50,59 @@ final class CustoDaObraUITests: XCTestCase {
     func testCusto1() { medir(1) }
     func testCusto2() { medir(2) }
     func testCusto3() { medir(3) }
+
+    // MARK: protótipo da obra em List (02/11, tarde)
+
+    private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+
+    /// As linhas do log do app desta abertura que interessam à rolagem: as peças (aparece, some, altura) e as paradas.
+    private func pecasDoLog(desde: Date) -> [String] {
+        let pasta = "/tmp/custta-sonda"
+        guard let nomes = try? FileManager.default.contentsOfDirectory(atPath: pasta) else { return [] }
+        let prefixo = "sonda-\(variante)-"
+        var linhas: [String] = []
+        for nome in nomes where nome.hasPrefix(prefixo) && nome.hasSuffix(".log") {
+            guard let ms = Double(nome.dropFirst(prefixo.count).dropLast(4)), ms / 1000 >= desde.timeIntervalSince1970 - 1,
+                  let texto = try? String(contentsOfFile: pasta + "/" + nome, encoding: .utf8) else { continue }
+            linhas += texto.split(separator: "\n").map(String.init)
+        }
+        return linhas
+    }
+
+    /// A obra pesada de cima a baixo e de volta, em arrastos rápidos (com impulso): o tempo de cada 10, as peças vivas
+    /// (as que apareceram e não sumiram), a maior altura de cartão de mês e as paradas da thread. A memória do app vem do
+    /// lado do Mac (memoria.sh), pelas horas das linhas `custo |`.
+    private func rolarAPesada(_ letra: [String]) {
+        let inicio = Date.now
+        let app = abrirApp(conta: "senha", dados: "pesada", abrir: "obra:v1", argumentos: ["-custta.sonda", variante] + letra)
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 60))
+        print("custo | rolagem\(letra.isEmpty ? "" : " AX5") | abriu em \(String(format: "%.1f", Date.now.timeIntervalSince(inicio))) s | \(String(format: "%.3f", Date.now.timeIntervalSince1970))")
+        for sentido in ["desce", "sobe"] {
+            var marca = Date.now
+            for i in 1...40 {
+                if sentido == "desce" { app.swipeUp(velocity: .fast) } else { app.swipeDown(velocity: .fast) }
+                if i % 10 == 0 {
+                    print("custo | rolagem | \(sentido) \(i): \(String(format: "%.1f", Date.now.timeIntervalSince(marca))) s | \(String(format: "%.3f", Date.now.timeIntervalSince1970))")
+                    marca = Date.now
+                }
+            }
+        }
+        let log = pecasDoLog(desde: inicio)
+        var vivas = Set<String>(), maior = (0, ""), aparicoes = 0, sumicos = 0
+        for linha in log {
+            if let r = linha.range(of: "aparece ") { vivas.insert(String(linha[r.upperBound...])); aparicoes += 1 }
+            if let r = linha.range(of: "some ") { vivas.remove(String(linha[r.upperBound...])); sumicos += 1 }
+            if let r = linha.range(of: "altura mes ") {
+                let resto = String(linha[r.upperBound...])
+                if let h = Int(resto.split(separator: " ").last ?? ""), h > maior.0 { maior = (h, resto) }
+            }
+        }
+        print("custo | rolagem | peças: \(aparicoes) aparições, \(sumicos) sumiços, \(vivas.count) vivas no fim; maior cartão: \(maior.1)")
+        for linha in log where linha.contains("parada") || linha.contains("presa") { print("custo | rolagem | app: \(linha)") }
+        app.terminate()
+    }
+
+    func testCustoAX5() { medir(4, letra: maiorLetra) }
+    func testCustoRolagem() { rolarAPesada([]) }
+    func testCustoRolagemAX5() { rolarAPesada(maiorLetra) }
 }

@@ -13,6 +13,9 @@ import notify
 @MainActor
 final class FolhasDeOrigemUITests: XCTestCase {
     private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+    /// A borda externa da grade 16/34 da etapa 4: o `Grade.externa` do app (Blocos.swift), que o alvo dos testes de tela não
+    /// enxerga. Todo bloco da obra vai de uma borda à outra.
+    private static let bordaDaGrade: CGFloat = 16
     /// A obra aberta (v1, a Casa Alphaville do mockup, por padrão).
     private func abrirObra(_ obra: String = "v1", argumentos: [String] = [], gravacao: String? = nil,
                            extra: [String: String] = [:]) -> XCUIApplication {
@@ -108,7 +111,8 @@ final class FolhasDeOrigemUITests: XCTestCase {
         XCTAssertTrue(indicador.label.hasPrefix("A pagar · 30 dias"), indicador.label)
         XCTAssertTrue(indicador.label.contains("Parcelas e gastos futuros"), indicador.label)
         XCTAssertTrue(indicador.elementType == .button, "a linha inteira é o botão: \(indicador.elementType.rawValue)")
-        XCTAssertEqual(indicador.frame.width, app.frame.width - 40, accuracy: 1, "e o quadro dele vai de ponta a ponta do cartão (o contentShape, dentro do rótulo)")
+        XCTAssertEqual(indicador.frame.width, app.frame.width - 2 * Self.bordaDaGrade, accuracy: 1,
+                       "e o quadro dele é o bloco inteiro, de uma borda da grade à outra (o contentShape, dentro do rótulo)")
         abrirAPagar(app)
         XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("A pagar · 30 dias"), app.elemento("tituloDaFolha").label)
         let resumo = app.elemento("resumoDoAPagar")

@@ -189,6 +189,7 @@ struct ObraView: View {
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
         .rolagemFixaSemFolha()
+        .onAppear { Sonda.vigiar() }
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

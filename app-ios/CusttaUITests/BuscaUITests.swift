@@ -229,7 +229,10 @@ final class BuscaUITests: XCTestCase {
         XCTAssertTrue(linha.exists, "o gasto, depois de rolar")
         linha.swipeLeft()
         app.buttons["apagar-j1"].tap()
-        app.alerts["Apagar este gasto?"].buttons["Apagar"].tap()
+        // Espera o alerta antes de tocar: em máquina lenta ele ainda não estava lá quando o teste procurava o "Apagar".
+        let alerta = app.alerts["Apagar este gasto?"]
+        XCTAssertTrue(alerta.waitForExistence(timeout: 5), "o apagar pergunta")
+        alerta.buttons["Apagar"].tap()
         XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 5))
         XCTAssertTrue(lupa.exists, "sem gasto, o mês escolhido segura a lupa")
         XCTAssertTrue(mes.exists, "e o mês")

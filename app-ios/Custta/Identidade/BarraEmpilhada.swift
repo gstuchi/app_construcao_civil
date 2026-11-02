@@ -33,6 +33,11 @@ struct BarraEmpilhada: View {
     let pedacos: [PedacoDoAnel]
     @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var letra
+    #if DEBUG
+    @Environment(\.marcasApagadas) private var apagadas
+    #else
+    private let apagadas = false
+    #endif
 
     var body: some View {
         let grande = letra.isAccessibilitySize
@@ -41,7 +46,7 @@ struct BarraEmpilhada: View {
             let larguras = largurasDaBarra(pedacos, largura: geo.size.width, piso: piso, vao: vao)
             HStack(spacing: vao) {
                 ForEach(Array(pedacos.enumerated()), id: \.offset) { i, pedaco in
-                    Capsule().fill(paleta.cor(corDoPedaco(pedaco))).frame(width: larguras[i])
+                    Capsule().fill(paleta.cor(corDoPedaco(pedaco)).opacity(apagadas ? 0 : 1)).frame(width: larguras[i])
                 }
             }
         }
@@ -135,3 +140,12 @@ struct Hachura: Shape {
         return listras.intersection(Path(rect))
     }
 }
+
+#if DEBUG
+extension EnvironmentValues {
+    /// Laudo das marcas (spec da etapa 4, "Laudo das marcas"; só Debug): com `-custta.marcasApagadas YES` as marcas de
+    /// gráfico somem sem mexer no layout, como o texto apagado apaga o texto; os dois prints dão a cor de cada marca e o
+    /// fundo atrás dela (a placa sobre o vidro), e o laudo cobra 3:1.
+    @Entry var marcasApagadas = false
+}
+#endif

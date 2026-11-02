@@ -20,6 +20,8 @@ final class LeituraNoVidroUITests: XCTestCase {
     private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
     private let temas = ["escuro", "claro"]
     private static let portao = 4.5
+    /// O mínimo das marcas de gráfico (spec da etapa 4, "Laudo das marcas"), o do mockup.
+    private static let portaoDasMarcas = 3.0
     /// A barra de status fica de fora: a hora muda entre os dois prints.
     private static let barraDeStatus: CGFloat = 70
     /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
@@ -171,7 +173,10 @@ final class LeituraNoVidroUITests: XCTestCase {
         }
     }
 
-    @MainActor private func anexar(_ nome: String, _ imagem: UIImage, _ palavras: [LaudoDeContraste.Palavra], _ escala: CGFloat) {
+    /// As marcas saem com o prefixo "marcas" e o portão delas: o comparador do laudo (`scripts/compara-laudo.mjs`) lê só as
+    /// tabelas "leitura — …", com o portão de 4,5.
+    @MainActor private func anexar(_ nome: String, _ imagem: UIImage, _ palavras: [LaudoDeContraste.Palavra], _ escala: CGFloat,
+                                   portao: Double = LeituraNoVidroUITests.portao, tipo: String = "leitura") {
         let formato = UIGraphicsImageRendererFormat()
         formato.scale = 1
         let tamanho = CGSize(width: imagem.size.width * imagem.scale, height: imagem.size.height * imagem.scale)
@@ -180,7 +185,7 @@ final class LeituraNoVidroUITests: XCTestCase {
             for p in palavras {
                 let caixa = CGRect(x: p.caixa.minX * escala, y: p.caixa.minY * escala,
                                    width: p.caixa.width * escala, height: p.caixa.height * escala).insetBy(dx: -4, dy: -4)
-                let cor: UIColor = p.nota < Self.portao ? .systemRed : .systemGreen
+                let cor: UIColor = p.nota < portao ? .systemRed : .systemGreen
                 cor.setStroke()
                 ctx.cgContext.setLineWidth(4)
                 ctx.cgContext.stroke(caixa)
@@ -191,15 +196,15 @@ final class LeituraNoVidroUITests: XCTestCase {
             }
         }
         let foto = XCTAttachment(image: anotada)
-        foto.name = "leitura — \(nome)"
+        foto.name = "\(tipo) — \(nome)"
         foto.lifetime = .keepAlways
         add(foto)
         let linhas = palavras.map { p in
             String(format: "%@  %4.0f,%4.0f  %4.0f×%3.0f pt  nota %5.2f  pior %5.2f", p.corHex,
                    p.caixa.minX, p.caixa.minY, p.caixa.width, p.caixa.height, p.nota, p.minimo)
         }
-        let tabela = XCTAttachment(string: "Leitura — \(nome) (portão \(Self.portao):1)\n" + linhas.joined(separator: "\n"))
-        tabela.name = "leitura — \(nome) (tabela)"
+        let tabela = XCTAttachment(string: "\(tipo == "leitura" ? "Leitura" : "Marcas") — \(nome) (portão \(portao):1)\n" + linhas.joined(separator: "\n"))
+        tabela.name = "\(tipo) — \(nome) (tabela)"
         tabela.lifetime = .keepAlways
         add(tabela)
     }
@@ -418,6 +423,52 @@ extension LeituraNoVidroUITests {
         cenas.append(Cena(nome: "obra vendida, sólido do lucro, na maior letra", conta: "senha", argumentos: escuro + maiorLetra,
                           espera: "indicadorLucro", escopo: "tudo", dados: "vitrine", abrir: "obra:v3"))
         cobrar(cenas)
+    }
+
+    /// O laudo das marcas (spec da etapa 4, "Laudo das marcas"): os pedaços da barra empilhada da obra a 3:1 com o que fica
+    /// atrás deles (a placa forte sobre o vidro), nos dois temas e nos vidros Transparente e Fosco. Cada cena sai em dois
+    /// prints, um normal e um com as marcas apagadas (`-custta.marcasApagadas`, só Debug), como o texto apagado; a marca é o
+    /// que muda de um para o outro, dentro do quadro da barra.
+    @MainActor func testMarcasDaBarraDeTopicos() {
+        var falhas: [String] = []
+        for tema in temas {
+            for vidro in ["transparente", "fosco"] {
+                let nome = "marcas, barra de tópicos, \(tema), \(vidro)"
+                let argumentos = ["-custta.tema", tema, "-custta.vidro", vidro, "-custta.rolagem", "750"] + piorMomento
+                func fotografar(apagadas: Bool) -> (XCUIScreenshot, CGRect, CGFloat) {
+                    let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
+                                       argumentos: argumentos + (apagadas ? ["-custta.marcasApagadas", "YES"] : []))
+                    let barra = app.elemento("barraDeTopicos")
+                    XCTAssertTrue(barra.waitForExistence(timeout: 30), "\(nome): a obra não abriu")
+                    Thread.sleep(forTimeInterval: 2)                   // o vidro e a rolagem assentam
+                    let foto = XCUIScreen.main.screenshot()
+                    let quadro = barra.frame, largura = app.frame.width
+                    app.terminate()
+                    return (foto, quadro, largura)
+                }
+                let (normal, quadro, largura) = fotografar(apagadas: false)
+                let (semMarcas, _, _) = fotografar(apagadas: true)
+                let imagem = normal.image.cgImage!
+                let escala = CGFloat(imagem.width) / largura
+                let marcas: [LaudoDeContraste.Palavra]
+                do {
+                    marcas = try LaudoDeContraste.medirMarcas(normal: Retrato(imagem), semMarcas: Retrato(semMarcas.image.cgImage!),
+                                                              escala: escala, em: [quadro])
+                } catch {
+                    XCTFail("\(nome): \(error)")
+                    continue
+                }
+                // Os 7 pedaços da Casa Alphaville: os 6 maiores e o "Outros".
+                XCTAssertEqual(marcas.count, 7, "\(nome): \(marcas.map(\.corHex))")
+                anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
+                Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
+                falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in
+                    "\(nome): marca \(m.corHex) em \(Int(m.caixa.minX)),\(Int(m.caixa.minY)) fica em "
+                        + String(format: "%.2f:1 (pior pixel %.2f:1)", m.nota, m.minimo)
+                }
+            }
+        }
+        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portaoDasMarcas):1:\n" + falhas.joined(separator: "\n"))
     }
 
     /// A lista da obra rolando, no escuro (onde a dose de vidro decide), sem e com Aumentar contraste: o pior

@@ -27,8 +27,10 @@ final class FolhasDeOrigemUITests: XCTestCase {
     /// A seta do indicador "A pagar · 30 dias": rola até ele e toca; a folha abre com o resumo.
     private func abrirAPagar(_ app: XCUIApplication) {
         let indicador = app.elemento("indicadorAPagar")
-        XCTAssertTrue(indicador.waitForExistence(timeout: 5))
+        // Rola antes de exigir: na maior letra o A pagar nasce fora da janela e, solto na LazyVStack da obra, só entra na
+        // árvore quando a lista chega nele (o rolarAte pergunta pelo exists a cada volta e rola enquanto não acha).
         app.rolarAte(indicador)
+        XCTAssertTrue(indicador.waitForExistence(timeout: 5))
         indicador.tap()
         XCTAssertTrue(app.elemento("resumoDoAPagar").waitForExistence(timeout: 10), "a seta abre a folha do A pagar")
     }

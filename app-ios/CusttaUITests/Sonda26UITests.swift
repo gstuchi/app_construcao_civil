@@ -116,4 +116,57 @@ final class Sonda26UITests: XCTestCase {
     func testBCPilhaComum() { sondaB("pilhaComum") }
     func testBDSemPosicaoSemRolagem() { sondaB("semPosicao", rolagem: false) }
     func testBESemRolagemFixa() { sondaB("controle", rolagem: false) }
+
+    // MARK: protótipo da obra em List (02/11, tarde): a variante vem do ambiente do executor, uma por rodada
+    // (`TEST_RUNNER_CUSTTA_SONDA`, que o xcodebuild entrega sem o prefixo): controle (a estrutura de hoje, blocos soltos),
+    // blocoUnico (o 8b24c60, controle positivo da (b)), list.
+
+    private var varianteDaRodada: String { ProcessInfo.processInfo.environment["CUSTTA_SONDA"] ?? "controle" }
+
+    /// (b) pelo caminho do usuário, sem o gancho da rolagem: arrastos até a lupa (`rolar`) ou o toque direto, que o XCUITest
+    /// rola sozinho até ela; depois a lupa, "ceramica" e o buscar do teclado. A vigia do app acusa a trava em ~4 s.
+    private func sondaBSemGancho(_ variante: String, rolar: Bool) {
+        let inicio = Date.now
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
+                           argumentos: ["-custta.tema", "escuro"] + piorMomento + ["-custta.sonda", variante])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 30))
+        linha("sonda-b", variante, inicio, "abriu (\(rolar ? "arrastos" : "toque direto"))")
+        let lupa = app.buttons["buscar"]
+        if rolar {
+            app.rolarAte(lupa, tentativas: 20)
+            linha("sonda-b", variante, inicio, "rolou: lupa \(lupa.exists ? "y=\(Int(lupa.frame.minY))" : "fora da árvore")")
+            if travou(variante, desde: inicio, segundos: 1) {
+                linha("sonda-b", variante, inicio, "resultado: travou ao rolar")
+                sleep(15)                                // o sample de 10 s do Mac (vigia-sample.sh)
+                app.terminate()
+                return XCTFail("travou ao rolar")
+            }
+        }
+        lupa.tap()
+        linha("sonda-b", variante, inicio, "tocou a lupa")
+        if travou(variante, desde: inicio, segundos: 7) {
+            linha("sonda-b", variante, inicio, "resultado: travou depois da lupa")
+            sleep(15)                                // o sample de 10 s do Mac (vigia-sample.sh)
+            app.terminate()
+            return XCTFail("travou depois da lupa")
+        }
+        app.digitarComFoco("ceramica\n", em: app.textFields["campoDaBusca"])
+        linha("sonda-b", variante, inicio, "digitou")
+        if travou(variante, desde: inicio, segundos: 7) {
+            linha("sonda-b", variante, inicio, "resultado: travou depois de digitar")
+            sleep(15)                                // o sample de 10 s do Mac (vigia-sample.sh)
+            app.terminate()
+            return XCTFail("travou depois de digitar")
+        }
+        let fechou = app.keyboards.firstMatch.waitForNonExistence(timeout: 5)
+        let soma = app.elemento("somaDosAchados").exists
+        let pilula = app.elemento("lancamentos").exists ? app.elemento("lancamentos").label : "sem pílula"
+        linha("sonda-b", variante, inicio, "resultado: \(fechou ? "passou" : "teclado não fechou"), soma \(soma), \(pilula)")
+        XCTAssertTrue(fechou, "o buscar do teclado o fecha")
+        app.terminate()
+    }
+
+    func testListB1Arrastos() { sondaBSemGancho(varianteDaRodada, rolar: true) }
+    func testListB2ToqueDireto() { sondaBSemGancho(varianteDaRodada, rolar: false) }
+    func testListA() { sondaA(varianteDaRodada) }
 }

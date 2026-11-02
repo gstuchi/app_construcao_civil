@@ -71,93 +71,45 @@ struct ObraView: View {
                                      perguntando = true
                                  })
         return ScrollViewReader { leitor in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: Grade.entreBlocos) {
-                    // O título solto e a cápsula com a fase e o tempo: 8 pt entre eles e 16 até o sólido (mockup, .ob-meta-w).
-                    TituloMono(texto: obra.nome)
-                        .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
-                    CapsulaDeMetadados {
-                        EtiquetaDeFase(fase: obra.fase, grande: true)
-                        Text(textoDoInicio(obra, hoje: hoje))
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("faseDaObra")
-                    .padding(.bottom, 4)
-                    BlocosDaObra(obra: obra, taxa: taxa, hoje: hoje) {
-                        // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
-                        if linhaAberta != nil { fecharLinha(); return }
-                        folhas.aberta = .aPagar(obraId: obra.id)
-                    }
-                    AcoesDaFaseView(fase: obra.fase,
-                                    definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
-                        agir($0, obra: obra)
-                    }
-                    // Os afazeres, 12 abaixo das ações, em todas as fases.
-                    NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
-                        LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
-                    }
-                    .buttonStyle(.plain)
-                    // Os gastos por tópico, só com gastos: a barra empilhada no lugar do mini-anel (pedida em 29/10), sem toque
-                    // e sem "Gráficos ›" até os Gráficos chegarem (PR 2b).
-                    if !obra.gastos.isEmpty {
-                        let pedacos = pedacosDoAnel(gastoPorTopico(obra))
-                        // Um elemento só para o VoiceOver, como os outros blocos: o título e os pedaços com o %, sem a
-                        // legenda, que repetiria os maiores. Com o .contain, o título vinha duas vezes (no texto e na barra),
-                        // e esconder um filho dentro dele não o tira da árvore.
-                        BlocoDeVidro {
-                            Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
-                                .padding(.bottom, 8)
-                            BarraDeTopicos(pedacos: pedacos, topicos: topicos)
+            Group {
+                if Sonda.emList {
+                    // Protótipo (proto/etapa4-obra-em-list): as mesmas peças, uma por linha da List (UICollectionView), sem
+                    // separador nem fundo, com o recuo da coluna e o espaço da grade entre as linhas.
+                    List {
+                        Group {
+                            pecas(obra, hoje: hoje, taxa: taxa, topicos: topicos, filtrando: filtrando, achados: achados,
+                                  lista: lista, acoes: acoes, leitor: leitor)
                         }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Gastos por tópico")
-                        .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
-                        .accessibilityIdentifier("gastosPorTopico")
+                        .listRowInsets(EdgeInsets(top: 0, leading: Grade.externa, bottom: 0, trailing: Grade.externa))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id vem antes do recuo: a lupa rola até a pílula, e não
-                    // até os 6 pt de cima dela.
-                    CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
-                                            busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
-                                            comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
-                                            abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
-                        .id("lancamentos")
-                        .padding(.top, 6)
-                    if busca.aberta {
-                        CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
-                    }
-                    if !busca.mes.isEmpty {
-                        ChipDoMes(mes: busca.mes, tirar: tirarOMes)
-                    }
-                    if let soma = somaDosAchados(achados, filtrando: filtrando) {
-                        SomaDosAchadosView(soma: soma)
-                    }
-                    if obra.gastos.isEmpty {
-                        CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
-                                       identificador: "obraSemGastos") { EmptyView() }
-                    } else if achados.isEmpty {
-                        VazioDaBuscaView(vazio: vazioDaBusca(obra.gastos, texto: busca.texto, mes: busca.mes), limpar: limparFiltro,
-                                         verTodos: tirarOMes)
-                    } else {
-                        if let aVencer = lista.aVencer {
-                            CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto, topicos: topicos,
-                                            lista: acoes)
-                                .id("aVencer")
+                    .listStyle(.plain)
+                    .listRowSpacing(Grade.entreBlocos)
+                    .environment(\.defaultMinListRowHeight, 0)
+                    .scrollContentBackground(.hidden)
+                    .buttonStyle(.borderless)
+                    .environment(\.linhaMono, true)
+                    .contentMargins(.bottom, 98, for: .scrollContent)
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                            pecas(obra, hoje: hoje, taxa: taxa, topicos: topicos, filtrando: filtrando, achados: achados,
+                                  lista: lista, acoes: acoes, leitor: leitor)
                         }
-                        ForEach(lista.meses) { mes in
-                            CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
-                        }
+                        .padding(.horizontal, Grade.externa)
+                        // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
+                        .environment(\.linhaMono, true)
+                        // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
+                        // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
+                        .padding(.bottom, 98)
+                        // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
+                        .contentShape(.rect)
+                        .onTapGesture { if linhaAberta != nil { fecharLinha() } }
                     }
                 }
-                .padding(.horizontal, Grade.externa)
-                // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
-                .environment(\.linhaMono, true)
-                // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
-                // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
-                .padding(.bottom, 98)
-                // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
-                .contentShape(.rect)
-                .onTapGesture { if linhaAberta != nil { fecharLinha() } }
             }
+            .sondaDaRolagem("obra")
             // Só com a obra à vista: o gasto lançado pelo + da tela Orçamento não rola nem leva o foco aqui, por baixo dela.
             .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
         }
@@ -515,5 +467,88 @@ struct SeparadorDaLista: View {
 
     var body: some View {
         if mono { LinhaFina().padding(.horizontal, Grade.recuo) } else { LinhaFina().padding(.leading, 67) }
+    }
+}
+
+extension ObraView {
+    /// As peças da obra, de cima para baixo: os filhos da LazyVStack ou, no protótipo, as linhas da List.
+    @ViewBuilder fileprivate func pecas(_ obra: Obra, hoje: String, taxa: Double, topicos: [String: Topico], filtrando: Bool,
+                                        achados: [Gasto], lista: ListaDaObra, acoes: AcoesDaLista,
+                                        leitor: ScrollViewProxy) -> some View {
+        // O título solto e a cápsula com a fase e o tempo: 8 pt entre eles e 16 até o sólido (mockup, .ob-meta-w).
+        TituloMono(texto: obra.nome)
+            .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
+        CapsulaDeMetadados {
+            EtiquetaDeFase(fase: obra.fase, grande: true)
+            Text(textoDoInicio(obra, hoje: hoje))
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("faseDaObra")
+        .padding(.bottom, 4)
+        BlocosDaObra(obra: obra, taxa: taxa, hoje: hoje) {
+            // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
+            if linhaAberta != nil { fecharLinha(); return }
+            folhas.aberta = .aPagar(obraId: obra.id)
+        }
+        AcoesDaFaseView(fase: obra.fase,
+                        definirOrcamento: pecasOrcamento(obra).definir ? { folhas.aberta = .orcamento(obraId: obra.id) } : nil) {
+            agir($0, obra: obra)
+        }
+        // Os afazeres, 12 abaixo das ações, em todas as fases.
+        NavigationLink(value: RotaDeObras.afazeres(obra.id)) {
+            LinhaDosAfazeresView(linha: linhaDosAfazeres(obra.afazeres))
+        }
+        .buttonStyle(.plain)
+        // Os gastos por tópico, só com gastos: a barra empilhada no lugar do mini-anel (pedida em 29/10), sem toque
+        // e sem "Gráficos ›" até os Gráficos chegarem (PR 2b).
+        if !obra.gastos.isEmpty {
+            let pedacos = pedacosDoAnel(gastoPorTopico(obra))
+            // Um elemento só para o VoiceOver, como os outros blocos: o título e os pedaços com o %, sem a
+            // legenda, que repetiria os maiores. Com o .contain, o título vinha duas vezes (no texto e na barra),
+            // e esconder um filho dentro dele não o tira da árvore.
+            BlocoDeVidro {
+                Text("Gastos por tópico").font(.body.weight(.semibold)).foregroundStyle(paleta.cor(.texto))
+                    .padding(.bottom, 8)
+                BarraDeTopicos(pedacos: pedacos, topicos: topicos)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Gastos por tópico")
+            .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
+            .accessibilityIdentifier("gastosPorTopico")
+        }
+        // 18 pt acima dos lançamentos (mockup, .lan-cab). O id vem antes do recuo: a lupa rola até a pílula, e não
+        // até os 6 pt de cima dela.
+        CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
+                                busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
+                                comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
+                                abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
+            .id("lancamentos")
+            .padding(.top, 6)
+        if busca.aberta {
+            CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
+        }
+        if !busca.mes.isEmpty {
+            ChipDoMes(mes: busca.mes, tirar: tirarOMes)
+        }
+        if let soma = somaDosAchados(achados, filtrando: filtrando) {
+            SomaDosAchadosView(soma: soma)
+        }
+        if obra.gastos.isEmpty {
+            CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
+                           identificador: "obraSemGastos") { EmptyView() }
+        } else if achados.isEmpty {
+            VazioDaBuscaView(vazio: vazioDaBusca(obra.gastos, texto: busca.texto, mes: busca.mes), limpar: limparFiltro,
+                             verTodos: tirarOMes)
+        } else {
+            if let aVencer = lista.aVencer {
+                CartaoDoAVencer(grupo: aVencer, aberto: filtrando ? $aVencerAbertoNaBusca : $aVencerAberto, topicos: topicos,
+                                lista: acoes)
+                    .id("aVencer")
+            }
+            ForEach(lista.meses) { mes in
+                CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
+                    .sondaPeca("mes \(mes.id) (\(mes.gastos.count) gastos)")
+            }
+        }
     }
 }

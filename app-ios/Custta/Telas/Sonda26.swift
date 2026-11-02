@@ -9,7 +9,9 @@ import SwiftUI
    - semPosicao: a obra sem o `.scrollPosition` do gancho quando não há `-custta.rolagem` (como em Release);
    - semRefixar: o gancho rola uma vez e não reaplica a rolagem;
    - blocosSoltos: os blocos do alto viram filhos da LazyVStack, em vez de um VStack só;
-   - pilhaComum: a obra num VStack, em vez da LazyVStack. */
+   - pilhaComum: a obra num VStack, em vez da LazyVStack;
+   - blocoUnico: os blocos do alto de volta num VStack só, um filho da LazyVStack (o 8b24c60: controle positivo da (b));
+   - list, listOlhos: a obra numa List (UICollectionView), as mesmas peças, uma por linha (protótipo de 02/11). */
 enum Sonda {
     #if DEBUG
     static let variante: String = UserDefaults.standard.string(forKey: "custta.sonda") ?? ""
@@ -21,7 +23,9 @@ enum Sonda {
     static var semRefixar: Bool { variante == "semRefixar" }
     static var blocosSoltos: Bool { variante == "blocosSoltos" || variante == "olhosSoltos" }
     static var pilhaComum: Bool { variante == "pilhaComum" }
-    static var comOlhos: Bool { variante == "olhos" || variante == "olhosSoltos" }
+    static var comOlhos: Bool { variante == "olhos" || variante == "olhosSoltos" || variante == "listOlhos" }
+    static var blocoUnico: Bool { variante == "blocoUnico" }
+    static var emList: Bool { variante.hasPrefix("list") }
 
     private static let fila = DispatchQueue(label: "br.com.custta.sonda")
     nonisolated(unsafe) private static var saida: FileHandle?
@@ -158,15 +162,15 @@ struct PilhaDaSonda<Conteudo: View>: View {
     }
 }
 
-/// Os blocos do alto: um VStack só ou, com `blocosSoltos`, cada um como filho da LazyVStack da obra (o mesmo espaço).
+/// Os blocos do alto: soltos, cada um como filho da pilha da obra (o de hoje), ou, com `blocoUnico`, num VStack só.
 struct PilhaDosBlocos<Conteudo: View>: View {
     @ViewBuilder let conteudo: () -> Conteudo
 
     var body: some View {
-        if Sonda.blocosSoltos {
-            Group(content: conteudo)
-        } else {
+        if Sonda.blocoUnico {
             VStack(spacing: Grade.entreBlocos, content: conteudo)
+        } else {
+            Group(content: conteudo)
         }
     }
 }

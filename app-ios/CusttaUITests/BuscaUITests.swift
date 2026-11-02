@@ -217,11 +217,13 @@ final class BuscaUITests: XCTestCase {
     /// mês, com a busca aberta, em que a lupa da maior letra é o × que fecha. Fechada a busca, só a pílula.
     func testObraQueFicaSemGastoComMesOuBuscaAbertaFicaComOsBotoes() throws {
         // Só no iOS 26: o simulador roda o sistema que o teste vê, e no 27 o método segue valendo.
-        try XCTSkipIf(ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26,
+        let sonda = ProcessInfo.processInfo.environment["CUSTTA_SONDA"]
+        try XCTSkipIf(sonda == nil && ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26,
                       "problema conhecido: no iOS 26, arrastar na maior letra na obra de lista curta trava a LazyVStack "
                       + "(só na VM lenta da CI, 3 em 4); a estrutura da obra será trocada antes da App Store; ver #99")
         let app = abrirObra("o4", dados: "exemplo",
-                            argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+                            argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+                                + (sonda.map { ["-custta.sonda", $0] } ?? []))
         let lupa = app.buttons["buscar"], mes = app.buttons["filtrarPorMes"]
         app.rolarAte(mes, tentativas: 20)                 // na maior letra, as 12 roladas do padrão chegam sem folga
         escolherMes(app, "Junho de 2023")

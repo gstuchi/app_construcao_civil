@@ -53,7 +53,7 @@ struct BlocosDaObra: View {
     var body: some View {
         let indicadores = indicadoresDaObra(obra, taxa: taxa, hoje: hoje)
         let solido = solidoDaObra(obra, taxa: taxa)
-        Group {
+        PilhaDosBlocos {
             switch solido {
             case .total: total(indicadores, solido: true)
             case let .lucro(valor, etiqueta, nota): lucro(valor: valor, etiqueta: etiqueta, nota: nota)

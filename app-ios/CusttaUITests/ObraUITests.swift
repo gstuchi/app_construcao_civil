@@ -42,19 +42,21 @@ final class ObraUITests: XCTestCase {
         XCTAssertTrue(aPagar.contains("R$\u{a0}13.250,00") && aPagar.contains("3 vencimentos"), aPagar)
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.450.000,00"))
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Em construção"))
-        let fase = app.elemento("faseDaObra").label, lancamentos = app.elemento("lancamentos").label
+        let fase = app.elemento("faseDaObra").label
         XCTAssertTrue(fase.contains("14 meses"), fase)
-        XCTAssertTrue(lancamentos.contains("46"), lancamentos)
         let tituloPequeno = app.elemento("tituloPequenoDaBarra")
         XCTAssertFalse(tituloPequeno.exists, "no alto, o nome fica só no título grande")
-        app.swipeUp()
+        // A pílula fica abaixo da dobra: rolada a tela até ela, o nome passa para a barra.
+        let lancamentos = app.elemento("lancamentos")
+        app.rolarAte(lancamentos)
+        XCTAssertTrue(lancamentos.label.contains("46"), lancamentos.label)
         XCTAssertTrue(tituloPequeno.waitForExistence(timeout: 5), "rolada a tela, o nome passa para a barra")
     }
 
     func testAVencerFechadoAbreEFecha() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
         let aVencer = app.elemento("aVencer")
-        XCTAssertTrue(aVencer.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         app.rolarAte(aVencer)
         XCTAssertEqual(aVencer.value as? String, "fechado")
         XCTAssertFalse(app.elemento("gasto-g037").exists, "as parcelas futuras não aparecem com o grupo fechado")
@@ -97,9 +99,12 @@ final class ObraUITests: XCTestCase {
 
     func testObraSemGastos() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
-        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("indicadorTotal").waitForExistence(timeout: 10))
         let total = app.elemento("indicadorTotal").label
         XCTAssertTrue(total.contains("sem gastos") && total.contains("R$\u{a0}0,00"), total)
+        // O cartão vazio fica no fim, abaixo da dobra.
+        app.rolarAte(app.elemento("obraSemGastos"))
+        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         // Etapa 4: o sólido com R$ 0,00 convida a lançar o primeiro gasto.
         XCTAssertTrue(total.contains("Toque no + para lançar o primeiro gasto."), total)
     }
@@ -141,6 +146,7 @@ final class ObraUITests: XCTestCase {
         XCTAssertEqual(orcamento.minY - lucro.frame.maxY, 12, accuracy: 0.5, "o Orçamento logo depois do sólido")
         XCTAssertEqual(total.frame.minY - orcamento.maxY, 12, accuracy: 0.5, "o Total gasto logo depois do Orçamento")
         XCTAssertTrue(total.label.contains("R$\u{a0}842.317,45") && total.label.contains("46 lançamentos"), total.label)
+        app.rolarAte(app.elemento("indicadorVenda"))
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.380.000,00"))
     }
 
@@ -185,7 +191,10 @@ final class ObraUITests: XCTestCase {
     /// Sem gastos, somem os gastos por tópico (como as portas do site).
     func testSemGastosSemGastosPorTopico() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
-        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        // O cartão vazio é a última peça: com a lista nele, o lugar dos gastos por tópico está na tela.
+        app.rolarAte(app.elemento("obraSemGastos"))
+        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         XCTAssertFalse(app.elemento("gastosPorTopico").exists)
         XCTAssertTrue(app.elemento("linhaDosAfazeres").exists)
     }

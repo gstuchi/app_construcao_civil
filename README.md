@@ -6,11 +6,12 @@
 
 App de iPhone e PWA offline-first para acompanhar quanto cada obra custou, quanto o dinheiro renderia no banco no mesmo período (valor corrigido) e o lucro real na venda — bruto e acima do banco.
 
-O app de iPhone está sendo refeito em SwiftUI nativo, com a mesma conta e os mesmos dados do site.
+O site está em produção; o app de iPhone está sendo refeito em SwiftUI nativo, em teste no TestFlight, com a mesma conta e os mesmos dados.
 
 ![Status](https://img.shields.io/badge/status-em%20produ%C3%A7%C3%A3o-2ecc71)
 ![PWA](https://img.shields.io/badge/PWA-offline--first-3ad17e)
 ![Stack](https://img.shields.io/badge/stack-vanilla%20JS-f7df1e)
+![iOS](https://img.shields.io/badge/iOS-SwiftUI-0a84ff)
 ![Build](https://img.shields.io/badge/build-nenhum-lightgrey)
 ![Deploy](https://img.shields.io/badge/deploy-Vercel-black)
 

@@ -49,6 +49,9 @@ O produto é pensado para um usuário não técnico, com foco em **clareza em 5 
 - **Gastos por obra** organizados por tópico (terreno, fundação, acabamento…), pagos via Pix ou cartão parcelável.
 - **Valor bruto × valor corrigido** — quanto o dinheiro renderia no banco no período, com taxa configurável (padrão 1% a.m.).
 - **Lucro na venda** — apurado em dois eixos: bruto e acima do rendimento de banco.
+- **Orçamento previsto × real** — por total ou por tópico, com o quanto já foi gasto de cada um.
+- **A pagar** — parcelas e gastos futuros dos próximos 30 dias, mês a mês.
+- **Afazeres** da obra e **busca** nos lançamentos, com filtro por mês.
 - **Ciclo de vida da obra** em três fases: em construção → pronta (à venda) → vendida.
 - **Gráficos**: distribuição por tópico (donut) e gasto por mês.
 - **Simulador "Vale a pena?"** — margem estimada por preço de venda.

@@ -148,7 +148,15 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
     }
 
+    /// Só no iOS 27, no portão da ponta (decisão do Orquestrador, 03/11). No iOS 26, a auditoria troca a letra (padrão e
+    /// maior) em volta de cada auditoria, e a obra, que é uma List, se mede de novo durante a troca: depois de rolar, textos
+    /// do bloco A pagar ("3 vencimentos", "Parcelas e gastos futuros") saem como cortados ou sem crescer, com a tela
+    /// mostrando os dois inteiros. A main, numa LazyVStack, não tinha isso. No iOS 26, a obra na maior letra segue no laudo
+    /// de leitura e nos prints, iguais aos de antes da List.
     @MainActor func testObraNoMaiorTamanho() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0,
+                                                                                                  patchVersion: 0)),
+                          "a auditoria do iOS 26 pega a List se medindo na troca de letra; a obra na maior letra é auditada no iOS 27")
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado)
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)

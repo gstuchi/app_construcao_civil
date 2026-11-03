@@ -53,8 +53,10 @@ O produto é pensado para um usuário não técnico, com foco em **clareza em 5 
 - **A pagar** — parcelas e gastos futuros dos próximos 30 dias, mês a mês.
 - **Afazeres** da obra e **busca** nos lançamentos, com filtro por mês.
 - **Ciclo de vida da obra** em três fases: em construção → pronta (à venda) → vendida.
-- **Gráficos**: distribuição por tópico (donut) e gasto por mês.
-- **Simulador "Vale a pena?"** — margem estimada por preço de venda.
+- **Gráficos**: distribuição por tópico (donut), evolução da obra e gasto por mês, com saída em PDF.
+- **Relatório** da obra, agrupado por tópico, com a correção do período.
+- **Simulador "Vale a pena?"** — margem e TIR mensal estimadas por preço e prazo de venda, comparadas ao banco.
+- **Exportação** dos dados em JSON e CSV.
 - **Offline-first** — dados persistidos no aparelho; sincronização em nuvem quando há rede.
 - **Multiusuário** — login por conta (Firebase), dados isolados por usuário.
 

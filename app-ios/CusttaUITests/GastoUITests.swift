@@ -78,6 +78,30 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.frame.contains(parcela.frame), "e a 1ª parcela está inteira à vista: \(parcela.frame)")
     }
 
+    /// Na maior letra, editar um gasto do fim de um mês longo e salvar: a linha fica inteira à vista, entre a barra e a cápsula
+    /// de abas. O cartão do mês passa da tela, e o scrollTo da List só acha o cartão: quem leva a rolagem até a linha é a ponte
+    /// do UIKit (PonteDaRolagem.swift), e este teste cai quando ela não acha a linha.
+    func testNaMaiorLetraEditarUmGastoDoFimDoMesDeixaALinhaAVista() {
+        let app = abrirObra(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let linha = app.elemento("gasto-g024")
+        app.rolarAte(linha, tentativas: 30)
+        linha.tap()
+        XCTAssertTrue(app.elemento("linhaValor").waitForExistence(timeout: 5))
+        app.elemento("linhaValor").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        for _ in 0..<8 { app.buttons["tecla-del"].tap() }
+        for t in "12345" { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5))
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
+        sleep(2)
+        let barra = app.navigationBars.firstMatch.frame, capsula = app.buttons["aba-obras"].frame
+        XCTAssertTrue(linha.exists, "a linha editada está na árvore")
+        XCTAssertGreaterThanOrEqual(linha.frame.minY, barra.maxY, "a linha não fica sob a barra: \(linha.frame)")
+        XCTAssertLessThanOrEqual(linha.frame.maxY, capsula.minY, "nem sob a cápsula de abas: \(linha.frame)")
+    }
+
     /// Na maior letra, a folha nas medidas do mockup (AX5): o nome da obra sai da barra e fica para o VoiceOver, no valor
     /// do título; as teclas param em 72 pt, para as quatro fileiras caberem com o visor; o "Avançar" tem 72 pt no mínimo.
     func testNaMaiorLetraTituloTeclasEBotaoComoNoMockup() {

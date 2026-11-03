@@ -36,6 +36,22 @@ struct DadosDeExemploTests {
         #expect(orcamentoObra(obras[1]) == nil && orcamentoObra(obras[2]) == nil)
     }
 
+    /// A obra pesada (`CUSTTA_DADOS=pesada`, a da medida da obra em List no iPhone) carrega em qualquer dia: a Casa
+    /// Alphaville com 520 gastos a mais, 566 no total, um mês passado com 30 ou mais, e as outras obras como na vitrine.
+    @Test(arguments: dias)
+    func obraPesadaComUmGastoPorDia(_ dia: String) throws {
+        var calendario = Calendar(identifier: .gregorian)
+        calendario.timeZone = .current
+        let partes = dia.split(separator: "-").map { Int($0)! }
+        let hoje = try #require(calendario.date(from: DateComponents(year: partes[0], month: partes[1], day: partes[2], hour: 12)))
+        let pesada = Estado.de(DadosDeExemplo.vitrinePesada(hoje: hoje)), vitrine = Estado.de(DadosDeExemplo.vitrine(hoje: hoje))
+        let casa = try #require(pesada.obras.first { $0.id == "v1" })
+        #expect(casa.gastos.count == 566)
+        let maior = listaDaObra(casa, hoje: dataLocalISO(hoje, fuso: .current)).meses.map(\.gastos.count).max() ?? 0
+        #expect(maior >= 30, "um mês cheio: a célula gigante da List na maior letra")
+        #expect(pesada.obras.filter { $0.id != "v1" } == vitrine.obras.filter { $0.id != "v1" })
+    }
+
     /// Os orçamentos da etapa 3 sobre a vitrine mostram os números do mockup aprovado (parte1.html) em qualquer dia.
     @Test(arguments: dias)
     func orcamentosDoMockupDaEtapa3(_ dia: String) throws {

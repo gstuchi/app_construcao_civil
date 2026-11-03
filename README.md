@@ -109,6 +109,7 @@ O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o
 - **[AGENTS.md](AGENTS.md)** — idioma, estilo de commit, como rodar os testes e o que quebra produção.
 - **[PRODUCT.md](PRODUCT.md)** — usuário-alvo e princípios de design.
 - **[docs/planejamento-app-store.md](docs/planejamento-app-store.md)** — as fases do caminho até a App Store.
+- **[docs/specs/2026-10-06-app-nativo-design.md](docs/specs/2026-10-06-app-nativo-design.md)** — decisões e etapas do app nativo.
 - **[docs/specs/](docs/specs/)** e **[docs/plans/](docs/plans/)** — o spec e o plano de cada funcionalidade, antes do código.
 
 ## Licença

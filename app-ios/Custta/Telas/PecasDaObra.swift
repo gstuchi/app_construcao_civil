@@ -436,6 +436,11 @@ struct PilulaDaAcao: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         let rotulo = configuration.label
+            // O ícone junto do texto, no meio da pílula. Numa linha de List, o Label ganharia o estilo da linha (o ícone numa
+            // coluna à esquerda), e o texto andaria; o título e ícone segura o alinhamento, mas lá afasta o ícone do texto 8 pt
+            // a mais. A folga fica nos 8 pt de fora da List.
+            .labelStyle(.titleAndIcon)
+            .labelIconToTitleSpacing(8)
             .font(.body.weight(.semibold))
             .multilineTextAlignment(.center)
             .foregroundStyle(paleta.cor(principal ? .sobreMarca : .texto))

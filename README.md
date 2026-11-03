@@ -58,7 +58,8 @@ O produto é pensado para um usuário não técnico, com foco em **clareza em 5 
 - **Simulador "Vale a pena?"** — margem e TIR mensal estimadas por preço e prazo de venda, comparadas ao banco.
 - **Exportação** dos dados em JSON e CSV.
 - **Offline-first** — dados persistidos no aparelho; sincronização em nuvem quando há rede.
-- **Multiusuário** — login por conta (Firebase), dados isolados por usuário.
+- **Multiusuário** — conta por e-mail, Google ou Apple (Firebase), dados isolados por usuário.
+- **Notificações** diárias de orçamento, afazeres, parcelas do mês e lembrete de lançar.
 
 ## Arquitetura
 

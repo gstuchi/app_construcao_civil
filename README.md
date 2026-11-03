@@ -86,8 +86,10 @@ camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 | `styles.css` | todo o CSS do app: temas e componentes |
 | `app.js` | estado e render da interface |
 | `calc.js` | cálculos puros de obra (correção monetária, parcelas) — sem DOM |
+| `dados.js`, `cadastro.js` | regras do documento e do cadastro — sem DOM |
 | `cloud.js`, `auth.js` | Firebase (Auth + Firestore) e a tela de login |
 | `nativo.js`, `push.js`, `share.js`, `ui-confirm.js` | camada nativa, notificações, exportação e diálogos |
+| `gestos.js`, `teclado.js`, `tema.js`, `icons.js` | gestos, teclado de valor, tema e ícones |
 | `sw.js`, `manifest.json` | service worker e manifesto do PWA |
 | `firestore.rules` | as regras que de fato protegem os dados |
 | `vendor/` | SDKs do Firebase e do Sentry, versionados em vez de vindos de CDN |

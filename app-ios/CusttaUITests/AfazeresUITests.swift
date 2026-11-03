@@ -35,8 +35,9 @@ final class AfazeresUITests: XCTestCase {
             XCTAssertTrue(cartao.waitForExistence(timeout: 10))
             cartao.tap()
             let linha = app.elemento("linhaDosAfazeres")
-            XCTAssertTrue(linha.waitForExistence(timeout: 5))
+            XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
             app.rolarAte(linha)
+            XCTAssertTrue(linha.exists)
             XCTAssertEqual(linha.label, "Afazeres")
             XCTAssertEqual(linha.value as? String, valor, obra)
             linha.tap()
@@ -178,8 +179,9 @@ final class AfazeresUITests: XCTestCase {
         while pendentes(app) != "Pendentes, 2" && Date.now < ate { usleep(200_000) }
         app.navigationBars.buttons["BackButton"].tap()
         let linha = app.elemento("linhaDosAfazeres")
-        XCTAssertTrue(linha.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
         app.rolarAte(linha)
+        XCTAssertTrue(linha.exists)
         XCTAssertTrue((linha.value as? String ?? "").hasSuffix("com a altura do peitoril e o lado de abrir de cada folha."),
                       "o VoiceOver lê o pendente de 213 caracteres inteiro")
         XCTAssertLessThan(linha.frame.height, 110, "duas linhas do pendente, e não seis")

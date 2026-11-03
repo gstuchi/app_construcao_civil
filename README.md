@@ -71,6 +71,10 @@ no DOM, o que o torna testável em Node; `cloud.js` é o único ponto de contato
 com o Firebase; `sw.js` é network-first, então o cache só serve como retrato
 para o modo offline.
 
+O app nativo usa o mesmo documento. As regras dele ficam em `CusttaNucleo`,
+cópia em Swift do `calc.js` e do `dados.js`; os vetores de
+`tests/vetores/calc.json` fazem a CI falhar se os dois lados divergem.
+
 O diagrama do fluxo de dados, a tabela de globais, a fronteira de segurança e a
 camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 

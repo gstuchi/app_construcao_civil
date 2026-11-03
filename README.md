@@ -93,7 +93,7 @@ camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 | `sw.js`, `manifest.json` | service worker e manifesto do PWA |
 | `firestore.rules` | as regras que de fato protegem os dados |
 | `vendor/` | SDKs do Firebase e do Sentry, versionados em vez de vindos de CDN |
-| `app-ios/` | app nativo de iPhone em SwiftUI (em desenvolvimento) e o núcleo de cálculo em Swift (`CusttaNucleo`) |
+| `app-ios/` | app nativo de iPhone em SwiftUI e o núcleo em Swift (`CusttaNucleo`); falta só a análise (gráficos, relatório e PDF) |
 | `ios/` | projeto Capacitor do app para iPhone (o atual, até o nativo substituí-lo) |
 | `api/`, `notificacoes/` | função de cron e o job de notificações — não fazem parte do app web |
 | `tests/` | unidade, rules e suítes de browser |

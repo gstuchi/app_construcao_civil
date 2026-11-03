@@ -78,6 +78,9 @@ struct ObraView: View {
                     // O título solto e a cápsula com a fase e o tempo: 8 pt entre eles e 16 até o sólido (mockup, .ob-meta-w).
                     TituloMono(texto: obra.nome)
                         .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
+                        #if DEBUG
+                        .rolagemFixaDaLista()
+                        #endif
                     CapsulaDeMetadados {
                         EtiquetaDeFase(fase: obra.fase, grande: true)
                         Text(textoDoInicio(obra, hoje: hoje))
@@ -208,7 +211,6 @@ struct ObraView: View {
         .background { LeitorDaLetra(barra: barra) }
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
-        .rolagemFixaSemFolha()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

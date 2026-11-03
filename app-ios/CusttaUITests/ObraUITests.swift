@@ -1,4 +1,5 @@
 import XCTest
+import notify
 
 /* A tela da obra (etapa 2, PR 1), com os dados da vitrine (a obra do mockup aprovado: 46 lançamentos, 13 a vencer):
    entrar pela lista e voltar pelo círculo e pela borda; o caminho que sobrevive à troca de aba; os indicadores com os
@@ -51,6 +52,30 @@ final class ObraUITests: XCTestCase {
         app.rolarAte(lancamentos)
         XCTAssertTrue(lancamentos.label.contains("46"), lancamentos.label)
         XCTAssertTrue(tituloPequeno.waitForExistence(timeout: 5), "rolada a tela, o nome passa para a barra")
+    }
+
+    /// Com a obra rolada na maior letra, o Tamanho do Texto vai à letra padrão e volta, como pela Central de Controle (a
+    /// auditoria do iOS 26 faz o mesmo em volta de cada auditoria): a obra volta com a mesma peça no mesmo lugar. A List
+    /// guardava o número da rolagem e, na volta, com as linhas de cima na altura estimada, a tela parava num mês lá embaixo.
+    func testNaMaiorLetraIdaEVoltaDaLetraDeixaAObraNoLugar() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"],
+                           extra: ["CUSTTA_TROCA_LETRA": "aviso"])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        app.swipeUp()
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1.5)
+        let pecas = ["indicadorTotal", "indicadorCorrigido", "indicadorAPagar", "indicadorVenda", "linhaDosAfazeres", "lancamentos"]
+        guard let id = pecas.first(where: { app.elemento($0).exists && app.elemento($0).isHittable }) else {
+            return XCTFail("nenhuma peça do alto à vista depois de rolar")
+        }
+        let peca = app.elemento(id), antes = peca.frame
+        for _ in 0..<2 {                                   // a letra padrão, e de volta a maior
+            notify_post("br.com.custta.falso.trocarLetra")
+            Thread.sleep(forTimeInterval: 2.5)
+        }
+        XCTAssertTrue(peca.exists, "\(id) segue na tela depois de a letra ir e voltar")
+        XCTAssertEqual(peca.frame.minY, antes.minY, accuracy: 2, "\(id) no mesmo lugar: antes \(antes), depois \(peca.frame)")
     }
 
     func testAVencerFechadoAbreEFecha() {

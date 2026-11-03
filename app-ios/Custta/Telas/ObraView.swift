@@ -269,9 +269,11 @@ extension ObraView {
         busca.aberta = true
         Task { @MainActor in
             if rolar {
-                // O scrollTo da List não rola uma linha que já está na tela, e a pílula está: a ponte a leva ao topo. O
-                // teclado sobe junto, como hoje: ele não encolhe a List, e a pílula chega ao topo do mesmo jeito.
-                ponte.rolarAoTopo("lancamentos", animado: !opcoes.reduzirMovimento)
+                // O scrollTo da List não rola uma linha que já está na tela, e a pílula está: a ponte a leva ao topo. Com o
+                // campo entrando, a List mede de novo as linhas de cima: a ponte espera a lista assentar para calcular o
+                // alvo, e o foco vem depois, com o campo já na tela. Na VM lenta da CI, com o foco antes de o campo existir
+                // e o alvo calculado no meio da medida, a lista parava 160 pt além, com o campo sob a barra (1 em 4).
+                await ponte.rolarQuandoAssentar(ate: "lancamentos", a: 0, quadros: 30, animado: !opcoes.reduzirMovimento)
             }
             buscaEmFoco = true
         }

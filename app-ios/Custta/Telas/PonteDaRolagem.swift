@@ -36,23 +36,21 @@ final class PonteDaRolagem {
         return (vista as? UIScrollView).map { ($0, marca) }
     }
 
-    /// Tenta uma vez por quadro, até `quadros` vezes: quando a marca do gasto está na tela e a altura do conteúdo é a mesma
-    /// em dois quadros seguidos (a lista parou de se medir), rola até o meio dele. Devolve se rolou; sem a marca, a lista
-    /// fica onde está. Nada força o layout: a lista se mede no tempo dela.
-    @discardableResult func rolarQuandoAssentar(ate chave: String, quadros: Int, animado: Bool) async -> Bool {
+    /// Tenta uma vez por quadro, até `quadros` vezes: quando a marca da peça está na tela e a altura do conteúdo é a mesma
+    /// em dois quadros seguidos (a lista parou de se medir), rola até o ponto `fracao` dela (o meio do gasto; o topo da
+    /// pílula). Devolve se rolou; sem a marca, a lista fica onde está. Nada força o layout: a lista se mede no tempo dela.
+    @discardableResult func rolarQuandoAssentar(ate chave: String, a fracao: CGFloat = 0.5, quadros: Int,
+                                                animado: Bool) async -> Bool {
         var anterior: CGFloat?
         for _ in 0..<quadros {
             try? await Task.sleep(for: .milliseconds(16))
             guard let (rolagem, _) = rolagem(de: chave) else { anterior = nil; continue }
             let altura = rolagem.contentSize.height
-            if altura == anterior { return rolar(chave, a: 0.5, animado: animado) }
+            if altura == anterior { return rolar(chave, a: fracao, animado: animado) }
             anterior = altura
         }
         return false
     }
-
-    /// Leva a peça da chave ao topo da parte à vista, já, se a marca dela está na tela (a pílula, que a lupa sobe).
-    @discardableResult func rolarAoTopo(_ chave: String, animado: Bool) -> Bool { rolar(chave, a: 0, animado: animado) }
 
     // MARK: A letra que muda com a obra rolada
 

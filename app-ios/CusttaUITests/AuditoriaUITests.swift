@@ -148,12 +148,27 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
     }
 
+    /// A obra na maior letra, no topo. Rolada, não: a obra é uma List, e a auditoria troca a letra (padrão e maior) em volta
+    /// de cada auditoria, no iOS 26 e no 27. A List se mede de novo durante a troca, e textos do bloco A pagar ("3
+    /// vencimentos", "Parcelas e gastos futuros") saíam como cortados, com a tela mostrando os dois inteiros (problema
+    /// conhecido, 03/11; a LazyVStack também não era firme nesse teste no iOS 27, 1 de 2). As peças de baixo seguem na maior
+    /// letra na testVitrineDasPecasNoMaiorTamanho, e o A pagar, na testAPagarNoMaiorTamanho.
     @MainActor func testObraNoMaiorTamanho() throws {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado)
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
-        rolar(app)
-        try auditar(app, tiposDeAuditoria)
+    }
+
+    /// O bloco A pagar da obra na maior letra, inteiro: a etiqueta dos vencimentos e a nota "Parcelas e gastos futuros". Na
+    /// obra, ele fica abaixo da dobra, e a auditoria olha só o topo; rolado, numa List ou numa ScrollView, a troca de letra
+    /// da auditoria tira a rolagem do lugar (na vitrine, as rolagens de 900 a 3600 caíam todas na mesma tela). Aqui ele vem
+    /// no alto da vitrine das peças (`-custta.vitrineAPagar`) e é auditado sem rolar.
+    @MainActor func testAPagarNoMaiorTamanho() throws {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas",
+                           argumentos: maiorLetra + parado + ["-custta.vitrineAPagar", "YES"])
+        XCTAssertTrue(app.elemento("vitrine-aPagar").waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 1.5)
+        try auditar(app, [.dynamicType, .textClipped])
     }
 
     /// A vitrine das peças da identidade nova (etapa 4, PR 1b; só no Debug, com CUSTTA_ABRIR=pecas) na maior letra, em

@@ -69,7 +69,8 @@ final class LeituraNoVidroUITests: XCTestCase {
     ///   18 Pro (decisão do Prumo, 21/10).
     private static let excecoes = ["obra com orçamento por tópico, na maior letra": "iconeDoAviso"]
 
-    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect]) {
+    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool, assentar: TimeInterval = 2)
+        -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect], [CGRect]) {
         let excecao = Self.excecoes[cena.nome].map { ["-custta.foraDoLaudo", $0] } ?? []
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir, folha: cena.folha,
                            argumentos: cena.argumentos + excecao + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
@@ -81,14 +82,15 @@ final class LeituraNoVidroUITests: XCTestCase {
             XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")
         }
         cena.toques?(app)
-        Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
+        Thread.sleep(forTimeInterval: assentar)                    // o vidro e a rolagem assentam
         conferirAssunto(cena, app)
         let foto = XCUIScreen.main.screenshot()
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
         let largura = app.frame.width
         let informativo = exemploDaDescricao(app, cena)
+        let barra = app.navigationBars.buttons.allElementsBoundByIndex.filter(\.exists).map(\.frame)
         app.terminate()
-        return (foto, abas, largura, informativo)
+        return (foto, abas, largura, informativo, barra)
     }
 
     /// O assunto da cena à vista antes do print: abaixo da barra de status e acima da faixa de baixo, a borda de 140 pt ou a
@@ -144,10 +146,18 @@ final class LeituraNoVidroUITests: XCTestCase {
 
     /// Mede uma cena, anexa o print anotado e a tabela e devolve as palavras abaixo do portão.
     @MainActor private func conferir(_ cena: Cena) throws -> [String] {
-        let (normal, abas, largura, informativo) = fotografar(cena, textoApagado: false)
-        let (semTexto, _, _, _) = fotografar(cena, textoApagado: true)
+        let (normal, abas, largura, informativo, barra) = fotografar(cena, textoApagado: false)
         let imagem = normal.image.cgImage!
         let escala = CGFloat(imagem.width) / largura
+        // Os botões da barra (o voltar e o lápis) não têm texto e saem iguais nos dois prints. O vidro do voltar, do
+        // sistema, se adapta ao que tem atrás e assenta depois de a tela abrir: na obra em List, com o texto apagado, de 1 a
+        // 8 s, e o print sai aos 2 s. Com o vidro diferente, o print sem texto sai de novo, com mais espera (até 3 vezes).
+        var (semTexto, _, _, _, _) = fotografar(cena, textoApagado: true)
+        for espera in [6.0, 10, 14] {
+            guard !LaudoDeContraste.iguais(Retrato(imagem), Retrato(semTexto.image.cgImage!), em: barra, escala: escala) else { break }
+            Swift.print("leitura | \(cena.nome) | a barra mudou entre os prints: o sem texto sai de novo com \(Int(espera)) s")
+            semTexto = fotografar(cena, textoApagado: true, assentar: espera).0
+        }
         let capsula = abas.reduce(CGRect.null) { $0.union($1) }
         let regiao = capsula.isNull ? [] : [capsula.insetBy(dx: -10, dy: -10)]
         // O que passa por baixo da cápsula e da barra de início é desfocado e coberto pelo véu da borda de

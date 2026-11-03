@@ -72,6 +72,23 @@ enum LaudoDeContraste {
     /// Mede as palavras da cena. `escala` em pixels por ponto; `topo`, em pontos, deixa a barra de status de
     /// fora (a hora muda entre os prints); `somenteEm` limita a medida a regiões e `ignorar` tira regiões
     /// (em pontos).
+    /// Os dois prints são iguais nas regiões dadas (em pt): nenhum canal muda mais de 8.
+    static func iguais(_ a: Retrato, _ b: Retrato, em regioes: [CGRect], escala: CGFloat) -> Bool {
+        guard a.largura == b.largura, a.altura == b.altura else { return false }
+        for regiao in regioes {
+            let x0 = max(0, Int((regiao.minX * escala).rounded(.down))), x1 = min(a.largura, Int((regiao.maxX * escala).rounded(.up)))
+            let y0 = max(0, Int((regiao.minY * escala).rounded(.down))), y1 = min(a.altura, Int((regiao.maxY * escala).rounded(.up)))
+            guard x0 < x1, y0 < y1 else { continue }
+            for y in y0..<y1 {
+                for x in x0..<x1 {
+                    let i = (y * a.largura + x) * 4
+                    for c in 0..<3 where abs(Int(a.rgba[i + c]) - Int(b.rgba[i + c])) > 8 { return false }
+                }
+            }
+        }
+        return true
+    }
+
     static func medir(normal: Retrato, semTexto: Retrato, escala: CGFloat, topo: CGFloat = 0,
                       somenteEm: [CGRect]? = nil, ignorar: [CGRect] = []) throws -> [Palavra] {
         precondition(normal.largura == semTexto.largura && normal.altura == semTexto.altura)

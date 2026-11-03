@@ -41,6 +41,16 @@ extension XCUIApplication {
         }
     }
 
+    /// Volta a lista ao alto pelo dedo, até o título da obra ficar à vista. Na List, a peça do alto sai da árvore quando a lista
+    /// rola para longe dela.
+    func rolarAteOTopo(tentativas: Int = 12) {
+        let titulo = elemento("tituloDaObra")
+        for _ in 0..<tentativas {
+            if titulo.exists && titulo.isHittable { return }
+            swipeDown(velocity: .fast)
+        }
+    }
+
     /// Volta pelo gesto da borda esquerda, como o polegar (o XCUITest não tem "voltar" do sistema). No iOS 26 da CI, o arrasto
     /// sintetizado às vezes não volta depois de voltar pelo botão e entrar de novo, sem alerta e com o voltar à vista (runs
     /// 39710458060 e 39799242127). Lá, se `saindo` não some em 2 s, ele se repete uma vez, com um print e uma linha no log;

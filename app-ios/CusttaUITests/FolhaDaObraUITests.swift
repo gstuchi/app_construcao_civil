@@ -37,9 +37,13 @@ final class FolhaDaObraUITests: XCTestCase {
         let titulo = app.elemento("tituloDaObra")
         XCTAssertTrue(titulo.waitForExistence(timeout: 8), "\"Criar obra\" entra direto na obra nova")
         XCTAssertEqual(titulo.label, "Casa Granja Viana 2")
-        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Em construção"))
-        XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.600.000,00"))
+        // Abaixo da dobra, onde a List só cria a linha que entra na tela.
+        let venda = app.elemento("indicadorVenda"), vazia = app.elemento("obraSemGastos")
+        app.rolarAte(venda)
+        XCTAssertTrue(venda.label.contains("R$\u{a0}1.600.000,00"))
+        app.rolarAte(vazia)
+        XCTAssertTrue(vazia.exists)
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(app.staticTexts["4 obras"].waitForExistence(timeout: 5), "a obra nova está na lista")
     }

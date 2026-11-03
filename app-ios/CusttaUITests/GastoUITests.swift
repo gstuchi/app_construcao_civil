@@ -297,6 +297,7 @@ final class GastoUITests: XCTestCase {
         app.buttons["fecharFolha"].tap()
         app.alerts["Você já preencheu este gasto."].buttons["Descartar gasto"].tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertTrue(app.elemento("lancamentos").label.contains("46"), "nada foi gravado")
     }
 

@@ -101,7 +101,7 @@ camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 
 ## Por que a raiz tem tantos arquivos
 
-O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o que o navegador baixa. `index.html` carrega cada script na ordem declarada, `styles.css` traz todo o CSS e `sw.js` lista esses mesmos arquivos no precache. `package.json` existe para testes, manutenção do SDK local (`vendor/`), Capacitor e a função de cron em `api/` — nada dele vai para o navegador. O projeto iOS fica em `ios/`; `www/` é gerado por `npm run build:www` e não é versionado.
+O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o que o navegador baixa. `index.html` carrega cada script na ordem declarada, `styles.css` traz todo o CSS e `sw.js` lista esses mesmos arquivos no precache. `package.json` existe para testes, manutenção do SDK local (`vendor/`), Capacitor e a função de cron em `api/` — nada dele vai para o navegador. Os dois apps de iPhone ficam fora da raiz: o nativo em `app-ios/` e o Capacitor em `ios/`, que embrulha o site a partir de `www/`, gerado por `npm run build:www` e não versionado.
 
 ## Documentação
 

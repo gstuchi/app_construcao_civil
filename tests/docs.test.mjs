@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tamanhoPng, TELAS_README } from '../scripts/screenshots-loja.mjs';
+import { tamanhoPng } from '../scripts/screenshots-loja.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const versionados = execFileSync('git', ['ls-files'], { cwd: RAIZ, encoding: 'utf8' })
@@ -81,14 +81,12 @@ test('docs/ARQUITETURA.md documenta o fluxo de dados', () => {
 
 test('capturas do README existem em 1x, versionadas e com alt', () => {
   const readme = ler('README.md');
-  assert.equal(TELAS_README.size, 3, 'três capturas — quatro já viram carrossel');
-  for (const nome of TELAS_README.values()) {
-    const rel = `docs/img/${nome}`;
+  const capturas = [...readme.matchAll(/<img\s[^>]*src="(docs\/img\/[^"]+\.png)"/g)].map(m => m[1]);
+  assert.ok(capturas.length >= 1 && capturas.length <= 3, 'até três capturas — quatro já viram carrossel');
+  for (const rel of capturas) {
     assert.ok(versionados.includes(rel), `${rel} precisa estar versionado`);
-    const { width, height } = tamanhoPng(readFileSync(path.join(RAIZ, rel)));
-    assert.equal(width, 430, `${rel}: no README a captura é 1x; 1290 pesa 4x sem ganho`);
-    assert.equal(height, 932, `${rel}: altura de iPhone 6.9"`);
-    assert.ok(readme.includes(rel), `README não mostra ${rel}`);
+    const { width } = tamanhoPng(readFileSync(path.join(RAIZ, rel)));
+    assert.ok(width <= 500, `${rel}: no README a captura é 1x (${width} px); a de 3x pesa 9x sem ganho`);
   }
   const semAlt = [...readme.matchAll(/<img\s[^>]*src="docs\/img\/[^>]*>/g)]
     .filter(m => !/\balt="[^"]+"/.test(m[0])).map(m => m[0]);

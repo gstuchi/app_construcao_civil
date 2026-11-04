@@ -56,14 +56,11 @@ final class AncoraDaRolagemFixa: UIView {
     /// padrão, uma folga em pontos passava do fim da linha e mostrava outras, que a auditoria perdia ("sem elemento").
     private static func segurar(_ lista: UICollectionView, y: Double) {
         let topo = lista.contentOffset.y + lista.adjustedContentInset.top
-        let ancora = lista.indexPathsForVisibleItems
-            .compactMap { indice in lista.layoutAttributesForItem(at: indice).map { (indice, $0.frame) } }
-            .filter { $0.1.maxY > topo }
-            .min { $0.1.minY < $1.1.minY }
-        let indice = ancora?.0
-        // Negativa quando o alto cai no vão de 12 pt entre duas linhas: o ponto fica no vão, como o número da ScrollView.
-        // Presa a 0, ela levava o alto ao topo da linha de baixo (a v1 a 400 parava 5,33 pt abaixo da main).
-        let fracao = ancora.map { (topo - $0.1.minY) / max(1, $0.1.height) } ?? 0
+        // A conta da ponte (linhaDoAlto): a fração fica negativa quando o alto cai no vão entre duas linhas.
+        let ancora = linhaDoAlto(topo, em: lista.indexPathsForVisibleItems
+            .compactMap { indice in lista.layoutAttributesForItem(at: indice).map { (indice, $0.frame) } })
+        let indice = ancora?.indice
+        let fracao = ancora?.fracao ?? 0
         observacoes = [
             lista.observe(\.contentOffset, options: [.new]) { rolada, _ in
                 MainActor.assumeIsolated { ajustar(rolada, y: y, ancora: indice, fracao: fracao) }

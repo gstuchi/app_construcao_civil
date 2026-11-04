@@ -114,6 +114,7 @@ auditoria na maior letra) foram decididas pelo Orquestrador, pela delegação do
 | O rótulo da pílula de ação (item 11 da paridade) | `labelStyle(.titleAndIcon)` e `labelIconToTitleSpacing(8)` no `PilulaDaAcao` | Dentro da `List`, o `Label` ganha o estilo da linha (ícone numa coluna) e o texto anda alguns pt. O título e ícone segura o alinhamento, mas a `List` afasta o ícone do texto 8 pt a mais; a folga fixa nos 8 pt de fora deixa os prints iguais aos de hoje no 26.5 e no 27. Descartados: um `LabelStyle` próprio (1 px de diferença na vertical) e o `labelReservedIconWidth(0)` (desmonta o rótulo) |
 | A auditoria da obra na maior letra (item 9; Orquestrador, a contar ao Giovani, 03/11) | A obra (a v1) é auditada só no topo, nos dois sistemas, e volta a valer na CI do iOS 26; a parte 3 segue com a v2 a 800 e no fim e a v3 no fim, e as ações, os afazeres, a pílula e o A vencer da v1 rolada ficam sem auditoria na maior letra (problema conhecido). O bloco A pagar ganha auditoria própria na maior letra, no alto da vitrine das peças (`-custta.vitrineAPagar`), com mutação que cai. A letra que muda com a obra rolada vira conserto do app, na ponte, com teste próprio | A auditoria troca a letra em volta de cada auditoria (iOS 26 e 27). Na `List` rolada, isso tirava a obra do lugar (10 achados sem elemento; conserto na ponte) e pegava a célula se medindo (2 achados com elemento no A pagar, inteiros na tela: problema conhecido). Descartados: exceção por identificador nos dois textos (outra rolagem traz outros textos da mesma célula) e investigar a célula sem prazo |
 | A linha do alto no vão | A fração da linha do alto, no gancho dos testes e na ponte, pode ser negativa: quando o alto da parte à vista cai no vão de 12 pt entre duas linhas, o ponto fica no vão (`linhaDoAlto`, função pura com teste) | Os prints `main` × ponta de 04/11 acharam a v1 a 400 5,33 pt abaixo da `main`, nos dois temas e nos dois sistemas, com o conteúdo igual. O alto (y 400) caía no vão entre duas linhas, a 1ª linha abaixo dele começava em 405,33, e a fração presa a 0 (`max(0, …)`, desde a troca dos pontos pela fração, para a auditoria que muda a letra) segurava o topo dela. Na ponte, a mesma trava fazia a lista pular até 12 pt quando a letra ou o filtro mudavam com o alto num vão. Negativa, a fração devolve o alto ao vão e escala com a letra; a dentro da linha não muda. Achado e decidido em 04/11 (Orquestrador) |
+| O A vencer depois de salvar, no teste (Orquestrador, a contar ao Giovani, 04/11) | O `testLancarNoCartaoEm10xVaiParaOAVencer` espera o "aberto" até 5 s, em vez de ler na hora, e a sessão no iPhone mede a abertura no Instruments, com teto de ~1 s, como a célula gigante (Como entregar) | O A vencer abre 80 ms depois de a lista chegar nele, também hoje. Na `List`, na VM da CI, a leitura na hora pegou "fechado" em 2 de 3 runs completos (41706879156 e 41873791727); na `main`, nenhuma queda registrada. A gravação de tela da 2ª queda mostra o caminho de sempre: a lista vai ao A vencer fechado (o `scrollTo` do cartão), e ele abre 2,47 s depois, com a leitura no meio. A tentativa direta da ponte não roda com o A vencer fechado, e o soltar na desaceleração só existe quando a letra ou o filtro mudam. Descartado: só repetir a CI (a mesma cena duas vezes não é moeda). O app não muda: a ordem (rolar, depois abrir) é a de hoje; a `List` pode deixar a abertura mais lenta também no aparelho, e por isso a medida |
 | A lupa, o foco e o filtro | A pílula vai ao topo quando a lista assenta (ou com a última medida, se ela não assenta em 30 quadros), e o foco vem logo depois. Quando o filtro da busca muda os dados, a ponte segura a linha do alto, como na letra que muda | Na VM da CI, a pílula subia 160 pt durante a digitação, com o campo sob a barra e o × fora do alcance (sondas 41738960913, 1 de 4, e 41743119168, 2 de 6, já com a espera da lupa): a `List` reestima as linhas de cima quando os dados mudam, e o UIKit nem sempre compensa. Com o conserto (sonda 41749639956, 6 rodadas, na pilha anterior, com o teclado de lá), a pílula ficou em y 129 nas 6; o × limpou em 4, e as outras 2 foram toques perdidos da VM. Na ponta desta pilha, a mesma sonda: nas 6 rodadas, a pílula ficou em y 129 antes e depois de abrir o A vencer, e o × limpou a busca (run 41873797898, `proto/obra-em-list-sonda-x17`, 04/11; rodadas de 173 a 442 s). Outra mudança de dados com a busca aberta (outro aparelho apaga um gasto) não passa pela ponte: mesma causa, sem conserto aqui. Num aparelho rápido, a espera é de um ou dois quadros |
 | O VoiceOver e a obra pesada no iPhone (Giovani, 03/11) | Uma versão de Debug do ramo no iPhone dele, pelo Xcode, com `CUSTTA_DADOS=pesada`, numa sessão só, antes do merge: ele confere o VoiceOver (foco depois de salvar e de apagar, anel e ordem de leitura) e o Controle por Voz, e o Prumo grava as paradas da obra pesada no Instruments. É o portão do merge (Como entregar) | O simulador não roda o VoiceOver nem o Controle por Voz, e os dados falsos só existem em Debug. A obra pesada entra nos falsos nesta troca (10). O build da sessão sai com `SWIFT_OPTIMIZATION_LEVEL=-O`, que mantém o `DEBUG` e os falsos: em `-Onone`, uma parada acima de 1 s poderia ser da falta de otimização, e não da célula |
 | O anel do VoiceOver na `List` (achado da revisão às cegas) | Uma vista vazia do UIKit (`QuadroProprio`) no fundo do título, da cápsula e da soma dos achados | Sozinha numa linha, a peça virava a célula inteira para o VoiceOver: a cápsula com 370 pt de largura (269 hoje) e a soma também (266 hoje). Com a vista, a célula vira um contêiner, e os 31 identificadores em comum com a `main` têm o mesmo quadro. Descartado: a peça num `VStack` com `.accessibilityElement(children: .contain)`, que manteve os 370 pt |
@@ -202,7 +203,9 @@ auditoria na maior letra) foram decididas pelo Orquestrador, pela delegação do
     antes do traço). Reabra o app só pelo `devicectl`: pelo ícone, a versão de Debug sobe com os serviços reais e a conta
     dele, e a sessão apagaria e lançaria gastos de verdade: `xcrun xctrace record --device <udid do iPhone> --template 'Time Profiler' --instrument Hangs --attach Custta
     --time-limit 3m --output <pasta>/sessao.trace`;
-  - teto de ~1 s por parada. Acima disso, a célula gigante volta a ele, e o merge espera.
+  - com o traço gravando, ele lança uma compra no cartão em 10x: a abertura do A vencer, do Salvar até a 1ª parcela acesa,
+    tem o mesmo teto, porque a `List` pode deixá-la mais lenta (na VM da CI, 2,5 s; Decisões);
+  - teto de ~1 s por parada. Acima disso, a célula gigante (ou a abertura do A vencer) volta a ele, e o merge espera.
   O iPhone dele é recente: o que for liso nele não prova um iPhone antigo, e a CI do iOS 26 segue como o pior caso.
 - **Merge com o OK do Giovani** (exceção à regra de um risco por PR; Decisões). O Orquestrador leva a ele:
   - os prints de hoje × `List` (claro e escuro, letra padrão e maior, 402 e 375 pt);
@@ -303,7 +306,7 @@ elas, e a falta de qualquer uma delas também derruba.
 troca de letra e o aviso do caminho da ponte (+52), o A pagar da vitrine (+26), a obra pesada nos falsos (+22) e os
 lançamentos da vitrine (+4 −3). O que vai ao Release é +369 −35. Por tarefa: a ponte, +315 −19 (com o que ela troca na
 `ObraView`, o teclado da busca, a tentativa direta e a linha do alto); a `List`, +53 −20 (com o quadro próprio do anel); o
-rótulo da pílula, +5. Quatro linhas que a `List` põe e a ponte troca contam nas duas. Os testes somam +336 −51, e o
+rótulo da pílula, +5. Quatro linhas que a `List` põe e a ponte troca contam nas duas. Os testes somam +342 −52, e o
 checklist do aparelho, +41.
 
 **Os dois riscos**, escritos no corpo do PR, com a exceção à regra pedida ao Giovani (Decisões):
@@ -571,6 +574,10 @@ A adaptação segue estas regras:
 - **Depois de uma ação que mexe na rolagem** (salvar, a lupa, o A vencer que abre), o teste não rola antes de conferir: se
   a peça não estiver à vista, o defeito é do app. Para ler o que ficou no alto, o teste volta pelo dedo (`rolarAteOTopo`,
   novo).
+- **O A vencer que abre depois de salvar** (`testLancarNoCartaoEm10xVaiParaOAVencer`): ele abre 80 ms depois de a lista
+  chegar nele, também hoje, e o teste o lia na hora. Na `List`, na VM da CI, a abertura chegou 2,5 s depois, e a leitura
+  pegou "fechado" em 2 de 3 runs completos (41706879156 e 41873791727; na `main`, nenhuma queda registrada). O teste espera
+  o "aberto" até 5 s (Decisões).
 - **A cena do laudo** espera o total gasto, no alto. O cartão vazio fica abaixo da dobra também hoje: a cena mede a mesma
   tela de antes.
 
@@ -848,7 +855,21 @@ Em `app-ios/CusttaUITests/GastoUITests.swift`:
 ```diff
 --- a/app-ios/CusttaUITests/GastoUITests.swift
 +++ b/app-ios/CusttaUITests/GastoUITests.swift
-@@ -297,6 +297,7 @@ final class GastoUITests: XCTestCase {
+@@ -114,7 +114,12 @@ final class GastoUITests: XCTestCase {
+         escrever(app, "Revestimento da varanda")
+         app.buttons["salvarGasto"].tap()
+         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+-        XCTAssertEqual(app.elemento("aVencer").value as? String, "aberto", "o primeiro vencimento é daqui a um mês: o A vencer abre")
++        // O A vencer abre 80 ms depois de a lista chegar nele; na List, na VM da CI, ele abriu 2,5 s depois, e a leitura na
++        // hora pegava "fechado" (run 41873791727). O teste espera até 5 s: sem a abertura, cai.
++        let aVencer = app.elemento("aVencer")
++        let aberto = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "aberto"), object: aVencer)
++        XCTAssertEqual(XCTWaiter.wait(for: [aberto], timeout: 5), .completed,
++                       "o primeiro vencimento é daqui a um mês: o A vencer abre")
+         XCTAssertTrue(comRotulo(app, comecando: "Revestimento da varanda (1/10)").firstMatch.waitForExistence(timeout: 5))
+         XCTAssertTrue(app.elemento("lancamentos").label.contains("56"), "10 parcelas entraram")
+     }
+@@ -297,6 +302,7 @@ final class GastoUITests: XCTestCase {
          app.buttons["fecharFolha"].tap()
          app.alerts["Você já preencheu este gasto."].buttons["Descartar gasto"].tap()
          XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
@@ -983,6 +1004,19 @@ xcodebuild test-without-building "${XB[@]}" -derivedDataPath <seu dd> -collect-t
 Expected: `18` (no 26.5 do Mac, 439 s). O `grep -c` só conta; para ver uma queda, troque por
 `grep -E "Test Case .*failed|error:"`, que tem de sair vazio.
 
+O do A vencer, que espera a abertura:
+
+Run:
+```bash
+xcodebuild test-without-building "${XB[@]}" -derivedDataPath <seu dd> -collect-test-diagnostics never \
+  -only-testing:CusttaUITests/GastoUITests/testLancarNoCartaoEm10xVaiParaOAVencer 2>&1 | grep -E "Test Case .*(passed|failed)"
+```
+Expected (no 26.5 do Mac; na ponta, com a `List`, passa em 26,4 s, e com o simulador freado a 1/3 da velocidade, como a VM,
+em 37,7 e 39,7 s):
+```
+Test Case '-[CusttaUITests.GastoUITests testLancarNoCartaoEm10xVaiParaOAVencer]' passed (27.452 seconds).
+```
+
 Os dois do laudo:
 
 Run:
@@ -1013,22 +1047,27 @@ Expected (no 26.5, com a `List` já na ponta, onde a adaptação importa; 133 s)
 
 - [ ] **Step 3: Mutação: os testes ainda mordem**
 
-Mute o app duas vezes e rode os testes da mutação; cada um tem de cair, e depois desfaça:
+Mute o app três vezes e rode os testes da mutação; cada um tem de cair, e depois desfaça:
 - `acoesDaFase(.construcao)` devolvendo também `.registrarVenda`: cai o `testMarcarComoProntaEVoltarPraConstrucaoSemPergunta`
   ("a construção não se vende");
-- o bloco dos gastos por tópico sem o `if !obra.gastos.isEmpty`: cai o `testSemGastosSemGastosPorTopico`.
+- o bloco dos gastos por tópico sem o `if !obra.gastos.isEmpty`: cai o `testSemGastosSemGastosPorTopico`;
+- o `mostrar` sem o `abrirAVencer()`: o A vencer fica fechado depois de salvar no cartão, e cai o
+  `testLancarNoCartaoEm10xVaiParaOAVencer`, depois dos 5 s de espera (na ponta, com a `List`, cai igual, nas linhas 152 e
+  154).
 
 Expected:
 ```
 FasesUITests.swift:18: error: -[CusttaUITests.FasesUITests testMarcarComoProntaEVoltarPraConstrucaoSemPergunta] : XCTAssertFalse failed - a construção não se vende
 ObraUITests.swift:198: error: -[CusttaUITests.ObraUITests testSemGastosSemGastosPorTopico] : XCTAssertFalse failed
+GastoUITests.swift:121: error: -[CusttaUITests.GastoUITests testLancarNoCartaoEm10xVaiParaOAVencer] : XCTAssertEqual failed: ("XCTWaiterResult(rawValue: 2)") is not equal to ("XCTWaiterResult(rawValue: 1)") - o primeiro vencimento é daqui a um mês: o A vencer abre
+GastoUITests.swift:123: error: -[CusttaUITests.GastoUITests testLancarNoCartaoEm10xVaiParaOAVencer] : XCTAssertTrue failed
 ```
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add app-ios/CusttaUITests/Abrir.swift app-ios/CusttaUITests/AfazeresUITests.swift app-ios/CusttaUITests/BuscaUITests.swift app-ios/CusttaUITests/CruzadoUITests.swift app-ios/CusttaUITests/EstadosUITests.swift app-ios/CusttaUITests/FasesUITests.swift app-ios/CusttaUITests/FolhaDaObraUITests.swift app-ios/CusttaUITests/GastoUITests.swift app-ios/CusttaUITests/LeituraNoVidroUITests.swift app-ios/CusttaUITests/ObraUITests.swift
-git commit -m "test: testes da obra rolam até a peça abaixo da dobra" -m "Na List, o XCUITest só vê a linha que está na tela (a LazyVStack expunha a ~1.700 pt). Vinte e um testes liam ou tocavam uma peça abaixo da dobra logo ao abrir, sem rolar: as ações da fase, a pílula, o A vencer, a linha dos afazeres, o cartão vazio e a Venda, também no laudo do alerta de não salvou e no teste cruzado com o site. Agora eles esperam uma peça do alto, rolam até a peça como a pessoa rolaria e só então leem; a ausência que um teste confere fica depois de a lista chegar à região, para ele seguir pegando o que pegava. Depois de uma ação que mexe na rolagem (salvar, a lupa), o teste não rola antes de conferir. A cena da obra sem gastos do laudo espera o total gasto, no alto, e mede a mesma tela."
+git commit -m "test: testes da obra rolam até a peça abaixo da dobra" -m "Na List, o XCUITest só vê a linha que está na tela (a LazyVStack expunha a ~1.700 pt). Vinte e um testes liam ou tocavam uma peça abaixo da dobra logo ao abrir, sem rolar: as ações da fase, a pílula, o A vencer, a linha dos afazeres, o cartão vazio e a Venda, também no laudo do alerta de não salvou e no teste cruzado com o site. Agora eles esperam uma peça do alto, rolam até a peça como a pessoa rolaria e só então leem; a ausência que um teste confere fica depois de a lista chegar à região, para ele seguir pegando o que pegava. Depois de uma ação que mexe na rolagem (salvar, a lupa), o teste não rola antes de conferir; o A vencer, que abre depois de a lista chegar nele, é esperado até 5 s (na VM da CI, ele abriu 2,5 s depois, e a leitura na hora pegava \"fechado\"). A cena da obra sem gastos do laudo espera o total gasto, no alto, e mede a mesma tela."
 ```
 
 ### Task 4: O laudo deixa o vidro do voltar de fora, como a barra de status
@@ -2468,7 +2507,7 @@ Em `app-ios/CusttaUITests/GastoUITests.swift`:
      }
  
      /// Na maior letra, a folha nas medidas do mockup (AX5): o nome da obra sai da barra e fica para o VoiceOver, no valor
-@@ -365,4 +396,27 @@ final class GastoUITests: XCTestCase {
+@@ -370,4 +401,27 @@ final class GastoUITests: XCTestCase {
          alerta.buttons["OK"].tap()
          XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}1.380,00", "o gasto continua na folha")
      }

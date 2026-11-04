@@ -194,6 +194,8 @@ struct ObraView: View {
         .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
         .onChange(of: folhas.aberta) { _, aberta in if aberta != nil { linhaAberta = nil } }
         .onChange(of: busca.filtrando) { _, agora in if agora { aVencerAbertoNaBusca = true } }
+        // Cada letra da busca muda os dados da List: a ponte segura a linha do alto (a pílula, com o campo embaixo).
+        .onChange(of: busca.filtro) { ponte.segurarOAlto() }
         .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
         .onDisappear { linhaAberta = nil }
         .sensoryFeedback(.success, trigger: folhas.destaque)

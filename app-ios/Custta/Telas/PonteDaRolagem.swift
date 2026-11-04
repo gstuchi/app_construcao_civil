@@ -84,6 +84,14 @@ final class PonteDaRolagem {
         alto = primeira.map { ($0.0, max(0, topo - $0.1.minY) / max(1, $0.1.height)) }
     }
 
+    /// O filtro da busca mudou os dados: a List volta as linhas de cima da tela à altura estimada e, na VM lenta da CI, nem
+    /// sempre compensa a rolagem; a pílula subia 160 pt, com o campo sob a barra (2 de 6). Segura a linha do alto como na
+    /// letra que muda.
+    func segurarOAlto() {
+        guard let lista else { return }
+        letraMudou(lista)
+    }
+
     /// O Tamanho do Texto mudou: a List mede as linhas de novo e guarda o número da rolagem, e a tela vai para outro lugar (na
     /// ida e volta da letra, as linhas de cima ficam na altura estimada, e a obra rolada parava num mês lá embaixo). A ponte
     /// segura a linha que estava no alto, no mesmo ponto dela, a cada quadro, por 1,5 s; um arrasto solta.

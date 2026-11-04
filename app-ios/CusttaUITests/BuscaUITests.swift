@@ -68,6 +68,9 @@ final class BuscaUITests: XCTestCase {
         buscar(app, "ceramica")
         XCTAssertEqual(app.textFields["campoDaBusca"].label, "Buscar gasto ou tópico", "o rótulo do campo para o VoiceOver")
         XCTAssertLessThan(app.elemento("lancamentos").frame.minY, 200, "a lista rola até a pílula, com o campo embaixo")
+        let barra = app.navigationBars.firstMatch.frame
+        XCTAssertGreaterThanOrEqual(app.elemento("lancamentos").frame.minY, barra.maxY - 1, "a pílula abaixo da barra, e não sob ela")
+        XCTAssertGreaterThanOrEqual(app.textFields["campoDaBusca"].frame.minY, barra.maxY, "o campo abaixo da barra")
         XCTAssertEqual(pilula(app), "Lançamentos, 12 de 46")
         XCTAssertEqual(app.elemento("somaDosAchados").label, "Soma dos achados: R$\u{a0}95.120,30")
         XCTAssertLessThan(app.elemento("somaDosAchados").frame.width, app.frame.width - 32 - 40,

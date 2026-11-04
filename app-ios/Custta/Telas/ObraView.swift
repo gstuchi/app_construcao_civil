@@ -40,6 +40,8 @@ struct ObraView: View {
     /// O título pequeno mora num objeto próprio, lido só pela peça da barra: ao cruzar o limite no meio da rolagem, só
     /// ela se refaz, e não a tela inteira (lista, indicadores e cartões).
     @State private var barra = BarraDaObra()
+    /// A rolagem da List e as marcas das linhas acesas, para o rolar até o gasto salvo (PonteDaRolagem.swift).
+    @State private var ponte = PonteDaRolagem()
     #if DEBUG
     /// Laudo e conferência visual: a linha que abre mostrando "Apagar" (`-custta.linhaAberta g027`).
     @AppStorage("custta.linhaAberta") private var linhaDeTeste = ""
@@ -71,7 +73,8 @@ struct ObraView: View {
                                  apagar: { gasto in
                                      alvoDoApagar = gasto
                                      perguntando = true
-                                 })
+                                 },
+                                 ponte: ponte)
         return ScrollViewReader { leitor in
             // A obra numa List (UICollectionView), uma peça por linha e um cartão por mês numa linha: no iOS 26, a LazyVStack
             // entrava em laço de layout ao arrastar na maior letra numa obra de lista curta (#99).
@@ -81,6 +84,7 @@ struct ObraView: View {
                     TituloMono(texto: obra.nome)
                         .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
                         .background { QuadroProprio() }
+                        .background { MarcaDaLista(ponte: ponte) }
                         #if DEBUG
                         .rolagemFixaDaLista()
                         #endif
@@ -125,14 +129,15 @@ struct ObraView: View {
                         .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
                         .accessibilityIdentifier("gastosPorTopico")
                     }
-                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id fica na linha inteira, por fora do recuo: o scrollTo
-                    // da List só acha o id da linha, e a lupa rola até a pílula com os 6 pt de cima dela.
+                    // 18 pt acima dos lançamentos (mockup, .lan-cab). A marca da ponte cobre a pílula e os 6 pt de cima dela: a
+                    // lupa leva o topo da marca ao alto da parte à vista, e a pílula para onde parava na ScrollView (y 129 no 18
+                    // Pro, medido nas duas em 03/11).
                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
-                                            abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
+                                            abrir: { abrirBusca() }, fechar: fecharBusca)
                         .padding(.top, 6)
-                        .id("lancamentos")
+                        .background { MarcaDaLinha(ponte: ponte, chave: "lancamentos") }
                     if busca.aberta {
                         CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
                             // O teclado fecha quando o dedo rola o campo para fora da tela, como na LazyVStack de antes, em
@@ -202,6 +207,8 @@ struct ObraView: View {
         }
         .onChange(of: folhas.aberta) { _, aberta in if aberta != nil { linhaAberta = nil } }
         .onChange(of: busca.filtrando) { _, agora in if agora { aVencerAbertoNaBusca = true } }
+        // Cada letra da busca muda os dados da List: a ponte segura a linha do alto (a pílula, com o campo embaixo).
+        .onChange(of: busca.filtro) { ponte.segurarOAlto() }
         .onChange(of: folhas.pedidoDeApagar) { _, p in if let p, p.obraId == obra.id { apagar(p, obra: obra, lista: lista) } }
         .onDisappear { linhaAberta = nil }
         .sensoryFeedback(.success, trigger: folhas.destaque)
@@ -272,12 +279,17 @@ extension ObraView {
 
     /// A lupa: abre o campo embaixo da pílula, rola a lista até a pílula e põe o teclado; com o campo aberto, só devolve o
     /// foco a ele.
-    private func abrirBusca(_ leitor: ScrollViewProxy) {
+    private func abrirBusca() {
         let rolar = !busca.aberta
         busca.aberta = true
         Task { @MainActor in
             if rolar {
-                withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo("lancamentos", anchor: .top) }
+                // O scrollTo da List não rola uma linha que já está na tela, e a pílula está: a ponte a leva ao topo. Com o
+                // campo entrando, a List mede de novo as linhas de cima: a ponte espera a lista assentar para calcular o
+                // alvo, e o foco vem depois, com o campo já na tela. Na VM lenta da CI, com o foco antes de o campo existir
+                // e o alvo calculado no meio da medida, a lista parava 160 pt além, com o campo sob a barra (1 em 4).
+                await ponte.rolarQuandoAssentar(ate: "lancamentos", a: 0, quadros: 30, animado: !opcoes.reduzirMovimento,
+                                                insistir: true)
             }
             buscaEmFoco = true
         }
@@ -302,8 +314,8 @@ extension ObraView {
         foco = .lancamentos
     }
 
-    /// Depois de salvar: rola em dois tempos (o cartão, que a LazyVStack cria, e depois a linha), abre o "A vencer" se o
-    /// gasto foi para lá, acende por 2 s e leva o VoiceOver para a linha.
+    /// Depois de salvar: leva o cartão do gasto ao topo, abre o "A vencer" se o gasto foi para lá, rola até o meio da linha
+    /// pela ponte do UIKit (o scrollTo da List só acha o cartão), acende por 2 s e leva o VoiceOver para a linha.
     private func mostrar(_ d: Folhas.Destaque, lista: ListaDaObra, leitor: ScrollViewProxy) {
         guard let primeiro = d.ids.first else { return }
         let noAVencer = lista.aVencer?.meses.contains { $0.gastos.contains { $0.id == primeiro } } ?? false
@@ -311,15 +323,26 @@ extension ObraView {
         acesos = Set(d.ids)
         novos = d.novo
         Task { @MainActor in
-            if let cartao { leitor.scrollTo(cartao, anchor: .center) }
-            // O "A vencer" abre depois de a lista chegar nele, ainda fechado: aberto antes, na maior letra (milhares de
-            // pontos que a LazyVStack ainda não criou), a rolagem parava num mês lá embaixo.
-            if noAVencer {
-                try? await Task.sleep(for: .milliseconds(80))
-                abrirAVencer()
+            let animado = !opcoes.reduzirMovimento
+            // Com a linha já na tela (a edição), a ponte vai direto ao gasto, sem passar pelo topo do cartão. No "A vencer"
+            // fechado a linha não existe: ele abre no tempo de antes, sem esperar a tentativa.
+            var direto = false
+            if !(noAVencer && !aVencerAbertoAgora) {
+                direto = await ponte.rolarQuandoAssentar(ate: primeiro, quadros: 3, animado: animado)
             }
-            try? await Task.sleep(for: .milliseconds(80))
-            withAnimation(opcoes.reduzirMovimento ? nil : .easeOut(duration: 0.3)) { leitor.scrollTo(primeiro, anchor: .center) }
+            if !direto {
+                if let cartao { leitor.scrollTo(cartao, anchor: .top) }
+                // O "A vencer" abre depois de a lista chegar nele, ainda fechado.
+                if noAVencer {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    abrirAVencer()
+                }
+                // A marca da linha aparece quando a célula do cartão entra na tela e se mede: até ~1 s.
+                await ponte.rolarQuandoAssentar(ate: primeiro, quadros: 60, animado: animado)
+            }
+            #if DEBUG
+            ponte.avisarCaminho(direto: direto)
+            #endif
             try? await Task.sleep(for: .milliseconds(450))
             foco = .gasto(primeiro)
             try? await Task.sleep(for: .seconds(2))
@@ -376,6 +399,8 @@ struct AcoesDaLista {
     let foco: AccessibilityFocusState<AlvoDoFoco?>.Binding
     let tocar: (Gasto) -> Void
     let apagar: (Gasto) -> Void
+    /// Só na obra: a ponte que acha a linha do gasto salvo na rolagem (nil nas folhas).
+    var ponte: PonteDaRolagem? = nil
 }
 
 /// Uma linha de gasto na lista: tocar edita, arrastar mostra "Apagar", acende depois de salvar. Para o VoiceOver é um
@@ -396,6 +421,9 @@ struct LinhaDaLista: View {
         }
         .id(gasto.id)
         .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
+        .background {
+            if let ponte = lista.ponte, lista.acesos.contains(gasto.id) { MarcaDaLinha(ponte: ponte, chave: gasto.id) }
+        }
     }
 }
 

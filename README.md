@@ -1,6 +1,9 @@
 <div align="center">
 
-# custta.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/logo-escuro.svg">
+  <img src="docs/img/logo.svg" width="260" alt="custta.">
+</picture>
 
 **Controle de custos e lucro por obra, na ponta do lápis.**
 
@@ -12,7 +15,6 @@ O site está em produção; o app de iPhone está sendo refeito em SwiftUI nativ
 ![PWA](https://img.shields.io/badge/PWA-offline--first-3ad17e)
 ![Stack](https://img.shields.io/badge/stack-vanilla%20JS-f7df1e)
 ![iOS](https://img.shields.io/badge/iOS-SwiftUI-0a84ff)
-![Build](https://img.shields.io/badge/build-nenhum-lightgrey)
 ![Deploy](https://img.shields.io/badge/deploy-Vercel-black)
 
 <table>
@@ -75,8 +77,7 @@ O app nativo usa o mesmo documento. As regras dele ficam em `CusttaNucleo`,
 cópia em Swift do `calc.js` e do `dados.js`; os vetores de
 `tests/vetores/calc.json` fazem a CI falhar se os dois lados divergem.
 
-O diagrama do fluxo de dados, a tabela de globais, a fronteira de segurança e a
-camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
+Fluxo de dados, globais, segurança e camada nativa: **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 
 ## Estrutura do projeto
 
@@ -101,7 +102,7 @@ camada nativa estão em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 
 ## Por que a raiz tem tantos arquivos
 
-O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o que o navegador baixa. `index.html` carrega cada script na ordem declarada, `styles.css` traz todo o CSS e `sw.js` lista esses mesmos arquivos no precache. `package.json` existe para testes, manutenção do SDK local (`vendor/`), Capacitor e a função de cron em `api/` — nada dele vai para o navegador. Os dois apps de iPhone ficam fora da raiz: o nativo em `app-ios/` e o Capacitor em `ios/`, que embrulha o site a partir de `www/`, gerado por `npm run build:www` e não versionado.
+O app não tem bundler nem etapa de build: os arquivos da raiz são exatamente o que o navegador baixa. `index.html` carrega cada script na ordem declarada, `styles.css` traz todo o CSS e `sw.js` lista esses mesmos arquivos no precache. `package.json` serve a testes, SDK local (`vendor/`), Capacitor e ao cron de `api/`; nada dele vai ao navegador. Os dois apps de iPhone ficam fora da raiz: o nativo em `app-ios/` e o Capacitor em `ios/`, que embrulha o site a partir de `www/`, gerado por `npm run build:www` e não versionado.
 
 ## Documentação
 

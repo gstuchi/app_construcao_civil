@@ -19,9 +19,9 @@ O site está em produção; o app de iPhone está sendo refeito em SwiftUI nativ
 
 <table>
   <tr>
-    <td><img src="docs/img/inicio.png" width="260" alt="Lista de obras com total gasto por obra e comparativo entre elas"></td>
-    <td><img src="docs/img/obra.png" width="260" alt="Tela da obra com total gasto, valor corrigido pelo banco, contas a pagar e venda estimada"></td>
-    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos de evolução da obra e de gasto por mês"></td>
+    <td><img src="docs/img/obra.png" width="260" alt="Obra no app de iPhone: total gasto, orçamento, corrigido pelo banco e A pagar"></td>
+    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos da obra: anel de gastos por tópico com o valor de cada um"></td>
+    <td><img src="docs/img/vale-a-pena.png" width="260" alt="Simulador Vale a pena?: TIR mensal da venda comparada ao banco"></td>
   </tr>
 </table>
 

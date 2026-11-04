@@ -17,17 +17,9 @@ O site está em produção; o app de iPhone está sendo refeito em SwiftUI nativ
 ![iOS](https://img.shields.io/badge/iOS-SwiftUI-0a84ff)
 ![Deploy](https://img.shields.io/badge/deploy-Vercel-black)
 
-<table>
-  <tr>
-    <td><img src="docs/img/obra.png" width="260" alt="Obra no app de iPhone: total gasto, orçamento e A pagar"></td>
-    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos da obra: gastos por tópico"></td>
-    <td><img src="docs/img/vale-a-pena.png" width="260" alt="Simulador Vale a pena?: TIR comparada ao banco"></td>
-  </tr>
-</table>
+https://github.com/user-attachments/assets/7c2f952a-e6cd-4389-88f7-c39ecff4bedb
 
 </div>
-
-https://github.com/user-attachments/assets/7c2f952a-e6cd-4389-88f7-c39ecff4bedb
 
 ---
 

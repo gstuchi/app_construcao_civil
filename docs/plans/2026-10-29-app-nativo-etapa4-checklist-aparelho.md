@@ -46,3 +46,44 @@ A etapa não grava nada novo: os caminhos de gravação são os das etapas 2 e 3
 - [ ] Controle por Voz ("Mostrar nomes"): "Tocar Orçamento", "Tocar A pagar", "Tocar Afazeres" e o nome de um lançamento funcionam; os gastos por tópico não aparecem como botão.
 - [ ] No escuro e no claro, nos vidros Transparente e Fosco (Ajustes → Aparência), os pedaços da barra se distinguem da placa atrás e entre si, e o texto da legenda se lê. Com Reduzir transparência, os blocos ficam sólidos e nada some.
 - [ ] Com Aumentar contraste, a obra inteira continua legível, e o bloco verde não muda de cor.
+
+## A obra em List (o TestFlight da troca, antes do marco 2)
+
+A tela da obra trocou de estrutura por dentro, para não travar no iOS 26. Nada deveria mudar à vista: compare com o build
+do marco 1 nas mesmas obras.
+
+- [ ] A obra abre igual à do marco 1: o título, a cápsula, os blocos, as ações, os Afazeres, os gastos por tópico, a pílula
+  "Lançamentos" e os meses, com os mesmos espaços. O botão "Marcar como pronta" com o ícone junto do texto, no meio.
+- [ ] Rolar com o dedo, devagar e rápido, de cima a baixo e de volta: a lista acompanha o dedo, sem soluço nem salto.
+  Logo depois de abrir, os primeiros arrastos andam como os de depois.
+- [ ] Tocar no Orçamento e nos Afazeres abre como antes, sem um realce cinza no bloco inteiro; ao voltar, nada pisca.
+- [ ] Lançar um gasto pelo +: a lista rola até a linha nova, que acende por 2 s. Editar um gasto do fim de um mês longo:
+  ao salvar, a linha fica à vista e acende, sem a lista ir ao topo do mês e voltar.
+- [ ] Uma compra no cartão em 10x: a lista rola até o "A vencer", que abre, com a 1ª parcela à vista e acesa.
+- [ ] Arrastar um lançamento para a esquerda mostra "Apagar"; tocar em outra linha, no A pagar ou rolar fecha. Tocar fora
+  das linhas e dos botões não fecha mais a linha aberta: no vão entre duas linhas (aceito em 03/11), e também no título,
+  na cápsula, nos blocos de número, no cabeçalho de um mês e nos gastos por tópico. Diga se isso serve.
+- [ ] A lupa: o campo abre embaixo da pílula, a lista rola até ela, e o teclado sobe e desce sem a tela travar. O campo
+  nunca fica escondido sob a barra de cima, e o × dele limpa a busca. Com o teclado aberto, um arrasto curto o deixa
+  aberto, e rolar até o campo ir longe da tela (meia tela além) o fecha, como no marco 1. Digitar logo depois de um
+  arrasto curto, com a lista ainda deslizando: o teclado fica, e a letra entra.
+- [ ] Lance no site um gasto de teste ("teste busca"), busque por ele no iPhone e, com a busca aberta e o teclado em cima,
+  apague esse gasto no site: o campo segue abaixo da barra, e o × limpa a busca.
+
+**Texto Maior no máximo**
+
+- [ ] Numa obra de lista curta, arrastar a lista para cima e para baixo várias vezes: nada trava (era o defeito do iOS 26).
+- [ ] Na obra de mais lançamentos que você tiver, rolar até o mês mais cheio e de volta: diga se alguma parada se nota, e
+  quanto tempo dura. A versão de teste da sessão (Decisões) mede isso no Instruments.
+- [ ] Com a obra rolada até o meio, mudar o Tamanho do Texto pela Central de Controle, para um menor e de volta ao máximo:
+  a obra volta com o mesmo bloco no alto da tela, sem pular para outro mês.
+
+**Acessibilidade**
+
+- [ ] VoiceOver: o anel de cada bloco, da cápsula e do título tem o tamanho de antes (a cápsula não fica mais alta).
+- [ ] VoiceOver, depois de salvar um gasto, o foco vai para a linha nova; depois de apagar, para a linha vizinha, e ele
+  diz "Gasto apagado". Apague a compra toda (uma parcela do A vencer): o foco vai para uma linha que existe na tela.
+- [ ] VoiceOver, o rotor de cabeçalhos passa por todos os meses, também os que estavam fora da tela.
+- [ ] Controle por Voz ("Mostrar nomes"): "Tocar Orçamento", "Tocar A pagar", "Tocar Afazeres" e o nome de um lançamento.
+- [ ] Com Reduzir movimento, Aumentar contraste e Reduzir transparência ligados nos Ajustes do iPhone (não no app), a obra
+  continua como no marco 1.

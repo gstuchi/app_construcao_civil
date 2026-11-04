@@ -68,6 +68,9 @@ final class BuscaUITests: XCTestCase {
         buscar(app, "ceramica")
         XCTAssertEqual(app.textFields["campoDaBusca"].label, "Buscar gasto ou tópico", "o rótulo do campo para o VoiceOver")
         XCTAssertLessThan(app.elemento("lancamentos").frame.minY, 200, "a lista rola até a pílula, com o campo embaixo")
+        let barra = app.navigationBars.firstMatch.frame
+        XCTAssertGreaterThanOrEqual(app.elemento("lancamentos").frame.minY, barra.maxY - 1, "a pílula abaixo da barra, e não sob ela")
+        XCTAssertGreaterThanOrEqual(app.textFields["campoDaBusca"].frame.minY, barra.maxY, "o campo abaixo da barra")
         XCTAssertEqual(pilula(app), "Lançamentos, 12 de 46")
         XCTAssertEqual(app.elemento("somaDosAchados").label, "Soma dos achados: R$\u{a0}95.120,30")
         XCTAssertLessThan(app.elemento("somaDosAchados").frame.width, app.frame.width - 32 - 40,
@@ -216,6 +219,28 @@ final class BuscaUITests: XCTestCase {
         XCTAssertEqual(pilula(app), "Lançamentos")
         XCTAssertFalse(app.buttons["buscar"].exists)
         XCTAssertFalse(app.buttons["filtrarPorMes"].exists)
+        // O anel do VoiceOver abraça a pílula, e não a célula da List (370 pt): sozinha na linha, ela depende da marca da
+        // ponte no fundo, uma vista do UIKit (ver o QuadroProprio, na ObraView).
+        let quadro = app.elemento("lancamentos").frame
+        XCTAssertLessThan(quadro.width, app.windows.firstMatch.frame.width - 32 - 40, "o anel da pílula: \(quadro)")
+    }
+
+    /// O teclado da busca fica como na LazyVStack de antes: o arrasto curto o deixa aberto, mesmo com o impulso levando o
+    /// campo para fora da tela, e os arrastos longos o fecham quando o campo passa de meia tela além dela. Na List, a célula
+    /// com o foco fica viva, e sem a régua do campo contra a janela (ObraView.campoForaDaJanela) o teclado não fechava
+    /// nunca: 12 arrastos, e ele seguia em y 583 (sonda de 03/11).
+    func testArrastoCurtoDeixaOTecladoEOsLongosOFecham() {
+        let app = abrirObra()
+        buscar(app, "o")
+        let teclado = app.keyboards.firstMatch, meio = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+        meio.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
+        XCTAssertTrue(teclado.exists, "o arrasto curto fechou o teclado")
+        for _ in 0..<12 {
+            guard teclado.exists else { break }
+            meio.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        XCTAssertTrue(teclado.waitForNonExistence(timeout: 3), "os arrastos longos não fecharam o teclado")
     }
 
     /// A obra que fica sem gasto segue com a lupa e o mês enquanto há filtro ou busca: com o mês escolhido, e depois, sem o

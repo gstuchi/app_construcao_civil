@@ -10,19 +10,23 @@ final class FasesUITests: XCTestCase {
     func testMarcarComoProntaEVoltarPraConstrucaoSemPergunta() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
         let pronta = app.buttons["acao-marcarPronta"]
-        XCTAssertTrue(pronta.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("faseDaObra").waitForExistence(timeout: 10))
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Em construção"))
-        XCTAssertFalse(app.buttons["acao-registrarVenda"].exists, "a construção não se vende")
+        // As ações ficam abaixo da dobra: a lista cria a linha delas quando chega perto, e só então a ausência prova algo.
         app.rolarAte(pronta)
+        XCTAssertTrue(pronta.exists)
+        XCTAssertFalse(app.buttons["acao-registrarVenda"].exists, "a construção não se vende")
         pronta.tap()
         let voltar = app.buttons["acao-voltarConstrucao"]
         XCTAssertTrue(voltar.waitForExistence(timeout: 5), "pronta: voltar e registrar venda")
         XCTAssertTrue(app.buttons["acao-registrarVenda"].exists)
         XCTAssertFalse(app.alerts.firstMatch.exists, "mudar a fase não pergunta (o mudarFase do site)")
+        app.rolarAteOTopo()
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Pronta · à venda"))
         app.rolarAte(voltar)
         voltar.tap()
         XCTAssertTrue(app.buttons["acao-marcarPronta"].waitForExistence(timeout: 5))
+        app.rolarAteOTopo()
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Em construção"))
     }
 
@@ -61,21 +65,25 @@ final class FasesUITests: XCTestCase {
     func testDesfazerVendaPerguntaComOTextoDoSite() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v3")
         let desfazer = app.buttons["acao-desfazerVenda"]
-        XCTAssertTrue(desfazer.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         app.rolarAte(desfazer)
+        XCTAssertTrue(desfazer.exists)
         desfazer.tap()
         let alerta = app.alerts["Desfazer a venda?"]
         XCTAssertTrue(alerta.waitForExistence(timeout: 5))
         XCTAssertTrue(alerta.staticTexts["A obra volta pra “Pronta”."].exists)
         alerta.buttons["Cancelar"].tap()
         XCTAssertTrue(alerta.waitForNonExistence(timeout: 5))
+        app.rolarAteOTopo()
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Vendida"), "cancelar não muda nada")
         app.rolarAte(desfazer)
         desfazer.tap()
         XCTAssertTrue(alerta.waitForExistence(timeout: 5))
         alerta.buttons["Desfazer venda"].tap()
         XCTAssertTrue(app.buttons["acao-registrarVenda"].waitForExistence(timeout: 5))
+        app.rolarAteOTopo()
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Pronta · à venda"))
+        app.rolarAte(app.elemento("indicadorVenda"))
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("Venda estimada"), "a venda saiu; volta a estimativa")
     }
 
@@ -98,10 +106,12 @@ final class FasesUITests: XCTestCase {
         XCTAssertTrue(confirmar.waitForExistence(timeout: 10))
         confirmar.doubleTap()
         XCTAssertTrue(confirmar.waitForNonExistence(timeout: 5), "a folha desce")
+        app.rolarAte(app.buttons["acao-desfazerVenda"])
         XCTAssertTrue(app.buttons["acao-desfazerVenda"].waitForExistence(timeout: 5))
         sleep(1)
         XCTAssertFalse(app.alerts.firstMatch.exists, "nenhum aviso")
         XCTAssertFalse(app.elemento("tituloDaFolha").exists, "nenhuma folha abriu por baixo")
+        app.rolarAte(app.elemento("indicadorVenda"))
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.380.000,00"))
     }
 

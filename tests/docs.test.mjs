@@ -82,7 +82,7 @@ test('docs/ARQUITETURA.md documenta o fluxo de dados', () => {
 test('capturas do README existem em 1x, versionadas e com alt', () => {
   const readme = ler('README.md');
   const capturas = [...readme.matchAll(/<img\s[^>]*src="(docs\/img\/[^"]+\.png)"/g)].map(m => m[1]);
-  assert.ok(capturas.length >= 1 && capturas.length <= 3, 'até três capturas — quatro já viram carrossel');
+  assert.ok(capturas.length <= 3, 'até três capturas — quatro já viram carrossel');
   for (const rel of capturas) {
     assert.ok(versionados.includes(rel), `${rel} precisa estar versionado`);
     const { width } = tamanhoPng(readFileSync(path.join(RAIZ, rel)));

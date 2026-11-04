@@ -79,6 +79,9 @@ struct ObraView: View {
                     TituloMono(texto: obra.nome)
                         .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
                         .background { QuadroProprio() }
+                        #if DEBUG
+                        .rolagemFixaDaLista()
+                        #endif
                     CapsulaDeMetadados {
                         EtiquetaDeFase(fase: obra.fase, grande: true)
                         Text(textoDoInicio(obra, hoje: hoje))
@@ -207,7 +210,6 @@ struct ObraView: View {
         .background { LeitorDaLetra(barra: barra) }
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
-        .rolagemFixaSemFolha()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

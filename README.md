@@ -19,13 +19,15 @@ O site está em produção; o app de iPhone está sendo refeito em SwiftUI nativ
 
 <table>
   <tr>
-    <td><img src="docs/img/obra.png" width="260" alt="Obra no app de iPhone: total gasto, orçamento, corrigido pelo banco e A pagar"></td>
-    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos da obra: anel de gastos por tópico com o valor de cada um"></td>
-    <td><img src="docs/img/vale-a-pena.png" width="260" alt="Simulador Vale a pena?: TIR mensal da venda comparada ao banco"></td>
+    <td><img src="docs/img/obra.png" width="260" alt="Obra no app de iPhone: total gasto, orçamento e A pagar"></td>
+    <td><img src="docs/img/graficos.png" width="260" alt="Gráficos da obra: gastos por tópico"></td>
+    <td><img src="docs/img/vale-a-pena.png" width="260" alt="Simulador Vale a pena?: TIR comparada ao banco"></td>
   </tr>
 </table>
 
 </div>
+
+https://github.com/user-attachments/assets/7c2f952a-e6cd-4389-88f7-c39ecff4bedb
 
 ---
 

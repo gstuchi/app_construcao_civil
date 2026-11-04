@@ -87,7 +87,7 @@ final class ObraUITests: XCTestCase {
         // No fim da rolagem, o último gasto fica à vista, acima da cápsula de abas (mockup: o conteúdo termina 132 pt acima
         // da borda de baixo).
         let ultimo = app.elemento("gasto-g001")
-        var fim = -1.0                                   // a pilha cria o último gasto antes de ele entrar na tela
+        var fim = -1.0                                   // a List cria o último cartão um pouco antes de ele entrar na tela
         for _ in 0..<16 {
             app.swipeUp()
             guard ultimo.exists else { continue }
@@ -129,6 +129,9 @@ final class ObraUITests: XCTestCase {
         XCTAssertEqual(titulo.minX, 16, accuracy: 0.5, "o título solto na borda de 16 pt")
         XCTAssertEqual(fase.minX, 16, accuracy: 0.5, "a cápsula na borda de 16 pt")
         XCTAssertEqual(quadros[0].minY - fase.maxY, 16, accuracy: 0.5, "a cápsula 16 pt acima do sólido")
+        // O anel do VoiceOver abraça a peça, e não a linha da List (a cápsula tem 269 pt, o título 258, a coluna 370).
+        XCTAssertLessThan(titulo.width, largura - 32 - 40, "o anel do título abraça o título: \(titulo)")
+        XCTAssertLessThan(fase.width, largura - 32 - 40, "o anel da cápsula abraça a cápsula: \(fase)")
         XCTAssertFalse(app.elemento("indicadorLucro").exists, "fora da vendida, o sólido é o Total gasto")
     }
 

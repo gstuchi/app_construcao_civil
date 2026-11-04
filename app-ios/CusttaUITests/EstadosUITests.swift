@@ -102,8 +102,8 @@ final class EstadosUITests: XCTestCase {
         app.buttons["salvarGasto"].doubleTap()
         XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
         sleep(1)
-        // A lista rolou até a linha nova (o destaque). Com a obra em blocos (etapa 4), o alto fica longe e sai da lista
-        // preguiçosa: o nome vem do título pequeno da barra, e a contagem, da pílula "Lançamentos", logo acima da linha.
+        // A lista rolou até a linha nova (o destaque). Com a obra em blocos (etapa 4), o alto fica longe e sai da List: o
+        // nome vem do título pequeno da barra, e a contagem, da pílula "Lançamentos", logo acima da linha.
         XCTAssertEqual(app.elemento("tituloPequenoDaBarra").label, "Casa Alphaville")
         XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
     }

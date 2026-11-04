@@ -603,7 +603,7 @@ extension LeituraNoVidroUITests {
     @MainActor func testLeituraDaParte3NaMaiorLetra() {
         let escuro = ["-custta.tema", "escuro"] + piorMomento + maiorLetra
         cobrar([
-            // Espera o lápis da barra: rolada, o título sai da pilha preguiçosa antes da espera achar. A 1977 pt, as ações à vista
+            // Espera o lápis da barra: rolada, o título sai da List antes da espera achar. A 1977 pt, as ações à vista
             // nos dois iPhones (a 1100 da etapa 3, a obra em blocos punha a tela entre o A pagar e a Venda estimada, sem ação
             // nenhuma). A obra quebra 162 pt a mais no 18 Pro, e nenhuma rolagem acha um vão comum fora do "Toque no lápis para
             // informar o valor": no 18 Pro (a largura da CI), a borda fica entre a 1ª e a 2ª linha dessa frase (6 pt abaixo da

@@ -57,10 +57,11 @@ struct VitrineDasPecas: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("vitrine-topicos")
-                // Os lançamentos na linha mono: os dois primeiros do mês mais recente e um de R$ 1 bilhão, que não cabe ao
-                // lado do título (deixaria menos de 120 pt para ele) e desce para baixo dele.
+                // Os lançamentos na linha mono: os dois mais recentes, de qualquer mês (nos dias 3 e 4, o mês corrente
+                // só tem um), e um de R$ 1 bilhão, que não cabe ao lado do título (deixaria menos de 120 pt para ele) e
+                // desce para baixo dele.
                 let topicos = mapaDeTopicos(estado.config.topicosProprios)
-                let lancamentos = Array(listaDaObra(casa, hoje: hoje).meses.first?.gastos.prefix(2) ?? []) + [Self.gigante]
+                let lancamentos = Array(listaDaObra(casa, hoje: hoje).meses.flatMap(\.gastos).prefix(2)) + [Self.gigante]
                 CartaoDaLista {
                     ForEach(Array(lancamentos.enumerated()), id: \.element.id) { i, gasto in
                         if i > 0 { LinhaFina().padding(.horizontal, Grade.recuo) }

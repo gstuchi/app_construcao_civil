@@ -50,20 +50,22 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
     }
 
-    /// Na maior letra, depois de salvar, a lista rola até o gasto e ele acende à vista: o cartão do mês fica fora da parte
-    /// que a LazyVStack já criou, e a rolagem vai pela identidade do ForEach (um .id no cartão só existe depois de criado).
+    /// Na maior letra, depois de salvar, a lista rola até o gasto e ele acende à vista, entre a barra e a cápsula de abas: o
+    /// cartão do mês é uma linha da List, e a ponte do UIKit leva o gasto ao meio da parte à vista.
     func testNaMaiorLetraAListaRolaAteOGastoSalvo() {
         let app = abrirObra(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         lancarValor(app, "777777")
         app.buttons["salvarGasto"].tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
         let linha = app.descendants(matching: .any).matching(NSPredicate(format: "value == %@", "R$\u{a0}7.777,77")).firstMatch
-        XCTAssertTrue(linha.waitForExistence(timeout: 5), "a lista rolou até o cartão do mês, que a LazyVStack cria")
-        XCTAssertTrue(app.frame.contains(linha.frame), "e a linha acesa está inteira à vista: \(linha.frame)")
+        XCTAssertTrue(linha.waitForExistence(timeout: 5), "a lista rolou até o cartão do mês")
+        let barra = app.navigationBars.firstMatch.frame, abas = app.buttons["aba-obras"].frame
+        XCTAssertGreaterThanOrEqual(linha.frame.minY, barra.maxY, "e a linha acesa está inteira à vista, abaixo da barra: \(linha.frame)")
+        XCTAssertLessThanOrEqual(linha.frame.maxY, abas.minY, "e acima da cápsula de abas: \(linha.frame)")
     }
 
-    /// Na maior letra, a compra no cartão vai para o "A vencer", que também fica fora da parte que a LazyVStack já criou:
-    /// a lista rola até ele, que abre, e a 1ª parcela acende à vista (o primeiro vencimento é daqui a um mês).
+    /// Na maior letra, a compra no cartão vai para o "A vencer": a lista rola até ele, que abre, e a 1ª parcela acende à vista,
+    /// entre a barra e a cápsula de abas (o primeiro vencimento é daqui a um mês).
     func testNaMaiorLetraAListaRolaAteOAVencer() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: [
             "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL", "-custta.folha", "cartao"])
@@ -71,11 +73,40 @@ final class GastoUITests: XCTestCase {
         app.buttons["salvarGasto"].tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
         let aVencer = app.elemento("aVencer")
-        XCTAssertTrue(aVencer.waitForExistence(timeout: 5), "a lista rolou até o A vencer, que a LazyVStack cria")
+        XCTAssertTrue(aVencer.waitForExistence(timeout: 5), "a lista rolou até o A vencer")
         XCTAssertEqual(aVencer.value as? String, "aberto")
         let parcela = app.descendants(matching: .any).matching(NSPredicate(format: "value == %@", "R$\u{a0}498,00")).firstMatch
         XCTAssertTrue(parcela.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.frame.contains(parcela.frame), "e a 1ª parcela está inteira à vista: \(parcela.frame)")
+        let barra = app.navigationBars.firstMatch.frame, abas = app.buttons["aba-obras"].frame
+        XCTAssertGreaterThanOrEqual(parcela.frame.minY, barra.maxY, "e a 1ª parcela está inteira à vista, abaixo da barra: \(parcela.frame)")
+        XCTAssertLessThanOrEqual(parcela.frame.maxY, abas.minY, "e acima da cápsula de abas: \(parcela.frame)")
+    }
+
+    /// Na maior letra, editar um gasto do fim de um mês longo e salvar: a linha fica inteira à vista, entre a barra e a cápsula
+    /// de abas. O cartão do mês passa da tela, e o scrollTo da List só acha o cartão: quem leva a rolagem até a linha é a ponte
+    /// do UIKit (PonteDaRolagem.swift), e este teste cai quando ela não acha a linha. Com a linha à vista, a ponte vai direto
+    /// ao gasto, sem passar pelo topo do cartão (o salto que o conselho de 03/11 descartou): o aviso do caminho diz "direto".
+    func testNaMaiorLetraEditarUmGastoDoFimDoMesDeixaALinhaAVista() {
+        let app = abrirObra(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let linha = app.elemento("gasto-g024")
+        app.rolarAte(linha, tentativas: 30)
+        linha.tap()
+        XCTAssertTrue(app.elemento("linhaValor").waitForExistence(timeout: 5))
+        app.elemento("linhaValor").tap()
+        XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))
+        for _ in 0..<8 { app.buttons["tecla-del"].tap() }
+        for t in "12345" { app.buttons["tecla-\(t)"].tap() }
+        app.buttons["confirmarValor"].tap()
+        XCTAssertTrue(app.buttons["salvarGasto"].waitForExistence(timeout: 5))
+        let avisos = AvisosDaPonte()
+        app.buttons["salvarGasto"].tap()
+        XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5), "a folha desce")
+        sleep(2)
+        XCTAssertEqual(avisos.caminhos(), ["direto"], "a ponte vai direto ao gasto à vista, sem passar pelo topo do cartão")
+        let barra = app.navigationBars.firstMatch.frame, capsula = app.buttons["aba-obras"].frame
+        XCTAssertTrue(linha.exists, "a linha editada está na árvore")
+        XCTAssertGreaterThanOrEqual(linha.frame.minY, barra.maxY, "a linha não fica sob a barra: \(linha.frame)")
+        XCTAssertLessThanOrEqual(linha.frame.maxY, capsula.minY, "nem sob a cápsula de abas: \(linha.frame)")
     }
 
     /// Na maior letra, a folha nas medidas do mockup (AX5): o nome da obra sai da barra e fica para o VoiceOver, no valor
@@ -369,5 +400,28 @@ final class GastoUITests: XCTestCase {
         XCTAssertTrue(alerta.staticTexts["O gasto continua aqui; nada foi salvo ainda."].exists)
         alerta.buttons["OK"].tap()
         XCTAssertEqual(app.elemento("linhaValor").value as? String, "R$\u{a0}1.380,00", "o gasto continua na folha")
+    }
+
+    /// Os avisos do caminho da ponte (PonteDaRolagem.avisarCaminho, só em Debug), lidos depois da ação.
+    private final class AvisosDaPonte {
+        private var direto: Int32 = 0, cartao: Int32 = 0
+
+        init() {
+            notify_register_check("br.com.custta.falso.ponte.direto", &direto)
+            notify_register_check("br.com.custta.falso.ponte.cartao", &cartao)
+            _ = caminhos()                                      // o 1º notify_check sempre diz que mudou
+        }
+
+        func caminhos() -> [String] {
+            var foiDireto: Int32 = 0, foiCartao: Int32 = 0
+            notify_check(direto, &foiDireto)
+            notify_check(cartao, &foiCartao)
+            return (foiDireto != 0 ? ["direto"] : []) + (foiCartao != 0 ? ["cartão"] : [])
+        }
+
+        deinit {
+            notify_cancel(direto)
+            notify_cancel(cartao)
+        }
     }
 }

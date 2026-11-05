@@ -70,6 +70,8 @@ final class BuscaUITests: XCTestCase {
         XCTAssertLessThan(app.elemento("lancamentos").frame.minY, 200, "a lista rola até a pílula, com o campo embaixo")
         XCTAssertEqual(pilula(app), "Lançamentos, 12 de 46")
         XCTAssertEqual(app.elemento("somaDosAchados").label, "Soma dos achados: R$\u{a0}95.120,30")
+        XCTAssertLessThan(app.elemento("somaDosAchados").frame.width, app.frame.width - 32 - 40,
+                          "o anel do VoiceOver abraça a soma, e não a linha da List")
         let aVencer = app.elemento("aVencer")
         XCTAssertEqual(aVencer.value as? String, "aberto", "com filtro, o A vencer abre sozinho")
         XCTAssertTrue(aVencer.label.hasPrefix("A vencer, R$\u{a0}36.900,00, 6 gastos"), aVencer.label)
@@ -228,8 +230,8 @@ final class BuscaUITests: XCTestCase {
         let lupa = app.buttons["buscar"], mes = app.buttons["filtrarPorMes"]
         app.rolarAte(mes, tentativas: 20)                 // na maior letra, as 12 roladas do padrão chegam sem folga
         escolherMes(app, "Junho de 2023")
-        // O chip e a soma dos achados, que o mês põe embaixo dos botões, levam o gasto para baixo da dobra, onde a
-        // LazyVStack pode ainda não o ter criado (no iOS 26 da CI, não tinha): espera o chip e rola até a linha.
+        // O chip e a soma dos achados, que o mês põe embaixo dos botões, levam o gasto para baixo da dobra, onde a List
+        // pode ainda não ter criado a célula dele (no iOS 26 da CI, não tinha): espera o chip e rola até a linha.
         XCTAssertTrue(app.elemento("chipDoMes").waitForExistence(timeout: 5))
         let linha = app.elemento("gasto-j1")              // o único gasto da obra
         app.rolarAte(linha)

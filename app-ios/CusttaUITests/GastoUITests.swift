@@ -114,7 +114,12 @@ final class GastoUITests: XCTestCase {
         escrever(app, "Revestimento da varanda")
         app.buttons["salvarGasto"].tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
-        XCTAssertEqual(app.elemento("aVencer").value as? String, "aberto", "o primeiro vencimento é daqui a um mês: o A vencer abre")
+        // O A vencer abre 80 ms depois de a lista chegar nele; na List, na VM da CI, ele abriu 2,5 s depois, e a leitura na
+        // hora pegava "fechado" (run 41873791727). O teste espera até 5 s: sem a abertura, cai.
+        let aVencer = app.elemento("aVencer")
+        let aberto = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "aberto"), object: aVencer)
+        XCTAssertEqual(XCTWaiter.wait(for: [aberto], timeout: 5), .completed,
+                       "o primeiro vencimento é daqui a um mês: o A vencer abre")
         XCTAssertTrue(comRotulo(app, comecando: "Revestimento da varanda (1/10)").firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.elemento("lancamentos").label.contains("56"), "10 parcelas entraram")
     }
@@ -297,6 +302,7 @@ final class GastoUITests: XCTestCase {
         app.buttons["fecharFolha"].tap()
         app.alerts["Você já preencheu este gasto."].buttons["Descartar gasto"].tap()
         XCTAssertTrue(app.elemento("linhaTopico").waitForNonExistence(timeout: 5))
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertTrue(app.elemento("lancamentos").label.contains("46"), "nada foi gravado")
     }
 

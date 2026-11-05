@@ -71,18 +71,27 @@ struct ObraView: View {
                                      perguntando = true
                                  })
         return ScrollViewReader { leitor in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: Grade.entreBlocos) {
+            // A obra numa List (UICollectionView), uma peça por linha e um cartão por mês numa linha: no iOS 26, a LazyVStack
+            // entrava em laço de layout ao arrastar na maior letra numa obra de lista curta (#99).
+            List {
+                Group {
                     // O título solto e a cápsula com a fase e o tempo: 8 pt entre eles e 16 até o sólido (mockup, .ob-meta-w).
                     TituloMono(texto: obra.nome)
                         .padding(EdgeInsets(top: -6, leading: 0, bottom: -4, trailing: 0))
+                        .background { QuadroProprio() }
+                        #if DEBUG
+                        .rolagemFixaDaLista()
+                        #endif
                     CapsulaDeMetadados {
                         EtiquetaDeFase(fase: obra.fase, grande: true)
                         Text(textoDoInicio(obra, hoje: hoje))
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("faseDaObra")
-                    .padding(.bottom, 4)
+                    .background { QuadroProprio() }
+                    // Do sólido para baixo, uma Section própria: os 16 pt até o sólido vêm do espaço entre as Sections, e não
+                    // de um recuo na célula da cápsula, que é o elemento de acessibilidade dela (o anel do VoiceOver).
+                    Section {
                     BlocosDaObra(obra: obra, taxa: taxa, hoje: hoje) {
                         // Com uma linha arrastada aberta, o toque só a fecha, como o das linhas.
                         if linhaAberta != nil { fecharLinha(); return }
@@ -114,14 +123,14 @@ struct ObraView: View {
                         .accessibilityValue(faladoDaBarra(pedacos, topicos: topicos))
                         .accessibilityIdentifier("gastosPorTopico")
                     }
-                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id vem antes do recuo: a lupa rola até a pílula, e não
-                    // até os 6 pt de cima dela.
+                    // 18 pt acima dos lançamentos (mockup, .lan-cab). O id fica na linha inteira, por fora do recuo: o scrollTo
+                    // da List só acha o id da linha, e a lupa rola até a pílula com os 6 pt de cima dela.
                     CabecalhoDosLancamentos(contador: contadorLancamentos(total: obra.gastos.count, achados: achados.count, filtro: busca.filtro),
                                             busca: busca, meses: mesesDoFiltro(obra.gastos, escolhido: busca.mes),
                                             comBotoes: !obra.gastos.isEmpty || filtrando || busca.aberta, foco: $foco,
                                             abrir: { abrirBusca(leitor) }, fechar: fecharBusca)
-                        .id("lancamentos")
                         .padding(.top, 6)
+                        .id("lancamentos")
                     if busca.aberta {
                         CampoDaBusca(texto: $busca.texto, foco: $buscaEmFoco, fechar: fecharBusca)
                     }
@@ -130,6 +139,7 @@ struct ObraView: View {
                     }
                     if let soma = somaDosAchados(achados, filtrando: filtrando) {
                         SomaDosAchadosView(soma: soma)
+                            .background { QuadroProprio() }
                     }
                     if obra.gastos.isEmpty {
                         CartaoDeEstado(titulo: "Nenhum gasto lançado.", texto: "Toque no + para lançar o primeiro.", icone: "Icones/notas",
@@ -147,17 +157,29 @@ struct ObraView: View {
                             CartaoDoMes(mes: mes, topicos: topicos, lista: acoes)
                         }
                     }
+                    }
+                    .listSectionSpacing(16)
                 }
-                .padding(.horizontal, Grade.externa)
-                // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
-                .environment(\.linhaMono, true)
-                // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
-                // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
-                .padding(.bottom, 98)
-                // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
-                .contentShape(.rect)
-                .onTapGesture { if linhaAberta != nil { fecharLinha() } }
+                // Sem recuo, separador nem fundo de linha. A borda de 16 pt vem da margem da List, e não do recuo da linha: a
+                // célula, que na List é o elemento de acessibilidade, fica com a largura do bloco (x 16, 370 pt num 402).
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                // O Orçamento e os afazeres (NavigationLink) sem o chevron da célula, que estreitava o bloco.
+                .navigationLinkIndicatorVisibility(.hidden)
             }
+            .listStyle(.plain)
+            .listRowSpacing(Grade.entreBlocos)
+            .environment(\.defaultMinListRowHeight, 0)
+            .scrollContentBackground(.hidden)
+            // Cada botão de uma linha responde ao próprio toque (a lupa e o mês ao lado da pílula), e não ao da linha inteira.
+            .buttonStyle(.borderless)
+            // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
+            .environment(\.linhaMono, true)
+            .contentMargins(.horizontal, Grade.externa, for: .scrollContent)
+            // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
+            // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
+            .contentMargins(.bottom, 98, for: .scrollContent)
             // Só com a obra à vista: o gasto lançado pelo + da tela Orçamento não rola nem leva o foco aqui, por baixo dela.
             .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
         }
@@ -188,7 +210,6 @@ struct ObraView: View {
         .background { LeitorDaLetra(barra: barra) }
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
-        .rolagemFixaSemFolha()
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)
@@ -515,4 +536,18 @@ struct SeparadorDaLista: View {
     var body: some View {
         if mono { LinhaFina().padding(.horizontal, Grade.recuo) } else { LinhaFina().padding(.leading, 67) }
     }
+}
+
+/// O quadro próprio de uma peça sozinha numa linha da List (o título, a cápsula, a soma dos achados): uma vista vazia do
+/// UIKit no fundo da linha. Sem ela, a célula inteira vira o elemento de acessibilidade, e o anel do VoiceOver toma a linha
+/// toda (a cápsula com 370 pt de largura, e não os 269 dela). Com ela, a célula vira um contêiner, e a peça fica com o quadro
+/// dela, igual ao da ScrollView. Depende de a List ser uma UICollectionView, como a ponte; o testOAltoEmBlocosNaGrade vigia.
+private struct QuadroProprio: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let vista = UIView()
+        vista.isUserInteractionEnabled = false
+        return vista
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }

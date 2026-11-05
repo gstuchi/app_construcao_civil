@@ -69,7 +69,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     ///   18 Pro (decisão do Prumo, 21/10).
     private static let excecoes = ["obra com orçamento por tópico, na maior letra": "iconeDoAviso"]
 
-    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect]) {
+    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect], [CGRect]) {
         let excecao = Self.excecoes[cena.nome].map { ["-custta.foraDoLaudo", $0] } ?? []
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir, folha: cena.folha,
                            argumentos: cena.argumentos + excecao + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
@@ -87,8 +87,12 @@ final class LeituraNoVidroUITests: XCTestCase {
         let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
         let largura = app.frame.width
         let informativo = exemploDaDescricao(app, cena)
+        // Todos os voltar: com a folha aberta, o da tela de baixo e o da folha. O da tela de baixo cai no cabeçalho da folha
+        // (12–64 × 58–110), onde hoje só há o × do sistema, sem texto; um texto novo ali ficaria fora do laudo.
+        let doVoltar = app.navigationBars.buttons.matching(identifier: "BackButton").allElementsBoundByIndex.filter(\.exists)
+            .map { $0.frame.insetBy(dx: -4, dy: -4) }
         app.terminate()
-        return (foto, abas, largura, informativo)
+        return (foto, abas, largura, informativo, doVoltar)
     }
 
     /// O assunto da cena à vista antes do print: abaixo da barra de status e acima da faixa de baixo, a borda de 140 pt ou a
@@ -144,8 +148,8 @@ final class LeituraNoVidroUITests: XCTestCase {
 
     /// Mede uma cena, anexa o print anotado e a tabela e devolve as palavras abaixo do portão.
     @MainActor private func conferir(_ cena: Cena) throws -> [String] {
-        let (normal, abas, largura, informativo) = fotografar(cena, textoApagado: false)
-        let (semTexto, _, _, _) = fotografar(cena, textoApagado: true)
+        let (normal, abas, largura, informativo, voltar) = fotografar(cena, textoApagado: false)
+        let (semTexto, _, _, _, _) = fotografar(cena, textoApagado: true)
         let imagem = normal.image.cgImage!
         let escala = CGFloat(imagem.width) / largura
         let capsula = abas.reduce(CGRect.null) { $0.union($1) }
@@ -158,11 +162,14 @@ final class LeituraNoVidroUITests: XCTestCase {
         // O indicador de início, como a barra de status, é do sistema e muda entre os prints (aparece ou não, e
         // muda de cor com o que tem por baixo): os 34 pt de baixo ficam de fora em toda cena.
         let indicador = [CGRect(x: 0, y: altura - 34, width: largura, height: 34)]
+        // O voltar também: é do sistema, sem texto do app, e o vidro dele se adapta ao que tem atrás e assenta depois de a
+        // tela abrir. Na obra em List, com o texto apagado, assenta de 1 a 8 s, e o print sai aos 2 s: o vidro diferente
+        // virava "texto" a 1,63:1. Nas cenas roladas, a borda de cima já o deixa de fora.
         let borda = cena.rolada ? [CGRect(x: 0, y: 0, width: largura, height: 140)] : []
         let palavras = try LaudoDeContraste.medir(normal: Retrato(imagem), semTexto: Retrato(semTexto.image.cgImage!),
                                                   escala: escala, topo: Self.barraDeStatus,
                                                   somenteEm: cena.escopo == "navegacao" ? regiao : nil,
-                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + borda + informativo)
+                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + voltar + borda + informativo)
         XCTAssertFalse(palavras.isEmpty, "\(cena.nome): nenhum texto medido")
         anexar(cena.nome, normal.image, palavras, escala)
         Swift.print(String(format: "leitura | %@ | %d palavras, %d abaixo | pior nota %.2f", cena.nome, palavras.count,
@@ -410,7 +417,9 @@ extension LeituraNoVidroUITests {
                 Cena(nome: "obra, gastos por tópico, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "804"],
                      espera: "gastosPorTopico", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true,
                      assunto: ["gastosPorTopico"]),
-                Cena(nome: "obra sem gastos, \(tema)", conta: "senha", argumentos: combo, espera: "obraSemGastos", escopo: "tudo",
+                // Espera o total gasto, no alto: o cartão vazio fica abaixo da dobra, e a List só cria a linha que entra na tela
+                // (a LazyVStack o criava fora dela). A cena mede a mesma tela de antes.
+                Cena(nome: "obra sem gastos, \(tema)", conta: "senha", argumentos: combo, espera: "indicadorTotal", escopo: "tudo",
                      abrir: "obra:o3"),
                 Cena(nome: "obra sem orçamento, ações, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "350"],
                      espera: "definirOrcamento", escopo: "tudo", dados: "semOrcamento", abrir: "obra:v1", rolada: true,
@@ -594,7 +603,7 @@ extension LeituraNoVidroUITests {
     @MainActor func testLeituraDaParte3NaMaiorLetra() {
         let escuro = ["-custta.tema", "escuro"] + piorMomento + maiorLetra
         cobrar([
-            // Espera o lápis da barra: rolada, o título sai da pilha preguiçosa antes da espera achar. A 1977 pt, as ações à vista
+            // Espera o lápis da barra: rolada, o título sai da List antes da espera achar. A 1977 pt, as ações à vista
             // nos dois iPhones (a 1100 da etapa 3, a obra em blocos punha a tela entre o A pagar e a Venda estimada, sem ação
             // nenhuma). A obra quebra 162 pt a mais no 18 Pro, e nenhuma rolagem acha um vão comum fora do "Toque no lápis para
             // informar o valor": no 18 Pro (a largura da CI), a borda fica entre a 1ª e a 2ª linha dessa frase (6 pt abaixo da
@@ -619,8 +628,9 @@ extension LeituraNoVidroUITests {
             let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", gravacao: "recusa",
                                argumentos: ["-custta.tema", tema] + piorMomento)
             let pronta = app.buttons["acao-marcarPronta"]
-            XCTAssertTrue(pronta.waitForExistence(timeout: 10))
+            XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
             app.rolarAte(pronta)
+            XCTAssertTrue(pronta.exists)
             pronta.tap()
             let alerta = app.alerts["Não salvou na nuvem"]
             XCTAssertTrue(alerta.waitForExistence(timeout: 8), "\(tema): o alerta não abriu")

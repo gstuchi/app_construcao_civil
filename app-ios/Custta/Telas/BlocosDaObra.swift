@@ -35,11 +35,11 @@ func comSinal(_ valor: Double) -> String {
     valor < 0 ? "\u{2212}" + moeda(-valor) : "+" + moeda(valor)
 }
 
-/// O sólido e os blocos de vidro do alto da obra, 12 pt um do outro (o espaço da LazyVStack da obra). Cada bloco é um filho
-/// dela, num Group, e não um VStack só: no iOS 26, os blocos num filho único de ~630 pt (~2.500 na maior letra) faziam a
-/// LazyVStack reestimar a lista inteira cada vez que ele entrava e saía da janela, e abrir a busca perto da lista (a lupa,
-/// "ceramica" e o buscar do teclado) prendia a thread principal num laço de layout (sonda de 02/11, iOS 26.5: 10 travas em 10
-/// com o VStack, nenhuma em 2 com os blocos soltos).
+/// O sólido e os blocos de vidro do alto da obra, 12 pt um do outro (o espaço entre as linhas da List da obra). Cada bloco é
+/// uma linha dela, num Group, e não um VStack só: uma linha se mede sozinha. Na LazyVStack de antes, no iOS 26, os blocos num
+/// filho único de ~630 pt (~2.500 na maior letra) faziam a lista reestimar tudo cada vez que ele entrava e saía da janela, e
+/// abrir a busca perto da lista (a lupa, "ceramica" e o buscar do teclado) prendia a thread principal num laço de layout
+/// (sonda de 02/11, iOS 26.5: 10 travas em 10 com o VStack, nenhuma em 2 com os blocos soltos).
 struct BlocosDaObra: View {
     let obra: Obra
     let taxa: Double

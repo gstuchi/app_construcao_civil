@@ -410,7 +410,9 @@ extension LeituraNoVidroUITests {
                 Cena(nome: "obra, gastos por tópico, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "804"],
                      espera: "gastosPorTopico", escopo: "tudo", dados: "vitrine", abrir: "obra:v1", rolada: true,
                      assunto: ["gastosPorTopico"]),
-                Cena(nome: "obra sem gastos, \(tema)", conta: "senha", argumentos: combo, espera: "obraSemGastos", escopo: "tudo",
+                // Espera o total gasto, no alto: o cartão vazio fica abaixo da dobra, e a List só cria a linha que entra na tela
+                // (a LazyVStack o criava fora dela). A cena mede a mesma tela de antes.
+                Cena(nome: "obra sem gastos, \(tema)", conta: "senha", argumentos: combo, espera: "indicadorTotal", escopo: "tudo",
                      abrir: "obra:o3"),
                 Cena(nome: "obra sem orçamento, ações, \(tema)", conta: "senha", argumentos: combo + ["-custta.rolagem", "350"],
                      espera: "definirOrcamento", escopo: "tudo", dados: "semOrcamento", abrir: "obra:v1", rolada: true,
@@ -619,8 +621,9 @@ extension LeituraNoVidroUITests {
             let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", gravacao: "recusa",
                                argumentos: ["-custta.tema", tema] + piorMomento)
             let pronta = app.buttons["acao-marcarPronta"]
-            XCTAssertTrue(pronta.waitForExistence(timeout: 10))
+            XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
             app.rolarAte(pronta)
+            XCTAssertTrue(pronta.exists)
             pronta.tap()
             let alerta = app.alerts["Não salvou na nuvem"]
             XCTAssertTrue(alerta.waitForExistence(timeout: 8), "\(tema): o alerta não abriu")

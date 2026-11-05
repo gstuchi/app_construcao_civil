@@ -63,6 +63,7 @@ final class BuscaUITests: XCTestCase {
     /// soma deles, e o "A vencer" abre sozinho com os 6 que vêm. Com acento, maiúscula e espaço no fim, o mesmo.
     func testBuscarSemAcentoPeloTopicoEPelaDescricao() {
         let app = abrirObra()
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertEqual(pilula(app), "Lançamentos, 46")
         buscar(app, "ceramica")
         XCTAssertEqual(app.textFields["campoDaBusca"].label, "Buscar gasto ou tópico", "o rótulo do campo para o VoiceOver")
@@ -207,7 +208,9 @@ final class BuscaUITests: XCTestCase {
     /// Obra sem gasto: a pílula sem número (o contador do site) e sem a lupa e o mês, que não teriam o que filtrar.
     func testObraSemGastoSoAPilula() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
-        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        app.rolarAte(app.elemento("obraSemGastos"))
+        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         XCTAssertEqual(pilula(app), "Lançamentos")
         XCTAssertFalse(app.buttons["buscar"].exists)
         XCTAssertFalse(app.buttons["filtrarPorMes"].exists)
@@ -265,13 +268,15 @@ final class BuscaUITests: XCTestCase {
         app.navigationBars.buttons["BackButton"].tap()
         XCTAssertTrue(v2.waitForExistence(timeout: 5))
         v2.tap()
-        XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertEqual(pilula(app), "Lançamentos, 5")
         XCTAssertFalse(app.textFields["campoDaBusca"].exists)
         app.navigationBars.buttons["BackButton"].tap()
         XCTAssertTrue(v1.waitForExistence(timeout: 5))
         v1.tap()
-        XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertEqual(pilula(app), "Lançamentos, 46", "de volta à mesma obra, sem o filtro")
         XCTAssertFalse(app.textFields["campoDaBusca"].exists)
     }

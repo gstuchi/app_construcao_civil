@@ -50,6 +50,7 @@ extension Composicao {
         case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
         case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos", "topicoLongo"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
         case "avista": DadosDeExemplo.vitrineComVencimentoAVista()
+        case "pesada": DadosDeExemplo.vitrinePesada()
         case "analise": DadosDeExemplo.vitrineDaAnalise()
         default: DadosDeExemplo.vitrine()
         }

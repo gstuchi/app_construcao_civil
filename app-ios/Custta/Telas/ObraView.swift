@@ -181,11 +181,7 @@ struct ObraView: View {
                     }
                     .listSectionSpacing(16)
                 }
-                // Sem recuo, separador nem fundo de linha. A borda de 16 pt vem da margem da List, e não do recuo da linha: a
-                // célula, que na List é o elemento de acessibilidade, fica com a largura do bloco (x 16, 370 pt num 402).
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+                .linhaDaListaDaObra()
                 // O Orçamento e os afazeres (NavigationLink) sem o chevron da célula, que estreitava o bloco.
                 .navigationLinkIndicatorVisibility(.hidden)
             }
@@ -574,6 +570,20 @@ struct CartaoDoMes: View {
             }
             Color.clear.frame(height: 6)
         }
+    }
+}
+
+extension View {
+    /// Cada linha da List da obra, sem recuo, separador nem fundo de linha. A borda de 16 pt vem da margem da List, e não do
+    /// recuo da linha: a célula, que na List é o elemento de acessibilidade, fica com a largura do bloco (x 16, 370 pt num 402).
+    /// O milésimo de ponto a menos na altura medida é por causa da conta em Double: a célula sobe a altura ao pixel seguinte, e a
+    /// soma das peças às vezes passa do pixel por um resto de 1e-13. O cartão de 920 px virava uma célula de 921, centrado nela,
+    /// em meio pixel: os fios saíam com 0 ou 2 px, e tudo abaixo descia 1 px. Um milésimo de ponto é 0,003 px, não aparece.
+    func linhaDaListaDaObra() -> some View {
+        padding(.bottom, -0.001)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
     }
 }
 

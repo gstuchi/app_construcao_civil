@@ -234,6 +234,7 @@ struct ObraView: View {
         .background { LeitorDaLetra(barra: barra) }
         #if DEBUG
         .task { if !linhaDeTeste.isEmpty { linhaAberta = linhaDeTeste } }
+        .onAppear { SondaDaPesada.vigiar() }
         #endif
         .pausaOFundoAoRolar()
         .bordaDeRolagem(abas: true)

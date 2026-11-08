@@ -286,6 +286,7 @@ final class BuscaUITests: XCTestCase {
         let v1 = app.elemento("obra-v1"), v2 = app.elemento("obra-v2")
         XCTAssertTrue(v1.waitForExistence(timeout: 10))
         v1.tap()
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
         buscar(app, "cimento")
         XCTAssertEqual(pilula(app), "Lançamentos, 2 de 46")
         app.navigationBars.buttons["BackButton"].tap()

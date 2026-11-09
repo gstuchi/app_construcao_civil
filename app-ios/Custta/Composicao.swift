@@ -1,4 +1,5 @@
 import Foundation
+import FirebaseAppCheck
 import FirebaseCore
 import FirebaseAuth
 import CusttaNucleo
@@ -49,12 +50,24 @@ enum Composicao {
     static func configurarFirebase(emuladores: Bool) -> FirebaseApp {
         guard emuladores else {
             if let app = FirebaseApp.app() { return app }
+            prepararAppCheck()
             FirebaseApp.configure()
             return FirebaseApp.app()!
         }
         if let app = FirebaseApp.app(name: nomeDoAppDosEmuladores) { return app }
         FirebaseApp.configure(name: nomeDoAppDosEmuladores, options: opcoesDosEmuladores())
         return FirebaseApp.app(name: nomeDoAppDosEmuladores)!
+    }
+
+    /// O App Check nasce junto com o FirebaseApp e lê a fábrica nesse momento: precisa rodar antes do configure. No Release, a
+    /// prova do aparelho. No Debug, fábrica nenhuma, porque o SDK registra uma sozinho ao carregar (no simulador, a de depuração,
+    /// que iria à rede do Google a cada token): sem fábrica, o App Check não nasce.
+    private static func prepararAppCheck() {
+        #if DEBUG
+        AppCheck.setAppCheckProviderFactory(nil)
+        #else
+        AppCheck.setAppCheckProviderFactory(FabricaDeProva())
+        #endif
     }
 
     /// Chave falsa dos emuladores. O emulador do Auth aceita qualquer chave e a produção recusa esta: um pedido que
@@ -65,6 +78,7 @@ enum Composicao {
 
     /// As opções do GoogleService-Info.plist com o projeto e a chave dos emuladores (o app e os testes contra eles).
     static func opcoesDosEmuladores() -> FirebaseOptions {
+        prepararAppCheck() // antes de qualquer configure nos emuladores, inclusive os dos testes, que vêm todos por aqui
         let caminho = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist")!
         let opcoes = FirebaseOptions(contentsOfFile: caminho)!
         opcoes.projectID = projetoDosEmuladores

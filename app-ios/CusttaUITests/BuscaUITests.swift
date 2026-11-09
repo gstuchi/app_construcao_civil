@@ -63,12 +63,18 @@ final class BuscaUITests: XCTestCase {
     /// soma deles, e o "A vencer" abre sozinho com os 6 que vêm. Com acento, maiúscula e espaço no fim, o mesmo.
     func testBuscarSemAcentoPeloTopicoEPelaDescricao() {
         let app = abrirObra()
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertEqual(pilula(app), "Lançamentos, 46")
         buscar(app, "ceramica")
         XCTAssertEqual(app.textFields["campoDaBusca"].label, "Buscar gasto ou tópico", "o rótulo do campo para o VoiceOver")
         XCTAssertLessThan(app.elemento("lancamentos").frame.minY, 200, "a lista rola até a pílula, com o campo embaixo")
+        let barra = app.navigationBars.firstMatch.frame
+        XCTAssertGreaterThanOrEqual(app.elemento("lancamentos").frame.minY, barra.maxY - 1, "a pílula abaixo da barra, e não sob ela")
+        XCTAssertGreaterThanOrEqual(app.textFields["campoDaBusca"].frame.minY, barra.maxY, "o campo abaixo da barra")
         XCTAssertEqual(pilula(app), "Lançamentos, 12 de 46")
         XCTAssertEqual(app.elemento("somaDosAchados").label, "Soma dos achados: R$\u{a0}95.120,30")
+        XCTAssertLessThan(app.elemento("somaDosAchados").frame.width, app.frame.width - 32 - 40,
+                          "o anel do VoiceOver abraça a soma, e não a linha da List")
         let aVencer = app.elemento("aVencer")
         XCTAssertEqual(aVencer.value as? String, "aberto", "com filtro, o A vencer abre sozinho")
         XCTAssertTrue(aVencer.label.hasPrefix("A vencer, R$\u{a0}36.900,00, 6 gastos"), aVencer.label)
@@ -207,26 +213,46 @@ final class BuscaUITests: XCTestCase {
     /// Obra sem gasto: a pílula sem número (o contador do site) e sem a lupa e o mês, que não teriam o que filtrar.
     func testObraSemGastoSoAPilula() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
-        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        app.rolarAte(app.elemento("obraSemGastos"))
+        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         XCTAssertEqual(pilula(app), "Lançamentos")
         XCTAssertFalse(app.buttons["buscar"].exists)
         XCTAssertFalse(app.buttons["filtrarPorMes"].exists)
+        // O anel do VoiceOver abraça a pílula, e não a célula da List (370 pt): sozinha na linha, ela depende da marca da
+        // ponte no fundo, uma vista do UIKit (ver o QuadroProprio, na ObraView).
+        let quadro = app.elemento("lancamentos").frame
+        XCTAssertLessThan(quadro.width, app.windows.firstMatch.frame.width - 32 - 40, "o anel da pílula: \(quadro)")
+    }
+
+    /// O teclado da busca fica como na LazyVStack de antes: o arrasto curto o deixa aberto, mesmo com o impulso levando o
+    /// campo para fora da tela, e os arrastos longos o fecham quando o campo passa de meia tela além dela. Na List, a célula
+    /// com o foco fica viva, e sem a régua do campo contra a janela (ObraView.campoForaDaJanela) o teclado não fechava
+    /// nunca: 12 arrastos, e ele seguia em y 583 (sonda de 03/11).
+    func testArrastoCurtoDeixaOTecladoEOsLongosOFecham() {
+        let app = abrirObra()
+        buscar(app, "o")
+        let teclado = app.keyboards.firstMatch, meio = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+        meio.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
+        XCTAssertTrue(teclado.exists, "o arrasto curto fechou o teclado")
+        for _ in 0..<12 {
+            guard teclado.exists else { break }
+            meio.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        XCTAssertTrue(teclado.waitForNonExistence(timeout: 3), "os arrastos longos não fecharam o teclado")
     }
 
     /// A obra que fica sem gasto segue com a lupa e o mês enquanto há filtro ou busca: com o mês escolhido, e depois, sem o
     /// mês, com a busca aberta, em que a lupa da maior letra é o × que fecha. Fechada a busca, só a pílula.
-    func testObraQueFicaSemGastoComMesOuBuscaAbertaFicaComOsBotoes() throws {
-        // Só no iOS 26: o simulador roda o sistema que o teste vê, e no 27 o método segue valendo.
-        try XCTSkipIf(ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26,
-                      "problema conhecido: no iOS 26, arrastar na maior letra na obra de lista curta trava a LazyVStack "
-                      + "(só na VM lenta da CI, 3 em 4); a estrutura da obra será trocada antes da App Store; ver #99")
+    func testObraQueFicaSemGastoComMesOuBuscaAbertaFicaComOsBotoes() {
         let app = abrirObra("o4", dados: "exemplo",
                             argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         let lupa = app.buttons["buscar"], mes = app.buttons["filtrarPorMes"]
         app.rolarAte(mes, tentativas: 20)                 // na maior letra, as 12 roladas do padrão chegam sem folga
         escolherMes(app, "Junho de 2023")
-        // O chip e a soma dos achados, que o mês põe embaixo dos botões, levam o gasto para baixo da dobra, onde a
-        // LazyVStack pode ainda não o ter criado (no iOS 26 da CI, não tinha): espera o chip e rola até a linha.
+        // O chip e a soma dos achados, que o mês põe embaixo dos botões, levam o gasto para baixo da dobra, onde a List
+        // pode ainda não ter criado a célula dele (no iOS 26 da CI, não tinha): espera o chip e rola até a linha.
         XCTAssertTrue(app.elemento("chipDoMes").waitForExistence(timeout: 5))
         let linha = app.elemento("gasto-j1")              // o único gasto da obra
         app.rolarAte(linha)
@@ -260,18 +286,21 @@ final class BuscaUITests: XCTestCase {
         let v1 = app.elemento("obra-v1"), v2 = app.elemento("obra-v2")
         XCTAssertTrue(v1.waitForExistence(timeout: 10))
         v1.tap()
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
         buscar(app, "cimento")
         XCTAssertEqual(pilula(app), "Lançamentos, 2 de 46")
         app.navigationBars.buttons["BackButton"].tap()
         XCTAssertTrue(v2.waitForExistence(timeout: 5))
         v2.tap()
-        XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertEqual(pilula(app), "Lançamentos, 5")
         XCTAssertFalse(app.textFields["campoDaBusca"].exists)
         app.navigationBars.buttons["BackButton"].tap()
         XCTAssertTrue(v1.waitForExistence(timeout: 5))
         v1.tap()
-        XCTAssertTrue(app.elemento("lancamentos").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 5))
+        app.rolarAte(app.elemento("lancamentos"))
         XCTAssertEqual(pilula(app), "Lançamentos, 46", "de volta à mesma obra, sem o filtro")
         XCTAssertFalse(app.textFields["campoDaBusca"].exists)
     }

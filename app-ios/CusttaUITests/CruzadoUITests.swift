@@ -58,8 +58,9 @@ final class CruzadoUITests: XCTestCase {
         app.recusarGuardarSenha()                       // a oferta do iOS de guardar a senha do formulário cobre a lista
         elemento("obra-\(afazeres.obra)").tap()
         let linha = elemento("linhaDosAfazeres")
-        XCTAssertTrue(linha.waitForExistence(timeout: 30))
+        XCTAssertTrue(elemento("tituloDaObra").waitForExistence(timeout: 30))
         app.rolarAte(linha)
+        XCTAssertTrue(linha.exists)
         XCTAssertEqual(linha.value as? String, afazeres.linha)
         linha.tap()
         XCTAssertTrue(elemento("pendentes").waitForExistence(timeout: 10))

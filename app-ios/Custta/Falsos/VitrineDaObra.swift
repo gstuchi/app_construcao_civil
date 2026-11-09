@@ -111,6 +111,27 @@ extension DadosDeExemplo {
         return .objeto(raiz)
     }
 
+    /// A obra pesada (`CUSTTA_DADOS=pesada`): a vitrine com 520 gastos a mais na Casa Alphaville, um por dia para trás a
+    /// partir de ontem, 566 no total. Cada mês passado fica com uns 30 gastos, e o cartão de um mês vira uma célula gigante da
+    /// List na maior letra: é a obra da medida no iPhone, no Instruments, e das sondas da CI.
+    static func vitrinePesada(hoje: Date = .now) -> ValorJSON {
+        guard case .objeto(var raiz) = vitrine(hoje: hoje), case .lista(var obras) = raiz["obras"], case .objeto(var alphaville) = obras[0],
+              case .lista(var gastos) = alphaville["gastos"] else { return vitrine(hoje: hoje) }
+        let topicos = ["matbasicos", "maoobra", "eletrica", "hidraulica", "revest", "pintura", "ferragem", "alvenaria"]
+        var calendario = Calendar(identifier: .gregorian)
+        calendario.timeZone = .current
+        for i in 1...520 {
+            let dia = calendario.date(byAdding: .day, value: -i, to: hoje) ?? hoje
+            gastos.append(.objeto(["id": .texto(String(format: "p%03d", i)), "valor": .numero(Double(100 + (i * 37) % 9000)),
+                                   "topico": .texto(topicos[i % topicos.count]), "descricao": .texto("Compra de material \(i)"),
+                                   "data": .texto(dataLocalISO(dia, fuso: .current)), "pagamento": .texto("pix")]))
+        }
+        alphaville["gastos"] = .lista(gastos)
+        obras[0] = .objeto(alphaville)
+        raiz["obras"] = .lista(obras)
+        return .objeto(raiz)
+    }
+
     /// A vitrine com um vencimento à vista no A pagar (`CUSTTA_DADOS=avista`): a caçamba de entulho no Pix, agendada para
     /// daqui a 2 dias, antes das três parcelas do mockup. O apagar à vista de dentro da folha do A pagar ("Apagar este
     /// gasto?", com o nome e o valor).

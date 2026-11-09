@@ -10,7 +10,8 @@ import CusttaNucleo
                   prejuizo (a vitrine com a vendida no prejuízo) | porTopico, perto, passou, semOrcamento, muitosTopicos,
                   topicoLongo (os orçamentos do mockup da etapa 3 sobre a vitrine: VitrineDoOrcamento.swift) | avista (a
                   vitrine com um vencimento à vista no A pagar) | analise (a vitrine e as obras dos estados da análise da
-                  etapa 4: VitrineDaAnalise.swift)
+                  etapa 4: VitrineDaAnalise.swift) | pesada (a vitrine com 520 gastos a mais na Casa Alphaville, para a
+                  medida da obra em List no iPhone: VitrineDaObra.swift)
    CUSTTA_REDE    offline (abre "em modo avião": dados do cache e indicador "Sem conexão")
    CUSTTA_LEITURA erro (a escuta falha com permission-denied) | formato (documento que o app não lê) | nunca (a escuta
                   não responde: "Carregando suas obras…")
@@ -50,6 +51,7 @@ extension Composicao {
         case "prejuizo": DadosDeExemplo.vitrineComPrejuizo()
         case let v? where ["porTopico", "perto", "passou", "semOrcamento", "muitosTopicos", "topicoLongo"].contains(v): DadosDeExemplo.vitrineDoOrcamento(v)
         case "avista": DadosDeExemplo.vitrineComVencimentoAVista()
+        case "pesada": DadosDeExemplo.vitrinePesada()
         case "analise": DadosDeExemplo.vitrineDaAnalise()
         default: DadosDeExemplo.vitrine()
         }

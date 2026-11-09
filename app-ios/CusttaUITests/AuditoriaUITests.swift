@@ -148,12 +148,29 @@ final class AuditoriaUITests: XCTestCase {
         try auditar(app, tiposDeAuditoria)
     }
 
+    /// A obra (a v1) na maior letra, no topo. Rolada, não: a obra é uma List, e a auditoria troca a letra (padrão e maior) em
+    /// volta de cada auditoria, no iOS 26 e no 27. A List se mede de novo durante a troca, e textos do bloco A pagar ("3
+    /// vencimentos", "Parcelas e gastos futuros") saíam como cortados, com a tela mostrando os dois inteiros (problema
+    /// conhecido, 03/11; a LazyVStack também não era firme nesse teste no iOS 27, 1 de 2). Abaixo da dobra, a auditoria na
+    /// maior letra fica assim: o A pagar na testAPagarNoMaiorTamanho; a v2 a 800 e no fim e a v3 no fim na
+    /// testParte3NoMaiorTamanho; as peças da vitrine no alto dela e numa tela rolada na testVitrineDasPecasNoMaiorTamanho. As
+    /// ações, os afazeres, a pílula e o A vencer da v1 rolada ficam sem auditoria na maior letra (problema conhecido).
     @MainActor func testObraNoMaiorTamanho() throws {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado)
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
-        rolar(app)
-        try auditar(app, tiposDeAuditoria)
+    }
+
+    /// O bloco A pagar da obra na maior letra, inteiro: a etiqueta dos vencimentos e a nota "Parcelas e gastos futuros". Na
+    /// obra, ele fica abaixo da dobra, e a auditoria olha só o topo; rolado, numa List ou numa ScrollView, a troca de letra
+    /// da auditoria tira a rolagem do lugar (na vitrine, as rolagens de 900 a 3600 caíam todas na mesma tela). Aqui ele vem
+    /// no alto da vitrine das peças (`-custta.vitrineAPagar`) e é auditado sem rolar.
+    @MainActor func testAPagarNoMaiorTamanho() throws {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas",
+                           argumentos: maiorLetra + parado + ["-custta.vitrineAPagar", "YES"])
+        XCTAssertTrue(app.elemento("vitrine-aPagar").waitForExistence(timeout: 10))
+        Thread.sleep(forTimeInterval: 1.5)
+        try auditar(app, [.dynamicType, .textClipped])
     }
 
     /// A vitrine das peças da identidade nova (etapa 4, PR 1b; só no Debug, com CUSTTA_ABRIR=pecas) na maior letra, em
@@ -352,12 +369,14 @@ final class AuditoriaUITests: XCTestCase {
     /// achados sem elemento enquanto a auditoria trocava o tamanho da letra (CI, 17/10; no Mac passam).
     /// Com a obra em blocos (etapa 4), mais alta, a v2 a 800 cai no Corrigido e no A pagar (18 Pro). No meio da obra não dá:
     /// a auditoria troca o tamanho da letra, nos menores o conteúdo fica mais curto que a rolagem fixa, a lista salta, e os
-    /// blocos que estavam à vista saem da janela da LazyVStack. A auditoria acusa "Dynamic Type font sizes are unsupported"
+    /// blocos que estavam à vista saíam da janela da LazyVStack de antes. A auditoria acusa "Dynamic Type font sizes are unsupported"
     /// sem elemento, com o texto crescendo a cada passo de letra (sonda de 02/11, iOS 27: a v2 e a v3 a 1600 com os blocos
     /// soltos, e a v3 a 2000 também com o VStack de antes; a v2 a 1850 já dava o mesmo). Por isso a v2 e a
     /// v3 ficam no topo e no fim (99999, que a rolagem fixa leva ao fim em toda letra), onde a janela fica nas mesmas peças.
-    /// As peças do meio (blocos, número mono, cabeçalhos) seguem na maior letra na testVitrineDasPecasNoMaiorTamanho.
-    /// Prova no PR #99.
+    /// As peças do meio (blocos, número mono, cabeçalhos) seguem na maior letra na testVitrineDasPecasNoMaiorTamanho, no alto
+    /// dela e numa tela rolada. Prova no PR #99. Na List (03/11), a rolagem fixa é o gancho da List (RolagemFixaDaLista): anda
+    /// até a rolagem pedida, presa ao fim do conteúdo que ela mede, e segura a linha do alto; no fim (99999), antes de
+    /// auditar, o teste confere que a última linha de gasto (a mais antiga, g0) está à vista, e não o vazio.
     @MainActor func testParte3NoMaiorTamanho() throws {
         var app: XCUIApplication
         for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 99_999), ("v3", 0), ("v3", 99_999)] {
@@ -365,6 +384,11 @@ final class AuditoriaUITests: XCTestCase {
                            argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1.5)
+            if rolagem == 99_999 {
+                let ultima = app.elemento("gasto-\(obra)g0")
+                XCTAssertTrue(ultima.waitForExistence(timeout: 5) && app.frame.intersects(ultima.frame),
+                              "\(obra) no fim: a última linha de gasto à vista, \(ultima.frame)")
+            }
             try auditar(app, tiposDeAuditoria)
             app.terminate()
         }

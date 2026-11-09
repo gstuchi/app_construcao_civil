@@ -15,6 +15,9 @@ struct VitrineDasPecas: View {
     ])])])).obras[0].gastos[0]
     @Environment(\.paleta) private var paleta
     @Environment(\.dynamicTypeSize) private var letra
+    /// Com `-custta.vitrineAPagar`, a vitrine abre com o bloco A pagar da obra no alto, para a auditoria na maior letra o ver
+    /// sem rolar (AuditoriaUITests.testAPagarNoMaiorTamanho).
+    @AppStorage("custta.vitrineAPagar") private var aPagarNoAlto = false
 
     var body: some View {
         let casa = estado.obras[0]
@@ -22,6 +25,7 @@ struct VitrineDasPecas: View {
         let indicadores = indicadoresDaObra(casa, taxa: estado.config.taxaMensal, hoje: hoje)
         ScrollView {
             VStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                if aPagarNoAlto { aPagar(indicadores) }
                 TituloMono(texto: casa.nome, identificador: "vitrine-titulo")
                 CapsulaDeMetadados {
                     EtiquetaDeFase(fase: casa.fase, grande: true)
@@ -57,10 +61,11 @@ struct VitrineDasPecas: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("vitrine-topicos")
-                // Os lançamentos na linha mono: os dois primeiros do mês mais recente e um de R$ 1 bilhão, que não cabe ao
-                // lado do título (deixaria menos de 120 pt para ele) e desce para baixo dele.
+                // Os lançamentos na linha mono: os dois mais recentes, de qualquer mês (nos dias 3 e 4, o mês corrente
+                // só tem um), e um de R$ 1 bilhão, que não cabe ao lado do título (deixaria menos de 120 pt para ele) e
+                // desce para baixo dele.
                 let topicos = mapaDeTopicos(estado.config.topicosProprios)
-                let lancamentos = Array(listaDaObra(casa, hoje: hoje).meses.first?.gastos.prefix(2) ?? []) + [Self.gigante]
+                let lancamentos = Array(listaDaObra(casa, hoje: hoje).meses.flatMap(\.gastos).prefix(2)) + [Self.gigante]
                 CartaoDaLista {
                     ForEach(Array(lancamentos.enumerated()), id: \.element.id) { i, gasto in
                         if i > 0 { LinhaFina().padding(.horizontal, Grade.recuo) }
@@ -111,6 +116,28 @@ struct VitrineDasPecas: View {
         .navigationTitle("Peças")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .principal) { TituloPequenoMono(texto: casa.nome, letra: letra) } }
+    }
+
+    /// O bloco A pagar da obra: o rótulo do botão em BlocosDaObra.aPagar, com a etiqueta dos vencimentos e a nota, montado
+    /// com as mesmas peças. Sem o botão e com os textos um a um, como os outros blocos da vitrine: dentro do botão, a
+    /// auditoria não os vê.
+    private func aPagar(_ indicadores: IndicadoresDaObra) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                CabecalhoDoBloco(rotulo: "A pagar · 30 dias") {
+                    EtiquetaDoIndicador(texto: indicadores.etiquetaDoAPagar, cor: .alerta)
+                }
+                ValorEmDinheiro(indicadores.aPagar, mono: .bloco)
+                NotaDoBloco(texto: "Parcelas e gastos futuros")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            SetaDoBloco()
+        }
+        .padding(.vertical, Grade.recuoVertical(letra))
+        .padding(.horizontal, Grade.recuo)
+        .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(letra)))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("vitrine-aPagar")
     }
 }
 #endif

@@ -1,4 +1,5 @@
 import XCTest
+import notify
 
 /* A tela da obra (etapa 2, PR 1), com os dados da vitrine (a obra do mockup aprovado: 46 lançamentos, 13 a vencer):
    entrar pela lista e voltar pelo círculo e pela borda; o caminho que sobrevive à troca de aba; os indicadores com os
@@ -42,19 +43,51 @@ final class ObraUITests: XCTestCase {
         XCTAssertTrue(aPagar.contains("R$\u{a0}13.250,00") && aPagar.contains("3 vencimentos"), aPagar)
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.450.000,00"))
         XCTAssertTrue(app.elemento("faseDaObra").label.contains("Em construção"))
-        let fase = app.elemento("faseDaObra").label, lancamentos = app.elemento("lancamentos").label
+        let fase = app.elemento("faseDaObra").label
         XCTAssertTrue(fase.contains("14 meses"), fase)
-        XCTAssertTrue(lancamentos.contains("46"), lancamentos)
         let tituloPequeno = app.elemento("tituloPequenoDaBarra")
         XCTAssertFalse(tituloPequeno.exists, "no alto, o nome fica só no título grande")
-        app.swipeUp()
+        // A pílula fica abaixo da dobra: rolada a tela até ela, o nome passa para a barra.
+        let lancamentos = app.elemento("lancamentos")
+        app.rolarAte(lancamentos)
+        XCTAssertTrue(lancamentos.label.contains("46"), lancamentos.label)
         XCTAssertTrue(tituloPequeno.waitForExistence(timeout: 5), "rolada a tela, o nome passa para a barra")
+    }
+
+    /// Com a obra rolada na maior letra, o Tamanho do Texto vai à letra padrão e volta, como pela Central de Controle (a
+    /// auditoria do iOS 26 faz o mesmo em volta de cada auditoria): a obra volta com a mesma peça no mesmo lugar. A List
+    /// guardava o número da rolagem e, na volta, com as linhas de cima na altura estimada, a tela parava num mês lá embaixo.
+    func testNaMaiorLetraIdaEVoltaDaLetraDeixaAObraNoLugar() {
+        let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"],
+                           extra: ["CUSTTA_TROCA_LETRA": "aviso"])
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        // Na maior letra, o anel da cápsula abraça a cápsula (355 pt), e não a célula da List (370): o QuadroProprio no
+        // fundo da linha. Na letra padrão, quem vigia é o testOAltoEmBlocosNaGrade.
+        let fase = app.elemento("faseDaObra").frame
+        XCTAssertLessThan(fase.width, app.windows.firstMatch.frame.width - 32 - 8, "o anel da cápsula na maior letra: \(fase)")
+        app.swipeUp()
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 1.5)
+        let pecas = ["indicadorTotal", "indicadorCorrigido", "indicadorAPagar", "indicadorVenda", "linhaDosAfazeres", "lancamentos"]
+        guard let id = pecas.first(where: { app.elemento($0).exists && app.elemento($0).isHittable }) else {
+            return XCTFail("nenhuma peça do alto à vista depois de rolar")
+        }
+        let peca = app.elemento(id), antes = peca.frame
+        notify_post("br.com.custta.falso.trocarLetra")          // a letra padrão
+        Thread.sleep(forTimeInterval: 2.5)
+        XCTAssertTrue(peca.exists, "\(id) segue na tela na letra padrão")
+        XCTAssertLessThan(peca.frame.height, antes.height - 1, "a letra padrão encolhe \(id): a troca chegou ao app")
+        notify_post("br.com.custta.falso.trocarLetra")          // de volta à maior
+        Thread.sleep(forTimeInterval: 2.5)
+        XCTAssertTrue(peca.exists, "\(id) segue na tela depois de a letra ir e voltar")
+        XCTAssertEqual(peca.frame.minY, antes.minY, accuracy: 2, "\(id) no mesmo lugar: antes \(antes), depois \(peca.frame)")
     }
 
     func testAVencerFechadoAbreEFecha() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1")
         let aVencer = app.elemento("aVencer")
-        XCTAssertTrue(aVencer.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         app.rolarAte(aVencer)
         XCTAssertEqual(aVencer.value as? String, "fechado")
         XCTAssertFalse(app.elemento("gasto-g037").exists, "as parcelas futuras não aparecem com o grupo fechado")
@@ -85,7 +118,7 @@ final class ObraUITests: XCTestCase {
         // No fim da rolagem, o último gasto fica à vista, acima da cápsula de abas (mockup: o conteúdo termina 132 pt acima
         // da borda de baixo).
         let ultimo = app.elemento("gasto-g001")
-        var fim = -1.0                                   // a pilha cria o último gasto antes de ele entrar na tela
+        var fim = -1.0                                   // a List cria o último cartão um pouco antes de ele entrar na tela
         for _ in 0..<16 {
             app.swipeUp()
             guard ultimo.exists else { continue }
@@ -97,9 +130,12 @@ final class ObraUITests: XCTestCase {
 
     func testObraSemGastos() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
-        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("indicadorTotal").waitForExistence(timeout: 10))
         let total = app.elemento("indicadorTotal").label
         XCTAssertTrue(total.contains("sem gastos") && total.contains("R$\u{a0}0,00"), total)
+        // O cartão vazio fica no fim, abaixo da dobra.
+        app.rolarAte(app.elemento("obraSemGastos"))
+        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         // Etapa 4: o sólido com R$ 0,00 convida a lançar o primeiro gasto.
         XCTAssertTrue(total.contains("Toque no + para lançar o primeiro gasto."), total)
     }
@@ -124,6 +160,9 @@ final class ObraUITests: XCTestCase {
         XCTAssertEqual(titulo.minX, 16, accuracy: 0.5, "o título solto na borda de 16 pt")
         XCTAssertEqual(fase.minX, 16, accuracy: 0.5, "a cápsula na borda de 16 pt")
         XCTAssertEqual(quadros[0].minY - fase.maxY, 16, accuracy: 0.5, "a cápsula 16 pt acima do sólido")
+        // O anel do VoiceOver abraça a peça, e não a linha da List (a cápsula tem 269 pt, o título 258, a coluna 370).
+        XCTAssertLessThan(titulo.width, largura - 32 - 40, "o anel do título abraça o título: \(titulo)")
+        XCTAssertLessThan(fase.width, largura - 32 - 40, "o anel da cápsula abraça a cápsula: \(fase)")
         XCTAssertFalse(app.elemento("indicadorLucro").exists, "fora da vendida, o sólido é o Total gasto")
     }
 
@@ -141,6 +180,7 @@ final class ObraUITests: XCTestCase {
         XCTAssertEqual(orcamento.minY - lucro.frame.maxY, 12, accuracy: 0.5, "o Orçamento logo depois do sólido")
         XCTAssertEqual(total.frame.minY - orcamento.maxY, 12, accuracy: 0.5, "o Total gasto logo depois do Orçamento")
         XCTAssertTrue(total.label.contains("R$\u{a0}842.317,45") && total.label.contains("46 lançamentos"), total.label)
+        app.rolarAte(app.elemento("indicadorVenda"))
         XCTAssertTrue(app.elemento("indicadorVenda").label.contains("R$\u{a0}1.380.000,00"))
     }
 
@@ -185,7 +225,10 @@ final class ObraUITests: XCTestCase {
     /// Sem gastos, somem os gastos por tópico (como as portas do site).
     func testSemGastosSemGastosPorTopico() {
         let app = abrirApp(conta: "senha", dados: "exemplo", abrir: "obra:o3")
-        XCTAssertTrue(app.elemento("obraSemGastos").waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
+        // O cartão vazio é a última peça: com a lista nele, o lugar dos gastos por tópico está na tela.
+        app.rolarAte(app.elemento("obraSemGastos"))
+        XCTAssertTrue(app.elemento("obraSemGastos").exists)
         XCTAssertFalse(app.elemento("gastosPorTopico").exists)
         XCTAssertTrue(app.elemento("linhaDosAfazeres").exists)
     }

@@ -16,6 +16,7 @@ struct CusttaApp: App {
             UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor: UIColor.clear]
             UINavigationBar.appearance().titleTextAttributes = [.foregroundColor: UIColor.clear]
         }
+        TrocaDeLetraDoTeste.vigiar()
         #endif
     }
 

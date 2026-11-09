@@ -4,7 +4,7 @@ import Testing
 import CusttaNucleo
 
 /* A vitrine mostra os números do mockup aprovado em qualquer dia (as datas são contadas de hoje), também com os orçamentos
-   da etapa 3. */
+   da etapa 3 e as obras dos estados da análise da etapa 4. */
 struct DadosDeExemploTests {
     static let dias = ["2026-01-31", "2026-03-01", "2026-10-08", "2026-12-31", "2027-02-28", "2028-02-29"]
 
@@ -34,6 +34,35 @@ struct DadosDeExemploTests {
         let lista = listaDaObra(casa, hoje: iso)
         #expect(lista.aVencer?.quantidade == 13 && lista.aVencer?.total == 65_500)
         #expect(orcamentoObra(obras[1]) == nil && orcamentoObra(obras[2]) == nil)
+    }
+
+    /// A obra pesada (`CUSTTA_DADOS=pesada`, a da medida da obra em List no iPhone) carrega em qualquer dia: a Casa
+    /// Alphaville com 520 gastos a mais, um por dia, de ontem para trás (p001 ontem, p520 há 520 dias), 566 no total, um mês
+    /// passado com 30 ou mais, o A vencer e as outras obras como na vitrine. A medida depende dessa forma: meses passados
+    /// cheios, e não um A vencer gigante.
+    @Test(arguments: dias)
+    func obraPesadaComUmGastoPorDia(_ dia: String) throws {
+        var calendario = Calendar(identifier: .gregorian)
+        calendario.timeZone = .current
+        let partes = dia.split(separator: "-").map { Int($0)! }
+        let hoje = try #require(calendario.date(from: DateComponents(year: partes[0], month: partes[1], day: partes[2], hour: 12)))
+        let iso = dataLocalISO(hoje, fuso: .current)
+        let pesada = Estado.de(DadosDeExemplo.vitrinePesada(hoje: hoje)), vitrine = Estado.de(DadosDeExemplo.vitrine(hoje: hoje))
+        let casa = try #require(pesada.obras.first { $0.id == "v1" })
+        let daVitrine = try #require(vitrine.obras.first { $0.id == "v1" })
+        #expect(casa.gastos.count == 566)
+        let novos = casa.gastos.filter { $0.id.hasPrefix("p") }
+        #expect(novos.count == 520)
+        for i in [1, 2, 31, 260, 519, 520] {
+            let dia = try #require(calendario.date(byAdding: .day, value: -i, to: hoje))
+            #expect(novos.first { $0.id == String(format: "p%03d", i) }?.data == dataLocalISO(dia, fuso: .current), "p\(i)")
+        }
+        #expect(Set(novos.map(\.data)).count == 520, "um gasto por dia")
+        #expect(novos.allSatisfy { $0.data < iso }, "nenhum hoje nem no futuro")
+        let lista = listaDaObra(casa, hoje: iso)
+        #expect(lista.aVencer == listaDaObra(daVitrine, hoje: iso).aVencer, "o A vencer da vitrine")
+        #expect((lista.meses.map(\.gastos.count).max() ?? 0) >= 30, "um mês cheio: a célula gigante da List na maior letra")
+        #expect(pesada.obras.filter { $0.id != "v1" } == vitrine.obras.filter { $0.id != "v1" })
     }
 
     /// Os orçamentos da etapa 3 sobre a vitrine mostram os números do mockup aprovado (parte1.html) em qualquer dia.
@@ -76,5 +105,102 @@ struct DadosDeExemploTests {
         #expect(diarias.filter { $0.data < iso(0) }.count == 100 && diarias.filter { $0.data > iso(0) }.count == 20, "100 pagas e 20 a vencer, nenhuma hoje")
         let data = Dictionary(uniqueKeysWithValues: diarias.map { ($0.id, $0.data) })
         #expect(data["d001"] == iso(-1) && data["d100"] == iso(-100) && data["d101"] == iso(1) && data["d120"] == iso(20), "de ontem para trás e de amanhã em diante")
+    }
+
+    /// As obras dos estados da análise (etapa 4, `CUSTTA_DADOS=analise`) sobre a vitrine, em qualquer dia: o que cada uma
+    /// promete às telas dos marcos 2 e 3. No dia 1º, os gastos deste mês caem todos nele, e a obra de 1 mês continua com 1 mês.
+    @Test(arguments: dias)
+    func obrasDosEstadosDaAnalise(_ dia: String) throws {
+        var calendario = Calendar(identifier: .gregorian)
+        calendario.timeZone = .current
+        let partes = dia.split(separator: "-").map { Int($0)! }
+        let hoje = try #require(calendario.date(from: DateComponents(year: partes[0], month: partes[1], day: partes[2], hour: 12)))
+        let iso = dataLocalISO(hoje, fuso: .current)
+        func dias(_ n: Int) -> String { dataLocalISO(calendario.date(byAdding: .day, value: n, to: hoje)!, fuso: .current) }
+        // O mês pelo dia 1º (que todo mês tem) e o dia preso ao fim dele: a conta de mês do Calendar a partir do dia 29 a 31
+        // erra o bissexto no iOS 26 quando o mês fica negativo (swift-foundation #1708).
+        func meses(_ n: Int) -> String {
+            let c = calendario.dateComponents([.year, .month, .day], from: hoje)
+            let primeiro = calendario.date(from: DateComponents(year: c.year, month: c.month, day: 1, hour: 12))!
+            let alvo = calendario.date(byAdding: .month, value: n, to: primeiro)!
+            let dia = min(c.day!, calendario.range(of: .day, in: .month, for: alvo)!.count)
+            return dataLocalISO(calendario.date(byAdding: .day, value: dia - 1, to: alvo)!, fuso: .current)
+        }
+        let estado = Estado.de(DadosDeExemplo.vitrineDaAnalise(hoje: hoje))
+        #expect(estado.obras.map(\.id) == ["v1", "v2", "v3", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"])
+        #expect(Array(estado.obras.prefix(3)) == Estado.de(DadosDeExemplo.vitrine(hoje: hoje)).obras, "a vitrine de sempre na frente")
+        let obra = Dictionary(uniqueKeysWithValues: estado.obras.map { ($0.id, $0) })
+        let ids = estado.obras.flatMap { $0.gastos.map(\.id) }
+        #expect(Set(ids).count == ids.count, "cada gasto com id próprio")
+        // A Casa Alphaville (v1): 14 tópicos (o anel junta 8 no "Outros") e 13 parcelas a vencer.
+        let casa = try #require(obra["v1"])
+        #expect(gastoPorTopico(casa).count == 14 && pedacosDoAnel(gastoPorTopico(casa)).last?.topicos.count == 8)
+        #expect(listaDaObra(casa, hoje: iso).aVencer?.quantidade == 13)
+        // a1: a Casa Alphaville vendida há 114 dias por R$ 1.380.000,00, com os gastos dela; os depois da venda ficam fora da
+        // evolução.
+        let vendida = try #require(obra["a1"])
+        #expect(vendida.nome == "Casa Alphaville" && vendida.fase == .vendida && vendida.venda == Venda(valor: 1_380_000, data: dias(-114)))
+        #expect(vendida.gastos.map(\.valor) == casa.gastos.map(\.valor) && vendida.gastos.map(\.data) == casa.gastos.map(\.data))
+        #expect(fraseForaDaEvolucao(vendida, hoje: iso)?.hasSuffix("com data depois da venda.") == true)
+        // a2: sem gastos.
+        let cotia = try #require(obra["a2"])
+        #expect(cotia.nome == "Casa Cotia" && cotia.gastos.isEmpty && cotia.fase == .construcao)
+        // a3: 1 gasto, neste mês.
+        let terreno = try #require(obra["a3"])
+        #expect(terreno.nome == "Terreno Granja" && terreno.gastos.map(\.valor) == [120_000])
+        #expect(serieMensal(terreno.gastos).count == 1 && serieEvolucao(terreno, taxa: 1, hoje: iso).count == 1)
+        #expect(terreno.gastos.allSatisfy { $0.data.prefix(7) == iso.prefix(7) && $0.data <= iso }, "neste mês, até hoje")
+        // a4: 5 gastos neste mês, até hoje: 1 mês nos gráficos e menos de 1 mês de obra no "Vale a pena?".
+        let vilaNova = try #require(obra["a4"])
+        #expect(vilaNova.nome == "Sobrado Vila Nova" && vilaNova.gastos.count == 5 && gastoPorTopico(vilaNova).count == 4)
+        #expect(vilaNova.gastos.allSatisfy { $0.data.prefix(7) == iso.prefix(7) && $0.data <= iso }, "neste mês, até hoje")
+        #expect(serieMensal(vilaNova.gastos).count == 1 && serieEvolucao(vilaNova, taxa: 1, hoje: iso).count == 1)
+        #expect(mesesDeObra(vilaNova, hoje: iso) < 1 && vilaNova.valorEstimadoVenda == 1_100_000 && vilaNova.areaM2 == 220)
+        #expect([cotia, terreno, vilaNova].allSatisfy { $0.dataInicio == String(iso.prefix(8)) + "01" }, "no dia 1º deste mês")
+        // a5: 7 gastos, todos em Estrutura.
+        let galpao = try #require(obra["a5"])
+        #expect(galpao.nome == "Galpão Jundiaí" && galpao.gastos.count == 7 && gastoPorTopico(galpao).map(\.id) == ["estrutura"])
+        // a6: Outros e Extras abaixo de 1%.
+        let granja = try #require(obra["a6"])
+        let topicos = gastoPorTopico(granja)
+        #expect(granja.nome == "Casa Granja Viana" && topicos.map(\.id) == ["terreno", "fundacao", "projeto", "outros", "extras"])
+        #expect(topicos.map { porcentoDoTopico($0.bruto, total: totalBruto(granja)) } == ["78%", "17%", "5%", "<1%", "<1%"])
+        // a7: 30 meses de gastos (do 30º mês atrás ao mês passado), com 3 parados: os dois gráficos de mês passam de 24 e
+        // mostram os últimos 24, com os 3 parados entre eles.
+        let morumbi = try #require(obra["a7"])
+        #expect(morumbi.nome == "Casa Morumbi" && morumbi.dataInicio == meses(-30) && morumbi.gastos.count == 27)
+        #expect(morumbi.gastos.first?.data == meses(-30) && morumbi.gastos.last?.data == meses(-1))
+        #expect(gastoPorMesFoiCortado(morumbi.gastos) && evolucaoFoiCortada(morumbi, hoje: iso))
+        let porMes = serieMensal(morumbi.gastos)
+        #expect(porMes.count == 24 && porMes.first?.mes == String(meses(-24).prefix(7)))
+        #expect(porMes.filter { $0.total == 0 }.map(\.mes) == [-20, -19, -18].map { String(meses($0).prefix(7)) }, "3 meses parados, seguidos")
+        #expect(!gastoPorMesFoiCortado(casa.gastos) && !evolucaoFoiCortada(casa, hoje: iso), "a Casa Alphaville cabe em 24")
+        // a8: a Casa Alphaville sem a venda estimada, com os mesmos gastos.
+        let semVenda = try #require(obra["a8"])
+        #expect(semVenda.nome == "Casa Alphaville" && semVenda.fase == .construcao && semVenda.venda == nil)
+        #expect(semVenda.valorEstimadoVenda == nil && casa.valorEstimadoVenda == 1_450_000)
+        #expect(semVenda.gastos.map(\.valor) == casa.gastos.map(\.valor) && semVenda.gastos.map(\.data) == casa.gastos.map(\.data))
+    }
+
+    /// A conta de mês para trás dos falsos no fim do mês: o dia que o mês não tem fica no último dele, sem transbordar para 1º de
+    /// março. No iOS 26, a do Calendar levava 29/02/2028 − 24 meses a 01/03/2026 (swift-foundation #1708): dois gastos da Casa
+    /// Morumbi da análise em março e fevereiro de 2026 parado (job app da CI do #99). As datas aqui são escritas, não contadas.
+    @Test func mesesParaTrasNoFimDoMes() throws {
+        var calendario = Calendar(identifier: .gregorian)
+        calendario.timeZone = .current
+        func dia(_ a: Int, _ m: Int, _ d: Int) throws -> Date {
+            try #require(calendario.date(from: DateComponents(year: a, month: m, day: d, hour: 12)))
+        }
+        let bissexto = try dia(2028, 2, 29), fimDeJaneiro = try dia(2028, 1, 31)
+        let analise = Estado.de(DadosDeExemplo.vitrineDaAnalise(hoje: bissexto))
+        let morumbi = try #require(analise.obras.first { $0.id == "a7" })
+        let datas = Set(morumbi.gastos.map(\.data))
+        #expect(morumbi.dataInicio == "2025-08-29")
+        #expect(datas.isSuperset(of: ["2025-08-29", "2026-01-29", "2026-02-28", "2027-01-29", "2027-02-28", "2028-01-29"]))
+        #expect(!datas.contains("2026-03-01") && !datas.contains("2027-03-01"), "nada em 1º de março")
+        // A vitrine pelo mesmo caminho: no 31/01/2028, a 1ª etapa do Sobrado Granja Viana, de 23 meses atrás, fica em 28/02/2026.
+        let vitrine = Estado.de(DadosDeExemplo.vitrine(hoje: fimDeJaneiro))
+        let sobrado = try #require(vitrine.obras.first { $0.id == "v2" })
+        #expect(sobrado.dataInicio == "2026-02-28" && sobrado.gastos.contains { $0.data == "2026-02-28" })
     }
 }

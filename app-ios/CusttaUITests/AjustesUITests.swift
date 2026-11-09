@@ -79,6 +79,23 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons["aba-ajustes"].frame.maxY + 4, base - 22, accuracy: 1)
     }
+
+    /// A cápsula na borda externa de 16 pt dos dois lados, a da grade 16/34 da etapa 4 (ajuste 3), no app inteiro
+    /// (confirmação 5 de 29/10): em Obras, a cápsula à esquerda e o + à direita; em Ajustes, sem o +, a cápsula na largura
+    /// toda. As abas ficam a 4 pt da borda da cápsula.
+    @MainActor func testCapsulaNaBordaDe16Pontos() {
+        let app = abrirApp(conta: "senha")
+        let obras = app.buttons["aba-obras"], mais = app.buttons["botaoMais"]
+        XCTAssertTrue(obras.waitForExistence(timeout: 10))
+        let largura = app.windows.firstMatch.frame.width
+        XCTAssertEqual(obras.frame.minX - 4, 16, accuracy: 0.5)
+        XCTAssertEqual(mais.frame.maxX, largura - 16, accuracy: 0.5)
+        app.abrirAba("ajustes")
+        XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
+        XCTAssertTrue(mais.waitForNonExistence(timeout: 3), "em Ajustes não há o +")
+        XCTAssertEqual(obras.frame.minX - 4, 16, accuracy: 0.5)
+        XCTAssertEqual(app.buttons["aba-ajustes"].frame.maxX + 4, largura - 16, accuracy: 0.5)
+    }
     /// Ajustes › Aparência (a escolha do vidro, adiantada da etapa 5 para o TestFlight): tocar Fosco grava a escolha deste
     /// aparelho e o app passa ao Fosco na hora; a escolha fica ao reabrir; o Transparente volta do mesmo jeito. A prova é
     /// relativa, pelo print do painel da Conta, logo abaixo (o mesmo conteúdo e o mesmo lugar nas duas doses; só o vidro

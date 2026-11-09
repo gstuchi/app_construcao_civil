@@ -79,13 +79,37 @@ struct DentroDaObraTests {
         let o = obra([gasto("e1", "2026-09-01", 3_000, topico: "estrutura"), gasto("x1", "2026-09-02", 1_500, topico: "c_apagado"),
                       gasto("f1", "2026-09-03", 3_000, topico: "fundacao"), gasto("l1", "2026-09-04", 2_000, topico: "eletrica"),
                       gasto("l2", "2026-12-04", 2_500, topico: "eletrica")])
-        let linhas = gastoPorTopico(o, hoje: Self.hoje, taxaMensal: 1)
+        let linhas = gastoPorTopico(o)
         #expect(linhas.map(\.id) == ["eletrica", "estrutura", "fundacao", "c_apagado"], "do maior para o menor; no empate, a ordem dos gastos")
         #expect(linhas.map(\.bruto) == [4_500, 3_000, 3_000, 1_500], "o bruto, com o gasto futuro")
         #expect(linhas.map(\.pct) == [38, 25, 25, 13], "o Math.round do site: 37,5 vai a 38")
-        #expect(textoDaParteDaObra(linhas[0].pct) == "38% da obra")
-        #expect(gastoPorTopico(obra([]), hoje: Self.hoje, taxaMensal: 1).isEmpty)
+        #expect(textoDaParteDaObra(linhas[0].bruto, total: 12_000) == "38% da obra")
+        #expect(gastoPorTopico(obra([])).isEmpty)
         #expect(dicaDoModoTotal == "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\".")
+    }
+
+    /// O "% da obra" da lista "Gasto por tópico" e do detalhe do tópico: o `porcentoDoTopico` da etapa 4, com "<1%" quando o
+    /// tópico tem dinheiro e não chega a 1% (o site mostraria 0% ou 1%), sobre o mesmo bruto e o mesmo total nas duas telas.
+    @Test func parteDaObraAbaixoDeUmPorCento() {
+        #expect(textoDaParteDaObra(4, total: 1_000) == "<1% da obra", "o site diria 0%")
+        #expect(textoDaParteDaObra(5, total: 1_000) == "<1% da obra", "o site diria 1%")
+        #expect(textoDaParteDaObra(10, total: 1_000) == "1% da obra")
+        #expect(textoDaParteDaObra(0, total: 1_000) == "0% da obra" && textoDaParteDaObra(0, total: 0) == "0% da obra")
+        let o = obra([gasto("r1", "2026-09-01", 99_100, topico: "revest"), gasto("p1", "2026-09-02", 500, topico: "pintura"),
+                      gasto("d1", "2026-09-03", 400, topico: "projeto")])
+        #expect(detalheDoTopico(o, topico: "pintura", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · <1% da obra")
+        #expect(detalheDoTopico(o, topico: "projeto", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · <1% da obra")
+        #expect(detalheDoTopico(o, topico: "revest", hoje: Self.hoje, taxaMensal: 1).linha == "1 gasto · 99% da obra")
+    }
+
+    @Test func gastoPorTopicoComoOSite() {
+        // calc.js gastoPorTopico (o donut e a legenda da obra e dos Gráficos). Exato: o bruto soma os gastos na ordem do
+        // documento, como o site, e o "% da obra" é inteiro.
+        for c in Vetores.casos("calc.gastoPorTopico") {
+            let linhas = gastoPorTopico(c.args[0].obra)
+            confere(.lista(linhas.map { .objeto(["id": .texto($0.id), "bruto": .numero($0.bruto), "pct": .numero($0.pct)]) }),
+                    c.saida, .exata, c.caso)
+        }
     }
 
     @Test func gastoPorTopicoNoEmpateSegueAOrdemDosGastos() {
@@ -95,10 +119,21 @@ struct DentroDaObraTests {
         let o = obra([gasto("l1", "2026-09-28", 1_990, topico: "eletrica"), gasto("f1", "2026-09-03", 2_000, topico: "fundacao"),
                       gasto("p1", "2026-09-20", 1_000, topico: "pintura"), gasto("e1", "2026-09-01", 2_000, topico: "estrutura"),
                       gasto("p2", "2026-09-25", 1_000, topico: "pintura"), gasto("a1", "2026-09-02", 2_500, topico: "acabamento")])
-        let linhas = gastoPorTopico(o, hoje: Self.hoje, taxaMensal: 1)
+        let linhas = gastoPorTopico(o)
         #expect(linhas.map(\.id) == ["acabamento", "fundacao", "pintura", "estrutura", "eletrica"])
         #expect(linhas.map(\.bruto) == [2_500, 2_000, 2_000, 2_000, 1_990])
         #expect(linhas.map(\.pct) == [24, 19, 19, 19, 19], "o empate é do bruto, não do % arredondado")
+    }
+
+    @Test func gastoPorTopicoSomaNaOrdemDosGastosESemRelogio() {
+        // O bruto soma o tópico na ordem do documento, como o site, até o último bit: 0,1 + 0,2 + 0,3 dá 0,6000000000000001
+        // (de trás para a frente, 0,6). Sem hoje, o gasto de qualquer data conta, mesmo o de 2099 (o l2 de 04/12/2026 do
+        // modo total deixa de ser futuro em dezembro).
+        let o = obra([gasto("a", "2026-09-01", 0.1, topico: "pintura"), gasto("b", "2099-12-31", 0.2, topico: "pintura"),
+                      gasto("c", "2026-09-03", 0.3, topico: "pintura"), gasto("d", "2099-12-31", 0.4, topico: "eletrica")])
+        let linhas = gastoPorTopico(o)
+        #expect(linhas.map(\.id) == ["pintura", "eletrica"])
+        #expect(linhas.map(\.bruto) == [0.6000000000000001, 0.4])
     }
 
     @Test func aPagarPorMesComOQueVemDepois() {

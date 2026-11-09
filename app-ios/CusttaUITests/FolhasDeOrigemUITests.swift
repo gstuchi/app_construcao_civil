@@ -13,6 +13,9 @@ import notify
 @MainActor
 final class FolhasDeOrigemUITests: XCTestCase {
     private static let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+    /// A borda externa da grade 16/34 da etapa 4: o `Grade.externa` do app (Blocos.swift), que o alvo dos testes de tela não
+    /// enxerga. Todo bloco da obra vai de uma borda à outra.
+    private static let bordaDaGrade: CGFloat = 16
     /// A obra aberta (v1, a Casa Alphaville do mockup, por padrão).
     private func abrirObra(_ obra: String = "v1", argumentos: [String] = [], gravacao: String? = nil,
                            extra: [String: String] = [:]) -> XCUIApplication {
@@ -24,8 +27,10 @@ final class FolhasDeOrigemUITests: XCTestCase {
     /// A seta do indicador "A pagar · 30 dias": rola até ele e toca; a folha abre com o resumo.
     private func abrirAPagar(_ app: XCUIApplication) {
         let indicador = app.elemento("indicadorAPagar")
-        XCTAssertTrue(indicador.waitForExistence(timeout: 5))
+        // Rola antes de exigir: na maior letra o A pagar fica abaixo da dobra e, numa linha da List da obra, só entra na
+        // árvore quando a lista chega nele (o rolarAte pergunta pelo exists a cada volta e rola enquanto não acha).
         app.rolarAte(indicador)
+        XCTAssertTrue(indicador.waitForExistence(timeout: 5))
         indicador.tap()
         XCTAssertTrue(app.elemento("resumoDoAPagar").waitForExistence(timeout: 10), "a seta abre a folha do A pagar")
     }
@@ -108,7 +113,8 @@ final class FolhasDeOrigemUITests: XCTestCase {
         XCTAssertTrue(indicador.label.hasPrefix("A pagar · 30 dias"), indicador.label)
         XCTAssertTrue(indicador.label.contains("Parcelas e gastos futuros"), indicador.label)
         XCTAssertTrue(indicador.elementType == .button, "a linha inteira é o botão: \(indicador.elementType.rawValue)")
-        XCTAssertEqual(indicador.frame.width, app.frame.width - 40, accuracy: 1, "e o quadro dele vai de ponta a ponta do cartão (o contentShape, dentro do rótulo)")
+        XCTAssertEqual(indicador.frame.width, app.frame.width - 2 * Self.bordaDaGrade, accuracy: 1,
+                       "e o quadro dele é o bloco inteiro, de uma borda da grade à outra (o contentShape, dentro do rótulo)")
         abrirAPagar(app)
         XCTAssertTrue(app.elemento("tituloDaFolha").label.hasPrefix("A pagar · 30 dias"), app.elemento("tituloDaFolha").label)
         let resumo = app.elemento("resumoDoAPagar")
@@ -124,12 +130,15 @@ final class FolhasDeOrigemUITests: XCTestCase {
             XCTAssertTrue(linhas[2].label.hasPrefix("Tinta acrílica, parcela 2 de 3. Pintura, Cartão, "), linhas[2].label)
             XCTAssertEqual(linhas[2].value as? String, "R$\u{a0}2.300,00")
         }
-        // Agrupados por mês: o cabeçalho do mês do 2º vencimento, com o total dele (o do 3º, se for o mesmo mês).
+        // Agrupados por mês: o cabeçalho do mês do 2º vencimento, com o total de todos os vencimentos que caem nele (o 1º
+        // também cai nele no começo do mês e nos três últimos dias; o 3º, salvo no dia em que só ele vira o mês).
         let mesDoSegundo = mes(daquiA: 24)
-        let total = mes(daquiA: 25) == mesDoSegundo ? "R$\u{a0}8.450,00" : "R$\u{a0}6.150,00"
+        let vencimentos = [(dias: 3, reais: 4_800), (dias: 24, reais: 6_150), (dias: 25, reais: 2_300)]  // g039, g032, g045
+        let soma = vencimentos.filter { mes(daquiA: $0.dias) == mesDoSegundo }.reduce(0) { $0 + $1.reais }
+        let total = String(format: "R$\u{a0}%d.%03d,00", soma / 1000, soma % 1000)
         let cabecalho = naFolha(app, "mes-\(mesDoSegundo)")
         XCTAssertNotNil(cabecalho, "o cabeçalho do mês")
-        XCTAssertTrue(cabecalho?.label.contains(total) == true, cabecalho?.label ?? "")
+        XCTAssertTrue(cabecalho?.label.contains(total) == true, "\(total) em \(cabecalho?.label ?? "")")
         if let cabecalho, linhas.count == 3 { XCTAssertLessThan(cabecalho.frame.maxY, linhas[1].frame.minY + 1) }
         // A frase do fim: o que vem depois dos 30 dias está no "A vencer" da obra.
         let ponte = app.elemento("ponteDoAPagar")

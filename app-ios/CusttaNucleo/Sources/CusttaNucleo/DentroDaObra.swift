@@ -55,22 +55,29 @@ public struct GastoDoTopico: Equatable, Sendable, Identifiable {
     public let pct: Double
 }
 
-/// O "Gasto por tópico" do modo total: cada tópico com gasto, com o bruto e o "% da obra" do resumo do tópico, para o número
-/// ser o mesmo que o detalhe mostra ao abrir. A ordem é a da legenda do donut do site (renderObra do app.js,
-/// `Object.entries(byTop).sort((a,b)=>b[1]-a[1])`): do maior bruto para o menor e, no empate, o tópico que aparece primeiro
-/// nos gastos, porque o byTop nasce na ordem dos gastos e o sort do JavaScript é estável.
-public func gastoPorTopico(_ obra: Obra, hoje: String, taxaMensal: Double) -> [GastoDoTopico] {
+/// `gastoPorTopico` do calc.js (o donut e a legenda da obra e dos Gráficos), também o "Gasto por tópico" do modo total: cada
+/// tópico com gasto, com o bruto e o "% da obra" do resumo do tópico, para o número ser o mesmo que o detalhe mostra ao abrir.
+/// Do maior bruto para o menor e, no empate, o tópico que aparece primeiro nos gastos (o sort do JavaScript é estável). O
+/// bruto soma os gastos do tópico na ordem do documento, como o `resumoTopico`, e não depende de hoje nem da taxa.
+public func gastoPorTopico(_ obra: Obra) -> [GastoDoTopico] {
     var ids: [String] = []
-    for g in obra.gastos where !ids.contains(g.topico) { ids.append(g.topico) }
+    var brutos: [String: Double] = [:]
+    for g in obra.gastos {
+        if brutos[g.topico] == nil { ids.append(g.topico) }
+        brutos[g.topico, default: 0] += g.valor
+    }
+    let total = totalBruto(obra)
     let linhas = ids.map { id in
-        let r = resumoTopico(obra, topico: id, hoje: hoje, taxaMensal: taxaMensal)
-        return GastoDoTopico(id: id, bruto: r.bruto, pct: r.pct)
+        let bruto = brutos[id] ?? 0
+        return GastoDoTopico(id: id, bruto: bruto, pct: total > 0 ? arredondarJS(bruto / total * 100) : 0)
     }
     return ordenadoEstavel(linhas) { $0.bruto > $1.bruto }
 }
 
-/// "38% da obra".
-public func textoDaParteDaObra(_ pct: Double) -> String { "\(numeroJS(pct))% da obra" }
+/// "38% da obra" e, quando o tópico tem dinheiro e não chega a 1%, "<1% da obra" (o `porcentoDoTopico` da barra e do anel da
+/// etapa 4; o site mostraria 0% ou 1%). A lista "Gasto por tópico" e o detalhe do tópico passam o mesmo bruto e o mesmo total
+/// (`totalBruto`), para o número não mudar ao abrir o detalhe.
+public func textoDaParteDaObra(_ bruto: Double, total: Double) -> String { porcentoDoTopico(bruto, total: total) + " da obra" }
 
 /// A dica do fim da tela Orçamento no modo total.
 public let dicaDoModoTotal = "Para comparar tópico a tópico, toque no lápis e escolha \"Por tópico\"."
@@ -169,7 +176,7 @@ public func fraseDoOrcamentoNoDetalhe(_ item: ItemOrcamento) -> FraseDoOrcamento
 /// A folha do detalhe do tópico.
 public struct DetalheDoTopico: Equatable, Sendable {
     public let resumo: ResumoDoTopico
-    /// "6 gastos · 12% da obra".
+    /// "6 gastos · 12% da obra" ("<1% da obra" abaixo de 1%).
     public let linha: String
     /// "corrigido: R$ …".
     public let corrigido: String
@@ -189,7 +196,8 @@ public func detalheDoTopico(_ obra: Obra, topico: String, hoje: String, taxaMens
     } else {
         orcamento = .nenhum
     }
-    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(textoDaParteDaObra(r.pct))",
+    let parte = textoDaParteDaObra(r.bruto, total: totalBruto(obra))
+    return DetalheDoTopico(resumo: r, linha: "\(r.qtd) gasto\(r.qtd == 1 ? "" : "s") · \(parte)",
                            corrigido: "corrigido: " + moeda(r.corrigido), orcamento: orcamento,
                            aVencer: ordenados.filter { menorJS(hoje, $0.data) }.reversed(),
                            pagos: ordenados.filter { !menorJS(hoje, $0.data) })

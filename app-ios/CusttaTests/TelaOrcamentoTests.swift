@@ -53,7 +53,7 @@ struct TelaOrcamentoTests {
         #expect(linhasForaDoOrcamento(r, topicos: mapaDeTopicos([])).map(\.abre) == [true], "o fora do orçamento abre")
         let total = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
                          gastos: [("terreno", 319_847.85), ("revest", 0), ("c_meu", 2_000)])
-        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([]))
+        let porGasto = linhasDoGastoPorTopico(gastoPorTopico(total), total: totalBruto(total), topicos: mapaDeTopicos([]))
         #expect(porGasto.map(\.id) == ["terreno", "c_meu", "revest"])
         #expect(porGasto.allSatisfy { $0.abre }, "no gasto por tópico, todas abrem, mesmo a de R$ 0,00")
     }
@@ -62,10 +62,10 @@ struct TelaOrcamentoTests {
         let o = obra(.objeto(["modo": .texto("total"), "total": .numero(1_000_000)]),
                      gastos: [("terreno", 319_847.85), ("revest", 76_700), ("c_meu", 2_000)])
         let proprio = TopicoProprio(campos: ["id": .texto("c_meu"), "nm": .texto("Gesso"), "ic": .texto("etiqueta")])
-        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o, hoje: "2026-10-20", taxaMensal: 1), topicos: mapaDeTopicos([proprio]))
+        let linhas = linhasDoGastoPorTopico(gastoPorTopico(o), total: totalBruto(o), topicos: mapaDeTopicos([proprio]))
         #expect(linhas.map(\.nome) == ["Terreno", "Cerâmica", "Gesso"])
         #expect(linhas.map(\.gasto) == ["R$ 320 mil", "R$ 77 mil", "R$ 2 mil"])
-        #expect(linhas.map(\.frase) == ["80% da obra", "19% da obra", "1% da obra"])
+        #expect(linhas.map(\.frase) == ["80% da obra", "19% da obra", "<1% da obra"], "o Gesso tem 0,5%: o site diria 1%")
         #expect(linhas.allSatisfy { $0.previsto == nil && $0.item == nil && !$0.fraseEmAlerta })
     }
 
@@ -95,7 +95,7 @@ struct TelaOrcamentoTests {
         #expect(altura(60, .accessibility5) > altura(1000, .accessibility5), "na letra grande, quebra")
     }
 
-    /// A frase do "passou" no âmbar sobre o vidro (#6F4705 no claro, #FFD98A no escuro); as outras, fora do âmbar.
+    /// A frase do "passou" no âmbar sobre o vidro (#5E3A03 no claro, #FFD98A no escuro); as outras, fora do âmbar.
     @MainActor @Test func fraseDoPassouNoAmbarSobreOVidro() throws {
         func cor(_ alerta: Bool, _ esquema: ColorScheme) throws -> [UInt8] {
             let r = ImageRenderer(content: FraseDoTopicoNoOrcamento(texto: "Passou R$ 6,2 mil do previsto", alerta: alerta)
@@ -112,8 +112,8 @@ struct TelaOrcamentoTests {
             let opacos = stride(from: 0, to: rgba.count, by: 4).filter { rgba[$0 + 3] == 255 }.map { Array(rgba[$0..<$0 + 3]) }
             return Dictionary(grouping: opacos, by: { $0 }).max { $0.value.count < $1.value.count }?.key ?? []
         }
-        #expect(try cor(true, .light) == [0x6F, 0x47, 0x05])
+        #expect(try cor(true, .light) == [0x5E, 0x3A, 0x03])
         #expect(try cor(true, .dark) == [0xFF, 0xD9, 0x8A])
-        #expect(try cor(false, .light) != [0x6F, 0x47, 0x05] && cor(false, .dark) != [0xFF, 0xD9, 0x8A], "a frase que não é do passou")
+        #expect(try cor(false, .light) != [0x5E, 0x3A, 0x03] && cor(false, .dark) != [0xFF, 0xD9, 0x8A], "a frase que não é do passou")
     }
 }

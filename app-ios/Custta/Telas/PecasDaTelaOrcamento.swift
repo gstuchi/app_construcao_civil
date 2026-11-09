@@ -50,12 +50,13 @@ func linhasForaDoOrcamento(_ r: ResumoOrcamento, topicos: [String: Topico]) -> [
     }
 }
 
-/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto; todas abrem o detalhe.
-func linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
+/// O "Gasto por tópico" do modo total: o bruto e o "% da obra" de cada tópico com gasto ("<1%" abaixo de 1%), sobre o
+/// `totalBruto` da obra, o mesmo do detalhe que a linha abre; todas abrem o detalhe.
+func linhasDoGastoPorTopico(_ gastos: [GastoDoTopico], total: Double, topicos: [String: Topico]) -> [LinhaDeTopicoDoOrcamento] {
     gastos.map { g in
         let t = topico(g.id, topicos)
         return LinhaDeTopicoDoOrcamento(id: g.id, nome: t.nome, icone: t.icone, gasto: moedaCurtaSemZero(g.bruto), previsto: nil,
-                                        item: nil, frase: textoDaParteDaObra(g.pct), abre: true)
+                                        item: nil, frase: textoDaParteDaObra(g.bruto, total: total), abre: true)
     }
 }
 
@@ -229,7 +230,7 @@ struct LinhaDeTopicoNoOrcamento: View {
 }
 
 /// A frase do site embaixo da barra ("Faltam R$ 3,3 mil — 96%"; no modo total, "38% da obra"), no secundário; a do
-/// "passou", em semibold, no âmbar sobre o vidro.
+/// "passou", em semibold, no âmbar sobre o vidro. O VoiceOver lê o "<1%" como "menos de 1%", como na barra empilhada.
 struct FraseDoTopicoNoOrcamento: View {
     let texto: String
     let alerta: Bool
@@ -238,6 +239,7 @@ struct FraseDoTopicoNoOrcamento: View {
 
     var body: some View {
         Text(texto)
+            .accessibilityLabel(porcentoFalado(texto))
             .font(.footnote.weight(alerta ? .semibold : .regular))
             .foregroundStyle(paleta.cor(alerta ? .alertaNoVidro : vidro.secundario))
             .fixedSize(horizontal: false, vertical: true)

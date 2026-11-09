@@ -27,6 +27,8 @@ struct RaizView: View {
     /// O globo para pelo "Reduzir movimento".
     @AppStorage("custta.auroraPiorCaso") private var auroraPiorCaso = false
     @AppStorage("custta.textoApagado") private var textoApagado = ""
+    /// Laudo das marcas (etapa 4): as marcas de gráfico apagadas, sem mexer no layout (`-custta.marcasApagadas YES`).
+    @AppStorage("custta.marcasApagadas") private var marcasApagadas = false
     #endif
 
     var body: some View {
@@ -50,6 +52,7 @@ struct RaizView: View {
         #if DEBUG
         .modifier(ApagaTexto(ativo: textoApagado == "tudo"))
         .environment(\.apagaTextoDaNavegacao, textoApagado == "navegacao")
+        .environment(\.marcasApagadas, marcasApagadas)
         #endif
         // O aviso e o "Finalizar saída" ficam por cima de todas as telas; vêm antes do .environment para receber
         // a mesma paleta.

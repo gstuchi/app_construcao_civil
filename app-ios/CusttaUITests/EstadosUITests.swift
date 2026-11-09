@@ -54,6 +54,8 @@ final class EstadosUITests: XCTestCase {
         app.buttons["salvarGasto"].tap()
         let titulo = app.elemento("tituloDaObra")
         XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
+        // Depois de salvar, a lista rola até o gasto novo; o título e o total ficam no alto.
+        app.rolarAteOTopo()
         XCTAssertEqual(titulo.label, "Sobrado Granja Viana", "a folha desce na obra que recebeu o gasto")
         XCTAssertTrue(app.elemento("indicadorTotal").label.contains("6 lançamentos"), app.elemento("indicadorTotal").label)
         app.navigationBars.buttons.firstMatch.tap()
@@ -100,8 +102,10 @@ final class EstadosUITests: XCTestCase {
         app.buttons["salvarGasto"].doubleTap()
         XCTAssertTrue(app.buttons["salvarGasto"].waitForNonExistence(timeout: 5))
         sleep(1)
-        XCTAssertEqual(app.elemento("tituloDaObra").label, "Casa Alphaville")
-        XCTAssertTrue(app.elemento("indicadorTotal").label.contains("47 lançamentos"), app.elemento("indicadorTotal").label)
+        // A lista rolou até a linha nova (o destaque). Com a obra em blocos (etapa 4), o alto fica longe e sai da List: o
+        // nome vem do título pequeno da barra, e a contagem, da pílula "Lançamentos", logo acima da linha.
+        XCTAssertEqual(app.elemento("tituloPequenoDaBarra").label, "Casa Alphaville")
+        XCTAssertTrue(app.elemento("lancamentos").label.contains("47"), app.elemento("lancamentos").label)
     }
 
     /// Na maior letra o nome da obra quebra embaixo do rótulo e fica à esquerda, como no mockup (`.f-lin .d` alinhado à
@@ -237,8 +241,9 @@ final class EstadosUITests: XCTestCase {
     func testNaoSalvouAlertaUmaVezETocarTentaDeNovo() {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", gravacao: "recusa")
         let pronta = app.buttons["acao-marcarPronta"]
-        XCTAssertTrue(pronta.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         app.rolarAte(pronta)
+        XCTAssertTrue(pronta.exists)
         pronta.tap()
         let alerta = app.alerts["Não salvou na nuvem"]
         XCTAssertTrue(alerta.waitForExistence(timeout: 5))
@@ -261,8 +266,9 @@ final class EstadosUITests: XCTestCase {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", gravacao: "recusa",
                            extra: ["CUSTTA_GRAVACAO_ESPERA": "aviso"])
         let pronta = app.buttons["acao-marcarPronta"]
-        XCTAssertTrue(pronta.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         app.rolarAte(pronta)
+        XCTAssertTrue(pronta.exists)
         pronta.tap()
         app.buttons["botaoMais"].tap()
         XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5))

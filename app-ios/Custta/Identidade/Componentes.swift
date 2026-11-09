@@ -280,18 +280,30 @@ struct EtiquetaDeFase: View {
 /// duas linhas se lê errado. Os outros textos crescem e quebram. Algarismos tabulares, na cor do texto ou na que o
 /// lugar pede (o total do mês vai no secundário do cabeçalho). Com `prefixo`, o "R$" das linhas da folha vem no mesmo
 /// texto, menor e no secundário: encolhe junto com o número (em dois textos, na letra máxima só o número encolhia e o
-/// "R$" ficava maior que ele).
+/// "R$" ficava maior que ele). Com `mono`, a forma da identidade nova (NumeroMono.swift): encolhe até o R$ chegar a 11 pt.
 struct ValorEmDinheiro: View {
     let texto: String
     let fonte: Font
     var cor: Token = .texto
     var prefixo: Font?
+    var mono: TamanhoDoNumero?
     @Environment(\.paleta) private var paleta
+    @Environment(\.tintaDoBloco) private var tinta
+    @Environment(\.dynamicTypeSize) private var tamanhoDaLetra
 
     var body: some View {
-        conteudo
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
+        if let mono {
+            let medidas = mono.medidas(corpo: corpoDoTexto(tamanhoDaLetra))
+            // O VoiceOver lê o valor inteiro do núcleo ("R$ 842.317,45"), num elemento só.
+            textoMono(medidas, cor: paleta.cor(tinta ?? cor))
+                .lineLimit(1)
+                .minimumScaleFactor(medidas.fatorMinimo)
+                .accessibilityLabel(texto)
+        } else {
+            conteudo
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+        }
     }
 
     private var conteudo: Text {
@@ -407,12 +419,12 @@ struct RolagemFixaDoTeste: ViewModifier {
 extension View {
     /// A rolagem fixa do laudo só com o `-custta.rolagem`: sem ele, a lista fica sem o `.scrollPosition`, que muda a rolagem
     /// dela, como em Release. É a das folhas de origem (o A pagar e o detalhe do tópico ficam como sem o gancho nos testes de
-    /// tela); a obra e a tela Orçamento usam a `rolagemFixaSemFolha`.
+    /// tela); a tela Orçamento usa a `rolagemFixaSemFolha`, e a obra, que é uma List, a `rolagemFixaDaLista`.
     @ViewBuilder func rolagemFixaSoComOArgumento() -> some View {
         if UserDefaults.standard.object(forKey: "custta.rolagem") != nil { modifier(RolagemFixaDoTeste()) } else { self }
     }
 
-    /// A rolagem fixa das telas de baixo das folhas (a obra e a tela Orçamento). Na cena que abre uma folha
+    /// A rolagem fixa da tela de baixo das folhas em ScrollView (a tela Orçamento). Na cena que abre uma folha
     /// (`CUSTTA_FOLHA`) com o `-custta.rolagem`, a rolagem é só da folha, e a tela de baixo fica sem o gancho: na VM do
     /// iOS 26, rolar também a obra atrás da folha parava a thread principal de 14 a 21 s, e a cena do fim do A pagar
     /// passava dos 10 s de espera do laudo (sonda do run 40590390423).

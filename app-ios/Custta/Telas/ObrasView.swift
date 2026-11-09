@@ -8,11 +8,14 @@ enum RotaDeObras: Hashable, Sendable {
     case orcamento(String)
     /// A tela "Afazeres" da obra, empurrada pela linha dos afazeres (etapa 3).
     case afazeres(String)
+    /// Uma tela da análise da obra, Gráficos ou Relatório (etapa 4), empurrada sobre ela: a costura com Custta/Analise.
+    case analise(TelaDaAnalise)
 
-    /// A obra da tela: a própria, ou a dona do orçamento ou dos afazeres (o + da cápsula lança gasto nela).
+    /// A obra da tela: a própria, ou a dona do orçamento, dos afazeres ou da tela da análise (o + da cápsula lança gasto nela).
     var obraId: String {
         switch self {
         case .obra(let id), .orcamento(let id), .afazeres(let id): return id
+        case .analise(let tela): return tela.obraId
         }
     }
 }
@@ -30,6 +33,8 @@ struct ObrasView: View {
     /// Laudo de leitura (Tarefa 11): a lista parada numa rolagem dada, em pt, para dois prints iguais.
     @AppStorage("custta.rolagem") private var rolagemFixa = -1.0
     @State private var posicao = ScrollPosition(edge: .top)
+    /// A vitrine das peças da identidade nova (etapa 4, PR 1b), empurrada com `CUSTTA_ABRIR=pecas`.
+    @State private var vitrine = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] == "pecas"
     #endif
 
     var body: some View {
@@ -93,8 +98,12 @@ struct ObrasView: View {
                 case .obra(let id): ObraView(id: id, caminho: $caminho)
                 case .orcamento(let id): OrcamentoView(id: id, caminho: $caminho)
                 case .afazeres(let id): AfazeresView(obraId: id, caminho: $caminho)
+                case .analise(let tela): DestinoDaAnalise(tela: tela, caminho: $caminho)
                 }
             }
+            #if DEBUG
+            .navigationDestination(isPresented: $vitrine) { VitrineDasPecas() }
+            #endif
         }
     }
 }

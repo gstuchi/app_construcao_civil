@@ -66,6 +66,8 @@ Passaram pelo conselho (3 Opus, lentes custo, risco aos dados e operação, crí
 
 **Ramo:** `feat/blindagem4-corte`, a partir da `main`. **Risco:** Código novo em `corte/`, fora da Vercel. Nada roda até o G4, e a função nasce desarmada. Linhas de produção: ~500.
 
+> **Como o PR 1 entrou (10/11).** Além das 8 tarefas, a revisão trouxe 4 commits depois da Tarefa 8: a CI instala e confere a assinatura do lockfile de `corte/`; o Google falso dos testes confere o prazo e o `responseType`, e o teste do implantar exige `--max-instances=3`; incidente aberto de política desconhecida vira `corte-erro`, sem agir; e, por decisão do Giovani, a folga do `religar.sh` vale também para o orçamento de fora do Firestore quando a cobrança foi tirada. As listagens abaixo mostram o código de antes desses commits: o estado final está no código, no passo 4 de "Alerta aciona o corte" e em "Se o corte agir". Na Tarefa 1, o lockfile ficou o do protótipo, com o `google-auth-library` na 11.3.2, e a última frase da mensagem do commit mudou, porque a 11.3.3 completou os 7 dias no dia.
+
 ### Tarefa 1: chore: pacote da função de corte de gastos
 
 **Arquivos:** `.vercelignore`, `corte/.npmrc` (novo), `corte/package.json` (novo), `tests/pacotes.test.cjs`

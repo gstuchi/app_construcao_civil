@@ -45,6 +45,10 @@ const REVISADOS = {
     'firebase-admin': 'github.com/firebase/firebase-admin-node',
     'web-push': 'github.com/web-push-libs/web-push',
   },
+  'corte': {
+    '@google-cloud/functions-framework': 'github.com/GoogleCloudPlatform/functions-framework-nodejs',
+    'google-auth-library': 'github.com/googleapis/google-cloud-node',
+  },
 };
 
 /* Nome do pacote pela chave do lockfile: "node_modules/a/node_modules/@b/c" → "@b/c". */

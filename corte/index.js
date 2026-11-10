@@ -26,6 +26,7 @@ function criarManipulador({
     orcamentoProjeto: env.ORCAMENTO_PROJETO,
     orcamentoFora: env.ORCAMENTO_FORA_FIRESTORE,
     politica: env.POLITICA_ALERTA,
+    modo: regra.modoDoCorte(env.MODO_CORTE),
   };
   let memo = null;
   const google = () => (memo = memo || carregar(env));
@@ -122,10 +123,11 @@ function criarManipulador({
     }
     passagem.custo = aplicado.custoCentavos / 100;
     const contexto = { orcamento: msg.nome, custo: passagem.custo };
-    const decisao = regra.decidirOrcamento(papel, aplicado.custoCentavos);
+    const decisao = regra.decidirOrcamento(papel, aplicado.custoCentavos, config.modo);
     if(decisao === 'nada') return;
     if(decisao === 'tirar-cobranca'){
-      passagem.fez = (await tirarCobranca(contexto, instante.toISOString(), 'gasto fora do Firestore passou de R$ 100')).fez;
+      const motivo = papel === 'fora' ? 'gasto fora do Firestore passou de R$ 100' : 'modo oficial: gasto do projeto chegou a R$ 60';
+      passagem.fez = (await tirarCobranca(contexto, instante.toISOString(), motivo)).fez;
       return;
     }
     const r = await desligarApi(contexto, instante.toISOString());
@@ -142,6 +144,10 @@ function criarManipulador({
   async function tratarIncidente(msg, passagem, instante){
     passagem.politica = msg.politica;
     if(msg.estado !== 'open' || msg.politica !== config.politica) return;
+    if(config.modo === 'oficial'){
+      passagem.fez = 'só registrou o alerta: o modo oficial não age nele';
+      return;
+    }
     const r = await desligarApi({ politica: msg.politica }, instante.toISOString());
     passagem.fez = r.fez;
     if(r.falhou) throw r.erro;
@@ -160,6 +166,11 @@ function criarManipulador({
         return;
       }
       passagem.tipo = msg.tipo;
+      if(!config.modo){
+        passagem.fez = 'não agiu: MODO_CORTE desconhecido';
+        logar('ALERT', 'corte-erro', `MODO_CORTE desconhecido: ${env.MODO_CORTE}`, {});
+        return;
+      }
       if(msg.tipo === 'incidente') await tratarIncidente(msg, passagem, agora());
       else await tratarOrcamento(msg, passagem, agora());
     }catch(e){

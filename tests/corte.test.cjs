@@ -127,6 +127,22 @@ test('regra: limiares em centavos, por papel', ()=>{
   assert.equal(regra.decidirOrcamento('fora', 10000), 'tirar-cobranca');
 });
 
+test('regra: no modo oficial o projeto tira a cobrança em R$ 60 e o de fora não muda', ()=>{
+  assert.equal(regra.decidirOrcamento('projeto', 5999, 'oficial'), 'nada');
+  assert.equal(regra.decidirOrcamento('projeto', 6000, 'oficial'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('projeto', 30000, 'oficial'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('fora', 9999, 'oficial'), 'nada');
+  assert.equal(regra.decidirOrcamento('fora', 10000, 'oficial'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('projeto', 6000, 'dois-tempos'), 'desligar-api');
+});
+
+test('regra: modo do corte só aceita o texto exato, e sem variável vale dois-tempos', ()=>{
+  assert.equal(regra.modoDoCorte(undefined), 'dois-tempos');
+  assert.equal(regra.modoDoCorte('dois-tempos'), 'dois-tempos');
+  assert.equal(regra.modoDoCorte('oficial'), 'oficial');
+  for(const valor of ['OFICIAL', 'oficial ', '', 'dois_tempos', 'true']) assert.equal(regra.modoDoCorte(valor), null, JSON.stringify(valor));
+});
+
 test('regra: cobrança só sai com custo de R$ 100 e falha de 6 horas', ()=>{
   const seis = 6 * 60 * 60 * 1000, t0 = Date.parse('2026-11-09T12:00:00.000Z'), falha = new Date(t0).toISOString();
   assert.equal(regra.deveTirarCobrancaPorFalha(10000, falha, t0 + seis), true);
@@ -679,6 +695,122 @@ test('cenário 16: falha de 6 horas com a cobrança já tirada não chama update
   assert.equal(passagemUnica(r).fez, 'cobrança já estava tirada');
 });
 
+const OFICIAL = { MODO_CORTE: 'oficial' };
+
+test('cenário 17: modo oficial, 59,99 no projeto não faz nada', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, msgOrcamento(59.99), { env: OFICIAL });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), []);
+  assert.deepEqual(r.de('corte-acao'), []);
+  assert.equal(passagemUnica(r).fez, 'nada');
+});
+
+test('cenário 17: modo oficial, 60 no projeto tira a cobrança sem olhar a API e sem esperar as 6 horas', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, msgOrcamento(60), { env: OFICIAL });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler', 'cobranca-tirar']);
+  assert.equal(g.cobranca, false);
+  assert.equal(g.api, 'ENABLED');
+  assert.equal(g.estado.cobrancaTiradaEm, T0);
+  assert.equal(g.estado.primeiraFalha, null);
+  assert.equal(g.estado.apiDesligadaEm, null);
+  assert.equal(g.estado.orcamentos.projeto.maiorCusto, 60);
+  const a = r.de('corte-acao')[0];
+  assert.equal(a.acao, 'tirar-cobranca'); assert.equal(a.severity, 'ALERT'); assert.equal(a.orcamento, 'projeto'); assert.equal(a.custo, 60);
+  assert.equal(passagemUnica(r).fez, 'tirou a cobrança');
+});
+
+test('cenário 17: modo oficial vale sobre o custo descontada a base', async ()=>{
+  const quase = googleFalso({ estado: estadoCom({ projeto: noMes(12.34, 12.34) }) });
+  await rodar(quase, msgOrcamento(72.33), { env: OFICIAL });
+  assert.deepEqual(semEstado(quase.chamadas), []);
+  const passou = googleFalso({ estado: estadoCom({ projeto: noMes(12.34, 12.34) }) });
+  const r = await rodar(passou, msgOrcamento(72.34), { env: OFICIAL });
+  assert.deepEqual(semEstado(passou.chamadas), ['cobranca-ler', 'cobranca-tirar']);
+  assert.equal(r.de('corte-acao')[0].custo, 60);
+});
+
+test('cenário 17: modo oficial com ARMADO_COBRANCA=false só registra que faria, mesmo com a API armada', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, msgOrcamento(300), { env: { ...OFICIAL, ARMADO_API: 'true', ARMADO_COBRANCA: 'false' } });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler']);
+  assert.equal(g.cobranca, true);
+  assert.equal(g.estado.cobrancaTiradaEm, null);
+  assert.equal(r.de('corte-acao')[0].acao, 'faria-tirar-cobranca');
+  assert.match(r.de('corte-acao')[0].message, /faria/);
+  assert.equal(passagemUnica(r).fez, 'faria tirar a cobrança');
+});
+
+test('cenário 17: modo oficial com a cobrança já tirada não chama update nem relança', async ()=>{
+  const g = googleFalso({ cobranca: false, estado: estadoCom({ projeto: noMes(70) }, { cobrancaTiradaEm: T0 }) });
+  const r = await rodar(g, msgOrcamento(80), { env: OFICIAL, agora: mais(T0, 3600000) });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler']);
+  assert.equal(g.estado.cobrancaTiradaEm, T0);
+  assert.equal(passagemUnica(r).fez, 'cobrança já estava tirada');
+});
+
+test('cenário 17: modo oficial, falha ao tirar a cobrança relança para o Pub/Sub repetir', async ()=>{
+  const erro = new ErroHttp(503);
+  const g = googleFalso();
+  g.falhar['cobranca-tirar'] = [erro];
+  const r = await rodar(g, msgOrcamento(60), { env: OFICIAL });
+  assert.equal(r.erro, erro);
+  assert.equal(g.estado.cobrancaTiradaEm, null);
+  assert.ok(!g.chamadas.some(c => c.startsWith('api-')));
+});
+
+test('cenário 17: modo oficial não muda o orçamento fora do Firestore', async ()=>{
+  const abaixo = googleFalso();
+  await rodar(abaixo, foraDe(99.99), { env: OFICIAL });
+  assert.deepEqual(semEstado(abaixo.chamadas), []);
+  const acima = googleFalso();
+  const r = await rodar(acima, foraDe(100), { env: OFICIAL });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(acima.chamadas), ['cobranca-ler', 'cobranca-tirar']);
+  assert.match(r.de('corte-acao')[0].message, /fora do Firestore/);
+});
+
+test('cenário 17: modo oficial, alerta aberto só registra, sem ação e sem falar com o Google', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, incidente('leituras', 'open'), { env: OFICIAL });
+  assert.equal(r.erro, null);
+  assert.deepEqual(g.chamadas, []);
+  assert.deepEqual(r.de('corte-acao'), []);
+  assert.deepEqual(r.de('corte-erro'), []);
+  const p = passagemUnica(r);
+  assert.equal(p.tipo, 'incidente'); assert.equal(p.politica, 'leituras'); assert.match(p.fez, /registrou/);
+});
+
+test('cenário 18: dois-tempos escrito é o mesmo corte de quando a variável não existe', async ()=>{
+  const env = { MODO_CORTE: 'dois-tempos' };
+  const g1 = googleFalso();
+  await rodar(g1, msgOrcamento(60), { env });
+  assert.deepEqual(semEstado(g1.chamadas), ['api-ler', 'api-desligar', 'api-ler']);
+  const g2 = googleFalso();
+  await rodar(g2, incidente('leituras', 'open'), { env });
+  assert.deepEqual(semEstado(g2.chamadas), ['api-ler', 'api-desligar', 'api-ler']);
+});
+
+test('cenário 18: MODO_CORTE desconhecido dá corte-erro e nenhuma ação, em qualquer mensagem', async ()=>{
+  for(const valor of ['OFICIAL', 'oficial ', '', 'dois_tempos']){
+    for(const corpo of [msgOrcamento(300), foraDe(300), incidente('leituras', 'open')]){
+      const g = googleFalso();
+      const r = await rodar(g, corpo, { env: { MODO_CORTE: valor } });
+      const caso = JSON.stringify([valor, corpo]);
+      assert.equal(r.erro, null, caso);
+      assert.deepEqual(g.chamadas, [], caso);
+      assert.deepEqual(r.de('corte-acao'), [], caso);
+      assert.equal(r.de('corte-erro').length, 1, caso);
+      assert.match(r.de('corte-erro')[0].message, /MODO_CORTE/, caso);
+      passagemUnica(r);
+    }
+  }
+});
+
 test('orçamento com nome desconhecido dá erro, sem relançar e sem agir', async ()=>{
   const g = googleFalso();
   const r = await rodar(g, msgOrcamento(500, { budgetDisplayName: 'renomeado' }));
@@ -907,7 +1039,7 @@ test('implantar: sem argumento, sobe desarmada, com os parâmetros combinados', 
     '--trigger-topic=custta-corte', '--retry', `--service-account=${conta}`, `--trigger-service-account=${conta}`,
     '--no-allow-unauthenticated', '--timeout=300s', '--project=custta-corte']) assert.ok(c.includes(flag), flag);
   assert.deepEqual(envDe(c), {
-    ARMADO_API: 'false', ARMADO_COBRANCA: 'false', PROJETO_ALVO: 'app-construcao-civil', BUCKET_ESTADO: 'custta-corte-estado',
+    ARMADO_API: 'false', ARMADO_COBRANCA: 'false', MODO_CORTE: 'dois-tempos', PROJETO_ALVO: 'app-construcao-civil', BUCKET_ESTADO: 'custta-corte-estado',
     ORCAMENTO_PROJETO: 'custta-projeto', ORCAMENTO_FORA_FIRESTORE: 'custta-fora-firestore', POLITICA_ALERTA: 'custta-leituras',
   });
 });
@@ -919,8 +1051,18 @@ test('implantar: cada interruptor arma só pelo próprio argumento', ()=>{
   assert.deepEqual(so(['--armar-api', '--armar-cobranca']), ['true', 'true']);
 });
 
+test('implantar: --modo-oficial passa MODO_CORTE=oficial; sem ele, dois-tempos', ()=>{
+  const env = (args, ambiente) => { const r = rodarScript('implantar.sh', args, { env: ambiente }); assert.equal(r.status, 0, r.saida); return envDe(r.log[0]); };
+  assert.equal(env(['--modo-oficial']).MODO_CORTE, 'oficial');
+  assert.equal(env(['--armar-cobranca', '--modo-oficial']).MODO_CORTE, 'oficial');
+  assert.equal(env(['--armar-api', '--armar-cobranca']).MODO_CORTE, 'dois-tempos');
+  assert.equal(env([], { MODO_CORTE: 'oficial' }).MODO_CORTE, 'dois-tempos', 'só o argumento muda o modo');
+  const desarmada = env(['--modo-oficial']);
+  assert.deepEqual([desarmada.ARMADO_API, desarmada.ARMADO_COBRANCA], ['false', 'false'], 'o modo não arma nada');
+});
+
 test('implantar: argumento desconhecido para antes do gcloud', ()=>{
-  for(const args of [['--armar'], ['true'], ['--armar-api', 'x']]){
+  for(const args of [['--armar'], ['true'], ['--armar-api', 'x'], ['--modo'], ['--modo-oficial', 'x']]){
     const r = rodarScript('implantar.sh', args);
     assert.notEqual(r.status, 0, args.join(' '));
     assert.deepEqual(r.log, [], args.join(' '));

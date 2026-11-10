@@ -2,16 +2,21 @@
 # Implanta a função de corte no projeto próprio dela. Sem argumento sobe desarmada: só registra
 # o que faria.
 #
-# Uso: corte/implantar.sh [--armar-api] [--armar-cobranca]
+# Uso: corte/implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]
+#
+# --modo-oficial é a receita oficial do Google, para a volta às provas reprovadas: um tempo só,
+# tira a cobrança em R$ 60. Não arma nada: continua valendo --armar-cobranca. Sem ele, dois-tempos.
 set -euo pipefail
 
 ARMADO_API=false
 ARMADO_COBRANCA=false
+MODO_CORTE=dois-tempos
 while [ $# -gt 0 ]; do
   case "$1" in
     --armar-api) ARMADO_API=true;;
     --armar-cobranca) ARMADO_COBRANCA=true;;
-    *) echo "uso: implantar.sh [--armar-api] [--armar-cobranca]" >&2; exit 2;;
+    --modo-oficial) MODO_CORTE=oficial;;
+    *) echo "uso: implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]" >&2; exit 2;;
   esac
   shift
 done
@@ -39,5 +44,5 @@ gcloud functions deploy custta-corte \
   --no-allow-unauthenticated \
   --timeout=300s \
   --max-instances=3 \
-  --set-env-vars="ARMADO_API=$ARMADO_API,ARMADO_COBRANCA=$ARMADO_COBRANCA,PROJETO_ALVO=$PROJETO_ALVO,BUCKET_ESTADO=$BUCKET_ESTADO,ORCAMENTO_PROJETO=$ORCAMENTO_PROJETO,ORCAMENTO_FORA_FIRESTORE=$ORCAMENTO_FORA_FIRESTORE,POLITICA_ALERTA=$POLITICA_ALERTA" \
+  --set-env-vars="ARMADO_API=$ARMADO_API,ARMADO_COBRANCA=$ARMADO_COBRANCA,MODO_CORTE=$MODO_CORTE,PROJETO_ALVO=$PROJETO_ALVO,BUCKET_ESTADO=$BUCKET_ESTADO,ORCAMENTO_PROJETO=$ORCAMENTO_PROJETO,ORCAMENTO_FORA_FIRESTORE=$ORCAMENTO_FORA_FIRESTORE,POLITICA_ALERTA=$POLITICA_ALERTA" \
   --project="$PROJETO_FUNCAO"

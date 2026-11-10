@@ -3,7 +3,7 @@
    disco ou relógio. Limiares valem sobre custo = costAmount − base, em centavos, para a
    conta em reais não errar na fronteira (64,07 − 4,07 dá 59,99999999999999). */
 
-const LIMITE_API = 6000; // R$ 60,00: desliga a API do Firestore
+const LIMITE_API = 6000; // R$ 60,00: desliga a API do Firestore (no modo oficial, tira a cobrança)
 const LIMITE_COBRANCA = 10000; // R$ 100,00: tira a cobrança
 const ESPERA_FALHA_MS = 6 * 60 * 60 * 1000; // falha de desligar que persiste tanto vira corte da cobrança
 
@@ -77,9 +77,17 @@ function papelDoOrcamento(nome, config){
   return null;
 }
 
-function decidirOrcamento(papel, custoCentavos){
+/* Sem a variável vale dois-tempos. Qualquer outro texto devolve null: a função não age. */
+function modoDoCorte(valor){
+  if(valor === undefined) return 'dois-tempos';
+  return valor === 'dois-tempos' || valor === 'oficial' ? valor : null;
+}
+
+/* No modo oficial, a receita do Google, o orçamento do projeto vai direto à cobrança. */
+function decidirOrcamento(papel, custoCentavos, modo = 'dois-tempos'){
   if(papel === 'fora') return custoCentavos >= LIMITE_COBRANCA ? 'tirar-cobranca' : 'nada';
-  return custoCentavos >= LIMITE_API ? 'desligar-api' : 'nada';
+  if(custoCentavos < LIMITE_API) return 'nada';
+  return modo === 'oficial' ? 'tirar-cobranca' : 'desligar-api';
 }
 
 /* A cobrança só sai pelo orçamento do projeto quando a API não ficou desligada: é o que o
@@ -105,6 +113,6 @@ function registrarCobrancaTirada(estado, agora){
 
 module.exports = {
   LIMITE_API, LIMITE_COBRANCA, ESPERA_FALHA_MS, MensagemIlegivel,
-  estadoNormal, intervaloDe, interpretar, aplicarOrcamento, papelDoOrcamento, decidirOrcamento,
+  estadoNormal, intervaloDe, interpretar, aplicarOrcamento, papelDoOrcamento, modoDoCorte, decidirOrcamento,
   deveTirarCobrancaPorFalha, registrarFalha, registrarApiDesligada, registrarCobrancaTirada,
 };

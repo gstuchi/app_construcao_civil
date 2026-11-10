@@ -22,6 +22,10 @@ export const __ctrl = {
 };
 
 export function initializeApp(config){ __ctrl.config = config; return { nome: 'stub' }; }
+export function initializeAppCheck(){ return { nome: 'app-check-stub' }; }
+export class ReCaptchaEnterpriseProvider{
+  getToken(){ return Promise.resolve({ token:'app-check-teste', expireTimeMillis:0 }); }
+}
 export function getAuth(){ return { nome: 'auth-stub', currentUser:{ uid:'u-teste', email:'teste@exemplo.com' } }; }
 export function getIdToken(){ return __ctrl.token; }
 export const EmailAuthProvider = { credential:(email,senha)=>({email,senha}) };

@@ -39,6 +39,12 @@ test('cspNativa tira o que só o login com Google da web usa', ()=>{
   assert.ok(nativa.includes("script-src 'self'"));
 });
 
+test('cspNativa tira o reCAPTCHA, que só o site publicado usa', ()=>{
+  const nativa = cspNativa("default-src 'none'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; connect-src 'self' https://*.googleapis.com https://www.google.com/recaptcha/");
+  assert.ok(!nativa.includes('recaptcha'));
+  assert.ok(nativa.includes("connect-src 'self' https://*.googleapis.com"));
+});
+
 test('arquivo listado ausente falha', async()=>{
   const falsa = await mkdtemp(join(tmpdir(), 'custta-raiz-'));
   await writeFile(join(falsa, 'sw.js'), "const ASSETS = ['./', './index.html', './falta.js'];");

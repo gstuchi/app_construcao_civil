@@ -2,6 +2,7 @@
    Expõe window.CLOUD pros scripts clássicos (auth.js, app.js).
    As chaves abaixo são públicas; a segurança vem das rules do Firestore. */
 import { initializeApp } from './vendor/firebase/firebase-app.js';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from './vendor/firebase/firebase-app-check.js';
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, sendPasswordResetEmail, signOut, getIdToken,
@@ -33,7 +34,46 @@ const firebaseConfig = {
    idToken porque o client é do mesmo projeto (111188093030). */
 const GOOGLE_CLIENT_ID_WEB = '111188093030-76cph7rdbibirr8l61jn72r3i3f92e8u.apps.googleusercontent.com';
 
+/* Chave pública do reCAPTCHA Enterprise do site. */
+const CHAVE_RECAPTCHA = '6Le8PBouAAAAALEn9yAzVZmqhew_Gpn2jkMJjY4C';
+
+/* O App Check só observa, e só nos endereços publicados: em 127.0.0.1, em
+   localhost e no WKWebView (capacitor://localhost) ele não liga. */
+function enderecoPublicado(){
+  const host = globalThis.location?.hostname || '';
+  return host === 'custta.com.br' || host.endsWith('.vercel.app');
+}
+
+/* O SDK não trata falha no carregamento do script do reCAPTCHA: se ele não chega
+   (bloqueador, rede filtrada, app aberto sem internet), getToken nunca responde e
+   o Auth e o Firestore esperam para sempre pelo token. Com prazo, a falha vira um
+   erro que o SDK já absorve: o pedido sai com o token de erro dele, o App Check só
+   observa, e a próxima tentativa funciona quando o reCAPTCHA chegar. Uma tentativa
+   por vez, com o mesmo prazo para quem chegar depois: bloqueado, só o primeiro espera. */
+const PRAZO_RECAPTCHA = 4000;
+class ProvedorReCaptcha extends ReCaptchaEnterpriseProvider {
+  #emVoo = null;
+  #inicio = 0;
+  getToken(){
+    /* Sem rede o script não chega: o prazo só deixaria a tela de login à vista por 4 s
+       antes do dado em cache aparecer. onLine verdadeiro não garante rede; aí vale o prazo. */
+    if(navigator.onLine === false) return Promise.reject(new Error('reCAPTCHA sem rede'));
+    if(!this.#emVoo){
+      this.#inicio = Date.now();
+      this.#emVoo = super.getToken().finally(()=>{ this.#emVoo = null; });
+    }
+    const resta = Math.max(0, this.#inicio + PRAZO_RECAPTCHA - Date.now());
+    return Promise.race([this.#emVoo, new Promise((_, falha)=>{ setTimeout(falha, resta, new Error('reCAPTCHA sem resposta')); })]);
+  }
+}
+
 const app = initializeApp(firebaseConfig);
+if(enderecoPublicado()){
+  initializeAppCheck(app, {
+    provider: new ProvedorReCaptcha(CHAVE_RECAPTCHA),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 const auth = getAuth(app);
 /* Qual botão mandou para o redirect: o erro na volta diz "Apple" ou "Google". */
 const CHAVE_REDIRECT = 'custta-redirect';

@@ -20,7 +20,7 @@ test('política cita token de dispositivo do FCM e lista de SDKs bate com packag
 test('política publicada identifica o controlador e não é mais rascunho', ()=>{
   const politica = ler('privacidade.html');
   assert.doesNotMatch(politica, /Rascunho|será confirmado/);
-  assert.match(politica, /<strong>Versão vigente:<\/strong> 30 de setembro de 2026\./);
+  assert.match(politica, /<strong>Versão vigente:<\/strong> 10 de novembro de 2026\./);
   assert.match(politica, /Controlador dos dados pessoais: <strong>Giovani Stuchi<\/strong>/);
   assert.match(politica, /Resolução CD\/ANPD nº 2\/2022/);
 });

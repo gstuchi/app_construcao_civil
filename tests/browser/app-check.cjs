@@ -16,6 +16,7 @@ const TOKEN_RECAPTCHA='recaptcha-falso';
 const TOKEN_APP_CHECK='app-check-falso';
 const UID='uid-falso';
 const HORA='2026-11-09T12:00:00.000000Z';
+const HORA_ESCRITA='2026-11-09T12:00:01.000000Z';
 const MARCA='dG9rZW4=';
 const CAMPOS={
   obras:{arrayValue:{values:[{mapValue:{fields:{
@@ -78,7 +79,8 @@ function criarFirestore(r){
   function aoWrite(c,msg){
     if(!msg.writes){ envia(c,{streamId:'s',streamToken:MARCA}); return; }
     r.escritas.push(...msg.writes);
-    envia(c,{streamToken:MARCA,writeResults:msg.writes.map(()=>({updateTime:HORA})),commitTime:HORA});
+    /* Hora depois da do documento e o serverTimestamp respondido: só assim o SDK grava a escrita no cache. */
+    envia(c,{streamToken:MARCA,writeResults:msg.writes.map(w=>({updateTime:HORA_ESCRITA,transformResults:(w.updateTransforms||[]).map(()=>({timestampValue:HORA_ESCRITA}))})),commitTime:HORA_ESCRITA});
   }
   return rota=>{
     const pedido=rota.request(), url=new URL(pedido.url());
@@ -105,7 +107,8 @@ function criarFirestore(r){
    o gapi do login social (apis.google.com) não interessa aqui e é só abortado. */
 async function contexto(browser,hostsFalsos,{reCaptcha='responde'}={}){
   const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
-  const r={script:[],troca:[],auth:[],abertura:{Listen:[],Write:[]},escritas:[],violacoes:[],erros:[],fora:[]};
+  const r={script:[],troca:[],auth:[],abertura:{Listen:[],Write:[]},escritas:[],violacoes:[],erros:[],fora:[],scriptEntregue:false};
+  r.atrasoDoScript=new Promise(solta=>{ r.soltaScript=solta; });
   await ctx.exposeBinding('__registraCSP',(_s,v)=>r.violacoes.push(v));
   await ctx.addInitScript(()=>{
     sessionStorage.setItem('splashVista','1');
@@ -118,9 +121,10 @@ async function contexto(browser,hostsFalsos,{reCaptcha='responde'}={}){
     if(url.hostname!=='apis.google.com') r.fora.push(url.href);
     return rota.abort();
   });
-  await ctx.route(/^https:\/\/www\.google\.com\/recaptcha\//,rota=>{
+  await ctx.route(/^https:\/\/www\.google\.com\/recaptcha\//,async rota=>{
     r.script.push(rota.request().url());
     if(reCaptcha==='aborta') return rota.abort();
+    if(reCaptcha==='lento'){ await r.atrasoDoScript; r.scriptEntregue=true; }
     return rota.fulfill({status:200,headers:{'content-type':'text/javascript'},body:SCRIPT_RECAPTCHA});
   });
   await ctx.route(/^https:\/\/content-firebaseappcheck\.googleapis\.com\//,rota=>{
@@ -131,11 +135,11 @@ async function contexto(browser,hostsFalsos,{reCaptcha='responde'}={}){
   await ctx.route(/^https:\/\/firestore\.googleapis\.com\//,criarFirestore(r));
   return {ctx,r};
 }
-async function abrir(ctx,r,endereco){
+async function abrir(ctx,r,endereco,waitUntil='load'){
   const page=await ctx.newPage();
   page.setDefaultTimeout(15000);
   page.on('pageerror',e=>r.erros.push(e.message));
-  await page.goto(endereco);
+  await page.goto(endereco,{waitUntil});
   await page.waitForFunction(()=>window.CLOUD);
   await page.evaluate(()=>CLOUD.ready);
   return page;
@@ -148,10 +152,13 @@ async function ate(cond,rotulo){
   }
 }
 /* Entrar pela tela, ver o dado do servidor falso chegar e gravar uma mudança. */
-async function entrarESincronizar(page,r){
+async function preencherLogin(page){
   await page.waitForSelector('#fLogin',{state:'visible'});
   await page.fill('#lEmail','ana@example.com');
   await page.fill('#lSenha','Obra2026x');
+}
+async function entrarESincronizar(page,r){
+  await preencherLogin(page);
   await page.click('#fLogin button[type=submit]');
   await page.waitForFunction(()=>!document.body.classList.contains('locked'));
   await page.waitForFunction(()=>db.obras.some(o=>o.nome==='Obra do falso'));
@@ -159,6 +166,35 @@ async function entrarESincronizar(page,r){
   await ate(()=>r.escritas.some(e=>JSON.stringify(e).includes('Obra alterada')),'a escrita não chegou ao Firestore falso');
   await page.waitForFunction(()=>CLOUD.estado()==='ocioso');
 }
+/* Sem rede: navigator.onLine falso e todo o Google abortado (a rota mais nova vale
+   primeiro). O site segue vindo do route, no lugar do service worker. */
+async function tirarARede(ctx){
+  await ctx.setOffline(true);
+  await ctx.route(/^https:\/\/([^/]+\.)?(google|googleapis|gstatic)\.com\//,rota=>rota.abort());
+}
+/* Recarrega e devolve os ms, desde o início da navegação, até a obra estar na tela destravada. */
+async function recarregarEMedir(page,nome){
+  await page.reload();
+  const marca=await page.waitForFunction(n=>!document.body.classList.contains('locked')&&document.body.innerText.includes(n)&&performance.now(),nome);
+  return Math.round(await marca.jsonValue());
+}
+/* Deixa vencido o token do App Check guardado, como depois de uma hora sem abrir o app. Devolve quantos achou. */
+const vencerTokenGuardado=page=>page.evaluate(()=>new Promise((pronto,falha)=>{
+  const aberto=indexedDB.open('firebase-app-check-database');
+  aberto.onerror=()=>falha(aberto.error);
+  aberto.onsuccess=()=>{
+    const banco=aberto.result, tx=banco.transaction('firebase-app-check-store','readwrite'), cursor=tx.objectStore('firebase-app-check-store').openCursor();
+    let achados=0;
+    cursor.onsuccess=()=>{
+      const c=cursor.result;
+      if(!c) return;
+      c.update({...c.value,value:{...c.value.value,expireTimeMillis:Date.now()-1000}});
+      achados++; c.continue();
+    };
+    tx.oncomplete=()=>{ banco.close(); pronto(achados); };
+    tx.onerror=()=>falha(tx.error);
+  };
+}));
 const semIncidentes=r=>{
   assert.deepEqual(r.violacoes,[],'violação de CSP');
   assert.deepEqual(r.erros,[],'erro de página');
@@ -221,6 +257,51 @@ const tokenDaAbertura=h=>/(?:^|\r\n)x-firebase-appcheck:([^\r\n]*)/i.exec(h)?.[1
       assert.deepEqual(r.troca,[],'não pode trocar token sem o reCAPTCHA');
       semIncidentes(r);
       console.log('ok - script do reCAPTCHA bloqueado: entrar e sincronizar seguem, sem erro de página');
+      await ctx.close();
+    }
+    /* 5. Sem rede, com dado em cache: a obra aparece na hora, com o token do App Check
+       guardado válido ou vencido (o normal depois de uma hora): vencido, o provedor
+       desiste sem esperar o prazo. */
+    for(const vencido of [false,true]){
+      const {ctx,r}=await contexto(browser,['custta.com.br']);
+      const page=await abrir(ctx,r,'https://custta.com.br/');
+      await entrarESincronizar(page,r);
+      if(vencido) assert.ok(await vencerTokenGuardado(page)>0,'não achou o token guardado');
+      await tirarARede(ctx);
+      const ms=await recarregarEMedir(page,'Obra alterada');
+      assert.ok(ms<1000,`a obra levou ${ms} ms para aparecer sem rede`);
+      /* Sem rede, o WebChannel testa a conexão com um pixel do Google, que o img-src barra (com ou sem App Check). */
+      r.violacoes=r.violacoes.filter(v=>!v.startsWith('img-src: https://www.google.com/images/cleardot.gif'));
+      semIncidentes(r);
+      console.log(`ok - sem rede, token ${vencido?'vencido':'válido'}: a obra em cache aparece em ${ms} ms`);
+      await ctx.close();
+    }
+    /* 6. reCAPTCHA lento: o script chega 8 s depois do clique. O login destrava no prazo,
+       antes dele, e o pedido seguinte já leva token válido: o prazo não prende o token. */
+    {
+      const {ctx,r}=await contexto(browser,['custta.com.br'],{reCaptcha:'lento'});
+      /* O load espera o script injetado; aqui ele só chega depois do clique. O prazo conta
+         do primeiro pedido de token, que o App Check faz logo na abertura, não do clique. */
+      const aberto=Date.now();
+      const page=await abrir(ctx,r,'https://custta.com.br/','domcontentloaded');
+      await preencherLogin(page);
+      const inicio=Date.now();
+      setTimeout(r.soltaScript,8000);
+      await page.click('#fLogin button[type=submit]');
+      await page.waitForFunction(()=>!document.body.classList.contains('locked'));
+      const ms=Date.now()-inicio;
+      assert.ok(!r.scriptEntregue,'o login esperou o script chegar');
+      assert.ok(Date.now()-aberto>=3900&&ms<6000,`o login destravou em ${ms} ms`);
+      assert.deepEqual(r.troca,[],'trocou token antes do script chegar');
+      assert.ok(r.auth.length>0&&!r.auth.includes(TOKEN_APP_CHECK),'o login não podia ter token válido');
+      await page.waitForFunction(()=>db.obras.some(o=>o.nome==='Obra do falso'));
+      await ate(()=>r.troca.length>0,'não trocou o token depois que o script chegou');
+      await page.waitForTimeout(300); // o provedor só solta a tentativa em voo depois da resposta da troca
+      await page.evaluate(()=>{ db.obras[0].nome='Obra alterada'; save(); });
+      await ate(()=>r.escritas.some(e=>JSON.stringify(e).includes('Obra alterada')),'a escrita não chegou ao Firestore falso');
+      assert.ok(r.abertura.Write.some(h=>tokenDaAbertura(h)===TOKEN_APP_CHECK),'o pedido seguinte não levou o token válido');
+      semIncidentes(r);
+      console.log(`ok - reCAPTCHA lento: login destrava em ${ms} ms e o pedido seguinte leva token válido`);
       await ctx.close();
     }
   }finally{ await browser.close(); }

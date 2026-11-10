@@ -827,6 +827,10 @@ body .layout-18{width:22px;height:60px;animation-delay:1.62s}
 body .layout-19{width:100%}
 body .layout-20{text-align:center;margin-top:14px;font-size:13px}
 body .layout-21{color:var(--muted)}
+/* Selo do reCAPTCHA escondido: no lugar dele, o texto da tela de login. O app nativo não usa o reCAPTCHA. */
+.grecaptcha-badge{visibility:hidden}
+body .auth-recaptcha{text-align:center;margin-top:6px;font-size:12px;color:var(--muted)}
+html.nativo .auth-recaptcha{display:none}
 body .layout-22{display:flex;align-items:center}
 body .layout-23{width:100%;margin-top:12px}
 body .layout-24{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:12.5px;color:var(--muted)}

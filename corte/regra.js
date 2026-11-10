@@ -88,17 +88,19 @@ function deveTirarCobrancaPorFalha(custoCentavos, primeiraFalha, agoraMs){
   return custoCentavos >= LIMITE_COBRANCA && Boolean(primeiraFalha) && agoraMs - Date.parse(primeiraFalha) >= ESPERA_FALHA_MS;
 }
 
+/* Os três registros devolvem o mesmo objeto quando nada muda: não há o que regravar. */
 function registrarFalha(estado, agora){
-  return { ...estado, primeiraFalha: estado.primeiraFalha || agora };
+  return estado.primeiraFalha ? estado : { ...estado, primeiraFalha: agora };
 }
 
 /* API confirmada desligada encerra a falha: a contagem só anda enquanto o estado real é ligada. */
 function registrarApiDesligada(estado, agora){
+  if(estado.apiDesligadaEm && !estado.primeiraFalha) return estado;
   return { ...estado, apiDesligadaEm: estado.apiDesligadaEm || agora, primeiraFalha: null };
 }
 
 function registrarCobrancaTirada(estado, agora){
-  return { ...estado, cobrancaTiradaEm: estado.cobrancaTiradaEm || agora };
+  return estado.cobrancaTiradaEm ? estado : { ...estado, cobrancaTiradaEm: agora };
 }
 
 module.exports = {

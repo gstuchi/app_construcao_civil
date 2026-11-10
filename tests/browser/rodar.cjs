@@ -35,5 +35,6 @@ const run=(file,args=[])=>new Promise((resolve,reject)=>{
     await run('tests/browser/cadastro.cjs');
     await run('tests/browser/google.cjs');
     await run('tests/browser/apple.cjs');
+    await run('tests/browser/app-check.cjs');
   }finally{server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

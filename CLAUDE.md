@@ -86,6 +86,8 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 `npm run sonda:banco` ([scripts/sonda-banco.mjs](scripts/sonda-banco.mjs)) prova o que está **no ar** (`test:rules` prova o arquivo, no emulador). Só com a apiKey pública, cria 2 contas descartáveis `@example.com` e faz 45 verificações: controles positivos (o dono grava, lê e atualiza o que é dele, inclusive o próprio nome via máscara; sem isso um 403 não prova nada) e ataques (sem login, uma conta contra a outra, campo ou formato proibido, caminhos estranhos, os outros bancos do projeto), confere que o dado da vítima não mudou e apaga contas e documentos no fim. Saída 0 = banco fechado e nada sobrou; 1 = algum ataque passou, controle positivo falhou ou sobrou conta ou documento (a saída mostra o caminho ou o uid para apagar no console). Sem `--producao` sai com 2 sem tocar a rede; o script do npm já passa a flag.
 
+**App Check** (só observando; a exigência é do console): o site liga em `custta.com.br` e `*.vercel.app` (`enderecoPublicado`, em `cloud.js`), então testes e emuladores ficam de fora. O `ProvedorReCaptcha` limita a espera a 4 s e recusa na hora sem rede, porque o SDK puro segura o Auth e o Firestore quando o script do reCAPTCHA não chega. Na CSP, `https://www.google.com/recaptcha/`, `https://www.gstatic.com/recaptcha/` e `https://recaptcha.google.com/recaptcha/` existem só para ele.
+
 ### Service worker
 
 [sw.js](sw.js) é network-first. Ao **criar um arquivo JS/CSS novo na raiz**: adicione em `ASSETS` **e** incremente `CACHE` (`obras-vNN`). Sem o bump, aparelhos já instalados continuam com o retrato velho offline.

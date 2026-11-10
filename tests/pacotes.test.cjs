@@ -182,3 +182,17 @@ test('CI confere a assinatura do registro de tudo que instalou', ()=>{
   assert.match(ci, /^\s*- run: npm audit signatures --prefix notificacoes\s*$/m);
   assert.ok(ci.indexOf('npm audit signatures') > ci.indexOf('npm ci --prefix notificacoes'), 'assinatura se confere depois de instalar');
 });
+
+/* Toda pasta com lockfile revisado instala na CI pelo lockfile e confere a assinatura depois: sem
+   isso, um lockfile fora de sincronia ou com pacote adulterado passa verde e só aparece no deploy. */
+test('CI instala pelo lockfile e confere a assinatura de cada pasta revisada', ()=>{
+  const ci = lerTexto('.github/workflows/testes.yml');
+  const posicao = comando => ci.search(new RegExp(`^\\s*- run: ${comando}\\s*$`, 'm'));
+  for(const dir of Object.keys(REVISADOS)){
+    const prefixo = dir === '.' ? '' : ` --prefix ${dir}`;
+    const instalar = posicao(`npm ci${prefixo}`), conferir = posicao(`npm audit signatures${prefixo}`);
+    assert.ok(instalar >= 0, `${dir}: a CI não roda npm ci${prefixo}`);
+    assert.ok(conferir >= 0, `${dir}: a CI não roda npm audit signatures${prefixo}`);
+    assert.ok(conferir > instalar, `${dir}: a assinatura se confere depois de instalar`);
+  }
+});

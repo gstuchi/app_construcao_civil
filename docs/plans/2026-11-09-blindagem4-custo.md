@@ -3472,7 +3472,7 @@ Com esse criado, apagar o orçamento antigo de R$ 25. O novo tem o mesmo aviso, 
 1. Em `console.cloud.google.com/monitoring/alerting?project=app-construcao-civil` → **Edit notification channels** → **Pub/Sub** → **Add New**. A janela mostra a conta `service-<número>@gcp-sa-monitoring-notification.iam.gserviceaccount.com`.
 2. Em `console.cloud.google.com/cloudpubsub/topic/list?project=CORTE` → `custta-corte` → **Permissions** → **Add principal** → essa conta → **Pub/Sub Publisher** → **Save**.
 3. Voltar, informar o tópico `projects/CORTE/topics/custta-corte`, **Send test notification**, **Add channel**.
-4. Editar a política `custta-leituras` e marcar esse canal também. A mensagem de teste chega como incidente simulado, e a função simulando só registra.
+4. Editar a política `custta-leituras` e marcar esse canal também. A mensagem de teste chega como incidente simulado. Se ela vier aberta e com outro nome de política, a função deixa um `corte-erro` de política desconhecida e não age: é o esperado aqui, e o aviso `Custta: o corte falhou`, se já existir, manda e-mail por isso. Fechada, ou aberta com o nome `custta-leituras`, a função simulando só registra.
 
 **Avisos, no projeto `CORTE`**, sem depender do Mac:
 - Criar um canal de e-mail também em `CORTE`: o canal do G1 fica em outro projeto.

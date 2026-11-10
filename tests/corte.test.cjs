@@ -184,6 +184,7 @@ function googleFalso({ api = 'ENABLED', cobranca = true, estado = null } = {}){
   const g = { api, cobranca, estado, geracao: estado ? 5 : 0, chamadas: [], falhar: {}, enviados: [], leiturasAteDesligar: 0 };
   const talvezFalhe = rotulo => { const f = g.falhar[rotulo]; if(f && f.length) throw f.shift(); };
   g.cliente = { async request(o){
+    assert.equal(o.timeout, 30000, 'todo pedido ao Google tem prazo');
     const metodo = o.method || 'GET';
     let rotulo;
     if(metodo === 'GET' && o.url === URL_API) rotulo = 'api-ler';
@@ -215,7 +216,7 @@ function googleFalso({ api = 'ENABLED', cobranca = true, estado = null } = {}){
       if(!g.estado) throw new ErroHttp(404);
       return { status: 200, data: { generation: String(g.geracao) } };
     }
-    if(rotulo === 'estado-ler') return { status: 200, data: JSON.stringify(g.estado) };
+    if(rotulo === 'estado-ler') return { status: 200, data: o.responseType === 'text' ? JSON.stringify(g.estado) : g.estado };
     const esperada = o.url.slice(URL_UPLOAD.length);
     if(esperada !== String(g.geracao)) throw new ErroHttp(412);
     assert.equal(o.headers['Content-Type'], 'application/json');
@@ -1037,7 +1038,7 @@ test('implantar: sem argumento, sobe desarmada, com os parâmetros combinados', 
   const conta = 'custta-corte@custta-corte.iam.gserviceaccount.com';
   for(const flag of ['--gen2', '--runtime=nodejs22', '--region=us-central1', `--source=${PASTA_CORTE}`, '--entry-point=receber',
     '--trigger-topic=custta-corte', '--retry', `--service-account=${conta}`, `--trigger-service-account=${conta}`,
-    '--no-allow-unauthenticated', '--timeout=300s', '--project=custta-corte']) assert.ok(c.includes(flag), flag);
+    '--no-allow-unauthenticated', '--timeout=300s', '--max-instances=3', '--project=custta-corte']) assert.ok(c.includes(flag), flag);
   assert.deepEqual(envDe(c), {
     ARMADO_API: 'false', ARMADO_COBRANCA: 'false', MODO_CORTE: 'dois-tempos', PROJETO_ALVO: 'app-construcao-civil', BUCKET_ESTADO: 'custta-corte-estado',
     ORCAMENTO_PROJETO: 'custta-projeto', ORCAMENTO_FORA_FIRESTORE: 'custta-fora-firestore', POLITICA_ALERTA: 'custta-leituras',

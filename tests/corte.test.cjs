@@ -893,3 +893,45 @@ test('religar: roda no Cloud Shell só com gcloud e python3, sem Node', ()=>{
   assert.match(texto, /python3/);
   assert.doesNotMatch(texto, /\b(node|npm|npx|jq)\b/);
 });
+
+const envDe = chamada => Object.fromEntries(chamada.find(a => a.startsWith('--set-env-vars=')).slice('--set-env-vars='.length).split(',').map(p => p.split('=')));
+
+test('implantar: sem argumento, sobe desarmada, com os parâmetros combinados', ()=>{
+  const r = rodarScript('implantar.sh', []);
+  assert.equal(r.status, 0, r.saida);
+  assert.equal(r.log.length, 1);
+  const c = r.log[0];
+  assert.deepEqual(c.slice(0, 3), ['functions', 'deploy', 'custta-corte']);
+  const conta = 'custta-corte@custta-corte.iam.gserviceaccount.com';
+  for(const flag of ['--gen2', '--runtime=nodejs22', '--region=us-central1', `--source=${PASTA_CORTE}`, '--entry-point=receber',
+    '--trigger-topic=custta-corte', '--retry', `--service-account=${conta}`, `--trigger-service-account=${conta}`,
+    '--no-allow-unauthenticated', '--timeout=300s', '--project=custta-corte']) assert.ok(c.includes(flag), flag);
+  assert.deepEqual(envDe(c), {
+    ARMADO_API: 'false', ARMADO_COBRANCA: 'false', PROJETO_ALVO: 'app-construcao-civil', BUCKET_ESTADO: 'custta-corte-estado',
+    ORCAMENTO_PROJETO: 'custta-projeto', ORCAMENTO_FORA_FIRESTORE: 'custta-fora-firestore', POLITICA_ALERTA: 'custta-leituras',
+  });
+});
+
+test('implantar: cada interruptor arma só pelo próprio argumento', ()=>{
+  const so = args => { const r = rodarScript('implantar.sh', args); assert.equal(r.status, 0, r.saida); const e = envDe(r.log[0]); return [e.ARMADO_API, e.ARMADO_COBRANCA]; };
+  assert.deepEqual(so(['--armar-api']), ['true', 'false']);
+  assert.deepEqual(so(['--armar-cobranca']), ['false', 'true']);
+  assert.deepEqual(so(['--armar-api', '--armar-cobranca']), ['true', 'true']);
+});
+
+test('implantar: argumento desconhecido para antes do gcloud', ()=>{
+  for(const args of [['--armar'], ['true'], ['--armar-api', 'x']]){
+    const r = rodarScript('implantar.sh', args);
+    assert.notEqual(r.status, 0, args.join(' '));
+    assert.deepEqual(r.log, [], args.join(' '));
+  }
+});
+
+test('implantar: projetos e nomes trocam por ambiente, para o projeto descartável', ()=>{
+  const r = rodarScript('implantar.sh', [], { env: { PROJETO_FUNCAO: 'corte-teste', PROJETO_ALVO: 'descartavel', BUCKET_ESTADO: 'balde' } });
+  assert.equal(r.status, 0, r.saida);
+  assert.ok(r.log[0].includes('--project=corte-teste'));
+  assert.ok(r.log[0].includes('--service-account=custta-corte@corte-teste.iam.gserviceaccount.com'));
+  assert.equal(envDe(r.log[0]).PROJETO_ALVO, 'descartavel');
+  assert.equal(envDe(r.log[0]).BUCKET_ESTADO, 'balde');
+});

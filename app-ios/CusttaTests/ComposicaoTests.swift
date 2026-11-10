@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import FirebaseAppCheck
 import FirebaseCore
 @testable import Custta
 
@@ -37,5 +38,20 @@ struct ComposicaoTests {
         #expect(app.options.projectID == Composicao.projetoDosEmuladores && app.options.apiKey == Composicao.chaveDosEmuladores)
         #expect(Composicao.configurarFirebase(emuladores: true) === app, "reabrir devolve o mesmo app (configurar de novo derruba)")
         #expect(FirebaseApp.app() == nil, "o app padrão fica só para a produção")
+    }
+
+    /// No Debug (emuladores, testes, app aberto pelo Xcode) o App Check não nasce: o SDK registra sozinho uma fábrica ao
+    /// carregar (no simulador, a de depuração, que iria à rede do Google a cada token), e a composição a tira.
+    @Test func debugNaoLigaAppCheck() {
+        let app = Composicao.configurarFirebase(emuladores: true)
+        #expect(AppCheck.appCheck(app: app) == nil, "o App Check só nasce no Release")
+    }
+
+    /// A fábrica do App Check entrega o provedor do App Attest, sem rede: criar o provedor não fala com ninguém, e é o
+    /// pedido de token que iria à Apple e ao Firebase. Aqui ninguém pede token.
+    @Test func fabricaDeProvaEntregaAppAttest() {
+        let app = Composicao.configurarFirebase(emuladores: true)
+        let provedor = FabricaDeProva().createProvider(with: app)
+        #expect(provedor is AppAttestProvider)
     }
 }

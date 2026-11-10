@@ -72,7 +72,7 @@ test('pacotes: só Firebase e GoogleSignIn, em versão exata, e o Package.resolv
   assert.deepEqual(remotos.map(r => r.url).sort(), ['https://github.com/firebase/firebase-ios-sdk.git', 'https://github.com/google/GoogleSignIn-iOS']);
   for(const r of remotos) assert.equal(r.tipo, 'exactVersion', `${r.url} preso por versão exata`);
   assert.deepEqual([...new Set([...pbx.matchAll(/isa = XCSwiftPackageProductDependency;[^}]*productName = (\w+);/g)].map(m => m[1]))].sort(),
-    ['CusttaNucleo', 'FirebaseAuth', 'FirebaseFirestore', 'GoogleSignIn']);
+    ['CusttaNucleo', 'FirebaseAppCheck', 'FirebaseAuth', 'FirebaseFirestore', 'GoogleSignIn']);
   assert.match(pbx, /isa = XCLocalSwiftPackageReference;\s*relativePath = CusttaNucleo;/);
 
   const pins = JSON.parse(ler(RESOLVED)).pins;
@@ -96,9 +96,13 @@ test('o app nativo não leva o Sentry', () => {
 });
 
 test('reaproveita do app de hoje: Firebase, entitlements e o esquema de URL do Google', () => {
-  // Enquanto ios/ existir (até a remoção do Capacitor), as cópias não podem divergir.
+  // Enquanto ios/ existir (até a remoção do Capacitor), as cópias não podem divergir. O nativo leva a mais só o App
+  // Attest do App Check, no ambiente de produção: o App Check não aceita token do ambiente de testes da Apple.
   assert.equal(ler('app-ios/Custta/GoogleService-Info.plist'), ler('ios/App/App/GoogleService-Info.plist'));
-  assert.equal(ler('app-ios/Custta/Custta.entitlements'), ler('ios/App/App/App.entitlements'));
+  const appAttest = /\t<key>com\.apple\.developer\.devicecheck\.appattest-environment<\/key>\n\t<string>production<\/string>\n/;
+  const entitlements = ler('app-ios/Custta/Custta.entitlements');
+  assert.match(entitlements, appAttest);
+  assert.equal(entitlements.replace(appAttest, ''), ler('ios/App/App/App.entitlements'));
   const google = ler('app-ios/Custta/GoogleService-Info.plist');
   const valor = chave => google.match(new RegExp(`<key>${chave}</key>\\s*<string>([^<]+)</string>`))[1];
   const info = ler('app-ios/Custta/Info.plist');

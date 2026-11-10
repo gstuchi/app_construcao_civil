@@ -11,6 +11,7 @@
 		C05A00000000000000000091 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000081 /* FirebaseFirestore */; };
 		C05A00000000000000000092 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000082 /* GoogleSignIn */; };
 		C05A00000000000000000093 /* CusttaNucleo in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000083 /* CusttaNucleo */; };
+		C05A00000000000000000094 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = C05A00000000000000000084 /* FirebaseAppCheck */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +77,7 @@
 				C05A00000000000000000091 /* FirebaseFirestore in Frameworks */,
 				C05A00000000000000000092 /* GoogleSignIn in Frameworks */,
 				C05A00000000000000000093 /* CusttaNucleo in Frameworks */,
+				C05A00000000000000000094 /* FirebaseAppCheck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,6 +142,7 @@
 				C05A00000000000000000081 /* FirebaseFirestore */,
 				C05A00000000000000000082 /* GoogleSignIn */,
 				C05A00000000000000000083 /* CusttaNucleo */,
+				C05A00000000000000000084 /* FirebaseAppCheck */,
 			);
 			productName = Custta;
 			productReference = C05A00000000000000000010 /* Custta.app */;
@@ -579,6 +582,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C05A00000000000000000072 /* XCLocalSwiftPackageReference "CusttaNucleo" */;
 			productName = CusttaNucleo;
+		};
+		C05A00000000000000000084 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C05A00000000000000000070 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

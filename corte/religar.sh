@@ -5,9 +5,10 @@
 # Uso: corte/religar.sh [--folga N]     N em reais, padrão 0
 #
 # A função continua armada e os gatilhos valem sobre custo = costAmount - base. A folga soma à
-# base do orçamento do projeto o gasto do ataque que o relatório atrasado ainda vai mostrar. O
-# orçamento de fora do Firestore nunca leva folga e só ganha base nova se a cobrança foi tirada:
-# sem corte, base nova subiria o teto de quem gasta fora do Firestore.
+# base o gasto do ataque que o relatório atrasado ainda vai mostrar. O orçamento de fora do
+# Firestore só ganha base nova se a cobrança foi tirada, e aí com a mesma folga: sem corte, base
+# nova subiria o teto de quem gasta fora do Firestore; com corte e sem folga, o custo atrasado do
+# mesmo ataque tiraria a cobrança de novo assim que ela voltasse.
 set -euo pipefail
 
 uso(){ echo "uso: religar.sh [--folga N]" >&2; exit 2; }
@@ -62,7 +63,7 @@ base_projeto = rebasear(projeto, folga) if projeto is not None else 0
 linhas = [f"API cai de novo em {reais(base_projeto + LIMITE_API)}"]
 fora = orcamentos.get(os.environ["ORCAMENTO_FORA_FIRESTORE"])
 if fora is not None and estado.get("cobrancaTiradaEm"):
-    linhas.append(f"cobrança cai em {reais(rebasear(fora, 0) + LIMITE_COBRANCA)}")
+    linhas.append(f"cobrança cai em {reais(rebasear(fora, folga) + LIMITE_COBRANCA)}")
 estado["primeiraFalha"] = None
 estado["apiDesligadaEm"] = None
 estado["cobrancaTiradaEm"] = None

@@ -941,13 +941,27 @@ test('religar: sem cobrança tirada, o orçamento de fora do Firestore não muda
   }
 });
 
-test('religar: --folga soma só à base do orçamento do projeto, sem ruído de ponto flutuante', ()=>{
+test('religar: com a cobrança tirada, --folga soma às bases dos dois orçamentos, sem ruído de ponto flutuante', ()=>{
   const r = rodarScript('religar.sh', ['--folga', '15'], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   assert.equal(r.gravado.orcamentos['custta-projeto'].base, 99.2);
-  assert.equal(r.gravado.orcamentos['custta-fora-firestore'].base, 12.5, 'fora do Firestore nunca leva folga');
-  const fino = rodarScript('religar.sh', ['--folga', '0.1'], { estado: { orcamentos: { 'custta-projeto': noMes(0.2) } } });
+  assert.equal(r.gravado.orcamentos['custta-fora-firestore'].base, 27.5, 'o custo atrasado do ataque também chega ao orçamento de fora');
+  const fino = rodarScript('religar.sh', ['--folga', '0.1'], { estado: {
+    orcamentos: { 'custta-projeto': noMes(0.2), 'custta-fora-firestore': noMes(0.2) }, cobrancaTiradaEm: '2026-11-09T14:00:00.000Z',
+  } });
   assert.equal(fino.gravado.orcamentos['custta-projeto'].base, 0.3);
+  assert.equal(fino.gravado.orcamentos['custta-fora-firestore'].base, 0.3);
+});
+
+test('religar: com a folga no orçamento de fora, o custo atrasado do mesmo ataque não tira a cobrança de novo', async ()=>{
+  const cortado = { orcamentos: { projeto: noMes(40), fora: noMes(101) }, primeiraFalha: null, apiDesligadaEm: null, cobrancaTiradaEm: T0 };
+  const r = rodarScript('religar.sh', ['--folga', '150'], { estado: cortado, env: { ORCAMENTO_PROJETO: 'projeto', ORCAMENTO_FORA_FIRESTORE: 'fora' } });
+  assert.equal(r.status, 0, r.saida);
+  const g = googleFalso({ cobranca: true, estado: r.gravado });
+  const relatorio = await rodar(g, foraDe(205));
+  assert.equal(relatorio.erro, null);
+  assert.ok(!g.chamadas.includes('cobranca-tirar'), 'a cobrança de volta não cai pelo relatório atrasado');
+  assert.equal(passagemUnica(relatorio).fez, 'nada');
 });
 
 test('religar: os nomes dos orçamentos trocam por ambiente; orçamento de outro nome não muda', ()=>{
@@ -955,7 +969,7 @@ test('religar: os nomes dos orçamentos trocam por ambiente; orçamento de outro
   const estado = { orcamentos: { p: noMes(10), f: noMes(20), 'custta-projeto': outro }, cobrancaTiradaEm: '2026-11-09T14:00:00.000Z' };
   const r = rodarScript('religar.sh', ['--folga', '5'], { estado, env: { ORCAMENTO_PROJETO: 'p', ORCAMENTO_FORA_FIRESTORE: 'f' } });
   assert.equal(r.status, 0, r.saida);
-  assert.deepEqual(r.gravado.orcamentos, { p: noMes(10, 15), f: noMes(20, 20), 'custta-projeto': outro });
+  assert.deepEqual(r.gravado.orcamentos, { p: noMes(10, 15), f: noMes(20, 25), 'custta-projeto': outro });
 });
 
 const emReais = v => `R$ ${v.toFixed(2).replace('.', ',')}`;
@@ -964,7 +978,7 @@ test('religar: termina dizendo em quanto cada corte volta, calculado da base gra
   const r = rodarScript('religar.sh', ['--folga', '15'], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   const fim = r.saida.trim().split('\n').slice(-2);
-  assert.deepEqual(fim, ['API cai de novo em R$ 159,20', 'cobrança cai em R$ 112,50']);
+  assert.deepEqual(fim, ['API cai de novo em R$ 159,20', 'cobrança cai em R$ 127,50']);
   /* Os limites vivem em regra.js e o script, sem Node, repete os dois: mudar lá sem mudar aqui quebra. */
   const { 'custta-projeto': projeto, 'custta-fora-firestore': fora } = r.gravado.orcamentos;
   assert.deepEqual(fim, [`API cai de novo em ${emReais(projeto.base + regra.LIMITE_API / 100)}`, `cobrança cai em ${emReais(fora.base + regra.LIMITE_COBRANCA / 100)}`]);

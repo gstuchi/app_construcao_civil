@@ -10,7 +10,7 @@ const headers = Object.fromEntries(vercel.headers[0].headers.map(h => [h.key.toL
 
 assert.ok(headers['content-security-policy'], 'CSP ausente');
 assert.ok(!headers['content-security-policy'].includes('unsafe-inline'));
-assert.ok(!headers['content-security-policy'].includes('gstatic'));
+assert.ok(!/gstatic\.com(?!\/recaptcha\/)/.test(headers['content-security-policy']), 'gstatic só no caminho do reCAPTCHA');
 for(const nome of ['index.html','privacidade.html','app.js']){
   const texto=readFileSync(join(raiz,nome),'utf8');
   assert.ok(!/<style\b|\sstyle=/.test(texto), `${nome}: CSS inline`);
@@ -30,8 +30,9 @@ assert.ok(versaoHeaders, 'versao.json precisa de CORS para o app nativo');
 assert.deepStrictEqual(versaoHeaders.headers.find(h => h.key === 'Access-Control-Allow-Origin'), { key:'Access-Control-Allow-Origin', value:'capacitor://localhost' });
 
 const csp = headers['content-security-policy'];
-assert.ok(/script-src 'self' https:\/\/apis\.google\.com(;|$)/.test(csp), 'script-src do login com Google');
-assert.ok(csp.includes("frame-src 'self' https://app-construcao-civil.firebaseapp.com"), 'frame-src do login com Google');
+assert.ok(/script-src 'self' https:\/\/apis\.google\.com https:\/\/www\.google\.com\/recaptcha\/ https:\/\/www\.gstatic\.com\/recaptcha\/(;|$)/.test(csp), 'script-src do login com Google e do reCAPTCHA');
+assert.ok(/frame-src 'self' https:\/\/app-construcao-civil\.firebaseapp\.com https:\/\/www\.google\.com\/recaptcha\/ https:\/\/recaptcha\.google\.com\/recaptcha\/(;|$)/.test(csp), 'frame-src do login com Google e do reCAPTCHA');
+assert.ok(/connect-src [^;]* https:\/\/www\.google\.com\/recaptcha\/(;|$| )/.test(csp), 'connect-src do reCAPTCHA');
 const fonteApp = new RegExp('^' + vercel.headers[0].source + '$');
 assert.ok(fonteApp.test('/') && fonteApp.test('/index.html') && fonteApp.test('/privacidade.html'), 'CSP precisa cobrir o app');
 assert.ok(!fonteApp.test('/__/auth/handler') && !fonteApp.test('/__/firebase/init.json'), 'CSP do Custta não pode cobrir o handler do Firebase');

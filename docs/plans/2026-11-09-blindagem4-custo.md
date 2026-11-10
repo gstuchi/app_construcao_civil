@@ -3556,7 +3556,7 @@ O Giovani fica sabendo por e-mail: `Custta: o corte agiu`, `Custta: o corte falh
 **Não religue sem entender.** Com a API fora, as métricas ficam zeradas, com ou sem robô. Só religando se descobre se ele continua, e por isso a função fica armada e corta de novo.
 
 **Só a API desligou (o caso comum).** Dá para fazer sem Mac, no Cloud Shell do Google, pelo celular. Leva cerca de 15 minutos.
-1. Decidir a folga **antes** do comando. Com menos de 24 h do pico, o custo atrasado ainda sobe, e `--folga 0` faz a API cair de novo. `--folga 100` evita isso, mas adia o próximo corte e sobe o teto do mês em R$ 100. Só o Giovani decide.
+1. Decidir a folga **antes** do comando. Com menos de 24 h do pico, o custo atrasado ainda sobe, e `--folga 0` faz a API cair de novo. `--folga 100` evita isso, mas adia o próximo corte e sobe o teto do mês em R$ 100. Se a cobrança também foi tirada, a mesma folga vale para o orçamento de fora do Firestore e sobe o teto dele no mesmo tanto. Só o Giovani decide.
 2. Em `shell.cloud.google.com`, com o ID real no lugar de `CORTE` e a folga escolhida:
    `rm -rf app_construcao_civil; git clone https://github.com/gstuchi/app_construcao_civil && cd app_construcao_civil && BUCKET_ESTADO=CORTE-estado bash corte/religar.sh --folga 0`
    Grava a base e, só depois, religa a API. O script imprime em quanto a API cai de novo. Na opção oficial, esse valor é o da cobrança.
@@ -3564,7 +3564,7 @@ O Giovani fica sabendo por e-mail: `Custta: o corte agiu`, `Custta: o corte falh
 4. Conferir que o site e o app leem e gravam. `gcloud firestore databases describe --project app-construcao-civil` (PITR e proteção) e `gcloud firestore backups schedules list --database '(default)' --project app-construcao-civil`. Recriar o que faltar.
 
 **A cobrança foi tirada.** Só com o interruptor armado, e só se a API não desligou, se o gasto foi de fora do Firestore, ou na opção oficial. De 40 minutos a mais de um dia.
-1. Rodar o `religar.sh`, como acima, **antes** de religar a cobrança, para a função não cortar de novo. Se a última linha falhar (ligar a API sem cobrança), a base já ficou gravada: siga.
+1. Rodar o `religar.sh`, como acima, **antes** de religar a cobrança, para a função não cortar de novo. A folga escolhida no passo 1 de cima vale aqui também para o orçamento de fora do Firestore: com menos de 24 h do pico, `--folga 0` deixa o custo atrasado do mesmo ataque tirar a cobrança de novo assim que ela voltar. Se a última linha falhar (ligar a API sem cobrança), a base já ficou gravada: siga.
 2. Em `console.cloud.google.com/billing/projects`, **Change billing** no projeto `app-construcao-civil`. O Google diz que pode levar até 24 h, sem garantia.
 3. `gcloud services enable firestore.googleapis.com --project app-construcao-civil`.
 4. Conferir banco, PITR, agendamentos e backups. Ligar o PITR de novo antes de restaurar. Dado perdido: restaurar backup em banco novo e copiar por conta, com um agente.

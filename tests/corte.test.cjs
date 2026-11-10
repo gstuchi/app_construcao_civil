@@ -551,14 +551,25 @@ test('cenário 10: alerta open da política certa desliga a API, sem olhar custo
   assert.equal(passagemUnica(r).tipo, 'incidente');
 });
 
-test('cenário 10: alerta closed ou de outra política não faz nada', async ()=>{
-  for(const corpo of [incidente('leituras', 'closed'), incidente('outra', 'open')]){
+test('cenário 10: alerta closed, da política certa ou de outra, não faz nada', async ()=>{
+  for(const corpo of [incidente('leituras', 'closed'), incidente('outra', 'closed')]){
     const g = googleFalso();
     const r = await rodar(g, corpo);
     assert.equal(r.erro, null);
     assert.deepEqual(g.chamadas, [], JSON.stringify(corpo));
+    assert.deepEqual(r.de('corte-erro'), [], JSON.stringify(corpo));
     assert.equal(passagemUnica(r).fez, 'nada');
   }
+});
+
+test('cenário 10: alerta open de outra política dá erro, sem agir e sem relançar', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, incidente('outra', 'open'));
+  assert.equal(r.erro, null);
+  assert.deepEqual(g.chamadas, []);
+  assert.equal(r.de('corte-erro').length, 1, 'um corte-erro por alerta de política desconhecida');
+  assert.match(r.de('corte-erro')[0].message, /outra/);
+  assert.equal(passagemUnica(r).fez, 'ignorou política desconhecida');
 });
 
 test('cenário 10: bucket fora do ar não segura o desligar do alerta', async ()=>{

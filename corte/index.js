@@ -143,7 +143,14 @@ function criarManipulador({
 
   async function tratarIncidente(msg, passagem, instante){
     passagem.politica = msg.politica;
-    if(msg.estado !== 'open' || msg.politica !== config.politica) return;
+    if(msg.estado !== 'open') return;
+    /* O canal é só do alerta de leituras: política com outro nome é configuração errada, e calar
+       aqui desligaria o caminho rápido do corte sem ninguém saber. */
+    if(msg.politica !== config.politica){
+      passagem.fez = 'ignorou política desconhecida';
+      logar('ERROR', 'corte-erro', `alerta de política desconhecida: ${msg.politica}`, { politica: msg.politica });
+      return;
+    }
     if(config.modo === 'oficial'){
       passagem.fez = 'só registrou o alerta: o modo oficial não age nele';
       return;

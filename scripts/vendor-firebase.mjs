@@ -7,7 +7,7 @@ const require=createRequire(import.meta.url);
 const versao=require('firebase/package.json').version;
 await mkdir('vendor/firebase',{recursive:true});
 const result=await build({
-  entryPoints:{'firebase-app':'firebase/app','firebase-auth':'firebase/auth','firebase-firestore':'firebase/firestore'},
+  entryPoints:{'firebase-app':'firebase/app','firebase-auth':'firebase/auth','firebase-firestore':'firebase/firestore','firebase-app-check':'firebase/app-check'},
   bundle:true, splitting:true, format:'esm', platform:'browser', target:'es2022',
   outdir:'vendor/firebase', chunkNames:'shared-[hash]', minify:true, legalComments:'eof',
   write:false, metafile:true,

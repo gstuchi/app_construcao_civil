@@ -135,6 +135,18 @@ test('manifesto de privacidade: sem rastreamento, UserDefaults pelo motivo certo
   assert.doesNotMatch(m, /<key>NSPrivacyCollectedDataTypeTracking<\/key>\s*<true\/>/, 'nada coletado para rastrear');
 });
 
+test('App Attest do App Check: no manifesto, como outros dados para o funcionamento do app, e na política', () => {
+  // A página do Firebase sobre a coleta para a App Store (https://firebase.google.com/docs/ios/app-store-data-collection)
+  // diz que o provedor App Attest coleta o objeto de atestação e o de asserção, dado que os manifestos do Firebase não
+  // cobrem: a declaração é do app. Vai na entrada de outros dados que já existe, para o rótulo ter uma resposta por tipo.
+  const outros = ler('app-ios/Custta/PrivacyInfo.xcprivacy')
+    .match(/<dict>(?:(?!<\/?dict>)[\s\S])*NSPrivacyCollectedDataTypeOtherDataTypes<(?:(?!<\/?dict>)[\s\S])*<\/dict>/)?.[0];
+  assert.ok(outros, 'outros dados declarados no manifesto');
+  assert.match(outros, /<string>NSPrivacyCollectedDataTypePurposeAppFunctionality<\/string>/, 'a prova do App Attest serve ao funcionamento do app');
+  assert.match(outros, /<string>NSPrivacyCollectedDataTypePurposeAnalytics<\/string>/, 'o que já era declarado continua');
+  assert.match(ler('privacidade.html'), /<strong>App Attest<\/strong> da Apple/, 'a política cita o App Attest');
+});
+
 test('cores só por tokens: nenhuma cor solta no código do app', () => {
   const sistema = '(red|green|blue|orange|yellow|pink|purple|black|white|gray|brown|cyan|mint|indigo|teal|primary|secondary)';
   const solta = new RegExp(String.raw`\bColor\s*\(\s*(red|hue|white|\.sRGB|\.displayP3|uiColor|\.system\w+)\b|\bUIColor\s*\(\s*(red|white|hue|displayP3)\b|\bUIColor\.(${sistema}|label|system\w+)\b|#colorLiteral|\bColor\.${sistema}\b|\.(foreground(Style|Color)|background|fill|stroke|strokeBorder|border|tint)\(\s*\.${sistema}\b|\.shadow\(\s*color:\s*\.${sistema}\b`);

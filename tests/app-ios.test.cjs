@@ -147,6 +147,16 @@ test('App Attest do App Check: no manifesto, como outros dados para o funcioname
   assert.match(ler('privacidade.html'), /<strong>App Attest<\/strong> da Apple/, 'a política cita o App Attest');
 });
 
+test('App Check da produção: a FabricaDeProva entra antes do FirebaseApp.configure() do Release', () => {
+  // Nenhum teste monta a composição com rede, então só a fonte guarda o ramo da produção. Sem o prepararAppCheck() logo
+  // antes do configure, ou com outra fábrica no Release, o app cairia na fábrica padrão do SDK (o DeviceCheck, que ninguém
+  // configurou) e, com a exigência ligada no console, os pedidos do app seriam recusados.
+  const c = ler('app-ios/Custta/Composicao.swift');
+  assert.match(c, /\n( +)prepararAppCheck\(\)\n\1FirebaseApp\.configure\(\)\n/, 'prepararAppCheck() logo antes do FirebaseApp.configure() da produção');
+  assert.match(c, /private static func prepararAppCheck\(\) \{\s*#if DEBUG\s*AppCheck\.setAppCheckProviderFactory\(nil\)\s*#else\s*AppCheck\.setAppCheckProviderFactory\(FabricaDeProva\(\)\)\s*#endif\s*\}/,
+    'o Release registra a FabricaDeProva, e o Debug diz nil');
+});
+
 test('cores só por tokens: nenhuma cor solta no código do app', () => {
   const sistema = '(red|green|blue|orange|yellow|pink|purple|black|white|gray|brown|cyan|mint|indigo|teal|primary|secondary)';
   const solta = new RegExp(String.raw`\bColor\s*\(\s*(red|hue|white|\.sRGB|\.displayP3|uiColor|\.system\w+)\b|\bUIColor\s*\(\s*(red|white|hue|displayP3)\b|\bUIColor\.(${sistema}|label|system\w+)\b|#colorLiteral|\bColor\.${sistema}\b|\.(foreground(Style|Color)|background|fill|stroke|strokeBorder|border|tint)\(\s*\.${sistema}\b|\.shadow\(\s*color:\s*\.${sistema}\b`);

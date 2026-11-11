@@ -11,6 +11,7 @@ const path=require('node:path');
 const {chromium}=require('playwright');
 const {initializeTestEnvironment}=require('@firebase/rules-unit-testing');
 const {doc,getDoc}=require('firebase/firestore');
+const {violacoesDoApp}=require('./csp-terceiros.cjs');
 const PROJECT='demo-custta-phase2';
 const ROOT=path.resolve(__dirname,'../..');
 /* 127.0.0.1, não localhost: o iframe do Auth emulator (127.0.0.1:9099) precisa
@@ -328,7 +329,8 @@ const respostaGoogle=(page,r)=>page.evaluate(r=>sessionStorage.setItem('__respos
     }
 
     // 15.
-    assert.deepEqual(violacoes,[]); assert.deepEqual(errosPagina,[]);
-    console.log('ok - nenhuma violação de CSP nem erro de página');
+    const pings=violacoes.length-violacoesDoApp(violacoes).length;
+    assert.deepEqual(violacoesDoApp(violacoes),[]); assert.deepEqual(errosPagina,[]);
+    console.log(`ok - nenhuma violação de CSP nem erro de página${pings?` (${pings} ${pings===1?'ping':'pings'} de telemetria do gapi fora da conta)`:''}`);
   }finally{ await browser.close(); await env.cleanup(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

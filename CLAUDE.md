@@ -90,7 +90,7 @@ Adicionar uma chave de topo em `db` **quebra as escritas em produção** se as r
 
 ### Service worker
 
-[sw.js](sw.js) é network-first. Ao **criar um arquivo JS/CSS novo na raiz**: adicione em `ASSETS` **e** incremente `CACHE` (`obras-vNN`). Sem o bump, aparelhos já instalados continuam com o retrato velho offline.
+[sw.js](sw.js) é network-first. Ao **criar um arquivo JS/CSS novo na raiz**: adicione em `ASSETS` **e** incremente `CACHE` (`obras-vNN`). Sem o bump, aparelhos já instalados continuam com o retrato velho offline. A CI dos PRs confere isso contra a base (`scripts/cache-do-sw.mjs`): `ASSETS` mudado sem `CACHE` maior, ou `CACHE` que desce, fica vermelho. À mão, antes do push: `node scripts/cache-do-sw.mjs origin/main`.
 
 ### Notificações push
 

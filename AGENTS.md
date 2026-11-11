@@ -54,7 +54,9 @@ de `CUSTTA_EMULADORES=1`; as de dados sintéticos (`mobile`, `cartao`, `nativo`,
 1. **Arquivo JS ou CSS novo na raiz** entra na lista `ASSETS` do `sw.js` **e**
    incrementa o `CACHE` (`obras-vNN`). Sem o incremento, quem já instalou o app
    continua vendo a versão velha offline. Essa mesma lista alimenta o
-   `scripts/build-www.mjs`, que monta o app iOS.
+   `scripts/build-www.mjs`, que monta o app iOS. A CI dos PRs confere o
+   incremento contra a base (`scripts/cache-do-sw.mjs`); à mão, rode
+   `node scripts/cache-do-sw.mjs origin/main`.
 2. **A CSP é estrita** (`vercel.json`): nada de `<style>`, de `style="..."` em
    atributo nem de `onclick=` no HTML. CSS vai para `styles.css`.
 3. **Mudar o formato do estado** sem atualizar `firestore.rules` derruba a

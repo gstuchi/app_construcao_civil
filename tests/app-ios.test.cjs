@@ -72,7 +72,7 @@ test('pacotes: só Firebase e GoogleSignIn, em versão exata, e o Package.resolv
   assert.deepEqual(remotos.map(r => r.url).sort(), ['https://github.com/firebase/firebase-ios-sdk.git', 'https://github.com/google/GoogleSignIn-iOS']);
   for(const r of remotos) assert.equal(r.tipo, 'exactVersion', `${r.url} preso por versão exata`);
   assert.deepEqual([...new Set([...pbx.matchAll(/isa = XCSwiftPackageProductDependency;[^}]*productName = (\w+);/g)].map(m => m[1]))].sort(),
-    ['CusttaNucleo', 'FirebaseAuth', 'FirebaseFirestore', 'GoogleSignIn']);
+    ['CusttaNucleo', 'FirebaseAppCheck', 'FirebaseAuth', 'FirebaseFirestore', 'GoogleSignIn']);
   assert.match(pbx, /isa = XCLocalSwiftPackageReference;\s*relativePath = CusttaNucleo;/);
 
   const pins = JSON.parse(ler(RESOLVED)).pins;
@@ -96,9 +96,13 @@ test('o app nativo não leva o Sentry', () => {
 });
 
 test('reaproveita do app de hoje: Firebase, entitlements e o esquema de URL do Google', () => {
-  // Enquanto ios/ existir (até a remoção do Capacitor), as cópias não podem divergir.
+  // Enquanto ios/ existir (até a remoção do Capacitor), as cópias não podem divergir. O nativo leva a mais só o App
+  // Attest do App Check, no ambiente de produção: o App Check não aceita token do ambiente de testes da Apple.
   assert.equal(ler('app-ios/Custta/GoogleService-Info.plist'), ler('ios/App/App/GoogleService-Info.plist'));
-  assert.equal(ler('app-ios/Custta/Custta.entitlements'), ler('ios/App/App/App.entitlements'));
+  const appAttest = /\t<key>com\.apple\.developer\.devicecheck\.appattest-environment<\/key>\n\t<string>production<\/string>\n/;
+  const entitlements = ler('app-ios/Custta/Custta.entitlements');
+  assert.match(entitlements, appAttest);
+  assert.equal(entitlements.replace(appAttest, ''), ler('ios/App/App/App.entitlements'));
   const google = ler('app-ios/Custta/GoogleService-Info.plist');
   const valor = chave => google.match(new RegExp(`<key>${chave}</key>\\s*<string>([^<]+)</string>`))[1];
   const info = ler('app-ios/Custta/Info.plist');
@@ -129,6 +133,28 @@ test('manifesto de privacidade: sem rastreamento, UserDefaults pelo motivo certo
   for(const tipo of ['EmailAddress', 'Name', 'UserID', 'OtherUserContent', 'OtherDataTypes'])
     assert.match(m, new RegExp(`NSPrivacyCollectedDataType${tipo}<`), `dado coletado ${tipo}`);
   assert.doesNotMatch(m, /<key>NSPrivacyCollectedDataTypeTracking<\/key>\s*<true\/>/, 'nada coletado para rastrear');
+});
+
+test('App Attest do App Check: no manifesto, como outros dados para o funcionamento do app, e na política', () => {
+  // A página do Firebase sobre a coleta para a App Store (https://firebase.google.com/docs/ios/app-store-data-collection)
+  // diz que o provedor App Attest coleta o objeto de atestação e o de asserção, dado que os manifestos do Firebase não
+  // cobrem: a declaração é do app. Vai na entrada de outros dados que já existe, para o rótulo ter uma resposta por tipo.
+  const outros = ler('app-ios/Custta/PrivacyInfo.xcprivacy')
+    .match(/<dict>(?:(?!<\/?dict>)[\s\S])*NSPrivacyCollectedDataTypeOtherDataTypes<(?:(?!<\/?dict>)[\s\S])*<\/dict>/)?.[0];
+  assert.ok(outros, 'outros dados declarados no manifesto');
+  assert.match(outros, /<string>NSPrivacyCollectedDataTypePurposeAppFunctionality<\/string>/, 'a prova do App Attest serve ao funcionamento do app');
+  assert.match(outros, /<string>NSPrivacyCollectedDataTypePurposeAnalytics<\/string>/, 'o que já era declarado continua');
+  assert.match(ler('privacidade.html'), /<strong>App Attest<\/strong> da Apple/, 'a política cita o App Attest');
+});
+
+test('App Check da produção: a FabricaDeProva entra antes do FirebaseApp.configure() do Release', () => {
+  // Nenhum teste monta a composição com rede, então só a fonte guarda o ramo da produção. Sem o prepararAppCheck() logo
+  // antes do configure, ou com outra fábrica no Release, o app cairia na fábrica padrão do SDK (o DeviceCheck, que ninguém
+  // configurou) e, com a exigência ligada no console, os pedidos do app seriam recusados.
+  const c = ler('app-ios/Custta/Composicao.swift');
+  assert.match(c, /\n( +)prepararAppCheck\(\)\n\1FirebaseApp\.configure\(\)\n/, 'prepararAppCheck() logo antes do FirebaseApp.configure() da produção');
+  assert.match(c, /private static func prepararAppCheck\(\) \{\s*#if DEBUG\s*AppCheck\.setAppCheckProviderFactory\(nil\)\s*#else\s*AppCheck\.setAppCheckProviderFactory\(FabricaDeProva\(\)\)\s*#endif\s*\}/,
+    'o Release registra a FabricaDeProva, e o Debug diz nil');
 });
 
 test('cores só por tokens: nenhuma cor solta no código do app', () => {

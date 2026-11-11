@@ -74,13 +74,22 @@ async function contextoNativo(novoContexto){
 }
 const idTokenFalso=(sub,email)=>JSON.stringify({sub,email,email_verified:true});
 const travado=page=>page.evaluate(()=>document.body.classList.contains('locked'));
-/* O logout limpa o cache e recarrega a página. Esperar só o "locked" deixa o
-   próximo page.evaluate correr contra o reload; espera o documento novo. */
+/* Sair e apagar a conta limpam o cache e recarregam a página. O login aparece ainda na
+   página velha, antes do reload, e a página nova já nasce travada (auth.js) antes de o
+   Auth dizer quem é; quando esse primeiro estado chega, ela volta para a aba Entrar.
+   Esperar só o "locked" ou o #fLogin deixa o passo seguinte correr contra as duas coisas:
+   espera o documento novo e o CLOUD.ready, que resolve com esse estado já aplicado.
+   "antes" é o documento lido antes do clique. */
+async function esperarRecarga(page,antes){
+  await page.waitForFunction(antes=>window.__documentoId !== antes && window.CLOUD,antes,{timeout:30000});
+  await page.evaluate(()=>CLOUD.ready);
+  await page.waitForFunction(()=>!CLOUD.user() && !CLOUD.cacheBloqueado() && document.body.classList.contains('locked'));
+}
 async function sair(page){
   const antes=await page.evaluate(()=>window.__documentoId);
   await page.locator('#btnSair:visible, #btnSairSide:visible').first().click();
   await page.locator('dialog.confirma-dialog [data-acao=confirmar]').click();
-  await page.waitForFunction(antes=>window.__documentoId !== antes && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && document.body.classList.contains('locked'),antes,{timeout:30000});
+  await esperarRecarga(page,antes);
 }
 
 (async()=>{
@@ -111,18 +120,18 @@ async function sair(page){
     await page.evaluate(()=>CLOUD.ready);
     return page;
   };
-  // Ajustes → Apagar conta → digita APAGAR (o envio fica com quem chama)
+  /* Ajustes → Apagar conta → digita APAGAR (o envio fica com quem chama). Devolve o
+     documento de antes do envio, para esperaContaApagada reconhecer a recarga. */
   const abrirApagar=async page=>{
     await page.locator('nav.tabs [data-tab="ajustes"]').click();
     await page.locator('#ajApagar').click();
     await page.waitForSelector('#contaConfirmacao',{state:'visible'});
     await page.locator('#contaConfirmacao').fill('APAGAR');
+    return page.evaluate(()=>window.__documentoId);
   };
-  const esperaContaApagada=async page=>{
-    // window.CLOUD: durante a recarga o documento novo ainda não tem CLOUD, e CLOUD solto estoura ReferenceError
-    await page.waitForFunction(()=>document.body.classList.contains('locked') && window.CLOUD && !CLOUD.user(),null,{timeout:20000});
-    // o apagar recarrega a página; espera o formulário em vez de conferir na hora
-    await page.locator('#fLogin').waitFor({ state:'visible', timeout:20000 });
+  const esperaContaApagada=async(page,antes)=>{
+    await esperarRecarga(page,antes);
+    assert.equal(await page.locator('#fLogin').isVisible(),true);
   };
   try{
     const context=await novoContexto();
@@ -189,14 +198,14 @@ async function sair(page){
     // 6. apagar conta Apple: sem senha, reautentica no popup e revoga o token
     const revogacoes=await interceptaRevogacao(context);
     assert.equal((await leDoc('perfis',uidBia)).exists(),true);
-    await abrirApagar(page);
+    const antesDeApagar=await abrirApagar(page);
     assert.equal(await page.locator('#contaSenha').count(),0);
     {
       const popup=await abrirPopup(page,()=>page.locator('#contaEnviar').click());
       assert.equal(await page.locator('#contaMensagem').textContent(),'Confirme sua conta Apple na janela que abriu.');
       await escolherConta(popup,'bia@privaterelay.appleid.com');
     }
-    await esperaContaApagada(page);
+    await esperaContaApagada(page,antesDeApagar);
     for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uidBia)).exists(),false,`${colecao}/${uidBia} sobrou`);
     assert.equal(revogacoes.length,1);
     assert.equal(revogacoes[0].providerId,'apple.com');
@@ -220,12 +229,12 @@ async function sair(page){
       const dados=(await leDoc('perfis',uid)).data();
       assert.equal('nome' in dados,false);
       assert.equal(dados.origem,'youtube');
-      await abrirApagar(p);
+      const antesDeApagarSemNome=await abrirApagar(p);
       {
         const popup=await abrirPopup(p,()=>p.locator('#contaEnviar').click());
         await escolherConta(popup,'sem.nome@privaterelay.appleid.com');
       }
-      await esperaContaApagada(p);
+      await esperaContaApagada(p,antesDeApagarSemNome);
       for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uid)).exists(),false,`${colecao}/${uid} sobrou`);
       assert.ok(revFalha.length>=1,'a revogação deveria ter sido tentada');
       console.log('ok - Apple sem nome grava perfil sem nome e a conta é apagada mesmo com a revogação falhando');
@@ -271,9 +280,9 @@ async function sair(page){
 
       // 10. apagar conta no app: reautentica com o plugin e revoga com o código
       const rev=await interceptaRevogacao(ctxNativo);
-      await abrirApagar(pNativo);
+      const antesDeApagarNoApp=await abrirApagar(pNativo);
       await pNativo.locator('#contaEnviar').click();
-      await esperaContaApagada(pNativo);
+      await esperaContaApagada(pNativo,antesDeApagarNoApp);
       for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uidCaio)).exists(),false,`${colecao}/${uidCaio} sobrou`);
       assert.equal(rev.length,1);
       assert.equal(rev[0].providerId,'apple.com');

@@ -41,13 +41,22 @@ async function escolherConta(popup, email){
   await popup.locator('.js-reuse-account',{hasText:email}).first().click();
 }
 const travado=page=>page.evaluate(()=>document.body.classList.contains('locked'));
-/* O logout limpa o cache e recarrega a página. Esperar só o "locked" deixa o
-   próximo page.evaluate correr contra o reload; espera o documento novo. */
+/* Sair e apagar a conta limpam o cache e recarregam a página. O login aparece ainda na
+   página velha, antes do reload, e a página nova já nasce travada (auth.js) antes de o
+   Auth dizer quem é; quando esse primeiro estado chega, ela volta para a aba Entrar.
+   Esperar só o "locked" ou o #fLogin deixa o passo seguinte correr contra as duas coisas:
+   espera o documento novo e o CLOUD.ready, que resolve com esse estado já aplicado.
+   "antes" é o documento lido antes do clique. */
+async function esperarRecarga(page,antes){
+  await page.waitForFunction(antes=>window.__documentoId !== antes && window.CLOUD,antes,{timeout:30000});
+  await page.evaluate(()=>CLOUD.ready);
+  await page.waitForFunction(()=>!CLOUD.user() && !CLOUD.cacheBloqueado() && document.body.classList.contains('locked'));
+}
 async function sair(page){
   const antes=await page.evaluate(()=>window.__documentoId);
   await page.locator('#btnSair:visible, #btnSairSide:visible').first().click();
   await page.locator('dialog.confirma-dialog [data-acao=confirmar]').click();
-  await page.waitForFunction(antes=>window.__documentoId !== antes && window.CLOUD && !CLOUD.user() && !CLOUD.cacheBloqueado() && document.body.classList.contains('locked'),antes,{timeout:30000});
+  await esperarRecarga(page,antes);
 }
 
 /* App nativo: CSP da <meta> do www/ (libera a checagem de versão) e plugin GoogleSignIn
@@ -170,17 +179,14 @@ const respostaGoogle=(page,r)=>page.evaluate(r=>sessionStorage.setItem('__respos
     await page.waitForSelector('#contaConfirmacao',{state:'visible'});
     assert.equal(await page.locator('#contaSenha').count(),0);
     await page.locator('#contaConfirmacao').fill('APAGAR');
+    const antesDeApagar=await page.evaluate(()=>window.__documentoId);
     {
       const popup=await abrirPopup(page,()=>page.locator('#contaEnviar').click());
       assert.equal(await page.locator('#contaMensagem').textContent(),'Confirme sua conta Google na janela que abriu.');
       await escolherConta(popup,'ana.google@example.com');
     }
-    // window.CLOUD: durante a recarga o documento novo ainda não tem CLOUD, e CLOUD solto estoura ReferenceError
-    await page.waitForFunction(()=>document.body.classList.contains('locked') && window.CLOUD && !CLOUD.user(),null,{timeout:20000});
-    /* apagar a conta limpa o cache local e recarrega: a condição acima pode valer ainda na página
-       velha, e o formulário só aparece depois da recarga. Espera ele em vez de conferir na hora
-       (no runner da CI, com a página mais pesada de pintar, a conferência imediata pegava o meio) */
-    await page.locator('#fLogin').waitFor({ state:'visible', timeout:20000 });
+    await esperarRecarga(page,antesDeApagar);
+    assert.equal(await page.locator('#fLogin').isVisible(),true);
     for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uidAna)).exists(),false,`${colecao}/${uidAna} sobrou`);
     console.log('ok - apagar conta Google reautentica pelo popup e remove dados, perfis e push');
 
@@ -310,9 +316,10 @@ const respostaGoogle=(page,r)=>page.evaluate(r=>sessionStorage.setItem('__respos
       await pNativo.locator('#ajApagar').click();
       await pNativo.waitForSelector('#contaConfirmacao',{state:'visible'});
       await pNativo.locator('#contaConfirmacao').fill('APAGAR');
+      const antesDeApagarNoApp=await pNativo.evaluate(()=>window.__documentoId);
       await pNativo.locator('#contaEnviar').click();
-      await pNativo.waitForFunction(()=>document.body.classList.contains('locked') && window.CLOUD && !CLOUD.user(),null,{timeout:20000});
-      await pNativo.locator('#fLogin').waitFor({state:'visible',timeout:20000});
+      await esperarRecarga(pNativo,antesDeApagarNoApp);
+      assert.equal(await pNativo.locator('#fLogin').isVisible(),true);
       for(const colecao of ['dados','perfis','push']) assert.equal((await leDoc(colecao,uidGabi)).exists(),false,`${colecao}/${uidGabi} sobrou`);
       assert.equal((await pedidosGoogle(pNativo)).filter(p=>p[0]==='signIn').length,signInsAntes+1,'reautenticação pelo plugin');
       assert.deepEqual(revogacoes,[],'conta Google não revoga token (isso é só da Apple)');

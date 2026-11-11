@@ -3337,13 +3337,13 @@ O corte não fica armado antes disto. O Orquestrador conduz, e um agente roda os
 
 **Se o T1 ou o T2 reprovar, a volta é a opção oficial do Google,** um tempo só, tirar a cobrança em R$ 60: reimplantar com `--modo-oficial` (Tarefa 8). A retirada da cobrança continua dependendo do T3 aprovado ou do aceite do risco.
 
-**Projetos.** Criados no G3, com a mesma conta de cobrança. O crédito paga: cerca de R$ 70 somados, R$ 0 em dinheiro.
+**Projetos.** Os do G3, com a mesma conta de cobrança. Os nomes seguem `custta-*`, e os IDs não: o Google recusou criar projetos novos, e três vazios foram reusados. `CORTE`, `A` e `B` são os IDs anotados no G3, digitados em cada comando (regra no início de "Passos do Giovani"). O crédito paga: cerca de R$ 70 somados, R$ 0 em dinheiro.
 
-| Projeto | Uso |
-|---|---|
-| `CORTE` (`custta-corte-XXXX`) | A função, o tópico e os buckets |
-| `A` (`custta-descartavel-a-XXXX`) | T4, T6, T5, T2, T1 curto, depois T1 longo |
-| `B` (`custta-descartavel-b-XXXX`) | T3 |
+| Projeto | Nome | Uso |
+|---|---|---|
+| `CORTE` | `custta-corte` | A função, o tópico e os buckets |
+| `A` | `custta-descartavel-a` | T4, T6, T5, T2, T1 curto, depois T1 longo |
+| `B` | `custta-descartavel-b` | T3 |
 
 **Preparo de A e B.** Um agente faz, nesta ordem, com os valores lidos no G2:
 1. `npx firebase projects:addfirebase <projeto>`, na pasta do repo. Autenticação por e-mail ligada. Registrar um app web e, em A, um app iOS `br.com.custta.app` para o Simulador.
@@ -3363,7 +3363,7 @@ Linha de base, antes de cada teste, em `provas/<teste>-antes.txt`: `gcloud fires
 
 | Teste | Passos | Passa se | Reprova, e o que acontece |
 |---|---|---|---|
-| **T4. Orçamento real e atraso.** A | Orçamento `teste-projeto` em A com os valores do G7, publicando no tópico. Função desarmada, como no G4. Baixar 17 GiB por REST em loop, acima dos 10 GiB grátis, anotando início e fim. Repetir em outro dia. | `costAmount` chega ao gasto real, e a mensagem chega à função. Anotar o atraso e o intervalo entre mensagens. Até 24 h é o esperado. | Mais de 48 h, ou custo que nunca aparece: chamar o Prumo, porque mexe nos gatilhos. |
+| **T4. Orçamento real e atraso.** A | Orçamento `teste-projeto` em A com os valores do G7, publicando no tópico; antes de criar, conferir o papel de publicador no tópico (G7, "Publicador do orçamento no tópico"). Função desarmada, como no G4. Baixar 17 GiB por REST em loop, acima dos 10 GiB grátis, anotando início e fim. Repetir em outro dia. | `costAmount` chega ao gasto real, e a mensagem chega à função. Anotar o atraso e o intervalo entre mensagens. Até 24 h é o esperado. | Mais de 48 h, ou custo que nunca aparece: chamar o Prumo, porque mexe nos gatilhos. |
 | **T6. Alerta aciona.** A | Em A, `gcloud services enable pubsub.googleapis.com monitoring.googleapis.com --project A`. Política `teste-leituras`, igual à do G1, com canal Pub/Sub no tópico (os 3 passos de "Alerta aciona" do G7, em A). Implantar com `--armar-api`. Loop de leituras a 600/min por 10 min (6.000 leituras). Depois, religar e repetir o loop: tem de sair um `open` novo. | API desligada em até 15 min do início, nas duas vezes, com `corte-acao` no registro. | Não dispara, ou não dispara da segunda vez: conferir o canal, o limiar e o dado ausente do G1. |
 | **T5. Lógica e permissões.** A, depois de religar | Só os papéis do G4, entre projetos. Implantar com `--armar-api`. Publicar à mão os cenários de `tests/corte.test.cjs`. Usar o `religar.sh` no segundo ataque. Tirar só o `serviceUsageAdmin` e ver a falha persistente; o `serviceUsageViewer` fica, senão a `primeiraFalha` não grava. Devolver o papel e religar A no fim. | Cada cenário decide como no teste. | Decisão errada: corrigir a função. |
 | **T2. Fila dos aparelhos.** A, decide a opção | Site apontado para A, e Simulador iOS Debug com o plist de A (serviços reais, nunca o de produção). (1) Sem rede, 3 lançamentos; fechar e abrir sem rede; desligar a API; voltar a rede, esperar 10 min, anotar código, `hasPendingWrites` e pílula; religar e medir a volta. (2) Gravando a cada 5 s durante o desligamento (conexão aberta). (3) Site e iPhone lançando durante a queda, com um deles com cache de dias antes. Religar um por vez. | Nenhum lançamento recusado nem perdido, nos dois aparelhos, e a fila sobe ao religar. Anotar quem ganha no último-grava-vence. | Gravação recusada ou perdida: **volta à opção oficial.** |
@@ -3380,6 +3380,8 @@ Linha de base, antes de cada teste, em `provas/<teste>-antes.txt`: `gcloud fires
 O Orquestrador conduz cada passo na hora. Os rótulos vêm da documentação oficial, em inglês; a tela dele pode estar em português. **Onde está "rótulo não documentado", o Orquestrador confere na tela.**
 
 Comando no Mac: ele digita `! <comando>` no terminal do Orquestrador, para o login ficar com ele. `CORTE`, `A` e `B` são os IDs reais anotados no G3.
+
+**ID literal em todo comando.** No lugar de `CORTE`, `A` e `B` vai o ID digitado, nunca uma variável de shell como `$A` ou `$CORTE`. O `implantar.sh` e o `religar.sh` leem `${PROJETO_ALVO:-app-construcao-civil}`: variável vazia ou ausente cai no padrão, que é a produção. Por isso, nas provas, o `PROJETO_ALVO` nunca fica de fora do comando. O pior caso é `implantar.sh --armar-api` sem `PROJETO_ALVO`, que arma o corte contra a produção. Só o G7, o G14 e "Se o corte agir" deixam o `PROJETO_ALVO` de fora, porque lá o alvo é a produção. Os outros padrões dos scripts (`custta-corte` e `custta-corte-estado`) também não são os IDs reais.
 
 Ninguém toca na aba **APIs** do App Check antes do G13: é lá que fica o botão de exigir.
 
@@ -3430,6 +3432,8 @@ Pronto quando: a política aparece na lista. Desfazer: apagar a política. A mé
 2. Em `console.cloud.google.com/billing/projects`, ligar os três à conta de cobrança do Custta (**Change billing**).
 3. Se a tela recusar por limite de projetos na conta de teste, parar e chamar o Prumo: a documentação não dá esse limite.
 
+**O que aconteceu em 10/11.** O Google recusou criar projetos novos ("exceeded your allotted project quota"). Foram reusados três projetos vazios que já existiam na conta, com os nomes acima, e os IDs deles não seguem `custta-*`. Por isso vale a regra do ID literal, no início desta seção.
+
 ### G4. Função nas provas
 
 Depois do merge do PR 1. Um agente roda, com o login dele.
@@ -3440,8 +3444,9 @@ Depois do merge do PR 1. Um agente roda, com o login dele.
 4. `gcloud iam service-accounts create custta-corte --project CORTE`. Em todos os comandos abaixo, `CONTA` é `serviceAccount:custta-corte@CORTE.iam.gserviceaccount.com`.
 5. `gcloud storage buckets add-iam-policy-binding gs://CORTE-teste --member CONTA --role roles/storage.objectUser`.
 6. Em A: `gcloud projects add-iam-policy-binding A --member CONTA --role <papel>`, para `roles/serviceusage.serviceUsageViewer`, `roles/serviceusage.serviceUsageAdmin`, `roles/browser` e `roles/billing.projectManager`.
-7. Implantar para as provas, sempre com estas variáveis: `PROJETO_FUNCAO=CORTE PROJETO_ALVO=A BUCKET_ESTADO=CORTE-teste ORCAMENTO_PROJETO=teste-projeto ORCAMENTO_FORA_FIRESTORE=teste-fora POLITICA_ALERTA=teste-leituras bash corte/implantar.sh`. Cada prova acrescenta o argumento que precisa.
-8. Depois do primeiro deploy: `gcloud run services add-iam-policy-binding custta-corte --region us-central1 --member CONTA --role roles/run.invoker --project CORTE` e `gcloud projects add-iam-policy-binding CORTE --member CONTA --role roles/eventarc.eventReceiver`.
+7. **Papel de build, antes do primeiro deploy.** O build da função roda como a conta padrão do Compute do projeto do corte, `<número>-compute@developer.gserviceaccount.com`, que lá não tinha papel nenhum. Em 10/11 o primeiro deploy falhou com "Could not build the function due to a missing permission on the build service account", e o erro aponta para `cloud.google.com/functions/docs/troubleshooting#build-service-account`. Ler o número com `gcloud projects describe CORTE --format='value(projectNumber)'` e rodar `gcloud projects add-iam-policy-binding CORTE --member serviceAccount:<número>-compute@developer.gserviceaccount.com --role roles/cloudbuild.builds.builder`, com o número digitado. Em 10/11 o papel entrou depois da falha, e o deploy seguinte passou. Dar o papel antes do primeiro deploy não foi provado, porque o log não mostra se a conta já existia: se o comando recusar por conta inexistente, implantar uma vez (item 8), ver falhar, dar o papel e implantar de novo.
+8. Implantar para as provas, sempre com estas variáveis: `PROJETO_FUNCAO=CORTE PROJETO_ALVO=A BUCKET_ESTADO=CORTE-teste ORCAMENTO_PROJETO=teste-projeto ORCAMENTO_FORA_FIRESTORE=teste-fora POLITICA_ALERTA=teste-leituras bash corte/implantar.sh`. Cada prova acrescenta o argumento que precisa.
+9. Depois do primeiro deploy: `gcloud run services add-iam-policy-binding custta-corte --region us-central1 --member CONTA --role roles/run.invoker --project CORTE` e `gcloud projects add-iam-policy-binding CORTE --member CONTA --role roles/eventarc.eventReceiver`.
 
 ### G5 e G6. Provas
 
@@ -3469,6 +3474,8 @@ Com esse criado, apagar o orçamento antigo de R$ 25. O novo tem o mesmo aviso, 
 **Orçamento fora do Firestore**, o mesmo caminho:
 - **Name**: `custta-fora-firestore`. **Projects**: só `app-construcao-civil`. **Services**: selecionar todos e desmarcar **Cloud Firestore**. **Savings**: desmarcar só **Promotional credits**.
 - **Target amount**: `100`. Limite em **Actual**: `100%`. Mesmo tópico. **Finish**.
+
+**Publicador do orçamento no tópico.** Os avisos dos orçamentos chegam ao tópico `custta-corte` pela conta `billing-budget-alert@system.gserviceaccount.com`, com `roles/pubsub.publisher` no tópico. Em 10/11 o papel foi dado à mão antes de criar o `teste-projeto` por `gcloud`, e os avisos chegaram à função. Criar o orçamento sem o papel, e o caminho do console, não foram testados. O papel é do tópico, não do orçamento: basta uma vez, e vale para os dois orçamentos acima e para o `teste-projeto` do T4. Antes de criar um orçamento, por qualquer caminho, conferir com `gcloud pubsub topics get-iam-policy custta-corte --project CORTE`. Se faltar: `gcloud pubsub topics add-iam-policy-binding custta-corte --project CORTE --member serviceAccount:billing-budget-alert@system.gserviceaccount.com --role roles/pubsub.publisher`.
 
 **Alerta aciona o corte:**
 1. Em `console.cloud.google.com/monitoring/alerting?project=app-construcao-civil` → **Edit notification channels** → **Pub/Sub** → **Add New**. A janela mostra a conta `service-<número>@gcp-sa-monitoring-notification.iam.gserviceaccount.com`.

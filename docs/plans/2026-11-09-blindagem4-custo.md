@@ -3337,13 +3337,13 @@ O corte não fica armado antes disto. O Orquestrador conduz, e um agente roda os
 
 **Se o T1 ou o T2 reprovar, a volta é a opção oficial do Google,** um tempo só, tirar a cobrança em R$ 60: reimplantar com `--modo-oficial` (Tarefa 8). A retirada da cobrança continua dependendo do T3 aprovado ou do aceite do risco.
 
-**Projetos.** Criados no G3, com a mesma conta de cobrança. O crédito paga: cerca de R$ 70 somados, R$ 0 em dinheiro.
+**Projetos.** Os do G3, com a mesma conta de cobrança. Os nomes seguem `custta-*`, e os IDs não: o Google recusou criar projetos novos, e três vazios foram reusados. `CORTE`, `A` e `B` são os IDs anotados no G3, digitados em cada comando (regra no início de "Passos do Giovani"). O crédito paga: cerca de R$ 70 somados, R$ 0 em dinheiro.
 
-| Projeto | Uso |
-|---|---|
-| `CORTE` (`custta-corte-XXXX`) | A função, o tópico e os buckets |
-| `A` (`custta-descartavel-a-XXXX`) | T4, T6, T5, T2, T1 curto, depois T1 longo |
-| `B` (`custta-descartavel-b-XXXX`) | T3 |
+| Projeto | Nome | Uso |
+|---|---|---|
+| `CORTE` | `custta-corte` | A função, o tópico e os buckets |
+| `A` | `custta-descartavel-a` | T4, T6, T5, T2, T1 curto, depois T1 longo |
+| `B` | `custta-descartavel-b` | T3 |
 
 **Preparo de A e B.** Um agente faz, nesta ordem, com os valores lidos no G2:
 1. `npx firebase projects:addfirebase <projeto>`, na pasta do repo. Autenticação por e-mail ligada. Registrar um app web e, em A, um app iOS `br.com.custta.app` para o Simulador.
@@ -3380,6 +3380,8 @@ Linha de base, antes de cada teste, em `provas/<teste>-antes.txt`: `gcloud fires
 O Orquestrador conduz cada passo na hora. Os rótulos vêm da documentação oficial, em inglês; a tela dele pode estar em português. **Onde está "rótulo não documentado", o Orquestrador confere na tela.**
 
 Comando no Mac: ele digita `! <comando>` no terminal do Orquestrador, para o login ficar com ele. `CORTE`, `A` e `B` são os IDs reais anotados no G3.
+
+**ID literal em todo comando.** No lugar de `CORTE`, `A` e `B` vai o ID digitado, nunca uma variável de shell como `$A` ou `$CORTE`. O `implantar.sh` e o `religar.sh` leem `${PROJETO_ALVO:-app-construcao-civil}`: variável vazia ou ausente cai no padrão, que é a produção. Por isso, nas provas, o `PROJETO_ALVO` nunca fica de fora do comando. O pior caso é `implantar.sh --armar-api` sem `PROJETO_ALVO`, que arma o corte contra a produção. Só o G7, o G14 e "Se o corte agir" deixam o `PROJETO_ALVO` de fora, porque lá o alvo é a produção. Os outros padrões dos scripts (`custta-corte` e `custta-corte-estado`) também não são os IDs reais.
 
 Ninguém toca na aba **APIs** do App Check antes do G13: é lá que fica o botão de exigir.
 
@@ -3429,6 +3431,8 @@ Pronto quando: a política aparece na lista. Desfazer: apagar a política. A mé
 1. Em `console.cloud.google.com/projectcreate`, criar três, com nomes `custta-corte`, `custta-descartavel-a` e `custta-descartavel-b`. O Google acrescenta um sufixo ao ID se o nome estiver em uso: **anotar os três IDs**.
 2. Em `console.cloud.google.com/billing/projects`, ligar os três à conta de cobrança do Custta (**Change billing**).
 3. Se a tela recusar por limite de projetos na conta de teste, parar e chamar o Prumo: a documentação não dá esse limite.
+
+**O que aconteceu em 10/11.** O Google recusou criar projetos novos ("exceeded your allotted project quota"). Foram reusados três projetos vazios que já existiam na conta, com os nomes acima, e os IDs deles não seguem `custta-*`. Por isso vale a regra do ID literal, no início desta seção.
 
 ### G4. Função nas provas
 

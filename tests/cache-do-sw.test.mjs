@@ -116,3 +116,18 @@ test('pela linha de comando, contra a base no git: reprova sem subir o CACHE e p
     rmSync(repo, { recursive: true, force: true });
   }
 });
+
+test('a CI dos PRs compara o sw.js do merge com a base, antes de instalar', () => {
+  const ci = readFileSync(join(raiz, '.github', 'workflows', 'testes.yml'), 'utf8');
+  /* O checkout do PR é o merge com a base, que é o 1º pai: com dois commits baixados, o HEAD^1
+     existe e é a base. Um ref: trocaria o merge pela ponta do PR, e o HEAD^1 deixaria de ser a base. */
+  const checkout = /^( *)- uses: actions\/checkout@[0-9a-f]{40}[^\n]*\n((?:\1 {2}[^\n]*\n)*)/m.exec(ci);
+  assert.ok(checkout, 'testes.yml sem o actions/checkout');
+  assert.match(checkout[2], /^ +fetch-depth: 2$/m, 'o checkout precisa de fetch-depth: 2 para o HEAD^1 existir');
+  assert.doesNotMatch(checkout[2], /^ +ref:/m, 'com ref:, o HEAD deixa de ser o merge do PR com a base');
+  /* Só nos PRs: no push à main não há base de PR. Um if: errado pularia o passo com o job verde. */
+  const passo = /^( *)- name: CACHE do sw\.js sobe quando o ASSETS muda\n\1 {2}if: github\.event_name == 'pull_request'\n\1 {2}run: node scripts\/cache-do-sw\.mjs HEAD\^1\n/m.exec(ci);
+  assert.ok(passo, 'testes.yml sem o passo que confere o CACHE do sw.js contra o HEAD^1, só nos PRs');
+  const instalar = ci.search(/^ *- run: npm ci$/m);
+  assert.ok(instalar > passo.index, 'a conferência roda antes do npm ci, para falhar em segundos');
+});

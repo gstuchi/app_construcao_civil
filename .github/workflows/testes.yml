@@ -15,10 +15,20 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No PR, o checkout é o merge com a base, e a base é o 1º pai: com dois commits, o
+          # HEAD^1 existe para a conferência do CACHE do sw.js.
+          fetch-depth: 2
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
+      # PR que muda o ASSETS do sw.js sem subir o CACHE deixa quem já instalou o app com o
+      # retrato velho offline. Roda antes de instalar, para falhar em segundos. No push à main
+      # não roda: lá não há base de PR, e a main só recebe por PR.
+      - name: CACHE do sw.js sobe quando o ASSETS muda
+        if: github.event_name == 'pull_request'
+        run: node scripts/cache-do-sw.mjs HEAD^1
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin

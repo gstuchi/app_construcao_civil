@@ -54,16 +54,32 @@ function responderAuth(rota,r){
 }
 /* WebChannel falso: o POST de abertura devolve o handshake e entrega os cabeçalhos
    no corpo (campo headers, sem preflight); as mensagens saem pelo back channel, o
-   GET longo, sempre em quadros "tamanho\njson\n". */
-function criarFirestore(r){
+   GET longo, sempre em quadros "tamanho\njson\n". Como no servidor real, o quadro
+   entregue fica na fila até o cliente confirmar, pelo AID, que o recebeu; até lá volta
+   em todo GET. O cliente desiste de um GET já respondido (ver segurarAteDesistir), e
+   sem o reenvio o que ia nele se perde e o stream fica mudo. */
+function criarFirestore(r,{ctx,perdeOPrimeiroGet=false}={}){
   const canais=new Map();
   let contador=0;
   const quadro=o=>{ const t=JSON.stringify(o)+'\n'; return `${t.length}\n${t}`; };
   const texto=(rota,corpo)=>rota.fulfill({status:200,headers:{...cors(rota),'content-type':'text/plain'},body:corpo});
+  function confirma(c,aid){ if(aid!==null) c.fila=c.fila.filter(([id])=>id>Number(aid)); }
   function solta(c){
     if(!c.pendente||!c.fila.length) return;
     const rota=c.pendente; c.pendente=null;
-    texto(rota,quadro(c.fila.splice(0)));
+    const corpo=quadro(c.fila);
+    if(perdeOPrimeiroGet&&!c.segurou){ c.segurou=true; segurarAteDesistir(c,rota,corpo); return; }
+    // GET que o cliente já abortou pode recusar a resposta: o que ia nela segue na fila.
+    texto(rota,corpo).catch(()=>{});
+  }
+  /* A resposta do 1º GET longo do canal sai, mas só chega depois que o cliente desistiu
+     dele: sem nada em 4x o RTT do handshake, o WebChannel acha que um proxy segura a
+     resposta, cancela o GET e abre outro em long polling. */
+  function segurarAteDesistir(c,rota,corpo){
+    const url=rota.request().url();
+    ctx.waitForEvent('requestfailed',{predicate:q=>q.url()===url,timeout:5000})
+      .then(()=>{ r.desistiu[c.tipo]++; },()=>{})
+      .then(()=>texto(rota,corpo).catch(()=>{}));
   }
   function envia(c,msg){ c.fila.push([++c.ultimo,[msg]]); solta(c); }
   function aoListen(c,msg){
@@ -82,32 +98,36 @@ function criarFirestore(r){
     /* Hora depois da do documento e o serverTimestamp respondido: só assim o SDK grava a escrita no cache. */
     envia(c,{streamToken:MARCA,writeResults:msg.writes.map(w=>({updateTime:HORA_ESCRITA,transformResults:(w.updateTransforms||[]).map(()=>({timestampValue:HORA_ESCRITA}))})),commitTime:HORA_ESCRITA});
   }
-  return rota=>{
+  return async rota=>{
     const pedido=rota.request(), url=new URL(pedido.url());
     const tipo=url.pathname.includes('/Write/')?'Write':'Listen';
     if(pedido.method()!=='POST'){
       const c=canais.get(url.searchParams.get('SID'));
       if(!c||url.searchParams.get('TYPE')==='terminate') return texto(rota,'');
+      confirma(c,url.searchParams.get('AID'));
       c.pendente=rota; solta(c);
       return;
     }
     const corpo=new URLSearchParams(pedido.postData()||'');
     let c=canais.get(url.searchParams.get('SID'));
     const abertura=!c;
+    if(c) confirma(c,url.searchParams.get('AID'));
     if(abertura){
-      c={sid:'sessao'+(++contador),fila:[],ultimo:0,pendente:null};
+      c={sid:'sessao'+(++contador),tipo,fila:[],ultimo:0,pendente:null};
       canais.set(c.sid,c);
       r.abertura[tipo].push(corpo.get('headers')||'');
     }
     for(let i=0;i<Number(corpo.get('count')||0);i++) (tipo==='Listen'?aoListen:aoWrite)(c,JSON.parse(corpo.get(`req${i}___data__`)));
+    /* RTT de handshake acima de zero: com zero o WebChannel não arma a detecção de proxy. */
+    if(abertura&&perdeOPrimeiroGet) await new Promise(res=>setTimeout(res,30));
     return texto(rota,quadro(abertura?[[0,['c',c.sid,'',8,12,30000]]]:[1,c.ultimo,0]));
   };
 }
 /* Contexto com os falsos. Quem não tem falso e sai de onde não devia cai em r.fora;
    o gapi do login social (apis.google.com) não interessa aqui e é só abortado. */
-async function contexto(browser,hostsFalsos,{reCaptcha='responde'}={}){
+async function contexto(browser,hostsFalsos,{reCaptcha='responde',perdeOPrimeiroGet=false}={}){
   const ctx=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
-  const r={script:[],troca:[],auth:[],abertura:{Listen:[],Write:[]},escritas:[],violacoes:[],erros:[],fora:[],scriptEntregue:false};
+  const r={script:[],troca:[],auth:[],abertura:{Listen:[],Write:[]},escritas:[],violacoes:[],erros:[],fora:[],scriptEntregue:false,desistiu:{Listen:0,Write:0}};
   r.atrasoDoScript=new Promise(solta=>{ r.soltaScript=solta; });
   await ctx.exposeBinding('__registraCSP',(_s,v)=>r.violacoes.push(v));
   await ctx.addInitScript(()=>{
@@ -132,7 +152,7 @@ async function contexto(browser,hostsFalsos,{reCaptcha='responde'}={}){
     return json(rota,{token:TOKEN_APP_CHECK,ttl:'3600s'});
   });
   await ctx.route(/^https:\/\/(identitytoolkit|securetoken)\.googleapis\.com\//,rota=>responderAuth(rota,r));
-  await ctx.route(/^https:\/\/firestore\.googleapis\.com\//,criarFirestore(r));
+  await ctx.route(/^https:\/\/firestore\.googleapis\.com\//,criarFirestore(r,{ctx,perdeOPrimeiroGet}));
   return {ctx,r};
 }
 async function abrir(ctx,r,endereco,waitUntil='load'){
@@ -302,6 +322,19 @@ const tokenDaAbertura=h=>/(?:^|\r\n)x-firebase-appcheck:([^\r\n]*)/i.exec(h)?.[1
       assert.ok(r.abertura.Write.some(h=>tokenDaAbertura(h)===TOKEN_APP_CHECK),'o pedido seguinte não levou o token válido');
       semIncidentes(r);
       console.log(`ok - reCAPTCHA lento: login destrava em ${ms} ms e o pedido seguinte leva token válido`);
+      await ctx.close();
+    }
+    /* 7. A resposta do 1º GET longo de cada canal chega depois que o cliente desistiu dele:
+       o que saiu ali volta no GET seguinte, como no servidor real, e entrar e sincronizar
+       seguem. Na CI isso acontecia ao acaso, quando a resposta demorava mais que 4x o RTT
+       do handshake, e a escrita nunca chegava. */
+    {
+      const {ctx,r}=await contexto(browser,['custta.com.br'],{perdeOPrimeiroGet:true});
+      const page=await abrir(ctx,r,'https://custta.com.br/');
+      await entrarESincronizar(page,r);
+      assert.ok(r.desistiu.Listen>0&&r.desistiu.Write>0,`o cliente não desistiu do 1º GET longo (${JSON.stringify(r.desistiu)}): o cenário não prova o reenvio`);
+      semIncidentes(r);
+      console.log('ok - resposta do 1º GET longo perdida: o que saiu nele volta no GET seguinte e a escrita chega');
       await ctx.close();
     }
   }finally{ await browser.close(); }

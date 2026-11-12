@@ -36,6 +36,9 @@ const cloudEmulado=()=>fs.readFileSync(path.join(ROOT,'cloud.js'),'utf8')
     const page=await context.newPage(); page.setDefaultTimeout(15000);
     const errosPagina=[]; page.on('pageerror',err=>errosPagina.push(err.message));
     await page.goto('http://localhost:8123'); await page.waitForFunction(()=>window.CLOUD);
+    /* A página nasce mostrando Entrar, e o 1º estado do Auth (sem conta) volta para essa
+       aba quem já clicou em Criar conta. O CLOUD.ready resolve com esse estado aplicado. */
+    await page.evaluate(()=>CLOUD.ready);
     await page.locator('#authTabs button[data-k="cad"]').click();
 
     // checklist reage ao digitar

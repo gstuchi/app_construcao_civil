@@ -44,7 +44,7 @@
     "@sentry/browser": "10.74.0",
     "esbuild": "0.28.2",
     "firebase": "12.18.0",
-    "firebase-tools": "^15.32.1",
+    "firebase-tools": "^15.36.0",
     "playwright": "1.63.0"
   },
   "allowScripts": {

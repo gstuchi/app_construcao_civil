@@ -49,7 +49,6 @@
   },
   "allowScripts": {
     "esbuild": true,
-    "fsevents": true,
     "re2": true,
     "@firebase/util": true,
     "protobufjs": true

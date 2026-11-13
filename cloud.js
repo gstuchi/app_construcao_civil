@@ -721,6 +721,8 @@ window.CLOUD = {
   temPendencia: () => !!pendingBlob || emVoo || pendenciaCache,
   /* Cliente do Firestore morto com lançamento esperando recarga (a pílula diz "Não salvou"). */
   clienteMorto: () => parado,
+  /* Há lançamento que fechar o app perderia: ainda fora da fila do SDK, ou só na cópia. */
+  dadoEmRisco: () => !!soNaMemoria() || !!(currentUser && copia.ler(currentUser.uid)),
   /* Toque no aviso: guarda a cópia e recarrega sem pedir confirmação para sair. false
      quando não há onde guardar: a recarga apagaria o lançamento. */
   recarregar(){

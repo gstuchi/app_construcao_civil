@@ -621,3 +621,23 @@ test('parado, a quebra repetida não repete o aviso; lançamento novo repete', {
   await assert.rejects(CLOUD.saveDados(blobCom('b')), { code: 'cliente-morto' });
   assert.strictEqual(avisos(), 2, 'o lançamento novo ficou sem resposta');
 });
+
+test('dado em risco: só na memória ou na cópia, não o que já está na fila do SDK', { timeout: 8000 }, async () => {
+  assert.strictEqual(CLOUD.dadoEmRisco(), false);
+  ctrl.respostas.push(new Promise(() => {})); // entregue ao SDK, sem resposta
+  CLOUD.saveDados(blobCom('na fila do SDK'));
+  assert.strictEqual(CLOUD.dadoEmRisco(), false, 'a fila do SDK sobrevive ao fechamento');
+  await abreSessao();
+  ctrl.respostas.push({ code: 'unavailable' });
+  CLOUD.saveDados(blobCom('esperando nova tentativa')).catch(() => {});
+  await passa(20);
+  assert.strictEqual(CLOUD.dadoEmRisco(), true, 'blob esperando o backoff só existe na memória');
+  sessao = armazem(); recargas = 0;
+  await abreSessao();
+  morre();
+  CLOUD.saveDados(blobCom('na cópia')).catch(() => {});
+  await passa(20);
+  await abreSessao(); // página nova: a cópia ainda não foi reaplicada
+  assert.strictEqual(CLOUD.dadoEmRisco(), true, 'a cópia some ao fechar a aba');
+  await passa(1100); // o backoff da segunda página vence aqui, não no teste seguinte
+});

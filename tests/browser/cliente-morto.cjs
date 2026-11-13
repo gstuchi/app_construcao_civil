@@ -129,6 +129,12 @@ async function ate(condicao, ms){
     let cargas = 0, mortes = 0;
     page.on('load', ()=>{ cargas++; });
     page.on('pageerror', e=>{ if(/reading 'batchId'/.test(e.message)) mortes++; });
+    const dialogos = [];
+    page.on('dialog', d=>{ dialogos.push(d.type()); d.dismiss().catch(()=>{}); });
+    const pilula = ()=>page.evaluate(()=>{
+      const p = document.getElementById('syncPill');
+      return p.classList.contains('hidden') ? '' : p.textContent.trim();
+    });
     const abriu = ()=>page.waitForFunction(()=>window.CLOUD && CLOUD.user() && typeof dadosCarregados !== 'undefined' && dadosCarregados);
     const lanca = (id, descricao)=>page.evaluate(([id, descricao])=>{
       db.obras[0].gastos.push({ id, valor: 1234.56, topico: 'estrutura', descricao, data: '2026-11-13', pagamento: 'pix' });
@@ -168,5 +174,80 @@ async function ate(condicao, ms){
     assert.ok(avisos.some(t=>/recarregou para salvar seus últimos lançamentos/.test(t)),
       'a tela não disse por que recarregou: ' + JSON.stringify(avisos));
     console.log('ok - lançamento feito com o cliente morto sobrevive à recarga automática e sobe');
+
+    /* 2. Morre de novo na mesma sessão: não recarrega em laço, não diz "Salvando…" nem
+       "feche e abra", segura o fechamento e recarrega quando a pessoa toca no aviso. */
+    await mata();
+    await lanca('g-segunda', 'Lançado na segunda morte');
+    const recarregouDeNovo = await ate(()=>cargas >= 3, 4000);
+    assert.equal(recarregouDeNovo, false, 'recarregou de novo sozinho: a guarda contra laço falhou');
+    assert.equal(await pilula(), 'Não salvou', 'com lançamento só na memória a pílula tem de dizer "Não salvou"');
+    const avisosParado = await page.evaluate(()=>window.__toasts);
+    assert.ok(avisosParado.some(t=>/Seus últimos lançamentos ainda não foram para a nuvem/.test(t)),
+      'a segunda morte não avisou: ' + JSON.stringify(avisosParado));
+    await page.evaluate(()=>{ window.dispatchEvent(new Event('offline')); window.dispatchEvent(new Event('online')); });
+    assert.equal(await pilula(), 'Não salvou', 'a rede tirou o aviso');
+    // erro qualquer da tela com lançamento só na memória: o aviso genérico manda fechar o app
+    await page.evaluate(()=>{ ultimoAvisoErro = 0; window.__toasts.length = 0; setTimeout(()=>{ throw new Error('erro qualquer da tela'); }); });
+    await page.waitForTimeout(300);
+    const avisosDoErro = await page.evaluate(()=>window.__toasts);
+    assert.ok(!avisosDoErro.some(t=>/feche e abra/.test(t)), 'com lançamento só na memória o aviso mandou fechar o app');
+    await page.keyboard.press('a'); // gesto da pessoa: sem ele o navegador não pergunta antes de fechar
+    await page.close({ runBeforeUnload: true });
+    assert.ok(await ate(()=>dialogos.includes('beforeunload'), 3000), 'fechar com lançamento só na memória não pediu confirmação');
+    assert.equal(page.isClosed(), false, 'a página fechou');
+    const dialogosAntesDoToque = dialogos.length;
+    await page.locator('#syncPill').click();
+    assert.ok(await ate(()=>cargas >= 3, 10000), 'o toque em "Não salvou" não recarregou');
+    assert.equal(dialogos.length, dialogosAntesDoToque, 'a recarga pedida pelo toque perguntou se podia sair');
+    await abriu();
+    assert.ok(await ate(async()=>(await noServidor()).includes('g-segunda'), 15000),
+      'o lançamento da segunda morte não chegou ao servidor');
+    assert.deepEqual((await noServidor()).sort(), ['g-depois', 'g-segunda'], 'o servidor perdeu um dos lançamentos');
+    console.log('ok - segunda morte na sessão não recarrega em laço, avisa, segura o fechamento e sobe pelo toque');
+
+    /* 3. Sem onde guardar (sessionStorage cheio ou bloqueado): recarregar apagaria o
+       lançamento, então nem a recarga automática nem o toque recarregam. */
+    const semEspaco = await browser.newContext({ serviceWorkers: 'block' });
+    await semEspaco.route('**/cloud.js', r=>r.fulfill({ contentType: 'text/javascript', body: cloudNoEmulador() }));
+    await semEspaco.route('**/firebase-auth.js', r=>r.fulfill({ contentType: 'text/javascript', body: authFalso }));
+    await semEspaco.addInitScript(()=>{
+      sessionStorage.setItem('splashVista', '1');
+      const grava = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(k, v){
+        if(this === sessionStorage && k !== 'splashVista') throw new DOMException('cheio', 'QuotaExceededError');
+        return grava.call(this, k, v);
+      };
+      window.__toasts = [];
+      document.addEventListener('DOMContentLoaded', ()=>{
+        new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{
+          if(n.classList?.contains('toast')) window.__toasts.push(n.textContent);
+        }))).observe(document.getElementById('toastWrap'), { childList: true });
+      });
+    });
+    const canal3 = await canalDeEscrita(semEspaco);
+    const pagina3 = await semEspaco.newPage();
+    let cargas3 = 0, mortes3 = 0;
+    pagina3.on('load', ()=>{ cargas3++; });
+    pagina3.on('pageerror', e=>{ if(/reading 'batchId'/.test(e.message)) mortes3++; });
+    await pagina3.goto(URL_APP);
+    await pagina3.waitForFunction(()=>window.CLOUD && CLOUD.user() && typeof dadosCarregados !== 'undefined' && dadosCarregados);
+    await pagina3.evaluate(()=>save()); // abre a conexão de escrita
+    canal3.matar();
+    assert.ok(await ate(()=>mortes3 > 0, 10000), 'o SDK não quebrou na terceira página');
+    await pagina3.evaluate(()=>{
+      db.obras[0].gastos.push({ id: 'g-sem-espaco', valor: 1, topico: 'estrutura', descricao: 'Sem onde guardar', data: '2026-11-13', pagamento: 'pix' });
+      salvarComAviso('Gasto lançado com sucesso').catch(()=>{});
+      renderAll();
+    });
+    assert.equal(await ate(()=>cargas3 >= 2, 3000), false, 'recarregou sem a cópia e apagaria o lançamento');
+    await pagina3.evaluate(()=>{ window.__toasts.length = 0; });
+    await pagina3.locator('#syncPill').click();
+    assert.equal(await ate(()=>cargas3 >= 2, 2000), false, 'o toque recarregou sem a cópia');
+    const avisosSemEspaco = await pagina3.evaluate(()=>window.__toasts);
+    assert.ok(avisosSemEspaco.some(t=>/Não deu para guardar seus últimos lançamentos neste aparelho/.test(t)),
+      'o toque sem a cópia não explicou: ' + JSON.stringify(avisosSemEspaco));
+    await semEspaco.close();
+    console.log('ok - sem onde guardar a cópia, nada recarrega e o toque explica');
   } finally { await env.cleanup(); await browser.close(); }
 })().catch(err=>{ console.error(err); process.exitCode = 1; });

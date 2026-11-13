@@ -1817,7 +1817,9 @@ function bootCloud(){
     dadosCarregados = false; // a conta que entrou ainda não teve os dados vistos
     unwatch = CLOUD.watchDados((blob, meta)=>{
       if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
-      const novo = normaliza(blob);
+      /* meta.copia: o que só estava na memória quando o cliente do Firestore morreu
+         (cloud.js). Na primeira leitura da conta volta para a tela e para a fila do SDK. */
+      const novo = normaliza(meta.copia || blob);
       /* A mesma regra do saveDados no cloud.js: cache sem documento não é dado visto.
          Depois de visto não volta atrás (conta nova que ouviu "não existe" e perdeu a rede). */
       const carregou = !dadosCarregados && (!meta.fromCache || blob !== null);
@@ -1828,6 +1830,10 @@ function bootCloud(){
         if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
         renderAll();
       }else if(carregou) renderInicio(); // conta nova: o "não existe" do servidor não muda o db, mas a lista sai do "Carregando…"
+      if(meta.copia){
+        save();
+        toast('O app recarregou para salvar seus últimos lançamentos.');
+      }
       if(!tokenFcmSincronizado){
         tokenFcmSincronizado = true;
         OBRA_PUSH.sincronizarToken?.(); // no-op na web; nativo troca o token se o FCM já rotacionou o antigo
@@ -1849,6 +1855,12 @@ window.addEventListener('cloud-erro', e=>{
   const { code, terminal } = e.detail;
   // recusa local antes de ver os dados: nada foi para a fila, o gesto precisa de resposta
   if(code === 'nao-carregado'){ avisaNaoCarregado(); return; }
+  /* Cliente do Firestore morto e a recarga automática já gasta: o lançamento está na
+     cópia, que fechar o app apaga. toast(), não avisoRaro: a cada lançamento a tela responde. */
+  if(code === 'cliente-morto'){
+    toast('Seus últimos lançamentos ainda não foram para a nuvem. Toque em “Não salvou” para enviar. Não feche o app antes.', 'erro');
+    return;
+  }
   const msg = code === 'limite'
     ? 'Não salvou: limite de dados atingido. Reduza os dados e tente novamente.'
     : terminal
@@ -1873,14 +1885,22 @@ function renderSync(estado, origem){
   syncPill.classList.toggle('hidden', !v);
   syncPill.classList.toggle('erro', estado === 'erro');
   if(!v) return;
+  /* Cliente do Firestore morto com lançamento esperando: tentar de novo não adianta,
+     só recarregar. Decide pelo CLOUD, não pelo evento: online e offline repintam sem
+     code nem origem. */
+  const morto = estado === 'erro' && !!window.CLOUD?.clienteMorto?.();
   syncPill.innerHTML = `${v.marca}<span class="rotulo"></span>`;
-  syncPill.querySelector('.rotulo').textContent = estado === 'erro' && origem === 'leitura' ? 'Não sincronizou' : v.rotulo;
-  syncPill.title = estado === 'erro'
-    ? 'Não foi possível sincronizar. Toque para tentar de novo.'
-    : v.rotulo;
-  syncPill.onclick = estado === 'erro'
-    ? ()=>{ toast('Tentando de novo…'); CLOUD.tentarDeNovo(); }
-    : null;
+  syncPill.querySelector('.rotulo').textContent = estado === 'erro' && origem === 'leitura' && !morto ? 'Não sincronizou' : v.rotulo;
+  syncPill.title = morto
+    ? 'Seus últimos lançamentos ainda não foram para a nuvem. Toque para enviar.'
+    : estado === 'erro'
+      ? 'Não foi possível sincronizar. Toque para tentar de novo.'
+      : v.rotulo;
+  syncPill.onclick = morto
+    ? ()=>{ if(!CLOUD.recarregar()) toast('Não deu para guardar seus últimos lançamentos neste aparelho. Anote-os antes de fechar o app.', 'erro'); }
+    : estado === 'erro'
+      ? ()=>{ toast('Tentando de novo…'); CLOUD.tentarDeNovo(); }
+      : null;
 }
 window.addEventListener('cloud-estado', e=>{
   const { estado, origem, code } = e.detail;
@@ -1906,14 +1926,20 @@ function registraErro(origem, msg, stack){
 window.OBRA_DIAG = { erros: () => diag.slice(), registra: registraErro };
 (window.OBRA_ERROS_INICIAIS || []).forEach(e=>registraErro(e.origem, e.msg, e.stack));
 delete window.OBRA_ERROS_INICIAIS;
+/* "Feche e abra" apaga o que ainda não chegou à fila do SDK: com lançamento em risco o
+   aviso genérico não sai, qualquer que seja o erro; a pílula diz o que fazer. */
+function avisoDeErro(){
+  if(window.CLOUD?.dadoEmRisco?.()) return;
+  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+}
 window.addEventListener('error', e=>{
   registraErro('window', e.message, e.error && e.error.stack);
-  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+  avisoDeErro();
 });
 window.addEventListener('unhandledrejection', e=>{
   const r = e.reason;
   registraErro('promise', (r && (r.message || r.code)) || r, r && r.stack);
-  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+  avisoDeErro();
 });
 
 function ligaSync(){ renderSync(CLOUD.estado()); }

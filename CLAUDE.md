@@ -42,7 +42,7 @@ CSP estrita no `vercel.json` (`default-src 'none'`, `script-src 'self'`, `style-
 
 `https://apis.google.com` (em `script-src`) e o `frame-src` existem só para o login social da web (Google e Apple), isto é, gapi e o iframe do handler de auth. `/__/auth` e `/__/firebase` são proxy do Firebase via rewrite da Vercel: ficam fora da CSP do Custta (o header não casa com `/__/`) e fora do service worker (`sw.js` nunca cacheia `/__/`).
 
-Para dirigir o app num browser de verdade, suba `node tests/browser/servidor.cjs` (serve a raiz em :8123 com os headers do `vercel.json`) e chame a suíte direto — `tests/browser/rodar.cjs` só orquestra. As suítes com dados sintéticos (`mobile`, `cartao`, `nativo`, `contraste`, `xss`, `login`) fazem stub de `window.CLOUD` e de `sessionStorage.splashVista` via `addInitScript`; as que usam SDK real (`fase1/2/3`, `persistencia`, `sync`) exigem os emuladores (`CUSTTA_EMULADORES=1`).
+Para dirigir o app num browser de verdade, suba `node tests/browser/servidor.cjs` (serve a raiz em :8123 com os headers do `vercel.json`) e chame a suíte direto — `tests/browser/rodar.cjs` só orquestra. As suítes com dados sintéticos (`mobile`, `cartao`, `nativo`, `contraste`, `xss`, `login`) fazem stub de `window.CLOUD` e de `sessionStorage.splashVista` via `addInitScript`; as que usam SDK real (`fase1/2/3`, `persistencia`, `sync`, `cliente-morto`) exigem os emuladores (`CUSTTA_EMULADORES=1`).
 
 ## Arquitetura
 
@@ -67,7 +67,7 @@ Scripts clássicos com globais, carregados na ordem em que aparecem no `index.ht
 
 ### Estado e sincronização
 
-O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados — só preferências por aparelho (localStorage: `mo_tema`, `custta-estado`; sessionStorage: `splashVista`).
+O app inteiro é um blob só: `{ obras: [...], config: { taxaMensal, topicosCustom } }`, gravado em `dados/{uid}` no Firestore. Não há localStorage de dados — só preferências por aparelho (localStorage: `mo_tema`, `custta-estado`; sessionStorage: `splashVista`). A exceção é o cliente do Firestore morto (`INTERNAL ASSERTION FAILED`): o `cloud.js` guarda no sessionStorage (`custta-copia`, `custta-recarregou`) o blob que só existia na memória, recarrega a página uma vez por sessão e o reaplica na primeira leitura da conta.
 
 Fluxo: mutação em `db` → `save()` → `CLOUD.saveDados` (entrega cada versão na hora à fila persistente do SDK e sobrescreve o documento inteiro) → `onSnapshot` volta → `bootCloud` ignora o eco (`meta.pendingWrites || meta.localDirty`, mais comparação `canon()`) → `renderAll()`.
 

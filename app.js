@@ -1817,7 +1817,9 @@ function bootCloud(){
     dadosCarregados = false; // a conta que entrou ainda não teve os dados vistos
     unwatch = CLOUD.watchDados((blob, meta)=>{
       if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
-      const novo = normaliza(blob);
+      /* meta.copia: o que só estava na memória quando o cliente do Firestore morreu
+         (cloud.js). Na primeira leitura da conta volta para a tela e para a fila do SDK. */
+      const novo = normaliza(meta.copia || blob);
       /* A mesma regra do saveDados no cloud.js: cache sem documento não é dado visto.
          Depois de visto não volta atrás (conta nova que ouviu "não existe" e perdeu a rede). */
       const carregou = !dadosCarregados && (!meta.fromCache || blob !== null);
@@ -1828,6 +1830,10 @@ function bootCloud(){
         if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
         renderAll();
       }else if(carregou) renderInicio(); // conta nova: o "não existe" do servidor não muda o db, mas a lista sai do "Carregando…"
+      if(meta.copia){
+        save();
+        toast('O app recarregou para salvar seus últimos lançamentos.');
+      }
       if(!tokenFcmSincronizado){
         tokenFcmSincronizado = true;
         OBRA_PUSH.sincronizarToken?.(); // no-op na web; nativo troca o token se o FCM já rotacionou o antigo

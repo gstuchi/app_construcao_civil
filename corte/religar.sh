@@ -15,6 +15,12 @@
 # lista religadosForcados, com a hora, o resultado da trava (livre, segura ou nao-leu) e o que
 # ela disse, na mesma gravação da base: sem base gravada, nem a API religa nem o registro fica.
 #
+# Volta de um corte que tirou a cobrança (cobrancaTiradaEm no estado): a API só religa se estiver
+# desligada, porque no modo oficial-alerta ela pode ter seguido ligada; a volta fica em voltouEm; e o
+# script manda religar a cobrança no console, em até 72 h do corte, e conferir os dados conta por
+# conta em até 7 dias, a janela do PITR. Segunda volta assim no mesmo mês pede --forcar: antes, bloquear
+# a conta atacante ou exigir o App Check.
+#
 # A função continua armada e os gatilhos valem sobre custo = costAmount - base. A folga soma à
 # base o gasto do ataque que o relatório atrasado ainda vai mostrar. O orçamento de fora do
 # Firestore só ganha base nova se a cobrança foi tirada, e aí com a mesma folga: sem corte, base
@@ -303,14 +309,22 @@ gravar_base(){
   [ -n "$geracao" ] || return 1
   gcloud storage cat "$OBJETO" > "$PASTA/atual.json" || return 1
   FOLGA="$FOLGA" ORCAMENTO_PROJETO="$ORCAMENTO_PROJETO" ORCAMENTO_FORA_FIRESTORE="$ORCAMENTO_FORA_FIRESTORE" \
-  MOTIVO="$MOTIVO" RESULTADO="$RESULTADO" \
-    python3 - "$PASTA/atual.json" "$PASTA/novo.json" "$PASTA/vale-agora.txt" "$PASTA/trava.txt" <<'PY' || return 1
+  MOTIVO="$MOTIVO" RESULTADO="$RESULTADO" PROJETO_ALVO="$PROJETO_ALVO" PASTA="$PASTA" \
+    python3 - "$PASTA/atual.json" "$PASTA/novo.json" "$PASTA/vale-agora.txt" "$PASTA/trava.txt" <<'PY' || return $?
 import json, os, sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 LIMITE_API, LIMITE_COBRANCA = 60, 100  # os de corte/regra.js, em reais
+SEM_COBRANCA = timedelta(hours=72)  # prazo máximo sem conta de cobrança (decisão 16 do plano)
+CONFERENCIA = timedelta(days=7)  # conferência dos dados depois da volta: a janela do PITR
+try:
+    from zoneinfo import ZoneInfo
+    BRASILIA = ZoneInfo("America/Sao_Paulo")
+except Exception:  # sem a base de fusos; Brasília não tem horário de verão desde 2019
+    BRASILIA = timezone(timedelta(hours=-3))
 
 origem, destino, vale_agora, trava = sys.argv[1:5]
+pasta = os.environ["PASTA"]
 folga = float(os.environ["FOLGA"])
 with open(origem, encoding="utf-8") as f:
     estado = json.load(f)
@@ -323,16 +337,45 @@ def rebasear(orcamento, acrescimo):
 def reais(valor):
     return f"R$ {valor:.2f}".replace(".", ",")
 
+def instante(iso):
+    return datetime.strptime(iso[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+
+def hora(t):
+    return t.astimezone(BRASILIA).strftime("%d/%m %Hh%M")
+
+agora = instante(os.environ["AGORA"]) if os.environ.get("AGORA") else datetime.now(timezone.utc)
+agora_iso = agora.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+motivo = os.environ["MOTIVO"]
+tirada = estado.get("cobrancaTiradaEm")
+voltou = estado.get("voltouEm")
+segunda_volta = bool(tirada and isinstance(voltou, str) and voltou[:7] == agora_iso[:7])
+if segunda_volta and not motivo:
+    with open(os.path.join(pasta, "recusa.txt"), "w", encoding="utf-8") as f:
+        f.write(f"segundo corte da cobrança neste mês (a volta anterior foi em {hora(instante(voltou))}): antes de religar, "
+                "bloqueie a conta atacante no Authentication ou exija o App Check (G13), e rode com --forcar \"motivo\". "
+                "a API NÃO foi religada.\n")
+    sys.exit(5)
+
 projeto = orcamentos.get(os.environ["ORCAMENTO_PROJETO"])
 base_projeto = rebasear(projeto, folga) if projeto is not None else 0
 linhas = [f"API cai de novo em {reais(base_projeto + LIMITE_API)}"]
 fora = orcamentos.get(os.environ["ORCAMENTO_FORA_FIRESTORE"])
 if fora is not None and estado.get("cobrancaTiradaEm"):
     linhas.append(f"cobrança cai em {reais(rebasear(fora, folga) + LIMITE_COBRANCA)}")
+if tirada:
+    estado["voltouEm"] = agora_iso
+    prazo = instante(tirada) + SEM_COBRANCA
+    console = f"console.cloud.google.com/billing/projects → Change billing no projeto {os.environ['PROJETO_ALVO']}"
+    if prazo > agora:
+        religue = f"Religue a cobrança até {hora(prazo)} (72 h depois do corte): {console}."
+    else:
+        religue = f"O prazo de 72 h sem conta de cobrança venceu em {hora(prazo)}: religue a cobrança agora, em {console}."
+    with open(os.path.join(pasta, "volta.txt"), "w", encoding="utf-8") as f:
+        f.write(religue + "\n" + f"Confira os dados conta por conta no dia seguinte, até {hora(agora + CONFERENCIA)} "
+                "(7 dias da volta, a janela do PITR).\n")
 estado["primeiraFalha"] = None
 estado["apiDesligadaEm"] = None
 estado["cobrancaTiradaEm"] = None
-motivo = os.environ["MOTIVO"]
 if motivo:
     # A lista só cresce: o registro de um --forcar não apaga o de outro. AGORA (testes) fixa a hora.
     try:
@@ -340,14 +383,12 @@ if motivo:
             disse = f.read().splitlines()
     except OSError:
         disse = []
-    agora = os.environ.get("AGORA")
-    quando = datetime.strptime(agora[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc) if agora else datetime.now(timezone.utc)
     anteriores = estado.get("religadosForcados")
     lista = anteriores if isinstance(anteriores, list) else ([] if anteriores is None else [anteriores])
-    estado["religadosForcados"] = lista + [{
-        "em": quando.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
-        "motivo": motivo, "resultado": os.environ["RESULTADO"], "trava": disse,
-    }]
+    registro = {"em": agora_iso, "motivo": motivo, "resultado": os.environ["RESULTADO"], "trava": disse}
+    if segunda_volta:
+        registro["voltaAnterior"] = voltou
+    estado["religadosForcados"] = lista + [registro]
 with open(destino, "w", encoding="utf-8") as f:
     json.dump(estado, f, ensure_ascii=False)
 with open(vale_agora, "w", encoding="utf-8") as f:
@@ -356,11 +397,29 @@ PY
   gcloud storage cp "$PASTA/novo.json" "$OBJETO" --if-generation-match="$geracao" || return 1
 }
 
-if ! gravar_base; then
+# Saída 5 do gravar_base: segunda volta da cobrança no mês sem --forcar. Recusa sem repetir.
+GRAVOU=0
+gravar_base || GRAVOU=$?
+if [ "$GRAVOU" -ne 0 ] && [ "$GRAVOU" -ne 5 ]; then
   echo "não gravou a base: tentando mais uma vez" >&2
-  gravar_base || { echo "base não gravada: a API NÃO foi religada" >&2; exit 1; }
+  GRAVOU=0
+  gravar_base || GRAVOU=$?
 fi
+if [ "$GRAVOU" -eq 5 ]; then cat "$PASTA/recusa.txt" >&2; exit 5; fi
+[ "$GRAVOU" -eq 0 ] || { echo "base não gravada: a API NÃO foi religada" >&2; exit 1; }
 
-gcloud services enable firestore.googleapis.com --project "$PROJETO_ALVO"
-echo "API religada. Abra um aparelho por vez: o último a subir regrava o documento inteiro."
+# Depois de um corte que tirou a cobrança, a API pode ter seguido ligada (modo oficial-alerta).
+# Sem conseguir listar, religa como antes.
+religar_api=1
+if [ -f "$PASTA/volta.txt" ]; then
+  ligadas="$(gcloud services list --enabled --project "$PROJETO_ALVO" --format='value(config.name)')" || ligadas=""
+  if printf '%s\n' "$ligadas" | grep -qx 'firestore.googleapis.com'; then religar_api=0; fi
+fi
+if [ "$religar_api" -eq 1 ]; then
+  gcloud services enable firestore.googleapis.com --project "$PROJETO_ALVO"
+  echo "API religada. Abra um aparelho por vez: o último a subir regrava o documento inteiro."
+else
+  echo "A API do Firestore seguiu ligada: o app ficou no gratuito."
+fi
+[ -f "$PASTA/volta.txt" ] && cat "$PASTA/volta.txt"
 cat "$PASTA/vale-agora.txt"

@@ -169,6 +169,14 @@ test('regra: no modo oficial o projeto tira a cobrança em R$ 60 e o de fora nã
   assert.equal(regra.decidirOrcamento('projeto', 6000, 'dois-tempos'), 'desligar-api');
 });
 
+test('regra: no modo oficial-alerta o projeto tira a cobrança em R$ 60, e o de fora não muda', ()=>{
+  assert.equal(regra.decidirOrcamento('projeto', 5999, 'oficial-alerta'), 'nada');
+  assert.equal(regra.decidirOrcamento('projeto', 6000, 'oficial-alerta'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('projeto', 30000, 'oficial-alerta'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('fora', 9999, 'oficial-alerta'), 'nada');
+  assert.equal(regra.decidirOrcamento('fora', 10000, 'oficial-alerta'), 'tirar-cobranca');
+});
+
 test('regra: modo do corte só aceita o texto exato, e sem variável vale dois-tempos', ()=>{
   assert.equal(regra.modoDoCorte(undefined), 'dois-tempos');
   assert.equal(regra.modoDoCorte('dois-tempos'), 'dois-tempos');

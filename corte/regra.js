@@ -98,11 +98,12 @@ function modoDoCorte(valor){
   return valor === 'dois-tempos' || valor === 'oficial' ? valor : null;
 }
 
-/* No modo oficial, a receita do Google, o orçamento do projeto vai direto à cobrança. */
+/* Nos dois modos oficiais, a receita do Google, o orçamento do projeto vai direto à cobrança; no
+   oficial-alerta, com a API de reserva (index.js). */
 function decidirOrcamento(papel, custoCentavos, modo = 'dois-tempos'){
   if(papel === 'fora') return custoCentavos >= LIMITE_COBRANCA ? 'tirar-cobranca' : 'nada';
   if(custoCentavos < LIMITE_API) return 'nada';
-  return modo === 'oficial' ? 'tirar-cobranca' : 'desligar-api';
+  return modo === 'oficial' || modo === 'oficial-alerta' ? 'tirar-cobranca' : 'desligar-api';
 }
 
 /* A cobrança só sai pelo orçamento do projeto quando a API não ficou desligada: é o que o

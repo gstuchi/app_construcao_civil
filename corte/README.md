@@ -8,6 +8,8 @@ Cloud Run function em projeto próprio (`custta-corte`), fora do app. Recebe do 
 
 Com `MODO_CORTE=oficial`, a receita oficial do Google para a volta às provas reprovadas, é um tempo só: R$ 60 no orçamento do projeto tira a cobrança na hora, sem tentar desligar a API, e o alerta de leituras só registra. O orçamento de fora do Firestore não muda. O padrão é `dois-tempos`; valor desconhecido dá `corte-erro` e nenhuma ação.
 
+Com `MODO_CORTE=oficial-alerta`, a direção do conselho de 17/11, a cobrança sai primeiro: o alerta de leituras aberto e o orçamento do projeto em R$ 60, a cada mensagem, tiram a cobrança, e a função confere que `billingEnabled` caiu (até 6 leituras, 10 s entre elas). Erro na retirada, ou falta de confirmação, desliga a API de reserva, e o `corte-acao` diz que foi reserva e por quê. O orçamento de fora do Firestore segue como nos outros modos, sem reserva. `ARMADO_COBRANCA` arma a retirada, e `ARMADO_API`, só a reserva: com a cobrança desarmada, a função só registra que faria, mesmo com a API armada.
+
 Nunca religa nada. Os dois interruptores (`ARMADO_API`, `ARMADO_COBRANCA`) começam em `false`: desarmada, a função só registra o que faria.
 
 - `implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]`: implanta a função.

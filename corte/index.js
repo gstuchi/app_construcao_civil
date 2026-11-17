@@ -7,6 +7,12 @@ const regra = require('./regra.js');
 const FRAMEWORK = '@google-cloud/functions-framework';
 const VOLTAS_CONFIRMA = 6;
 const ESPERA_CONFIRMA_MS = 10000;
+/* Prazo do modo oficial-alerta. A conferência da cobrança para de esperar 150 s depois da chegada da
+   mensagem. Com cada pedido no prazo de 30 s do google.js, ela termina antes de 190 s (uma espera de
+   10 s e uma leitura depois da última olhada no relógio), e a reserva pede o services.get e o
+   disable antes de 220 s: o disable sai dentro dos 300 s do implantar.sh. Sem o teto, leituras
+   lentas da cobrança comeriam o prazo antes da reserva, a cada repetição do Pub/Sub. */
+const TETO_COBRANCA_MS = 150000;
 
 /* Dependências de corte/ só carregam quando a função roda: o teste da raiz não as instala. */
 function carregarPadrao(env){
@@ -32,8 +38,10 @@ function criarManipulador({
   const google = () => (memo = memo || carregar(env));
   const logar = (severity, marca, message, extra) => escrever(JSON.stringify({ severity, message, marca, ...extra }));
   const acao = (message, extra) => logar('ALERT', 'corte-acao', message, extra);
-  /* O corte pelo alerta diz na mensagem qual condição abriu; o do orçamento não tem condição. */
+  /* O corte pelo alerta diz na mensagem qual condição abriu; o do orçamento não tem condição. A
+     reserva do modo oficial-alerta diz que é reserva e por quê, para o e-mail apontar a volta certa. */
   const pela = contexto => (contexto.condicao ? `: ${contexto.condicao}` : '');
+  const naReserva = contexto => (contexto.reserva ? ` na reserva da cobrança (${contexto.reserva})` : '');
 
   /* Depois do erro basta uma leitura: o pedido não foi aceito, nada vai mudar. Depois do sucesso,
      dá tempo à operação. Sem nenhuma leitura boa não há prova de nada: relança sem contar falha. */
@@ -60,8 +68,8 @@ function criarManipulador({
       return { fez: 'API já estava desligada' };
     }
     if(!config.armadoApi){
-      acao(`faria desligar a API do Firestore (ARMADO_API=false)${pela(contexto)}`, { acao: 'faria-desligar-api', ...contexto });
-      return { fez: 'faria desligar a API' };
+      acao(`faria desligar a API do Firestore${naReserva(contexto)} (ARMADO_API=false)${pela(contexto)}`, { acao: 'faria-desligar-api', ...contexto });
+      return { fez: 'faria desligar a API', desarmada: true };
     }
     let erroDesligar = null;
     try{
@@ -73,7 +81,7 @@ function criarManipulador({
        quanto "tem serviço dependente". */
     if(await confirmarDesligada(erroDesligar ? 1 : VOLTAS_CONFIRMA)){
       await g.atualizarEstado(e => regra.registrarApiDesligada(e, iso));
-      acao(`API do Firestore desligada${pela(contexto)}`, { acao: 'desligar-api', ...contexto });
+      acao(`API do Firestore desligada${naReserva(contexto)}${pela(contexto)}`, { acao: 'desligar-api', ...contexto });
       return { fez: 'desligou a API' };
     }
     const estado = await g.atualizarEstado(e => regra.registrarFalha(e, iso));
@@ -98,6 +106,75 @@ function criarManipulador({
     await g.atualizarEstado(e => regra.registrarCobrancaTirada(e, iso));
     acao(`cobrança do projeto tirada: ${motivo}`, { acao: 'tirar-cobranca', ...contexto });
     return { fez: 'tirou a cobrança', resolvido: true };
+  }
+
+  /* Como confirmarDesligada, para a cobrança: billingEnabled falso confirma. Leitura que falha não
+     confirma; no modo oficial-alerta, sem confirmação entra a reserva. Para de esperar no teto. */
+  async function confirmarCobrancaTirada(inicioMs){
+    let viuLigada = false, erroLeitura = null;
+    for(let i = 0; i < VOLTAS_CONFIRMA; i++){
+      if(i > 0){
+        if(agora().getTime() - inicioMs >= TETO_COBRANCA_MS) break;
+        await esperar(ESPERA_CONFIRMA_MS);
+      }
+      try{
+        if(!await google().cobrancaLigada()) return { tirada: true };
+        viuLigada = true;
+      }catch(e){
+        erroLeitura = e;
+      }
+    }
+    return { tirada: false, viuLigada, erroLeitura };
+  }
+
+  /* Modo oficial-alerta: a cobrança sai primeiro, e a API é a reserva. Com ARMADO_COBRANCA=false só
+     registra, mesmo com a API armada: armar pela metade não pode virar a B calada. A reserva que
+     desliga a API, ou que a acha já desligada, para o gasto; desarmada ou com falha, relança, para
+     o Pub/Sub repetir. */
+  async function tirarCobrancaComReserva(contexto, iso, motivo){
+    const g = google();
+    /* Leitura que falha antes do pedido: desarmada, relança sem tocar em nada; armada, tenta tirar e
+       confere, como se estivesse ligada (pedir de novo, já tirada, não muda nada). */
+    let ligada;
+    try{
+      ligada = await g.cobrancaLigada();
+    }catch(e){
+      if(!config.armadoCobranca) throw e;
+      ligada = null;
+    }
+    if(ligada === false){
+      await g.atualizarEstado(e => regra.registrarCobrancaConfirmada(e, iso));
+      return { fez: 'cobrança já estava tirada' };
+    }
+    if(!config.armadoCobranca){
+      acao(`faria tirar a cobrança do projeto (ARMADO_COBRANCA=false): ${motivo}`, { acao: 'faria-tirar-cobranca', ...contexto });
+      return { fez: 'faria tirar a cobrança' };
+    }
+    let erroTirar = null;
+    try{
+      await g.tirarCobranca();
+    }catch(e){
+      erroTirar = e;
+    }
+    /* Vale o estado real, e depois do erro a conferência é inteira, não uma leitura só como no
+       desligarApi: outra execução pode estar tirando a cobrança agora (o 2º open de um ataque), e uma
+       reserva por engano derruba o app que este modo quer manter no gratuito. */
+    const conferida = await confirmarCobrancaTirada(Date.parse(iso));
+    if(conferida.tirada){
+      /* O aviso sai antes de gravar: com o bucket fora, a repetição acha a cobrança já tirada e só
+         registraria, e o "o corte agiu" nunca sairia. */
+      acao(`cobrança do projeto tirada: ${motivo}`, { acao: 'tirar-cobranca', ...contexto });
+      await g.atualizarEstado(e => regra.registrarCobrancaConfirmada(e, iso));
+      return { fez: 'tirou a cobrança' };
+    }
+    const porque = erroTirar ? `erro ao tirar a cobrança: ${erroTirar.message}`
+      : conferida.viuLigada ? 'a cobrança continuou ligada depois do pedido de tirar'
+        : `a cobrança não pôde ser conferida depois do pedido de tirar: ${conferida.erroLeitura.message}`;
+    const r = await desligarApi({ ...contexto, reserva: porque }, iso);
+    const fez = `reserva: ${r.fez}`;
+    if(r.falhou) return { fez, falhou: true, erro: r.erro };
+    if(r.desarmada) return { fez, falhou: true, erro: erroTirar || new Error(porque) };
+    return { fez };
   }
 
   async function tratarOrcamento(msg, passagem, instante){
@@ -128,6 +205,12 @@ function criarManipulador({
     const decisao = regra.decidirOrcamento(papel, aplicado.custoCentavos, config.modo);
     if(decisao === 'nada') return;
     if(decisao === 'tirar-cobranca'){
+      if(papel === 'projeto' && config.modo === 'oficial-alerta'){
+        const r = await tirarCobrancaComReserva(contexto, instante.toISOString(), 'modo oficial-alerta: gasto do projeto chegou a R$ 60');
+        passagem.fez = r.fez;
+        if(r.falhou) throw r.erro;
+        return;
+      }
       const motivo = papel === 'fora' ? 'gasto fora do Firestore passou de R$ 100' : 'modo oficial: gasto do projeto chegou a R$ 60';
       passagem.fez = (await tirarCobranca(contexto, instante.toISOString(), motivo)).fez;
       return;
@@ -156,6 +239,12 @@ function criarManipulador({
     }
     if(config.modo === 'oficial'){
       passagem.fez = 'só registrou o alerta: o modo oficial não age nele';
+      return;
+    }
+    if(config.modo === 'oficial-alerta'){
+      const r = await tirarCobrancaComReserva(incidente, instante.toISOString(), `alerta de leituras aberto${pela(incidente)}`);
+      passagem.fez = r.fez;
+      if(r.falhou) throw r.erro;
       return;
     }
     const r = await desligarApi(incidente, instante.toISOString());

@@ -95,7 +95,7 @@ function papelDoOrcamento(nome, config){
 /* Sem a variável vale dois-tempos. Qualquer outro texto devolve null: a função não age. */
 function modoDoCorte(valor){
   if(valor === undefined) return 'dois-tempos';
-  return valor === 'dois-tempos' || valor === 'oficial' ? valor : null;
+  return valor === 'dois-tempos' || valor === 'oficial' || valor === 'oficial-alerta' ? valor : null;
 }
 
 /* Nos dois modos oficiais, a receita do Google, o orçamento do projeto vai direto à cobrança; no
@@ -127,8 +127,15 @@ function registrarCobrancaTirada(estado, agora){
   return estado.cobrancaTiradaEm ? estado : { ...estado, cobrancaTiradaEm: agora };
 }
 
+/* No modo oficial-alerta, a cobrança confirmada fora para o gasto: encerra também a falha de desligar
+   que uma reserva tenha deixado, para ela não pesar se o modo voltar a ser o dois-tempos. */
+function registrarCobrancaConfirmada(estado, agora){
+  if(estado.cobrancaTiradaEm && !estado.primeiraFalha) return estado;
+  return { ...estado, cobrancaTiradaEm: estado.cobrancaTiradaEm || agora, primeiraFalha: null };
+}
+
 module.exports = {
   LIMITE_API, LIMITE_COBRANCA, ESPERA_FALHA_MS, MensagemIlegivel,
   estadoNormal, intervaloDe, interpretar, aplicarOrcamento, papelDoOrcamento, modoDoCorte, decidirOrcamento,
-  deveTirarCobrancaPorFalha, registrarFalha, registrarApiDesligada, registrarCobrancaTirada,
+  deveTirarCobrancaPorFalha, registrarFalha, registrarApiDesligada, registrarCobrancaTirada, registrarCobrancaConfirmada,
 };

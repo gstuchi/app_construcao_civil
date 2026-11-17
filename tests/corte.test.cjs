@@ -25,9 +25,42 @@ test('regra: o mês sai certo em qualquer fuso do início do período', ()=>{
   assert.equal(regra.interpretar(eventoDe(msgOrcamento(1, { costIntervalStart: '2027-01-01T08:00:00Z' }))).intervalo, '2027-01');
 });
 
-test('regra: incidente traz a política e o estado', ()=>{
+test('regra: incidente traz a política e o estado; sem condição nem valores, eles vêm nulos', ()=>{
   assert.deepEqual(regra.interpretar(eventoDe({ version: '1.2', incident: { incident_id: 'x', policy_name: 'leituras', state: 'open' } })),
-    { tipo: 'incidente', politica: 'leituras', estado: 'open' });
+    { tipo: 'incidente', politica: 'leituras', estado: 'open', condicao: null, valorObservado: null, limiar: null });
+});
+
+/* O aviso como o Monitoring publica (versão 1.2, do T4 de 12/11, com os IDs trocados): o valor
+   observado e o limiar vêm em texto. */
+const avisoReal = ({ condicao = 'Leituras do Firestore: mais de 2.000 em 1 h', observado = '2512.000', limiar = '2000', estado = 'open', politica = 'leituras' } = {}) => ({
+  version: '1.2',
+  incident: {
+    condition: { conditionThreshold: { aggregations: [{ alignmentPeriod: '3600s', crossSeriesReducer: 'REDUCE_SUM', perSeriesAligner: 'ALIGN_SUM' }],
+      comparison: 'COMPARISON_GT', duration: '0s', filter: 'metric.type="firestore.googleapis.com/document/read_ops_count"', thresholdValue: 2000, trigger: { count: 1 } },
+    displayName: condicao, name: 'projects/alvo/alertPolicies/1/conditions/2' },
+    condition_name: condicao, ended_at: null, incident_id: '0.abc', metadata: { system_labels: {}, user_labels: {} },
+    metric: { displayName: 'Document reads', labels: {}, type: 'firestore.googleapis.com/document/read_ops_count' },
+    observed_value: observado, policy_name: politica,
+    resource: { labels: { project_id: 'alvo', resource_container: '1' }, type: 'firestore.googleapis.com/Database' },
+    resource_id: '', resource_name: 'alvo Firestore Database', resource_type_display_name: 'Firestore Database',
+    scoping_project_id: 'alvo', scoping_project_number: 1, severity: 'No severity', started_at: 1794516898, state: estado,
+    summary: 'Document reads for alvo Firestore Database is above the threshold of 2000.000 with a value of 2512.000.',
+    threshold_value: limiar, url: 'https://console.cloud.google.com/monitoring/alerting/alerts/0.abc',
+  },
+});
+
+test('regra: incidente traz a condição, cortada em 200, e o valor observado e o limiar como número', ()=>{
+  assert.deepEqual(regra.interpretar(eventoDe(avisoReal())),
+    { tipo: 'incidente', politica: 'leituras', estado: 'open', condicao: 'Leituras do Firestore: mais de 2.000 em 1 h', valorObservado: 2512, limiar: 2000 });
+  const numero = v => regra.interpretar(eventoDe(avisoReal({ observado: v }))).valorObservado;
+  assert.equal(numero('586.000'), 586, 'texto do Monitoring vira número: 586, não 586 mil');
+  assert.equal(numero(' 2512.5 '), 2512.5);
+  assert.equal(numero(2512), 2512);
+  for(const ruim of ['', '  ', 'abc', '1e3', '0x10', 'Infinity', '586,000', true, null, {}, []]) assert.equal(numero(ruim), null, JSON.stringify(ruim));
+  assert.equal(regra.interpretar(eventoDe(avisoReal({ limiar: 'dois mil' }))).limiar, null);
+  const condicao = c => regra.interpretar(eventoDe(avisoReal({ condicao: c }))).condicao;
+  assert.equal(condicao('x'.repeat(300)), 'x'.repeat(200));
+  for(const ruim of [123, null, '', '   ', ['a']]) assert.equal(condicao(ruim), null, JSON.stringify(ruim));
 });
 
 test('regra: mensagem ilegível lança MensagemIlegivel', ()=>{
@@ -610,6 +643,50 @@ test('cenário 10: dois e três open seguidos com a API já desligada dão um co
       assert.equal(passagemUnica(r).fez, 'API já estava desligada', caso);
     }
   }
+});
+
+test('cenário 10: o corte-acao e a passagem do open dizem a condição, o valor observado e o limiar', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, avisoReal());
+  assert.equal(r.erro, null);
+  const [a] = r.de('corte-acao');
+  assert.equal(a.acao, 'desligar-api');
+  assert.equal(a.condicao, 'Leituras do Firestore: mais de 2.000 em 1 h');
+  assert.equal(a.valorObservado, 2512);
+  assert.equal(a.limiar, 2000);
+  assert.equal(a.politica, 'leituras');
+  assert.equal(a.message, 'API do Firestore desligada: Leituras do Firestore: mais de 2.000 em 1 h');
+  const p = passagemUnica(r);
+  assert.deepEqual([p.condicao, p.valorObservado, p.limiar], ['Leituras do Firestore: mais de 2.000 em 1 h', 2512, 2000]);
+
+  const desarmada = await rodar(googleFalso(), avisoReal({ condicao: 'Leituras do Firestore: mais de 2.500 em 5 min', observado: '2700', limiar: '2500' }), { env: { ARMADO_API: 'false' } });
+  const [f] = desarmada.de('corte-acao');
+  assert.equal(f.acao, 'faria-desligar-api');
+  assert.deepEqual([f.condicao, f.valorObservado, f.limiar], ['Leituras do Firestore: mais de 2.500 em 5 min', 2700, 2500]);
+  assert.match(f.message, /^faria desligar a API do Firestore \(ARMADO_API=false\): Leituras do Firestore: mais de 2\.500 em 5 min$/);
+});
+
+test('cenário 10: open sem a condição e os valores, ou com tipo errado, corta igual', async ()=>{
+  for(const corpo of [incidente('leituras', 'open'), avisoReal({ condicao: 42, observado: 'muito', limiar: {} })]){
+    const g = googleFalso();
+    const r = await rodar(g, corpo);
+    assert.equal(r.erro, null);
+    assert.deepEqual(semEstado(g.chamadas), ['api-ler', 'api-desligar', 'api-ler']);
+    const [a] = r.de('corte-acao');
+    assert.equal(a.acao, 'desligar-api');
+    assert.deepEqual([a.condicao, a.valorObservado, a.limiar], [null, null, null]);
+    assert.equal(a.message, 'API do Firestore desligada');
+  }
+});
+
+test('cenário 10: o segundo open, que não corta, ainda deixa na passagem qual condição abriu', async ()=>{
+  const g = googleFalso();
+  await rodar(g, avisoReal({ condicao: 'Leituras do Firestore: mais de 2.500 em 5 min', observado: '2700', limiar: '2500' }));
+  const r = await rodar(g, avisoReal({ condicao: 'Leituras do Firestore: mais de 2.000 em 1 h', observado: '4500', limiar: '2000' }), { agora: mais(T0, 34000) });
+  assert.deepEqual(r.de('corte-acao'), []);
+  const p = passagemUnica(r);
+  assert.equal(p.fez, 'API já estava desligada');
+  assert.deepEqual([p.condicao, p.valorObservado, p.limiar], ['Leituras do Firestore: mais de 2.000 em 1 h', 4500, 2000]);
 });
 
 test('cenário 11: desarmado só registra que faria', async ()=>{

@@ -32,6 +32,8 @@ function criarManipulador({
   const google = () => (memo = memo || carregar(env));
   const logar = (severity, marca, message, extra) => escrever(JSON.stringify({ severity, message, marca, ...extra }));
   const acao = (message, extra) => logar('ALERT', 'corte-acao', message, extra);
+  /* O corte pelo alerta diz na mensagem qual condição abriu; o do orçamento não tem condição. */
+  const pela = contexto => (contexto.condicao ? `: ${contexto.condicao}` : '');
 
   /* Depois do erro basta uma leitura: o pedido não foi aceito, nada vai mudar. Depois do sucesso,
      dá tempo à operação. Sem nenhuma leitura boa não há prova de nada: relança sem contar falha. */
@@ -58,7 +60,7 @@ function criarManipulador({
       return { fez: 'API já estava desligada' };
     }
     if(!config.armadoApi){
-      acao('faria desligar a API do Firestore (ARMADO_API=false)', { acao: 'faria-desligar-api', ...contexto });
+      acao(`faria desligar a API do Firestore (ARMADO_API=false)${pela(contexto)}`, { acao: 'faria-desligar-api', ...contexto });
       return { fez: 'faria desligar a API' };
     }
     let erroDesligar = null;
@@ -71,7 +73,7 @@ function criarManipulador({
        quanto "tem serviço dependente". */
     if(await confirmarDesligada(erroDesligar ? 1 : VOLTAS_CONFIRMA)){
       await g.atualizarEstado(e => regra.registrarApiDesligada(e, iso));
-      acao('API do Firestore desligada', { acao: 'desligar-api', ...contexto });
+      acao(`API do Firestore desligada${pela(contexto)}`, { acao: 'desligar-api', ...contexto });
       return { fez: 'desligou a API' };
     }
     const estado = await g.atualizarEstado(e => regra.registrarFalha(e, iso));
@@ -142,7 +144,8 @@ function criarManipulador({
   }
 
   async function tratarIncidente(msg, passagem, instante){
-    passagem.politica = msg.politica;
+    const incidente = { politica: msg.politica, condicao: msg.condicao, valorObservado: msg.valorObservado, limiar: msg.limiar };
+    Object.assign(passagem, incidente);
     if(msg.estado !== 'open') return;
     /* O canal é só do alerta de leituras: política com outro nome é configuração errada, e calar
        aqui desligaria o caminho rápido do corte sem ninguém saber. */
@@ -155,7 +158,7 @@ function criarManipulador({
       passagem.fez = 'só registrou o alerta: o modo oficial não age nele';
       return;
     }
-    const r = await desligarApi({ politica: msg.politica }, instante.toISOString());
+    const r = await desligarApi(incidente, instante.toISOString());
     passagem.fez = r.fez;
     if(r.falhou) throw r.erro;
   }

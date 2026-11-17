@@ -30,10 +30,25 @@ function interpretarOrcamento(c){
   return { tipo: 'orcamento', nome: c.budgetDisplayName, custo: c.costAmount, moeda: c.currencyCode, intervalo };
 }
 
+const TAMANHO_CONDICAO = 200;
+
+/* O Monitoring manda o valor observado e o limiar em texto ("586.000"): no registro vão como
+   número, para "586.000" não ser lido como 586 mil. Fora disso, null; o corte não depende deles. */
+function numeroDoIncidente(valor){
+  if(typeof valor === 'number') return Number.isFinite(valor) ? valor : null;
+  return typeof valor === 'string' && /^-?\d+(\.\d+)?$/.test(valor.trim()) ? Number(valor) : null;
+}
+
+/* Com três condições em OR, cada uma abre o próprio incidente: condition_name diz qual janela foi. */
 function interpretarIncidente(inc){
   if(!inc || typeof inc.policy_name !== 'string' || typeof inc.state !== 'string')
     throw new MensagemIlegivel('incidente sem policy_name ou state');
-  return { tipo: 'incidente', politica: inc.policy_name, estado: inc.state };
+  const nome = typeof inc.condition_name === 'string' ? inc.condition_name.trim() : '';
+  return {
+    tipo: 'incidente', politica: inc.policy_name, estado: inc.state,
+    condicao: nome ? nome.slice(0, TAMANHO_CONDICAO) : null,
+    valorObservado: numeroDoIncidente(inc.observed_value), limiar: numeroDoIncidente(inc.threshold_value),
+  };
 }
 
 /* evento é o CloudEvent do Pub/Sub: data.message.data traz o JSON em base64. */

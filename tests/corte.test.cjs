@@ -1672,6 +1672,27 @@ test('religar: --forcar sem conseguir gravar a base não religa nem deixa regist
   assert.equal(r.gravado, null);
 });
 
+test('religar: o registro do --forcar sobrevive às regravações da função, em todo caminho que regrava o estado', async ()=>{
+  const forcados = [{ em: '2026-11-17T18:00:00.000Z', motivo: 'corte falso', resultado: 'segura', trava: ['Trava: linha'] }];
+  const com = (orcamentos, resto = {}) => googleFalso({ estado: estadoCom(orcamentos, { religadosForcados: forcados, ...resto }) });
+  const falhando = com({ projeto: noMes(10) });
+  falhando.falhar['api-desligar'] = [new ErroHttp(403)];
+  const casos = [
+    ['maiorCusto sobe', com({ projeto: noMes(10) }), msgOrcamento(20)],
+    ['orçamento desliga a API', com({ projeto: noMes(10) }), msgOrcamento(70)],
+    ['alerta desliga a API', com({}), incidente('leituras', 'open')],
+    ['falha ao desligar', falhando, msgOrcamento(70)],
+    ['cobrança tirada', com({}), foraDe(100)],
+    ['API já desligada encerra a falha', com({}, { primeiraFalha: T0 }), incidente('leituras', 'open')],
+  ];
+  casos[5][1].api = 'DISABLED';
+  for(const [nome, g, corpo] of casos){
+    await rodar(g, corpo);
+    assert.ok(g.enviados.length > 0, `${nome}: o caso precisa regravar o estado`);
+    for(const enviado of g.enviados) assert.deepEqual(enviado.religadosForcados, forcados, nome);
+  }
+});
+
 test('religar: a recusa ensina o caminho do corte falso: subir o limiar e forçar com motivo', async ()=>{
   const segura = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: SEGURA_1H });
   assert.equal(segura.status, 3);

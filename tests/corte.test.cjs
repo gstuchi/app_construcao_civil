@@ -861,7 +861,7 @@ test('index registra a função receber no framework de CloudEvents', ()=>{
 
 /* Os scripts rodam de verdade, com um gcloud falso no PATH que anota cada chamada, com os
    argumentos separados por |, na ordem em que chegaram. */
-const { spawnSync } = require('node:child_process');
+const { spawnSync, spawn } = require('node:child_process');
 const { mkdtempSync, writeFileSync, readFileSync, chmodSync, existsSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
@@ -884,7 +884,7 @@ case "$1 $2" in
 esac
 `;
 
-function rodarScript(nome, args, { estado = '{}', falhasCp = 0, env = {}, semObjeto = false, falhaEnable = false } = {}){
+function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaEnable = false } = {}){
   const dir = mkdtempSync(path.join(tmpdir(), 'corte-gcloud-'));
   writeFileSync(path.join(dir, 'gcloud'), GCLOUD_FALSO);
   chmodSync(path.join(dir, 'gcloud'), 0o755);
@@ -892,15 +892,36 @@ function rodarScript(nome, args, { estado = '{}', falhasCp = 0, env = {}, semObj
   writeFileSync(path.join(dir, 'falhas-cp'), String(falhasCp));
   if(semObjeto) writeFileSync(path.join(dir, 'sem-objeto'), '');
   if(falhaEnable) writeFileSync(path.join(dir, 'falha-enable'), '');
-  const r = spawnSync('bash', [path.join(PASTA_CORTE, nome), ...args], {
-    encoding: 'utf8', cwd: tmpdir(), env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, GCLOUD_DIR: dir, ...env },
-  });
+  return dir;
+}
+const ambienteDe = (dir, env) => ({ ...process.env, PATH: `${dir}:${process.env.PATH}`, GCLOUD_DIR: dir, ...env });
+function resultadoDe(dir, status, stdout, stderr){
   const arquivoLog = path.join(dir, 'log'), gravado = path.join(dir, 'gravado.json');
   return {
-    status: r.status, saida: r.stdout + r.stderr,
+    status, saida: stdout + stderr,
     log: existsSync(arquivoLog) ? readFileSync(arquivoLog, 'utf8').split('\n').filter(Boolean).map(l => l.split('|')) : [],
     gravado: existsSync(gravado) ? JSON.parse(readFileSync(gravado, 'utf8')) : null,
   };
+}
+
+function rodarScript(nome, args, { env = {}, ...opcoes } = {}){
+  const dir = prepararGcloud(opcoes);
+  const r = spawnSync('bash', [path.join(PASTA_CORTE, nome), ...args], { encoding: 'utf8', cwd: tmpdir(), env: ambienteDe(dir, env) });
+  return resultadoDe(dir, r.status, r.stdout, r.stderr);
+}
+
+/* O religar roda sem bloquear o processo do teste, para um servidor falso daqui poder responder
+   a ele enquanto roda; o spawnSync pararia o laço de eventos até o fim do script. */
+function rodarReligar(args, { env = {}, ...opcoes } = {}){
+  const dir = prepararGcloud(opcoes);
+  return new Promise((resolve, reject) => {
+    const filho = spawn('bash', [path.join(PASTA_CORTE, 'religar.sh'), ...args], { cwd: tmpdir(), env: ambienteDe(dir, env) });
+    let stdout = '', stderr = '';
+    filho.stdout.setEncoding('utf8').on('data', d => { stdout += d; });
+    filho.stderr.setEncoding('utf8').on('data', d => { stderr += d; });
+    filho.on('error', reject);
+    filho.on('close', status => resolve(resultadoDe(dir, status, stdout, stderr)));
+  });
 }
 const ESTADO_CORTADO = {
   orcamentos: { 'custta-projeto': { intervalo: '2026-11', base: 0, maiorCusto: 84.2 }, 'custta-fora-firestore': { intervalo: '2026-11', base: 3, maiorCusto: 12.5 } },
@@ -909,8 +930,8 @@ const ESTADO_CORTADO = {
 const OBJETO_GS = 'gs://custta-corte-estado/estado.json';
 const nomeDe = chamada => chamada.slice(0, 3).join(' ');
 
-test('religar: lê a geração, depois o conteúdo, grava condicionado e só então religa', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO });
+test('religar: lê a geração, depois o conteúdo, grava condicionado e só então religa', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.log.map(nomeDe), [
     `storage objects describe`, `storage cat ${OBJETO_GS}`, `storage cp ${r.log[2][2]}`, 'services enable firestore.googleapis.com',
@@ -920,8 +941,8 @@ test('religar: lê a geração, depois o conteúdo, grava condicionado e só ent
   assert.deepEqual(r.log[3], ['services', 'enable', 'firestore.googleapis.com', '--project', 'app-construcao-civil']);
 });
 
-test('religar: com a cobrança tirada, base vira o maiorCusto nos dois orçamentos e os três registros zeram', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO });
+test('religar: com a cobrança tirada, base vira o maiorCusto nos dois orçamentos e os três registros zeram', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.gravado, {
     orcamentos: { 'custta-projeto': { intervalo: '2026-11', base: 84.2, maiorCusto: 84.2 }, 'custta-fora-firestore': { intervalo: '2026-11', base: 12.5, maiorCusto: 12.5 } },
@@ -929,10 +950,10 @@ test('religar: com a cobrança tirada, base vira o maiorCusto nos dois orçament
   });
 });
 
-test('religar: sem cobrança tirada, o orçamento de fora do Firestore não muda, com folga ou sem', ()=>{
+test('religar: sem cobrança tirada, o orçamento de fora do Firestore não muda, com folga ou sem', async ()=>{
   const estado = { ...ESTADO_CORTADO, cobrancaTiradaEm: null };
   for(const args of [[], ['--folga', '15']]){
-    const r = rodarScript('religar.sh', args, { estado });
+    const r = await rodarReligar(args, { estado });
     assert.equal(r.status, 0, r.saida);
     assert.deepEqual(r.gravado.orcamentos['custta-fora-firestore'], ESTADO_CORTADO.orcamentos['custta-fora-firestore'], args.join(' '));
     assert.equal(r.gravado.primeiraFalha, null);
@@ -941,12 +962,12 @@ test('religar: sem cobrança tirada, o orçamento de fora do Firestore não muda
   }
 });
 
-test('religar: com a cobrança tirada, --folga soma às bases dos dois orçamentos, sem ruído de ponto flutuante', ()=>{
-  const r = rodarScript('religar.sh', ['--folga', '15'], { estado: ESTADO_CORTADO });
+test('religar: com a cobrança tirada, --folga soma às bases dos dois orçamentos, sem ruído de ponto flutuante', async ()=>{
+  const r = await rodarReligar(['--folga', '15'], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   assert.equal(r.gravado.orcamentos['custta-projeto'].base, 99.2);
   assert.equal(r.gravado.orcamentos['custta-fora-firestore'].base, 27.5, 'o custo atrasado do ataque também chega ao orçamento de fora');
-  const fino = rodarScript('religar.sh', ['--folga', '0.1'], { estado: {
+  const fino = await rodarReligar(['--folga', '0.1'], { estado: {
     orcamentos: { 'custta-projeto': noMes(0.2), 'custta-fora-firestore': noMes(0.2) }, cobrancaTiradaEm: '2026-11-09T14:00:00.000Z',
   } });
   assert.equal(fino.gravado.orcamentos['custta-projeto'].base, 0.3);
@@ -955,7 +976,7 @@ test('religar: com a cobrança tirada, --folga soma às bases dos dois orçament
 
 test('religar: com a folga no orçamento de fora, o custo atrasado do mesmo ataque não tira a cobrança de novo', async ()=>{
   const cortado = { orcamentos: { projeto: noMes(40), fora: noMes(101) }, primeiraFalha: null, apiDesligadaEm: null, cobrancaTiradaEm: T0 };
-  const r = rodarScript('religar.sh', ['--folga', '150'], { estado: cortado, env: { ORCAMENTO_PROJETO: 'projeto', ORCAMENTO_FORA_FIRESTORE: 'fora' } });
+  const r = await rodarReligar(['--folga', '150'], { estado: cortado, env: { ORCAMENTO_PROJETO: 'projeto', ORCAMENTO_FORA_FIRESTORE: 'fora' } });
   assert.equal(r.status, 0, r.saida);
   const g = googleFalso({ cobranca: true, estado: r.gravado });
   const relatorio = await rodar(g, foraDe(205));
@@ -964,18 +985,18 @@ test('religar: com a folga no orçamento de fora, o custo atrasado do mesmo ataq
   assert.equal(passagemUnica(relatorio).fez, 'nada');
 });
 
-test('religar: os nomes dos orçamentos trocam por ambiente; orçamento de outro nome não muda', ()=>{
+test('religar: os nomes dos orçamentos trocam por ambiente; orçamento de outro nome não muda', async ()=>{
   const outro = noMes(50, 1);
   const estado = { orcamentos: { p: noMes(10), f: noMes(20), 'custta-projeto': outro }, cobrancaTiradaEm: '2026-11-09T14:00:00.000Z' };
-  const r = rodarScript('religar.sh', ['--folga', '5'], { estado, env: { ORCAMENTO_PROJETO: 'p', ORCAMENTO_FORA_FIRESTORE: 'f' } });
+  const r = await rodarReligar(['--folga', '5'], { estado, env: { ORCAMENTO_PROJETO: 'p', ORCAMENTO_FORA_FIRESTORE: 'f' } });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.gravado.orcamentos, { p: noMes(10, 15), f: noMes(20, 25), 'custta-projeto': outro });
 });
 
 const emReais = v => `R$ ${v.toFixed(2).replace('.', ',')}`;
 
-test('religar: termina dizendo em quanto cada corte volta, calculado da base gravada', ()=>{
-  const r = rodarScript('religar.sh', ['--folga', '15'], { estado: ESTADO_CORTADO });
+test('religar: termina dizendo em quanto cada corte volta, calculado da base gravada', async ()=>{
+  const r = await rodarReligar(['--folga', '15'], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   const fim = r.saida.trim().split('\n').slice(-2);
   assert.deepEqual(fim, ['API cai de novo em R$ 159,20', 'cobrança cai em R$ 127,50']);
@@ -984,31 +1005,31 @@ test('religar: termina dizendo em quanto cada corte volta, calculado da base gra
   assert.deepEqual(fim, [`API cai de novo em ${emReais(projeto.base + regra.LIMITE_API / 100)}`, `cobrança cai em ${emReais(fora.base + regra.LIMITE_COBRANCA / 100)}`]);
 });
 
-test('religar: sem cobrança tirada, não fala de cobrança', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null } });
+test('religar: sem cobrança tirada, não fala de cobrança', async ()=>{
+  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null } });
   assert.equal(r.status, 0, r.saida);
   assert.match(r.saida, /API cai de novo em R\$ 144,20\n$/);
   assert.doesNotMatch(r.saida, /cobrança cai/);
 });
 
-test('religar: sem registro dos orçamentos, a API cai no limite cheio e a cobrança não muda', ()=>{
-  const r = rodarScript('religar.sh', ['--folga', '15'], { estado: { orcamentos: {}, cobrancaTiradaEm: '2026-11-09T14:00:00.000Z' } });
+test('religar: sem registro dos orçamentos, a API cai no limite cheio e a cobrança não muda', async ()=>{
+  const r = await rodarReligar(['--folga', '15'], { estado: { orcamentos: {}, cobrancaTiradaEm: '2026-11-09T14:00:00.000Z' } });
   assert.equal(r.status, 0, r.saida);
   assert.match(r.saida, /API cai de novo em R\$ 60,00\n$/);
   assert.doesNotMatch(r.saida, /cobrança cai/);
   assert.equal(r.gravado.cobrancaTiradaEm, null);
 });
 
-test('religar: argumento errado para antes de qualquer gcloud', ()=>{
+test('religar: argumento errado para antes de qualquer gcloud', async ()=>{
   for(const args of [['--folga', 'abc'], ['--folga', '-5'], ['--folga'], ['--folga', '1.2.3'], ['--outro']]){
-    const r = rodarScript('religar.sh', args, { estado: ESTADO_CORTADO });
+    const r = await rodarReligar(args, { estado: ESTADO_CORTADO });
     assert.notEqual(r.status, 0, args.join(' '));
     assert.deepEqual(r.log, [], args.join(' '));
   }
 });
 
-test('religar: conflito na gravação tenta uma vez de novo, relendo tudo', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO, falhasCp: 1 });
+test('religar: conflito na gravação tenta uma vez de novo, relendo tudo', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, falhasCp: 1 });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.log.map(c => c.slice(0, 2).join(' ')), [
     'storage objects', 'storage cat', 'storage cp', 'storage objects', 'storage cat', 'storage cp', 'services enable',
@@ -1016,31 +1037,31 @@ test('religar: conflito na gravação tenta uma vez de novo, relendo tudo', ()=>
   assert.equal(r.saida.match(/API cai de novo/g).length, 1, 'o que vale agora sai uma vez só');
 });
 
-test('religar: sem conseguir gravar a base, não religa a API', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO, falhasCp: 2 });
+test('religar: sem conseguir gravar a base, não religa a API', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, falhasCp: 2 });
   assert.notEqual(r.status, 0);
   assert.ok(!r.log.some(c => c[0] === 'services'), 'a base grava antes de religar');
   assert.equal(r.log.filter(c => c[1] === 'cp').length, 2);
 });
 
-test('religar: estado.json ausente ou ilegível para sem gravar nem religar', ()=>{
-  const sem = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO, semObjeto: true });
+test('religar: estado.json ausente ou ilegível para sem gravar nem religar', async ()=>{
+  const sem = await rodarReligar([], { estado: ESTADO_CORTADO, semObjeto: true });
   assert.notEqual(sem.status, 0);
   assert.ok(!sem.log.some(c => c[1] === 'cp' || c[0] === 'services'));
-  const ruim = rodarScript('religar.sh', [], { estado: 'não é json' });
+  const ruim = await rodarReligar([], { estado: 'não é json' });
   assert.notEqual(ruim.status, 0);
   assert.ok(!ruim.log.some(c => c[1] === 'cp' || c[0] === 'services'));
 });
 
-test('religar: falha ao religar aparece no código de saída', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO, falhaEnable: true });
+test('religar: falha ao religar aparece no código de saída', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, falhaEnable: true });
   assert.notEqual(r.status, 0);
   assert.ok(r.gravado, 'a base já está gravada: repetir o script é seguro');
   assert.doesNotMatch(r.saida, /API cai de novo/);
 });
 
-test('religar: projeto e bucket trocam por ambiente, para o projeto descartável', ()=>{
-  const r = rodarScript('religar.sh', [], { estado: ESTADO_CORTADO, env: { PROJETO_ALVO: 'descartavel', BUCKET_ESTADO: 'balde' } });
+test('religar: projeto e bucket trocam por ambiente, para o projeto descartável', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { PROJETO_ALVO: 'descartavel', BUCKET_ESTADO: 'balde' } });
   assert.equal(r.status, 0, r.saida);
   assert.equal(r.log[1][2], 'gs://balde/estado.json');
   assert.deepEqual(r.log[3], ['services', 'enable', 'firestore.googleapis.com', '--project', 'descartavel']);

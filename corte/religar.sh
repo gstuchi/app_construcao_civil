@@ -3,12 +3,17 @@
 # API do Firestore. Roda no Cloud Shell, sem o Mac: precisa só de gcloud e de python3 (que o Cloud
 # Shell traz).
 #
-# Uso: corte/religar.sh [--folga N]     N em reais, padrão 0
+# Uso: corte/religar.sh [--folga N] [--forcar "motivo"]     N em reais, padrão 0
 #
 # A trava lê a política do alerta de leituras no projeto alvo e, para cada condição, soma as
 # leituras na janela dela mais 5 minutos, o atraso da métrica. Com alguma soma em metade do limiar
 # ou mais, não religa e diz a hora em que solta: religada assim, pouca leitura nova abre o alerta e
 # corta de novo. Sem conseguir ler a política ou a métrica, também não religa.
+#
+# --forcar religa assim mesmo, num corte falso (uso legítimo que cresceu: suba o limiar da
+# política antes) ou com o Monitoring fora. O motivo é obrigatório e vai para o estado.json, na
+# lista religadosForcados, com a hora, o resultado da trava (livre, segura ou nao-leu) e o que
+# ela disse, na mesma gravação da base: sem base gravada, nem a API religa nem o registro fica.
 #
 # A função continua armada e os gatilhos valem sobre custo = costAmount - base. A folga soma à
 # base o gasto do ataque que o relatório atrasado ainda vai mostrar. O orçamento de fora do
@@ -17,12 +22,19 @@
 # mesmo ataque tiraria a cobrança de novo assim que ela voltasse.
 set -euo pipefail
 
-uso(){ echo "uso: religar.sh [--folga N]" >&2; exit 2; }
+uso(){ echo 'uso: religar.sh [--folga N] [--forcar "motivo"]' >&2; exit 2; }
 
 FOLGA=0
+MOTIVO=
 while [ $# -gt 0 ]; do
   case "$1" in
     --folga) [ $# -ge 2 ] || uso; FOLGA="$2"; shift 2;;
+    --forcar)
+      # Motivo vazio, só de espaço ou outra opção no lugar dele param aqui, antes de qualquer gcloud.
+      [ $# -ge 2 ] || uso
+      case "$2" in -*) uso;; esac
+      [[ "$2" =~ [^[:space:]] ]] || uso
+      MOTIVO="$2"; shift 2;;
     *) uso;;
   esac
 done
@@ -56,10 +68,11 @@ PASTA="$(mktemp -d)"
 trap 'rm -rf "$PASTA"' EXIT
 
 # A trava vem antes de tudo: recusada, nada muda no bucket nem na API. Sai com 0 quando deixa, 3
-# quando segura e 4 quando não conseguiu ler; qualquer outra saída também conta como não leu.
+# quando segura e 4 quando não conseguiu ler; qualquer outra saída também conta como não leu. O
+# que ela diz fica em trava.txt, para o registro do --forcar.
 TRAVA=0
 PROJETO_ALVO="$PROJETO_ALVO" PROJETO_COTA="$PROJETO_COTA" POLITICA_ALERTA="$POLITICA_ALERTA" URL_MONITORING="$URL_MONITORING" \
-  python3 - <<'PY' || TRAVA=$?
+  python3 - "$PASTA/trava.txt" <<'PY' || TRAVA=$?
 import json, os, re, subprocess, sys
 import urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
@@ -232,6 +245,12 @@ def avaliar(agora, token):
     return linhas, soltas
 
 
+def dizer(linhas):
+    print("\n".join(linhas))
+    with open(sys.argv[1], "w", encoding="utf-8") as f:
+        f.write("\n".join(linhas) + "\n")
+
+
 def principal():
     try:
         agora = instante(os.environ["AGORA"]) if os.environ.get("AGORA") else datetime.now(timezone.utc)
@@ -246,24 +265,35 @@ def principal():
         motivo = f"{type(e).__name__}: {e}"
     else:
         if soltas:
-            print(f"Trava: leituras ainda altas na política {nome}. Religue a partir de {hora(max(soltas))}, horário de Brasília: "
-                  "é o mínimo, contando só as leituras que a métrica já mostra (ela atrasa uns 4 minutos).")
+            cabeca = (f"Trava: leituras ainda altas na política {nome}. Religue a partir de {hora(max(soltas))}, horário de Brasília: "
+                      "é o mínimo, contando só as leituras que a métrica já mostra (ela atrasa uns 4 minutos).")
         else:
-            print(f"Trava: leituras abaixo da metade do limiar na política {nome}.")
-        print("\n".join(linhas))
+            cabeca = f"Trava: leituras abaixo da metade do limiar na política {nome}."
+        dizer([cabeca] + linhas)
         return 3 if soltas else 0
-    print(f"Trava: sem ler as leituras, não deixo religar: {motivo}.")
+    dizer([f"Trava: sem ler as leituras, não deixo religar: {motivo}."])
     return 4
 
 
 sys.exit(principal())
 PY
 case "$TRAVA" in
-  0) ;;
-  3) echo "a API NÃO foi religada: rode de novo a partir da hora acima." >&2; exit 3;;
-  4) echo "a API NÃO foi religada: sem ler as leituras, a trava não deixa." >&2; exit 4;;
-  *) echo "a trava não rodou até o fim (saída $TRAVA): a API NÃO foi religada." >&2; exit 4;;
+  0) RESULTADO=livre;;
+  3) RESULTADO=segura;;
+  4) RESULTADO=nao-leu;;
+  *) RESULTADO=nao-leu; echo "a trava não rodou até o fim (saída $TRAVA)" > "$PASTA/trava.txt";;
 esac
+if [ -z "$MOTIVO" ]; then
+  case "$TRAVA" in
+    0) ;;
+    3) echo "a API NÃO foi religada: rode de novo a partir da hora acima. Num corte falso, de uso legítimo que cresceu, suba o limiar da política e rode com --forcar \"motivo\"." >&2; exit 3;;
+    4) echo "a API NÃO foi religada: sem ler as leituras, a trava não deixa. Confira o acesso ao Monitoring e rode de novo, ou rode com --forcar \"motivo\"." >&2; exit 4;;
+    *) echo "a trava não rodou até o fim (saída $TRAVA): a API NÃO foi religada." >&2; exit 4;;
+  esac
+else
+  [ "$TRAVA" = 0 ] || [ "$TRAVA" = 3 ] || [ "$TRAVA" = 4 ] || echo "a trava não rodou até o fim (saída $TRAVA)" >&2
+  echo "Religando à força, com a trava em \"$RESULTADO\". Motivo: $MOTIVO"
+fi
 
 # A geração vem antes do conteúdo: se o objeto mudar no meio, a gravação condicionada recusa.
 # Cada comando tem o próprio || return porque set -e não vale dentro de função chamada em if.
@@ -273,12 +303,14 @@ gravar_base(){
   [ -n "$geracao" ] || return 1
   gcloud storage cat "$OBJETO" > "$PASTA/atual.json" || return 1
   FOLGA="$FOLGA" ORCAMENTO_PROJETO="$ORCAMENTO_PROJETO" ORCAMENTO_FORA_FIRESTORE="$ORCAMENTO_FORA_FIRESTORE" \
-    python3 - "$PASTA/atual.json" "$PASTA/novo.json" "$PASTA/vale-agora.txt" <<'PY' || return 1
+  MOTIVO="$MOTIVO" RESULTADO="$RESULTADO" \
+    python3 - "$PASTA/atual.json" "$PASTA/novo.json" "$PASTA/vale-agora.txt" "$PASTA/trava.txt" <<'PY' || return 1
 import json, os, sys
+from datetime import datetime, timezone
 
 LIMITE_API, LIMITE_COBRANCA = 60, 100  # os de corte/regra.js, em reais
 
-origem, destino, vale_agora = sys.argv[1:4]
+origem, destino, vale_agora, trava = sys.argv[1:5]
 folga = float(os.environ["FOLGA"])
 with open(origem, encoding="utf-8") as f:
     estado = json.load(f)
@@ -300,6 +332,22 @@ if fora is not None and estado.get("cobrancaTiradaEm"):
 estado["primeiraFalha"] = None
 estado["apiDesligadaEm"] = None
 estado["cobrancaTiradaEm"] = None
+motivo = os.environ["MOTIVO"]
+if motivo:
+    # A lista só cresce: o registro de um --forcar não apaga o de outro. AGORA (testes) fixa a hora.
+    try:
+        with open(trava, encoding="utf-8") as f:
+            disse = f.read().splitlines()
+    except OSError:
+        disse = []
+    agora = os.environ.get("AGORA")
+    quando = datetime.strptime(agora[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc) if agora else datetime.now(timezone.utc)
+    anteriores = estado.get("religadosForcados")
+    lista = anteriores if isinstance(anteriores, list) else ([] if anteriores is None else [anteriores])
+    estado["religadosForcados"] = lista + [{
+        "em": quando.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "motivo": motivo, "resultado": os.environ["RESULTADO"], "trava": disse,
+    }]
 with open(destino, "w", encoding="utf-8") as f:
     json.dump(estado, f, ensure_ascii=False)
 with open(vale_agora, "w", encoding="utf-8") as f:

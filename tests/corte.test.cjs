@@ -1384,6 +1384,99 @@ test('religar: a trava não usa proxy do ambiente, para o token ir só ao Monito
   assert.equal(r.pedidos.length, 4);
 });
 
+const SEGURA_1H = { leituras: [['2026-11-17T17:30:00Z', 1000]] };
+
+test('religar: --forcar sem motivo para antes de qualquer gcloud e de qualquer pedido ao Monitoring', async ()=>{
+  for(const args of [['--forcar'], ['--forcar', ''], ['--forcar', '  \t '], ['--forcar', '--folga', '5'], ['--folga', '5', '--forcar'], ['--forcar', '-x']]){
+    const r = await rodarReligar(args, { estado: ESTADO_CORTADO, monitoring: SEGURA_1H });
+    assert.equal(r.status, 2, JSON.stringify(args));
+    assert.deepEqual(r.log, [], JSON.stringify(args));
+    assert.deepEqual(r.pedidos, [], JSON.stringify(args));
+    assert.match(r.saida, /uso: religar\.sh \[--folga N\] \[--forcar "motivo"\]/);
+  }
+});
+
+test('religar: --forcar religa com a soma alta, mostra o que a trava diz e registra no estado o motivo e o resultado', async ()=>{
+  const motivo = 'corte falso: uso legítimo cresceu, limiar subiu para 4.000 em 1 h';
+  const r = await rodarReligar(['--forcar', motivo], { estado: ESTADO_CORTADO, monitoring: SEGURA_1H });
+  assert.equal(r.status, 0, r.saida);
+  assert.ok(r.log.some(c => c[0] === 'services'), 'religou');
+  assert.equal(linhaDe(r, C1H), `- ${C1H}: 1.000 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h35.`);
+  assert.match(r.saida, new RegExp(`Religando à força, com a trava em "segura"\\. Motivo: ${motivo}`));
+  assert.doesNotMatch(r.saida, /NÃO foi religada/);
+  const [registro, ...resto] = r.gravado.religadosForcados;
+  assert.deepEqual(resto, []);
+  assert.deepEqual(Object.keys(registro).sort(), ['em', 'motivo', 'resultado', 'trava']);
+  assert.equal(registro.em, '2026-11-17T18:00:00.000Z');
+  assert.equal(registro.motivo, motivo);
+  assert.equal(registro.resultado, 'segura');
+  assert.match(registro.trava[0], /^Trava: leituras ainda altas na política custta-leituras\. Religue a partir de 17\/11 15h35/);
+  assert.ok(registro.trava.includes(`- ${C1H}: 1.000 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h35.`));
+  assert.equal(r.gravado.orcamentos['custta-projeto'].base, 84.2, 'a base grava como sempre');
+  assert.equal(r.gravado.apiDesligadaEm, null);
+});
+
+test('religar: --forcar vale sem leitura e com o python da trava quebrado, e registra o porquê', async ()=>{
+  const semLeitura = await rodarReligar(['--forcar', 'Monitoring fora'], { estado: ESTADO_CORTADO, monitoring: { falhar: { politicas: 403 } } });
+  assert.equal(semLeitura.status, 0, semLeitura.saida);
+  assert.ok(semLeitura.log.some(c => c[0] === 'services'));
+  const [a] = semLeitura.gravado.religadosForcados;
+  assert.equal(a.resultado, 'nao-leu');
+  assert.deepEqual(a.trava, ['Trava: sem ler as leituras, não deixo religar: o Monitoring respondeu HTTP 403 PERMISSION_DENIED: falha falsa em politicas.']);
+
+  const quebrado = await rodarReligar(['--forcar', 'python quebrou'], { estado: ESTADO_CORTADO, pythonQuebra: 1 });
+  assert.equal(quebrado.status, 0, quebrado.saida);
+  assert.ok(quebrado.log.some(c => c[0] === 'services'));
+  const [b] = quebrado.gravado.religadosForcados;
+  assert.equal(b.resultado, 'nao-leu');
+  assert.deepEqual(b.trava, ['a trava não rodou até o fim (saída 1)']);
+});
+
+test('religar: --forcar com a trava livre também registra, com o resultado livre', async ()=>{
+  const r = await rodarReligar(['--folga', '5', '--forcar', 'por garantia'], { estado: ESTADO_CORTADO });
+  assert.equal(r.status, 0, r.saida);
+  const [registro] = r.gravado.religadosForcados;
+  assert.equal(registro.resultado, 'livre');
+  assert.equal(registro.motivo, 'por garantia');
+  assert.equal(r.gravado.orcamentos['custta-projeto'].base, 89.2, 'a folga vale junto, em qualquer ordem');
+});
+
+test('religar: cada --forcar acrescenta ao registro, e religar sem ele não mexe no registro', async ()=>{
+  const antes = { em: '2026-11-10T09:00:00.000Z', motivo: 'o primeiro', resultado: 'segura', trava: ['linha'] };
+  const estado = { ...ESTADO_CORTADO, religadosForcados: [antes] };
+  const motivo = 'aspas "duplas", acento e\nquebra de linha';
+  const forcado = await rodarReligar(['--forcar', motivo], { estado, monitoring: SEGURA_1H });
+  assert.equal(forcado.status, 0, forcado.saida);
+  assert.equal(forcado.gravado.religadosForcados.length, 2);
+  assert.deepEqual(forcado.gravado.religadosForcados[0], antes);
+  assert.equal(forcado.gravado.religadosForcados[1].motivo, motivo, 'o motivo grava como veio');
+
+  const normal = await rodarReligar([], { estado });
+  assert.equal(normal.status, 0, normal.saida);
+  assert.deepEqual(normal.gravado.religadosForcados, [antes]);
+
+  const avulso = await rodarReligar(['--forcar', 'o segundo'], { estado: { ...ESTADO_CORTADO, religadosForcados: antes }, monitoring: SEGURA_1H });
+  assert.equal(avulso.status, 0, avulso.saida);
+  assert.deepEqual(avulso.gravado.religadosForcados.map(f => f.motivo), ['o primeiro', 'o segundo'], 'registro antigo fora de lista entra na lista, não some');
+});
+
+test('religar: --forcar sem conseguir gravar a base não religa nem deixa registro', async ()=>{
+  const r = await rodarReligar(['--forcar', 'teste'], { estado: ESTADO_CORTADO, monitoring: SEGURA_1H, falhasCp: 2 });
+  assert.equal(r.status, 1, r.saida);
+  assert.equal(r.log.filter(c => c[1] === 'cp').length, 2, 'tentou gravar a base com o registro, duas vezes');
+  assert.ok(!r.log.some(c => c[0] === 'services'));
+  assert.equal(r.gravado, null);
+});
+
+test('religar: a recusa ensina o caminho do corte falso: subir o limiar e forçar com motivo', async ()=>{
+  const segura = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: SEGURA_1H });
+  assert.equal(segura.status, 3);
+  assert.match(segura.saida, /suba o limiar da política e rode com --forcar "motivo"/);
+  const semLeitura = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { falhar: { serie: 503 } } });
+  assert.equal(semLeitura.status, 4);
+  assert.match(semLeitura.saida, /ou rode com --forcar "motivo"/);
+});
+
 test('religar: o projeto da cota troca por PROJETO_COTA; a política e a série seguem as do projeto alvo', async ()=>{
   const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { PROJETO_COTA: 'custta-corte' } });
   assert.equal(r.status, 0, r.saida);

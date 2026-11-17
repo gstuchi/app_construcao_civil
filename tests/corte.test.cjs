@@ -2208,12 +2208,26 @@ test('religar depois da cobrança: sem conseguir listar os serviços, religa ass
   assert.deepEqual(r.log.slice(-2).map(c => c.slice(0, 2).join(' ')), ['services list', 'services enable']);
 });
 
-test('religar sem a cobrança tirada não lista a API, não grava voltouEm e não fala da cobrança', async ()=>{
-  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-10T09:00:00.000Z' } });
+test('religar sem a cobrança tirada não lista a API nem fala da cobrança, mas grava voltouEm e manda conferir os dados', async ()=>{
+  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-10-30T09:00:00.000Z' } });
   assert.equal(r.status, 0, r.saida);
   assert.ok(!r.log.some(c => c[0] === 'services' && c[1] === 'list'));
-  assert.equal(r.gravado.voltouEm, '2026-11-10T09:00:00.000Z', 'a volta anterior fica');
-  assert.doesNotMatch(r.saida, /Religue a cobrança|Confira os dados/);
+  assert.equal(r.gravado.voltouEm, '2026-11-17T18:00:00.000Z', 'toda volta fica registrada');
+  assert.doesNotMatch(r.saida, /Religue a cobrança/);
+  assert.ok(r.saida.split('\n').includes(CONFIRA), 'a conferência dos dados vale para toda volta');
+  assert.match(r.saida, /API cai de novo em R\$ 144,20\n$/);
+});
+
+test('religar: segunda volta no mesmo mês pede --forcar também depois de um corte só da API', async ()=>{
+  const estado = { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-10T09:00:00.000Z' };
+  const r = await rodarReligar([], { estado });
+  assert.equal(r.status, 5, r.saida);
+  assert.ok(!r.log.some(c => c[1] === 'cp' || c[0] === 'services'));
+  assert.match(r.saida, /segundo corte neste mês \(a volta anterior foi em 10\/11 06h00\)/);
+  const forcado = await rodarReligar(['--forcar', 'conta atacante bloqueada'], { estado });
+  assert.equal(forcado.status, 0, forcado.saida);
+  assert.equal(forcado.gravado.religadosForcados.at(-1).voltaAnterior, '2026-11-10T09:00:00.000Z');
+  assert.equal(forcado.gravado.voltouEm, '2026-11-17T18:00:00.000Z');
 });
 
 test('religar depois da cobrança: com o prazo de 72 h vencido, diz que venceu', async ()=>{
@@ -2230,7 +2244,7 @@ test('religar depois da cobrança: segunda volta no mesmo mês pede --forcar, an
   assert.equal(r.log.filter(c => c[1] === 'cat').length, 1, 'recusa sem repetir a leitura');
   assert.doesNotMatch(r.saida, /tentando mais uma vez/);
   assert.equal(r.gravado, null);
-  assert.match(r.saida, /segundo corte da cobrança neste mês \(a volta anterior foi em 10\/11 06h00\)/);
+  assert.match(r.saida, /segundo corte neste mês \(a volta anterior foi em 10\/11 06h00\)/);
   assert.match(r.saida, /bloqueie a conta atacante no Authentication ou exija o App Check \(G13\), e rode com --forcar "motivo"/);
   assert.match(r.saida, /a API NÃO foi religada/);
 
@@ -2240,6 +2254,34 @@ test('religar depois da cobrança: segunda volta no mesmo mês pede --forcar, an
   const ultimo = forcado.gravado.religadosForcados.at(-1);
   assert.equal(ultimo.motivo, 'conta atacante bloqueada');
   assert.equal(ultimo.voltaAnterior, '2026-11-10T09:00:00.000Z');
+});
+
+test('religar: repetir depois de uma volta que falhou no fim não conta como segundo corte, nos dois ramos', async ()=>{
+  for(const [ramo, estado] of [['só API', { ...ESTADO_CORTADO, cobrancaTiradaEm: null }], ['cobrança tirada', TIRADA_HOJE]]){
+    const primeira = await rodarReligar([], { estado, falhaEnable: true });
+    assert.notEqual(primeira.status, 0, `${ramo}: o enable falhou`);
+    assert.equal(primeira.gravado.voltouEm, '2026-11-17T18:00:00.000Z', `${ramo}: a base e a volta já gravaram`);
+    const repeticao = await rodarReligar([], { estado: primeira.gravado });
+    assert.equal(repeticao.status, 0, `${ramo}: ${repeticao.saida}`);
+    assert.doesNotMatch(repeticao.saida, /segundo corte/);
+    assert.ok(repeticao.log.some(c => c[0] === 'services' && c[1] === 'enable'), `${ramo}: religa na repetição`);
+    assert.equal(repeticao.gravado.religadosForcados, undefined, `${ramo}: nada a forçar nem a registrar`);
+  }
+});
+
+test('religar: segundo corte do modo novo, com a cobrança tirada e a API ligada (apiDesligadaEm nulo), também pede --forcar', async ()=>{
+  const estado = { ...ESTADO_CORTADO, apiDesligadaEm: null, cobrancaTiradaEm: '2026-11-17T12:00:00.000Z', voltouEm: '2026-11-10T09:00:00.000Z' };
+  const r = await rodarReligar([], { estado, apiLigada: true });
+  assert.equal(r.status, 5, r.saida);
+  assert.ok(!r.log.some(c => c[1] === 'cp' || c[0] === 'services'));
+  assert.match(r.saida, /segundo corte neste mês/);
+});
+
+test('religar: segundo corte conta pelo mês de Brasília: volta às 22h de 31/10 não é do mesmo mês de novembro', async ()=>{
+  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-01T01:00:00.000Z' } });
+  assert.equal(r.status, 0, r.saida);
+  const mesmoMes = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-01T03:00:00.000Z' } });
+  assert.equal(mesmoMes.status, 5, 'meia-noite de 01/11 em Brasília já é novembro');
 });
 
 test('religar depois da cobrança: volta anterior em outro mês não conta', async ()=>{

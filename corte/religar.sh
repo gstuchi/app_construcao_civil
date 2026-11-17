@@ -15,11 +15,11 @@
 # lista religadosForcados, com a hora, o resultado da trava (livre, segura ou nao-leu) e o que
 # ela disse, na mesma gravação da base: sem base gravada, nem a API religa nem o registro fica.
 #
-# Volta de um corte que tirou a cobrança (cobrancaTiradaEm no estado): a API só religa se estiver
-# desligada, porque no modo oficial-alerta ela pode ter seguido ligada; a volta fica em voltouEm; e o
-# script manda religar a cobrança no console, em até 72 h do corte, e conferir os dados conta por
-# conta em até 7 dias, a janela do PITR. Segunda volta assim no mesmo mês pede --forcar: antes, bloquear
-# a conta atacante ou exigir o App Check.
+# Toda volta fica em voltouEm, e o script manda conferir os dados conta por conta em até 7 dias, a
+# janela do PITR. Segunda volta no mesmo mês pede --forcar: antes, bloquear a conta atacante ou exigir
+# o App Check (unânime no conselho de 17/11). Depois de um corte que tirou a cobrança
+# (cobrancaTiradaEm no estado), a API só religa se estiver desligada, porque no modo oficial-alerta
+# ela pode ter seguido ligada, e o script manda religar a cobrança no console, em até 72 h do corte.
 #
 # A função continua armada e os gatilhos valem sobre custo = costAmount - base. A folga soma à
 # base o gasto do ataque que o relatório atrasado ainda vai mostrar. O orçamento de fora do
@@ -348,10 +348,18 @@ agora_iso = agora.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 motivo = os.environ["MOTIVO"]
 tirada = estado.get("cobrancaTiradaEm")
 voltou = estado.get("voltouEm")
-segunda_volta = bool(tirada and isinstance(voltou, str) and voltou[:7] == agora_iso[:7])
+# Segundo corte: um corte pendente no estado (a função preenche apiDesligadaEm ou cobrancaTiradaEm,
+# e a volta zera os dois) depois de uma volta neste mês, no fuso de Brasília. Repetir uma volta que
+# falhou no fim não conta, porque ela já zerou os dois; corte que a função não conseguiu gravar no
+# estado (bucket fora) também não conta.
+def mes(t):
+    return t.astimezone(BRASILIA).strftime("%Y-%m")
+
+pendente = bool(tirada or estado.get("apiDesligadaEm"))
+segunda_volta = bool(pendente and isinstance(voltou, str) and mes(instante(voltou)) == mes(agora))
 if segunda_volta and not motivo:
     with open(os.path.join(pasta, "recusa.txt"), "w", encoding="utf-8") as f:
-        f.write(f"segundo corte da cobrança neste mês (a volta anterior foi em {hora(instante(voltou))}): antes de religar, "
+        f.write(f"segundo corte neste mês (a volta anterior foi em {hora(instante(voltou))}): antes de religar, "
                 "bloqueie a conta atacante no Authentication ou exija o App Check (G13), e rode com --forcar \"motivo\". "
                 "a API NÃO foi religada.\n")
     sys.exit(5)
@@ -362,17 +370,19 @@ linhas = [f"API cai de novo em {reais(base_projeto + LIMITE_API)}"]
 fora = orcamentos.get(os.environ["ORCAMENTO_FORA_FIRESTORE"])
 if fora is not None and estado.get("cobrancaTiradaEm"):
     linhas.append(f"cobrança cai em {reais(rebasear(fora, folga) + LIMITE_COBRANCA)}")
+estado["voltouEm"] = agora_iso
+volta = []
 if tirada:
-    estado["voltouEm"] = agora_iso
     prazo = instante(tirada) + SEM_COBRANCA
     console = f"console.cloud.google.com/billing/projects → Change billing no projeto {os.environ['PROJETO_ALVO']}"
     if prazo > agora:
-        religue = f"Religue a cobrança até {hora(prazo)} (72 h depois do corte): {console}."
+        volta.append(f"Religue a cobrança até {hora(prazo)} (72 h depois do corte): {console}.")
     else:
-        religue = f"O prazo de 72 h sem conta de cobrança venceu em {hora(prazo)}: religue a cobrança agora, em {console}."
-    with open(os.path.join(pasta, "volta.txt"), "w", encoding="utf-8") as f:
-        f.write(religue + "\n" + f"Confira os dados conta por conta no dia seguinte, até {hora(agora + CONFERENCIA)} "
-                "(7 dias da volta, a janela do PITR).\n")
+        volta.append(f"O prazo de 72 h sem conta de cobrança venceu em {hora(prazo)}: religue a cobrança agora, em {console}.")
+    open(os.path.join(pasta, "cobranca-tirada"), "w").close()
+volta.append(f"Confira os dados conta por conta no dia seguinte, até {hora(agora + CONFERENCIA)} (7 dias da volta, a janela do PITR).")
+with open(os.path.join(pasta, "volta.txt"), "w", encoding="utf-8") as f:
+    f.write("\n".join(volta) + "\n")
 estado["primeiraFalha"] = None
 estado["apiDesligadaEm"] = None
 estado["cobrancaTiradaEm"] = None
@@ -411,7 +421,7 @@ if [ "$GRAVOU" -eq 5 ]; then cat "$PASTA/recusa.txt" >&2; exit 5; fi
 # Depois de um corte que tirou a cobrança, a API pode ter seguido ligada (modo oficial-alerta).
 # Sem conseguir listar, religa como antes.
 religar_api=1
-if [ -f "$PASTA/volta.txt" ]; then
+if [ -f "$PASTA/cobranca-tirada" ]; then
   ligadas="$(gcloud services list --enabled --project "$PROJETO_ALVO" --format='value(config.name)')" || ligadas=""
   if printf '%s\n' "$ligadas" | grep -qx 'firestore.googleapis.com'; then religar_api=0; fi
 fi
@@ -421,5 +431,5 @@ if [ "$religar_api" -eq 1 ]; then
 else
   echo "A API do Firestore seguiu ligada: o app ficou no gratuito."
 fi
-[ -f "$PASTA/volta.txt" ] && cat "$PASTA/volta.txt"
+cat "$PASTA/volta.txt"
 cat "$PASTA/vale-agora.txt"

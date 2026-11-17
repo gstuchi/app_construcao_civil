@@ -3616,7 +3616,7 @@ A hora dita é o mínimo: a métrica atrasa uns 4 minutos. Rodar antes da hora n
 7. **Passaram 72 h e o ataque continua:** desligar a API do Firestore e religar a cobrança. O app sai do ar, e o banco volta a ter conta.
 8. **Segundo corte no mesmo mês:** não religar sem antes bloquear a conta atacante no Authentication ou exigir o App Check (G13). O `religar.sh` pede `--forcar`.
 
-**A reserva agiu: a API do Firestore foi desligada.** A retirada da cobrança falhou, ou o modo armado é o `dois-tempos`. O app fica fora para todos, com "Salvando…" na tela. Leva cerca de 15 minutos, e dá para fazer pelo celular, no Cloud Shell.
+**A reserva agiu: a API do Firestore foi desligada.** A retirada da cobrança falhou, ou o modo armado é o `dois-tempos`. O app fica fora para todos, com "Salvando…" na tela. O comando leva cerca de 15 minutos, mas depois de um corte por leituras a trava pode mandar esperar, até umas 6 h, e diz a hora (veja "Não religue sem entender", acima). Dá para fazer pelo celular, no Cloud Shell.
 1. O mesmo comando do item 3 acima, com a folga decidida antes. Ele grava a base e só depois religa a API. Depois de religar, ainda há recusas intermitentes por até ~6,5 minutos.
 2. Avisar quem usa: abrir **um aparelho de cada vez, com internet**. Cada salvamento regrava o documento inteiro, e o último a subir apaga o outro.
 3. Os itens 5, 6 e 8 acima.

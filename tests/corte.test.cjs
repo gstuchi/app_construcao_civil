@@ -865,6 +865,8 @@ const { spawnSync, spawn } = require('node:child_process');
 const { mkdtempSync, writeFileSync, readFileSync, chmodSync, existsSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
+const http = require('node:http');
+const PYTHON_REAL = spawnSync('sh', ['-c', 'command -v python3'], { encoding: 'utf8' }).stdout.trim();
 
 const PASTA_CORTE = path.join(__dirname, '..', 'corte');
 const GCLOUD_FALSO = `#!/bin/sh
@@ -880,11 +882,15 @@ case "$1 $2" in
     cp "$3" "$GCLOUD_DIR/gravado.json";;
   "services enable") [ -f "$GCLOUD_DIR/falha-enable" ] && exit 1; exit 0;;
   "functions deploy") exit 0;;
+  "auth print-access-token")
+    [ -f "$GCLOUD_DIR/sem-token" ] && { echo 'ERROR: (gcloud.auth.print-access-token) sem conta ativa' >&2; exit 1; }
+    echo token-falso;;
   *) echo "gcloud falso: chamada inesperada: $*" >&2; exit 99;;
 esac
 `;
 
-function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaEnable = false } = {}){
+/* pythonQuebra: a primeira chamada ao python3, a da trava, sai com esse código; as outras vão ao de verdade. */
+function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaEnable = false, semToken = false, pythonQuebra = 0 } = {}){
   const dir = mkdtempSync(path.join(tmpdir(), 'corte-gcloud-'));
   writeFileSync(path.join(dir, 'gcloud'), GCLOUD_FALSO);
   chmodSync(path.join(dir, 'gcloud'), 0o755);
@@ -892,6 +898,18 @@ function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaE
   writeFileSync(path.join(dir, 'falhas-cp'), String(falhasCp));
   if(semObjeto) writeFileSync(path.join(dir, 'sem-objeto'), '');
   if(falhaEnable) writeFileSync(path.join(dir, 'falha-enable'), '');
+  if(semToken) writeFileSync(path.join(dir, 'sem-token'), '');
+  if(pythonQuebra){
+    writeFileSync(path.join(dir, 'python3'), `#!/bin/sh
+if [ ! -f "$GCLOUD_DIR/python-quebrou" ]; then
+  : > "$GCLOUD_DIR/python-quebrou"
+  echo 'Traceback (most recent call last): quebra falsa' >&2
+  exit ${pythonQuebra}
+fi
+exec ${PYTHON_REAL} "$@"
+`);
+    chmodSync(path.join(dir, 'python3'), 0o755);
+  }
   return dir;
 }
 const ambienteDe = (dir, env) => ({ ...process.env, PATH: `${dir}:${process.env.PATH}`, GCLOUD_DIR: dir, ...env });
@@ -910,18 +928,125 @@ function rodarScript(nome, args, { env = {}, ...opcoes } = {}){
   return resultadoDe(dir, r.status, r.stdout, r.stderr);
 }
 
-/* O religar roda sem bloquear o processo do teste, para um servidor falso daqui poder responder
-   a ele enquanto roda; o spawnSync pararia o laço de eventos até o fim do script. */
-function rodarReligar(args, { env = {}, ...opcoes } = {}){
-  const dir = prepararGcloud(opcoes);
-  return new Promise((resolve, reject) => {
-    const filho = spawn('bash', [path.join(PASTA_CORTE, 'religar.sh'), ...args], { cwd: tmpdir(), env: ambienteDe(dir, env) });
-    let stdout = '', stderr = '';
-    filho.stdout.setEncoding('utf8').on('data', d => { stdout += d; });
-    filho.stderr.setEncoding('utf8').on('data', d => { stderr += d; });
-    filho.on('error', reject);
-    filho.on('close', status => resolve(resultadoDe(dir, status, stdout, stderr)));
+/* As políticas como a API devolveu no G1 refeito (17/11), com o e-mail trocado: a de leituras, com
+   as três condições em OR, e a de aviso ao lado, que a trava não lê. */
+const FILTRO_LEITURAS = 'metric.type="firestore.googleapis.com/document/read_ops_count" AND resource.type="firestore.googleapis.com/Database"';
+const registro = mutateTime => ({ mutateTime, mutatedBy: 'giovani@example.com' });
+const condicaoDe = (politica, id, displayName, alignmentPeriod, thresholdValue) => ({
+  conditionThreshold: {
+    filter: FILTRO_LEITURAS, comparison: 'COMPARISON_GT', thresholdValue, duration: '0s', trigger: { count: 1 },
+    aggregations: [{ alignmentPeriod, perSeriesAligner: 'ALIGN_SUM', crossSeriesReducer: 'REDUCE_SUM' }],
+  },
+  displayName, name: `${politica}/conditions/${id}`,
+});
+const politicaDe = (name, displayName, conditions, content, criada, mudada) => ({
+  name, displayName, combiner: 'OR', creationRecord: registro(criada), mutationRecord: registro(mudada), conditions,
+  documentation: { content, mimeType: 'text/markdown' },
+  notificationChannels: ['projects/app-construcao-civil/notificationChannels/4046886658766328506'],
+  enabled: true, alertStrategy: { autoClose: '1800s' },
+});
+const P_AVISO = 'projects/app-construcao-civil/alertPolicies/18027824024381381616';
+const P_LEITURAS = 'projects/app-construcao-civil/alertPolicies/3538567307137321334';
+const POLITICA_AVISO = politicaDe(P_AVISO, 'custta-leituras-aviso', [
+  condicaoDe(P_AVISO, '18027824024381380643', 'Aviso de leituras do Firestore: mais de 600 em 1 h', '3600s', 600),
+  condicaoDe(P_AVISO, '18027824024381381684', 'Aviso de leituras do Firestore: mais de 2.000 em 24 h', '86400s', 2000),
+], 'Só aviso, nunca corta: leituras acima de 600 em 1 h ou de 2.000 em 24 h. O uso normal é de poucas leituras por dia. Abra Firestore > Uso e chame o Claude.',
+'2026-11-17T18:18:27.471276040Z', '2026-11-17T18:18:27.471276040Z');
+const POLITICA_LEITURAS = politicaDe(P_LEITURAS, 'custta-leituras', [
+  condicaoDe(P_LEITURAS, '4892309744294522298', 'Leituras do Firestore: mais de 2.500 em 5 min', '300s', 2500),
+  condicaoDe(P_LEITURAS, '4892309744294519197', 'Leituras do Firestore: mais de 2.000 em 1 h', '3600s', 2000),
+  condicaoDe(P_LEITURAS, '4892309744294520192', 'Leituras do Firestore: mais de 6.000 em 6 h', '21600s', 6000),
+], 'Soma de leituras acima do limite numa das três janelas: 2.500 em 5 min, 2.000 em 1 h ou 6.000 em 6 h. O uso normal é de poucas leituras por dia. Abra Firestore > Uso e chame o Claude.',
+'2026-11-10T17:15:37.518101114Z', '2026-11-17T18:18:47.870629685Z');
+const POLITICAS = { alertPolicies: [POLITICA_AVISO, POLITICA_LEITURAS], totalSize: 2 };
+const C5MIN = 'Leituras do Firestore: mais de 2.500 em 5 min';
+const C1H = 'Leituras do Firestore: mais de 2.000 em 1 h';
+const C6H = 'Leituras do Firestore: mais de 6.000 em 6 h';
+
+const serieCom = points => ({ timeSeries: [{
+  metric: { type: 'firestore.googleapis.com/document/read_ops_count' },
+  resource: { type: 'firestore.googleapis.com/Database', labels: { project_id: 'alvo' } },
+  metricKind: 'DELTA', valueType: 'INT64', points,
+}], unit: '1' });
+const STATUS = { 403: 'PERMISSION_DENIED', 404: 'NOT_FOUND', 429: 'RESOURCE_EXHAUSTED', 503: 'UNAVAILABLE' };
+
+/* O Monitoring numa porta local. alertPolicies.list devolve `politicas`; timeSeries.list devolve,
+   numa série só (REDUCE_SUM), os pontos de `leituras` ([fim do minuto, quantas]) do intervalo
+   pedido, do mais novo ao mais velho e com int64Value em texto, como a API. O ponto que fecha no
+   início do intervalo também vem: quem decide a janela é o script. Com `porPagina`, as duas listas
+   vêm em páginas, com nextPageToken; com `semFim`, a de políticas manda sempre mais uma página,
+   até a 200ª, quando desiste com 429, para um laço sem teto falhar em vez de travar o teste;
+   `serie` troca a resposta da série inteira. `falhar` por rota: um código HTTP, 'mudo' (nunca
+   responde), 'derruba' (fecha a conexão), 'lixo' (200 sem JSON) ou { redireciona: url } (302).
+   Anota cada pedido. */
+async function subirMonitoring({ politicas = POLITICAS, leituras = [], falhar = {}, porPagina = Infinity, semFim = false, serie } = {}){
+  const pedidos = [];
+  const servidor = http.createServer((req, res) => {
+    const url = new URL(req.url, 'http://monitoring');
+    const busca = Object.fromEntries(url.searchParams);
+    pedidos.push({ metodo: req.method, caminho: url.pathname, busca, auth: req.headers.authorization, cota: req.headers['x-goog-user-project'] });
+    const responder = (status, corpo) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=UTF-8' }); res.end(JSON.stringify(corpo)); };
+    const rota = url.pathname.endsWith('/alertPolicies') ? 'politicas' : url.pathname.endsWith('/timeSeries') ? 'serie' : null;
+    if(!rota || req.method !== 'GET') return responder(404, { error: { code: 404, message: `rota inesperada: ${req.method} ${url.pathname}`, status: 'NOT_FOUND' } });
+    const falha = falhar[rota];
+    if(falha === 'mudo') return;
+    if(falha === 'derruba') return req.socket.destroy();
+    if(falha === 'lixo'){ res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('<html>isto não é json</html>'); }
+    if(falha && falha.redireciona){ res.writeHead(302, { Location: falha.redireciona }); return res.end(); }
+    if(falha) return responder(falha, { error: { code: falha, message: `falha falsa em ${rota}`, status: STATUS[falha] } });
+    const de = Number(busca.pageToken || 0);
+    if(rota === 'politicas' && semFim){
+      if(de >= 200) return responder(429, { error: { code: 429, message: 'chega de páginas', status: STATUS[429] } });
+      return responder(200, { alertPolicies: [], nextPageToken: String(de + 1) });
+    }
+    const pagina = (itens, chave, resto = {}) => {
+      const corpo = { ...resto, ...(itens.length ? { [chave]: itens.slice(de, de + porPagina) } : {}) };
+      if(de + porPagina < itens.length) corpo.nextPageToken = String(de + porPagina);
+      return corpo;
+    };
+    if(rota === 'politicas') return responder(200, pagina(politicas.alertPolicies || [], 'alertPolicies', { totalSize: politicas.totalSize }));
+    if(serie) return responder(200, serie(busca));
+    const inicio = Date.parse(busca['interval.startTime']), fim = Date.parse(busca['interval.endTime']);
+    const pontos = leituras.filter(([t]) => Date.parse(t) >= inicio && Date.parse(t) <= fim)
+      .sort(([a], [b]) => Date.parse(b) - Date.parse(a))
+      .map(([t, n]) => ({ interval: { startTime: semMs(Date.parse(t) - MINUTO), endTime: t }, value: { int64Value: String(n) } }));
+    const { points, ...resto } = pagina(pontos, 'points');
+    responder(200, points ? { ...serieCom(points), ...resto } : { ...resto, unit: '1' });
   });
+  await new Promise(r => servidor.listen(0, '127.0.0.1', r));
+  return {
+    url: `http://127.0.0.1:${servidor.address().port}`, pedidos,
+    fechar: () => new Promise(r => { servidor.close(r); servidor.closeAllConnections(); }),
+  };
+}
+
+/* AGORA fixa o relógio da trava: 18h00 UTC, 15h00 em Brasília. */
+const AGORA = '2026-11-17T18:00:00Z';
+const MINUTO = 60000;
+const semMs = ms => new Date(ms).toISOString().replace('.000Z', 'Z');
+/* n leituras por minuto nos `minutos` minutos que terminam em `fim`: um ponto por minuto. */
+const rajada = (fim, minutos, n) => Array.from({ length: minutos }, (_, i) => [semMs(Date.parse(fim) - i * MINUTO), n]);
+
+/* O religar roda sem bloquear o processo do teste, para o Monitoring falso daqui responder a ele
+   enquanto roda; o spawnSync pararia o laço de eventos até o fim do script. */
+async function rodarReligar(args, { env = {}, monitoring = {}, ...opcoes } = {}){
+  const dir = prepararGcloud(opcoes);
+  const m = await subirMonitoring(monitoring);
+  try{
+    const r = await new Promise((resolve, reject) => {
+      const filho = spawn('bash', [path.join(PASTA_CORTE, 'religar.sh'), ...args], {
+        cwd: tmpdir(), env: ambienteDe(dir, { AGORA, URL_MONITORING: m.url, ...env }),
+      });
+      let stdout = '', stderr = '';
+      filho.stdout.setEncoding('utf8').on('data', d => { stdout += d; });
+      filho.stderr.setEncoding('utf8').on('data', d => { stderr += d; });
+      filho.on('error', reject);
+      filho.on('close', status => resolve(resultadoDe(dir, status, stdout, stderr)));
+    });
+    return { ...r, pedidos: m.pedidos };
+  }finally{
+    await m.fechar();
+  }
 }
 const ESTADO_CORTADO = {
   orcamentos: { 'custta-projeto': { intervalo: '2026-11', base: 0, maiorCusto: 84.2 }, 'custta-fora-firestore': { intervalo: '2026-11', base: 3, maiorCusto: 12.5 } },
@@ -930,15 +1055,15 @@ const ESTADO_CORTADO = {
 const OBJETO_GS = 'gs://custta-corte-estado/estado.json';
 const nomeDe = chamada => chamada.slice(0, 3).join(' ');
 
-test('religar: lê a geração, depois o conteúdo, grava condicionado e só então religa', async ()=>{
+test('religar: pede o token da trava, lê a geração, depois o conteúdo, grava condicionado e só então religa', async ()=>{
   const r = await rodarReligar([], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.log.map(nomeDe), [
-    `storage objects describe`, `storage cat ${OBJETO_GS}`, `storage cp ${r.log[2][2]}`, 'services enable firestore.googleapis.com',
+    'auth print-access-token', `storage objects describe`, `storage cat ${OBJETO_GS}`, `storage cp ${r.log[3][2]}`, 'services enable firestore.googleapis.com',
   ]);
-  assert.deepEqual(r.log[0].slice(3), [OBJETO_GS, '--format=value(generation)']);
-  assert.deepEqual(r.log[2].slice(3), [OBJETO_GS, '--if-generation-match=7']);
-  assert.deepEqual(r.log[3], ['services', 'enable', 'firestore.googleapis.com', '--project', 'app-construcao-civil']);
+  assert.deepEqual(r.log[1].slice(3), [OBJETO_GS, '--format=value(generation)']);
+  assert.deepEqual(r.log[3].slice(3), [OBJETO_GS, '--if-generation-match=7']);
+  assert.deepEqual(r.log[4], ['services', 'enable', 'firestore.googleapis.com', '--project', 'app-construcao-civil']);
 });
 
 test('religar: com a cobrança tirada, base vira o maiorCusto nos dois orçamentos e os três registros zeram', async ()=>{
@@ -1032,7 +1157,7 @@ test('religar: conflito na gravação tenta uma vez de novo, relendo tudo', asyn
   const r = await rodarReligar([], { estado: ESTADO_CORTADO, falhasCp: 1 });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.log.map(c => c.slice(0, 2).join(' ')), [
-    'storage objects', 'storage cat', 'storage cp', 'storage objects', 'storage cat', 'storage cp', 'services enable',
+    'auth print-access-token', 'storage objects', 'storage cat', 'storage cp', 'storage objects', 'storage cat', 'storage cp', 'services enable',
   ]);
   assert.equal(r.saida.match(/API cai de novo/g).length, 1, 'o que vale agora sai uma vez só');
 });
@@ -1063,14 +1188,266 @@ test('religar: falha ao religar aparece no código de saída', async ()=>{
 test('religar: projeto e bucket trocam por ambiente, para o projeto descartável', async ()=>{
   const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { PROJETO_ALVO: 'descartavel', BUCKET_ESTADO: 'balde' } });
   assert.equal(r.status, 0, r.saida);
-  assert.equal(r.log[1][2], 'gs://balde/estado.json');
-  assert.deepEqual(r.log[3], ['services', 'enable', 'firestore.googleapis.com', '--project', 'descartavel']);
+  assert.equal(r.log.find(c => c[1] === 'cat')[2], 'gs://balde/estado.json');
+  assert.deepEqual(r.log.find(c => c[0] === 'services'), ['services', 'enable', 'firestore.googleapis.com', '--project', 'descartavel']);
+  assert.equal(r.pedidos.length, 4);
+  for(const p of r.pedidos){
+    assert.match(p.caminho, /^\/v3\/projects\/descartavel\//, 'a trava lê a política e a métrica do projeto alvo');
+    assert.equal(p.cota, 'descartavel');
+  }
 });
 
-test('religar: roda no Cloud Shell só com gcloud e python3, sem Node', ()=>{
+const semBucket = r => !r.log.some(c => c[0] === 'storage' || c[0] === 'services');
+const linhaDe = (r, condicao) => r.saida.split('\n').find(l => l.startsWith(`- ${condicao}: `));
+
+test('religar: a trava lê a política do projeto alvo e, de cada condição, a série da janela dela mais 5 min', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO });
+  assert.equal(r.status, 0, r.saida);
+  assert.deepEqual(r.pedidos.map(p => `${p.metodo} ${p.caminho}`), [
+    'GET /v3/projects/app-construcao-civil/alertPolicies', ...Array(3).fill('GET /v3/projects/app-construcao-civil/timeSeries'),
+  ]);
+  for(const p of r.pedidos){
+    assert.equal(p.auth, 'Bearer token-falso');
+    assert.equal(p.cota, 'app-construcao-civil', 'o projeto de cota vai no cabeçalho: sem ele o gcloud do Cloud Shell divide a cota');
+  }
+  const series = r.pedidos.slice(1).map(p => p.busca);
+  for(const b of series){
+    assert.equal(b.filter, FILTRO_LEITURAS);
+    assert.equal(b['interval.endTime'], AGORA);
+    assert.equal(b['aggregation.alignmentPeriod'], '60s');
+    assert.equal(b['aggregation.perSeriesAligner'], 'ALIGN_SUM');
+    assert.equal(b['aggregation.crossSeriesReducer'], 'REDUCE_SUM');
+  }
+  assert.deepEqual(series.map(b => b['interval.startTime']), ['2026-11-17T17:50:00Z', '2026-11-17T16:55:00Z', '2026-11-17T11:55:00Z']);
+});
+
+test('religar: a trava segura com a soma em metade do limiar e deixa com uma leitura a menos', async ()=>{
+  const segura = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { leituras: [['2026-11-17T17:30:00Z', 1000]] } });
+  assert.equal(segura.status, 3, segura.saida);
+  assert.ok(semBucket(segura), 'recusada, nada muda no bucket nem na API');
+  assert.equal(segura.gravado, null);
+  assert.equal(linhaDe(segura, C1H), `- ${C1H}: 1.000 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h35.`);
+  assert.equal(linhaDe(segura, C5MIN), `- ${C5MIN}: 0 leituras em 10 min; segura com 1.250 ou mais; livre.`);
+  assert.equal(linhaDe(segura, C6H), `- ${C6H}: 1.000 leituras em 6 h 05 min; segura com 3.000 ou mais; livre.`);
+  assert.match(segura.saida, /Religue a partir de 17\/11 15h35, horário de Brasília: é o mínimo, contando só as leituras que a métrica já mostra \(ela atrasa uns 4 minutos\)\./);
+  assert.match(segura.saida, /a API NÃO foi religada/);
+
+  const deixa = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { leituras: [['2026-11-17T17:30:00Z', 999]] } });
+  assert.equal(deixa.status, 0, deixa.saida);
+  assert.ok(deixa.log.some(c => c[0] === 'services'));
+  assert.equal(linhaDe(deixa, C1H), `- ${C1H}: 999 leituras em 1 h 05 min; segura com 1.000 ou mais; livre.`);
+  assert.doesNotMatch(deixa.saida, /Religue a partir/);
+});
+
+test('religar: a hora em que solta sai da série por minuto, não do fim do ataque mais a janela', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { leituras: [['2026-11-17T17:00:00Z', 600], ['2026-11-17T17:40:00Z', 500]] } });
+  assert.equal(r.status, 3, r.saida);
+  assert.equal(linhaDe(r, C1H), `- ${C1H}: 1.100 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h05.`);
+  assert.match(r.saida, /Religue a partir de 17\/11 15h05/, 'pelo fim do ataque mais a janela seriam 15h45');
+});
+
+test('religar: com várias janelas segurando, cada uma diz a hora dela e vale a mais tarde', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { leituras: rajada('2026-11-17T17:55:00Z', 9, 500) } });
+  assert.equal(r.status, 3, r.saida);
+  assert.equal(linhaDe(r, C5MIN), `- ${C5MIN}: 2.500 leituras em 10 min; segura com 1.250 ou mais; solta 17/11 15h03.`);
+  assert.equal(linhaDe(r, C1H), `- ${C1H}: 4.500 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h59.`);
+  assert.equal(linhaDe(r, C6H), `- ${C6H}: 4.500 leituras em 6 h 05 min; segura com 3.000 ou mais; solta 17/11 20h55.`);
+  assert.match(r.saida, /Religue a partir de 17\/11 20h55/);
+});
+
+test('religar: a hora sobe para o minuto seguinte quando o ponto não fecha no minuto', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { leituras: [['2026-11-17T17:30:30.250Z', 1000]] } });
+  assert.equal(r.status, 3, r.saida);
+  assert.match(linhaDe(r, C1H), /; solta 17\/11 15h36\.$/);
+});
+
+test('religar: com outros números na custta-leituras, a trava acompanha', async ()=>{
+  const outra = { ...POLITICA_LEITURAS, conditions: [condicaoDe(P_LEITURAS, '9', 'Leituras: mais de 5.000 em 10 min', '600s', 5000)] };
+  const monitoring = n => ({ politicas: { alertPolicies: [POLITICA_AVISO, outra], totalSize: 2 }, leituras: [['2026-11-17T17:55:00Z', n]] });
+  const segura = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: monitoring(2500) });
+  assert.equal(segura.status, 3, segura.saida);
+  assert.equal(segura.pedidos[1].busca['interval.startTime'], '2026-11-17T17:45:00Z');
+  assert.equal(linhaDe(segura, 'Leituras: mais de 5.000 em 10 min'), '- Leituras: mais de 5.000 em 10 min: 2.500 leituras em 15 min; segura com 2.500 ou mais; solta 17/11 15h10.');
+  const deixa = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: monitoring(2499) });
+  assert.equal(deixa.status, 0, deixa.saida);
+});
+
+test('religar: limiar e janela vêm da política lida, a do nome em POLITICA_ALERTA', async ()=>{
+  const P = 'projects/alvo/alertPolicies/1';
+  const teste = politicaDe(P, 'leituras-teste', [condicaoDe(P, '2', 'Teste: mais de 10 em 2 min', '120s', 10)], 'teste', '2026-11-17T17:00:00Z', '2026-11-17T17:00:00Z');
+  const monitoring = { politicas: { alertPolicies: [POLITICA_LEITURAS, teste], totalSize: 2 }, leituras: [['2026-11-17T17:57:00Z', 5]] };
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { POLITICA_ALERTA: 'leituras-teste' }, monitoring });
+  assert.equal(r.status, 3, r.saida);
+  assert.equal(r.pedidos.length, 2, 'a política e a série da condição única');
+  assert.equal(r.pedidos[1].busca['interval.startTime'], '2026-11-17T17:53:00Z');
+  assert.equal(linhaDe(r, 'Teste: mais de 10 em 2 min'), '- Teste: mais de 10 em 2 min: 5 leituras em 7 min; segura com 5 ou mais; solta 17/11 15h04.');
+});
+
+test('religar: a trava segue as páginas da política e da série', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { porPagina: 1, leituras: [['2026-11-17T17:00:00Z', 600], ['2026-11-17T17:40:00Z', 500]] } });
+  assert.equal(r.status, 3, r.saida);
+  assert.match(linhaDe(r, C1H), /: 1\.100 leituras em 1 h 05 min;/);
+  assert.ok(r.pedidos.some(p => p.caminho.endsWith('/alertPolicies') && p.busca.pageToken === '1'), 'a de leituras vem na segunda página');
+  const daHora = r.pedidos.filter(p => p.busca['interval.startTime'] === '2026-11-17T16:55:00Z');
+  assert.deepEqual(daHora.map(p => p.busca.pageToken), [undefined, '1']);
+  for(const p of daHora) assert.equal(p.busca.filter, FILTRO_LEITURAS, 'a página seguinte repete o pedido');
+});
+
+async function portaFechada(){
+  const s = http.createServer();
+  await new Promise(r => s.listen(0, '127.0.0.1', r));
+  const { port } = s.address();
+  await new Promise(r => s.close(r));
+  return port;
+}
+
+test('religar: sem conseguir ler a política ou a série, a trava não deixa religar e diz por quê', { timeout: 120000 }, async ()=>{
+  const umaHora = POLITICA_LEITURAS.conditions[1];
+  const comLimiar = mudanca => ({ ...umaHora, conditionThreshold: { ...umaHora.conditionThreshold, ...mudanca } });
+  const soCom = (...conditions) => ({ politicas: { alertPolicies: [POLITICA_AVISO, { ...POLITICA_LEITURAS, conditions }], totalSize: 2 } });
+  const agregacao = (alignmentPeriod, perSeriesAligner = 'ALIGN_SUM') => ({ alignmentPeriod, perSeriesAligner, crossSeriesReducer: 'REDUCE_SUM' });
+  const ponto = value => ({ interval: { startTime: '2026-11-17T17:29:00Z', endTime: '2026-11-17T17:30:00Z' }, value });
+  const espiao = await subirMonitoring();
+  const casos = [
+    ['sem a política', { monitoring: { politicas: { alertPolicies: [POLITICA_AVISO], totalSize: 1 } } }, /a política custta-leituras não existe no projeto app-construcao-civil/],
+    ['nenhuma política no projeto', { monitoring: { politicas: {} } }, /a política custta-leituras não existe/],
+    ['duas com o mesmo nome', { monitoring: { politicas: { alertPolicies: [POLITICA_LEITURAS, POLITICA_LEITURAS], totalSize: 2 } } }, /há 2 políticas custta-leituras/],
+    ['lista de condições vazia', { monitoring: soCom() }, /a política custta-leituras não tem condição/],
+    ['sem lista de condições', { monitoring: { politicas: { alertPolicies: [{ ...POLITICA_LEITURAS, conditions: undefined }] } } }, /não tem condição/],
+    ['taxa no lugar de soma', { monitoring: soCom(comLimiar({ aggregations: [agregacao('3600s', 'ALIGN_RATE')] })) }, /a condição Leituras do Firestore: mais de 2\.000 em 1 h não é soma acima de um limiar/],
+    ['comparação abaixo', { monitoring: soCom(comLimiar({ comparison: 'COMPARISON_LT' })) }, /não é soma acima de um limiar/],
+    ['sem limiar', { monitoring: soCom(comLimiar({ thresholdValue: undefined })) }, /não é soma acima de um limiar/],
+    ['limiar zero', { monitoring: soCom(comLimiar({ thresholdValue: 0 })) }, /não é soma acima de um limiar/],
+    ['duas agregações', { monitoring: soCom(comLimiar({ aggregations: [agregacao('3600s'), agregacao('3600s')] })) }, /não é soma acima de um limiar/],
+    ['média entre as séries', { monitoring: soCom(comLimiar({ aggregations: [{ alignmentPeriod: '3600s', perSeriesAligner: 'ALIGN_SUM', crossSeriesReducer: 'REDUCE_MEAN' }] })) }, /não é soma acima de um limiar/],
+    ['sem redutor entre as séries', { monitoring: soCom(comLimiar({ aggregations: [{ alignmentPeriod: '3600s', perSeriesAligner: 'ALIGN_SUM' }] })) }, /não é soma acima de um limiar/],
+    ['razão, com denominatorFilter', { monitoring: soCom(comLimiar({ denominatorFilter: FILTRO_LEITURAS, denominatorAggregations: [agregacao('3600s')] })) }, /não é soma acima de um limiar/],
+    ['janela fora do formato', { monitoring: soCom(comLimiar({ aggregations: [agregacao('1h')] })) }, /não é soma acima de um limiar/],
+    ['condição de ausência', { monitoring: soCom({ displayName: 'Sem dado', conditionAbsent: { filter: FILTRO_LEITURAS, duration: '600s' } }) }, /a condição Sem dado não é soma acima de um limiar/],
+    ['HTTP 403 na política', { monitoring: { falhar: { politicas: 403 } } }, /o Monitoring respondeu HTTP 403 PERMISSION_DENIED: falha falsa em politicas/],
+    ['HTTP 503 na série', { monitoring: { falhar: { serie: 503 } } }, /o Monitoring respondeu HTTP 503 UNAVAILABLE: falha falsa em serie/],
+    ['corpo que não é JSON', { monitoring: { falhar: { serie: 'lixo' } } }, /a resposta do Monitoring veio fora do formato \(JSONDecodeError/],
+    ['conexão derrubada', { monitoring: { falhar: { politicas: 'derruba' } } }, /RemoteDisconnected|ConnectionResetError/],
+    ['prazo estourado', { monitoring: { falhar: { serie: 'mudo' } } }, /timed out/],
+    ['ponto sem valor', { monitoring: { serie: () => serieCom([ponto({})]) } }, /um ponto da série veio com valor fora do formato: \{\}/],
+    ['valor que não é número', { monitoring: { serie: () => serieCom([ponto({ int64Value: 'muitas' })]) } }, /valor fora do formato: \{"int64Value": "muitas"\}/],
+    ['valor negativo', { monitoring: { serie: () => serieCom([ponto({ int64Value: '5000' }), ponto({ int64Value: '-5000' })]) } }, /valor fora do formato: \{"int64Value": "-5000"\}/],
+    ['int64Value em número, fora do formato da API', { monitoring: { serie: () => serieCom([ponto({ int64Value: 1000 })]) } }, /valor fora do formato: \{"int64Value": 1000\}/],
+    ['valor booleano', { monitoring: { serie: () => serieCom([ponto({ doubleValue: true })]) } }, /valor fora do formato: \{"doubleValue": true\}/],
+    ['valor negativo em double', { monitoring: { serie: () => serieCom([ponto({ doubleValue: -1.5 })]) } }, /valor fora do formato/],
+    ['redirecionamento, que levaria o token junto', { monitoring: { falhar: { politicas: { redireciona: `${espiao.url}/v3/projects/app-construcao-civil/alertPolicies` } } } }, /o Monitoring respondeu HTTP 302/],
+    ['páginas sem fim', { monitoring: { semFim: true } }, /o Monitoring mandou mais de 50 páginas de alertPolicies/],
+    ['fim do ponto ilegível', { monitoring: { serie: () => serieCom([{ interval: { startTime: '2026-11-17T17:29:00Z', endTime: '17/11/2026 17:30' }, value: { int64Value: '5' } }]) } }, /hora fora do formato: 17\/11\/2026 17:30/],
+    ['token negado', { semToken: true }, /o gcloud não deu o token de acesso: ERROR: \(gcloud\.auth\.print-access-token\) sem conta ativa/],
+    ['Monitoring fora do ar', { env: { URL_MONITORING: `http://127.0.0.1:${await portaFechada()}` } }, /Connection refused/],
+  ];
+  try{
+    for(const [nome, opcoes, motivo] of casos){
+      const r = await rodarReligar([], { estado: ESTADO_CORTADO, ...opcoes });
+      assert.equal(r.status, 4, `${nome}: ${r.saida}`);
+      assert.ok(semBucket(r), nome);
+      assert.equal(r.gravado, null, nome);
+      assert.match(r.saida, /Trava: sem ler as leituras, não deixo religar: /, nome);
+      assert.match(r.saida, motivo, nome);
+      assert.match(r.saida, /a API NÃO foi religada/, nome);
+      if(nome === 'páginas sem fim') assert.equal(r.pedidos.length, 50, 'para no teto de 50 páginas');
+    }
+  }finally{
+    await espiao.fechar();
+  }
+  assert.deepEqual(espiao.pedidos, [], 'o redirecionamento não foi seguido: o token não saiu');
+});
+
+test('religar: série com doubleValue soma igual à de int64Value', async ()=>{
+  const serie = n => () => serieCom([{ interval: { startTime: '2026-11-17T17:29:00Z', endTime: '2026-11-17T17:30:00Z' }, value: { doubleValue: n } }]);
+  const segura = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { serie: serie(1000) } });
+  assert.equal(segura.status, 3, segura.saida);
+  assert.equal(linhaDe(segura, C1H), `- ${C1H}: 1.000 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h35.`);
+  const deixa = await rodarReligar([], { estado: ESTADO_CORTADO, monitoring: { serie: serie(999.5) } });
+  assert.equal(deixa.status, 0, deixa.saida);
+});
+
+test('religar: python da trava que não termina, ou que falta, conta como não leu', async ()=>{
+  for(const codigo of [1, 127]){
+    const r = await rodarReligar([], { estado: ESTADO_CORTADO, pythonQuebra: codigo });
+    assert.equal(r.status, 4, `${codigo}: ${r.saida}`);
+    assert.ok(semBucket(r), String(codigo));
+    assert.match(r.saida, new RegExp(`a trava não rodou até o fim \\(saída ${codigo}\\): a API NÃO foi religada`));
+  }
+});
+
+test('religar: a trava não usa proxy do ambiente, para o token ir só ao Monitoring', async ()=>{
+  const morto = `http://127.0.0.1:${await portaFechada()}`;
+  const env = { http_proxy: morto, https_proxy: morto, HTTP_PROXY: morto, HTTPS_PROXY: morto, no_proxy: '', NO_PROXY: '' };
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, env });
+  assert.equal(r.status, 0, r.saida);
+  assert.equal(r.pedidos.length, 4);
+});
+
+test('religar: o projeto da cota troca por PROJETO_COTA; a política e a série seguem as do projeto alvo', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { PROJETO_COTA: 'custta-corte' } });
+  assert.equal(r.status, 0, r.saida);
+  assert.equal(r.pedidos.length, 4);
+  for(const p of r.pedidos){
+    assert.equal(p.cota, 'custta-corte');
+    assert.match(p.caminho, /^\/v3\/projects\/app-construcao-civil\//);
+  }
+});
+
+test('religar: URL_MONITORING só aceita o Monitoring falso local, e AGORA só vale junto com ela', async ()=>{
+  for(const env of [
+    { URL_MONITORING: 'https://monitoring.googleapis.com' },
+    { URL_MONITORING: 'http://localhost:8123' },
+    { URL_MONITORING: 'http://127.0.0.1:8123/v3' },
+    { URL_MONITORING: 'http://127.0.0.1.exemplo.com:80' },
+    { URL_MONITORING: 'http://127.0.0.1:' },
+    { URL_MONITORING: '', AGORA: '2026-11-17T23:00:00Z' },
+  ]){
+    const r = await rodarReligar([], { estado: ESTADO_CORTADO, env });
+    assert.equal(r.status, 2, `${JSON.stringify(env)}: ${r.saida}`);
+    assert.deepEqual(r.log, [], 'para antes de qualquer gcloud: nem o token sai');
+    assert.deepEqual(r.pedidos, []);
+    assert.match(r.saida, /só vale nos testes|só aceita http:\/\/127\.0\.0\.1:porta/);
+  }
+});
+
+test('religar: a hora que a trava diz é honesta: nela passa e um minuto antes ainda segura', async ()=>{
+  const casos = [
+    [rajada('2026-11-17T17:55:00Z', 9, 500), AGORA, '17\\/11 20h55', '2026-11-17T23:55:00Z'],
+    [[['2026-11-17T17:00:00Z', 600], ['2026-11-17T17:40:00Z', 500]], AGORA, '17\\/11 15h05', '2026-11-17T18:05:00Z'],
+    [[['2026-11-17T17:30:30.123456789Z', 1000]], AGORA, '17\\/11 15h36', '2026-11-17T18:36:00Z'],
+    [rajada('2026-11-18T00:50:00Z', 9, 500), '2026-11-18T01:00:00Z', '18\\/11 03h50', '2026-11-18T06:50:00Z'],
+  ];
+  for(const [leituras, agora, impressa, utc] of casos){
+    const monitoring = { leituras };
+    const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { AGORA: agora }, monitoring });
+    assert.equal(r.status, 3, r.saida);
+    assert.match(r.saida, new RegExp(`Religue a partir de ${impressa}, horário de Brasília: é o mínimo`), r.saida);
+    const na = await rodarReligar([], { estado: ESTADO_CORTADO, env: { AGORA: utc }, monitoring });
+    assert.equal(na.status, 0, `${utc}: ${na.saida}`);
+    const antes = await rodarReligar([], { estado: ESTADO_CORTADO, env: { AGORA: semMs(Date.parse(utc) - MINUTO) }, monitoring });
+    assert.equal(antes.status, 3, `um minuto antes de ${utc}: ${antes.saida}`);
+  }
+});
+
+test('religar: sem a base de fusos, a hora sai em UTC-3 fixo, sem estourar', async ()=>{
+  const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { PYTHONTZPATH: '/nao-existe' }, monitoring: { leituras: [['2026-11-17T17:30:00Z', 1000]] } });
+  assert.equal(r.status, 3, r.saida);
+  assert.equal(linhaDe(r, C1H), `- ${C1H}: 1.000 leituras em 1 h 05 min; segura com 1.000 ou mais; solta 17/11 15h35.`);
+});
+
+test('religar: nenhum limiar nem janela da política mora no script', ()=>{
+  assert.doesNotMatch(readFileSync(path.join(PASTA_CORTE, 'religar.sh'), 'utf8'), /\b(2500|2000|6000|3600|21600)\b/);
+});
+
+test('religar: roda no Cloud Shell só com gcloud e python3, sem Node e só com a biblioteca padrão', ()=>{
   const texto = readFileSync(path.join(PASTA_CORTE, 'religar.sh'), 'utf8');
   assert.match(texto, /python3/);
-  assert.doesNotMatch(texto, /\b(node|npm|npx|jq)\b/);
+  assert.doesNotMatch(texto, /\b(node|npm|npx|jq|curl|wget)\b/);
+  const modulos = [...texto.matchAll(/^\s*(?:import\s+([\w., ]+?)\s*$|from\s+([\w.]+)\s+import\b)/gm)]
+    .flatMap(m => (m[1] || m[2]).split(',').map(s => s.trim().split('.')[0]));
+  assert.ok(modulos.includes('urllib'), 'a REST vai pelo urllib');
+  for(const m of modulos) assert.ok(['datetime', 'json', 'os', 're', 'subprocess', 'sys', 'urllib', 'zoneinfo'].includes(m), m);
 });
 
 const envDe = chamada => Object.fromEntries(chamada.find(a => a.startsWith('--set-env-vars=')).slice('--set-env-vars='.length).split(',').map(p => p.split('=')));

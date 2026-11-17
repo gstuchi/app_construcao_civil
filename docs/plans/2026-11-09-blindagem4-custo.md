@@ -3562,18 +3562,31 @@ Depois do G14. Firebase → card **Plano de faturamento** → **Fazer upgrade**.
 
 O Giovani fica sabendo por e-mail: `Custta: o corte agiu`, `Custta: o corte falhou`, os e-mails do orçamento ou o alerta de leituras. O site e o app continuam com o cache. Quem usa vê "Salvando…" sem fim.
 
+Num corte pelo alerta de leituras, cada janela abre o próprio incidente, e podem chegar dois `o corte agiu` do mesmo ataque, um por janela. Um `o corte falhou` logo depois de um `o corte agiu` também pode ser falso. Se o aviso de outra janela chega com o corte em curso e o pedido de desligar dele dá erro, ele registra falha, e a repetição do Pub/Sub, que acha a API desligada, encerra essa falha. Antes de tratar como falha, confira se a API está desligada: `gcloud services list --enabled --project app-construcao-civil | grep firestore.googleapis.com` não mostra nada.
+
 **Não religue sem entender.** Com a API fora, as métricas ficam zeradas, com ou sem robô. Só religando se descobre se ele continua, e por isso a função fica armada e corta de novo.
 
-**Só a API desligou (o caso comum).** Dá para fazer sem Mac, no Cloud Shell do Google, pelo celular. Leva cerca de 15 minutos.
+**Só a API desligou (o caso comum).** Dá para fazer sem Mac, no Cloud Shell do Google, pelo celular. O comando leva cerca de 15 minutos, mas depois de um corte por leituras a trava pode mandar esperar, até umas 6 h (veja "Quanto esperar", abaixo).
 1. Decidir a folga **antes** do comando. Com menos de 24 h do pico, o custo atrasado ainda sobe, e `--folga 0` faz a API cair de novo. `--folga 100` evita isso, mas adia o próximo corte e sobe o teto do mês em R$ 100. Se a cobrança também foi tirada, a mesma folga vale para o orçamento de fora do Firestore e sobe o teto dele no mesmo tanto. Só o Giovani decide.
 2. Em `shell.cloud.google.com`, com o ID real no lugar de `CORTE` e a folga escolhida:
    `rm -rf app_construcao_civil; git clone https://github.com/gstuchi/app_construcao_civil && cd app_construcao_civil && BUCKET_ESTADO=CORTE-estado bash corte/religar.sh --folga 0`
-   Grava a base e, só depois, religa a API. O script imprime em quanto a API cai de novo. Na opção oficial, esse valor é o da cobrança.
+   Antes de tudo, a trava confere as leituras. Se ela segurar, nada muda, e o script diz a hora em que ela solta: espere e rode o mesmo comando de novo. Com a trava livre, grava a base e, só depois, religa a API. O script imprime em quanto a API cai de novo. Na opção oficial, esse valor é o da cobrança.
 3. Avisar quem usa: abrir **um aparelho de cada vez, com internet**. Cada salvamento regrava o documento inteiro, e o último a subir apaga o outro. O PITR de 7 dias desfaz, e um agente faz isso num banco novo.
 4. Conferir que o site e o app leem e gravam. `gcloud firestore databases describe --project app-construcao-civil` (PITR e proteção) e `gcloud firestore backups schedules list --database '(default)' --project app-construcao-civil`. Recriar o que faltar.
 
+**Quanto esperar: a trava.** Antes de gravar a base, o `religar.sh` lê a política `custta-leituras` e, para cada janela dela (5 min, 1 h e 6 h), soma as leituras da janela mais 5 minutos, o atraso da métrica. Com alguma soma em metade do limiar ou mais, não religa: diz, por janela, a hora em que solta, e a hora geral, em horário de Brasília. **Religue quando a trava deixar; ela diz a hora.** A espera não é um prazo fixo por janela. Ela não depende de qual janela cortou, e sim do tamanho e do ritmo do ataque:
+- um ataque que somou 3.000 leituras ou mais em 6 h segura até ~6 h 05 min depois da última leitura. Rajada de 500 leituras por minuto ou mais cai sempre aqui, qualquer que seja a janela que cortou;
+- um ataque menor segura ~1 h;
+- se quem cortou foi a de 6 h, por gotejamento de 1.000 a 2.000 leituras por hora, a trava solta entre ~3 h e ~4 h 35 min depois do corte.
+
+A hora dita é o mínimo: a métrica atrasa uns 4 minutos. Rodar antes da hora não faz mal, porque a trava recusa de novo e repete a hora. Sem conseguir ler a política ou a métrica, a trava também não deixa religar, e diz por quê. Se o Monitoring responder `HTTP 403` com a cobrança tirada, pode ser a cota: o pedido usa o próprio projeto alvo como projeto de cota. Rode de novo com `PROJETO_COTA=CORTE` ao lado do `BUCKET_ESTADO=CORTE-estado`, para usar o projeto da função. Esse caso, sem cobrança, não foi provado.
+
+**`--forcar "motivo"`** religa mesmo com a trava segurando, ou sem ela conseguir ler. O motivo é obrigatório e fica no `estado.json`, na lista `religadosForcados`, com a hora e o que a trava disse. Só o Giovani decide forçar, e só em dois casos:
+- **Corte falso**, de uso legítimo que cresceu e passou do limiar: primeiro suba o limiar da política `custta-leituras`, depois rode o comando com `--forcar "corte falso: <o que cresceu>"`. Sem subir o limiar, o mesmo uso corta de novo.
+- **Monitoring fora do ar:** forçar religa sem saber se o ataque continua. Se continuar, a função, que segue armada, corta de novo.
+
 **A cobrança foi tirada.** Só com o interruptor armado, e só se a API não desligou, se o gasto foi de fora do Firestore, ou na opção oficial. De 40 minutos a mais de um dia.
-1. Rodar o `religar.sh`, como acima, **antes** de religar a cobrança, para a função não cortar de novo. A folga escolhida no passo 1 de cima vale aqui também para o orçamento de fora do Firestore: com menos de 24 h do pico, `--folga 0` deixa o custo atrasado do mesmo ataque tirar a cobrança de novo assim que ela voltar. Se a última linha falhar (ligar a API sem cobrança), a base já ficou gravada: siga.
+1. Rodar o `religar.sh`, como acima, **antes** de religar a cobrança, para a função não cortar de novo. A folga escolhida no passo 1 de cima vale aqui também para o orçamento de fora do Firestore: com menos de 24 h do pico, `--folga 0` deixa o custo atrasado do mesmo ataque tirar a cobrança de novo assim que ela voltar. Se a última linha falhar (ligar a API sem cobrança), a base já ficou gravada: siga. A trava vale aqui também: se ela segurar, a cobrança também espera, porque o religar não grava a base enquanto a trava não deixa. Se o Monitoring negar a leitura, veja o `PROJETO_COTA` em "Quanto esperar".
 2. Em `console.cloud.google.com/billing/projects`, **Change billing** no projeto `app-construcao-civil`. O Google diz que pode levar até 24 h, sem garantia.
 3. `gcloud services enable firestore.googleapis.com --project app-construcao-civil`.
 4. Conferir banco, PITR, agendamentos e backups. Ligar o PITR de novo antes de restaurar. Dado perdido: restaurar backup em banco novo e copiar por conta, com um agente.

@@ -689,6 +689,111 @@ test('cenário 10: o segundo open, que não corta, ainda deixa na passagem qual 
   assert.deepEqual([p.condicao, p.valorObservado, p.limiar], ['Leituras do Firestore: mais de 2.000 em 1 h', 4500, 2000]);
 });
 
+/* Corrida, item 7 do pedido da trava: no T6c o 2º open veio 34 s e 58 s depois do 1º, e a função
+   espera até 50 s pela confirmação do desligamento (6 voltas de 10 s). Duas instâncias sobre o
+   mesmo Google falso: a primeira para na espera da confirmação, numa porta que o teste abre, e a
+   segunda chega com a API ainda ENABLED. Decisão: aceitar o 2º corte-acao; o teste prende o que
+   acontece, nas duas ordens em que o estado pode ser gravado. */
+const portao = () => { let abrir; const aberta = new Promise(r => { abrir = r; }); return { aberta, abrir }; };
+async function ate(condicao){
+  for(let i = 0; i < 10000; i++){
+    if(condicao()) return;
+    await new Promise(r => setImmediate(r));
+  }
+  throw new Error('a corrida não chegou ao ponto esperado');
+}
+function instancia(g, { agora, esperar = async () => {}, cliente = g.cliente }){
+  const linhas = [];
+  const receber = criarManipulador({
+    carregar: () => criarGoogle({ cliente, projeto: 'alvo', bucket: 'estado-teste' }), env: ENV,
+    agora: () => new Date(agora), escrever: l => linhas.push(JSON.parse(l)), esperar,
+  });
+  return { receber: corpo => receber(eventoDe(corpo)).then(() => null, e => e), de: m => linhas.filter(l => l.marca === m) };
+}
+const C5MIN_AVISO = 'Leituras do Firestore: mais de 2.500 em 5 min', C1H_AVISO = 'Leituras do Firestore: mais de 2.000 em 1 h';
+const AVISO_5MIN = avisoReal({ condicao: C5MIN_AVISO, observado: '2700', limiar: '2500' });
+const AVISO_1H = avisoReal({ condicao: C1H_AVISO, observado: '4500', limiar: '2000' });
+const T34 = mais(T0, 34000);
+const contar = (g, rotulo) => g.chamadas.filter(c => c === rotulo).length;
+
+test('corrida: open com o corte do anterior em curso dá um 2º corte-acao, com a condição dele, e o estado fica de quem grava primeiro', async ()=>{
+  for(const primeiroAGravar of ['o segundo', 'o primeiro']){
+    const g = googleFalso();
+    g.demoraDesligar = 3;
+    const p1 = portao(), p2 = portao();
+    const a = instancia(g, { agora: T0, esperar: () => p1.aberta });
+    const b = instancia(g, { agora: T34, esperar: primeiroAGravar === 'o primeiro' ? () => p2.aberta : async () => {} });
+    const ra = a.receber(AVISO_5MIN);
+    await ate(() => contar(g, 'api-ler') === 2);
+    const rb = b.receber(AVISO_1H);
+    if(primeiroAGravar === 'o segundo'){
+      assert.equal(await rb, null, 'o segundo lê ENABLED, pede o disable de novo e confirma enquanto o primeiro dorme');
+      p1.abrir();
+    }else{
+      await ate(() => contar(g, 'api-ler') === 4);
+      p1.abrir();
+      assert.equal(await ra, null);
+      p2.abrir();
+    }
+    assert.equal(await ra, null);
+    assert.equal(await rb, null);
+    const caso = `grava primeiro ${primeiroAGravar}`;
+    assert.deepEqual(a.de('corte-acao').map(l => [l.acao, l.condicao]), [['desligar-api', C5MIN_AVISO]], caso);
+    assert.deepEqual(b.de('corte-acao').map(l => [l.acao, l.condicao]), [['desligar-api', C1H_AVISO]], caso);
+    assert.equal(contar(g, 'api-desligar'), 2, caso);
+    assert.equal(contar(g, 'estado-gravar'), 1, `${caso}: quem grava depois acha a hora já gravada`);
+    assert.equal(g.estado.apiDesligadaEm, primeiroAGravar === 'o segundo' ? T34 : T0, caso);
+    assert.equal(g.estado.primeiraFalha, null, caso);
+    assert.deepEqual([...a.de('corte-erro'), ...b.de('corte-erro')], [], caso);
+    assert.ok(!g.chamadas.some(c => c.startsWith('cobranca-')), caso);
+  }
+});
+
+test('corrida: se o disable do segundo dá erro com o primeiro em curso, a falha que ele grava some na repetição do Pub/Sub, nas duas ordens', async ()=>{
+  for(const primeiroAGravar of ['o segundo', 'o primeiro']){
+    const g = googleFalso();
+    g.demoraDesligar = 4;
+    const p1 = portao(), p3 = portao();
+    const a = instancia(g, { agora: T0, esperar: () => p1.aberta });
+    let segurarB = primeiroAGravar === 'o primeiro';
+    const clienteB = { async request(o){
+      if(segurarB && o.url.endsWith('?fields=generation')){ segurarB = false; await p3.aberta; }
+      return g.cliente.request(o);
+    } };
+    const b = instancia(g, { agora: T34, cliente: clienteB });
+    const ra = a.receber(AVISO_5MIN);
+    await ate(() => contar(g, 'api-ler') === 2);
+    const erro = new ErroHttp(400);
+    g.falhar['api-desligar'] = [erro];
+    const rb = b.receber(AVISO_1H);
+    const caso = `grava primeiro ${primeiroAGravar}`;
+    if(primeiroAGravar === 'o segundo'){
+      assert.equal(await rb, erro, `${caso}: o segundo vê a API ligada na única leitura depois do erro, grava a falha e relança`);
+      assert.equal(g.estado.primeiraFalha, T34, caso);
+      p1.abrir();
+      assert.equal(await ra, null);
+    }else{
+      await ate(() => contar(g, 'api-ler') === 4);
+      p1.abrir();
+      assert.equal(await ra, null);
+      assert.equal(g.estado.apiDesligadaEm, T0, caso);
+      p3.abrir();
+      assert.equal(await rb, erro, caso);
+      assert.deepEqual([g.estado.apiDesligadaEm, g.estado.primeiraFalha], [T0, T34], `${caso}: a falha grava por cima do corte registrado`);
+    }
+    assert.deepEqual(a.de('corte-acao').map(l => l.condicao), [C5MIN_AVISO], caso);
+    assert.deepEqual(b.de('corte-acao'), [], caso);
+    assert.equal(b.de('corte-erro').length, 1, `${caso}: um aviso de falha a mais, passageiro`);
+
+    const repeticao = instancia(g, { agora: mais(T0, 60000) });
+    assert.equal(await repeticao.receber(AVISO_1H), null, caso);
+    assert.deepEqual(repeticao.de('corte-acao'), [], caso);
+    assert.equal(g.estado.primeiraFalha, null, `${caso}: a repetição acha a API desligada e encerra a falha`);
+    assert.equal(g.estado.apiDesligadaEm, T0, `${caso}: e não mexe na hora do corte`);
+    assert.ok(!g.chamadas.some(c => c.startsWith('cobranca-')), `${caso}: nada chega à cobrança`);
+  }
+});
+
 test('cenário 11: desarmado só registra que faria', async ()=>{
   const env = { ARMADO_API: 'false', ARMADO_COBRANCA: 'false' };
   const g1 = googleFalso();

@@ -590,6 +590,28 @@ test('cenário 10: alerta com disable falhando registra a falha, relança e não
   assert.ok(!g.chamadas.some(c => c.startsWith('cobranca-')));
 });
 
+/* A política de leituras tem três condições em OR, e cada uma abre o próprio incidente: no T6c
+   chegaram três open por ataque em ~6 min 40 s. Do segundo em diante a API já está desligada. */
+test('cenário 10: dois e três open seguidos com a API já desligada dão um corte-acao só, e só o primeiro grava', async ()=>{
+  for(const vezes of [2, 3]){
+    const g = googleFalso();
+    const avisos = [];
+    for(let i = 0; i < vezes; i++) avisos.push(await rodar(g, incidente('leituras', 'open'), { agora: mais(T0, i * 200000) }));
+    const caso = `${vezes} open`;
+    const acoes = avisos.flatMap(r => r.de('corte-acao'));
+    assert.equal(acoes.length, 1, caso);
+    assert.equal(acoes[0].acao, 'desligar-api', caso);
+    assert.equal(g.chamadas.filter(c => c === 'api-desligar').length, 1, `${caso}: um disable só`);
+    assert.equal(g.chamadas.filter(c => c === 'estado-gravar').length, 1, `${caso}: os seguintes não regravam o estado`);
+    assert.equal(g.estado.apiDesligadaEm, T0, `${caso}: vale a hora do primeiro`);
+    for(const r of avisos.slice(1)){
+      assert.equal(r.erro, null, caso);
+      assert.deepEqual(r.de('corte-erro'), [], caso);
+      assert.equal(passagemUnica(r).fez, 'API já estava desligada', caso);
+    }
+  }
+});
+
 test('cenário 11: desarmado só registra que faria', async ()=>{
   const env = { ARMADO_API: 'false', ARMADO_COBRANCA: 'false' };
   const g1 = googleFalso();

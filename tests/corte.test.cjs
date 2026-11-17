@@ -2209,6 +2209,26 @@ test('implantar: --modo-oficial passa MODO_CORTE=oficial; sem ele, dois-tempos',
   assert.deepEqual([desarmada.ARMADO_API, desarmada.ARMADO_COBRANCA], ['false', 'false'], 'o modo não arma nada');
 });
 
+test('implantar: --modo-oficial-alerta passa MODO_CORTE=oficial-alerta e não arma nada sozinho', ()=>{
+  const env = args => { const r = rodarScript('implantar.sh', args); assert.equal(r.status, 0, r.saida); return envDe(r.log[0]); };
+  const so = env(['--modo-oficial-alerta']);
+  assert.deepEqual([so.MODO_CORTE, so.ARMADO_API, so.ARMADO_COBRANCA], ['oficial-alerta', 'false', 'false']);
+  const cobranca = env(['--armar-cobranca', '--modo-oficial-alerta']);
+  assert.deepEqual([cobranca.MODO_CORTE, cobranca.ARMADO_API, cobranca.ARMADO_COBRANCA], ['oficial-alerta', 'false', 'true']);
+  const tudo = env(['--modo-oficial-alerta', '--armar-cobranca', '--armar-api']);
+  assert.deepEqual([tudo.MODO_CORTE, tudo.ARMADO_API, tudo.ARMADO_COBRANCA], ['oficial-alerta', 'true', 'true']);
+  assert.equal(regra.modoDoCorte(so.MODO_CORTE), 'oficial-alerta', 'o texto que o implantar grava é o que a função aceita');
+});
+
+test('implantar: um modo só por comando; o segundo para antes do gcloud', ()=>{
+  for(const args of [['--modo-oficial', '--modo-oficial-alerta'], ['--modo-oficial-alerta', '--modo-oficial'], ['--modo-oficial-alerta', '--armar-api', '--modo-oficial-alerta']]){
+    const r = rodarScript('implantar.sh', args);
+    assert.equal(r.status, 2, args.join(' '));
+    assert.deepEqual(r.log, [], args.join(' '));
+    assert.match(r.saida, /uso: implantar\.sh \[--armar-api\] \[--armar-cobranca\] \[--modo-oficial \| --modo-oficial-alerta\]/);
+  }
+});
+
 test('implantar: argumento desconhecido para antes do gcloud', ()=>{
   for(const args of [['--armar'], ['true'], ['--armar-api', 'x'], ['--modo'], ['--modo-oficial', 'x']]){
     const r = rodarScript('implantar.sh', args);

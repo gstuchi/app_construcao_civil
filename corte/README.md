@@ -12,7 +12,7 @@ Com `MODO_CORTE=oficial-alerta`, a direção do conselho de 17/11, a cobrança s
 
 Nunca religa nada. Os dois interruptores (`ARMADO_API`, `ARMADO_COBRANCA`) começam em `false`: desarmada, a função só registra o que faria.
 
-- `implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]`: implanta a função.
+- `implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial | --modo-oficial-alerta]`: implanta a função; um modo só por comando.
 - `religar.sh [--folga N] [--forcar "motivo"]`: volta depois de um corte; roda no Cloud Shell. Antes de tudo, a trava lê a política de leituras e só deixa religar com todas as somas abaixo da metade do limiar; quando segura, diz a hora em que solta. `--forcar` religa assim mesmo, com o motivo registrado no `estado.json`.
 
 O roteiro de implantação e de volta está no plano da Blindagem 4, em `docs/plans/`; quanto esperar depois de um corte e quando forçar, em "Se o corte agir". Os testes ficam em `tests/corte.test.cjs`.

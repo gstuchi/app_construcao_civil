@@ -104,7 +104,7 @@ function dinheiroHtml(v){
   return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$&nbsp;</span>${int}${cent ? `<span class="cent">,${cent}</span>` : ''}</span>`;
 }
 function dinheiroCurtoHtml(v){
-  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '').replace(/\s(mil|mi)$/, '&nbsp;<span class="suf">$1</span>');
+  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '').replace(/\s(mil|mi)$/, '<span class="suf">&nbsp;$1</span>');
   return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$&nbsp;</span>${corpo}</span>`;
 }
 /* Pedaços do anel e da barra empilhada: os 6 maiores tópicos em cor e o resto em "Outros",

@@ -1161,7 +1161,7 @@ body .layout-45{font-size:30px}
 
   /* números: mono, tabulares, "R$" e centavos menores na linha do número */
   .num{font-family:var(--fonte-num);letter-spacing:var(--num-ls);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .num .moeda{font-size:max(.58em,min(1em,11px));font-weight:600;letter-spacing:0}
+  .num .moeda{font-size:max(.58em,min(1em,11px));font-weight:600;letter-spacing:0;margin-right:-.2em} /* o espaço de verdade (lido e copiado) é largo em mono: a margem devolve */
   .num .cent{font-size:max(.62em,min(1em,11px));letter-spacing:0;margin-left:.03em}
   .num .suf{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:.78em;font-weight:600;letter-spacing:0}
   .li-val,.kpi .k-num,.card .k-val,.orc-num,.donut .center b,.top-resumo b,.orc-val b{font-family:var(--fonte-num);letter-spacing:var(--num-ls);font-weight:600}
@@ -1320,6 +1320,12 @@ body .layout-45{font-size:30px}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--grade)}
   .stats .rot{font-size:13px;color:var(--muted);font-weight:500}
   .stats .num{font-size:17px}
+  /* desktop: o anel ao lado da lista */
+  @media (min-width:900px){
+    .graf-bloco{display:grid;grid-template-columns:auto 1fr;column-gap:36px;align-items:start}
+    .graf-bloco > h2{grid-column:1 / -1}
+    .graf-bloco .anel-caixa{margin:14px 8px;position:sticky;top:96px}
+  }
 
   /* ===== Relatório (identidade da etapa 4) ===== */
 

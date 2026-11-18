@@ -87,9 +87,21 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     // Relatório: um grupo por tópico, do maior bruto para o menor (no empate, o que aparece primeiro nos gastos); no grupo, os
     // gastos por data e, na mesma data, a ordem do documento; a descrição vazia vira o nome do tópico; o gasto a vencer não corrige
     await page.evaluate(()=>{showView('relatorio');renderRelatorio();});
-    const linhasDoRelatorio=async()=>(await page.$$eval('#relBody .rep-table tbody tr',trs=>trs.map(tr=>[...tr.children].map(td=>td.textContent))))
-      .map(l=>l.map(texto));
-    assert.deepEqual((await linhasDoRelatorio()).slice(0,21),[
+    // (identidade da etapa 4) um bloco por tópico com os gastos dentro e o total no bloco sólido; a linha sai no formato da
+    // tabela de antes, sem a coluna da correção (ela não aparece mais por linha): [nome, data, bruto, corrigido]
+    const linhasDoRelatorio=async()=>(await page.evaluate(()=>{
+      const t=e=>e?e.textContent:'';
+      const linhas=[];
+      document.querySelectorAll('#relLista .rel-top[data-top]').forEach(top=>{
+        linhas.push([t(top.querySelector('.rel-nm')),'',t(top.querySelector('.rel-v')),t(top.querySelector('.rel-corr')).replace('corrigido','')]);
+        top.querySelectorAll('.rel-gasto').forEach(g=>linhas.push([t(g.querySelector('.rel-desc')),t(g.querySelector('.rel-data')),t(g.querySelector('.rel-v')),t(g.querySelector('.rel-corr')).replace('corrigido','')]));
+      });
+      const tot=document.querySelector('#relTopo .rel-total');
+      linhas.push(['TOTAL','',t(tot.querySelector('.k-num')),t(tot.querySelector('.rel-total-linha .num'))]);
+      return linhas;
+    })).map(l=>l.map(texto));
+    const sem5=ls=>ls.map(l=>l.slice(0,4));
+    assert.deepEqual((await linhasDoRelatorio()).slice(0,21),sem5([
       ['Terreno','','R$ 150.000,00','R$ 165.942,65','+R$ 15.942,65'],['Terreno','01/12/25','R$ 150.000,00','R$ 165.942,65','+R$ 15.942,65'],
       ['Fundação','','R$ 20.000,00','R$ 21.767,00','+R$ 1.767,00'],['Sapatas','20/01/26','R$ 20.000,00','R$ 21.767,00','+R$ 1.767,00'],
       ['Pintura','','R$ 10.000,00','R$ 10.865,06','+R$ 865,06'],['Pintura','15/01/26','R$ 2.500,00','R$ 2.725,33','+R$ 225,33'],
@@ -100,23 +112,24 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
       ['Telhado','','R$ 2.500,00','R$ 2.500,00','+R$ 0,00'],['Telhas','03/12/26','R$ 2.500,00','R$ 2.500,00','+R$ 0,00'],
       ['Documentação','','R$ 1.200,00','R$ 1.312,44','+R$ 112,44'],['Alvará','05/01/26','R$ 1.200,00','R$ 1.312,44','+R$ 112,44'],
       ['Outros','','R$ 300,00','R$ 321,32','+R$ 21,32'],['Limpeza','10/03/26','R$ 300,00','R$ 321,32','+R$ 21,32'],
-      ['TOTAL','','R$ 202.400,50','R$ 222.689,91','+R$ 20.289,41']]);
+      ['TOTAL','','R$ 202.400,50','R$ 222.689,91','+R$ 20.289,41']]));
     // a cola passa a taxa da config à regra (com a taxa em 1 do teste ela passaria sem ser vista) e o tópico que não existe mais
     // aparece pelo id, no grupo e na linha sem descrição
     await page.evaluate(()=>{db.config.taxaMensal=0.5;renderRelatorio();});
-    assert.deepEqual((await linhasDoRelatorio())[20],['TOTAL','','R$ 202.400,50','R$ 212.323,74','+R$ 9.923,24']);
+    assert.deepEqual((await linhasDoRelatorio())[20],['TOTAL','','R$ 202.400,50','R$ 212.323,74']);
     await page.evaluate(()=>{db.config.taxaMensal=1;db.obras[0].gastos.push({id:'x1',valor:100,topico:'c_sumiu',descricao:'',data:'2026-02-01',pagamento:'pix'});renderRelatorio();});
     assert.deepEqual((await linhasDoRelatorio()).filter(l=>l[0]==='c_sumiu'),
-      [['c_sumiu','','R$ 100,00','R$ 108,41','+R$ 8,41'],['c_sumiu','01/02/26','R$ 100,00','R$ 108,41','+R$ 8,41']]);
+      [['c_sumiu','','R$ 100,00','R$ 108,41'],['c_sumiu','01/02/26','R$ 100,00','R$ 108,41']]);
     await page.evaluate(()=>{db.obras[0].gastos.pop();renderRelatorio();});
     // cada caixinha leva o id do seu gasto, na ordem das linhas
     assert.deepEqual(await page.$$eval('#relBody .rel-check',cs=>cs.map(c=>c.dataset.gasto)),['a4','a7','a3','a11','a1','a2','a5','a6','a8','a9','a10']);
 
     // Fim do relatório, com a cor pelo sinal, e a linha da correção: venda estimada e margem; venda, lucro e acima do banco;
     // margem negativa; e nada sem as duas
-    const fimDoRelatorio=()=>page.$$eval('#relBody .rep-table tbody tr',trs=>trs.slice(trs.findIndex(tr=>tr.children[0].textContent.trim()==='TOTAL')+1)
-      .map(tr=>[...tr.children].map(td=>[td.textContent.replace(/\s+/g,' ').trim(),td.className])));
-    const linhaDaCorrecao=async()=>texto((await page.locator('#relBody .rep-head').innerText()).split('\n')[1]);
+    const fimDoRelatorio=()=>page.$$eval('#relBody .rel-fim .rel-fim-linha',ls=>ls.map(l=>{const v=l.querySelector('.rel-fim-v');
+      return [[l.querySelector('.rel-fim-rot').textContent.replace(/\s+/g,' ').trim(),''],['',''],
+        [v.textContent.replace(/\s+/g,' ').replace(/−/g,'-').trim(),[...v.classList].filter(c=>c!=='rel-fim-v').join(' ')]];}));
+    const linhaDaCorrecao=async()=>texto(await page.locator('#relMeta p:nth-of-type(2)').textContent());
     assert.deepEqual(await fimDoRelatorio(),[[['Venda estimada',''],['',''],['R$ 450.000,00','']],
       [['Margem estimada (estimado − corrigido)',''],['',''],['R$ 227.310,09','pos']]]);
     assert.equal(await linhaDaCorrecao(),'Correção de 1% ao mês, da data de cada gasto até hoje (06/10/26).');
@@ -129,7 +142,7 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     assert.deepEqual((await fimDoRelatorio()).slice(1).map(l=>l[2]),[['R$ 0,00','pos'],['R$ 0,00','pos']]);
     // a data da venda vem do blob e entra na linha da correção: sai escapada, sem criar elemento
     await page.evaluate(()=>{db.obras.find(o=>o.id==='v').venda.data='2026-05-<b>20';renderRelatorio();});
-    assert.equal(await page.locator('#relBody .rep-head b').count(),0);
+    assert.equal(await page.locator('#relMeta b').count(),0);
     assert.equal(await linhaDaCorrecao(),'Correção de 0% ao mês, da data de cada gasto até a venda (<b>20/05/26).');
     await page.evaluate(()=>{const v=db.obras.find(o=>o.id==='v').venda;v.valor=230000;v.data='2026-05-20';});
     await page.evaluate(()=>{db.config.taxaMensal=1;openObra('p');showView('relatorio');renderRelatorio();});
@@ -145,15 +158,21 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     // Soma da seleção: "N item(ns)", o bruto, o corrigido sem arredondar cada gasto antes e a parte do total com 2 casas
     const selecao=async()=>page.evaluate(()=>[$('#relSelected').classList.contains('hidden'),
       ...['#relSelQtd','#relSelBruto','#relSelCorr','#relSelPct'].map(s=>$(s).textContent.replace(/\s+/g,' '))]);
+    // o Selecionar liga os marcadores; o gasto se marca com o tópico aberto
+    const selecionar=async()=>{await page.locator('#relSelecionar').click();
+      await page.evaluate(()=>document.querySelectorAll('#relLista .rel-top:not(.aberto) .rel-abre').forEach(b=>b.click()));};
     await page.evaluate(()=>{openObra('a');showView('relatorio');renderRelatorio();});
+    await selecionar();
     await page.locator('.rel-check[data-gasto="a1"]').check();
     await page.locator('.rel-check[data-gasto="a3"]').check();
     assert.deepEqual(await selecao(),[false,'2 itens','R$ 8.500,00','R$ 9.229,86','4,20%']);
     await page.locator('.rel-check[data-gasto="a1"]').uncheck();
     assert.deepEqual(await selecao(),[false,'1 item','R$ 2.500,00','R$ 2.725,33','1,24%']);
     await page.locator('.rel-check[data-gasto="a3"]').uncheck();
-    assert.equal((await selecao())[0],true);
+    assert.equal(await page.locator('#relSelQtd').count(),0);
+    assert.match(texto(await page.locator('#relSelected').textContent()),/Nenhum gasto marcado/);
     await page.evaluate(()=>{openObra('z');showView('relatorio');renderRelatorio();});
+    await selecionar();
     await page.locator('.rel-check[data-gasto="z1"]').check();
     assert.deepEqual(await selecao(),[false,'1 item','R$ 0,00','R$ 0,00','0%']);
 

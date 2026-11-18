@@ -64,13 +64,15 @@ const {chromium}=require('playwright');
         assert.ok(Math.abs(await page.evaluate(()=>scrollY)-pos)<2,'fechar restaura posição da lista');
       }
     }
-    /* O relatório da obra rola para o lado e mantém cada gasto numa linha só; a tabela da
-       simulação vem em pares e cabe sem rolar. */
+    /* O relatório da obra e a tabela da simulação cabem na largura, sem rolar de lado. */
     for(const width of [320,393,430]){
       await page.setViewportSize({width,height:852});
       await page.evaluate(()=>{closeSheet();openObra('o');showView('relatorio');renderRelatorio();});
-      const alturas=await page.$$eval('#v-relatorio .rep-table tbody tr:not(.rt-top) td:first-child',tds=>tds.map(td=>td.getBoundingClientRect().height));
-      assert.ok(alturas.length>0 && alturas.every(h=>h<50),`relatório da obra a ${width}px: descrição deve caber numa linha (alturas ${alturas.slice(0,3).join(', ')})`);
+      // um bloco por tópico (identidade da etapa 4): aberto, cada gasto cabe na largura, sem rolar de lado
+      await page.evaluate(()=>document.querySelectorAll('#relLista .rel-top:not(.aberto) .rel-abre').forEach(b=>b.click()));
+      assert.ok(await page.locator('#relLista .rel-gasto').count()>0,`relatório da obra a ${width}px: sem gastos à vista`);
+      assert.ok(await page.evaluate(()=>[...document.querySelectorAll('#relLista .rel-gasto')].every(g=>g.scrollWidth<=g.clientWidth+1)),`relatório da obra a ${width}px: gasto mais largo que o bloco`);
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`relatório da obra a ${width}px: a página rola de lado`);
       await page.evaluate(()=>{showView('simula');renderSimula();$('#simObra').value='o';const v=$('#simValor');v.value='90.000,00';v.dataset.touched='1';$('#simMeses').value='3';simulaCompute();});
       // a tabela da simulação vem em pares (rótulo em cima, bruto e corrigido embaixo): cabe sem rolar de lado
       assert.ok(await page.locator('#simOut .sim-tab').evaluate(t=>t.scrollWidth<=t.parentElement.clientWidth+1),'tabela da simulação cabe na largura');

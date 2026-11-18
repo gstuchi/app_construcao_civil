@@ -43,10 +43,13 @@ const {chromium}=require('playwright');
     await page.locator('#cSave').click();
     assert.equal(await page.evaluate(()=>obraById('o1').gastos.length),antesDuplicado+1);
     await page.evaluate(()=>{ showView('relatorio'); renderRelatorio(); });
+    // o Selecionar liga os marcadores, e o gasto se marca com o tópico aberto
+    await page.locator('#relSelecionar').click();
+    await page.evaluate(()=>document.querySelectorAll('#relLista .rel-top:not(.aberto) .rel-abre').forEach(b=>b.click()));
     const cimento=page.locator('.rel-check[aria-label*="Cimento"]');
     assert.equal(await cimento.count(),2);
     await cimento.nth(0).check(); await cimento.nth(1).check();
-    assert.equal((await page.locator('#relSelected').textContent()).includes('R$ 200,00'),true);
+    assert.equal((await page.locator('#relSelected').textContent()).replace(/\s+/g,' ').includes('R$ 200,00'),true);
     assert.equal((await page.locator('#relSelPct').textContent()),'66,67%');
     const antesObra=await page.evaluate(()=>db.obras.length);
     await page.evaluate(()=>formNovaObra());

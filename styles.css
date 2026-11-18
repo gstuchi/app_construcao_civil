@@ -1125,6 +1125,194 @@ body .layout-45{font-size:30px}
     html:not([data-theme="light"]) .grupo-obras > h2 .muted,html:not([data-theme="light"]) .obra-head .obra-meta{text-shadow:0 1px 8px rgba(0,0,0,.35)}
     html:not([data-theme="light"]) .nav-voltar,html:not([data-theme="light"]) header.top .sair{color:var(--text)}
   }
+/* ===== Identidade da etapa 4 (spec docs/specs/2026-10-29-app-nativo-etapa4-design.md) =====
+   A mesma do app nativo: números e título em mono, destaque verde, um bloco sólido por tela e
+   um assunto por bloco de vidro. Valores dos tokens do mockup aprovado (custta-mockups/nativo/
+   etapa4, LEIA-ME "Tokens novos"), nos dois temas. */
+  :root{
+    --fonte-num:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --num-ls:-.035em;
+    --muted:#B8D4C7; --amber:#FFD98A; --warn:#FFD98A;
+    --solido:#3AD17E; --solido-ink:#04100C; --solido-sombra:rgba(58,209,126,.20); --solido-luz:rgba(255,255,255,.35);
+    --solido-ambar:#FFD98A; --solido-ambar-ink:#2B1B00; --solido-ambar-sombra:rgba(255,217,138,.18);
+    --tinta-chip:rgba(4,16,12,.14);
+    --destaque:#3AD17E; --destaque-texto:#3AD17E; --destaque-num:#8CF0B4; --destaque-suave:#0C2F1E;
+    --placa:rgba(4,16,12,.58); --placa-forte:rgba(4,16,12,.84); --halo-titulo:rgba(4,16,12,.38);
+    --g1:#199E70; --g2:#3987E5; --g3:#D55181; --g4:#9085E9; --g5:#D95926; --g6:#14A3C7; --g-outros:#8FA89C;
+    --c1:#199E70; --c2:#3987E5; --c3:#D55181; --c4:#9085E9; --c5:#D95926; --c6:#14A3C7; --c7:#8FA89C; --c8:#8FA89C;
+    --anel-apagado:#123128; --anel-sep:rgba(4,16,12,.55);
+    --linha-banco:#B8D4C7; --graf-apagado:rgba(234,255,246,.40); --grade:rgba(234,255,246,.14); --grade-eixo:rgba(234,255,246,.30);
+    --trilho:rgba(234,255,246,.14); --selecao:rgba(234,255,246,.10);
+    --chart-rec:#3AD17E; --chart-gasto:#B8D4C7;
+  }
+  html[data-theme="light"]{
+    --muted:#2F4A3F; --amber:#5E3A03; --warn:#5E3A03;
+    --solido:#3AD17E; --solido-ink:#04100C; --solido-sombra:rgba(23,122,74,.22);
+    --solido-ambar:#F2C15A; --solido-ambar-ink:#2B1B00; --solido-ambar-sombra:rgba(138,90,6,.20);
+    --destaque:#177A4A; --destaque-texto:#0E7A41; --destaque-num:#0A5530; --destaque-suave:#D7F2E2;
+    --placa:rgba(255,255,255,.66); --placa-forte:rgba(255,255,255,.92); --halo-titulo:rgba(237,245,241,0);
+    --g1:#10976A; --g2:#2A78D6; --g3:#D14F86; --g4:#6250D6; --g5:#DC5A1E; --g6:#0C86A4; --g-outros:#5E7A6E;
+    --c1:#10976A; --c2:#2A78D6; --c3:#D14F86; --c4:#6250D6; --c5:#DC5A1E; --c6:#0C86A4; --c7:#5E7A6E; --c8:#5E7A6E;
+    --anel-apagado:#DCEAE3; --anel-sep:rgba(255,255,255,.75);
+    --linha-banco:#2F4A3F; --graf-apagado:rgba(20,43,35,.58); --grade:rgba(20,43,35,.14); --grade-eixo:rgba(20,43,35,.32);
+    --trilho:rgba(20,43,35,.09); --selecao:rgba(20,43,35,.07);
+    --chart-rec:#177A4A; --chart-gasto:#2F4A3F;
+  }
+
+  /* números: mono, tabulares, "R$" e centavos menores na linha do número */
+  .num{font-family:var(--fonte-num);letter-spacing:var(--num-ls);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .num .moeda{font-size:max(.58em,min(1em,11px));font-weight:600;letter-spacing:0;margin-right:.22em}
+  .num .cent{font-size:max(.62em,min(1em,11px));letter-spacing:0;margin-left:.03em}
+  .li-val,.kpi .k-num,.card .k-val,.orc-num,.donut .center b,.top-resumo b,.orc-val b{font-family:var(--fonte-num);letter-spacing:var(--num-ls);font-weight:600}
+
+  /* título grande em mono 600 (opção C, escolhida pelo Giovani em 28/10) com o halo do tom do
+     fundo atrás no escuro: o título fica solto sobre a aurora */
+  .titulo-grande,#tituloGrande{font-family:var(--fonte-num);font-weight:600;letter-spacing:-.045em;font-size:30px;line-height:38px;position:relative;isolation:isolate}
+  .titulo-grande::before{content:"";position:absolute;left:-16px;right:-16px;top:-6px;bottom:-8px;z-index:-1;pointer-events:none;
+    background:linear-gradient(to bottom,transparent,var(--halo-titulo) 28%,var(--halo-titulo) 72%,transparent)}
+  .nav-titulo{font-family:var(--fonte-num);letter-spacing:-.03em;font-size:16px}
+  @media (min-width:900px){ .titulo-grande,#tituloGrande{font-size:34px;line-height:42px} }
+
+  /* pílulas: fundos sólidos (contraste medido no mockup), o "tinta" mora dentro do sólido */
+  .chip2{font-size:13px;font-weight:600;padding:3px 10px;border:0}
+  .chip2.green{background:var(--destaque-suave);color:var(--destaque-texto)}
+  .chip2.amber{background:var(--amber-soft);color:var(--amber)}
+  .chip2.tinta{background:var(--tinta-chip);color:var(--solido-ink)}
+  .tag{font-size:12.5px;padding:2px 9px}
+  .chev{flex:none;color:var(--muted);font-size:22px;line-height:1}
+
+  /* blocos da obra: uma coluna no celular, um assunto por bloco */
+  .kpis{grid-template-columns:1fr;gap:12px}
+  .kpi{border-radius:26px;padding:16px 18px;border:0}
+  .kpi::after{display:none}
+  .kpi .k-top{margin-bottom:6px;flex-wrap:wrap;justify-content:space-between}
+  .kpi .k-nome{font-size:17px;font-weight:600;color:var(--text)}
+  .kpi .k-num{font-size:30px;line-height:1.25;margin-top:2px}
+  .kpi .k-num.gigante{font-size:40px;line-height:1.2;margin:6px 0 4px}
+  .kpi .k-num.medio{font-size:24px;line-height:1.3}
+  .kpi .k-obs{font-size:15px;color:var(--muted);margin-top:4px}
+  .kpi .k-obs.ambar{color:var(--amber)}
+  .kpi .k-linha{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .kpi-link{display:block}
+  /* o sólido: cor chapada, sem vidro (só um por tela) */
+  .kpi.solido{background:var(--solido);color:var(--solido-ink);-webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:0 14px 36px var(--solido-sombra),inset 0 1px 0 var(--solido-luz)}
+  .kpi.solido .k-nome{color:var(--solido-ink);font-weight:700}
+  .kpi.solido .k-obs{color:var(--solido-ink)}
+  .kpi.solido.ambar{background:var(--solido-ambar);color:var(--solido-ambar-ink);box-shadow:0 14px 36px var(--solido-ambar-sombra),inset 0 1px 0 var(--solido-luz)}
+  .kpi.solido.ambar .k-nome,.kpi.solido.ambar .k-obs{color:var(--solido-ambar-ink)}
+  /* orçamento */
+  .orc-card .orc-pill{font-size:13px;background:var(--destaque-suave);color:var(--destaque-texto)}
+  .orc-card .orc-pill.alerta{background:var(--amber-soft);color:var(--amber)}
+  .orc-sobra{display:flex;align-items:baseline;gap:6px;font-size:16px;color:var(--text)}
+  .orc-sobra-rot{color:var(--text)}
+  .orc-linha-barra{display:flex;align-items:center;gap:10px}
+  .orc-linha-barra .orc-barra{flex:1;height:10px;margin:12px 0 10px;background:var(--trilho)}
+  .orc-barra i{background:var(--destaque)}
+  .orc-barra.alerta i{background:var(--amber)}
+  .kpi .aviso{display:flex;align-items:flex-start;gap:6px;font-size:15px;font-weight:600;color:var(--amber);margin-top:2px}
+  .kpi .aviso svg{flex:none;width:1.15em;height:1.15em;margin-top:.15em}
+  .sheet .orc-lista{margin:4px 0 8px}
+  /* ações: o primário cheio na tinta; as duas portas lado a lado */
+  .obra-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .obra-actions .btn{min-width:0;min-height:54px;font-size:16px}
+  .obra-actions .btn.primary,.obra-actions .btn:not(.porta){grid-column:1 / -1}
+  /* gastos por tópico: barra empilhada sobre a placa (tom chapado, não é vidro) */
+  .pilha-bloco{display:block;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;border:0}
+  .pilha-bloco h2 .muted{display:inline-flex;align-items:center;gap:6px}
+  .pilha-placa{background:var(--placa-forte);border-radius:12px;padding:8px;margin:2px 0 12px}
+  .pilha{display:flex;gap:3px;height:16px}
+  .pilha i{display:block;border-radius:8px;min-width:8px;flex:1 1 0;background:var(--cor)}
+  .leg-mini{display:grid;gap:4px}
+  .leg-mini > div{display:flex;align-items:center;gap:10px;font-size:15px;min-width:0}
+  .leg-mini .pt{width:12px;height:12px;border-radius:50%;flex:none;background:var(--cor)}
+  .leg-mini .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+  .leg-mini .pc{font-family:var(--fonte-num);font-weight:600;color:var(--muted);letter-spacing:-.01em}
+  .leg-mini .mais-t{color:var(--muted);padding-left:22px}
+  @media (min-width:900px){
+    .kpis{grid-template-columns:1fr 1fr}
+    .kpis > .solido{grid-column:1 / -1}
+  }
+  @media (max-width:360px){ .kpi .k-num.gigante{font-size:34px} }
+  /* lançamentos: valor neutro em mono (o gasto não é "negativo"; o vermelho saiu com a identidade) */
+  ul.list .li-val .num{font-size:17px}
+  .grupo-obras ul.list .li-val,ul.list .li-val{color:var(--text)}
+  /* comparativo do início nas cores da identidade: gasto no destaque, corrigido apagado */
+  .hbar-track .hb-bruto{background:var(--destaque)}
+  .hbar-track .hb-corr{background:var(--trilho);border-color:var(--grade-eixo)}
+
+  /* ===== Gráficos ===== */
+  .graf-meta{margin:0 0 14px}
+  .subtit{display:inline-block;max-width:100%;padding:5px 18px;border-radius:999px;font-size:16px;color:var(--text);background:var(--selecao)}
+  .graf-bloco h2 .muted{font-size:15px}
+  .anel-caixa{position:relative;width:240px;height:240px;margin:6px auto 16px}
+  .anel-caixa::before{content:"";position:absolute;inset:-8px;border-radius:50%;background:var(--placa)}
+  .anel-caixa > svg{position:relative;display:block;overflow:visible}
+  .anel-caixa .trilho{stroke:var(--anel-apagado)}
+  .anel-caixa .seg{stroke:var(--cor);transition:stroke-width .2s ease-out,stroke .2s ease-out}
+  .anel-caixa .seg-sep{fill:var(--anel-sep)}
+  .anel-caixa .peca{cursor:pointer;transform-origin:120px 120px;transform-box:view-box}
+  .anel-caixa .alvo{pointer-events:stroke}
+  .anel-caixa .fecho{pointer-events:none}
+  .anel-caixa.anima .peca{animation:anel-entra 1.2s cubic-bezier(0,0,.58,1) both;animation-delay:var(--atraso)}
+  @keyframes anel-entra{0%{transform:rotate(var(--de));opacity:0}25%{opacity:1}100%{transform:none;opacity:1}}
+  /* apagar pela cor, opaca (26% da cor sobre o anel apagado, calculada no app.js: sem color-mix,
+     que o WKWebView do iOS 15 não tem): o Safari ignora filter em SVG e a opacidade mostra as emendas */
+  .anel-caixa.escolhido .peca:not(.on) .seg{stroke:var(--cor-apagada)}
+  .anel-caixa .peca.on .seg{stroke-width:34px}
+  .anel-caixa .peca.on .seg-sep{r:19.5px}
+  .anel-caixa .centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:0 46px;gap:1px}
+  .anel-caixa .centro .cr{font-size:14px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .anel-caixa .centro .cv{font-size:24px;line-height:1.3;color:var(--text)}
+  .anel-caixa .centro .cp{font-size:13px;color:var(--muted)}
+  .anel-caixa .centro .cl{pointer-events:auto;margin-top:4px;position:relative;display:inline-flex;align-items:center;gap:2px;font:600 13px/18px inherit;font-family:inherit;color:var(--destaque-texto);background:var(--destaque-suave);border:0;border-radius:999px;padding:3px 12px;cursor:pointer}
+  .anel-caixa .centro .cl::before{content:"";position:absolute;inset:-10px -6px}
+  @media (prefers-reduced-motion:reduce){ .anel-caixa.anima .peca{animation:none} .anel-caixa .seg{transition:none} }
+  .leg-lista{display:grid;margin:0 -8px}
+  .leg-lista > div[data-top]{display:flex;align-items:center;gap:10px;min-height:48px;padding:2px 8px;border-radius:12px;cursor:pointer;transition:background .15s ease-out}
+  .leg-lista > div.on{background:var(--selecao)}
+  .leg-lista > div[data-top]:active{background:var(--selecao)}
+  .leg-lista .pt{width:12px;height:12px;border-radius:50%;flex:none;background:var(--cor)}
+  .leg-lista .nm{flex:1;min-width:0;font-size:16.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .leg-lista .pc{font:600 14px/20px var(--fonte-num);color:var(--muted);letter-spacing:-.01em;min-width:40px;text-align:right}
+  .leg-lista .vl{min-width:96px;text-align:right;font-size:17px}
+  .leg-lista .outros-sep{border-top:1px solid var(--grade);margin:6px 8px 0;padding:10px 0 4px;color:var(--muted);font-size:14px}
+  /* séries */
+  .leitura{min-height:46px;margin-bottom:8px}
+  .leitura .rot{font-size:13.5px;color:var(--muted);font-weight:500}
+  .leitura .sub{font-size:15px;color:var(--muted)}
+  .leitura .sub .num{color:var(--text);font-size:17px}
+  .evo-svg{touch-action:pan-y;user-select:none;-webkit-user-select:none}
+  .evo-svg text{fill:var(--muted);font-variant-numeric:tabular-nums}
+  .evo-svg text.sel{fill:var(--text);font-weight:700}
+  .evo-svg .grade{stroke:var(--grade);stroke-dasharray:3 4}
+  .evo-svg .eixo{stroke:var(--grade-eixo)}
+  .evo-svg .area-ini{stop-color:var(--destaque);stop-opacity:.38}
+  .evo-svg .area-fim{stop-color:var(--destaque);stop-opacity:0}
+  .evo-svg .linha-gasto{stroke:var(--destaque);stroke-width:2.6;stroke-linecap:round}
+  .evo-svg .linha-banco{stroke:var(--linha-banco);stroke-width:2;stroke-dasharray:5 5;stroke-linecap:round}
+  .evo-svg .guia{stroke:var(--grade-eixo);stroke-dasharray:2 3}
+  .evo-svg .ponto-gasto{fill:var(--destaque)}
+  .evo-svg .ponto-banco{fill:var(--bg);stroke:var(--linha-banco);stroke-width:2}
+  .evo-leg{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+  .evo-leg span{display:inline-flex;align-items:center;gap:6px}
+  .evo-leg i{display:inline-block;width:18px;height:0;border-radius:2px;margin:0;vertical-align:middle}
+  .evo-leg i.cheia{border-top:3px solid var(--destaque)}
+  .evo-leg i.trac{border-top:2px dashed var(--linha-banco)}
+  .evo-leg i.bar{width:12px;height:12px;border-radius:3px;background:var(--graf-apagado)}
+  .evo-leg i.hach-i{width:12px;height:12px;border-radius:3px;border:1.5px dashed var(--graf-apagado);background:repeating-linear-gradient(-45deg,var(--graf-apagado) 0 1.5px,transparent 1.5px 4px)}
+  .nota-fora{font-size:13.5px;color:var(--amber);margin-top:10px}
+  .mes-bar{fill:var(--graf-apagado);opacity:1;filter:none;transition:fill .18s ease-out}
+  .mes-bar.on{fill:var(--destaque);filter:none}
+  .mes-bar.futuro{fill:url(#hachG);stroke:var(--graf-apagado);stroke-width:1;stroke-dasharray:2 2}
+  .mes-bar.futuro.on{stroke:var(--destaque)}
+  .evo-svg .hach{fill:var(--graf-apagado)}
+  .mes-zero{fill:var(--graf-apagado)}
+  html[data-theme="light"] .mes-bar{opacity:1}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--grade)}
+  .stats .rot{font-size:13px;color:var(--muted);font-weight:500}
+  .stats .num{font-size:17px}
+
 /* ===== Liquid Glass: recuos =====
    Sem backdrop-filter (WebKit muito antigo), com transparência reduzida (Ajustes › Acessibilidade)
    ou com contraste aumentado, o vidro vira superfície sólida. Os dois seletores repetem os

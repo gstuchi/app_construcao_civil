@@ -1254,84 +1254,252 @@ function sheetTopico(obraId, topicoId){
   $('#topFechar').onclick = closeSheet;
 }
 
+/* ===== RELATÓRIO (identidade da etapa 4; mockup parte 2, Relatório A) =====
+   O total da obra no bloco sólido, um bloco de vidro por tópico que abre e fecha com os gastos
+   (bruto e corrigido de cada um) e o fim com a venda e a margem. "Selecionar" põe um marcador em
+   cada gasto e em cada tópico (todos, parte ou nenhum) e a barra de soma embaixo; a lupa filtra
+   por descrição ou tópico (calc.js filtraGastos) e o resumo dos achados toma o lugar do sólido.
+   As contas são do calc.js (relatorioObra, fimRelatorio, somaSelecao), as mesmas do app nativo. */
+/* % do total com uma casa, como no mockup (38,0%); abaixo de 0,1% vira "<0,1%" */
+function pctRelatorio(v, total){
+  const p = total ? v / total * 100 : 0;
+  if(p > 0 && p < 0.1) return '<0,1%';
+  return p.toLocaleString('pt-BR', { minimumFractionDigits:1, maximumFractionDigits:1 }) + '%';
+}
+const relPlural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+/* marcador redondo de 44px: o input fica por cima, transparente (teclado, leitor de tela e clique);
+   a bola desenhada é irmã dele */
+const relBolaHtml = `<span class="rel-bola" aria-hidden="true">${ICON('check')}<i class="rel-traco"></i></span>`;
+function relGastoHtml(item, nomeTopico){
+  const g = item.gasto;
+  const desc = (g.descricao || nomeTopico) + (g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '');
+  return `<li><label class="rel-gasto" data-gasto="${escapeHtml(g.id)}">
+      <span class="rel-marca no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(desc)}">${relBolaHtml}</span>
+      <span class="rel-corpo">
+        <span class="rel-l1"><span class="rel-desc">${escapeHtml(desc)}</span><span class="rel-v">${dinheiroHtml(g.valor)}</span></span>
+        <span class="rel-l2"><span class="rel-data">${fmtData(g.data)}</span><span class="rel-corr">corrigido ${dinheiroHtml(item.corrigido)}</span></span>
+      </span>
+    </label></li>`;
+}
 function renderRelatorio(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const hoje = todayISO();
   const tx = taxa();
   const map = TOP_MAP();
+  const corDe = pedacosTopicos(o).corDe; // a mesma cor do anel dos Gráficos
 
   // grupos, gastos com o corrigido e totais: calc.js relatorioObra (o app nativo usa o mesmo)
   const rel = OBRA_CALC.relatorioObra(o, hoje, tx);
   const totB = rel.totalBruto;
   const totC = rel.totalCorrigido;
-  const itensRelatorio = new Map();
+  const itens = new Map();
+  rel.grupos.forEach(gr => gr.itens.forEach(it => itens.set(it.gasto.id, it)));
+  const nomeDe = id => (map[id] || {nm:id}).nm;
 
-  let rows = '';
-  rel.grupos.forEach(gr=>{
-    const t = map[gr.topico] || {nm:gr.topico, ic:'etiqueta'};
-    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
-      <td>${money(gr.bruto)}</td><td>${money(gr.corrigido)}</td><td>+${money(gr.corrigido-gr.bruto)}</td></tr>`;
-    gr.itens.forEach(item=>{
-      const {gasto:g, corrigido:c} = item;
-      itensRelatorio.set(g.id,item);
-      const descricao=g.descricao||t.nm;
-      rows += `<tr><td class="rt-desc"><label class="rep-pick no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(descricao)}"></label>${escapeHtml(descricao)}</td><td>${fmtData(g.data)}</td>
-        <td>${money(g.valor)}</td><td>${money(c)}</td><td>+${money(c-g.valor)}</td></tr>`;
-    });
-  });
+  // estado da tela: vale enquanto ela está aberta (entrar de novo começa tudo fechado)
+  const est = { abertos:new Set(), selecionando:false, marcados:new Set(), busca:'' };
+  const achados = () => {
+    const txt = est.busca.trim();
+    return txt ? new Set(OBRA_CALC.filtraGastos(o.gastos, map, { texto:txt }).map(g => g.id)) : null;
+  };
 
-  // venda e lucro, ou venda estimada e margem, ou nada: calc.js fimRelatorio
+  const f = FASES[o.fase];
+  const corrAte = o.venda ? 'Corrigido até a venda' : 'Corrigido pelo banco';
+  const meta = `
+    <div class="panel rel-meta" id="relMeta">
+      <span class="chip2 ${o.fase === 'construcao' ? 'amber' : 'green'}">${f.nm}</span>
+      <p>começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o, hoje))}</p>
+      <p>${escapeHtml(OBRA_CALC.linhaCorrecao(o, hoje, tx))}</p>
+    </div>`;
+
+  // venda e lucro, ou venda estimada e margem, ou nada: calc.js fimRelatorio. Prejuízo em âmbar.
   const fimRel = OBRA_CALC.fimRelatorio(o, hoje, tx);
-  let venda = '';
+  const linhaFim = (rot, v, sinal) => `<div class="rel-fim-linha"><span class="rel-fim-rot">${rot}</span>
+      <span class="rel-fim-v${sinal ? (v >= 0 ? ' pos' : ' neg') : ''}">${dinheiroHtml(v)}</span></div>`;
+  let fim = '';
   if(fimRel && fimRel.tipo === 'venda'){
-    venda = `
-      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(fimRel.data)}</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
-      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${fimRel.lucroBruto>=0?'pos':'neg'}">${money(fimRel.lucroBruto)}</td></tr>
-      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${fimRel.acimaDoBanco>=0?'pos':'neg'}">${money(fimRel.acimaDoBanco)}</td></tr>`;
+    fim = linhaFim(`Venda em ${fmtData(fimRel.data)}`, fimRel.valor)
+        + linhaFim('Lucro bruto (venda − gasto)', fimRel.lucroBruto, true)
+        + linhaFim('Acima do banco (venda − corrigido)', fimRel.acimaDoBanco, true);
   } else if(fimRel){
-    venda = `
-      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
-      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${fimRel.margem>=0?'pos':'neg'}">${money(fimRel.margem)}</td></tr>`;
+    fim = linhaFim('Venda estimada', fimRel.valor)
+        + linhaFim('Margem estimada (estimado − corrigido)', fimRel.margem, true);
   }
 
   $('#relBody').innerHTML = `
-    <div class="panel">
-      <h2 class="layout-28">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
-      <div class="rep-head">
-        ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
-        ${escapeHtml(OBRA_CALC.linhaCorrecao(o, hoje, tx))}<br>
-        Marque gastos para somar somente itens escolhidos.
+    <h2 class="rel-impresso">Relatório — ${escapeHtml(o.nome)}</h2>
+    <div class="rel-barra">
+      <span class="subtit">${escapeHtml(o.nome)}</span>
+      <div class="rel-acoes no-print">
+        <button type="button" class="rel-redondo" id="relLupa" aria-label="Buscar gasto ou tópico" aria-expanded="false" aria-controls="relBusca">${ICON('lupa')}<span class="rel-x" aria-hidden="true">×</span></button>
+        <button type="button" class="rel-pilula" id="relSelecionar" aria-pressed="false">Selecionar</button>
       </div>
-      <div class="rep-selected hidden" id="relSelected" aria-live="polite">
-        <div><span>Selecionados</span><b id="relSelQtd">0 itens</b></div>
-        <div><span>Bruto</span><b id="relSelBruto">${money(0)}</b></div>
-        <div><span>Corrigido</span><b id="relSelCorr">${money(0)}</b></div>
-        <div><span>Parte do total</span><b id="relSelPct">0%</b></div>
-      </div>
-      <div class="rep-scroll">
-        <table class="rep-table">
-          <thead><tr><th>Tópico / gasto</th><th>Data</th><th>Bruto</th><th>Corrigido</th><th>Correção pelo banco</th></tr></thead>
-          <tbody>
-            ${rows}
-            <tr class="rep-total"><td>TOTAL</td><td></td><td>${money(totB)}</td><td>${money(totC)}</td><td>+${money(totC-totB)}</td></tr>
-            ${venda}
-          </tbody>
-        </table>
-      </div>
-      <button class="layout-44 btn primary no-print" id="relPrint">${ICON('impressora')} Imprimir / salvar PDF</button>
-    </div>`;
-  const atualizarSelecao=()=>{
-    const marcados=[...document.querySelectorAll('.rel-check:checked')]
-      .map(c=>itensRelatorio.get(c.dataset.gasto)).filter(Boolean);
-    const soma=OBRA_CALC.somaSelecao(marcados,totB);
-    $('#relSelected').classList.toggle('hidden',marcados.length===0);
-    $('#relSelQtd').textContent=soma.quantos;
-    $('#relSelBruto').textContent=money(soma.bruto);
-    $('#relSelCorr').textContent=money(soma.corrigido);
-    $('#relSelPct').textContent=soma.parte;
+    </div>
+    <div class="rel-busca no-print" id="relBusca" hidden>
+      <span class="rel-busca-ic" aria-hidden="true">${ICON('lupa')}</span>
+      <input type="search" id="relBuscaCampo" placeholder="Buscar gasto ou tópico" aria-label="Buscar gasto ou tópico" autocomplete="off" enterkeyhint="search" maxlength="100">
+    </div>
+    ${meta}
+    <div id="relTopo"></div>
+    <div id="relLista"></div>
+    ${fim ? `<div class="panel rel-fim" id="relFim">${fim}</div>` : ''}
+    <button class="layout-44 btn primary no-print" id="relPrint">${ICON('impressora')} Imprimir / salvar PDF</button>
+    <div class="kpi rel-soma no-print hidden" id="relSelected" role="status" aria-live="polite"></div>`;
+
+  /* topo: o Total da obra no sólido; durante a busca, o resumo dos achados no lugar dele */
+  const pintaTopo = vis => {
+    let html;
+    if(!vis){
+      html = `<div class="kpi solido rel-total">
+        <div class="k-top"><span class="k-nome">Total da obra</span><span class="chip2 tinta">${relPlural(o.gastos.length, 'gasto', 'gastos')}</span></div>
+        <div class="k-num gigante">${dinheiroHtml(totB)}</div>
+        <div class="rel-total-linha"><span>${corrAte}</span>${dinheiroHtml(totC)}</div>
+        <div class="rel-total-linha"><span>Correção</span>${dinheiroHtml(totC - totB).replace('<span class="num">', '<span class="num">+')}</div>
+      </div>`;
+    } else if(!vis.size){
+      html = `<div class="panel rel-nada" role="status">
+        <p>Nada encontrado com esse filtro.</p>
+        <button type="button" class="btn ghost" id="relLimpar">Limpar a busca</button>
+      </div>`;
+    } else {
+      const s = OBRA_CALC.somaSelecao([...vis].map(id => itens.get(id)).filter(Boolean), totB);
+      html = `<div class="kpi solido rel-total" role="status" aria-live="polite">
+        <div class="k-top"><span class="k-nome">Achados</span><span class="chip2 tinta">${vis.size} de ${o.gastos.length} gastos</span></div>
+        <div class="k-num gigante">${dinheiroHtml(s.bruto)}</div>
+        <div class="rel-total-linha"><span>${corrAte}</span>${dinheiroHtml(s.corrigido)}</div>
+        <div class="rel-total-linha"><span>Parte do total</span><span class="num">${s.parte}</span></div>
+        ${est.selecionando ? `<button type="button" class="rel-marcar-todos" id="relMarcarAchados">Marcar os ${vis.size} achados</button>` : ''}
+      </div>`;
+    }
+    $('#relTopo').innerHTML = html;
+    const limpar = $('#relLimpar');
+    if(limpar) limpar.onclick = () => { $('#relBuscaCampo').value = ''; est.busca = ''; pinta(); $('#relBuscaCampo').focus(); };
+    const marcarTodos = $('#relMarcarAchados');
+    if(marcarTodos) marcarTodos.onclick = () => { vis.forEach(id => est.marcados.add(id)); atualizaMarcas(); };
   };
-  document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
+
+  /* um bloco por tópico, do maior para o menor bruto; na busca, só os tópicos com achados,
+     abertos e somando só os achados */
+  const pintaLista = vis => {
+    const blocos = rel.grupos.map((gr, i) => {
+      const its = vis ? gr.itens.filter(it => vis.has(it.gasto.id)) : gr.itens;
+      if(!its.length) return '';
+      const nm = nomeDe(gr.topico);
+      const bruto = vis ? its.reduce((s, it) => s + it.gasto.valor, 0) : gr.bruto;
+      const corr = vis ? its.reduce((s, it) => s + it.corrigido, 0) : gr.corrigido;
+      const qtd = vis ? `${its.length} de ${relPlural(gr.itens.length, 'gasto', 'gastos')}` : relPlural(gr.itens.length, 'gasto', 'gastos');
+      const aberto = vis ? true : est.abertos.has(gr.topico);
+      return `<div class="panel rel-top${aberto ? ' aberto' : ''}" data-top="${escapeHtml(gr.topico)}">
+        <div class="rel-top-cab">
+          <label class="rel-marca no-print"><input class="rel-check-top" type="checkbox" data-top="${escapeHtml(gr.topico)}" aria-label="Marcar os gastos de ${escapeHtml(nm)}">${relBolaHtml}</label>
+          <button type="button" class="rel-abre" aria-expanded="${aberto}" aria-controls="relG${i}"
+            aria-label="${escapeHtml(nm)}, ${money(bruto)}, corrigido ${money(corr)}, ${qtd}">
+            <span class="rel-l1"><span class="rel-nm">${escapeHtml(nm)}</span><span class="rel-v">${dinheiroHtml(bruto)}</span></span>
+            <span class="rel-l2"><span class="rel-info"><i class="pt" data-cor="${corDe(gr.topico)}"></i>${qtd} · ${pctRelatorio(bruto, totB)}</span><span class="rel-corr">corrigido ${dinheiroHtml(corr)}</span></span>
+            <span class="rel-qtd-marcada" aria-hidden="true"></span>
+            <span class="chev" aria-hidden="true">›</span>
+          </button>
+        </div>
+        <ul class="rel-gastos" id="relG${i}"${aberto ? '' : ' hidden'}>${its.map(it => relGastoHtml(it, nm)).join('')}</ul>
+      </div>`;
+    }).join('');
+    $('#relLista').innerHTML = blocos || (vis ? '' : `<div class="panel">${emptyBlock(ICON('recibo'), 'Sem gastos ainda.')}</div>`);
+    pintaCores($('#relLista'));
+    $('#relLista').querySelectorAll('.rel-abre').forEach(b => b.onclick = () => {
+      const bloco = b.closest('.rel-top');
+      const abre = !bloco.classList.contains('aberto');
+      bloco.classList.toggle('aberto', abre);
+      b.setAttribute('aria-expanded', String(abre));
+      bloco.querySelector('.rel-gastos').hidden = !abre;
+      if(!vis){ if(abre) est.abertos.add(bloco.dataset.top); else est.abertos.delete(bloco.dataset.top); }
+    });
+    $('#relLista').querySelectorAll('.rel-check').forEach(c => c.onchange = () => {
+      if(c.checked) est.marcados.add(c.dataset.gasto); else est.marcados.delete(c.dataset.gasto);
+      atualizaMarcas();
+    });
+    // o do tópico marca ou desmarca todos os gastos dele que estão à vista
+    $('#relLista').querySelectorAll('.rel-check-top').forEach(c => c.onchange = () => {
+      c.closest('.rel-top').querySelectorAll('.rel-check').forEach(g => {
+        if(c.checked) est.marcados.add(g.dataset.gasto); else est.marcados.delete(g.dataset.gasto);
+      });
+      atualizaMarcas();
+    });
+  };
+
+  /* marcadores (gasto e tópico com 3 estados), "N marcados" no tópico e a barra de soma */
+  const atualizaMarcas = () => {
+    const corpo = $('#relBody');
+    corpo.classList.toggle('rel-selecionando', est.selecionando);
+    corpo.querySelectorAll('.rel-check,.rel-check-top').forEach(c => { c.disabled = !est.selecionando; });
+    corpo.querySelectorAll('.rel-check').forEach(c => {
+      c.checked = est.marcados.has(c.dataset.gasto);
+      c.closest('.rel-gasto').classList.toggle('marcado', c.checked);
+    });
+    corpo.querySelectorAll('.rel-top').forEach(b => {
+      const cs = [...b.querySelectorAll('.rel-check')];
+      const n = cs.filter(c => c.checked).length;
+      const top = b.querySelector('.rel-check-top');
+      top.checked = n > 0 && n === cs.length;
+      top.indeterminate = n > 0 && n < cs.length;
+      b.querySelector('.rel-qtd-marcada').textContent = est.selecionando && n ? relPlural(n, 'marcado', 'marcados') : '';
+    });
+    const barra = $('#relSelected');
+    barra.classList.toggle('hidden', !est.selecionando);
+    if(!est.selecionando){ barra.innerHTML = ''; return; }
+    const vistos = [...corpo.querySelectorAll('.rel-check')].map(c => c.dataset.gasto);
+    const marcadosVistos = vistos.filter(id => est.marcados.has(id));
+    const fora = est.marcados.size - marcadosVistos.length;
+    const avisoFora = fora > 0 ? `<p class="rel-soma-fora">e mais ${relPlural(fora, 'marcado', 'marcados')} fora da busca</p>` : '';
+    if(!marcadosVistos.length){
+      barra.innerHTML = `<p class="rel-soma-vazia"><b>Nenhum gasto marcado</b> · Toque nos gastos para somar.</p>${avisoFora}`;
+      return;
+    }
+    const soma = OBRA_CALC.somaSelecao(marcadosVistos.map(id => itens.get(id)).filter(Boolean), totB);
+    barra.innerHTML = `<div class="rel-soma-grade">
+        <div><span class="rel-soma-rot" id="relSelQtd">${soma.quantos}</span><span class="rel-soma-v" id="relSelBruto">${dinheiroHtml(soma.bruto)}</span></div>
+        <div><span class="rel-soma-rot">corrigido</span><span class="rel-soma-v" id="relSelCorr">${dinheiroHtml(soma.corrigido)}</span></div>
+        <div><span class="rel-soma-rot">do total</span><span class="rel-soma-v num" id="relSelPct">${soma.parte}</span></div>
+      </div>${avisoFora}`;
+  };
+
+  const pinta = () => {
+    const vis = achados();
+    // a meta e o fim saem durante a busca: os achados sobem e o fim não se mistura com eles
+    $('#relMeta').classList.toggle('hidden', !!vis);
+    if($('#relFim')) $('#relFim').classList.toggle('hidden', !!vis);
+    pintaTopo(vis);
+    pintaLista(vis);
+    atualizaMarcas();
+  };
+
+  $('#relSelecionar').onclick = () => {
+    est.selecionando = !est.selecionando;
+    if(!est.selecionando) est.marcados.clear();
+    const b = $('#relSelecionar');
+    b.textContent = est.selecionando ? 'OK' : 'Selecionar';
+    b.setAttribute('aria-pressed', String(est.selecionando));
+    b.classList.toggle('on', est.selecionando);
+    pintaTopo(achados());
+    atualizaMarcas();
+  };
+  $('#relLupa').onclick = () => {
+    const caixa = $('#relBusca'), lupa = $('#relLupa');
+    const abre = caixa.hidden;
+    caixa.hidden = !abre;
+    lupa.setAttribute('aria-expanded', String(abre));
+    lupa.setAttribute('aria-label', abre ? 'Fechar a busca' : 'Buscar gasto ou tópico');
+    lupa.classList.toggle('on', abre);
+    if(abre) $('#relBuscaCampo').focus();
+    else if(est.busca){ $('#relBuscaCampo').value = ''; est.busca = ''; pinta(); }
+  };
+  $('#relBuscaCampo').oninput = e => { est.busca = e.target.value; pinta(); };
+  $('#relBuscaCampo').onkeydown = e => { if(e.key === 'Escape'){ e.preventDefault(); $('#relLupa').click(); $('#relLupa').focus(); } };
+
+  pinta();
+  // o PDF é sempre o relatório inteiro: imprimir com a busca ativa limpa a busca antes
+  // (registrado antes do onclick do ligarImprimir, roda primeiro)
+  $('#relPrint').addEventListener('click', () => { if(est.busca){ $('#relBuscaCampo').value = ''; est.busca = ''; pinta(); } });
   ligarImprimir($('#relPrint'));
 }
 

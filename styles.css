@@ -1241,6 +1241,8 @@ body .layout-45{font-size:30px}
   .hbar-track .hb-bruto{background:var(--destaque)}
   .hbar-track .hb-corr{background:var(--trilho);border-color:var(--grade-eixo)}
 
+  /* ===== Vale a pena? (identidade da etapa 4) ===== */
+
   /* ===== Gráficos ===== */
   .graf-meta{margin:0 0 14px}
   .subtit{display:inline-block;max-width:100%;padding:5px 18px;border-radius:999px;font-size:16px;color:var(--text);background:var(--selecao)}
@@ -1312,6 +1314,8 @@ body .layout-45{font-size:30px}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--grade)}
   .stats .rot{font-size:13px;color:var(--muted);font-weight:500}
   .stats .num{font-size:17px}
+
+  /* ===== Relatório (identidade da etapa 4) ===== */
 
 /* ===== Liquid Glass: recuos =====
    Sem backdrop-filter (WebKit muito antigo), com transparência reduzida (Ajustes › Acessibilidade)

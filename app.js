@@ -442,7 +442,11 @@ function renderObra(){
       <div class="kpi">
         <div class="k-top"><span class="k-nome">Venda estimada</span><span class="chip2 green">estimativa</span></div>
         <div class="k-num medio">${dinheiroHtml(o.valorEstimadoVenda)}</div>
-        <div class="k-obs">${ppm2 ? `${moneyShort(ppm2)}/m² · ${escapeHtml(String(o.areaM2).replace('.',','))} m² · ` : ''}margem ${o.valorEstimadoVenda-corr>=0?'':'−'}${moneyCurto(Math.abs(o.valorEstimadoVenda-corr))} sobre o corrigido</div>
+        <div class="k-obs">${[
+          ppm2 ? `${moneyShort(ppm2)}/m² · ${escapeHtml(String(o.areaM2).replace('.',','))} m²` : '',
+          // em construção ainda falta gastar: a margem sobre o que já foi gasto só engana
+          o.fase==='pronta' || !ppm2 ? `margem ${o.valorEstimadoVenda-corr>=0?'':'−'}${moneyCurto(Math.abs(o.valorEstimadoVenda-corr))} sobre o corrigido` : '',
+        ].filter(Boolean).join(' · ')}</div>
       </div>`;
   }
   const resumo = `

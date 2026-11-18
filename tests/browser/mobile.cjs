@@ -64,15 +64,18 @@ const {chromium}=require('playwright');
         assert.ok(Math.abs(await page.evaluate(()=>scrollY)-pos)<2,'fechar restaura posição da lista');
       }
     }
-    /* O relatório da obra rola para o lado e mantém cada gasto numa linha só. Quem quebra
-       a 1ª coluna para caber sem rolar é só o relatório da simulação (.rep-sim). */
+    /* O relatório da obra e a tabela da simulação cabem na largura, sem rolar de lado. */
     for(const width of [320,393,430]){
       await page.setViewportSize({width,height:852});
       await page.evaluate(()=>{closeSheet();openObra('o');showView('relatorio');renderRelatorio();});
-      const alturas=await page.$$eval('#v-relatorio .rep-table tbody tr:not(.rt-top) td:first-child',tds=>tds.map(td=>td.getBoundingClientRect().height));
-      assert.ok(alturas.length>0 && alturas.every(h=>h<50),`relatório da obra a ${width}px: descrição deve caber numa linha (alturas ${alturas.slice(0,3).join(', ')})`);
+      // um bloco por tópico (identidade da etapa 4): aberto, cada gasto cabe na largura, sem rolar de lado
+      await page.evaluate(()=>document.querySelectorAll('#relLista .rel-top:not(.aberto) .rel-abre').forEach(b=>b.click()));
+      assert.ok(await page.locator('#relLista .rel-gasto').count()>0,`relatório da obra a ${width}px: sem gastos à vista`);
+      assert.ok(await page.evaluate(()=>[...document.querySelectorAll('#relLista .rel-gasto')].every(g=>g.scrollWidth<=g.clientWidth+1)),`relatório da obra a ${width}px: gasto mais largo que o bloco`);
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`relatório da obra a ${width}px: a página rola de lado`);
       await page.evaluate(()=>{showView('simula');renderSimula();$('#simObra').value='o';const v=$('#simValor');v.value='90.000,00';v.dataset.touched='1';$('#simMeses').value='3';simulaCompute();});
-      assert.equal(await page.locator('#simOut .rep-sim td').first().evaluate(td=>getComputedStyle(td).whiteSpace),'normal','relatório da simulação continua quebrando a 1ª coluna');
+      // a tabela da simulação vem em pares (rótulo em cima, bruto e corrigido embaixo): cabe sem rolar de lado
+      assert.ok(await page.locator('#simOut .sim-tab').evaluate(t=>t.scrollWidth<=t.parentElement.clientWidth+1),'tabela da simulação cabe na largura');
     }
     /* No limite (venda logo acima/abaixo do custo corrigido) o veredito e o "% ao mês" do
        cartão têm de concordar: a TIR só passa do banco quando a venda passa do corrigido. */
@@ -83,7 +86,7 @@ const {chromium}=require('playwright');
         const corr=OBRA_CALC.totalCorrigido(o,taxa(),alvo);
         showView('simula');renderSimula();$('#simObra').value='o';$('#simMeses').value='2';
         const v=$('#simValor');v.value=OBRA_CALC.numParaCampo(Math.round(corr+delta));v.dataset.touched='1';simulaCompute();
-        return {rotulo:$('#simOut .card.saldo .k-label').textContent.trim(),pct:parseFloat($('#simOut .card.saldo .k-val').textContent.replace(',','.')),taxaBanco:taxa()};
+        return {rotulo:$('#simOut .sim-veredito .k-nome').textContent.trim(),pct:parseFloat($('#simOut .sim-veredito .sim-taxa').textContent.replace('−','-').replace(',','.')),taxaBanco:taxa()};
       },delta);
       if(delta>0){assert.match(rotulo,/Vale a pena/);assert.ok(pct>taxaBanco,`vale a pena com ${pct}% ao mês e banco a ${taxaBanco}%`);}
       else{assert.match(rotulo,/menos que o banco/);assert.ok(pct<taxaBanco,`rende menos com ${pct}% ao mês e banco a ${taxaBanco}%`);}

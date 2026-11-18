@@ -104,7 +104,7 @@ function dinheiroHtml(v){
   return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$</span>${int}${cent ? `<span class="cent">,${cent}</span>` : ''}</span>`;
 }
 function dinheiroCurtoHtml(v){
-  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '');
+  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '').replace(/\s(mil|mi)$/, '<span class="suf">$1</span>');
   return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$</span>${corpo}</span>`;
 }
 /* Pedaços do anel e da barra empilhada: os 6 maiores tópicos em cor e o resto em "Outros",
@@ -262,12 +262,28 @@ function renderInicio(){
         <div class="s"><span class="tag ${f.cls}">${f.nm}</span> <span class="obra-tempo">· ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</span></div>
         ${orcLinha}
       </div>
-      <div class="li-val">${moneyShort(OBRA_CALC.totalBruto(o))}</div>
+      <div class="li-val">${dinheiroCurtoHtml(OBRA_CALC.totalBruto(o))}</div>
       <span class="chevron" aria-hidden="true">›</span>`;
     li.onclick = ()=>openObra(o.id);
     list.appendChild(li);
   });
   pintaBarrasOrc(list);
+
+  /* o bloco sólido do início: quanto está investido nas obras que ainda não venderam */
+  const andamento = arr.filter(o => o.fase !== 'vendida' && OBRA_CALC.totalBruto(o) > 0);
+  const resumo = $('#inicioResumo');
+  if(andamento.length){
+    const bruto = andamento.reduce((t, o) => t + OBRA_CALC.totalBruto(o), 0);
+    const corr = andamento.reduce((t, o) => t + OBRA_CALC.totalCorrigido(o, taxa(), hoje), 0);
+    const venc = OBRA_CALC.aPagar(andamento, hoje);
+    resumo.innerHTML = `
+      <div class="kpi solido inicio-solido">
+        <div class="k-top"><span class="k-nome">Investido nas obras</span><span class="chip2 tinta">${andamento.length} em andamento</span></div>
+        <div class="k-num gigante">${dinheiroHtml(bruto)}</div>
+        <div class="k-obs">no banco já seria ${moneyCurto(corr)}${venc.qtd ? ` · ${moneyCurto(venc.total)} a pagar em 30 dias` : ''}</div>
+      </div>`;
+    fitNums(resumo);
+  } else resumo.innerHTML = '';
 
   drawComp(arr.filter(o=>OBRA_CALC.totalBruto(o)>0), hoje);
 }

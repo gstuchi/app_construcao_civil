@@ -1347,45 +1347,115 @@ function renderSimula(){
   simulaCompute();
 }
 
+/* Identidade da etapa 4 (mockup parte 2, "Vale a pena?"): o veredito é o bloco sólido (verde ou âmbar), depois a faixa
+   (custo, empata com o banco, sua venda) e a tabela pelo bruto × pelo corrigido em pares. Os números e os textos saem de
+   calc.js (contaSimulador e textosSimulador); aqui só muda a apresentação. */
+/* "R$ 1.234,56" / "-R$ 1.234,56" (money de calc.js) → o número em mono com R$ e centavos menores; "—" fica "—" */
+function simDinheiroHtml(txt){
+  if(!/R\$/.test(txt)) return escapeHtml(txt);
+  const v = parseNum(txt.replace(/[^\d,]/g, ''));
+  return dinheiroHtml(txt.trim().startsWith('-') ? -v : v);
+}
+/* "122,3%" / "8,63% a.m." → número em mono com a unidade menor; o sinal de menos tipográfico */
+function simPctHtml(txt){
+  const m = /^(-?)([\d.,]+)(%.*)$/.exec(txt);
+  if(!m) return escapeHtml(txt);
+  return `<span class="num">${m[1] ? '−' : ''}${m[2]}<span class="un">${escapeHtml(m[3])}</span></span>`;
+}
+/* posição de cada marca da faixa via CSSOM (a CSP proíbe style no HTML) */
+function pintaFaixa(escopo){
+  escopo.querySelectorAll('.sim-faixa [data-pos]').forEach(e => { e.style.left = e.dataset.pos + '%'; });
+}
+/* Os campos: o preço tem a largura do que está escrito (em ch, a fonte é mono), para o número ficar colado no "R$" e caber
+   na linha do rótulo; o − e o + dos meses apagam nos limites do campo (0 e 120, o teto da conta) */
+function simulaCampos(){
+  const v = $('#simValor');
+  const n = Math.max(4, v.value.length);
+  v.style.width = `calc(${n} * (1ch + var(--num-ls)) + 4px)`; // ch menos o aperto entre letras da fonte dos números
+  const m = parseInt($('#simMeses').value, 10) || 0;
+  $('#simMenos').disabled = m <= 0;
+  $('#simMais').disabled = m >= OBRA_CALC.MESES_SIMULADOR;
+}
+
 function simulaCompute(){
   const out = $('#simOut');
   const o = obraById($('#simObra').value);
-  if(!o){ out.innerHTML = ''; return; }
+  if(!o){ simulaCampos(); out.innerHTML = ''; return; }
 
   const vInp = $('#simValor');
   // enquanto a pessoa não digitou, o preço acompanha a venda estimada da obra escolhida (vazio sem estimada)
   if(!vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(OBRA_CALC.precoInicialSimulador(o));
+  simulaCampos();
   /* A conta e os textos: calc.js contaSimulador e textosSimulador (o app nativo usa os mesmos). Os meses param em 120 na
      conta, mesmo digitados além do teto do campo. A obra com menos de 1 mês fica sem taxa (o % ao mês explodiria), e a TIR
      passa da taxa do banco exatamente quando a venda passa do corrigido. */
   const conta = OBRA_CALC.contaSimulador(o, parseNum(vInp.value), parseInt($('#simMeses').value,10) || 0, todayISO(), taxa());
   if(!conta){
-    out.innerHTML = `<div class="panel"><p class="muted-note">Digite o preço de venda pra ver a conta.</p></div>`;
+    out.innerHTML = `<div class="kpi sim-vazio"><p>Digite o preço de venda pra ver a conta.</p></div>`;
     return;
   }
   const t = OBRA_CALC.textosSimulador(conta, taxa(), o.areaM2);
+
+  // o veredito: a taxa grande (o "% ao mês" menor ao lado), o quando numa linha, o banco na outra, o aviso da obra nova
+  const mTaxa = /^(-?)([\d.,]+)% ao mês$/.exec(t.taxa);
+  const taxaHtml = mTaxa
+    ? `<span class="num">${mTaxa[1] ? '−' : ''}${mTaxa[2]}<span class="un">% ao mês</span></span>`
+    : `<span class="num">${escapeHtml(t.taxa)}</span>`;
+  const [quando, ...resto] = t.detalhes;
+  const aviso = conta.novaDemais ? resto.pop() : '';
+  const linhasVeredito = [quando, resto.join(' · '), aviso].filter(Boolean)
+    .map((l, i) => `<div class="k-obs${i === 2 ? ' sim-aviso' : ''}">${escapeHtml(l)}</div>`).join('');
+
+  // a faixa: de um pouco antes do menor valor a um pouco depois do maior; a zona hachurada começa no empate com o banco
+  const lo = Math.min(conta.bruto, conta.venda) * .97, hi = Math.max(conta.corrigido, conta.venda) * 1.03;
+  const pos = v => (Math.min(100, Math.max(0, (v - lo) / ((hi - lo) || 1) * 100))).toFixed(2);
+  const legenda = [['custo', 'custo (bruto)', conta.bruto], ['limiar', 'empata com o banco', conta.corrigido], ['venda', 'sua venda', conta.venda]]
+    .map(([k, rot, v]) => `<li><span class="sim-leg-rot"><i class="sim-mk ${k}" aria-hidden="true"></i>${rot}</span>${dinheiroHtml(v)}</li>`).join('');
+
   const cor = s => s ? ` class="${s === 'negativo' ? 'neg' : 'pos'}"` : '';
+  const valor = txt => /R\$/.test(txt) ? simDinheiroHtml(txt) : simPctHtml(txt);
 
   out.innerHTML = `
-    <div class="card saldo big ${conta.vale?'':'saldo-abaixo'}">
-      <div class="k-label"><span class="k-ic">${ICON(conta.vale?'check':'alerta')}</span> ${t.veredito}</div>
-      <div class="layout-45 k-val">${t.taxa}</div>
-      <div class="k-sub">${escapeHtml(t.detalhes.join(' · '))}</div>
+    <div class="kpi solido sim-veredito${conta.vale ? '' : ' ambar'}">
+      <div class="k-top"><span class="k-nome"><span class="k-ic">${ICON(conta.vale?'check':'alerta')}</span>${t.veredito}</span></div>
+      <div class="k-num gigante sim-taxa">${taxaHtml}</div>
+      ${linhasVeredito}
     </div>
-    <div class="panel">
-      <h2 class="layout-28">${ICON('documento')} Relatório da simulação</h2>
-      <div class="rep-scroll"><table class="rep-table rep-sim">
-        <thead><tr><th></th><th>Pelo bruto</th><th>Pelo corrigido</th></tr></thead>
+    <div class="kpi sim-faixa-bloco">
+      <div class="k-top"><span class="k-nome">Onde a sua venda cai</span><span class="chip2 ${conta.vale ? 'green' : 'amber'}">${conta.vale ? 'acima do banco' : 'abaixo do banco'}</span></div>
+      <div class="sim-faixa" role="img" aria-label="Custo ${money(conta.bruto)}, empata com o banco em ${money(conta.corrigido)}, sua venda ${money(conta.venda)}">
+        <div class="zona" data-pos="${pos(conta.corrigido)}"></div>
+        <div class="marca custo" data-pos="${pos(conta.bruto)}"></div>
+        <div class="marca limiar" data-pos="${pos(conta.corrigido)}"></div>
+        <div class="marca venda" data-pos="${pos(conta.venda)}"></div>
+      </div>
+      <ul class="sim-leg">${legenda}</ul>
+    </div>
+    <div class="kpi sim-relatorio">
+      <div class="k-top"><h3 class="k-nome">Relatório da simulação</h3></div>
+      <table class="sim-tab">
+        <thead><tr><td></td><th scope="col">Pelo bruto</th><th scope="col">Pelo corrigido</th></tr></thead>
         <tbody>
-          ${t.tabela.map(l => `<tr${l.destaque ? ' class="rep-total"' : ''}><td>${escapeHtml(l.rotulo)}</td><td${cor(l.sinalBruto)}>${l.bruto}</td><td${cor(l.sinalCorrigido)}>${l.corrigido}</td></tr>`).join('\n          ')}
+          ${t.tabela.map(l => `<tr${l.destaque ? ' class="forte"' : ''}><th scope="row">${escapeHtml(l.rotulo)}</th><td${cor(l.sinalBruto)}>${valor(l.bruto)}</td><td${cor(l.sinalCorrigido)}>${valor(l.corrigido)}</td></tr>`).join('\n          ')}
         </tbody>
-      </table></div>
+      </table>
     </div>`;
+  pintaFaixa(out);
+  fitNums(out);
 }
 $('#simObra').onchange = simulaCompute;
 maskMoney('#simValor'); // antes do listener de cálculo: reformata, depois calcula
 $('#simValor').addEventListener('input', ()=>{ $('#simValor').dataset.touched='1'; simulaCompute(); });
+$('#simValor').addEventListener('blur', simulaCampos); // o blur completa os centavos: a largura acompanha
 $('#simMeses').addEventListener('input', simulaCompute);
+/* − e +: um mês por toque, dentro de 0 a 120 (um valor digitado além do teto volta para dentro) */
+[['#simMenos', -1], ['#simMais', 1]].forEach(([sel, passo]) => {
+  $(sel).addEventListener('click', ()=>{
+    const m = Math.min(OBRA_CALC.MESES_SIMULADOR, Math.max(0, (parseInt($('#simMeses').value, 10) || 0) + passo));
+    $('#simMeses').value = String(m);
+    simulaCompute();
+  });
+});
 
 /* ===== TEMA (claro/escuro) — preferência por aparelho, não sincroniza ===== */
 const TEMA_KEY = 'mo_tema';

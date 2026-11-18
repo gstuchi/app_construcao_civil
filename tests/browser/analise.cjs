@@ -158,11 +158,14 @@ const ZERADA={id:'z',nome:'Obra zerada',dataInicio:'2026-03-01',fase:'construcao
     assert.deepEqual(await selecao(),[false,'1 item','R$ 0,00','R$ 0,00','0%']);
 
     // "Vale a pena?": o cartão e a tabela da simulação, com a cor pelo sinal no lucro e nas porcentagens
-    const cartao=()=>page.evaluate(()=>{const c=$('#simOut .card.saldo');if(!c)return c;const abaixo=c.classList.contains('saldo-abaixo');
+    // o veredito é o bloco sólido da identidade nova (âmbar quando rende menos); o texto sai no formato de antes:
+    // o "−" tipográfico vira "-", e as linhas de baixo juntam com " · "
+    const norm=`t=>t.replace(/\\s+/g,' ').replace(/−/g,'-').replace(/R\\$\\s?/g,'R$ ').trim()`;
+    const cartao=()=>page.evaluate(norm=>{const n=eval(norm);const c=$('#simOut .sim-veredito');if(!c)return c;const abaixo=c.classList.contains('ambar');
       const ic=document.createElement('span');ic.innerHTML=ICON(abaixo?'alerta':'check');
       if(c.querySelector('.k-ic').innerHTML!==ic.innerHTML)throw new Error('o ícone do cartão não é o do veredito');
-      return [abaixo,...['.k-label','.k-val','.k-sub'].map(s=>c.querySelector(s).textContent.replace(/\s+/g,' ').trim())];});
-    const tabela=()=>page.$$eval('#simOut .rep-sim tbody tr',trs=>trs.map(tr=>[tr.className,...[...tr.children].map(td=>[td.textContent.replace(/\s+/g,' ').trim(),td.className])]));
+      return [abaixo,n(c.querySelector('.k-nome').textContent),n(c.querySelector('.sim-taxa').textContent),[...c.querySelectorAll('.k-obs')].map(e=>n(e.textContent)).join(' · ')];},norm);
+    const tabela=()=>page.$$eval('#simOut .sim-tab tbody tr',(trs,norm)=>{const n=eval(norm);return trs.map(tr=>[tr.classList.contains('forte')?'rep-total':'',...[...tr.children].map(td=>[n(td.textContent),td.className])]);},norm);
     const linha=(rotulo,b,c,cb='',cc='',tr='')=>[tr,[rotulo,''],[b,cb],[c,cc]];
     await page.evaluate(()=>{showView('simula');renderSimula();});
     assert.equal(await page.locator('#simObra').inputValue(),'a');

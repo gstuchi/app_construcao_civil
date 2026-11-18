@@ -1161,9 +1161,9 @@ body .layout-45{font-size:30px}
 
   /* números: mono, tabulares, "R$" e centavos menores na linha do número */
   .num{font-family:var(--fonte-num);letter-spacing:var(--num-ls);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .num .moeda{font-size:max(.58em,min(1em,11px));font-weight:600;letter-spacing:0;margin-right:.22em}
+  .num .moeda{font-size:max(.58em,min(1em,11px));font-weight:600;letter-spacing:0}
   .num .cent{font-size:max(.62em,min(1em,11px));letter-spacing:0;margin-left:.03em}
-  .num .suf{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:.78em;font-weight:600;letter-spacing:0;margin-left:.25em}
+  .num .suf{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:.78em;font-weight:600;letter-spacing:0}
   .li-val,.kpi .k-num,.card .k-val,.orc-num,.donut .center b,.top-resumo b,.orc-val b{font-family:var(--fonte-num);letter-spacing:var(--num-ls);font-weight:600}
 
   /* título grande em mono 600 (opção C, escolhida pelo Giovani em 28/10) com o halo do tom do

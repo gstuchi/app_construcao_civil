@@ -101,11 +101,11 @@ const obraById = id => db.obras.find(o=>o.id===id);
 function dinheiroHtml(v){
   const corpo = money(Math.abs(v || 0)).replace(/^R\$\s*/, '');
   const [int, cent] = corpo.split(',');
-  return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$</span>${int}${cent ? `<span class="cent">,${cent}</span>` : ''}</span>`;
+  return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$&nbsp;</span>${int}${cent ? `<span class="cent">,${cent}</span>` : ''}</span>`;
 }
 function dinheiroCurtoHtml(v){
-  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '').replace(/\s(mil|mi)$/, '<span class="suf">$1</span>');
-  return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$</span>${corpo}</span>`;
+  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '').replace(/\s(mil|mi)$/, '&nbsp;<span class="suf">$1</span>');
+  return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$&nbsp;</span>${corpo}</span>`;
 }
 /* Pedaços do anel e da barra empilhada: os 6 maiores tópicos em cor e o resto em "Outros",
    cinza. O tópico fixo "Outros" sempre entra no pedaço cinza (regra do spec da etapa 4). */
@@ -375,7 +375,7 @@ function sheetOrcamento(obraId){
     <div class="top-head">${ICON('alvo')}<h3>Orçamento por tópico</h3></div>
     <div class="top-resumo"><div class="sub">${rodape.usado} usado · ${rodape.rotulo} ${rodape.valor}</div>
       <b>${money(orc.gasto)}</b><div class="corr">de ${money(orc.previsto)} previstos</div></div>
-    <ul class="orc-lista">${linhas}${fora}</ul>
+    <ul class="orc-lista orc-topicos">${linhas}${fora}</ul>
     <div class="sheet-actions"><button class="btn ghost" id="orcFechar">Fechar</button>
       <button class="btn primary" id="oOrcEditar">${ICON('alvo')} Editar orçamento</button></div>`);
   pintaBarrasOrc($('#sheet'));
@@ -1161,7 +1161,7 @@ function anelCentro(tp){
        <span class="cv">${dinheiroCurtoHtml(p.bruto)}</span>
        <span class="cp">${pctTexto(p.bruto, tp.total)} do total</span>
        ${p.outros ? '' : `<button type="button" class="cl" id="anelVer">Ver gastos ›</button>`}`
-    : `<span class="cr">total gasto</span><span class="cv">${dinheiroCurtoHtml(tp.total)}</span>
+    : `<span class="cr">total gasto</span> <span class="cv">${dinheiroCurtoHtml(tp.total)}</span>
        <span class="cp">${tp.todos.length} tópico${tp.todos.length>1?'s':''}</span>`;
   const ver = $('#anelVer');
   if(ver) ver.onclick = () => sheetTopico(obraAberta, p.id);
@@ -1172,7 +1172,7 @@ function renderGraficos(){
   const tp = pedacosTopicos(o);
   if(anelSel && !tp.pedacos.some(p => p.id === anelSel)) anelSel = null;
   const corDe = tp.corDe;
-  const linha = t => `<div data-top="${escapeHtml(t.id)}" data-pedaco="${tp.pedacos.find(p=>p.ids.includes(t.id))?.id || ''}" role="button" tabindex="0">
+  const linha = t => `<div data-top="${escapeHtml(t.id)}" data-pedaco="${escapeHtml(tp.pedacos.find(p=>p.ids.includes(t.id))?.id || '')}" role="button" tabindex="0">
       <span class="pt" data-cor="${corDe(t.id)}"></span><span class="nm">${escapeHtml(nomeTopico(t.id))}</span>
       <span class="pc">${pctTexto(t.bruto, tp.total)}</span><span class="vl">${dinheiroHtml(t.bruto).replace(/<span class="cent">.*?<\/span>/,'')}</span><span class="chev" aria-hidden="true">›</span></div>`;
   const outros = tp.pedacos.find(p => p.outros);

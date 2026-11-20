@@ -1491,6 +1491,12 @@ case "$1 $2" in
     if [ "$n" -gt 0 ]; then echo $((n-1)) > "$GCLOUD_DIR/falhas-cp"; echo 'precondição falhou' >&2; exit 1; fi
     cp "$3" "$GCLOUD_DIR/gravado.json";;
   "services enable") [ -f "$GCLOUD_DIR/falha-enable" ] && exit 1; exit 0;;
+  "services list")
+    [ -f "$GCLOUD_DIR/falha-list" ] && exit 1
+    echo storage.googleapis.com
+    echo firestorekeyvisualizer.googleapis.com
+    [ -f "$GCLOUD_DIR/api-ligada" ] && echo firestore.googleapis.com
+    exit 0;;
   "functions deploy") exit 0;;
   "auth print-access-token")
     [ -f "$GCLOUD_DIR/sem-token" ] && { echo 'ERROR: (gcloud.auth.print-access-token) sem conta ativa' >&2; exit 1; }
@@ -1500,7 +1506,7 @@ esac
 `;
 
 /* pythonQuebra: a primeira chamada ao python3, a da trava, sai com esse código; as outras vão ao de verdade. */
-function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaEnable = false, semToken = false, pythonQuebra = 0 } = {}){
+function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaEnable = false, semToken = false, pythonQuebra = 0, apiLigada = false, falhaList = false } = {}){
   const dir = mkdtempSync(path.join(tmpdir(), 'corte-gcloud-'));
   writeFileSync(path.join(dir, 'gcloud'), GCLOUD_FALSO);
   chmodSync(path.join(dir, 'gcloud'), 0o755);
@@ -1509,6 +1515,8 @@ function prepararGcloud({ estado = '{}', falhasCp = 0, semObjeto = false, falhaE
   if(semObjeto) writeFileSync(path.join(dir, 'sem-objeto'), '');
   if(falhaEnable) writeFileSync(path.join(dir, 'falha-enable'), '');
   if(semToken) writeFileSync(path.join(dir, 'sem-token'), '');
+  if(apiLigada) writeFileSync(path.join(dir, 'api-ligada'), '');
+  if(falhaList) writeFileSync(path.join(dir, 'falha-list'), '');
   if(pythonQuebra){
     writeFileSync(path.join(dir, 'python3'), `#!/bin/sh
 if [ ! -f "$GCLOUD_DIR/python-quebrou" ]; then
@@ -1669,11 +1677,11 @@ test('religar: pede o token da trava, lê a geração, depois o conteúdo, grava
   const r = await rodarReligar([], { estado: ESTADO_CORTADO });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.log.map(nomeDe), [
-    'auth print-access-token', `storage objects describe`, `storage cat ${OBJETO_GS}`, `storage cp ${r.log[3][2]}`, 'services enable firestore.googleapis.com',
+    'auth print-access-token', `storage objects describe`, `storage cat ${OBJETO_GS}`, `storage cp ${r.log[3][2]}`, 'services list --enabled', 'services enable firestore.googleapis.com',
   ]);
   assert.deepEqual(r.log[1].slice(3), [OBJETO_GS, '--format=value(generation)']);
   assert.deepEqual(r.log[3].slice(3), [OBJETO_GS, '--if-generation-match=7']);
-  assert.deepEqual(r.log[4], ['services', 'enable', 'firestore.googleapis.com', '--project', 'app-construcao-civil']);
+  assert.deepEqual(r.log[5], ['services', 'enable', 'firestore.googleapis.com', '--project', 'app-construcao-civil']);
 });
 
 test('religar: com a cobrança tirada, base vira o maiorCusto nos dois orçamentos e os três registros zeram', async ()=>{
@@ -1681,7 +1689,7 @@ test('religar: com a cobrança tirada, base vira o maiorCusto nos dois orçament
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.gravado, {
     orcamentos: { 'custta-projeto': { intervalo: '2026-11', base: 84.2, maiorCusto: 84.2 }, 'custta-fora-firestore': { intervalo: '2026-11', base: 12.5, maiorCusto: 12.5 } },
-    primeiraFalha: null, apiDesligadaEm: null, cobrancaTiradaEm: null,
+    primeiraFalha: null, apiDesligadaEm: null, cobrancaTiradaEm: null, voltouEm: '2026-11-17T18:00:00.000Z',
   });
 });
 
@@ -1767,7 +1775,7 @@ test('religar: conflito na gravação tenta uma vez de novo, relendo tudo', asyn
   const r = await rodarReligar([], { estado: ESTADO_CORTADO, falhasCp: 1 });
   assert.equal(r.status, 0, r.saida);
   assert.deepEqual(r.log.map(c => c.slice(0, 2).join(' ')), [
-    'auth print-access-token', 'storage objects', 'storage cat', 'storage cp', 'storage objects', 'storage cat', 'storage cp', 'services enable',
+    'auth print-access-token', 'storage objects', 'storage cat', 'storage cp', 'storage objects', 'storage cat', 'storage cp', 'services list', 'services enable',
   ]);
   assert.equal(r.saida.match(/API cai de novo/g).length, 1, 'o que vale agora sai uma vez só');
 });
@@ -1799,7 +1807,7 @@ test('religar: projeto e bucket trocam por ambiente, para o projeto descartável
   const r = await rodarReligar([], { estado: ESTADO_CORTADO, env: { PROJETO_ALVO: 'descartavel', BUCKET_ESTADO: 'balde' } });
   assert.equal(r.status, 0, r.saida);
   assert.equal(r.log.find(c => c[1] === 'cat')[2], 'gs://balde/estado.json');
-  assert.deepEqual(r.log.find(c => c[0] === 'services'), ['services', 'enable', 'firestore.googleapis.com', '--project', 'descartavel']);
+  assert.deepEqual(r.log.find(c => c[0] === 'services' && c[1] === 'enable'), ['services', 'enable', 'firestore.googleapis.com', '--project', 'descartavel']);
   assert.equal(r.pedidos.length, 4);
   for(const p of r.pedidos){
     assert.match(p.caminho, /^\/v3\/projects\/descartavel\//, 'a trava lê a política e a métrica do projeto alvo');
@@ -2162,6 +2170,124 @@ test('religar: sem a base de fusos, a hora sai em UTC-3 fixo, sem estourar', asy
 
 test('religar: nenhum limiar nem janela da política mora no script', ()=>{
   assert.doesNotMatch(readFileSync(path.join(PASTA_CORTE, 'religar.sh'), 'utf8'), /\b(2500|2000|6000|3600|21600)\b/);
+});
+
+/* Volta de um corte que tirou a cobrança (conselho de 17/11): a API só religa se estiver desligada,
+   a volta fica em voltouEm, e o script manda religar a cobrança e conferir os dados. */
+const TIRADA_HOJE = { ...ESTADO_CORTADO, cobrancaTiradaEm: '2026-11-17T12:00:00.000Z' };
+const RELIGUE = 'Religue a cobrança até 20/11 09h00 (72 h depois do corte): console.cloud.google.com/billing/projects → Change billing no projeto app-construcao-civil.';
+const CONFIRA = 'Confira os dados conta por conta no dia seguinte, até 24/11 15h00 (7 dias da volta, a janela do PITR).';
+
+test('religar depois da cobrança: com a API ligada, não chama o enable, grava voltouEm e manda religar a cobrança e conferir os dados', async ()=>{
+  const r = await rodarReligar([], { estado: TIRADA_HOJE, apiLigada: true });
+  assert.equal(r.status, 0, r.saida);
+  assert.deepEqual(r.log.map(c => c.slice(0, 2).join(' ')), ['auth print-access-token', 'storage objects', 'storage cat', 'storage cp', 'services list']);
+  assert.deepEqual(r.log[4], ['services', 'list', '--enabled', '--project', 'app-construcao-civil', '--format=value(config.name)']);
+  assert.equal(r.gravado.voltouEm, '2026-11-17T18:00:00.000Z');
+  assert.equal(r.gravado.cobrancaTiradaEm, null);
+  assert.match(r.saida, /A API do Firestore seguiu ligada: o app ficou no gratuito\./);
+  assert.doesNotMatch(r.saida, /API religada/);
+  const linhas = r.saida.trim().split('\n');
+  assert.ok(linhas.includes(RELIGUE), r.saida);
+  assert.ok(linhas.includes(CONFIRA), r.saida);
+  assert.deepEqual(linhas.slice(-2), ['API cai de novo em R$ 144,20', 'cobrança cai em R$ 112,50'], 'em quanto cai continua por último');
+});
+
+test('religar depois da cobrança: com a API desligada, religa e manda religar a cobrança', async ()=>{
+  const r = await rodarReligar([], { estado: TIRADA_HOJE });
+  assert.equal(r.status, 0, r.saida);
+  assert.deepEqual(r.log.slice(-2).map(c => c.slice(0, 2).join(' ')), ['services list', 'services enable']);
+  assert.match(r.saida, /API religada/);
+  assert.ok(r.saida.split('\n').includes(RELIGUE));
+  assert.equal(r.gravado.voltouEm, '2026-11-17T18:00:00.000Z');
+});
+
+test('religar depois da cobrança: sem conseguir listar os serviços, religa assim mesmo', async ()=>{
+  const r = await rodarReligar([], { estado: TIRADA_HOJE, falhaList: true });
+  assert.equal(r.status, 0, r.saida);
+  assert.deepEqual(r.log.slice(-2).map(c => c.slice(0, 2).join(' ')), ['services list', 'services enable']);
+});
+
+test('religar sem a cobrança tirada não lista a API nem fala da cobrança, mas grava voltouEm e manda conferir os dados', async ()=>{
+  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-10-30T09:00:00.000Z' } });
+  assert.equal(r.status, 0, r.saida);
+  assert.ok(!r.log.some(c => c[0] === 'services' && c[1] === 'list'));
+  assert.equal(r.gravado.voltouEm, '2026-11-17T18:00:00.000Z', 'toda volta fica registrada');
+  assert.doesNotMatch(r.saida, /Religue a cobrança/);
+  assert.ok(r.saida.split('\n').includes(CONFIRA), 'a conferência dos dados vale para toda volta');
+  assert.match(r.saida, /API cai de novo em R\$ 144,20\n$/);
+});
+
+test('religar: segunda volta no mesmo mês pede --forcar também depois de um corte só da API', async ()=>{
+  const estado = { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-10T09:00:00.000Z' };
+  const r = await rodarReligar([], { estado });
+  assert.equal(r.status, 5, r.saida);
+  assert.ok(!r.log.some(c => c[1] === 'cp' || c[0] === 'services'));
+  assert.match(r.saida, /segundo corte neste mês \(a volta anterior foi em 10\/11 06h00\)/);
+  const forcado = await rodarReligar(['--forcar', 'conta atacante bloqueada'], { estado });
+  assert.equal(forcado.status, 0, forcado.saida);
+  assert.equal(forcado.gravado.religadosForcados.at(-1).voltaAnterior, '2026-11-10T09:00:00.000Z');
+  assert.equal(forcado.gravado.voltouEm, '2026-11-17T18:00:00.000Z');
+});
+
+test('religar depois da cobrança: com o prazo de 72 h vencido, diz que venceu', async ()=>{
+  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: '2026-11-13T12:00:00.000Z' } });
+  assert.equal(r.status, 0, r.saida);
+  assert.ok(r.saida.split('\n').includes('O prazo de 72 h sem conta de cobrança venceu em 16/11 09h00: religue a cobrança agora, em console.cloud.google.com/billing/projects → Change billing no projeto app-construcao-civil.'), r.saida);
+});
+
+test('religar depois da cobrança: segunda volta no mesmo mês pede --forcar, antes de gravar', async ()=>{
+  const estado = { ...TIRADA_HOJE, voltouEm: '2026-11-10T09:00:00.000Z' };
+  const r = await rodarReligar([], { estado });
+  assert.equal(r.status, 5, r.saida);
+  assert.ok(!r.log.some(c => c[1] === 'cp' || c[0] === 'services'), 'nada gravado, nada religado');
+  assert.equal(r.log.filter(c => c[1] === 'cat').length, 1, 'recusa sem repetir a leitura');
+  assert.doesNotMatch(r.saida, /tentando mais uma vez/);
+  assert.equal(r.gravado, null);
+  assert.match(r.saida, /segundo corte neste mês \(a volta anterior foi em 10\/11 06h00\)/);
+  assert.match(r.saida, /bloqueie a conta atacante no Authentication ou exija o App Check \(G13\), e rode com --forcar "motivo"/);
+  assert.match(r.saida, /a API NÃO foi religada/);
+
+  const forcado = await rodarReligar(['--forcar', 'conta atacante bloqueada'], { estado });
+  assert.equal(forcado.status, 0, forcado.saida);
+  assert.equal(forcado.gravado.voltouEm, '2026-11-17T18:00:00.000Z');
+  const ultimo = forcado.gravado.religadosForcados.at(-1);
+  assert.equal(ultimo.motivo, 'conta atacante bloqueada');
+  assert.equal(ultimo.voltaAnterior, '2026-11-10T09:00:00.000Z');
+});
+
+test('religar: repetir depois de uma volta que falhou no fim não conta como segundo corte, nos dois ramos', async ()=>{
+  for(const [ramo, estado] of [['só API', { ...ESTADO_CORTADO, cobrancaTiradaEm: null }], ['cobrança tirada', TIRADA_HOJE]]){
+    const primeira = await rodarReligar([], { estado, falhaEnable: true });
+    assert.notEqual(primeira.status, 0, `${ramo}: o enable falhou`);
+    assert.equal(primeira.gravado.voltouEm, '2026-11-17T18:00:00.000Z', `${ramo}: a base e a volta já gravaram`);
+    const repeticao = await rodarReligar([], { estado: primeira.gravado });
+    assert.equal(repeticao.status, 0, `${ramo}: ${repeticao.saida}`);
+    assert.doesNotMatch(repeticao.saida, /segundo corte/);
+    assert.ok(repeticao.log.some(c => c[0] === 'services' && c[1] === 'enable'), `${ramo}: religa na repetição`);
+    assert.equal(repeticao.gravado.religadosForcados, undefined, `${ramo}: nada a forçar nem a registrar`);
+  }
+});
+
+test('religar: segundo corte do modo novo, com a cobrança tirada e a API ligada (apiDesligadaEm nulo), também pede --forcar', async ()=>{
+  const estado = { ...ESTADO_CORTADO, apiDesligadaEm: null, cobrancaTiradaEm: '2026-11-17T12:00:00.000Z', voltouEm: '2026-11-10T09:00:00.000Z' };
+  const r = await rodarReligar([], { estado, apiLigada: true });
+  assert.equal(r.status, 5, r.saida);
+  assert.ok(!r.log.some(c => c[1] === 'cp' || c[0] === 'services'));
+  assert.match(r.saida, /segundo corte neste mês/);
+});
+
+test('religar: segundo corte conta pelo mês de Brasília: volta às 22h de 31/10 não é do mesmo mês de novembro', async ()=>{
+  const r = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-01T01:00:00.000Z' } });
+  assert.equal(r.status, 0, r.saida);
+  const mesmoMes = await rodarReligar([], { estado: { ...ESTADO_CORTADO, cobrancaTiradaEm: null, voltouEm: '2026-11-01T03:00:00.000Z' } });
+  assert.equal(mesmoMes.status, 5, 'meia-noite de 01/11 em Brasília já é novembro');
+});
+
+test('religar depois da cobrança: volta anterior em outro mês não conta', async ()=>{
+  const r = await rodarReligar([], { estado: { ...TIRADA_HOJE, voltouEm: '2026-10-30T09:00:00.000Z' } });
+  assert.equal(r.status, 0, r.saida);
+  assert.equal(r.gravado.voltouEm, '2026-11-17T18:00:00.000Z');
 });
 
 test('religar: roda no Cloud Shell só com gcloud e python3, sem Node e só com a biblioteca padrão', ()=>{

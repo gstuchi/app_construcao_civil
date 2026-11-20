@@ -11,6 +11,6 @@ Com `MODO_CORTE=oficial`, a receita oficial do Google para a volta às provas re
 Nunca religa nada. Os dois interruptores (`ARMADO_API`, `ARMADO_COBRANCA`) começam em `false`: desarmada, a função só registra o que faria.
 
 - `implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]`: implanta a função.
-- `religar.sh [--folga N]`: volta depois de um corte; roda no Cloud Shell.
+- `religar.sh [--folga N] [--forcar "motivo"]`: volta depois de um corte; roda no Cloud Shell. Antes de tudo, a trava lê a política de leituras e só deixa religar com todas as somas abaixo da metade do limiar; quando segura, diz a hora em que solta. `--forcar` religa assim mesmo, com o motivo registrado no `estado.json`.
 
-O roteiro de implantação e de volta está no plano da Blindagem 4, em `docs/plans/`. Os testes ficam em `tests/corte.test.cjs`.
+O roteiro de implantação e de volta está no plano da Blindagem 4, em `docs/plans/`; quanto esperar depois de um corte e quando forçar, em "Se o corte agir". Os testes ficam em `tests/corte.test.cjs`.

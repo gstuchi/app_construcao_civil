@@ -169,6 +169,29 @@ test('regra: no modo oficial o projeto tira a cobrança em R$ 60 e o de fora nã
   assert.equal(regra.decidirOrcamento('projeto', 6000, 'dois-tempos'), 'desligar-api');
 });
 
+test('regra: o modo oficial-alerta vale, só pelo texto exato', ()=>{
+  assert.equal(regra.modoDoCorte('oficial-alerta'), 'oficial-alerta');
+  for(const valor of ['oficial_alerta', 'oficial-alerta ', 'OFICIAL-ALERTA', 'oficial alerta', 'alerta', 'oficial-alertas']) assert.equal(regra.modoDoCorte(valor), null, JSON.stringify(valor));
+});
+
+test('regra: no modo oficial-alerta o projeto tira a cobrança em R$ 60, e o de fora não muda', ()=>{
+  assert.equal(regra.decidirOrcamento('projeto', 5999, 'oficial-alerta'), 'nada');
+  assert.equal(regra.decidirOrcamento('projeto', 6000, 'oficial-alerta'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('projeto', 30000, 'oficial-alerta'), 'tirar-cobranca');
+  assert.equal(regra.decidirOrcamento('fora', 9999, 'oficial-alerta'), 'nada');
+  assert.equal(regra.decidirOrcamento('fora', 10000, 'oficial-alerta'), 'tirar-cobranca');
+});
+
+test('regra: cobrança confirmada encerra a falha; sem mudança, devolve o mesmo objeto', ()=>{
+  const agora = '2026-11-17T18:00:00.000Z', depois = '2026-11-17T19:00:00.000Z';
+  const comFalha = regra.estadoNormal({ primeiraFalha: agora });
+  const confirmada = regra.registrarCobrancaConfirmada(comFalha, depois);
+  assert.deepEqual([confirmada.cobrancaTiradaEm, confirmada.primeiraFalha], [depois, null]);
+  assert.equal(regra.registrarCobrancaConfirmada(confirmada, '2026-11-17T20:00:00.000Z'), confirmada, 'vale a primeira hora, e nada a regravar');
+  const tiradaComFalha = { ...confirmada, primeiraFalha: agora };
+  assert.deepEqual(regra.registrarCobrancaConfirmada(tiradaComFalha, '2026-11-17T20:00:00.000Z'), { ...confirmada, primeiraFalha: null });
+});
+
 test('regra: modo do corte só aceita o texto exato, e sem variável vale dois-tempos', ()=>{
   assert.equal(regra.modoDoCorte(undefined), 'dois-tempos');
   assert.equal(regra.modoDoCorte('dois-tempos'), 'dois-tempos');
@@ -214,7 +237,7 @@ const URL_UPLOAD = 'https://storage.googleapis.com/upload/storage/v1/b/estado-te
 
 /* O Google inteiro num objeto: URL errada estoura, e falhar[rótulo] injeta erro uma vez por item. */
 function googleFalso({ api = 'ENABLED', cobranca = true, estado = null } = {}){
-  const g = { api, cobranca, estado, geracao: estado ? 5 : 0, chamadas: [], falhar: {}, enviados: [], leiturasAteDesligar: 0 };
+  const g = { api, cobranca, estado, geracao: estado ? 5 : 0, chamadas: [], falhar: {}, enviados: [], leiturasAteDesligar: 0, leiturasAteTirar: 0 };
   const talvezFalhe = rotulo => { const f = g.falhar[rotulo]; if(f && f.length) throw f.shift(); };
   g.cliente = { async request(o){
     assert.equal(o.timeout, 30000, 'todo pedido ao Google tem prazo');
@@ -239,10 +262,13 @@ function googleFalso({ api = 'ENABLED', cobranca = true, estado = null } = {}){
       if(g.demoraDesligar) g.leiturasAteDesligar = g.demoraDesligar; else g.api = 'DISABLED';
       return { status: 200, data: { name: 'operations/x' } };
     }
-    if(rotulo === 'cobranca-ler') return { status: 200, data: g.cobranca ? { billingEnabled: true, billingAccountName: 'billingAccounts/1' } : { billingAccountName: '' } };
+    if(rotulo === 'cobranca-ler'){
+      if(g.leiturasAteTirar > 0 && --g.leiturasAteTirar === 0) g.cobranca = false;
+      return { status: 200, data: g.cobranca ? { billingEnabled: true, billingAccountName: 'billingAccounts/1' } : { billingAccountName: '' } };
+    }
     if(rotulo === 'cobranca-tirar'){
       assert.deepEqual(o.data, { billingAccountName: '' });
-      g.cobranca = false;
+      if(g.demoraTirar) g.leiturasAteTirar = g.demoraTirar; else g.cobranca = false;
       return { status: 200, data: { billingAccountName: '' } };
     }
     if(rotulo === 'estado-meta'){
@@ -791,6 +817,386 @@ test('corrida: se o disable do segundo dá erro com o primeiro em curso, a falha
     assert.equal(g.estado.primeiraFalha, null, `${caso}: a repetição acha a API desligada e encerra a falha`);
     assert.equal(g.estado.apiDesligadaEm, T0, `${caso}: e não mexe na hora do corte`);
     assert.ok(!g.chamadas.some(c => c.startsWith('cobranca-')), `${caso}: nada chega à cobrança`);
+  }
+});
+
+/* Modo oficial-alerta (conselho de 17/11, conexao-aberta/decisao.md): a cobrança sai primeiro,
+   pelo alerta de leituras e pelo orçamento do projeto em R$ 60, com billingEnabled conferido; erro
+   ou falta de confirmação desliga a API, de reserva. O orçamento de fora do Firestore não muda. */
+const ALERTA = { MODO_CORTE: 'oficial-alerta' };
+const RETIRADA = ['cobranca-ler', 'cobranca-tirar', 'cobranca-ler'];
+const SEM_CONFIRMAR = ['cobranca-ler', 'cobranca-tirar', ...Array(6).fill('cobranca-ler')];
+
+test('oficial-alerta: alerta open tira a cobrança, confirma pelo billingEnabled e não toca na API', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), RETIRADA);
+  assert.equal(g.cobranca, false);
+  assert.equal(g.api, 'ENABLED');
+  assert.equal(g.estado.cobrancaTiradaEm, T0);
+  assert.equal(g.estado.apiDesligadaEm, null);
+  const [a, ...resto] = r.de('corte-acao');
+  assert.deepEqual(resto, []);
+  assert.equal(a.acao, 'tirar-cobranca');
+  assert.equal(a.condicao, 'Leituras do Firestore: mais de 2.000 em 1 h');
+  assert.equal(a.reserva, undefined);
+  assert.equal(a.message, 'cobrança do projeto tirada: alerta de leituras aberto: Leituras do Firestore: mais de 2.000 em 1 h');
+  assert.equal(passagemUnica(r).fez, 'tirou a cobrança');
+});
+
+test('oficial-alerta: retirada que demora e confirma antes da sexta leitura não aciona a reserva', async ()=>{
+  const g = googleFalso();
+  g.demoraTirar = 3;
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler', 'cobranca-tirar', 'cobranca-ler', 'cobranca-ler', 'cobranca-ler']);
+  assert.deepEqual(r.de('corte-acao').map(a => a.acao), ['tirar-cobranca']);
+});
+
+test('oficial-alerta: erro na retirada aciona a reserva, que desliga a API e diz no corte-acao que foi reserva', async ()=>{
+  const g = googleFalso();
+  g.falhar['cobranca-tirar'] = [new ErroHttp(403)];
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null, 'a reserva parou o gasto: não relança');
+  assert.deepEqual(semEstado(g.chamadas), [...SEM_CONFIRMAR, 'api-ler', 'api-desligar', 'api-ler'], 'depois do erro, a conferência inteira, antes da reserva');
+  assert.equal(g.cobranca, true);
+  assert.equal(g.api, 'DISABLED');
+  assert.equal(g.estado.apiDesligadaEm, T0);
+  assert.equal(g.estado.cobrancaTiradaEm, null);
+  const [a, ...resto] = r.de('corte-acao');
+  assert.deepEqual(resto, []);
+  assert.equal(a.acao, 'desligar-api');
+  assert.equal(a.reserva, 'erro ao tirar a cobrança: HTTP 403');
+  assert.equal(a.condicao, 'Leituras do Firestore: mais de 2.000 em 1 h');
+  assert.equal(a.message, 'API do Firestore desligada na reserva da cobrança (erro ao tirar a cobrança: HTTP 403): Leituras do Firestore: mais de 2.000 em 1 h');
+  assert.equal(passagemUnica(r).fez, 'reserva: desligou a API');
+});
+
+test('oficial-alerta: sem confirmação da retirada em seis leituras, a reserva desliga a API', async ()=>{
+  const g = googleFalso();
+  g.demoraTirar = 1000;
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler', 'cobranca-tirar', ...Array(6).fill('cobranca-ler'), 'api-ler', 'api-desligar', 'api-ler']);
+  assert.equal(g.api, 'DISABLED');
+  const [a] = r.de('corte-acao');
+  assert.equal(a.acao, 'desligar-api');
+  assert.equal(a.reserva, 'a cobrança continuou ligada depois do pedido de tirar');
+  assert.match(a.message, /^API do Firestore desligada na reserva da cobrança \(a cobrança continuou ligada depois do pedido de tirar\)/);
+});
+
+test('oficial-alerta: a conferência da cobrança faz 6 leituras com 5 esperas de 10 s, a mesma da API', async ()=>{
+  const g = googleFalso();
+  g.demoraTirar = 1000;
+  const esperas = [];
+  const receber = criarManipulador({
+    carregar: () => g.adaptador(), env: { ...ENV, ...ALERTA, ARMADO_API: 'false' }, agora: () => new Date(T0),
+    escrever: () => {}, esperar: async ms => { esperas.push(ms); },
+  });
+  await assert.rejects(receber(eventoDe(avisoReal())));
+  assert.deepEqual(semEstado(g.chamadas), [...SEM_CONFIRMAR, 'api-ler']);
+  assert.deepEqual(esperas, Array(5).fill(10000));
+});
+
+test('oficial-alerta: leitura da cobrança que falha não confirma, e a reserva entra dizendo que não conferiu', async ()=>{
+  const g = googleFalso();
+  const original = g.cliente.request;
+  let leituras = 0;
+  g.cliente.request = async o => {
+    if(o.url.endsWith('/billingInfo') && !o.method && ++leituras > 1) throw new ErroHttp(503);
+    return original(o);
+  };
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.equal(leituras, 7, 'a primeira leitura e as seis de confirmação');
+  assert.equal(g.api, 'DISABLED');
+  assert.equal(r.de('corte-acao')[0].reserva, 'a cobrança não pôde ser conferida depois do pedido de tirar: HTTP 503');
+});
+
+test('oficial-alerta: reserva com ARMADO_API=false só registra que faria, e relança para o Pub/Sub repetir', async ()=>{
+  const erro = new ErroHttp(403);
+  const g = googleFalso();
+  g.falhar['cobranca-tirar'] = [erro];
+  const r = await rodar(g, avisoReal(), { env: { ...ALERTA, ARMADO_API: 'false' } });
+  assert.equal(r.erro, erro);
+  assert.deepEqual(semEstado(g.chamadas), [...SEM_CONFIRMAR, 'api-ler']);
+  assert.equal(g.api, 'ENABLED');
+  const [a] = r.de('corte-acao');
+  assert.equal(a.acao, 'faria-desligar-api');
+  assert.equal(a.reserva, 'erro ao tirar a cobrança: HTTP 403');
+  assert.equal(r.de('corte-erro').length, 1);
+  assert.equal(passagemUnica(r).fez, 'reserva: faria desligar a API');
+});
+
+test('oficial-alerta: reserva que acha a API já desligada não relança nem repete o corte-acao', async ()=>{
+  const g = googleFalso({ api: 'DISABLED' });
+  g.falhar['cobranca-tirar'] = [new ErroHttp(403)];
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), [...SEM_CONFIRMAR, 'api-ler']);
+  assert.deepEqual(r.de('corte-acao'), []);
+  assert.equal(passagemUnica(r).fez, 'reserva: API já estava desligada');
+});
+
+test('oficial-alerta: reserva que falha relança, com a API ainda ligada', async ()=>{
+  const g = googleFalso();
+  g.falhar['cobranca-tirar'] = [new ErroHttp(403)];
+  g.falhar['api-desligar'] = [new ErroHttp(403)];
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.ok(r.erro);
+  assert.equal(g.api, 'ENABLED');
+  assert.equal(r.de('corte-erro').length, 1);
+  assert.match(passagemUnica(r).fez, /^reserva: /);
+});
+
+test('oficial-alerta: orçamento de R$ 60 com erro na retirada e reserva desarmada, ou falhando, relança e solta o corte-erro', async ()=>{
+  const erroTirar = new ErroHttp(403);
+  const desarmada = googleFalso();
+  desarmada.falhar['cobranca-tirar'] = [erroTirar];
+  const r1 = await rodar(desarmada, msgOrcamento(60), { env: { ...ALERTA, ARMADO_API: 'false' } });
+  assert.equal(r1.erro, erroTirar, 'relança para o Pub/Sub repetir, sem esperar a próxima mensagem do orçamento');
+  assert.equal(r1.de('corte-erro').length, 1);
+  assert.deepEqual(r1.de('corte-acao').map(a => a.acao), ['faria-desligar-api']);
+
+  const erroDesligar = new ErroHttp(403);
+  const falhando = googleFalso();
+  falhando.falhar['cobranca-tirar'] = [new ErroHttp(403)];
+  falhando.falhar['api-desligar'] = [erroDesligar];
+  const r2 = await rodar(falhando, msgOrcamento(60), { env: ALERTA });
+  assert.equal(r2.erro, erroDesligar);
+  assert.equal(r2.de('corte-erro').length, 1);
+  assert.equal(falhando.api, 'ENABLED');
+});
+
+test('oficial-alerta: cobrança já tirada só registra e não toca na API', async ()=>{
+  const g = googleFalso({ cobranca: false });
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler']);
+  assert.equal(g.estado.cobrancaTiradaEm, T0);
+  assert.deepEqual(r.de('corte-acao'), []);
+  assert.equal(passagemUnica(r).fez, 'cobrança já estava tirada');
+});
+
+test('oficial-alerta: orçamento de fora do Firestore com falha relança, sem reserva e sem tocar na API', async ()=>{
+  const erro = new ErroHttp(503);
+  const g = googleFalso();
+  g.falhar['cobranca-tirar'] = [erro];
+  const r = await rodar(g, foraDe(100), { env: ALERTA });
+  assert.equal(r.erro, erro);
+  assert.ok(!g.chamadas.some(c => c.startsWith('api-')));
+  assert.equal(r.de('corte-erro').length, 1);
+  const ok = googleFalso();
+  const r2 = await rodar(ok, foraDe(100), { env: ALERTA });
+  assert.equal(r2.erro, null);
+  assert.deepEqual(semEstado(ok.chamadas), ['cobranca-ler', 'cobranca-tirar'], 'o de fora segue como hoje, sem a confirmação nova');
+});
+
+test('oficial-alerta: desarmada, alerta e orçamento só registram faria-tirar-cobranca', async ()=>{
+  const env = { ...ALERTA, ARMADO_API: 'false', ARMADO_COBRANCA: 'false' };
+  for(const corpo of [avisoReal(), msgOrcamento(60), msgOrcamento(300)]){
+    const g = googleFalso();
+    const r = await rodar(g, corpo, { env });
+    assert.equal(r.erro, null, JSON.stringify(corpo).slice(0, 60));
+    assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler']);
+    assert.deepEqual(r.de('corte-acao').map(a => a.acao), ['faria-tirar-cobranca']);
+    assert.equal(g.cobranca, true);
+    assert.equal(passagemUnica(r).fez, 'faria tirar a cobrança');
+  }
+});
+
+test('oficial-alerta: armar só a API não desliga nada; sem ARMADO_COBRANCA só sai o faria da cobrança', async ()=>{
+  const g = googleFalso();
+  const r = await rodar(g, avisoReal(), { env: { ...ALERTA, ARMADO_API: 'true', ARMADO_COBRANCA: 'false' } });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-ler']);
+  assert.ok(!g.chamadas.some(c => c.startsWith('api-')), 'armar pela metade não vira a B');
+  assert.equal(g.api, 'ENABLED');
+  assert.deepEqual(r.de('corte-acao').map(a => a.acao), ['faria-tirar-cobranca']);
+});
+
+test('oficial-alerta: cada orçamento acima de R$ 60 com a cobrança ligada tenta de novo, sem esperar 6 horas; com ela tirada, só registra', async ()=>{
+  const g = googleFalso({ estado: estadoCom({ projeto: noMes(10) }) });
+  g.falhar['cobranca-tirar'] = [new ErroHttp(503)];
+  const r1 = await rodar(g, msgOrcamento(70), { env: ALERTA });
+  assert.equal(r1.erro, null, 'a reserva desligou a API');
+  assert.equal(g.api, 'DISABLED');
+  assert.equal(g.cobranca, true);
+  const r2 = await rodar(g, msgOrcamento(75), { env: ALERTA, agora: mais(T0, 60000) });
+  assert.equal(r2.erro, null);
+  assert.equal(g.chamadas.filter(c => c === 'cobranca-tirar').length, 2, 'um minuto depois, tenta de novo');
+  assert.equal(g.cobranca, false);
+  assert.deepEqual(r2.de('corte-acao').map(a => a.acao), ['tirar-cobranca']);
+  const r3 = await rodar(g, msgOrcamento(80), { env: ALERTA, agora: mais(T0, 120000) });
+  assert.equal(r3.erro, null);
+  assert.equal(g.chamadas.filter(c => c === 'cobranca-tirar').length, 2, 'com a cobrança tirada, não pede de novo');
+  assert.deepEqual(r3.de('corte-acao'), []);
+  assert.equal(passagemUnica(r3).fez, 'cobrança já estava tirada');
+});
+
+test('oficial-alerta: orçamento do projeto em 59,99 não faz nada; em 60 vai pelo caminho do alerta', async ()=>{
+  const abaixo = googleFalso();
+  const r1 = await rodar(abaixo, msgOrcamento(59.99), { env: ALERTA });
+  assert.deepEqual(semEstado(abaixo.chamadas), []);
+  assert.equal(passagemUnica(r1).fez, 'nada');
+  const g = googleFalso();
+  const r = await rodar(g, msgOrcamento(60), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), RETIRADA);
+  const [a] = r.de('corte-acao');
+  assert.equal(a.acao, 'tirar-cobranca');
+  assert.equal(a.orcamento, 'projeto');
+  assert.equal(a.custo, 60);
+  assert.equal(a.message, 'cobrança do projeto tirada: modo oficial-alerta: gasto do projeto chegou a R$ 60');
+});
+
+test('oficial-alerta: dois e três open seguidos tiram a cobrança uma vez só', async ()=>{
+  for(const vezes of [2, 3]){
+    const g = googleFalso();
+    const avisos = [];
+    for(let i = 0; i < vezes; i++) avisos.push(await rodar(g, avisoReal(), { env: ALERTA, agora: mais(T0, i * 200000) }));
+    assert.deepEqual(avisos.flatMap(r => r.de('corte-acao')).map(a => a.acao), ['tirar-cobranca'], `${vezes} open`);
+    assert.equal(g.chamadas.filter(c => c === 'cobranca-tirar').length, 1, `${vezes} open`);
+    for(const r of avisos.slice(1)) assert.equal(passagemUnica(r).fez, 'cobrança já estava tirada');
+  }
+});
+
+test('oficial-alerta: com cada pedido levando 29 s, a conferência da cobrança para no teto e o disable da reserva termina antes dos 300 s do implantar.sh', async ()=>{
+  const prazo = Number(readFileSync(path.join(PASTA_CORTE, 'implantar.sh'), 'utf8').match(/--timeout=(\d+)s/)[1]);
+  assert.equal(prazo, 300);
+  const g = googleFalso();
+  g.demoraTirar = 1000;
+  const t0 = Date.parse(T0);
+  let relogio = t0, fimDoDisable = null;
+  const original = g.cliente.request;
+  g.cliente.request = async o => {
+    relogio += 29000;
+    if(o.url.endsWith(':disable')) fimDoDisable = relogio;
+    return original(o);
+  };
+  const linhas = [];
+  const receber = criarManipulador({
+    carregar: () => g.adaptador(), env: { ...ENV, ...ALERTA }, agora: () => new Date(relogio),
+    escrever: l => linhas.push(JSON.parse(l)), esperar: async ms => { relogio += ms; },
+  });
+  await receber(eventoDe(avisoReal()));
+  const leituras = g.chamadas.filter(c => c === 'cobranca-ler').length;
+  assert.ok(leituras < 7, `a conferência parou antes das 6 leituras: ${leituras - 1} depois do pedido`);
+  assert.ok(fimDoDisable, 'a reserva pediu o disable');
+  assert.ok(fimDoDisable - t0 <= prazo * 1000, `o disable terminou em ${(fimDoDisable - t0) / 1000} s`);
+  assert.equal(g.api, 'DISABLED');
+});
+
+test('oficial-alerta: primeira leitura da cobrança com erro, armada, tira e confere; desarmada, relança sem tocar em nada', async ()=>{
+  const comPrimeiraLeituraRuim = () => {
+    const g = googleFalso();
+    const original = g.cliente.request;
+    let leituras = 0;
+    g.cliente.request = async o => {
+      if(o.url.endsWith('/billingInfo') && !o.method && ++leituras === 1) throw new ErroHttp(503);
+      return original(o);
+    };
+    return g;
+  };
+  const armada = comPrimeiraLeituraRuim();
+  const r = await rodar(armada, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(armada.chamadas), ['cobranca-tirar', 'cobranca-ler'], 'a leitura que falhou não chega ao falso; depois, o pedido e a conferência');
+  assert.equal(armada.cobranca, false);
+  assert.ok(!armada.chamadas.some(c => c.startsWith('api-')));
+  assert.deepEqual(r.de('corte-acao').map(a => a.acao), ['tirar-cobranca']);
+
+  const desarmada = comPrimeiraLeituraRuim();
+  const d = await rodar(desarmada, avisoReal(), { env: { ...ALERTA, ARMADO_COBRANCA: 'false', ARMADO_API: 'true' } });
+  assert.ok(d.erro, 'relança, para o Pub/Sub repetir');
+  assert.deepEqual(desarmada.chamadas, []);
+  assert.deepEqual(d.de('corte-acao'), []);
+  assert.equal(d.de('corte-erro').length, 1);
+});
+
+test('oficial-alerta: primeira leitura com erro e a cobrança já tirada, armada, repete o tirar-cobranca; aceito como os outros avisos repetidos', async ()=>{
+  const g = googleFalso({ cobranca: false, estado: estadoCom({}, { cobrancaTiradaEm: T0 }) });
+  const original = g.cliente.request;
+  let leituras = 0;
+  g.cliente.request = async o => {
+    if(o.url.endsWith('/billingInfo') && !o.method && ++leituras === 1) throw new ErroHttp(503);
+    return original(o);
+  };
+  const r = await rodar(g, avisoReal(), { env: ALERTA, agora: mais(T0, 60000) });
+  assert.equal(r.erro, null);
+  assert.deepEqual(semEstado(g.chamadas), ['cobranca-tirar', 'cobranca-ler'], 'sem saber o estado, pede de novo e confere');
+  assert.deepEqual(r.de('corte-acao').map(a => a.acao), ['tirar-cobranca']);
+  assert.equal(g.estado.cobrancaTiradaEm, T0, 'vale a hora do primeiro corte');
+  assert.ok(!g.chamadas.some(c => c.startsWith('api-')));
+});
+
+test('oficial-alerta: o corte-acao da retirada sai antes de gravar o estado: com o bucket fora, o aviso não se perde', async ()=>{
+  const erro = new ErroHttp(503);
+  const g = googleFalso();
+  g.falhar['estado-meta'] = [erro];
+  const r = await rodar(g, avisoReal(), { env: ALERTA });
+  assert.equal(r.erro, erro, 'relança para o estado entrar na repetição');
+  assert.deepEqual(r.de('corte-acao').map(a => a.acao), ['tirar-cobranca']);
+  const repeticao = await rodar(g, avisoReal(), { env: ALERTA, agora: mais(T0, 30000) });
+  assert.equal(repeticao.erro, null);
+  assert.deepEqual(repeticao.de('corte-acao'), [], 'a repetição acha a cobrança tirada e só registra');
+  assert.equal(g.estado.cobrancaTiradaEm, mais(T0, 30000));
+});
+
+test('oficial-alerta: cobrança confirmada fora encerra a falha que uma reserva tenha deixado', async ()=>{
+  for(const cobranca of [true, false]){
+    const g = googleFalso({ cobranca, estado: estadoCom({}, { primeiraFalha: T0 }) });
+    const r = await rodar(g, avisoReal(), { env: ALERTA, agora: mais(T0, 60000) });
+    assert.equal(r.erro, null);
+    assert.equal(g.estado.primeiraFalha, null, cobranca ? 'tirou agora' : 'já estava tirada');
+    assert.equal(g.estado.cobrancaTiradaEm, mais(T0, 60000));
+  }
+});
+
+/* Corrida da retirada, como o item 7 da trava: o 2º open chega com a retirada do 1º em
+   conferência. Com a conferência inteira depois de erro, nas quatro combinações a API não é
+   tocada e sai um tirar-cobranca por aviso, com a condição de cada um. */
+test('oficial-alerta: corrida, com o PUT do segundo passando ou dando erro, não aciona a reserva e não toca na API', async ()=>{
+  for(const pedidoDoSegundo of ['passa', 'dá erro']){
+    for(const primeiroAConfirmar of ['o segundo', 'o primeiro']){
+      const caso = `PUT do 2º ${pedidoDoSegundo}, confirma primeiro ${primeiroAConfirmar}`;
+      const g = googleFalso();
+      g.demoraTirar = 5;
+      const p1 = portao(), p2 = portao();
+      const instanciaAlerta = (agora, esperar) => {
+        const linhas = [];
+        const receber = criarManipulador({
+          carregar: () => g.adaptador(), env: { ...ENV, ...ALERTA }, agora: () => new Date(agora),
+          escrever: l => linhas.push(JSON.parse(l)), esperar,
+        });
+        return { receber: corpo => receber(eventoDe(corpo)).then(() => null, e => e), de: m => linhas.filter(l => l.marca === m) };
+      };
+      const a = instanciaAlerta(T0, () => p1.aberta);
+      const b = instanciaAlerta(T34, primeiroAConfirmar === 'o primeiro' ? () => p2.aberta : async () => {});
+      const ra = a.receber(AVISO_5MIN);
+      await ate(() => contar(g, 'cobranca-ler') === 2);
+      if(pedidoDoSegundo === 'dá erro') g.falhar['cobranca-tirar'] = [new ErroHttp(409)];
+      const rb = b.receber(AVISO_1H);
+      if(primeiroAConfirmar === 'o segundo'){
+        assert.equal(await rb, null, caso);
+        p1.abrir();
+      }else{
+        await ate(() => contar(g, 'cobranca-ler') === 4);
+        p1.abrir();
+        assert.equal(await ra, null, caso);
+        p2.abrir();
+      }
+      assert.equal(await ra, null, caso);
+      assert.equal(await rb, null, caso);
+      assert.ok(!g.chamadas.some(c => c.startsWith('api-')), `${caso}: nada de reserva`);
+      assert.equal(g.api, 'ENABLED', caso);
+      assert.equal(g.cobranca, false, caso);
+      assert.deepEqual(a.de('corte-acao').map(l => [l.acao, l.condicao]), [['tirar-cobranca', C5MIN_AVISO]], caso);
+      assert.deepEqual(b.de('corte-acao').map(l => [l.acao, l.condicao]), [['tirar-cobranca', C1H_AVISO]], caso);
+      assert.equal(g.estado.primeiraFalha, null, caso);
+      assert.ok(g.estado.cobrancaTiradaEm, caso);
+    }
   }
 });
 
@@ -1801,6 +2207,26 @@ test('implantar: --modo-oficial passa MODO_CORTE=oficial; sem ele, dois-tempos',
   assert.equal(env([], { MODO_CORTE: 'oficial' }).MODO_CORTE, 'dois-tempos', 'só o argumento muda o modo');
   const desarmada = env(['--modo-oficial']);
   assert.deepEqual([desarmada.ARMADO_API, desarmada.ARMADO_COBRANCA], ['false', 'false'], 'o modo não arma nada');
+});
+
+test('implantar: --modo-oficial-alerta passa MODO_CORTE=oficial-alerta e não arma nada sozinho', ()=>{
+  const env = args => { const r = rodarScript('implantar.sh', args); assert.equal(r.status, 0, r.saida); return envDe(r.log[0]); };
+  const so = env(['--modo-oficial-alerta']);
+  assert.deepEqual([so.MODO_CORTE, so.ARMADO_API, so.ARMADO_COBRANCA], ['oficial-alerta', 'false', 'false']);
+  const cobranca = env(['--armar-cobranca', '--modo-oficial-alerta']);
+  assert.deepEqual([cobranca.MODO_CORTE, cobranca.ARMADO_API, cobranca.ARMADO_COBRANCA], ['oficial-alerta', 'false', 'true']);
+  const tudo = env(['--modo-oficial-alerta', '--armar-cobranca', '--armar-api']);
+  assert.deepEqual([tudo.MODO_CORTE, tudo.ARMADO_API, tudo.ARMADO_COBRANCA], ['oficial-alerta', 'true', 'true']);
+  assert.equal(regra.modoDoCorte(so.MODO_CORTE), 'oficial-alerta', 'o texto que o implantar grava é o que a função aceita');
+});
+
+test('implantar: um modo só por comando; o segundo para antes do gcloud', ()=>{
+  for(const args of [['--modo-oficial', '--modo-oficial-alerta'], ['--modo-oficial-alerta', '--modo-oficial'], ['--modo-oficial-alerta', '--armar-api', '--modo-oficial-alerta']]){
+    const r = rodarScript('implantar.sh', args);
+    assert.equal(r.status, 2, args.join(' '));
+    assert.deepEqual(r.log, [], args.join(' '));
+    assert.match(r.saida, /uso: implantar\.sh \[--armar-api\] \[--armar-cobranca\] \[--modo-oficial \| --modo-oficial-alerta\]/);
+  }
 });
 
 test('implantar: argumento desconhecido para antes do gcloud', ()=>{

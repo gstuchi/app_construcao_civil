@@ -247,10 +247,76 @@ function agendaRetry(ms){
   retryTimer = setTimeout(()=>{ retryTimer = null; flushSave(); }, ms);
 }
 
+/* ---------- cliente do Firestore morto ----------
+   Se o servidor fecha a conexão de escrita sem gravação em voo, o SDK web 12.18.0
+   quebra por dentro (remote_store.ts, handleWriteError) e toda operação seguinte
+   lança INTERNAL ASSERTION FAILED (b815) até a página recarregar: nada mais entra
+   na fila guardada do SDK. O code chega vazio, então casa pela mensagem, com o
+   prefixo do Firestore: o Auth também lança INTERNAL ASSERTION FAILED, sem ele, e
+   não mata o Firestore. O que só existe na memória vai para uma cópia e a página
+   recarrega, uma vez por sessão; na abertura a cópia volta para a tela e para a fila
+   (meta.copia do watchDados). */
+const ehClienteMorto = err => {
+  const msg = typeof err === 'string' ? err : (err && typeof err.message === 'string' ? err.message : '');
+  return /FIRESTORE \([^)]*\) INTERNAL ASSERTION FAILED/.test(msg);
+};
+/* Único ponto que sabe onde a cópia mora. sessionStorage atravessa a recarga e some
+   ao fechar a aba: decisão de arquitetura em aberto (o PR lista as alternativas).
+   `quando` diz a idade de uma cópia que volte com uma aba restaurada. */
+const CHAVE_COPIA = 'custta-copia', CHAVE_RECARGA = 'custta-recarregou';
+const copia = {
+  ler(uid){
+    try{ const c = JSON.parse(window.sessionStorage.getItem(CHAVE_COPIA)); return c && c.uid === uid ? c.blob : null; }
+    catch{ return null; }
+  },
+  gravar(uid, blob){
+    try{ window.sessionStorage.setItem(CHAVE_COPIA, JSON.stringify({ uid, quando: Date.now(), blob })); return true; }
+    catch{ return false; }
+  },
+  apagar(){ try{ window.sessionStorage.removeItem(CHAVE_COPIA); }catch{} },
+  marcarRecarga(){ try{ window.sessionStorage.setItem(CHAVE_RECARGA, '1'); return true; }catch{ return false; } },
+  jaRecarregou(){ try{ return window.sessionStorage.getItem(CHAVE_RECARGA) === '1'; }catch{ return false; } },
+};
+/* Lida uma vez, na carga: depois que esta página pediu a recarga, outra detecção da
+   mesma quebra não pode virar aviso (o beforeunload travaria a recarga). */
+const recarregouNestaSessao = copia.jaRecarregou();
+let morto = false, recarregando = false, parado = false, blobEmVoo = null;
+const soNaMemoria = () => pendingBlob || (morto && emVoo ? blobEmVoo : null);
+/* gesto: veio de uma gravação (a tela responde a cada lançamento); a quebra repetida
+   pela janela ou pela leitura não repete o aviso. */
+function clienteMorreu(gesto = false){
+  morto = true;
+  clearTimeout(retryTimer); retryTimer = null;
+  const blob = soNaMemoria();
+  if(!currentUser || !blob) return; // nada a salvar: a próxima gravação guarda e recarrega
+  const guardou = copia.gravar(currentUser.uid, blob);
+  if(recarregando) return;
+  if(guardou && !recarregouNestaSessao && copia.marcarRecarga()){
+    recarregando = true;
+    window.location.reload();
+    return;
+  }
+  /* Segunda morte na sessão, ou sem onde guardar: recarregar de novo seria laço, e
+     recarregar sem a cópia apagaria o lançamento. Fica o aviso, e fechar pede confirmação. */
+  const avisar = gesto || !parado;
+  parado = true;
+  setEstado('erro', 'cliente-morto');
+  terminaEspera('reject', Object.assign(new Error('O Firestore parou nesta página.'), { code: 'cliente-morto' }));
+  if(avisar) window.dispatchEvent(new CustomEvent('cloud-erro', { detail: { code: 'cliente-morto', terminal: true } }));
+}
+window.addEventListener('error', e=>{ if(ehClienteMorto(e.error || e.message)) clienteMorreu(); });
+window.addEventListener('unhandledrejection', e=>{ if(ehClienteMorto(e.reason)) clienteMorreu(); });
+window.addEventListener('beforeunload', e=>{
+  if(!parado || recarregando) return;
+  e.preventDefault();
+  e.returnValue = true; // navegadores antigos só perguntam com isto
+});
+
 function flushSave(){
   if(!pendingBlob || !currentUser) return;
+  if(morto){ clienteMorreu(true); return; }
 
-  const blob = pendingBlob; pendingBlob = null; emVoo = true;
+  const blob = pendingBlob; pendingBlob = null; emVoo = true; blobEmVoo = blob;
   const versao = ++versaoEscrita;
   setEstado(offline() ? 'offline' : tentativa ? 'repetindo' : 'salvando');
   // A validação participa da mesma fila: confirmação de uma versão anterior
@@ -263,18 +329,20 @@ function flushSave(){
   escrita
     .then(()=>{
       if(versao !== versaoEscrita) return;
-      emVoo = false; tentativa = 0;
+      emVoo = false; blobEmVoo = null; tentativa = 0;
       if(pendingBlob) return flushSave(); // entrou blob novo enquanto este subia
       dirty = false;
+      copia.apagar(); // o servidor tem a última versão
       setEstado('ocioso');
       terminaEspera('resolve');
     })
     .catch(err=>{
       if(versao !== versaoEscrita) return;
-      emVoo = false;
+      emVoo = false; blobEmVoo = null;
       // guarda o blob pra próxima tentativa E avisa a UI: falha calada fazia o
       // usuário achar que estava salvo (ver 'cloud-erro' em app.js)
       pendingBlob = pendingBlob || blob;
+      if(ehClienteMorto(err)) return clienteMorreu(true); // tentar de novo não adianta
       const code = (err && err.code) || 'desconhecido';
       const terminal = code === 'limite' || calc().erroEhTerminal(err);
       if(code === 'unauthenticated') verificarSessao(true);
@@ -352,6 +420,7 @@ onAuthStateChanged(auth, async u => {
     clearTimeout(retryTimer);
     pendingBlob = null; dirty = false; emVoo = false; tentativa = 0;
     pendenciaCache = false; carregado = false;
+    copia.apagar(); parado = false; // a cópia é da conta que saiu
     ultimaVerificacao = 0;
     terminaEspera('reject', Object.assign(new Error('Sessão alterada.'), { code: 'cancelled' }));
     setEstado(offline() ? 'offline' : 'ocioso');
@@ -620,7 +689,7 @@ window.CLOUD = {
       return await contaExclusiva(async()=>{
         if(offline()) throw Object.assign(new Error('Conecte à internet antes de sair.'), { code: 'pendente' });
         const subiu = await Promise.race([
-          Promise.all([window.CLOUD.tentarDeNovo(), waitForPendingWrites(db)]).then(()=>true, ()=>false),
+          Promise.all([window.CLOUD.tentarDeNovo(), Promise.resolve().then(()=>waitForPendingWrites(db))]).then(()=>true, ()=>false),
           new Promise(r => { limite = setTimeout(()=>r(false), 5000); }),
         ]);
         if(!subiu) throw Object.assign(new Error('Tem lançamento que ainda não subiu.'), { code: 'pendente' });
@@ -631,6 +700,7 @@ window.CLOUD = {
           throw Object.assign(new Error('Sessão alterada durante a saída.'), { code: 'cancelled' });
         marcaCache(true);
         try{ await signOut(auth); }catch(err){ marcaCache(false); throw err; }
+        copia.apagar();
         esquecerGoogle();
         clearTimeout(retryTimer); retryTimer = null;
         pendingBlob = null; dirty = false; tentativa = 0; emVoo = false; pendenciaCache = false;
@@ -649,6 +719,19 @@ window.CLOUD = {
 
   estado: () => estadoAtual,
   temPendencia: () => !!pendingBlob || emVoo || pendenciaCache,
+  /* Cliente do Firestore morto com lançamento esperando recarga (a pílula diz "Não salvou"). */
+  clienteMorto: () => parado,
+  /* Há lançamento que fechar o app perderia: ainda fora da fila do SDK, ou só na cópia. */
+  dadoEmRisco: () => !!soNaMemoria() || !!(currentUser && copia.ler(currentUser.uid)),
+  /* Toque no aviso: guarda a cópia e recarrega sem pedir confirmação para sair. false
+     quando não há onde guardar: a recarga apagaria o lançamento. */
+  recarregar(){
+    const blob = soNaMemoria();
+    if(currentUser && blob && !copia.gravar(currentUser.uid, blob)) return false;
+    recarregando = true;
+    window.location.reload();
+    return true;
+  },
 
   /* Botão "Tentar de novo" da pill, e o flush do logout. */
   tentarDeNovo(){
@@ -697,15 +780,19 @@ window.CLOUD = {
         if(!dirty && estadoAtual !== 'erro')
           setEstado(offline() ? 'offline' : pendenciaCache ? 'salvando' : 'ocioso');
         const d = snap.data();
+        // a mesma regra do carregado: cache sem documento não é dado visto
+        const primeiraLeitura = !carregado && (!snap.metadata.fromCache || !!d);
         if(!snap.metadata.fromCache || d) carregado = true; // só vira falso com a troca de conta
         if(d) delete d._atualizado;
         cb(d || null, { fromCache: snap.metadata.fromCache,
                         pendingWrites: snap.metadata.hasPendingWrites,
-                        localDirty: dirty });
+                        localDirty: dirty,
+                        copia: primeiraLeitura && currentUser ? copia.ler(uid) : null });
       },
       /* Sem este callback, uma rule errada pararia a chegada de dados sem
          sintoma nenhum na tela — risco criado pela própria fronteira de segurança. */
       err => {
+        if(ehClienteMorto(err)) return clienteMorreu();
         if(atual === revisao && currentUser && currentUser.uid === uid){
           leitura.erro = err;
           rejectLeitura?.(err); rejectLeitura = null;
@@ -734,10 +821,15 @@ window.CLOUD = {
     }
     pendingBlob = JSON.parse(JSON.stringify(blob));
     dirty = true;
+    /* Depois da recarga, enquanto o servidor não confirma, a cópia acompanha cada
+       versão: reaplicada velha numa recarga seguinte, apagaria lançamento. Sem como
+       atualizar, sai: a fila do SDK já leva a versão nova. */
+    if(!morto && copia.ler(currentUser.uid) && !copia.gravar(currentUser.uid, pendingBlob)) copia.apagar();
     if(estadoAtual === 'erro') tentativa = 0; // gesto novo do usuário, backoff limpo
     clearTimeout(retryTimer); retryTimer = null;
     const p = new Promise((resolve, reject)=>espera.push({ resolve, reject }));
     p.catch(()=>{});
+    if(morto){ clienteMorreu(true); return p; } // sem "Salvando…": o SDK não recebe mais nada
     setEstado(offline() ? 'offline' : 'salvando');
     // Entrega cada versão imediatamente ao SDK, inclusive offline. A fila
     // persistente do Firestore mantém a ordem e sobrevive ao fechamento do app.

@@ -190,6 +190,7 @@
 
   <!-- ============ INÍCIO ============ -->
   <section class="view active" id="v-inicio">
+    <div id="inicioResumo"></div>
     <div class="panel grupo-obras">
       <h2><span class="rotulo-grupo">Minhas obras</span> <span class="muted" id="obraCount"></span></h2>
       <ul class="list" id="obrasList"></ul>
@@ -225,19 +226,28 @@
 
   <!-- ============ SERÁ QUE VALE A PENA? ============ -->
   <section class="view" id="v-simula">
-    <div class="panel">
+    <div class="panel sim-campos">
       <h2 class="layout-28"><span data-ico="balanca"></span> Será que vale a pena?</h2>
-      <div class="field"><label for="simObra">Obra</label><select id="simObra"></select></div>
-      <div class="row2">
-        <div class="field"><label for="simValor">Se eu vender por</label>
-          <div class="money"><b>R$</b><input id="simValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
-        <div class="field"><label for="simMeses">Daqui a (meses)</label>
-          <input id="simMeses" type="number" min="0" max="120" value="0"></div>
+      <div class="sim-campo">
+        <label for="simObra">Obra</label>
+        <div class="sim-select"><select id="simObra"></select></div>
       </div>
-      <p class="muted-note">A conta considera que não haverá mais gastos até a venda.
+      <div class="sim-campo">
+        <label for="simValor">Se eu vender por</label>
+        <div class="money sim-valor"><b>R$</b><input id="simValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+      </div>
+      <div class="sim-campo">
+        <label for="simMeses">Daqui a (meses)</label>
+        <div class="sim-passo">
+          <button type="button" class="sim-passo-btn" id="simMenos" aria-label="Um mês a menos" aria-controls="simMeses"><span aria-hidden="true">−</span></button>
+          <input id="simMeses" type="number" inputmode="numeric" min="0" max="120" value="0">
+          <button type="button" class="sim-passo-btn" id="simMais" aria-label="Um mês a mais" aria-controls="simMeses"><span aria-hidden="true">+</span></button>
+        </div>
+      </div>
+      <p class="sim-nota">A conta considera que não haverá mais gastos até a venda.
       Mude o preço e os meses pra comparar cenários: vender mais barato agora × esperar mais.</p>
     </div>
-    <div id="simOut"></div>
+    <div id="simOut" class="sim-out"></div>
   </section>
 
   <!-- ============ AJUSTES ============ -->

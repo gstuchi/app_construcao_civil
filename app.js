@@ -95,6 +95,35 @@ function fitNums(scope){
 }
 const obraById = id => db.obras.find(o=>o.id===id);
 
+/* ===== Identidade da etapa 4: números em mono =====
+   "R$" e centavos menores na linha do número (mockup custta-mockups/nativo/etapa4, parte 1).
+   O texto vem do money()/moneyCurto() do calc.js: o número é o mesmo, só muda a roupa. */
+function dinheiroHtml(v){
+  const corpo = money(Math.abs(v || 0)).replace(/^R\$\s*/, '');
+  const [int, cent] = corpo.split(',');
+  return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$&nbsp;</span>${int}${cent ? `<span class="cent">,${cent}</span>` : ''}</span>`;
+}
+function dinheiroCurtoHtml(v){
+  const corpo = moneyCurto(Math.abs(v || 0)).replace(/^R\$\s*/, '').replace(/\s(mil|mi)$/, '<span class="suf">&nbsp;$1</span>');
+  return `<span class="num">${v < 0 ? '−' : ''}<span class="moeda">R$&nbsp;</span>${corpo}</span>`;
+}
+/* Pedaços do anel e da barra empilhada: os 6 maiores tópicos em cor e o resto em "Outros",
+   cinza. O tópico fixo "Outros" sempre entra no pedaço cinza (regra do spec da etapa 4). */
+const CORES_TOPICO = ['--g1','--g2','--g3','--g4','--g5','--g6'];
+function pedacosTopicos(o){
+  const todos = OBRA_CALC.gastoPorTopico(o).filter(t => t.bruto > 0);
+  const total = todos.reduce((s, t) => s + t.bruto, 0);
+  const coloridos = todos.filter(t => t.id !== 'outros').slice(0, CORES_TOPICO.length);
+  const resto = todos.filter(t => !coloridos.includes(t));
+  const pedacos = coloridos.map((t, i) => ({ id:t.id, nm:nomeTopico(t.id), bruto:t.bruto, pct:t.pct, cor:CORES_TOPICO[i], ids:[t.id] }));
+  if(resto.length){
+    const bruto = resto.reduce((s, t) => s + t.bruto, 0);
+    pedacos.push({ id:'__outros', nm:'Outros', bruto, pct: total ? Math.round(bruto / total * 100) : 0, cor:'--g-outros', ids:resto.map(t => t.id), outros:true });
+  }
+  return { pedacos, total, todos, corDe: id => (pedacos.find(p => p.ids.includes(id)) || {}).cor || '--g-outros' };
+}
+const pctTexto = (bruto, total) => { const p = total ? bruto / total * 100 : 0; return p > 0 && p < 1 ? '<1%' : Math.round(p) + '%'; };
+
 /* ---------- navegação ---------- */
 /* iOS mata o app em segundo plano e o WKWebView recarrega do zero: lembra onde
    o usuário estava. Preferência por aparelho, não é dado de obra. */
@@ -233,12 +262,28 @@ function renderInicio(){
         <div class="s"><span class="tag ${f.cls}">${f.nm}</span> <span class="obra-tempo">· ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}</span></div>
         ${orcLinha}
       </div>
-      <div class="li-val">${moneyShort(OBRA_CALC.totalBruto(o))}</div>
+      <div class="li-val">${dinheiroCurtoHtml(OBRA_CALC.totalBruto(o))}</div>
       <span class="chevron" aria-hidden="true">›</span>`;
     li.onclick = ()=>openObra(o.id);
     list.appendChild(li);
   });
   pintaBarrasOrc(list);
+
+  /* o bloco sólido do início: quanto está investido nas obras que ainda não venderam */
+  const andamento = arr.filter(o => o.fase !== 'vendida' && OBRA_CALC.totalBruto(o) > 0);
+  const resumo = $('#inicioResumo');
+  if(andamento.length){
+    const bruto = andamento.reduce((t, o) => t + OBRA_CALC.totalBruto(o), 0);
+    const corr = andamento.reduce((t, o) => t + OBRA_CALC.totalCorrigido(o, taxa(), hoje), 0);
+    const venc = OBRA_CALC.aPagar(andamento, hoje);
+    resumo.innerHTML = `
+      <div class="kpi solido inicio-solido">
+        <div class="k-top"><span class="k-nome">Investido nas obras</span><span class="chip2 tinta">${andamento.length} em andamento</span></div>
+        <div class="k-num gigante">${dinheiroHtml(bruto)}</div>
+        <div class="k-obs">no banco já seria ${moneyCurto(corr)}${venc.qtd ? ` · ${moneyCurto(venc.total)} a pagar em 30 dias` : ''}</div>
+      </div>`;
+    fitNums(resumo);
+  } else resumo.innerHTML = '';
 
   drawComp(arr.filter(o=>OBRA_CALC.totalBruto(o)>0), hoje);
 }
@@ -279,42 +324,64 @@ function barraOrcHtml(pct, nivel, extra){
 function pintaBarrasOrc(escopo){
   escopo.querySelectorAll('.orc-barra i[data-pct]').forEach(i => { i.style.width = i.dataset.pct + '%'; });
 }
+/* cor e peso dos pedaços (barra empilhada, legenda) via CSSOM: a CSP proíbe style no HTML */
+function pintaCores(escopo){
+  escopo.querySelectorAll('[data-cor]').forEach(e => { e.style.setProperty('--cor', `var(${e.dataset.cor})`); });
+  escopo.querySelectorAll('[data-peso]').forEach(e => { e.style.flexGrow = e.dataset.peso; });
+}
 function fraseTopicoHtml(t){
   const f = OBRA_CALC.fraseTopicoOrc(t);
   return f ? `<div class="orc-frase${f.alerta ? ' alerta' : ''}">${f.texto}</div>` : '';
 }
+/* Bloco do orçamento na obra (identidade da etapa 4): pílula, sobra, barra, "% usado de…",
+   aviso dos tópicos que passaram e o que está fora. Por tópico, o detalhe abre numa folha. */
 function orcamentoHtml(o, orc, pecas){
   const rodape = OBRA_CALC.rodapeOrc(orc);
-  const card = `
-    <div class="panel orc-card" id="oOrc">
-      <div class="orc-topo"><span class="orc-rotulo">Orçamento</span>
+  const passaram = pecas.porTopico ? orc.topicos.filter(t => t.nivel === 'passou').length : 0;
+  return `
+    <button type="button" class="kpi kpi-link orc-card" id="oOrc" aria-label="Orçamento: ${rodape.usado} usado, ${rodape.rotulo} ${rodape.valor}">
+      <div class="k-top"><span class="k-nome">Orçamento</span>
         <span class="orc-pill${orc.nivel === 'ok' ? '' : ' alerta'}">${OBRA_CALC.ORC_PILULA[orc.nivel]}</span></div>
-      <div class="orc-num">${money(orc.gasto)} <small>de ${money(orc.previsto)}</small></div>
-      ${barraOrcHtml(orc.pct, orc.nivel)}
-      <div class="orc-rodape"><span><b>${rodape.usado}</b> usado</span>
-        <span>${rodape.rotulo} <b>${rodape.valor}</b></span></div>
-    </div>`;
-  let lista = '';
-  if(pecas.porTopico){
-    const linhas = orc.topicos.map(t => {
-      const valores = OBRA_CALC.linhaTopicoOrc(t);
-      const miolo = `
-        <div class="orc-linha"><span class="orc-nome">${escapeHtml(nomeTopico(t.id))}</span>
-          <span class="orc-val"><b>${valores.gasto}</b> / ${valores.previsto}</span></div>
-        ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoHtml(t)}`;
-      // tópico com gasto vira botão de verdade (semântica de lista/botão corretas pra leitor de tela)
-      return pecas.tocaveis.includes(t.id)
-        ? `<li class="orc-item"><button type="button" class="orc-item-conteudo" data-top="${escapeHtml(t.id)}">${miolo}</button></li>`
-        : `<li class="orc-item"><div class="orc-item-conteudo">${miolo}</div></li>`;
-    }).join('');
-    const fora = orc.fora.length ? `
-      <li class="orc-item orc-fora">
-        <div class="orc-linha"><span class="orc-nome">Fora do orçamento</span><span class="orc-val"><b>${moneyCurto(orc.foraTotal)}</b></span></div>
-        <div class="orc-frase">${escapeHtml(orc.fora.map(f => nomeTopico(f.id)).join(', '))}</div>
-      </li>` : '';
-    lista = `<h2 class="orc-secao">Por tópico</h2><div class="panel orc-topicos"><ul class="orc-lista">${linhas}${fora}</ul></div>`;
-  }
-  return card + lista + `<button class="btn ghost orc-editar" id="oOrcEditar">${ICON('alvo')} Editar orçamento</button>`;
+      <div class="orc-sobra"><span class="orc-sobra-rot">${rodape.rotulo}</span> <span class="k-num medio">${dinheiroHtml(Math.abs(orc.sobra))}</span></div>
+      <div class="orc-linha-barra">${barraOrcHtml(orc.pct, orc.nivel)}<span class="chev" aria-hidden="true">›</span></div>
+      <div class="k-obs">${rodape.usado} usado de ${money(orc.previsto)}</div>
+      ${passaram ? `<div class="aviso">${ICON('alerta')} ${passaram} tópico${passaram > 1 ? 's passaram' : ' passou'} do previsto</div>` : ''}
+      ${orc.foraTotal ? `<div class="k-obs">${moneyCurto(orc.foraTotal)} fora do orçamento</div>` : ''}
+    </button>`;
+}
+/* Folha do orçamento por tópico: a lista que morava dentro da obra. */
+function sheetOrcamento(obraId){
+  const o = obraById(obraId); if(!o) return;
+  const orc = OBRA_CALC.orcamentoObra(o), pecas = OBRA_CALC.pecasOrcamento(o);
+  if(!orc){ closeSheet(); return; }
+  if(!pecas.porTopico){ formOrcamento(o.id); return; }
+  const linhas = orc.topicos.map(t => {
+    const valores = OBRA_CALC.linhaTopicoOrc(t);
+    const miolo = `
+      <div class="orc-linha"><span class="orc-nome">${escapeHtml(nomeTopico(t.id))}</span>
+        <span class="orc-val"><b>${valores.gasto}</b> / ${valores.previsto}</span></div>
+      ${barraOrcHtml(t.pct, t.nivel, 'fina')}${fraseTopicoHtml(t)}`;
+    return pecas.tocaveis.includes(t.id)
+      ? `<li class="orc-item"><button type="button" class="orc-item-conteudo" data-top="${escapeHtml(t.id)}">${miolo}</button></li>`
+      : `<li class="orc-item"><div class="orc-item-conteudo">${miolo}</div></li>`;
+  }).join('');
+  const fora = orc.fora.length ? `
+    <li class="orc-item orc-fora">
+      <div class="orc-linha"><span class="orc-nome">Fora do orçamento</span><span class="orc-val"><b>${moneyCurto(orc.foraTotal)}</b></span></div>
+      <div class="orc-frase">${escapeHtml(orc.fora.map(f => nomeTopico(f.id)).join(', '))}</div>
+    </li>` : '';
+  const rodape = OBRA_CALC.rodapeOrc(orc);
+  openSheet(`
+    <div class="top-head">${ICON('alvo')}<h3>Orçamento por tópico</h3></div>
+    <div class="top-resumo"><div class="sub">${rodape.usado} usado · ${rodape.rotulo} ${rodape.valor}</div>
+      <b>${money(orc.gasto)}</b><div class="corr">de ${money(orc.previsto)} previstos</div></div>
+    <ul class="orc-lista orc-topicos">${linhas}${fora}</ul>
+    <div class="sheet-actions"><button class="btn ghost" id="orcFechar">Fechar</button>
+      <button class="btn primary" id="oOrcEditar">${ICON('alvo')} Editar orçamento</button></div>`);
+  pintaBarrasOrc($('#sheet'));
+  $('#sheet').querySelectorAll('.orc-item-conteudo[data-top]').forEach(btn => { btn.onclick = () => sheetTopico(o.id, btn.dataset.top); });
+  $('#orcFechar').onclick = closeSheet;
+  $('#oOrcEditar').onclick = () => formOrcamento(o.id);
 }
 
 /* ===== DETALHE DA OBRA ===== */
@@ -329,7 +396,7 @@ function renderObra(){
   const orc = OBRA_CALC.orcamentoObra(o);
   const pecasOrc = OBRA_CALC.pecasOrcamento(o);
 
-  let head = `
+  const head = `
     <div class="panel obra-head">
       <h2 class="layout-32"><span class="layout-33">${ICON(f.ic)} ${escapeHtml(o.nome)}</span>
         <button class="layout-34 li-del" id="oEdit" title="Editar obra" aria-label="Editar obra">${ICON('lapis')}</button></h2>
@@ -338,53 +405,67 @@ function renderObra(){
       </div>
     </div>`;
 
-  // 4 KPIs estilo dashboard (o início ficou só com a lista)
+  /* Um bloco sólido por tela (identidade da etapa 4): o Total gasto; na obra vendida com lucro,
+     o lucro da venda (decisão 4 do mockup, A). Abaixo, um assunto por bloco de vidro. */
   const venc = OBRA_CALC.aPagar([o], hoje);
   const ppm2 = OBRA_CALC.precoPorM2(o.valorEstimadoVenda, o.areaM2);
-  let kpiVenda;
-  if(o.fase==='vendida' && lucro){
-    kpiVenda = `
-      <div class="kpi green">
-        <div class="k-top"><span class="k-nome">Venda</span>
-          <span class="chip2 green">Vendida em ${fmtData(o.venda.data)}</span></div>
-        <div class="k-num">${money(o.venda.valor)}</div>
-        <div class="k-obs ${lucro.bruto>=0?'texto-positivo':'texto-negativo'}">lucro ${moneyShort(lucro.bruto)} · ${lucro.vsBanco>=0?'+':''}${moneyShort(lucro.vsBanco)} vs banco</div>
+  const qtd = o.gastos.length;
+  const chipQtd = qtd ? `${qtd} lançamento${qtd>1?'s':''}` : 'sem gastos';
+  const vendidaComLucro = o.fase==='vendida' && lucro && lucro.bruto >= 0;
+  const solido = vendidaComLucro ? `
+      <div class="kpi solido">
+        <div class="k-top"><span class="k-nome">Lucro da venda</span><span class="chip2 tinta">Vendida em ${fmtData(o.venda.data)}</span></div>
+        <div class="k-num gigante">${dinheiroHtml(lucro.bruto)}</div>
+        <div class="k-obs">venda de ${money(o.venda.valor)} · ${lucro.vsBanco>=0?'+':'−'}${moneyCurto(Math.abs(lucro.vsBanco))} acima do banco</div>
+      </div>` : `
+      <div class="kpi solido">
+        <div class="k-top"><span class="k-nome">Total gasto</span><span class="chip2 tinta">${chipQtd}</span></div>
+        <div class="k-num gigante">${dinheiroHtml(bruto)}</div>
+        <div class="k-obs">bruto, sem correção</div>
       </div>`;
-  } else if(o.valorEstimadoVenda){
+  const blocoTotal = vendidaComLucro ? `
+      <div class="kpi">
+        <div class="k-top"><span class="k-nome">Total gasto</span><span class="chip2 green">${chipQtd}</span></div>
+        <div class="k-num medio">${dinheiroHtml(bruto)}</div>
+        <div class="k-obs">bruto, sem correção</div>
+      </div>` : '';
+  let kpiVenda = '';
+  if(o.fase==='vendida' && lucro && !vendidaComLucro){
     kpiVenda = `
-      <div class="kpi green">
-        <div class="k-top"><span class="k-nome">Venda estimada</span>
-          <span class="chip2 green">estimativa</span></div>
-        <div class="k-num">${money(o.valorEstimadoVenda)}</div>
-        <div class="k-obs">${ppm2 ? `${moneyShort(ppm2)}/m² · ${escapeHtml(String(o.areaM2).replace('.',','))} m²` : `margem ${moneyShort(o.valorEstimadoVenda-corr)}`}</div>
+      <div class="kpi">
+        <div class="k-top"><span class="k-nome">Venda</span><span class="chip2 amber">Vendida em ${fmtData(o.venda.data)}</span></div>
+        <div class="k-num medio">${dinheiroHtml(o.venda.valor)}</div>
+        <div class="k-obs ambar">prejuízo de ${moneyCurto(Math.abs(lucro.bruto))} · ${moneyCurto(Math.abs(lucro.vsBanco))} abaixo do banco</div>
       </div>`;
-  } else {
+  } else if(o.fase!=='vendida' && o.valorEstimadoVenda){
     kpiVenda = `
-      <div class="kpi green">
-        <div class="k-top"><span class="k-nome">Venda estimada</span></div>
-        <div class="k-num">—</div>
-        <div class="k-obs">cadastre no editar obra</div>
+      <div class="kpi">
+        <div class="k-top"><span class="k-nome">Venda estimada</span><span class="chip2 green">estimativa</span></div>
+        <div class="k-num medio">${dinheiroHtml(o.valorEstimadoVenda)}</div>
+        <div class="k-obs">${[
+          ppm2 ? `${moneyShort(ppm2)}/m² · ${escapeHtml(String(o.areaM2).replace('.',','))} m²` : '',
+          // em construção ainda falta gastar: a margem sobre o que já foi gasto só engana
+          o.fase==='pronta' || !ppm2 ? `margem ${o.valorEstimadoVenda-corr>=0?'':'−'}${moneyCurto(Math.abs(o.valorEstimadoVenda-corr))} sobre o corrigido` : '',
+        ].filter(Boolean).join(' · ')}</div>
       </div>`;
   }
   const resumo = `
     <div class="kpis">
-      <div class="kpi">
-        <div class="k-top"><span class="k-nome">Total gasto</span>
-          <span class="chip2 brand">${o.gastos.length ? o.gastos.length+' lançamento'+(o.gastos.length>1?'s':'') : 'sem gastos'}</span></div>
-        <div class="k-num">${money(bruto)}</div>
-        <div class="k-obs">bruto, sem correção</div>
-      </div>
+      ${solido}
+      ${pecasOrc.cartao ? orcamentoHtml(o, orc, pecasOrc) : ''}
+      ${blocoTotal}
       <div class="kpi">
         <div class="k-top"><span class="k-nome">Corrigido pelo banco</span></div>
-        <div class="k-num" id="oCorr">${money(corr)}</div>
+        <div class="k-num medio" id="oCorr">${dinheiroHtml(corr)}</div>
         <div class="k-obs">Correção até ${o.venda?'a venda':'hoje'}: +${money(corr-bruto)}</div>
       </div>
-      <button type="button" class="kpi amber kpi-link" id="oAPagar">
+      ${o.fase==='vendida' ? '' : `
+      <button type="button" class="kpi kpi-link" id="oAPagar">
         <div class="k-top"><span class="k-nome">A pagar · 30 dias</span>
           <span class="chip2 amber">${venc.qtd ? venc.qtd+' vencimento'+(venc.qtd>1?'s':'') : 'nada em 30 dias'}</span></div>
-        <div class="k-num">${money(venc.total)}</div>
-        <div class="k-obs">Ver parcelas e gastos futuros →</div>
-      </button>
+        <div class="k-linha"><div class="k-num medio">${dinheiroHtml(venc.total)}</div><span class="chev" aria-hidden="true">›</span></div>
+        <div class="k-obs">Parcelas e gastos futuros</div>
+      </button>`}
       ${kpiVenda}
     </div>`;
 
@@ -396,8 +477,8 @@ function renderObra(){
   if(o.fase==='vendida') acoes += `<button class="btn ghost" id="oDesfazer">${ICON('voltar')} Desfazer venda</button>`;
   if(pecasOrc.definir) acoes += `<button class="btn ghost" id="oOrcDefinir">${ICON('alvo')} Definir orçamento</button>`;
   if(o.gastos.length) acoes += `
-    <button class="btn ghost" id="oGraf">${ICON('calculadora')} Ver gráficos</button>
-    <button class="btn ghost" id="oRel">${ICON('documento')} Relatório</button>`;
+    <button class="btn ghost porta" id="oGraf">${ICON('calculadora')} Ver gráficos</button>
+    <button class="btn ghost porta" id="oRel">${ICON('documento')} Relatório</button>`;
   acoes += '</div>';
 
   const afazeres = `
@@ -409,20 +490,16 @@ function renderObra(){
       <ul class="list" id="oAfazeres"></ul>
     </div>`;
 
-  const porTopico = OBRA_CALC.gastoPorTopico(o);
-
-  const graficos = `
-    <div class="panel"><h2>Gastos por tópico</h2>
-      <div class="layout-36 donut-wrap" id="oDonutWrap" title="Ver gráficos grandes">
-        <div class="donut">
-          <svg viewBox="0 0 36 36" width="132" height="132" id="oDonut"></svg>
-          <div class="center"><small>Total</small><b id="oDonutTotal"></b></div>
-        </div>
-        <div class="legend" id="oDonutLeg"></div>
-      </div>
-    </div>
-    ${evoChartHtml(o)}
-    ${mesChartHtml(o)}`;
+  /* Gastos por tópico: barra empilhada (6 maiores + Outros) e a legenda dos 4 maiores; o bloco
+     inteiro é a porta para os Gráficos (o anel animado e as séries moram lá). */
+  const tp = pedacosTopicos(o);
+  const graficos = tp.total > 0 ? `
+    <button type="button" class="panel pilha-bloco" id="oTopicos" aria-label="Gastos por tópico: ver gráficos">
+      <h2><span>Gastos por tópico</span><span class="muted">${tp.todos.length} tópico${tp.todos.length>1?'s':''} <span class="chev" aria-hidden="true">›</span></span></h2>
+      <div class="pilha-placa"><div class="pilha" id="oPilha">${tp.pedacos.map(p=>`<i data-cor="${p.cor}" data-peso="${p.bruto}"></i>`).join('')}</div></div>
+      <div class="leg-mini">${tp.pedacos.slice(0,4).map(p=>`<div><span class="pt" data-cor="${p.cor}"></span><span class="nm">${escapeHtml(p.nm)}</span><span class="pc">${pctTexto(p.bruto, tp.total)}</span></div>`).join('')}
+        ${tp.todos.length > 4 ? `<div class="mais-t">e mais ${tp.todos.length-4} tópico${tp.todos.length-4>1?'s':''}</div>` : ''}</div>
+    </button>` : '';
 
   // o mês escolhido fica na lista mesmo sem gasto: o filtro que vale nunca some do <select>
   const mesesDoFiltro = OBRA_CALC.mesesDoFiltro(o.gastos, filtroMes);
@@ -440,13 +517,10 @@ function renderObra(){
       <ul class="list" id="oGastos"></ul>
     </div>`;
 
-  $('#obraBody').innerHTML = head + (pecasOrc.cartao ? orcamentoHtml(o, orc, pecasOrc) : '') + resumo + acoes + afazeres + graficos + lanc;
+  $('#obraBody').innerHTML = head + resumo + acoes + afazeres + graficos + lanc;
   fitNums($('#obraBody'));
   pintaBarrasOrc($('#obraBody'));
-
-  drawDonutObra(porTopico, bruto);
-  bindEvoChart(o);
-  bindMesChart(o);
+  pintaCores($('#obraBody'));
   $('#fBusca').addEventListener('input', ()=>{ filtroTexto = $('#fBusca').value; renderGastosFiltrados(obraById(obraAberta)); });
   $('#fMes').onchange = ()=>{ filtroMes = $('#fMes').value; renderGastosFiltrados(obraById(obraAberta)); };
   renderGastosFiltrados(o);
@@ -464,21 +538,17 @@ function renderObra(){
   $('#afzInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addAfazer(); } });
 
   $('#oEdit').onclick = ()=>formEditarObra(o);
-  $('#oAPagar').onclick = ()=>sheetAPagar(o.id);
   const on = (id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
   on('#oRel',          ()=>{ showView('relatorio'); renderRelatorio(); });
   on('#oGraf',         ()=>{ showView('graficos'); renderGraficos(); });
-  on('#oDonutWrap',    ()=>{ if(o.gastos.length){ showView('graficos'); renderGraficos(); } });
+  on('#oAPagar',       ()=>sheetAPagar(o.id));
+  on('#oTopicos',      ()=>{ showView('graficos'); renderGraficos(); });
+  on('#oOrc',          ()=>sheetOrcamento(o.id));
   on('#oPronta',       ()=>mudarFase(o.id,'pronta'));
   on('#oVender',       ()=>formVenda(o));
   on('#oVoltarConstr', ()=>mudarFase(o.id,'construcao'));
   on('#oDesfazer',     async()=>{ if(await OBRA_CONFIRM.perguntar('Desfazer a venda? A obra volta pra “Pronta”.', { confirmar:'Desfazer venda' })){ const oo=obraById(o.id); if(!oo) return; delete oo.venda; oo.fase='pronta'; save(); renderAll(); } });
-  on('#oOrcEditar',    ()=>formOrcamento(o.id));
   on('#oOrcDefinir',   ()=>formOrcamento(o.id));
-  // botão de verdade: Enter/Espaço já funcionam nativamente, sem handler de teclado à parte
-  $('#obraBody').querySelectorAll('.orc-item-conteudo[data-top]').forEach(btn => {
-    btn.onclick = () => sheetTopico(o.id, btn.dataset.top);
-  });
   atualizaTitulo(); // obra renomeada (aqui ou em outro aparelho) atualiza o título da barra
 }
 
@@ -518,33 +588,6 @@ function afazerRow(o, a){
 }
 
 /* topicos: o gastoPorTopico do calc.js ({id, bruto, pct}, na ordem do donut) */
-function drawDonutObra(topicos, total){
-  const svg = $('#oDonut'), leg = $('#oDonutLeg');
-  $('#oDonutTotal').textContent = moneyShort(total);
-  if(!total){ svg.innerHTML=''; leg.innerHTML = `<div class="layout-37 empty"><p>Sem gastos ainda</p></div>`; return; }
-  const cs = getComputedStyle(document.documentElement);
-  const R = 15.915, C = 2*Math.PI*R;
-  let off = 0, paths = '';
-  topicos.forEach(({bruto},i)=>{
-    const len = bruto/total*C;
-    const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-    paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
-      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"></circle>`;
-    off += len;
-  });
-  svg.innerHTML = paths;
-  leg.innerHTML = '';
-  const map = TOP_MAP();
-  topicos.slice(0,7).forEach(({id,bruto,pct},i)=>{
-    const t = map[id] || {nm:id, ic:'etiqueta'};
-    const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-    leg.appendChild(el('div','row',
-      `<span class="dot pie-${i%PIE.length}"></span>
-       <span class="nm">${ICON(t.ic)} ${escapeHtml(t.nm)}</span>
-       <span class="vl">${pct}% · ${moneyShort(bruto)}</span>`));
-  });
-}
-
 /* Gráfico de evolução: área suave do acumulado corrigido + linha do bruto.
    Toque num mês mostra os valores no topo (sem tooltip flutuante).
    Cores validadas p/ daltonismo (dataviz): --chart-gasto × --chart-rec. */
@@ -569,7 +612,8 @@ function smoothPath(pts){
 function evoChartHtml(o, opts = {}){
   const suf = opts.sufixo || '';
   const titulo = opts.titulo || 'Evolução da obra';
-  const serie = opts.serie || OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
+  const hoje = todayISO();
+  const serie = opts.serie || OBRA_CALC.serieEvolucao(o, taxa(), hoje);
   if(!serie.length) return `<div class="panel"><h2>${titulo}</h2>${emptyBlock(ICON('calendario'),'Sem gastos ainda.')}</div>`;
   const W = 360, H = opts.H || 170, R = 6, T = 12, B = 22;
   const so1 = serie.length === 1;               // 1 mês só: linha reta atravessada
@@ -582,10 +626,10 @@ function evoChartHtml(o, opts = {}){
   const pb = s.map((p,i) => ({x:+x(i).toFixed(1), y:+y(p.bruto).toFixed(1)}));
   const grade = [0.25,0.5,0.75,1].map(f => {
     const gy = y(max*f).toFixed(1);
-    return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--border)" stroke-dasharray="3 4"/>
+    return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" class="grade"/>
             <text x="${L-4}" y="${+gy+3}" text-anchor="end">${moneyShort(max*f)}</text>`;
   }).join('');
-  const passo = Math.ceil(serie.length / 8); // no máx ~8 rótulos de mês
+  const passo = Math.ceil(serie.length / 7); // no máx ~7 rótulos de mês
   const rotulos = so1
     ? `<text x="${((L+W-R)/2).toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+serie[0].mes.slice(5)-1]}</text>`
     : serie.map((p,i) => (i % passo && i !== serie.length-1) ? '' :
@@ -596,46 +640,59 @@ function evoChartHtml(o, opts = {}){
     return `<rect class="evo-col" data-i="${i}" x="${x0.toFixed(1)}" y="${T}" width="${(x1-x0).toFixed(1)}" height="${H-T-B}" fill="transparent"/>`;
   }).join('');
   const sel = evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1;
-  const mx = so1 ? (L+W-R)/2 : pc[sel].x;
-  const marca = `<circle cx="${mx}" cy="${pc[sel].y}" r="3.5" fill="var(--chart-rec)"/>
-                 <circle cx="${so1 ? mx : pb[sel].x}" cy="${pb[sel].y}" r="3" fill="var(--chart-gasto)"/>`;
+  const mx = so1 ? (L+W-R)/2 : pb[sel].x;
+  const marca = `<line x1="${mx}" y1="${T}" x2="${mx}" y2="${H-B}" class="guia"/>
+                 <circle cx="${mx}" cy="${pc[sel].y}" r="4" class="ponto-banco"/>
+                 <circle cx="${mx}" cy="${pb[sel].y}" r="4.5" class="ponto-gasto"/>`;
+  // parcelas a vencer ficam fora da linha (ela para em hoje ou na venda): avisa quanto
+  const fim = o.venda ? o.venda.data : hoje;
+  const fora = o.gastos.filter(g => g.data > fim).reduce((t, g) => t + g.valor, 0);
   return `
     <div class="panel"><h2>${titulo}</h2>
-      <div class="evo-head"><span class="evo-val" id="evoVal${suf}"></span></div>
-      <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg${suf}" role="img" aria-label="Evolução do gasto bruto e corrigido por mês">
+      <div class="leitura" id="evoVal${suf}"></div>
+      <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="evoSvg${suf}" role="img" aria-label="Evolução do gasto e do corrigido pelo banco, mês a mês">
         <defs><linearGradient id="evoGrad${suf}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--chart-rec)" stop-opacity=".38"/>
-          <stop offset="100%" stop-color="var(--chart-rec)" stop-opacity=".02"/>
+          <stop offset="0%" class="area-ini"/><stop offset="100%" class="area-fim"/>
         </linearGradient></defs>
         ${grade}
-        <path d="${smoothPath(pc)} L ${W-R} ${H-B} L ${L} ${H-B} Z" fill="url(#evoGrad${suf})" stroke="none"/>
-        <path d="${smoothPath(pc)}" fill="none" stroke="var(--chart-rec)" stroke-width="2.4" stroke-linecap="round"/>
-        <path d="${smoothPath(pb)}" fill="none" stroke="var(--chart-gasto)" stroke-width="2" stroke-linecap="round"/>
+        <path d="${smoothPath(pb)} L ${W-R} ${H-B} L ${L} ${H-B} Z" fill="url(#evoGrad${suf})" stroke="none"/>
+        <path d="${smoothPath(pc)}" fill="none" class="linha-banco"/>
+        <path d="${smoothPath(pb)}" fill="none" class="linha-gasto"/>
         ${marca}${rotulos}${cols}
       </svg>
       <div class="evo-leg">
-        <span><i class="layout-38"></i>Gasto</span>
-        <span><i class="layout-39"></i>Corrigido pelo banco</span>
+        <span><i class="cheia"></i>Gasto</span>
+        <span><i class="trac"></i>Corrigido pelo banco</span>
       </div>
+      ${fora > 0 ? `<div class="nota-fora">Fora do gráfico: ${moneyCurto(fora)} em parcelas a vencer.</div>` : ''}
     </div>`;
 }
-function bindEvoChart(o, suf = '', rerender = renderObra, serieOpt = null){
+function bindEvoChart(o, suf = '', rerender = renderGraficos, serieOpt = null){
   const svg = $('#evoSvg' + suf);
   if(!svg) return;
   const serie = serieOpt || OBRA_CALC.serieEvolucao(o, taxa(), todayISO());
   const mostra = i => {
     const p = serie[i]; if(!p) return;
     const [yy, mm] = p.mes.split('-');
-    $('#evoVal' + suf).textContent =
-      `${MESAB[+mm-1]}/${yy.slice(2)} · gasto ${moneyShort(p.bruto)} · corrigido ${moneyShort(p.corrigido)}`;
+    $('#evoVal' + suf).innerHTML =
+      `<div class="rot">${MESAB[+mm-1]}/${yy.slice(2)}</div>
+       <div class="sub">gasto ${dinheiroCurtoHtml(p.bruto)} · no banco já seria ${dinheiroCurtoHtml(p.corrigido)}</div>`;
   };
   svg.querySelectorAll('.evo-col').forEach(r => r.onclick = () => { evoSel = +r.dataset.i; rerender(); });
   mostra(evoSel >= 0 && evoSel < serie.length ? evoSel : serie.length-1);
 }
 
-/* Gasto por mês: barras do valor bruto por mês-calendário, sem correção.
-   Complementa o acumulado do evo: mostra ritmo, picos e meses parados. */
-let mesSel = -1; // mês selecionado (índice); -1 = último com gasto
+/* Gasto por mês: barras finas do bruto por mês-calendário. O mês escolhido acende no destaque
+   (padrão: este mês); as parcelas a vencer ficam hachuradas. Média, maior e meses embaixo,
+   contados do 1º gasto até este mês, sem as parcelas a vencer. */
+let mesSel = -1; // mês selecionado (índice); -1 = este mês
+function mesPadrao(serie){
+  const agora = todayISO().slice(0, 7);
+  const i = serie.findIndex(p => p.mes === agora);
+  if(i >= 0) return i;
+  const passados = serie.map((p, k) => p.mes <= agora ? k : -1).filter(k => k >= 0);
+  return passados.length ? passados[passados.length - 1] : 0;
+}
 function mesChartHtml(o, opts = {}){
   const suf = opts.sufixo || '';
   const serie = OBRA_CALC.serieMensal(o.gastos);
@@ -645,62 +702,79 @@ function mesChartHtml(o, opts = {}){
   const L = margemEixo(max, H);
   const y = v => T + (H-T-B) * (1 - v/max);
   const slot = (W-L-R) / serie.length;
-  const bw = Math.min(26, slot * 0.62);
+  const bw = Math.max(3, Math.min(16, slot * 0.5));
   const grade = [0.25,0.5,0.75,1].map(f => {
     const gy = y(max*f).toFixed(1);
-    return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--border)" stroke-dasharray="3 4"/>
+    return `<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" class="grade"/>
             <text x="${L-4}" y="${+gy+3}" text-anchor="end">${moneyShort(max*f)}</text>`;
   }).join('');
-  const sel = mesSel >= 0 && mesSel < serie.length ? mesSel
-    : Math.max(0, serie.map(p=>p.total>0).lastIndexOf(true));
-  const passo = Math.ceil(serie.length / 8);
+  const sel = mesSel >= 0 && mesSel < serie.length ? mesSel : mesPadrao(serie);
+  const passo = Math.ceil(serie.length / 7);
   const base = H - B;
-  // barra com topo arredondado e base reta no eixo; mês zerado vira um toco
+  const agora = todayISO().slice(0, 7);
   const barra = (x0, yTopo) => {
-    const r = Math.min(3, bw/2, Math.max(0, base - yTopo));
+    const r = Math.min(bw/2, Math.max(0, base - yTopo));
     return `M${x0.toFixed(1)} ${base} V${(yTopo+r).toFixed(1)} Q${x0.toFixed(1)} ${yTopo.toFixed(1)} ${(x0+r).toFixed(1)} ${yTopo.toFixed(1)}`
          + ` H${(x0+bw-r).toFixed(1)} Q${(x0+bw).toFixed(1)} ${yTopo.toFixed(1)} ${(x0+bw).toFixed(1)} ${(yTopo+r).toFixed(1)} V${base} Z`;
   };
   const partes = serie.map((p,i) => {
     const cx = L + slot*i + slot/2, x0 = cx - bw/2;
-    const rot = (i % passo && i !== serie.length-1) ? '' :
-      `<text x="${cx.toFixed(1)}" y="${H-6}" text-anchor="middle">${MESAB[+p.mes.slice(5)-1]}</text>`;
+    const rot = (i !== sel && (i % passo || Math.abs(i - sel) < Math.max(2, passo * .6))) ? '' :
+      `<text x="${cx.toFixed(1)}" y="${H-6}" text-anchor="middle" class="eixo-x${i===sel?' sel':''}" data-i="${i}">${MESAB[+p.mes.slice(5)-1]}</text>`;
+    const futuro = p.mes > agora;
     const vis = p.total > 0
-      ? `<path class="mes-bar${i===sel?' on':''}" data-i="${i}" d="${barra(x0, y(p.total))}" fill="url(#mesGrad${suf})"/>`
-      : `<rect x="${x0.toFixed(1)}" y="${base-1.5}" width="${bw.toFixed(1)}" height="1.5" rx=".75" fill="var(--muted)" opacity=".35"/>`;
+      ? `<path class="mes-bar${futuro?' futuro':''}${i===sel?' on':''}" data-i="${i}" d="${barra(x0, y(p.total))}"/>`
+      : `<rect x="${x0.toFixed(1)}" y="${base-1.5}" width="${bw.toFixed(1)}" height="1.5" rx=".75" class="mes-zero"/>`;
     return `${vis}<rect class="mes-col" data-i="${i}" x="${(L+slot*i).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${H-T-B}" fill="transparent"/>${rot}`;
   }).join('');
+  const ate = serie.filter(p => p.mes <= agora);
+  const media = ate.length ? ate.reduce((t,p)=>t+p.total,0) / ate.length : 0;
+  const maior = ate.length ? Math.max(...ate.map(p=>p.total)) : 0;
+  const temFuturo = serie.some(p => p.mes > agora && p.total > 0);
   return `
     <div class="panel"><h2>Gasto por mês</h2>
-      <div class="evo-head"><span class="evo-val" id="mesVal${suf}"></span></div>
+      <div class="leitura" id="mesVal${suf}"></div>
       <svg class="evo-svg${H>200?' evo-big':''}" viewBox="0 0 ${W} ${H}" width="100%" id="mesSvg${suf}" role="img" aria-label="Gasto bruto por mês">
-        <defs><linearGradient id="mesGrad${suf}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--chart-gasto)" stop-opacity=".95"/>
-          <stop offset="100%" stop-color="var(--chart-gasto)" stop-opacity=".30"/>
-        </linearGradient></defs>
+        <defs><pattern id="hach${suf}" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1.5" height="4" class="hach"/></pattern></defs>
         ${grade}
-        <line x1="${L}" y1="${base}" x2="${W-R}" y2="${base}" stroke="var(--border)"/>
+        <line x1="${L}" y1="${base}" x2="${W-R}" y2="${base}" class="eixo"/>
         ${partes}
       </svg>
+      ${temFuturo ? `<div class="evo-leg"><span><i class="bar"></i>Pago</span><span><i class="hach-i"></i>A vencer</span></div>` : ''}
+      <div class="stats">
+        <div><div class="rot">Média por mês</div>${dinheiroCurtoHtml(media)}</div>
+        <div><div class="rot">Maior mês</div>${dinheiroCurtoHtml(maior)}</div>
+        <div><div class="rot">Meses</div><span class="num">${ate.length}</span></div>
+      </div>
     </div>`;
 }
 function bindMesChart(o, suf = ''){
   const svg = $('#mesSvg' + suf);
   if(!svg) return;
   const serie = OBRA_CALC.serieMensal(o.gastos);
+  const agora = todayISO().slice(0, 7);
   const mostra = i => {
     const p = serie[i]; if(!p) return;
     const [yy, mm] = p.mes.split('-');
-    $('#mesVal' + suf).textContent = `${MESAB[+mm-1]}/${yy.slice(2)} · ${money(p.total)}`;
+    $('#mesVal' + suf).innerHTML = `<div class="rot">${MESAB[+mm-1]}/${yy.slice(2)}${p.mes > agora ? ' · a vencer' : p.mes === agora ? ' · este mês' : ''}</div>
+      <div class="sub">${dinheiroHtml(p.total)}</div>`;
   };
-  // seleção troca in-place (classe + texto), sem repintar a tela toda
-  svg.querySelectorAll('.mes-col').forEach(r => r.onclick = () => {
-    mesSel = +r.dataset.i;
+  // tocar ou arrastar: o mês mais perto do dedo é o escolhido; a seleção fica ao soltar
+  const escolhe = i => {
+    if(i === mesSel || !serie[i]) return;
+    mesSel = i;
     svg.querySelectorAll('.mes-bar').forEach(b => b.classList.toggle('on', +b.dataset.i === mesSel));
     mostra(mesSel);
-  });
-  mostra(mesSel >= 0 && mesSel < serie.length ? mesSel
-    : Math.max(0, serie.map(p=>p.total>0).lastIndexOf(true)));
+  };
+  const cols = [...svg.querySelectorAll('.mes-col')];
+  const peloX = clientX => {
+    let melhor = 0, dist = Infinity;
+    cols.forEach(c => { const r = c.getBoundingClientRect(); const d = Math.abs(r.left + r.width/2 - clientX); if(d < dist){ dist = d; melhor = +c.dataset.i; } });
+    return melhor;
+  };
+  svg.addEventListener('pointerdown', e => { escolhe(peloX(e.clientX)); });
+  svg.addEventListener('pointermove', e => { if(e.buttons || e.pointerType === 'touch') escolhe(peloX(e.clientX)); });
+  mostra(mesSel >= 0 && mesSel < serie.length ? mesSel : mesPadrao(serie));
 }
 
 /* repinta só a lista de lançamentos + contador (não perde o foco do teclado) */
@@ -733,7 +807,7 @@ function gastoRow(o, g, opts){
       <div class="t">${escapeHtml(g.descricao || t.nm)}${suf}</div>
       <div class="s gasto-meta"><span>${pIc}${escapeHtml(t.nm)}</span><span class="gasto-data">${fmtData(g.data)}</span>${futura?' <span class="tag pend">a vencer</span>':''}</div>
     </div>
-    <div class="li-val neg">−${money(g.valor)}</div>`;
+    <div class="li-val">${dinheiroHtml(g.valor)}</div>`;
   li.querySelector('.li-main').style.cursor = 'pointer';
   li.querySelector('.li-main').onclick = ()=>formGasto(o.id, g, undefined, voltar);
   const del = el('button','li-del','×');
@@ -1029,44 +1103,6 @@ $('#btnGrafVoltar').onclick = ()=>{ if(obraAberta) openObra(obraAberta); else { 
 
 /* donut + legenda largura cheia (nome completo, % e valor) — reusado
    pela tela Gráficos e pelo dashboard do início. topicos: o gastoPorTopico do calc.js */
-function donutComLegendaHtml(topicos, total, size){
-  if(!(total > 0)) return emptyBlock(ICON('recibo'),'Sem gastos ainda.');
-  const cs = getComputedStyle(document.documentElement);
-  const map = TOP_MAP();
-  const R = 15.915, C = 2*Math.PI*R;
-  let off = 0, paths = '';
-  topicos.forEach(({id,bruto},i)=>{
-    const len = bruto/total*C;
-    const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-    paths += `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${color}" stroke-width="4.4"
-      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 18 18)"
-      data-top="${escapeHtml(id)}"></circle>`;
-    off += len;
-  });
-  const legenda = topicos.map(({id,bruto,pct},i)=>{
-    const t = map[id] || {nm:id, ic:'etiqueta'};
-    const color = cs.getPropertyValue(PIE[i%PIE.length]).trim();
-    return `<li data-top="${escapeHtml(id)}"><span class="dot pie-${i%PIE.length}"></span>
-      <div class="li-main"><div class="t">${ICON(t.ic)} ${escapeHtml(t.nm)}</div></div>
-      <div class="li-val">${pct}% · ${moneyShort(bruto)}</div></li>`;
-  }).join('');
-  return `<div class="graf-donut"><div class="donut donut-${size}">
-      <svg viewBox="0 0 36 36" width="${size}" height="${size}">${paths}</svg>
-      <div class="center"><small>Total</small><b>${moneyShort(total)}</b></div>
-    </div></div>
-    <ul class="list graf-leg">${legenda}</ul>`;
-}
-/* liga o clique da legenda e das fatias do donut. Separado do helper de HTML
-   porque ele devolve string: o bind só existe depois de inserir no DOM —
-   mesmo par de bindEvoChart/bindMesChart. Quem não chamar isso fica sem
-   interação, que é o comportamento antigo. */
-function bindDonutLegenda(container, onPick){
-  if(!container) return;
-  container.querySelectorAll('[data-top]').forEach(el=>{
-    el.onclick = ()=>onPick(el.dataset.top);
-  });
-}
-
 /* window.print() falha calado no WKWebView: no app o botão compartilha a planilha. */
 function ligarImprimir(botao){
   if(!OBRA_NATIVO.ehNativo()){ botao.onclick = ()=>window.print(); return; }
@@ -1078,25 +1114,113 @@ function ligarImprimir(botao){
   };
 }
 
-/* ===== GRÁFICOS DA OBRA (tela cheia, legível, imprime em PDF) ===== */
+/* ===== GRÁFICOS DA OBRA (identidade da etapa 4; mockup parte 1) =====
+   Anel com os 6 maiores tópicos + "Outros" em cinza, pontas redondas que montam uma na outra,
+   entrada girando (cada pedaço sai do topo e assenta) e toque que mostra o tópico no meio.
+   Abaixo, a evolução (gasto cheio, corrigido tracejado) e o gasto por mês com o mês aceso. */
+let anelSel = null;           // id do pedaço escolhido no anel (null = total)
+let anelAnimou = null;        // obra cuja entrada do anel já rodou (só anima ao abrir)
+function anelHtml(tp){
+  const S = 240, c = S/2, R = 100, E = 26;            // caixa, centro, raio e espessura
+  const C = 2*Math.PI*R, piso = 10;                   // piso de 10 pt de arco por pedaço
+  const n = tp.pedacos.length;
+  let lens = tp.pedacos.map(p => Math.max(piso, p.bruto / tp.total * C));
+  const excesso = lens.reduce((a,b)=>a+b,0) - C;      // o que o piso somou sai do maior
+  if(excesso > 0){ const i = lens.indexOf(Math.max(...lens)); lens[i] -= excesso; }
+  let ini = 0;
+  const pecas = tp.pedacos.map((p, i) => {
+    const len = lens[i], a0 = ini; ini += len;
+    const graus = a0 / C * 360;
+    const vis = n === 1 ? C : Math.max(.01, len);
+    // ponta inicial: aro do tom do fundo atrás da cabeça redonda (a emenda com o anterior)
+    const ang = (graus - 90) * Math.PI / 180, hx = (c + R*Math.cos(ang)).toFixed(2), hy = (c + R*Math.sin(ang)).toFixed(2);
+    return `<g class="peca" data-i="${i}" data-de="${(-graus).toFixed(2)}" data-cor="${p.cor}">
+      ${n > 1 ? `<circle class="seg-sep" cx="${hx}" cy="${hy}" r="${E/2 + 2.5}"/>` : ''}
+      <circle class="seg" cx="${c}" cy="${c}" r="${R}" fill="none" stroke-width="${E}" stroke-linecap="${n>1?'round':'butt'}"
+        stroke-dasharray="${vis.toFixed(2)} ${(C - vis + 1).toFixed(2)}" stroke-dashoffset="${(-a0).toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>
+      <circle class="alvo" cx="${c}" cy="${c}" r="${R}" fill="none" stroke="transparent" stroke-width="${E+16}"
+        stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-a0).toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>
+    </g>`;
+  }).join('');
+  // a cabeça do 1º pedaço volta por cima do último (o anel fecha sem degrau)
+  const p0 = tp.pedacos[0];
+  const fecho = n > 1 ? `<g class="peca fecho" data-i="0" data-de="0" data-cor="${p0.cor}"><circle class="seg-sep" cx="${c}" cy="${c - R}" r="${E/2 + 2.5}"/>
+      <circle class="seg" cx="${c}" cy="${c}" r="${R}" fill="none" stroke-width="${E}" stroke-linecap="round" stroke-dasharray=".01 ${C}" transform="rotate(-90 ${c} ${c})"/></g>` : '';
+  return `<div class="anel-caixa" id="anel">
+      <svg viewBox="0 0 ${S} ${S}" width="${S}" height="${S}" role="img" aria-label="Gastos por tópico">
+        <circle class="trilho" cx="${c}" cy="${c}" r="${R}" fill="none" stroke-width="${E + 8}"/>
+        ${pecas}${fecho}
+      </svg>
+      <div class="centro" id="anelCentro" aria-live="polite"></div>
+    </div>`;
+}
+function anelCentro(tp){
+  const p = tp.pedacos.find(x => x.id === anelSel);
+  const caixa = $('#anel'); if(!caixa) return;
+  caixa.classList.toggle('escolhido', !!p);
+  caixa.querySelectorAll('.peca').forEach(g => g.classList.toggle('on', !!p && tp.pedacos[+g.dataset.i] === p));
+  $('#grafBody').querySelectorAll('.leg-lista [data-pedaco]').forEach(l => l.classList.toggle('on', !!p && l.dataset.pedaco === p.id));
+  $('#anelCentro').innerHTML = p
+    ? `<span class="cr">${escapeHtml(p.outros ? `Outros · ${p.ids.length} tópico${p.ids.length>1?'s':''}` : p.nm)}</span>
+       <span class="cv">${dinheiroCurtoHtml(p.bruto)}</span>
+       <span class="cp">${pctTexto(p.bruto, tp.total)} do total</span>
+       ${p.outros ? '' : `<button type="button" class="cl" id="anelVer">Ver gastos ›</button>`}`
+    : `<span class="cr">total gasto</span> <span class="cv">${dinheiroCurtoHtml(tp.total)}</span>
+       <span class="cp">${tp.todos.length} tópico${tp.todos.length>1?'s':''}</span>`;
+  const ver = $('#anelVer');
+  if(ver) ver.onclick = () => sheetTopico(obraAberta, p.id);
+}
 function renderGraficos(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
-  const bruto = OBRA_CALC.totalBruto(o);
-  const donutLeg = donutComLegendaHtml(OBRA_CALC.gastoPorTopico(o), bruto, 240);
+  const tp = pedacosTopicos(o);
+  if(anelSel && !tp.pedacos.some(p => p.id === anelSel)) anelSel = null;
+  const corDe = tp.corDe;
+  const linha = t => `<div data-top="${escapeHtml(t.id)}" data-pedaco="${escapeHtml(tp.pedacos.find(p=>p.ids.includes(t.id))?.id || '')}" role="button" tabindex="0">
+      <span class="pt" data-cor="${corDe(t.id)}"></span><span class="nm">${escapeHtml(nomeTopico(t.id))}</span>
+      <span class="pc">${pctTexto(t.bruto, tp.total)}</span><span class="vl">${dinheiroHtml(t.bruto).replace(/<span class="cent">.*?<\/span>/,'')}</span><span class="chev" aria-hidden="true">›</span></div>`;
+  const outros = tp.pedacos.find(p => p.outros);
+  const coloridos = tp.todos.filter(t => !outros || !outros.ids.includes(t.id));
+  const cinzas = outros ? tp.todos.filter(t => outros.ids.includes(t.id)) : [];
+  const blocoAnel = tp.total > 0 ? `
+    <div class="panel graf-bloco">
+      <h2><span>Gastos por tópico</span><span class="muted">${tp.todos.length} tópico${tp.todos.length>1?'s':''}</span></h2>
+      ${anelHtml(tp)}
+      <div class="leg-lista">${coloridos.map(linha).join('')}
+        ${cinzas.length ? `<div class="outros-sep">Outros · ${cinzas.length} tópico${cinzas.length>1?'s':''}</div>${cinzas.map(linha).join('')}` : ''}</div>
+    </div>` : `<div class="panel">${emptyBlock(ICON('recibo'),'Sem gastos ainda.')}</div>`;
 
   $('#grafBody').innerHTML = `
-    <div class="panel">
-      <h2 class="layout-28">${ICON('calculadora')} Gráficos — ${escapeHtml(o.nome)}</h2>
-      <h2 class="layout-29">Gastos por tópico</h2>
-      ${donutLeg}
-    </div>
-    ${evoChartHtml(o, { sufixo:'G', H:300 })}
-    ${mesChartHtml(o, { sufixo:'G', H:300 })}
+    <div class="graf-meta"><span class="subtit">${escapeHtml(o.nome)}</span></div>
+    ${blocoAnel}
+    ${evoChartHtml(o, { sufixo:'G', H:220 })}
+    ${mesChartHtml(o, { sufixo:'G', H:200 })}
     <button class="layout-43 btn primary no-print" id="grafPrint">${ICON('impressora')} Imprimir / salvar PDF</button>`;
+  pintaCores($('#grafBody'));
+  const caixa = $('#anel');
+  if(caixa){
+    const anima = anelAnimou !== o.id && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    anelAnimou = o.id;
+    const cs = getComputedStyle(document.documentElement);
+    const rgb = v => { const h = cs.getPropertyValue(v).trim().replace('#',''); return [0,2,4].map(k => parseInt(h.slice(k,k+2),16)); };
+    const fundo = rgb('--anel-apagado');
+    caixa.querySelectorAll('.peca').forEach(g => {
+      const c = rgb(g.dataset.cor);
+      g.style.setProperty('--cor-apagada', `rgb(${c.map((x,k) => Math.round(x*.26 + fundo[k]*.74)).join(',')})`);
+      g.style.setProperty('--de', g.dataset.de + 'deg');
+      g.style.setProperty('--atraso', (+g.dataset.i * 0.1) + 's');
+      g.onclick = () => { const p = tp.pedacos[+g.dataset.i]; anelSel = anelSel === p.id ? null : p.id; anelCentro(tp); };
+    });
+    if(anima){ caixa.classList.add('anima'); setTimeout(() => caixa.classList.remove('anima'), 1200 + tp.pedacos.length * 100 + 50); }
+    anelCentro(tp);
+  }
+  $('#grafBody').querySelectorAll('.leg-lista [data-top]').forEach(l => {
+    const abre = () => sheetTopico(o.id, l.dataset.top);
+    l.onclick = abre;
+    l.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); abre(); } };
+  });
   bindEvoChart(o, 'G', renderGraficos);
   bindMesChart(o, 'G');
-  bindDonutLegenda($('#grafBody'), id=>sheetTopico(o.id, id));
   ligarImprimir($('#grafPrint'));
 }
 
@@ -1150,84 +1274,252 @@ function sheetTopico(obraId, topicoId){
   $('#topFechar').onclick = closeSheet;
 }
 
+/* ===== RELATÓRIO (identidade da etapa 4; mockup parte 2, Relatório A) =====
+   O total da obra no bloco sólido, um bloco de vidro por tópico que abre e fecha com os gastos
+   (bruto e corrigido de cada um) e o fim com a venda e a margem. "Selecionar" põe um marcador em
+   cada gasto e em cada tópico (todos, parte ou nenhum) e a barra de soma embaixo; a lupa filtra
+   por descrição ou tópico (calc.js filtraGastos) e o resumo dos achados toma o lugar do sólido.
+   As contas são do calc.js (relatorioObra, fimRelatorio, somaSelecao), as mesmas do app nativo. */
+/* % do total com uma casa, como no mockup (38,0%); abaixo de 0,1% vira "<0,1%" */
+function pctRelatorio(v, total){
+  const p = total ? v / total * 100 : 0;
+  if(p > 0 && p < 0.1) return '<0,1%';
+  return p.toLocaleString('pt-BR', { minimumFractionDigits:1, maximumFractionDigits:1 }) + '%';
+}
+const relPlural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+/* marcador redondo de 44px: o input fica por cima, transparente (teclado, leitor de tela e clique);
+   a bola desenhada é irmã dele */
+const relBolaHtml = `<span class="rel-bola" aria-hidden="true">${ICON('check')}<i class="rel-traco"></i></span>`;
+function relGastoHtml(item, nomeTopico){
+  const g = item.gasto;
+  const desc = (g.descricao || nomeTopico) + (g.parcela ? ` (${g.parcela.n}/${g.parcela.de})` : '');
+  return `<li><label class="rel-gasto" data-gasto="${escapeHtml(g.id)}">
+      <span class="rel-marca no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(desc)}">${relBolaHtml}</span>
+      <span class="rel-corpo">
+        <span class="rel-l1"><span class="rel-desc">${escapeHtml(desc)}</span><span class="rel-v">${dinheiroHtml(g.valor)}</span></span>
+        <span class="rel-l2"><span class="rel-data">${fmtData(g.data)}</span><span class="rel-corr">corrigido ${dinheiroHtml(item.corrigido)}</span></span>
+      </span>
+    </label></li>`;
+}
 function renderRelatorio(){
   const o = obraById(obraAberta);
   if(!o){ showView('inicio'); renderAll(); return; }
   const hoje = todayISO();
   const tx = taxa();
   const map = TOP_MAP();
+  const corDe = pedacosTopicos(o).corDe; // a mesma cor do anel dos Gráficos
 
   // grupos, gastos com o corrigido e totais: calc.js relatorioObra (o app nativo usa o mesmo)
   const rel = OBRA_CALC.relatorioObra(o, hoje, tx);
   const totB = rel.totalBruto;
   const totC = rel.totalCorrigido;
-  const itensRelatorio = new Map();
+  const itens = new Map();
+  rel.grupos.forEach(gr => gr.itens.forEach(it => itens.set(it.gasto.id, it)));
+  const nomeDe = id => (map[id] || {nm:id}).nm;
 
-  let rows = '';
-  rel.grupos.forEach(gr=>{
-    const t = map[gr.topico] || {nm:gr.topico, ic:'etiqueta'};
-    rows += `<tr class="rt-top"><td>${ICON(t.ic)} ${escapeHtml(t.nm)}</td><td></td>
-      <td>${money(gr.bruto)}</td><td>${money(gr.corrigido)}</td><td>+${money(gr.corrigido-gr.bruto)}</td></tr>`;
-    gr.itens.forEach(item=>{
-      const {gasto:g, corrigido:c} = item;
-      itensRelatorio.set(g.id,item);
-      const descricao=g.descricao||t.nm;
-      rows += `<tr><td class="rt-desc"><label class="rep-pick no-print"><input class="rel-check" type="checkbox" data-gasto="${escapeHtml(g.id)}" aria-label="Selecionar ${escapeHtml(descricao)}"></label>${escapeHtml(descricao)}</td><td>${fmtData(g.data)}</td>
-        <td>${money(g.valor)}</td><td>${money(c)}</td><td>+${money(c-g.valor)}</td></tr>`;
-    });
-  });
+  // estado da tela: vale enquanto ela está aberta (entrar de novo começa tudo fechado)
+  const est = { abertos:new Set(), selecionando:false, marcados:new Set(), busca:'' };
+  const achados = () => {
+    const txt = est.busca.trim();
+    return txt ? new Set(OBRA_CALC.filtraGastos(o.gastos, map, { texto:txt }).map(g => g.id)) : null;
+  };
 
-  // venda e lucro, ou venda estimada e margem, ou nada: calc.js fimRelatorio
+  const f = FASES[o.fase];
+  const corrAte = o.venda ? 'Corrigido até a venda' : 'Corrigido pelo banco';
+  const meta = `
+    <div class="panel rel-meta" id="relMeta">
+      <span class="chip2 ${o.fase === 'construcao' ? 'amber' : 'green'}">${f.nm}</span>
+      <p>começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o, hoje))}</p>
+      <p>${escapeHtml(OBRA_CALC.linhaCorrecao(o, hoje, tx))}</p>
+    </div>`;
+
+  // venda e lucro, ou venda estimada e margem, ou nada: calc.js fimRelatorio. Prejuízo em âmbar.
   const fimRel = OBRA_CALC.fimRelatorio(o, hoje, tx);
-  let venda = '';
+  const linhaFim = (rot, v, sinal) => `<div class="rel-fim-linha"><span class="rel-fim-rot">${rot}</span>
+      <span class="rel-fim-v${sinal ? (v >= 0 ? ' pos' : ' neg') : ''}">${dinheiroHtml(v)}</span></div>`;
+  let fim = '';
   if(fimRel && fimRel.tipo === 'venda'){
-    venda = `
-      <tr class="rep-total"><td>${ICON('acordo')} Venda em ${fmtData(fimRel.data)}</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
-      <tr><td>Lucro bruto (venda − gasto)</td><td></td><td colspan="3" class="${fimRel.lucroBruto>=0?'pos':'neg'}">${money(fimRel.lucroBruto)}</td></tr>
-      <tr><td>Acima do banco (venda − corrigido)</td><td></td><td colspan="3" class="${fimRel.acimaDoBanco>=0?'pos':'neg'}">${money(fimRel.acimaDoBanco)}</td></tr>`;
+    fim = linhaFim(`Venda em ${fmtData(fimRel.data)}`, fimRel.valor)
+        + linhaFim('Lucro bruto (venda − gasto)', fimRel.lucroBruto, true)
+        + linhaFim('Acima do banco (venda − corrigido)', fimRel.acimaDoBanco, true);
   } else if(fimRel){
-    venda = `
-      <tr class="rep-total"><td>${ICON('alvo')} Venda estimada</td><td></td><td colspan="3">${money(fimRel.valor)}</td></tr>
-      <tr><td>Margem estimada (estimado − corrigido)</td><td></td><td colspan="3" class="${fimRel.margem>=0?'pos':'neg'}">${money(fimRel.margem)}</td></tr>`;
+    fim = linhaFim('Venda estimada', fimRel.valor)
+        + linhaFim('Margem estimada (estimado − corrigido)', fimRel.margem, true);
   }
 
   $('#relBody').innerHTML = `
-    <div class="panel">
-      <h2 class="layout-28">${ICON('documento')} Relatório — ${escapeHtml(o.nome)}</h2>
-      <div class="rep-head">
-        ${FASES[o.fase].nm} · começou em ${fmtData(o.dataInicio)} · ${fmtMeses(OBRA_CALC.mesesDeObra(o,hoje))}<br>
-        ${escapeHtml(OBRA_CALC.linhaCorrecao(o, hoje, tx))}<br>
-        Marque gastos para somar somente itens escolhidos.
+    <h2 class="rel-impresso">Relatório — ${escapeHtml(o.nome)}</h2>
+    <div class="rel-barra">
+      <span class="subtit">${escapeHtml(o.nome)}</span>
+      <div class="rel-acoes no-print">
+        <button type="button" class="rel-redondo" id="relLupa" aria-label="Buscar gasto ou tópico" aria-expanded="false" aria-controls="relBusca">${ICON('lupa')}<span class="rel-x" aria-hidden="true">×</span></button>
+        <button type="button" class="rel-pilula" id="relSelecionar" aria-pressed="false">Selecionar</button>
       </div>
-      <div class="rep-selected hidden" id="relSelected" aria-live="polite">
-        <div><span>Selecionados</span><b id="relSelQtd">0 itens</b></div>
-        <div><span>Bruto</span><b id="relSelBruto">${money(0)}</b></div>
-        <div><span>Corrigido</span><b id="relSelCorr">${money(0)}</b></div>
-        <div><span>Parte do total</span><b id="relSelPct">0%</b></div>
-      </div>
-      <div class="rep-scroll">
-        <table class="rep-table">
-          <thead><tr><th>Tópico / gasto</th><th>Data</th><th>Bruto</th><th>Corrigido</th><th>Correção pelo banco</th></tr></thead>
-          <tbody>
-            ${rows}
-            <tr class="rep-total"><td>TOTAL</td><td></td><td>${money(totB)}</td><td>${money(totC)}</td><td>+${money(totC-totB)}</td></tr>
-            ${venda}
-          </tbody>
-        </table>
-      </div>
-      <button class="layout-44 btn primary no-print" id="relPrint">${ICON('impressora')} Imprimir / salvar PDF</button>
-    </div>`;
-  const atualizarSelecao=()=>{
-    const marcados=[...document.querySelectorAll('.rel-check:checked')]
-      .map(c=>itensRelatorio.get(c.dataset.gasto)).filter(Boolean);
-    const soma=OBRA_CALC.somaSelecao(marcados,totB);
-    $('#relSelected').classList.toggle('hidden',marcados.length===0);
-    $('#relSelQtd').textContent=soma.quantos;
-    $('#relSelBruto').textContent=money(soma.bruto);
-    $('#relSelCorr').textContent=money(soma.corrigido);
-    $('#relSelPct').textContent=soma.parte;
+    </div>
+    <div class="rel-busca no-print" id="relBusca" hidden>
+      <span class="rel-busca-ic" aria-hidden="true">${ICON('lupa')}</span>
+      <input type="search" id="relBuscaCampo" placeholder="Buscar gasto ou tópico" aria-label="Buscar gasto ou tópico" autocomplete="off" enterkeyhint="search" maxlength="100">
+    </div>
+    ${meta}
+    <div id="relTopo"></div>
+    <div id="relLista"></div>
+    ${fim ? `<div class="panel rel-fim" id="relFim">${fim}</div>` : ''}
+    <button class="layout-44 btn primary no-print" id="relPrint">${ICON('impressora')} Imprimir / salvar PDF</button>
+    <div class="kpi rel-soma no-print hidden" id="relSelected" role="status" aria-live="polite"></div>`;
+
+  /* topo: o Total da obra no sólido; durante a busca, o resumo dos achados no lugar dele */
+  const pintaTopo = vis => {
+    let html;
+    if(!vis){
+      html = `<div class="kpi solido rel-total">
+        <div class="k-top"><span class="k-nome">Total da obra</span><span class="chip2 tinta">${relPlural(o.gastos.length, 'gasto', 'gastos')}</span></div>
+        <div class="k-num gigante">${dinheiroHtml(totB)}</div>
+        <div class="rel-total-linha"><span>${corrAte}</span>${dinheiroHtml(totC)}</div>
+        <div class="rel-total-linha"><span>Correção</span>${dinheiroHtml(totC - totB).replace('<span class="num">', '<span class="num">+')}</div>
+      </div>`;
+    } else if(!vis.size){
+      html = `<div class="panel rel-nada" role="status">
+        <p>Nada encontrado com esse filtro.</p>
+        <button type="button" class="btn ghost" id="relLimpar">Limpar a busca</button>
+      </div>`;
+    } else {
+      const s = OBRA_CALC.somaSelecao([...vis].map(id => itens.get(id)).filter(Boolean), totB);
+      html = `<div class="kpi solido rel-total" role="status" aria-live="polite">
+        <div class="k-top"><span class="k-nome">Achados</span><span class="chip2 tinta">${vis.size} de ${o.gastos.length} gastos</span></div>
+        <div class="k-num gigante">${dinheiroHtml(s.bruto)}</div>
+        <div class="rel-total-linha"><span>${corrAte}</span>${dinheiroHtml(s.corrigido)}</div>
+        <div class="rel-total-linha"><span>Parte do total</span><span class="num">${s.parte}</span></div>
+        ${est.selecionando ? `<button type="button" class="rel-marcar-todos" id="relMarcarAchados">Marcar os ${vis.size} achados</button>` : ''}
+      </div>`;
+    }
+    $('#relTopo').innerHTML = html;
+    const limpar = $('#relLimpar');
+    if(limpar) limpar.onclick = () => { $('#relBuscaCampo').value = ''; est.busca = ''; pinta(); $('#relBuscaCampo').focus(); };
+    const marcarTodos = $('#relMarcarAchados');
+    if(marcarTodos) marcarTodos.onclick = () => { vis.forEach(id => est.marcados.add(id)); atualizaMarcas(); };
   };
-  document.querySelectorAll('.rel-check').forEach(c=>c.addEventListener('change',atualizarSelecao));
+
+  /* um bloco por tópico, do maior para o menor bruto; na busca, só os tópicos com achados,
+     abertos e somando só os achados */
+  const pintaLista = vis => {
+    const blocos = rel.grupos.map((gr, i) => {
+      const its = vis ? gr.itens.filter(it => vis.has(it.gasto.id)) : gr.itens;
+      if(!its.length) return '';
+      const nm = nomeDe(gr.topico);
+      const bruto = vis ? its.reduce((s, it) => s + it.gasto.valor, 0) : gr.bruto;
+      const corr = vis ? its.reduce((s, it) => s + it.corrigido, 0) : gr.corrigido;
+      const qtd = vis ? `${its.length} de ${relPlural(gr.itens.length, 'gasto', 'gastos')}` : relPlural(gr.itens.length, 'gasto', 'gastos');
+      const aberto = vis ? true : est.abertos.has(gr.topico);
+      return `<div class="panel rel-top${aberto ? ' aberto' : ''}" data-top="${escapeHtml(gr.topico)}">
+        <div class="rel-top-cab">
+          <label class="rel-marca no-print"><input class="rel-check-top" type="checkbox" data-top="${escapeHtml(gr.topico)}" aria-label="Marcar os gastos de ${escapeHtml(nm)}">${relBolaHtml}</label>
+          <button type="button" class="rel-abre" aria-expanded="${aberto}" aria-controls="relG${i}"
+            aria-label="${escapeHtml(nm)}, ${money(bruto)}, corrigido ${money(corr)}, ${qtd}">
+            <span class="rel-l1"><span class="rel-nm">${escapeHtml(nm)}</span><span class="rel-v">${dinheiroHtml(bruto)}</span></span>
+            <span class="rel-l2"><span class="rel-info"><i class="pt" data-cor="${corDe(gr.topico)}"></i>${qtd} · ${pctRelatorio(bruto, totB)}</span><span class="rel-corr">corrigido ${dinheiroHtml(corr)}</span></span>
+            <span class="rel-qtd-marcada" aria-hidden="true"></span>
+            <span class="chev" aria-hidden="true">›</span>
+          </button>
+        </div>
+        <ul class="rel-gastos" id="relG${i}"${aberto ? '' : ' hidden'}>${its.map(it => relGastoHtml(it, nm)).join('')}</ul>
+      </div>`;
+    }).join('');
+    $('#relLista').innerHTML = blocos || (vis ? '' : `<div class="panel">${emptyBlock(ICON('recibo'), 'Sem gastos ainda.')}</div>`);
+    pintaCores($('#relLista'));
+    $('#relLista').querySelectorAll('.rel-abre').forEach(b => b.onclick = () => {
+      const bloco = b.closest('.rel-top');
+      const abre = !bloco.classList.contains('aberto');
+      bloco.classList.toggle('aberto', abre);
+      b.setAttribute('aria-expanded', String(abre));
+      bloco.querySelector('.rel-gastos').hidden = !abre;
+      if(!vis){ if(abre) est.abertos.add(bloco.dataset.top); else est.abertos.delete(bloco.dataset.top); }
+    });
+    $('#relLista').querySelectorAll('.rel-check').forEach(c => c.onchange = () => {
+      if(c.checked) est.marcados.add(c.dataset.gasto); else est.marcados.delete(c.dataset.gasto);
+      atualizaMarcas();
+    });
+    // o do tópico marca ou desmarca todos os gastos dele que estão à vista
+    $('#relLista').querySelectorAll('.rel-check-top').forEach(c => c.onchange = () => {
+      c.closest('.rel-top').querySelectorAll('.rel-check').forEach(g => {
+        if(c.checked) est.marcados.add(g.dataset.gasto); else est.marcados.delete(g.dataset.gasto);
+      });
+      atualizaMarcas();
+    });
+  };
+
+  /* marcadores (gasto e tópico com 3 estados), "N marcados" no tópico e a barra de soma */
+  const atualizaMarcas = () => {
+    const corpo = $('#relBody');
+    corpo.classList.toggle('rel-selecionando', est.selecionando);
+    corpo.querySelectorAll('.rel-check,.rel-check-top').forEach(c => { c.disabled = !est.selecionando; });
+    corpo.querySelectorAll('.rel-check').forEach(c => {
+      c.checked = est.marcados.has(c.dataset.gasto);
+      c.closest('.rel-gasto').classList.toggle('marcado', c.checked);
+    });
+    corpo.querySelectorAll('.rel-top').forEach(b => {
+      const cs = [...b.querySelectorAll('.rel-check')];
+      const n = cs.filter(c => c.checked).length;
+      const top = b.querySelector('.rel-check-top');
+      top.checked = n > 0 && n === cs.length;
+      top.indeterminate = n > 0 && n < cs.length;
+      b.querySelector('.rel-qtd-marcada').textContent = est.selecionando && n ? relPlural(n, 'marcado', 'marcados') : '';
+    });
+    const barra = $('#relSelected');
+    barra.classList.toggle('hidden', !est.selecionando);
+    if(!est.selecionando){ barra.innerHTML = ''; return; }
+    const vistos = [...corpo.querySelectorAll('.rel-check')].map(c => c.dataset.gasto);
+    const marcadosVistos = vistos.filter(id => est.marcados.has(id));
+    const fora = est.marcados.size - marcadosVistos.length;
+    const avisoFora = fora > 0 ? `<p class="rel-soma-fora">e mais ${relPlural(fora, 'marcado', 'marcados')} fora da busca</p>` : '';
+    if(!marcadosVistos.length){
+      barra.innerHTML = `<p class="rel-soma-vazia"><b>Nenhum gasto marcado</b> · Toque nos gastos para somar.</p>${avisoFora}`;
+      return;
+    }
+    const soma = OBRA_CALC.somaSelecao(marcadosVistos.map(id => itens.get(id)).filter(Boolean), totB);
+    barra.innerHTML = `<div class="rel-soma-grade">
+        <div><span class="rel-soma-rot" id="relSelQtd">${soma.quantos}</span><span class="rel-soma-v" id="relSelBruto">${dinheiroHtml(soma.bruto)}</span></div>
+        <div><span class="rel-soma-rot">corrigido</span><span class="rel-soma-v" id="relSelCorr">${dinheiroHtml(soma.corrigido)}</span></div>
+        <div><span class="rel-soma-rot">do total</span><span class="rel-soma-v num" id="relSelPct">${soma.parte}</span></div>
+      </div>${avisoFora}`;
+  };
+
+  const pinta = () => {
+    const vis = achados();
+    // a meta e o fim saem durante a busca: os achados sobem e o fim não se mistura com eles
+    $('#relMeta').classList.toggle('hidden', !!vis);
+    if($('#relFim')) $('#relFim').classList.toggle('hidden', !!vis);
+    pintaTopo(vis);
+    pintaLista(vis);
+    atualizaMarcas();
+  };
+
+  $('#relSelecionar').onclick = () => {
+    est.selecionando = !est.selecionando;
+    if(!est.selecionando) est.marcados.clear();
+    const b = $('#relSelecionar');
+    b.textContent = est.selecionando ? 'OK' : 'Selecionar';
+    b.setAttribute('aria-pressed', String(est.selecionando));
+    b.classList.toggle('on', est.selecionando);
+    pintaTopo(achados());
+    atualizaMarcas();
+  };
+  $('#relLupa').onclick = () => {
+    const caixa = $('#relBusca'), lupa = $('#relLupa');
+    const abre = caixa.hidden;
+    caixa.hidden = !abre;
+    lupa.setAttribute('aria-expanded', String(abre));
+    lupa.setAttribute('aria-label', abre ? 'Fechar a busca' : 'Buscar gasto ou tópico');
+    lupa.classList.toggle('on', abre);
+    if(abre) $('#relBuscaCampo').focus();
+    else if(est.busca){ $('#relBuscaCampo').value = ''; est.busca = ''; pinta(); }
+  };
+  $('#relBuscaCampo').oninput = e => { est.busca = e.target.value; pinta(); };
+  $('#relBuscaCampo').onkeydown = e => { if(e.key === 'Escape'){ e.preventDefault(); $('#relLupa').click(); $('#relLupa').focus(); } };
+
+  pinta();
+  // o PDF é sempre o relatório inteiro: imprimir com a busca ativa limpa a busca antes
+  // (registrado antes do onclick do ligarImprimir, roda primeiro)
+  $('#relPrint').addEventListener('click', () => { if(est.busca){ $('#relBuscaCampo').value = ''; est.busca = ''; pinta(); } });
   ligarImprimir($('#relPrint'));
 }
 
@@ -1243,45 +1535,115 @@ function renderSimula(){
   simulaCompute();
 }
 
+/* Identidade da etapa 4 (mockup parte 2, "Vale a pena?"): o veredito é o bloco sólido (verde ou âmbar), depois a faixa
+   (custo, empata com o banco, sua venda) e a tabela pelo bruto × pelo corrigido em pares. Os números e os textos saem de
+   calc.js (contaSimulador e textosSimulador); aqui só muda a apresentação. */
+/* "R$ 1.234,56" / "-R$ 1.234,56" (money de calc.js) → o número em mono com R$ e centavos menores; "—" fica "—" */
+function simDinheiroHtml(txt){
+  if(!/R\$/.test(txt)) return escapeHtml(txt);
+  const v = parseNum(txt.replace(/[^\d,]/g, ''));
+  return dinheiroHtml(txt.trim().startsWith('-') ? -v : v);
+}
+/* "122,3%" / "8,63% a.m." → número em mono com a unidade menor; o sinal de menos tipográfico */
+function simPctHtml(txt){
+  const m = /^(-?)([\d.,]+)(%.*)$/.exec(txt);
+  if(!m) return escapeHtml(txt);
+  return `<span class="num">${m[1] ? '−' : ''}${m[2]}<span class="un">${escapeHtml(m[3])}</span></span>`;
+}
+/* posição de cada marca da faixa via CSSOM (a CSP proíbe style no HTML) */
+function pintaFaixa(escopo){
+  escopo.querySelectorAll('.sim-faixa [data-pos]').forEach(e => { e.style.left = e.dataset.pos + '%'; });
+}
+/* Os campos: o preço tem a largura do que está escrito (em ch, a fonte é mono), para o número ficar colado no "R$" e caber
+   na linha do rótulo; o − e o + dos meses apagam nos limites do campo (0 e 120, o teto da conta) */
+function simulaCampos(){
+  const v = $('#simValor');
+  const n = Math.max(4, v.value.length);
+  v.style.width = `calc(${n} * (1ch + var(--num-ls)) + 4px)`; // ch menos o aperto entre letras da fonte dos números
+  const m = parseInt($('#simMeses').value, 10) || 0;
+  $('#simMenos').disabled = m <= 0;
+  $('#simMais').disabled = m >= OBRA_CALC.MESES_SIMULADOR;
+}
+
 function simulaCompute(){
   const out = $('#simOut');
   const o = obraById($('#simObra').value);
-  if(!o){ out.innerHTML = ''; return; }
+  if(!o){ simulaCampos(); out.innerHTML = ''; return; }
 
   const vInp = $('#simValor');
   // enquanto a pessoa não digitou, o preço acompanha a venda estimada da obra escolhida (vazio sem estimada)
   if(!vInp.dataset.touched) vInp.value = OBRA_CALC.numParaCampo(OBRA_CALC.precoInicialSimulador(o));
+  simulaCampos();
   /* A conta e os textos: calc.js contaSimulador e textosSimulador (o app nativo usa os mesmos). Os meses param em 120 na
      conta, mesmo digitados além do teto do campo. A obra com menos de 1 mês fica sem taxa (o % ao mês explodiria), e a TIR
      passa da taxa do banco exatamente quando a venda passa do corrigido. */
   const conta = OBRA_CALC.contaSimulador(o, parseNum(vInp.value), parseInt($('#simMeses').value,10) || 0, todayISO(), taxa());
   if(!conta){
-    out.innerHTML = `<div class="panel"><p class="muted-note">Digite o preço de venda pra ver a conta.</p></div>`;
+    out.innerHTML = `<div class="kpi sim-vazio"><p>Digite o preço de venda pra ver a conta.</p></div>`;
     return;
   }
   const t = OBRA_CALC.textosSimulador(conta, taxa(), o.areaM2);
+
+  // o veredito: a taxa grande (o "% ao mês" menor ao lado), o quando numa linha, o banco na outra, o aviso da obra nova
+  const mTaxa = /^(-?)([\d.,]+)% ao mês$/.exec(t.taxa);
+  const taxaHtml = mTaxa
+    ? `<span class="num">${mTaxa[1] ? '−' : ''}${mTaxa[2]}<span class="un">% ao mês</span></span>`
+    : `<span class="num">${escapeHtml(t.taxa)}</span>`;
+  const [quando, ...resto] = t.detalhes;
+  const aviso = conta.novaDemais ? resto.pop() : '';
+  const linhasVeredito = [quando, resto.join(' · '), aviso].filter(Boolean)
+    .map((l, i) => `<div class="k-obs${i === 2 ? ' sim-aviso' : ''}">${escapeHtml(l)}</div>`).join('');
+
+  // a faixa: de um pouco antes do menor valor a um pouco depois do maior; a zona hachurada começa no empate com o banco
+  const lo = Math.min(conta.bruto, conta.venda) * .97, hi = Math.max(conta.corrigido, conta.venda) * 1.03;
+  const pos = v => (Math.min(100, Math.max(0, (v - lo) / ((hi - lo) || 1) * 100))).toFixed(2);
+  const legenda = [['custo', 'custo (bruto)', conta.bruto], ['limiar', 'empata com o banco', conta.corrigido], ['venda', 'sua venda', conta.venda]]
+    .map(([k, rot, v]) => `<li><span class="sim-leg-rot"><i class="sim-mk ${k}" aria-hidden="true"></i>${rot}</span>${dinheiroHtml(v)}</li>`).join('');
+
   const cor = s => s ? ` class="${s === 'negativo' ? 'neg' : 'pos'}"` : '';
+  const valor = txt => /R\$/.test(txt) ? simDinheiroHtml(txt) : simPctHtml(txt);
 
   out.innerHTML = `
-    <div class="card saldo big ${conta.vale?'':'saldo-abaixo'}">
-      <div class="k-label"><span class="k-ic">${ICON(conta.vale?'check':'alerta')}</span> ${t.veredito}</div>
-      <div class="layout-45 k-val">${t.taxa}</div>
-      <div class="k-sub">${escapeHtml(t.detalhes.join(' · '))}</div>
+    <div class="kpi solido sim-veredito${conta.vale ? '' : ' ambar'}">
+      <div class="k-top"><span class="k-nome"><span class="k-ic">${ICON(conta.vale?'check':'alerta')}</span>${t.veredito}</span></div>
+      <div class="k-num gigante sim-taxa">${taxaHtml}</div>
+      ${linhasVeredito}
     </div>
-    <div class="panel">
-      <h2 class="layout-28">${ICON('documento')} Relatório da simulação</h2>
-      <div class="rep-scroll"><table class="rep-table rep-sim">
-        <thead><tr><th></th><th>Pelo bruto</th><th>Pelo corrigido</th></tr></thead>
+    <div class="kpi sim-faixa-bloco">
+      <div class="k-top"><span class="k-nome">Onde a sua venda cai</span><span class="chip2 ${conta.vale ? 'green' : 'amber'}">${conta.vale ? 'acima do banco' : 'abaixo do banco'}</span></div>
+      <div class="sim-faixa" role="img" aria-label="Custo ${money(conta.bruto)}, empata com o banco em ${money(conta.corrigido)}, sua venda ${money(conta.venda)}">
+        <div class="zona" data-pos="${pos(conta.corrigido)}"></div>
+        <div class="marca custo" data-pos="${pos(conta.bruto)}"></div>
+        <div class="marca limiar" data-pos="${pos(conta.corrigido)}"></div>
+        <div class="marca venda" data-pos="${pos(conta.venda)}"></div>
+      </div>
+      <ul class="sim-leg">${legenda}</ul>
+    </div>
+    <div class="kpi sim-relatorio">
+      <div class="k-top"><h3 class="k-nome">Relatório da simulação</h3></div>
+      <table class="sim-tab">
+        <thead><tr><td></td><th scope="col">Pelo bruto</th><th scope="col">Pelo corrigido</th></tr></thead>
         <tbody>
-          ${t.tabela.map(l => `<tr${l.destaque ? ' class="rep-total"' : ''}><td>${escapeHtml(l.rotulo)}</td><td${cor(l.sinalBruto)}>${l.bruto}</td><td${cor(l.sinalCorrigido)}>${l.corrigido}</td></tr>`).join('\n          ')}
+          ${t.tabela.map(l => `<tr${l.destaque ? ' class="forte"' : ''}><th scope="row">${escapeHtml(l.rotulo)}</th><td${cor(l.sinalBruto)}>${valor(l.bruto)}</td><td${cor(l.sinalCorrigido)}>${valor(l.corrigido)}</td></tr>`).join('\n          ')}
         </tbody>
-      </table></div>
+      </table>
     </div>`;
+  pintaFaixa(out);
+  fitNums(out);
 }
 $('#simObra').onchange = simulaCompute;
 maskMoney('#simValor'); // antes do listener de cálculo: reformata, depois calcula
 $('#simValor').addEventListener('input', ()=>{ $('#simValor').dataset.touched='1'; simulaCompute(); });
+$('#simValor').addEventListener('blur', simulaCampos); // o blur completa os centavos: a largura acompanha
 $('#simMeses').addEventListener('input', simulaCompute);
+/* − e +: um mês por toque, dentro de 0 a 120 (um valor digitado além do teto volta para dentro) */
+[['#simMenos', -1], ['#simMais', 1]].forEach(([sel, passo]) => {
+  $(sel).addEventListener('click', ()=>{
+    const m = Math.min(OBRA_CALC.MESES_SIMULADOR, Math.max(0, (parseInt($('#simMeses').value, 10) || 0) + passo));
+    $('#simMeses').value = String(m);
+    simulaCompute();
+  });
+});
 
 /* ===== TEMA (claro/escuro) — preferência por aparelho, não sincroniza ===== */
 const TEMA_KEY = 'mo_tema';
@@ -1817,7 +2179,9 @@ function bootCloud(){
     dadosCarregados = false; // a conta que entrou ainda não teve os dados vistos
     unwatch = CLOUD.watchDados((blob, meta)=>{
       if(meta.localDirty) return; // preserva edições desta sessão; restaura cache após reabrir
-      const novo = normaliza(blob);
+      /* meta.copia: o que só estava na memória quando o cliente do Firestore morreu
+         (cloud.js). Na primeira leitura da conta volta para a tela e para a fila do SDK. */
+      const novo = normaliza(meta.copia || blob);
       /* A mesma regra do saveDados no cloud.js: cache sem documento não é dado visto.
          Depois de visto não volta atrás (conta nova que ouviu "não existe" e perdeu a rede). */
       const carregou = !dadosCarregados && (!meta.fromCache || blob !== null);
@@ -1828,6 +2192,10 @@ function bootCloud(){
         if(obraAberta && !novo.obras.some(o=>o.id===obraAberta)){ obraAberta=null; showView('inicio'); }
         renderAll();
       }else if(carregou) renderInicio(); // conta nova: o "não existe" do servidor não muda o db, mas a lista sai do "Carregando…"
+      if(meta.copia){
+        save();
+        toast('O app recarregou para salvar seus últimos lançamentos.');
+      }
       if(!tokenFcmSincronizado){
         tokenFcmSincronizado = true;
         OBRA_PUSH.sincronizarToken?.(); // no-op na web; nativo troca o token se o FCM já rotacionou o antigo
@@ -1849,6 +2217,12 @@ window.addEventListener('cloud-erro', e=>{
   const { code, terminal } = e.detail;
   // recusa local antes de ver os dados: nada foi para a fila, o gesto precisa de resposta
   if(code === 'nao-carregado'){ avisaNaoCarregado(); return; }
+  /* Cliente do Firestore morto e a recarga automática já gasta: o lançamento está na
+     cópia, que fechar o app apaga. toast(), não avisoRaro: a cada lançamento a tela responde. */
+  if(code === 'cliente-morto'){
+    toast('Seus últimos lançamentos ainda não foram para a nuvem. Toque em “Não salvou” para enviar. Não feche o app antes.', 'erro');
+    return;
+  }
   const msg = code === 'limite'
     ? 'Não salvou: limite de dados atingido. Reduza os dados e tente novamente.'
     : terminal
@@ -1873,14 +2247,22 @@ function renderSync(estado, origem){
   syncPill.classList.toggle('hidden', !v);
   syncPill.classList.toggle('erro', estado === 'erro');
   if(!v) return;
+  /* Cliente do Firestore morto com lançamento esperando: tentar de novo não adianta,
+     só recarregar. Decide pelo CLOUD, não pelo evento: online e offline repintam sem
+     code nem origem. */
+  const morto = estado === 'erro' && !!window.CLOUD?.clienteMorto?.();
   syncPill.innerHTML = `${v.marca}<span class="rotulo"></span>`;
-  syncPill.querySelector('.rotulo').textContent = estado === 'erro' && origem === 'leitura' ? 'Não sincronizou' : v.rotulo;
-  syncPill.title = estado === 'erro'
-    ? 'Não foi possível sincronizar. Toque para tentar de novo.'
-    : v.rotulo;
-  syncPill.onclick = estado === 'erro'
-    ? ()=>{ toast('Tentando de novo…'); CLOUD.tentarDeNovo(); }
-    : null;
+  syncPill.querySelector('.rotulo').textContent = estado === 'erro' && origem === 'leitura' && !morto ? 'Não sincronizou' : v.rotulo;
+  syncPill.title = morto
+    ? 'Seus últimos lançamentos ainda não foram para a nuvem. Toque para enviar.'
+    : estado === 'erro'
+      ? 'Não foi possível sincronizar. Toque para tentar de novo.'
+      : v.rotulo;
+  syncPill.onclick = morto
+    ? ()=>{ if(!CLOUD.recarregar()) toast('Não deu para guardar seus últimos lançamentos neste aparelho. Anote-os antes de fechar o app.', 'erro'); }
+    : estado === 'erro'
+      ? ()=>{ toast('Tentando de novo…'); CLOUD.tentarDeNovo(); }
+      : null;
 }
 window.addEventListener('cloud-estado', e=>{
   const { estado, origem, code } = e.detail;
@@ -1906,14 +2288,20 @@ function registraErro(origem, msg, stack){
 window.OBRA_DIAG = { erros: () => diag.slice(), registra: registraErro };
 (window.OBRA_ERROS_INICIAIS || []).forEach(e=>registraErro(e.origem, e.msg, e.stack));
 delete window.OBRA_ERROS_INICIAIS;
+/* "Feche e abra" apaga o que ainda não chegou à fila do SDK: com lançamento em risco o
+   aviso genérico não sai, qualquer que seja o erro; a pílula diz o que fazer. */
+function avisoDeErro(){
+  if(window.CLOUD?.dadoEmRisco?.()) return;
+  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+}
 window.addEventListener('error', e=>{
   registraErro('window', e.message, e.error && e.error.stack);
-  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+  avisoDeErro();
 });
 window.addEventListener('unhandledrejection', e=>{
   const r = e.reason;
   registraErro('promise', (r && (r.message || r.code)) || r, r && r.stack);
-  avisoRaro('Algo deu errado aqui dentro. Se atrapalhar, feche e abra o app.');
+  avisoDeErro();
 });
 
 function ligaSync(){ renderSync(CLOUD.estado()); }

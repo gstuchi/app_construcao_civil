@@ -38,6 +38,12 @@ async function abrir(browser,{tema='escuro',width=393}={}){
   return {ctx,page};
 }
 
+/* o "Editar orçamento" mora na folha do orçamento: tocar no bloco abre a folha (por tópico) ou
+   o formulário direto (só o total) */
+async function editarOrcamento(page){
+  if(!await page.locator('#oOrcEditar').count()) await page.locator('#oOrc').click();
+  if(await page.locator('#oOrcEditar').count()) await page.locator('#oOrcEditar').click();
+}
 (async()=>{
   const browser=await chromium.launch();
   try{
@@ -54,12 +60,13 @@ async function abrir(browser,{tema='escuro',width=393}={}){
     await page.evaluate(()=>openObra('a'));
     const card=page.locator('#oOrc');
     const txt=(await card.textContent()).replace(/\s+/g,' ');
-    assert.match(txt,/R\$\s612\.000,00 de R\$\s800\.000,00/);
-    assert.match(txt,/77% usado/);
+    assert.match(txt,/77% usado de R\$\s800\.000,00/);
     assert.match(txt,/sobra R\$\s188\.000,00/);
     assert.equal((await card.locator('.orc-pill').textContent()).trim(),'dentro do previsto');
     const largura=await card.locator('.orc-barra i').evaluate(i=>i.style.width);
     assert.equal(largura,'77%');
+    // o detalhe por tópico abre numa folha, pelo bloco do orçamento
+    await card.click();
     const nomes=await page.locator('.orc-topicos .orc-item .orc-nome').allTextContents();
     assert.deepEqual(nomes,['Fundação','Terreno','Estrutura','Elétrica','Acabamento','Fora do orçamento']);
     const item=nome=>page.locator('.orc-topicos .orc-item').filter({has:page.locator('.orc-nome',{hasText:nome})});
@@ -76,7 +83,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
     assert.match(await item('Fora do orçamento').textContent(),/R\$ 12 mil[\s\S]*Encanamento/);
     assert.equal(await page.locator('#oOrcEditar').count(),1);
     assert.equal(await page.locator('#oOrcDefinir').count(),0);
-    assert.equal(await page.locator('.kpis .kpi').count(),4,'KPIs continuam');
+    assert.equal(await page.locator('.kpis .kpi.solido').count(),1,'um bloco sólido por tela');
     // tocar no tópico abre a folha do tópico que já existe
     await item('Fundação').click();
     assert.match(await page.locator('#sheet').textContent(),/Fundação/);
@@ -105,7 +112,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
     await page.evaluate(()=>openObra('b'));
     assert.equal((await page.locator('#oOrc .orc-pill').textContent()).trim(),'passou do previsto');
     assert.equal(await page.locator('#oOrc .orc-barra i').evaluate(i=>i.style.width),'100%','no passou a barra para no previsto');
-    assert.match((await page.locator('#oOrc .orc-rodape').textContent()).replace(/\s+/g,' '),/104% usado passou R\$\s40\.000,00/);
+    assert.match((await page.locator('#oOrc').textContent()).replace(/\s+/g,' '),/passou R\$\s40\.000,00[\s\S]*104% usado de/);
     assert.equal(await page.locator('.orc-topicos').count(),0);
 
     // Obra sem orçamento: sem card, só a porta de entrada
@@ -117,11 +124,12 @@ async function abrir(browser,{tema='escuro',width=393}={}){
     assert.equal(await page.locator('#oOrcDefinir').count(),0);
     // Por tópico: só o previsto com gasto abre a folha do tópico; o sem gasto fica na lista, sem toque
     await page.evaluate(()=>{const c=obraById('c');c.fase='construcao';delete c.venda;c.orcamento={modo:'topicos',topicos:{terreno:900000,pintura:5000,eletrica:1000}};c.gastos.push({id:'gzero',topico:'eletrica',valor:0,data:'2026-03-01',descricao:'x',pagamento:'pix'});openObra('c');});
+    await page.locator('#oOrc').click();
     assert.equal(await page.locator('.orc-item-conteudo[data-top="terreno"]').count(),1);
     assert.equal(await page.locator('.orc-item-conteudo[data-top="pintura"]').count(),0);
     assert.equal(await page.locator('.orc-item-conteudo[data-top="eletrica"]').count(),1,'gasto de valor zero ainda abre');
     assert.equal(await page.locator('.orc-topicos .orc-item',{hasText:'Pintura'}).count(),1);
-    await page.evaluate(()=>{const c=obraById('c');delete c.orcamento;c.gastos.pop();openObra('c');});
+    await page.evaluate(()=>{closeSheet();const c=obraById('c');delete c.orcamento;c.gastos.pop();openObra('c');});
 
     // Folha: definir só o total numa obra sem orçamento
     await page.locator('#oOrcDefinir').click();
@@ -135,7 +143,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
 
     // Folha por tópico: abre no modo salvo, soma ao vivo, salva só valores > 0
     await page.evaluate(()=>{db.config.topicosCustom=[{id:'c_portao',nm:'Portão',ic:'etiqueta'}];openObra('a');});
-    await page.locator('#oOrcEditar').click();
+    await editarOrcamento(page);
     assert.equal((await page.locator('#sheet .seg button.on').textContent()).trim(),'Por tópico');
     assert.equal(await page.locator('#sheet .seg button.on').getAttribute('aria-pressed'),'true');
     const somaTxt=async()=>(await page.locator('#orcSoma').textContent()).replace(/\s/g,' ');
@@ -158,7 +166,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
       {modo:'topicos',topicos:{terreno:180000,fundacao:100000,estrutura:250000,acabamento:180000,c_portao:5000.5}});
 
     // Trocar pra "Só o total" e salvar vazio tira o orçamento
-    await page.locator('#oOrcEditar').click();
+    await editarOrcamento(page);
     await campo('fundacao').fill('200000');
     await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
     assert.equal(await page.locator('#orcTotal').isVisible(),true);
@@ -171,7 +179,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
 
     // Total já preenchido não muda ao voltar para "Só o total"
     await page.evaluate(()=>openObra('b'));
-    await page.locator('#oOrcEditar').click();
+    await editarOrcamento(page);
     await page.locator('#sheet .seg button',{hasText:'Por tópico'}).click();
     await page.locator('#orcTopWrap input[data-top="fundacao"]').fill('5000');
     await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
@@ -180,7 +188,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
 
     // Tirar orçamento pede confirmação
     await page.evaluate(()=>openObra('b'));
-    await page.locator('#oOrcEditar').click();
+    await editarOrcamento(page);
     await page.locator('#orcTirar').click();
     await page.locator('dialog[open] button',{hasText:'Tirar orçamento'}).click();
     await page.waitForFunction(()=>!('orcamento' in obraById('b')));
@@ -189,7 +197,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
 
     // O que a folha não mostra fica (achado 7): o campo desconhecido e o previsto de tópico sem linha na folha
     await page.evaluate(()=>{obraById('a').orcamento={modo:'topicos',topicos:{fundacao:90000,c_apagado:1000},nota:'do site'};openObra('a');});
-    await page.locator('#oOrcEditar').click();
+    await editarOrcamento(page);
     await page.locator('#orcTopWrap input[data-top="fundacao"]').fill('95000');
     // com a folha aberta, outro aparelho troca o documento: vale o orçamento do momento do Salvar
     await page.evaluate(()=>{db=normaliza(JSON.parse(JSON.stringify(db)));obraById('a').orcamento.nota='do outro aparelho';});
@@ -199,7 +207,7 @@ async function abrir(browser,{tema='escuro',width=393}={}){
     assert.deepEqual(await page.evaluate(()=>salvos.at(-1).obras.find(o=>o.id==='a').orcamento),
       {modo:'topicos',topicos:{fundacao:95000,c_apagado:1000},nota:'do outro aparelho'},'o documento leva o que a tela mostra');
     // no "Só o total" o desconhecido fica e os tópicos saem
-    await page.locator('#oOrcEditar').click();
+    await editarOrcamento(page);
     await page.locator('#sheet .seg button',{hasText:'Só o total'}).click();
     await page.locator('#orcTotal').fill('500000');
     await page.locator('#cSave').click();
@@ -279,7 +287,8 @@ async function abrir(browser,{tema='escuro',width=393}={}){
     for(const tema of ['escuro','claro']){
       const {ctx,page}=await abrir(browser,{tema});
       await page.evaluate(()=>openObra('a'));
-      const medidas=await page.evaluate(()=>['.orc-frase.alerta','#oOrc .orc-pill','#oOrc .orc-rodape','.orc-val','.orc-fora .orc-frase'].map(sel=>{
+      await page.locator('#oOrc').click();
+      const medidas=await page.evaluate(()=>['.orc-frase.alerta','#oOrc .orc-pill','#oOrc .k-obs','.orc-val','.orc-fora .orc-frase'].map(sel=>{
         const el=document.querySelector(sel); const cs=getComputedStyle(el);
         let fundo=cs.backgroundColor,no=el;
         while(/rgba\(0, 0, 0, 0\)|transparent/.test(fundo)&&no.parentElement){no=no.parentElement;fundo=getComputedStyle(no).backgroundColor;}

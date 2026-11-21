@@ -19,6 +19,7 @@ export const __ctrl = {
   resultadoLogin: null,   // o que signInWithCredential devolve
   resultadoPopup: null,   // o que signInWithPopup/reauthenticateWithPopup devolvem
   perfilCache: null,     // conteúdo de perfis/{uid} no cache local; null = não está no cache
+  morto: null,           // Error do cliente morto: setDoc, onSnapshot e waitForPendingWrites lançam na hora, como o SDK quebrado
 };
 
 export function initializeApp(config){ __ctrl.config = config; return { nome: 'stub' }; }
@@ -80,11 +81,12 @@ export function persistentSingleTabManager(){ __ctrl.tabManager = 'single'; retu
 export function doc(_db, col, id){ return { path: col + '/' + id }; }
 export function serverTimestamp(){ return '@ts'; }
 export function deleteField(){ return '@del'; }
-export function onSnapshot(_ref, _opcoes, cb, errCb){ __ctrl.snapshotCb = cb; __ctrl.snapshotErroCb = errCb; return () => {}; }
-export function waitForPendingWrites(){ return __ctrl.pendentesSDK; }
+export function onSnapshot(_ref, _opcoes, cb, errCb){ if(__ctrl.morto) throw __ctrl.morto; __ctrl.snapshotCb = cb; __ctrl.snapshotErroCb = errCb; return () => {}; }
+export function waitForPendingWrites(){ if(__ctrl.morto) throw __ctrl.morto; return __ctrl.pendentesSDK; }
 
 export function setDoc(ref, dados){
   __ctrl.setDocChamadas.push({ ref, dados });
+  if(__ctrl.morto) throw __ctrl.morto;
   const r = __ctrl.respostas.shift();
   if(r && typeof r.then === 'function') return r;
   if(!r || r === 'ok') return Promise.resolve();

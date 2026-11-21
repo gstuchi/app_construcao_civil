@@ -2,21 +2,30 @@
 # Implanta a função de corte no projeto próprio dela. Sem argumento sobe desarmada: só registra
 # o que faria.
 #
-# Uso: corte/implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]
+# Uso: corte/implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial | --modo-oficial-alerta]
 #
 # --modo-oficial é a receita oficial do Google, para a volta às provas reprovadas: um tempo só,
 # tira a cobrança em R$ 60. Não arma nada: continua valendo --armar-cobranca. Sem ele, dois-tempos.
+# --modo-oficial-alerta é a direção do conselho de 17/11: o alerta de leituras e o orçamento do
+# projeto em R$ 60 tiram a cobrança, com a API de reserva (corte/README.md). Também não arma nada:
+# --armar-cobranca arma a retirada, e --armar-api, a reserva. Um modo só por comando.
 set -euo pipefail
+
+uso(){ echo "uso: implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial | --modo-oficial-alerta]" >&2; exit 2; }
 
 ARMADO_API=false
 ARMADO_COBRANCA=false
 MODO_CORTE=dois-tempos
+MODO_DADO=
 while [ $# -gt 0 ]; do
   case "$1" in
     --armar-api) ARMADO_API=true;;
     --armar-cobranca) ARMADO_COBRANCA=true;;
-    --modo-oficial) MODO_CORTE=oficial;;
-    *) echo "uso: implantar.sh [--armar-api] [--armar-cobranca] [--modo-oficial]" >&2; exit 2;;
+    --modo-oficial|--modo-oficial-alerta)
+      [ -z "$MODO_DADO" ] || uso
+      MODO_DADO="$1"
+      MODO_CORTE="${1#--modo-}";;
+    *) uso;;
   esac
   shift
 done

@@ -7,19 +7,20 @@
 **Goal:** Fechar o risco de uma conta sem limite antes de o Giovani ativar a conta completa do Google Cloud, com teto de R$ 100 por mês. Quatro peças: alerta de leituras, corte automático de gasto, chaves restritas e App Check.
 
 **Architecture:**
-- **Corte:** uma função em projeto próprio recebe os avisos do orçamento e do alerta de leituras. Em R$ 60, ou no alerta, ela desliga a API do Firestore, e a cobrança continua ligada. Em R$ 100 ela só tira a cobrança se a API não desligou, com falha persistente por 6 h, ou se o gasto vier de fora do Firestore, medido por um segundo orçamento. Cada ação tem um interruptor próprio, e a retirada da cobrança só arma com o teste de 31 dias ou o aceite do risco.
+- **Corte:** uma função em projeto próprio recebe os avisos do orçamento e do alerta de leituras. **Direção de 17/11:** em R$ 60, ou no alerta, ela tira a cobrança do projeto e confere; se a retirada não se confirmar em cerca de 1 minuto, desliga a API do Firestore, como reserva (modo `oficial-alerta`). O gasto de fora do Firestore, medido por um segundo orçamento, tira a cobrança em R$ 100. Cada ação tem um interruptor próprio. O modo novo é construído desarmado e só é armado no G14, com o teste de 31 dias sem cobrança e a M5 aprovados. Se um dos dois reprovar, arma-se o modo de 09/11, que continua no código (`dois-tempos`: R$ 60 ou o alerta desligam a API; R$ 100 só tira a cobrança se a API não desligou, com falha por 6 h).
 - **App Check:** o site usa reCAPTCHA Enterprise, só nos endereços publicados, e o app usa App Attest, só no Release. Entram observando. A exigência é ligada depois, no console, só para o Firestore.
 - **Chaves:** restrição só no console.
 - O formato do estado e as `firestore.rules` não mudam. O cron do push, com Admin SDK, não muda.
 
-**Decisões do Giovani** (09/11; a tabela de Decisões dá o porquê):
+**Decisões do Giovani** (09/11, com as de 17/11 marcadas; a tabela de Decisões dá o porquê):
 1. Teto de R$ 100 por mês. Ele aceita que o app e os backups parem se o corte disparar.
-2. O corte em dois tempos: R$ 60 desliga a API, R$ 100 tira a cobrança com as duas condições acima. Se o T1 ou o T2 reprovar, volta para a opção oficial do Google, um tempo só, tirar a cobrança em R$ 60 (`--modo-oficial`).
+2. O corte em dois tempos: R$ 60 desliga a API, R$ 100 tira a cobrança com as duas condições acima. Se o T1 ou o T2 reprovar, volta para a opção oficial do Google, um tempo só, tirar a cobrança em R$ 60 (`--modo-oficial`). **17/11:** o T2 reprovou em 12/11, e a regra não foi aplicada no automático: ele pediu um conselho, que recomendou a oficial com reserva (a cobrança sai pelo alerta e em R$ 60; a API só cai se a retirada não se confirmar). Com o resumo na mão ele delegou: "pode escolher sempre o recomendado". Por essa delegação a direção é a oficial com reserva, construída já e desarmada. **Armar continua sendo decisão dele**, no G14.
 3. A função mora em projeto próprio.
-4. O alerta de 500 leituras por minuto, por 5 minutos, aciona o primeiro tempo.
-5. A retirada da cobrança tem interruptor próprio, desligado até o teste de 31 dias ou até ele aceitar o risco de perder dados.
+4. O alerta de leituras aciona o corte. **17/11 ("Sim, três janelas"):** o gatilho deixa de ser "500 por minuto, por 5 minutos" e passa a ser a soma em janela: mais de 2.500 leituras em 5 minutos, 2.000 em 1 hora ou 6.000 em 6 horas. Uma política à parte só avisa por e-mail: 600 em 1 hora ou 2.000 em 24 horas.
+5. A retirada da cobrança tem interruptor próprio, desligado até o teste de 31 dias ou até ele aceitar o risco de perder dados. **17/11:** como a retirada passa a ser a ação principal, esta condição vale para o G14 inteiro, junto com a M5.
 6. Liberar `vercel.app` no reCAPTCHA e na chave web, para as prévias continuarem.
 7. Cópia dos dados fora do projeto: decidir depois do teste de 31 dias.
+8. **17/11 ("Sim, cria e mede"):** a opção oficial acima do nível gratuito é medida num projeto descartável, o C, antes de qualquer coisa ser armada (a M5).
 
 **Tech Stack:** site com Firebase JS 12.18.0 e reCAPTCHA Enterprise; app em SwiftUI com firebase-ios-sdk 12.19.2 e App Attest; função em Node 22 no Cloud Run; orçamentos do Cloud Billing, Pub/Sub e Service Usage API.
 
@@ -36,15 +37,15 @@
 
 ## Decisões
 
-Passaram pelo conselho (3 Opus, lentes custo, risco aos dados e operação, crítica às cegas): as linhas de 1 a 8. Registro completo em `conselho/decisao.md`.
+Passaram pelo conselho (3 Opus, crítica às cegas): as linhas de 1 a 8, em 09/11 (`conselho/decisao.md`); a linha 13, no conselho do limiar de 12/11 (`conselho/limiar/decisao.md`); a linha 1, revista, e as linhas 14 a 17, no conselho B × oficial de 17/11 (`conselho/conexao-aberta/decisao.md`). Registro completo em `conselho/decisao.md`.
 
 | # | Decisão | Descartado | Porquê |
 |---|---|---|---|
-| 1 | Primeiro tempo: desligar a API do Firestore | Tirar a cobrança em R$ 60 | A oficial ficou em último nas 3 críticas: expõe banco e backups ao apagamento documentado a cada disparo, e não chega antes, porque depende do mesmo aviso atrasado. |
+| 1 | Primeiro tempo (17/11): tirar a cobrança, pelo alerta de leituras e pelo orçamento de R$ 60, conferindo; a API do Firestore só cai como reserva | Desligar a API primeiro (a escolha de 09/11); a oficial só pelo orçamento; a API primeiro, com a retirada como segunda barreira | Em 09/11 a oficial ficou em último: expunha banco e backups a cada disparo e não chegava antes. Desde então se mediu que desligar a API não corta quem já está conectado por até 20 minutos (acima do teto num corte só), que um corte falso derruba o app de todos e arma a perda na volta (T2: 146 gastos viraram 4), e que quase 5 dias sem cobrança não apagaram nada (T3). A oficial só pelo orçamento chega 6,5 a 24 h atrasada. Dois de três membros e o presidente; a lente de dados manteve a API primeiro. Vale desarmada até o G14. |
 | 2 | Mesma linha | Trancar só a leitura nas regras | A trava deixa gravar sem ler, e cada edição regrava o documento inteiro, então aparelhos se sobrescrevem às cegas; `push/{uid}` fica aberto (`firestore.rules:84`). |
-| 3 | R$ 100 condicional | R$ 100 sempre | O custo chega atrasado e passaria de R$ 100 com o gasto já parado. |
+| 3 | R$ 100 condicional (vale no modo `dois-tempos`) | R$ 100 sempre | O custo chega atrasado e passaria de R$ 100 com o gasto já parado. |
 | 4 | Segundo orçamento para o que não é Firestore | Regra de 48 h com R$ 5 | R$ 5 é 1 minuto de ataque, e o armazenamento disparava a regra. Sobra o reCAPTCHA, que não para com a API. |
-| 5 | Conferir por `services.get`, e falha só conta se durar 6 h | Confiar no código de erro | `FAILED_PRECONDITION` também sai por serviço dependente. Falha passageira não pode levar ao passo irreversível. |
+| 5 | Conferir por `services.get`, e falha só conta se durar 6 h (vale no modo `dois-tempos`) | Confiar no código de erro | `FAILED_PRECONDITION` também sai por serviço dependente. Falha passageira não pode levar ao passo irreversível. |
 | 6 | Religar grava uma base por mês, e a função segue armada | Calar a função até o mês seguinte | Calaria o corte no mês do ataque. |
 | 7 | Projeto próprio | Mesmo projeto | Sem cobrança, a função cairia junto. |
 | 8 | Aviso e prova de vida no projeto da função | Depender do cron do push | O cron morre com a API. |
@@ -52,6 +53,11 @@ Passaram pelo conselho (3 Opus, lentes custo, risco aos dados e operação, crí
 | 10 | Site com prazo de 4 s no reCAPTCHA e recusa imediata sem rede | SDK puro | Provado: sem o script, o login para 30,9 s e o Firestore não abre, mesmo só observando. Com token vencido, abrir sem rede levava 4 s; com a recusa, cerca de 58 ms. |
 | 11 | Debug do app diz `nil` à fábrica do App Check | Só não chamar | Linkar o SDK já registra uma fábrica padrão, que no simulador chama a rede real. |
 | 12 | Selo do reCAPTCHA escondido, com a frase na tela de login | Selo visível | O FAQ do reCAPTCHA permite, com "This site is protected by reCAPTCHA." visível. Desde 02/04/2026 os links para política e termos saíram dessa exigência. |
+| 13 | Gatilho por uso: soma em janela (5 min > 2.500, 1 h > 2.000, 6 h > 6.000), sem espera; avisos só por e-mail, em política à parte (1 h > 600, 24 h > 2.000) | 500 por minuto, por 5 minutos seguidos | O gatilho antigo nunca disparava num ataque em pulsos nem num download lento como o de 10/11 (R$ 107 a 338 sem corte). Os limiares ficam 24 a 71 vezes acima do maior uso em 42 dias. Provado no T6b e no T6c: abre 5 a 6 minutos depois de a soma cruzar, e a janela longa não impede um corte novo. |
+| 14 | Trava no `religar.sh`: recusa a volta enquanto alguma soma estiver em 50% do limiar ou mais; `--forcar "<motivo>"` só para corte falso | Regra escrita "só depois do e-mail de fechado" | Incidente aberto não emite outro aviso: religar cedo deixa o corte cego. O dono religa sob pressão. |
+| 15 | Retirada conferida (`billingEnabled` lido 6 vezes, de 10 em 10 s) e reserva: erro ou falta de confirmação desliga a API; acima de R$ 60, cada mensagem do orçamento tenta de novo, sem a espera de 6 h | Reserva só no erro; sem reserva | Uma retirada aceita e sem efeito ficaria sem rede. A espera de 6 h protegia um passo com risco aos dados; aqui o passo seguinte é a API, que o T1 curto mostrou reversível. |
+| 16 | Prazo máximo sem conta de cobrança: 72 h. Passou disso com o ataque vivo: desligar a API e religar a cobrança | Sem prazo; 7 dias; cópia diária fora do projeto como condição | 72 h cabem nas ~116 h que o T3 já mostrou sem perda. A cópia fora do projeto só volta se o T3 reprovar (decisão 7 do Giovani). |
+| 17 | Conferência dos dados depois de toda volta, em até 7 dias (a janela do PITR); segundo corte no mesmo mês não religa sem antes bloquear a conta atacante ou exigir o App Check (G13) | Confiar que alguém nota; deixar só a trava decidir | O último-grava-vence se arma em qualquer ação, quando todos os aparelhos voltam juntos. Unânime no conselho de 17/11. |
 
 ## Como entregar
 
@@ -3333,17 +3339,18 @@ FIM
 
 O corte não fica armado antes disto. O Orquestrador conduz, e um agente roda os comandos com o login do Giovani. Nada aqui toca em `app-construcao-civil`, salvo a leitura do G2.
 
-**Datas.** T1 longo e T3 duram 31 dias e **têm de começar até 02/12/2026** para fechar antes de 04/01/2027. Comece o quanto antes: se começarem até 14/11, o alvo de ativar em 15/12 se mantém. Se 04/01 chegar com o T1 longo em aberto, o Giovani decide.
+**Datas.** O T3 começou em 12/11 e fecha em 13/12/2026. O T1 longo deixou de ser condição do G14 em 17/11: começa até 02/12 se o projeto A ficar livre, como seguro da volta ao modo `dois-tempos`. A M5 leva 3 dias de relógio, mais 2 para ler o custo. O G15 continua até 04/01/2027, e nunca acontece com o corte desarmado.
 
-**Se o T1 ou o T2 reprovar, a volta é a opção oficial do Google,** um tempo só, tirar a cobrança em R$ 60: reimplantar com `--modo-oficial` (Tarefa 8). A retirada da cobrança continua dependendo do T3 aprovado ou do aceite do risco.
+**O T2 reprovou em 12/11:** com a API desligada, o site perdeu lançamentos de quem estava conectado (defeito do SDK web, consertado no site pelo PR #117) e, na volta, o último aparelho a subir levou uma conta de 146 para 4 gastos. A regra "reprovou, volta à oficial" não foi aplicada no automático. O conselho de 17/11 recomendou a oficial com reserva (`--modo-oficial-alerta`), armada só com o T3 de 31 dias e a M5 aprovados. O `--modo-oficial` da Tarefa 8, que só age pelo orçamento, fica no código sem uso previsto.
 
-**Projetos.** Os do G3, com a mesma conta de cobrança. Os nomes seguem `custta-*`, e os IDs não: o Google recusou criar projetos novos, e três vazios foram reusados. `CORTE`, `A` e `B` são os IDs anotados no G3, digitados em cada comando (regra no início de "Passos do Giovani"). O crédito paga: cerca de R$ 70 somados, R$ 0 em dinheiro.
+**Projetos.** Os do G3, com a mesma conta de cobrança. Os nomes seguem `custta-*`, e os IDs não: o Google recusou criar projetos novos, e três vazios foram reusados. `CORTE`, `A` e `B` são os IDs anotados no G3, digitados em cada comando (regra no início de "Passos do Giovani"). O crédito paga: cerca de R$ 70 somados, R$ 0 em dinheiro. Em 17/11 o Google recusou de novo um projeto novo, e um quarto projeto vazio foi reusado como C.
 
 | Projeto | Nome | Uso |
 |---|---|---|
 | `CORTE` | `custta-corte` | A função, o tópico e os buckets |
 | `A` | `custta-descartavel-a` | T4, T6, T5, T2, T1 curto, depois T1 longo |
 | `B` | `custta-descartavel-b` | T3 |
+| `C` | `custta-descartavel-c` | M5; depois o T5 e o T6 refeitos no modo novo |
 
 **Preparo de A e B.** Um agente faz, nesta ordem, com os valores lidos no G2:
 1. `npx firebase projects:addfirebase <projeto>`, na pasta do repo. Autenticação por e-mail ligada. Registrar um app web e, em A, um app iOS `br.com.custta.app` para o Simulador.
@@ -3371,6 +3378,22 @@ Linha de base, antes de cada teste, em `provas/<teste>-antes.txt`: `gcloud fires
 | **T1 longo.** A, 31 dias. **Começa até 02/12** | Desligar como a função, e deixar. Em 31 dias, `gcloud services enable firestore.googleapis.com --project A`, comparar com a linha de base, listar backups, anotar se rodou backup no meio. | Documentos iguais e os backups de antes do corte seguem listados e restauráveis. | Documento ou backup perdido: **volta à opção oficial.** |
 | **T3. Sem cobrança.** B, 31 dias. **Começa até 02/12** | Linha de base. Dar em B `roles/browser` e `roles/billing.projectManager` à conta da função. Implantar com `PROJETO_ALVO=B` e `--armar-api --armar-cobranca`, publicar uma mensagem `teste-fora` de R$ 100,01. Conferir que a cobrança saiu só com esse papel. **Só depois desta mensagem vem o G7**, que devolve a função à produção. Em 1 h, 24 h, 72 h e 31 dias: ler pelo SDK e listar backups. Depois religar a cobrança, anotar o tempo, comparar, restaurar um backup de antes do corte em banco novo. | Documentos voltam, e backups de antes do corte seguem restauráveis. Só então o `--armar-cobranca` pode ser usado em produção. | Dado perdido: a retirada da cobrança fica desarmada, e a cópia fora do projeto volta à mesa. Precisa de `billing.admin`: usar, e registrar. |
 
+### Estado das provas em 17/11 e provas novas
+
+| Prova | O que saiu | O que falta |
+|---|---|---|
+| T2 | **Reprovou** (12/11): gravação perdida pelo site com a conexão aberta; na volta, 146 gastos viraram 4 | T2 bis, só se o modo `dois-tempos` for armado: o conserto do site (PR #117) contra um corte de verdade |
+| Conexão aberta (medidas M, 12 e 13/11) | Com a API desligada, o servidor só reconfere cada conexão aos 10, 30 e 50 minutos de idade: até 20 minutos de leitura e gravação depois do corte, cobradas | Nada, na direção de 17/11 |
+| T1 curto | Aprovado: 1 h com a API desligada, dados, PITR, proteção e agendamento intactos; a volta tem recusas intermitentes por até ~6,5 min | T1 longo, só como seguro |
+| T3 | Em 1 h, 24 h e ~116 h sem cobrança: documentos iguais, PITR e proteção ligados, e 5 backups diários feitos sem conta | A leitura de 31 dias (13/12), religar a cobrança e restaurar um backup de antes |
+| T6b e T6c (13/11) | As somas em janela abrem o incidente 5 a 6 minutos depois de cruzar o limiar e fecham ~6 minutos depois de voltar a ele; uma política com três condições abre um incidente por condição (três avisos por ataque); a janela longa não impede um aviso novo | Nada |
+
+| Prova nova | Passos | Passa se | Reprova, e o que acontece |
+|---|---|---|---|
+| **M5. A oficial acima do nível gratuito.** C | Roteiro em `provas/roteiro-m5/`. Sem cobrança e dentro da cota: site gravando e lendo. Estourar as 50 mil leituras do dia e anotar o que veem o REST, a conexão aberta e a conexão nova, e quando volta. Com a cobrança ligada, ler ~10 GiB e tirar a cobrança no meio da leitura. Religar a cobrança, duas vezes, e medir a volta. Ler o custo do C em 24 h e 48 h. | **Zero gasto depois da retirada, inclusive pela conexão aberta;** o app funciona sem cobrança dentro da cota; o Monitoring segue medindo; banco, PITR e backups voltam iguais. | Gasto depois da retirada: a decisão volta ao Giovani com o número. Dado diferente na volta: a retirada da cobrança fica desarmada e o G14 arma o `dois-tempos`. |
+| **T5 refeito.** C, modo `oficial-alerta` | Os cenários de `tests/corte.test.cjs` do modo novo, publicados à mão: alerta aberto; 59,99 e 60,01; retirada com erro; retirada sem confirmação; cobrança já tirada; mensagem seguinte do orçamento; gasto de fora em R$ 100; desarmada. | Cada cenário decide como no teste; a reserva desliga a API quando a retirada falha. | Decisão errada: corrigir a função. |
+| **T6 de retirada.** C, modo `oficial-alerta` armado | Política de teste igual à do G1, com canal Pub/Sub. Leituras acima do limiar, por REST e por conexão aberta. | A cobrança do C sai em até 15 minutos do início, com um só `corte-acao`, e o gasto para. | Não dispara, ou a conexão aberta segue cobrada: chamar o Prumo. |
+
 **O que as provas não provam:** o que acontece depois de 31 dias; a conta completa, que só existe depois de ativar (repetir o T1 curto depois); um ataque real sob carga; que o Google não mude o comportamento.
 
 **Fim das provas:** apagar os orçamentos e as políticas de teste antes do G14. Depois, `gcloud projects delete A` e `B`, guardando `provas/` no vault.
@@ -3387,12 +3410,12 @@ Ninguém toca na aba **APIs** do App Check antes do G13: é lá que fica o botã
 
 | Passo | O quê | Quando |
 |---|---|---|
-| G1 | Alerta de leituras | Primeiro |
+| G1 | Alerta de leituras | Feito em 10/11; refeito em 17/11, com as somas em janela |
 | G2 | Instalar e entrar no `gcloud`, ler a produção | Antes do G3 |
 | G3 | Criar os 3 projetos | Antes do G4 |
 | G4 | Função nas provas | Depois do merge do PR 1 |
 | G5 | Provas curtas (T4, T6, T5, T2, T1 curto) | Logo depois do G4 |
-| G6 | **Começar T1 longo e T3** | **Até 02/12/2026** |
+| G6 | T1 longo e T3 | T3 começou em 12/11. T1 longo: até 02/12/2026, só se o A ficar livre (seguro) |
 | G7 | Função em produção, simulando | Depois de o T3 publicar a mensagem |
 | G8 | Restringir as chaves | Depois do G5 |
 | G9 | Chave do reCAPTCHA | Antes do merge do PR 2 |
@@ -3400,21 +3423,23 @@ Ninguém toca na aba **APIs** do App Check antes do G13: é lá que fica o botã
 | G11 | App Attest na Apple | Antes do merge do PR 3 |
 | G12 | Medir por 2 semanas | Depois do TestFlight com App Check |
 | G13 | Exigir, só no Firestore | Medição boa |
-| G14 | Armar o corte | Fim do T1 longo |
+| G14 | Armar o corte | Depois do T3 de 31 dias (13/12) e da M5 |
 | G15 | Ativar a conta completa | **Até 04/01/2027** |
 
 ### G1. Alerta de leituras
 
-1. Abrir `console.cloud.google.com/monitoring/alerting?project=app-construcao-civil`.
-2. **Edit notification channels** → seção **Email** → **Add New** → o e-mail dele, descrição `Custta alerta` → **Save**.
-3. Voltar e clicar **Create policy**.
-4. **Select a metric**: na barra de filtro, digitar `read_ops_count`. Escolher `firestore.googleapis.com/document/read_ops_count` (rótulo de tela não documentado) → **Apply**.
-5. **Rolling window**: `1 min`. **Rolling window function**: `sum`.
-6. **Across time series** → **Expand** → **Time series aggregation**: `sum`. **Next**.
-7. **Condition type**: `Threshold`. **Alert trigger**: `Any time series violates`. **Threshold position**: `Above threshold`. **Threshold value**: `500`. Em **Advanced options**: **Retest window** `5 min`; **Evaluation missing data** `Missing data points treated as values that don't violate the policy condition`. **Next**.
-8. **Notifications and name**: marcar `Custta alerta`. **Alert autoclose duration**: `30 min`. **Documentation**: `Leituras acima de 500 por minuto, por 5 minutos. O uso normal é de poucas leituras por dia. Abra Firestore > Uso e chame o Claude.` **Alert name**: `custta-leituras`, exato: é por este nome que a função reconhece o alerta. **Create policy**.
+**Feito em 10/11 e refeito em 17/11**, com o OK do Giovani ("Sim, três janelas"). Hoje a produção tem duas políticas, as duas só com o canal de e-mail `Custta alerta`. Nada corta antes do G7.
 
-Pronto quando: a política aparece na lista. Desfazer: apagar a política. A métrica leva até ~5 min para aparecer.
+| Política | Condições (qualquer uma abre incidente) | Faz |
+|---|---|---|
+| `custta-leituras` | Soma de `firestore.googleapis.com/document/read_ops_count` acima de **2.500 em 5 min**, **2.000 em 1 h** ou **6.000 em 6 h** | No G7 recebe o canal Pub/Sub: é ela que aciona o corte. O nome é exato: a função reconhece o alerta por ele |
+| `custta-leituras-aviso` | Acima de **600 em 1 h** ou **2.000 em 24 h** | Só e-mail, para sempre. Nunca recebe o canal Pub/Sub |
+
+Em todas as condições: janela igual ao período da soma, soma no tempo e entre as séries, "acima de", sem espera (`duration` 0 s) e sem regra de dado ausente (o Monitoring recusa as duas juntas). Combinador "qualquer condição". Fechamento automático em 30 min. O incidente abre 5 a 6 minutos depois de a soma cruzar o limiar e fecha ~6 minutos depois de ela voltar a ele: o da janela de 6 h fica aberto ~6 h.
+
+O refazer foi pela API do Monitoring, com leitura de volta; os pedidos e as respostas estão em `prumo-blindagem4/provas/g1-refeito-*.json`. Para refazer pelo console: `console.cloud.google.com/monitoring/alerting?project=app-construcao-civil` → a política → **Edit**; em cada condição, **Rolling window** igual à janela, **Rolling window function** `sum`, **Threshold** `Above`, **Retest window** `No retest`; em **Multi-condition trigger**, qualquer condição (rótulos de tela não conferidos).
+
+Desfazer: voltar a política à condição única de antes (500 por minuto, com espera de 5 min) e apagar a `custta-leituras-aviso`.
 
 ### G2. Instalar e entrar no gcloud, ler a produção
 
@@ -3459,8 +3484,10 @@ Depois de o T3 publicar a sua mensagem: a função é reimplantada aqui, e ela n
 **Peças (um agente roda):**
 1. `gcloud storage buckets create gs://CORTE-estado --project CORTE --location us-central1 --uniform-bucket-level-access`, e o papel `roles/storage.objectUser` para `CONTA`, como no G4.
 2. **Só leitura em produção, por enquanto:** `gcloud projects add-iam-policy-binding app-construcao-civil --member CONTA --role roles/serviceusage.serviceUsageViewer` e `--role roles/browser`.
-3. `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh`, sem argumentos. Fica simulando, apontada para a produção.
+3. `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh --modo-oficial-alerta`, sem argumento de armar. Fica simulando, apontada para a produção: cada gatilho só registra `faria-tirar-cobranca`, e a reserva não roda. Se o modo novo ainda não estiver na `main`, o mesmo comando sem `--modo-oficial-alerta`; reimplantar quando ele entrar.
 4. Conferir em `servicos-producao.txt` se `pubsub.googleapis.com` e `monitoring.googleapis.com` estão ligadas em produção. A documentação pede as duas nos dois projetos para o canal Pub/Sub. Se faltar: `gcloud services enable <api> --project app-construcao-civil`.
+5. **A produção está travada à conta de cobrança? Só leitura, no console.** Em `console.cloud.google.com/billing` → a conta do Custta → **Account management**, um cadeado ao lado de `app-construcao-civil` quer dizer que o vínculo está travado. Travado, o Google recusa tirar a cobrança e todo corte cairia na reserva: parar e chamar o Prumo. Não há comando que mostre a trava (busca de 17/11), e ela nunca se testa tentando tirar a cobrança da produção.
+6. **A função lê a cobrança com os papéis de leitura?** Depois da mensagem de teste do alerta, o registro tem de mostrar `faria-tirar-cobranca`. Se aparecer erro de permissão ao ler a cobrança, `roles/browser` não bastou: chamar o Prumo antes de dar qualquer papel a mais.
 
 **Orçamento do projeto**, em `console.cloud.google.com/billing/budgets` → escolher a conta → **Create budget**:
 - **Name**: `custta-projeto`. **Next**.
@@ -3481,11 +3508,11 @@ Com esse criado, apagar o orçamento antigo de R$ 25. O novo tem o mesmo aviso, 
 1. Em `console.cloud.google.com/monitoring/alerting?project=app-construcao-civil` → **Edit notification channels** → **Pub/Sub** → **Add New**. A janela mostra a conta `service-<número>@gcp-sa-monitoring-notification.iam.gserviceaccount.com`.
 2. Em `console.cloud.google.com/cloudpubsub/topic/list?project=CORTE` → `custta-corte` → **Permissions** → **Add principal** → essa conta → **Pub/Sub Publisher** → **Save**.
 3. Voltar, informar o tópico `projects/CORTE/topics/custta-corte`, **Send test notification**, **Add channel**.
-4. Editar a política `custta-leituras` e marcar esse canal também. A mensagem de teste chega como incidente simulado. Se ela vier aberta e com outro nome de política, a função deixa um `corte-erro` de política desconhecida e não age: é o esperado aqui, e o aviso `Custta: o corte falhou`, se já existir, manda e-mail por isso. Fechada, ou aberta com o nome `custta-leituras`, a função simulando só registra.
+4. Editar a política `custta-leituras` e marcar esse canal também. A mensagem de teste chega como incidente simulado. Se ela vier aberta e com outro nome de política, a função deixa um `corte-erro` de política desconhecida e não age: é o esperado aqui, e o aviso `Custta: o corte falhou`, se já existir, manda e-mail por isso. Fechada, ou aberta com o nome `custta-leituras`, a função simulando só registra. A política tem três condições (G1): cada uma abre o seu incidente, e a função recebe um aviso aberto por condição, três por ataque. **A `custta-leituras-aviso` nunca recebe este canal:** viraria `corte-erro` de política desconhecida.
 
 **Avisos, no projeto `CORTE`**, sem depender do Mac:
 - Criar um canal de e-mail também em `CORTE`: o canal do G1 fica em outro projeto.
-- **O corte agiu.** Em `console.cloud.google.com/logs/query?project=CORTE`, consulta `jsonPayload.marca="corte-acao" AND NOT jsonPayload.acao:"faria"`, criar alerta de log, nome `Custta: o corte agiu`. Na documentação do alerta, colar o comando de volta de "Se o corte agir", com o ID real, para ele ter no celular. Limite: 20 notificações por dia.
+- **O corte agiu.** Em `console.cloud.google.com/logs/query?project=CORTE`, consulta `jsonPayload.marca="corte-acao" AND NOT jsonPayload.acao:"faria"`, criar alerta de log, nome `Custta: o corte agiu`. Na documentação do alerta, colar os passos de "Se o corte agir" para o caso "a cobrança saiu", com o ID real e o prazo de 72 horas, para ele ter no celular. Limite: 20 notificações por dia.
 - **O corte falhou.** Mesma tela, consulta `jsonPayload.marca="corte-erro"`, nome `Custta: o corte falhou`.
 - **O corte parou.** Em Alerting → **Create policy** → métrica `run.googleapis.com/request_count` do serviço `custta-corte`, filtro `response_code_class="2xx"` → **Condition type** `Metric absence` → **Trigger absence time** `23,5 h` (o máximo) → nome `Custta: o corte parou de responder`.
 
@@ -3545,12 +3572,12 @@ Desfazer: mesma linha → **Unenforced (monitoring only)**.
 
 ### G14. Armar o corte
 
-Só com T1 curto, T1 longo, T2, T4, T5 e T6 aprovados, salvo o item 5.
+**A decisão de armar é do Giovani.** Só com tudo isto aprovado: o T3 de 31 dias inteiro (dados iguais, cobrança religada, um backup de antes restaurado); a M5, pelo critério escrito (zero gasto depois da retirada, inclusive pela conexão aberta); o T5 e o T6 refeitos no C com o modo novo; o T4 e o T1 curto; e a produção sem o vínculo travado à conta de cobrança (G7, item 5).
+
 1. Conferir: nenhum orçamento nem política de teste publicando no tópico, e `gcloud storage cat gs://CORTE-estado/estado.json` só com dados de produção.
-2. Somar a escrita na produção: `gcloud projects add-iam-policy-binding app-construcao-civil --member CONTA --role roles/serviceusage.serviceUsageAdmin`.
-3. `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh --armar-api`.
-4. **Retirada da cobrança:** só depois do T3 aprovado, **ou** com o aceite explícito dele do risco de perder dados. `gcloud projects add-iam-policy-binding app-construcao-civil --member CONTA --role roles/billing.projectManager`, e depois `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh --armar-api --armar-cobranca`.
-5. **Se o T1 ou o T2 reprovou, no lugar dos itens 2 a 4:** com a mesma condição do item 4, somar `roles/billing.projectManager` como lá, e `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh --modo-oficial --armar-cobranca`. O alerta de leituras fica só no e-mail.
+2. Somar a escrita na produção, os dois papéis: `gcloud projects add-iam-policy-binding app-construcao-civil --member CONTA --role roles/billing.projectManager` (a retirada) e `--role roles/serviceusage.serviceUsageAdmin` (a reserva).
+3. `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh --modo-oficial-alerta --armar-cobranca --armar-api`.
+4. **Se o T3 ou a M5 reprovaram, ou falta prova em 04/01, no lugar dos itens 2 e 3:** o modo de 09/11. Só `roles/serviceusage.serviceUsageAdmin`, e `PROJETO_FUNCAO=CORTE BUCKET_ESTADO=CORTE-estado bash corte/implantar.sh --armar-api` (`dois-tempos`; a retirada da cobrança fica desarmada). Antes disso: o conserto do site provado contra um corte de verdade (T2 bis) e o aceite escrito dele de que uma conexão aberta lê por até 20 minutos depois do corte. O G15 nunca acontece com o corte desarmado.
 
 Desfazer: o mesmo comando, sem os argumentos de armar.
 
@@ -3560,27 +3587,50 @@ Depois do G14. Firebase → card **Plano de faturamento** → **Fazer upgrade**.
 
 ## Se o corte agir
 
-O Giovani fica sabendo por e-mail: `Custta: o corte agiu`, `Custta: o corte falhou`, os e-mails do orçamento ou o alerta de leituras. O site e o app continuam com o cache. Quem usa vê "Salvando…" sem fim.
+O Giovani fica sabendo por e-mail: `Custta: o corte agiu`, `Custta: o corte falhou`, os e-mails do orçamento ou o alerta de leituras. O e-mail do corte diz qual janela do alerta cortou e se foi a reserva.
 
-**Não religue sem entender.** Com a API fora, as métricas ficam zeradas, com ou sem robô. Só religando se descobre se ele continua, e por isso a função fica armada e corta de novo.
+Vale quando a reserva agiu ou no modo `dois-tempos`, isto é, quando a API do Firestore foi desligada. Num corte pelo alerta de leituras, cada janela abre o próprio incidente, e podem chegar dois `o corte agiu` do mesmo ataque, um por janela. Um `o corte falhou` logo depois de um `o corte agiu` também pode ser falso. Se o aviso de outra janela chega com o corte em curso e o pedido de desligar dele dá erro, ele registra falha, e a repetição do Pub/Sub, que acha a API desligada, encerra essa falha. Antes de tratar como falha, confira se a API está desligada: `gcloud services list --enabled --project app-construcao-civil | grep firestore.googleapis.com` não mostra nada.
 
-**Só a API desligou (o caso comum).** Dá para fazer sem Mac, no Cloud Shell do Google, pelo celular. Leva cerca de 15 minutos.
-1. Decidir a folga **antes** do comando. Com menos de 24 h do pico, o custo atrasado ainda sobe, e `--folga 0` faz a API cair de novo. `--folga 100` evita isso, mas adia o próximo corte e sobe o teto do mês em R$ 100. Se a cobrança também foi tirada, a mesma folga vale para o orçamento de fora do Firestore e sobe o teto dele no mesmo tanto. Só o Giovani decide.
-2. Em `shell.cloud.google.com`, com o ID real no lugar de `CORTE` e a folga escolhida:
+No modo `oficial-alerta`, quando a cobrança saiu, a API continua ligada de propósito. Ali a conferência é a da cobrança: `gcloud billing projects describe app-construcao-civil --format='value(billingEnabled)'` tem de dar `False`. Ver a API ligada nesse caso não é falha.
+
+**Não religue sem entender.** Quem diz a hora é a trava do `religar.sh`: ela soma as leituras de cada janela do alerta e recusa enquanto alguma estiver em 50% do limiar ou mais, dizendo qual janela segura e a hora estimada. Ordem de grandeza: um ataque com 3.000 leituras ou mais em 6 h segura a volta por ~6 h 05 min depois da última leitura; um menor, ~1 h.
+
+A espera não é um prazo fixo por janela. Ela não depende de qual janela cortou, e sim do tamanho e do ritmo do ataque:
+- um ataque que somou 3.000 leituras ou mais em 6 h segura até ~6 h 05 min depois da última leitura. Rajada de 500 leituras por minuto ou mais cai sempre aqui, qualquer que seja a janela que cortou;
+- um ataque menor segura ~1 h;
+- se quem cortou foi a de 6 h, por gotejamento de 1.000 a 2.000 leituras por hora, a trava solta entre ~3 h e ~4 h 35 min depois do corte.
+
+A hora dita é o mínimo: a métrica atrasa uns 4 minutos. Rodar antes da hora não faz mal, porque a trava recusa de novo e repete a hora. Sem conseguir ler a política ou a métrica, a trava também não deixa religar, e diz por quê. Se o Monitoring responder `HTTP 403` com a cobrança tirada, pode ser a cota: o pedido usa o próprio projeto alvo como projeto de cota. Rode de novo com `PROJETO_COTA=CORTE` ao lado do `BUCKET_ESTADO=CORTE-estado`, para usar o projeto da função. Esse caso, sem cobrança, não foi provado.
+
+**`--forcar "motivo"`** religa mesmo com a trava segurando, ou sem ela conseguir ler. O motivo é obrigatório e fica no `estado.json`, na lista `religadosForcados`, com a hora e o que a trava disse. Só o Giovani decide forçar, e só em dois casos:
+- **Corte falso**, de uso legítimo que cresceu e passou do limiar: primeiro suba o limiar da política `custta-leituras`, depois rode o comando com `--forcar "corte falso: <o que cresceu>"`. Sem subir o limiar, o mesmo uso corta de novo.
+- **Monitoring fora do ar:** forçar religa sem saber se o ataque continua. Se continuar, a função, que segue armada, corta de novo.
+
+**A cobrança saiu e o app segue no ar (o caso comum, no modo `oficial-alerta`).** Sem pressa, com prazo: **72 horas** sem conta de cobrança.
+1. Enquanto isso: o app funciona dentro do nível gratuito (50 mil leituras por dia; o uso real é de dezenas). Num ataque de verdade o atacante gasta a cota, e quem usa vê "Salvando…" até as ~05h do dia seguinte. A M5 mede esse comportamento.
+2. Decidir a folga **antes** do comando. Com menos de 24 h do pico, o custo atrasado ainda sobe, e `--folga 0` faz o corte agir de novo assim que a cobrança voltar. `--folga 100` evita isso, mas adia o próximo corte e sobe o teto do mês em R$ 100. Só o Giovani decide.
+3. Quando a trava deixar, em `shell.cloud.google.com`, com o ID real no lugar de `CORTE` e a folga escolhida:
    `rm -rf app_construcao_civil; git clone https://github.com/gstuchi/app_construcao_civil && cd app_construcao_civil && BUCKET_ESTADO=CORTE-estado bash corte/religar.sh --folga 0`
-   Grava a base e, só depois, religa a API. O script imprime em quanto a API cai de novo. Na opção oficial, esse valor é o da cobrança.
-3. Avisar quem usa: abrir **um aparelho de cada vez, com internet**. Cada salvamento regrava o documento inteiro, e o último a subir apaga o outro. O PITR de 7 dias desfaz, e um agente faz isso num banco novo.
-4. Conferir que o site e o app leem e gravam. `gcloud firestore databases describe --project app-construcao-civil` (PITR e proteção) e `gcloud firestore backups schedules list --database '(default)' --project app-construcao-civil`. Recriar o que faltar.
+   Grava a base e a hora da volta, e imprime em quanto o corte age de novo e o prazo da conferência dos dados.
+   No modo oficial a API segue ligada, e quem atacou pode continuar lendo dentro do nível gratuito. Enquanto o ataque não para, as somas não caem e a hora que a trava imprime anda a cada rodada: ela é sempre um mínimo, nunca uma promessa. Se a hora seguir andando por mais de uma rodada, o ataque não parou: siga o item 7.
+4. Religar a cobrança: `console.cloud.google.com/billing/projects` → **Change billing** no projeto `app-construcao-civil`. De 40 minutos a mais de um dia, sem garantia (a M5 mede).
+5. Conferir que o site e o app leem e gravam. `gcloud firestore databases describe --project app-construcao-civil` (PITR e proteção), `gcloud firestore backups schedules list --database '(default)' --project app-construcao-civil` e `gcloud firestore backups list --project app-construcao-civil`. Recriar o que faltar; ligar o PITR de novo antes de restaurar.
+6. **No dia seguinte, a conferência dos dados**, em até 7 dias da volta: um agente compara, conta por conta, o número de gastos com o backup do dia do corte. Conta que perdeu lançamento: ler pelo PITR o instante de antes da volta e restaurar num banco novo. Depois de 7 dias o PITR não desfaz.
+7. **Passaram 72 h e o ataque continua** (é o caminho normal quando o ataque não para): desligar a API do Firestore e religar a cobrança. O app sai do ar, e o banco volta a ter conta. Bloqueie antes a conta que ataca; só então rode o `religar.sh` com `--forcar "<motivo>"`, porque a trava não vai soltar sozinha enquanto as leituras continuarem.
+8. **Segundo corte no mesmo mês:** não religar sem antes bloquear a conta atacante no Authentication ou exigir o App Check (G13). O `religar.sh` pede `--forcar`.
 
-**A cobrança foi tirada.** Só com o interruptor armado, e só se a API não desligou, se o gasto foi de fora do Firestore, ou na opção oficial. De 40 minutos a mais de um dia.
-1. Rodar o `religar.sh`, como acima, **antes** de religar a cobrança, para a função não cortar de novo. A folga escolhida no passo 1 de cima vale aqui também para o orçamento de fora do Firestore: com menos de 24 h do pico, `--folga 0` deixa o custo atrasado do mesmo ataque tirar a cobrança de novo assim que ela voltar. Se a última linha falhar (ligar a API sem cobrança), a base já ficou gravada: siga.
-2. Em `console.cloud.google.com/billing/projects`, **Change billing** no projeto `app-construcao-civil`. O Google diz que pode levar até 24 h, sem garantia.
-3. `gcloud services enable firestore.googleapis.com --project app-construcao-civil`.
-4. Conferir banco, PITR, agendamentos e backups. Ligar o PITR de novo antes de restaurar. Dado perdido: restaurar backup em banco novo e copiar por conta, com um agente.
+**A reserva agiu: a API do Firestore foi desligada.** A retirada da cobrança falhou, ou o modo armado é o `dois-tempos`. O app fica fora para todos, com "Salvando…" na tela. O comando leva cerca de 15 minutos, mas depois de um corte por leituras a trava pode mandar esperar, até umas 6 h, e diz a hora (veja "Não religue sem entender", acima). Dá para fazer pelo celular, no Cloud Shell.
+1. O mesmo comando do item 3 acima, com a folga decidida antes. Ele grava a base e só depois religa a API. Depois de religar, ainda há recusas intermitentes por até ~6,5 minutos.
+2. Avisar quem usa: abrir **um aparelho de cada vez, com internet**. Cada salvamento regrava o documento inteiro, e o último a subir apaga o outro.
+3. Os itens 5, 6 e 8 acima.
+
+**O corte falhou** (`Custta: o corte falhou`, sem `o corte agiu`): a função repete sozinha a cada mensagem. Se o gasto continua, agir à mão: `console.cloud.google.com/billing/projects` → **Disable billing** no projeto `app-construcao-civil`, e seguir "A cobrança saiu".
 
 ## Depois
 
-- **Cópia fora do projeto:** decidir com o resultado do T3.
+- **Cópia fora do projeto:** decidir com o resultado do T3. O conselho de 17/11 não a tornou condição; ela volta à mesa se o T3 reprovar.
+- **Só se o modo `dois-tempos` for armado:** o conserto do site contra um corte de verdade (T2 bis), as medidas da conexão aberta que faltam (quanto cabe numa conexão; conexão com mais de 50 minutos) e o T1 longo.
+- **Tetos de gasto do Firebase ("spend caps"):** em 17/11 não cobriam o Firestore nem o Authentication. Reconferir antes do G15: se passarem a cobrir, pausam sem tirar a cobrança.
 - **Repetir o T1 curto** depois de ativar a conta completa: as provas rodam só na conta de teste.
 - **Refazer o T5** a cada 6 meses, ou ao mexer na função.
 - **Apagar** o ramo `proto/b4-ios-swift63` e os projetos descartáveis.

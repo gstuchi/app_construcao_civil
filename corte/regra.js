@@ -30,10 +30,25 @@ function interpretarOrcamento(c){
   return { tipo: 'orcamento', nome: c.budgetDisplayName, custo: c.costAmount, moeda: c.currencyCode, intervalo };
 }
 
+const TAMANHO_CONDICAO = 200;
+
+/* O Monitoring manda o valor observado e o limiar em texto ("586.000"): no registro vão como
+   número, para "586.000" não ser lido como 586 mil. Fora disso, null; o corte não depende deles. */
+function numeroDoIncidente(valor){
+  if(typeof valor === 'number') return Number.isFinite(valor) ? valor : null;
+  return typeof valor === 'string' && /^-?\d+(\.\d+)?$/.test(valor.trim()) ? Number(valor) : null;
+}
+
+/* Com três condições em OR, cada uma abre o próprio incidente: condition_name diz qual janela foi. */
 function interpretarIncidente(inc){
   if(!inc || typeof inc.policy_name !== 'string' || typeof inc.state !== 'string')
     throw new MensagemIlegivel('incidente sem policy_name ou state');
-  return { tipo: 'incidente', politica: inc.policy_name, estado: inc.state };
+  const nome = typeof inc.condition_name === 'string' ? inc.condition_name.trim() : '';
+  return {
+    tipo: 'incidente', politica: inc.policy_name, estado: inc.state,
+    condicao: nome ? nome.slice(0, TAMANHO_CONDICAO) : null,
+    valorObservado: numeroDoIncidente(inc.observed_value), limiar: numeroDoIncidente(inc.threshold_value),
+  };
 }
 
 /* evento é o CloudEvent do Pub/Sub: data.message.data traz o JSON em base64. */
@@ -80,14 +95,15 @@ function papelDoOrcamento(nome, config){
 /* Sem a variável vale dois-tempos. Qualquer outro texto devolve null: a função não age. */
 function modoDoCorte(valor){
   if(valor === undefined) return 'dois-tempos';
-  return valor === 'dois-tempos' || valor === 'oficial' ? valor : null;
+  return valor === 'dois-tempos' || valor === 'oficial' || valor === 'oficial-alerta' ? valor : null;
 }
 
-/* No modo oficial, a receita do Google, o orçamento do projeto vai direto à cobrança. */
+/* Nos dois modos oficiais, a receita do Google, o orçamento do projeto vai direto à cobrança; no
+   oficial-alerta, com a API de reserva (index.js). */
 function decidirOrcamento(papel, custoCentavos, modo = 'dois-tempos'){
   if(papel === 'fora') return custoCentavos >= LIMITE_COBRANCA ? 'tirar-cobranca' : 'nada';
   if(custoCentavos < LIMITE_API) return 'nada';
-  return modo === 'oficial' ? 'tirar-cobranca' : 'desligar-api';
+  return modo === 'oficial' || modo === 'oficial-alerta' ? 'tirar-cobranca' : 'desligar-api';
 }
 
 /* A cobrança só sai pelo orçamento do projeto quando a API não ficou desligada: é o que o
@@ -111,8 +127,15 @@ function registrarCobrancaTirada(estado, agora){
   return estado.cobrancaTiradaEm ? estado : { ...estado, cobrancaTiradaEm: agora };
 }
 
+/* No modo oficial-alerta, a cobrança confirmada fora para o gasto: encerra também a falha de desligar
+   que uma reserva tenha deixado, para ela não pesar se o modo voltar a ser o dois-tempos. */
+function registrarCobrancaConfirmada(estado, agora){
+  if(estado.cobrancaTiradaEm && !estado.primeiraFalha) return estado;
+  return { ...estado, cobrancaTiradaEm: estado.cobrancaTiradaEm || agora, primeiraFalha: null };
+}
+
 module.exports = {
   LIMITE_API, LIMITE_COBRANCA, ESPERA_FALHA_MS, MensagemIlegivel,
   estadoNormal, intervaloDe, interpretar, aplicarOrcamento, papelDoOrcamento, modoDoCorte, decidirOrcamento,
-  deveTirarCobrancaPorFalha, registrarFalha, registrarApiDesligada, registrarCobrancaTirada,
+  deveTirarCobrancaPorFalha, registrarFalha, registrarApiDesligada, registrarCobrancaTirada, registrarCobrancaConfirmada,
 };

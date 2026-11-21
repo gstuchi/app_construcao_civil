@@ -76,7 +76,11 @@ async function percorre(browser,semCSP){
 
     await confere('início',()=>temHostil('#obrasList')&&temHostil('#compBars'));
     await page.evaluate(id=>openObra(id),ID1);
-    await confere('obra',()=>temHostil('#obraBody .obra-head')&&temHostil('#obraBody .orc-lista')&&temHostil('#oAfazeres')&&temHostil('#oDonutLeg')&&temHostil('#oGastos')&&temHostil('#obraBody .orc-fora'));
+    await confere('obra',()=>temHostil('#obraBody .obra-head')&&temHostil('#oAfazeres')&&temHostil('#obraBody .leg-mini')&&temHostil('#oGastos'));
+    // o orçamento por tópico mora na folha que o bloco do orçamento abre
+    await page.evaluate(id=>sheetOrcamento(id),ID1);
+    await confere('orçamento por tópico',()=>temHostil('#sheet .orc-lista')&&temHostil('#sheet .orc-fora'));
+    await page.evaluate(()=>closeSheet());
     await page.evaluate(p=>{filtroTexto=p;renderObra();},P);
     await confere('busca',p=>$('#fBusca').value===p,P);
     await page.evaluate(()=>{filtroTexto='';renderObra();});

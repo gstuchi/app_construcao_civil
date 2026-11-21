@@ -135,7 +135,8 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
     });
     /* vidro máximo (spec 2026-09-28-vidro-maximo): cards, painéis e indicadores são vidro sobre a
        aurora; os invólucros transparentes e as linhas da lista não, e nenhum vidro mora dentro de
-       outro (o de dentro só enxergaria o de fora, não a página) */
+       outro (o de dentro só enxergaria o de fora, não a página). O bloco sólido da identidade da
+       etapa 4 (um por tela) é cor chapada, de propósito sem vidro. */
     await teste('conteúdo em vidro sobre a aurora, sem vidro dentro de vidro', async ()=>{
       const { ctx, page } = await abrir(browser);
       await page.evaluate(() => openObra('o1'));
@@ -145,7 +146,7 @@ const perto = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
         const vistos = [...document.querySelectorAll('section.view.active :is(.panel,.card,.kpi,ul.list,ul.list li)')].filter(e => e.getClientRects().length);
         return {
           kpis: vistos.filter(e => e.matches('.kpi')).length,
-          semVidro: vistos.filter(e => e.matches('.kpi,.card:not(.saldo),.panel:not(.grupo-obras):not(.obra-head)') && !vidro(e)).map(e => e.className),
+          semVidro: vistos.filter(e => e.matches('.kpi:not(.solido),.card:not(.saldo),.panel:not(.grupo-obras):not(.obra-head)') && !vidro(e)).map(e => e.className),
           transparentes: [...document.querySelectorAll('.panel.obra-head,.panel.grupo-obras,ul.list li')].filter(vidro).map(e => e.className),
           aninhados: vistos.filter(e => { const pai = e.parentElement.closest(CONTEUDO); return vidro(e) && pai && vidro(pai); }).map(e => e.className),
           aurora: getComputedStyle(document.getElementById('aurora')).position,

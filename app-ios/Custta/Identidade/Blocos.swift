@@ -29,12 +29,15 @@ extension EnvironmentValues {
 /// Um assunto por bloco, no vidro do conteúdo, com os cantos e o recuo da grade. Ocupa a largura toda; a borda de 16 pt é
 /// da coluna da tela.
 struct BlocoDeVidro<Conteudo: View>: View {
+    /// O recuo de cima e de baixo, quando não é o da grade: o bloco de linhas (os campos do "Vale a pena?") usa 4 pt,
+    /// porque cada linha já traz a altura dela.
+    var recuoVertical: CGFloat? = nil
     @ViewBuilder let conteudo: Conteudo
     @Environment(\.dynamicTypeSize) private var tamanho
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) { conteudo }
-            .padding(.vertical, Grade.recuoVertical(tamanho))
+            .padding(.vertical, recuoVertical ?? Grade.recuoVertical(tamanho))
             .padding(.horizontal, Grade.recuo)
             .frame(maxWidth: .infinity, alignment: .leading)
             .superficie(.conteudo, em: .rect(cornerRadius: Grade.raioDoBloco(tamanho)))

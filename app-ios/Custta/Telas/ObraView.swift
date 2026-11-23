@@ -442,7 +442,7 @@ final class BarraDaObra {
 }
 
 /// Lê a letra da tela fora da barra e a guarda na BarraDaObra: só o título pequeno se refaz quando ela muda.
-private struct LeitorDaLetra: View {
+struct LeitorDaLetra: View {
     let barra: BarraDaObra
     @Environment(\.dynamicTypeSize) private var letra
 

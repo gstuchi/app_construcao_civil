@@ -1,7 +1,7 @@
 import SwiftUI
 import CusttaNucleo
 
-/* O app por dentro: as abas (Obras e Ajustes; "Vale a pena?" chega na etapa 4) com a cápsula de abas
+/* O app por dentro: as abas (Obras, "Vale a pena?" e Ajustes) com a cápsula de abas
    própria, e a barra de cada tela com a sincronização e o sair do topo, em vidro, como no site. Sair pede
    confirmação pelo alerta do sistema (decisão do Giovani). Só a aba escolhida fica montada: o TabView do
    sistema pinta um fundo opaco por trás das abas no iOS 26 (esconderia a aurora), e uma aba só escondida
@@ -10,6 +10,9 @@ import CusttaNucleo
 struct PrincipalView: View {
     @State private var aba = PrincipalView.abaInicial
     @State private var caminhoDeObras = PrincipalView.caminhoInicial
+    /// Os campos do "Vale a pena?": moram aqui, e não na tela da aba, que sai da árvore quando a pessoa troca de aba. Assim
+    /// duram enquanto o app está aberto (spec da etapa 4, "Dados e estado").
+    @State private var simulador = CamposDoSimulador()
     @State private var folhas = Folhas()
     /// O + da lista avisou em vez de abrir "Nova obra": o teto de obras ou os dados ainda não vistos.
     @State private var avisoDoMais: AvisoDoMais?
@@ -21,6 +24,7 @@ struct PrincipalView: View {
         Group {
             switch aba {
             case .obras: ObrasView(caminho: $caminhoDeObras)
+            case .valeAPena: ValeAPenaView(campos: $simulador)
             case .ajustes: AjustesView()
             }
         }
@@ -76,7 +80,7 @@ struct PrincipalView: View {
 extension PrincipalView {
     /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra (e no orçamento e nos afazeres dela), lança
     /// gasto nela. Obra vendida não recebe gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as
-    /// abertas; sem nenhuma aberta, cria obra. Em Ajustes, some.
+    /// abertas; sem nenhuma aberta, cria obra. No "Vale a pena?" e em Ajustes, some.
     private var acaoDoMais: AcaoDoMais? {
         guard aba == .obras else { return nil }
         let obras = modelo.sincronizador.estado.obras

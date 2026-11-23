@@ -5,9 +5,10 @@ import SwiftUI
    segmentado da entrada (decisão do Giovani em 10/10): o rótulo da aba escolhida fica no contraste dos
    dois tokens com qualquer coisa passando por baixo; na lente de vidro, a lista rolada derrubava o "Obras"
    para 3,8:1 no escuro. O que a barra do sistema dava de graça vem à mão: VoiceOver lê o nome,
-   "1 de 2" e "selecionada", alvo de 44 pt e o Visualizador de Conteúdo Grande no lugar de crescer com a
+   "1 de 3" e "selecionada", alvo de 44 pt e o Visualizador de Conteúdo Grande no lugar de crescer com a
    letra. O + volta na etapa 2, ao lado da cápsula e na Tinta (mockup): lança gasto na obra; some onde não há o que
-   criar (Ajustes), como o do site, e a cápsula ocupa a largura toda. */
+   criar ("Vale a pena?" e Ajustes), como o do site, e a cápsula ocupa a largura toda. A terceira aba, "Vale a pena?",
+   chega na etapa 4 (PR 4a), no meio, como no site. */
 
 /// O + ao lado da cápsula: o rótulo para o VoiceOver ("Lançar gasto") e o que ele faz.
 struct AcaoDoMais {
@@ -17,6 +18,7 @@ struct AcaoDoMais {
 
 enum Aba: String, CaseIterable, Identifiable, Sendable {
     case obras
+    case valeAPena
     case ajustes
 
     var id: String { rawValue }
@@ -24,12 +26,14 @@ enum Aba: String, CaseIterable, Identifiable, Sendable {
     var titulo: String {
         switch self {
         case .obras: return "Obras"
+        case .valeAPena: return "Vale a pena?"
         case .ajustes: return "Ajustes"
         }
     }
     var icone: String {
         switch self {
         case .obras: return "Icones/predio"
+        case .valeAPena: return "Icones/balanca"
         case .ajustes: return "Icones/engrenagem"
         }
     }

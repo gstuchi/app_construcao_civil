@@ -58,7 +58,7 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(obras.waitForExistence(timeout: 10))
         XCTAssertTrue(obras.isSelected)
         XCTAssertEqual(obras.label, "Obras")
-        XCTAssertEqual(ajustes.value as? String, "2 de 2")
+        XCTAssertEqual(ajustes.value as? String, "3 de 3")
         ajustes.tap()
         XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 5))
         XCTAssertTrue(ajustes.isSelected)
@@ -75,7 +75,7 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["aba-ajustes"].isSelected)
         XCTAssertFalse(app.buttons["aba-obras"].isSelected)
         XCTAssertFalse(app.buttons["botaoMais"].exists, "em Ajustes não há o +")
-        XCTAssertEqual(app.abasDaCapsula.map(\.identifier), ["aba-obras", "aba-ajustes"])
+        XCTAssertEqual(app.abasDaCapsula.map(\.identifier), ["aba-obras", "aba-valeAPena", "aba-ajustes"])
     }
 
     /// A cápsula fica 22 pt acima da borda, como a barra de abas do sistema (mockup aprovado), nas duas abas.

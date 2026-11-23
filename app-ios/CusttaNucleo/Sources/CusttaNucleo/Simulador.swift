@@ -168,3 +168,53 @@ public func faixaSimulador(_ conta: ContaDoSimulador) -> FaixaDoSimulador {
         acima: conta.vale, pilula: conta.vale ? "acima do banco" : "abaixo do banco",
         falado: "Custo \(moeda(conta.bruto)), empata com o banco em \(moeda(conta.corrigido)), sua venda \(moeda(conta.venda))")
 }
+
+/* Os campos do "Vale a pena?" e o que a tela mostra com eles. Moram na aba enquanto o app está aberto (spec da etapa 4,
+   "Dados e estado"), e o comportamento é o do site (app.js, `simulaCompute`): enquanto a pessoa não digitou, o preço
+   acompanha a venda estimada da obra escolhida; depois de digitar, vale o digitado, mesmo trocando de obra; os meses
+   começam em 0, como o campo do site, e andam de 0 a 120. */
+public struct CamposDoSimulador: Equatable, Sendable {
+    /// A obra escolhida na lista; nil até a pessoa escolher, e aí vale a primeira elegível.
+    public var obraId: String?
+    /// O preço digitado, em reais; nil enquanto a pessoa não digitou. Zero é o campo apagado.
+    public var precoDigitado: Double?
+    /// Daqui a quantos meses vende.
+    public private(set) var meses = 0
+
+    public init() {}
+
+    /// O − e o + dos meses, presos entre 0 e `mesesSimulador`.
+    public mutating func andarMeses(_ passo: Int) {
+        meses = min(mesesSimulador, max(0, meses + passo))
+    }
+}
+
+/// O que a tela do "Vale a pena?" mostra.
+public struct SimulacaoNaTela: Equatable, Sendable {
+    /// As obras da lista "Obra", na ordem do documento; vazia, a tela diz "— crie uma obra com gastos —".
+    public let elegiveis: [Obra]
+    /// A obra da conta: a escolhida enquanto elegível; senão, a primeira.
+    public let obra: Obra?
+    /// O preço do campo: o digitado ou, sem digitar, a venda estimada da obra; nil é o campo vazio.
+    public let preco: Double?
+    public let meses: Int
+    /// O − e o + nos limites.
+    public let podeMenos: Bool
+    public let podeMais: Bool
+    /// nil sem obra ou sem preço: a tela diz "Digite o preço de venda pra ver a conta."
+    public let conta: ContaDoSimulador?
+    public let textos: TextosDoSimulador?
+    public let faixa: FaixaDoSimulador?
+}
+
+/// A tela do "Vale a pena?" para os campos de agora.
+public func simulacaoNaTela(_ campos: CamposDoSimulador, obras: [Obra], hoje: String, taxa: Double) -> SimulacaoNaTela {
+    let lista = obrasSimulador(obras, escolhida: campos.obraId)
+    let obra = lista.elegiveis.first { $0.id == lista.escolhida }
+    // O campo apagado (zero) fica vazio: não volta para a estimada, como o campo já tocado do site.
+    let preco = (campos.precoDigitado ?? obra.flatMap(precoInicialSimulador)).flatMap { $0 > 0 ? $0 : nil }
+    let conta = obra.flatMap { o in preco.flatMap { contaSimulador(o, venda: $0, meses: campos.meses, hoje: hoje, taxa: taxa) } }
+    return SimulacaoNaTela(elegiveis: lista.elegiveis, obra: obra, preco: preco, meses: campos.meses, podeMenos: campos.meses > 0,
+                           podeMais: campos.meses < mesesSimulador, conta: conta,
+                           textos: conta.map { textosSimulador($0, taxa: taxa, area: obra?.areaM2) }, faixa: conta.map(faixaSimulador))
+}

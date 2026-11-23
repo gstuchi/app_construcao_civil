@@ -67,6 +67,17 @@ final class AjustesUITests: XCTestCase {
         XCTAssertTrue(app.elemento("obra-o1").waitForExistence(timeout: 5))
     }
 
+    /// `CUSTTA_ABRIR=aba:ajustes` abre o app já em Ajustes, sem toque na cápsula: é por onde o laudo e a auditoria chegam a
+    /// uma aba. A cápsula inteira sai de `abasDaCapsula`, na ordem das abas.
+    @MainActor func testOGanchoAbreOAppNaAba() {
+        let app = abrirApp(conta: "senha", abrir: "aba:ajustes")
+        XCTAssertTrue(app.buttons["sair"].waitForExistence(timeout: 10), "abriu em Ajustes")
+        XCTAssertTrue(app.buttons["aba-ajustes"].isSelected)
+        XCTAssertFalse(app.buttons["aba-obras"].isSelected)
+        XCTAssertFalse(app.buttons["botaoMais"].exists, "em Ajustes não há o +")
+        XCTAssertEqual(app.abasDaCapsula.map(\.identifier), ["aba-obras", "aba-ajustes"])
+    }
+
     /// A cápsula fica 22 pt acima da borda, como a barra de abas do sistema (mockup aprovado), nas duas abas.
     /// Ela tem 4 pt de margem em volta das abas.
     @MainActor func testCapsulaFica22PontosAcimaDaBorda() {

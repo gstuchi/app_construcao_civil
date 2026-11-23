@@ -32,7 +32,7 @@ final class AuditoriaUITests: XCTestCase {
                                     corteSemElemento: Bool = false) throws {
         // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
         let folha = app.elemento("tituloDaFolha").exists
-        let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+        let abas = folha ? [] : (app.abasDaCapsula + [app.buttons["botaoMais"]]).filter(\.exists).map(\.frame)
         let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
         // Com a folha aberta, a barra é a da folha, e não a da tela por trás dela (a primeira da árvore); e a folha não tem a
         // borda de rolagem das telas: o conteúdo dela começa onde a barra acaba.

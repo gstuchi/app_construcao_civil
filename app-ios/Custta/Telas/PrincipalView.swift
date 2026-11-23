@@ -8,7 +8,7 @@ import CusttaNucleo
    continuaria na árvore do VoiceOver pela barra de navegação. Por isso o caminho dentro de Obras mora aqui:
    quem vai a Ajustes e volta encontra a obra que tinha aberto. */
 struct PrincipalView: View {
-    @State private var aba = Aba.obras
+    @State private var aba = PrincipalView.abaInicial
     @State private var caminhoDeObras = PrincipalView.caminhoInicial
     @State private var folhas = Folhas()
     /// O + da lista avisou em vez de abrir "Nova obra": o teto de obras ou os dados ainda não vistos.
@@ -177,6 +177,24 @@ extension PrincipalView {
         guard let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] else { return nil }
         if abrir.hasPrefix("afazeres:") { return .afazeres(String(abrir.dropFirst(9))) }
         return TelaDaAnalise(gancho: abrir).map { .analise($0) }
+    }
+    #endif
+
+    /// A aba em que o app abre: Obras. Em Debug, `CUSTTA_ABRIR=aba:<nome>` abre noutra (`aba:ajustes`), para os testes de
+    /// tela, o laudo de leitura e a conferência visual chegarem a uma aba sem tocar na cápsula.
+    static var abaInicial: Aba {
+        #if DEBUG
+        return aba(doGancho: ProcessInfo.processInfo.environment["CUSTTA_ABRIR"])
+        #else
+        return .obras
+        #endif
+    }
+
+    #if DEBUG
+    /// A aba do gancho de abertura: `aba:<nome>`; com qualquer outro gancho, ou sem ele, Obras.
+    static func aba(doGancho abrir: String?) -> Aba {
+        guard let abrir, abrir.hasPrefix("aba:") else { return .obras }
+        return Aba(rawValue: String(abrir.dropFirst(4))) ?? .obras
     }
     #endif
 

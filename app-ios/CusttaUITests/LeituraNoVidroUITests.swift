@@ -38,9 +38,7 @@ final class LeituraNoVidroUITests: XCTestCase {
         /// "tudo" mede o conteúdo (da cápsula de abas para baixo fica de fora); "navegacao" mede só os rótulos
         /// da cápsula, com o conteúdo que passa por baixo dela intacto nos dois prints.
         let escopo: String
-        /// Aba aberta pela cápsula antes do print (Ajustes não tem gancho de abertura).
-        var aba: String? = nil
-        /// Dados dos falsos e tela aberta pelo gancho (`obra:v1`, a obra do mockup na vitrine).
+        /// Dados dos falsos e tela aberta pelo gancho (`obra:v1`, a obra do mockup na vitrine; `aba:ajustes`, a aba).
         var dados = "exemplo"
         var abrir: String? = nil
         /// Folha aberta pelo gancho quando os dados chegam (`novaObra`, `venda:v2`; etapa 2, parte 3).
@@ -76,15 +74,11 @@ final class LeituraNoVidroUITests: XCTestCase {
         // Até 30 s: na VM do iOS 26, a thread principal para de 3 a 8 s na abertura, e a cena rolada só fica pronta depois da
         // rolagem fixa (do "abriu" à frase do fim do A pagar, de 9 a 34 s no run 40590390423; no Mac, ~2 s).
         XCTAssertTrue(app.elemento(cena.espera).waitForExistence(timeout: 30), "\(cena.nome): a tela não abriu")
-        if let aba = cena.aba {
-            app.abrirAba(aba)
-            XCTAssertTrue(app.elemento("sair").waitForExistence(timeout: 10), "\(cena.nome): Ajustes não abriu")
-        }
         cena.toques?(app)
         Thread.sleep(forTimeInterval: 2)                           // o vidro e a rolagem assentam
         conferirAssunto(cena, app)
         let foto = XCUIScreen.main.screenshot()
-        let abas = ["aba-obras", "aba-ajustes"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+        let abas = app.abasDaCapsula.map(\.frame)
         let largura = app.frame.width
         let informativo = exemploDaDescricao(app, cena)
         // Todos os voltar: com a folha aberta, o da tela de baixo e o da folha. O da tela de baixo cai no cabeçalho da folha
@@ -267,8 +261,8 @@ final class LeituraNoVidroUITests: XCTestCase {
                   ("na maior letra", escuro + maiorLetra, false),
                   ("na maior letra, rolada", escuro + maiorLetra + ["-custta.rolagem", "2000"], true)]
         cobrar(cenas.map { nome, argumentos, rolada in
-            Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "aba-ajustes", escopo: "tudo",
-                 aba: "ajustes", rolada: rolada, assunto: rolada ? ["nomeConta"] : [])
+            Cena(nome: "ajustes, \(nome)", conta: "senha", argumentos: argumentos, espera: "sair", escopo: "tudo",
+                 abrir: "aba:ajustes", rolada: rolada, assunto: rolada ? ["nomeConta"] : [])
         })
     }
 }

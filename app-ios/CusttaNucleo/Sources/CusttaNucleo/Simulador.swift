@@ -122,3 +122,49 @@ public func textosSimulador(_ conta: ContaDoSimulador, taxa: Double, area: Doubl
     return TextosDoSimulador(veredito: conta.vale ? "Vale a pena" : "Rende menos que o banco",
                              taxa: conta.tir.map { virgula($0, 2) + "% ao mês" } ?? "—", detalhes: detalhes, tabela: tabela)
 }
+
+/* A faixa "Onde a sua venda cai" (regra nova do app, sem vetor do site: o site não tem a faixa). Vem do mockup aprovado da
+   etapa 4 (parte2.js, `telaSimula`): a escala começa 3% abaixo do menor entre o custo e a venda e termina 3% acima do maior
+   entre o empate e a venda, para nenhuma marca encostar na borda. O empate é o custo corrigido até a venda: vendendo por
+   esse valor, a obra rendeu o mesmo que o banco. */
+
+/// Cada marca da faixa, na ordem da legenda.
+public enum MarcaDaFaixa: String, Sendable, CaseIterable {
+    case custo, empate, venda
+}
+
+public struct LinhaDaFaixa: Equatable, Sendable {
+    public let marca: MarcaDaFaixa
+    /// "custo (bruto)", "empata com o banco" ou "sua venda".
+    public let rotulo: String
+    /// O valor inteiro, como "R$ 842.317,45".
+    public let valor: String
+    /// Onde a marca cai na faixa, de 0 (a borda esquerda) a 1.
+    public let fracao: Double
+}
+
+public struct FaixaDoSimulador: Equatable, Sendable {
+    /// Custo, empate e venda, nesta ordem.
+    public let linhas: [LinhaDaFaixa]
+    /// A venda passa do empate: a zona hachurada, do empate até o fim da faixa, é "acima do banco".
+    public let acima: Bool
+    /// "acima do banco" ou "abaixo do banco".
+    public let pilula: String
+    /// O que o VoiceOver lê na faixa, num elemento só.
+    public let falado: String
+}
+
+/// A faixa de uma conta do simulador.
+public func faixaSimulador(_ conta: ContaDoSimulador) -> FaixaDoSimulador {
+    let inicio = min(conta.bruto, conta.venda) * 0.97
+    let fim = max(conta.corrigido, conta.venda) * 1.03
+    func fracao(_ valor: Double) -> Double { fim > inicio ? (valor - inicio) / (fim - inicio) : 0 }
+    func linha(_ marca: MarcaDaFaixa, _ rotulo: String, _ valor: Double) -> LinhaDaFaixa {
+        LinhaDaFaixa(marca: marca, rotulo: rotulo, valor: moeda(valor), fracao: fracao(valor))
+    }
+    return FaixaDoSimulador(
+        linhas: [linha(.custo, "custo (bruto)", conta.bruto), linha(.empate, "empata com o banco", conta.corrigido),
+                 linha(.venda, "sua venda", conta.venda)],
+        acima: conta.vale, pilula: conta.vale ? "acima do banco" : "abaixo do banco",
+        falado: "Custo \(moeda(conta.bruto)), empata com o banco em \(moeda(conta.corrigido)), sua venda \(moeda(conta.venda))")
+}

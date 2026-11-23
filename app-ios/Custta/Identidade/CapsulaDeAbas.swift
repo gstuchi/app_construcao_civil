@@ -20,8 +20,19 @@ enum Aba: String, CaseIterable, Identifiable, Sendable {
     case ajustes
 
     var id: String { rawValue }
-    var titulo: String { self == .obras ? "Obras" : "Ajustes" }
-    var icone: String { self == .obras ? "Icones/predio" : "Icones/engrenagem" }
+    // Em `switch`, sem `default`: uma aba nova não compila sem o título e o ícone dela.
+    var titulo: String {
+        switch self {
+        case .obras: return "Obras"
+        case .ajustes: return "Ajustes"
+        }
+    }
+    var icone: String {
+        switch self {
+        case .obras: return "Icones/predio"
+        case .ajustes: return "Icones/engrenagem"
+        }
+    }
 }
 
 struct CapsulaDeAbas: View {

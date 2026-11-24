@@ -6,17 +6,26 @@ import XCTest
 final class ValeAPenaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
+    /// Abre o app já na aba, pelo gancho de Debug (`aba:valeAPena`). O toque na cápsula logo depois de abrir o app às vezes
+    /// se perde no iOS 26.5 (Lupa: 2 em 80); só o testAAbaAbreComOsCamposESemOMais chega pela cápsula.
     @MainActor private func abrirAAba(_ extra: [String: String] = [:]) -> XCUIApplication {
-        let app = abrirApp(conta: "senha", dados: "analise", extra: extra)
-        app.abrirAba("valeAPena")
+        let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena", extra: extra)
         XCTAssertTrue(app.elemento("tituloValeAPena").waitForExistence(timeout: 10), "a aba abriu")
         return app
     }
 
     /// A aba fica no meio da cápsula, e o + some nela, como em Ajustes e como no site. Os campos nascem com a primeira obra
-    /// elegível, o preço na venda estimada dela e os meses em 0, com o − desabilitado.
+    /// elegível, o preço na venda estimada dela e os meses em 0, com o − desabilitado. Chega pela cápsula, como a pessoa, e
+    /// toca de novo se o primeiro toque, logo depois de abrir o app, se perder.
     @MainActor func testAAbaAbreComOsCamposESemOMais() {
-        let app = abrirAAba()
+        let app = abrirApp(conta: "senha", dados: "analise")
+        let titulo = app.elemento("tituloValeAPena")
+        for _ in 0..<3 {
+            guard !titulo.exists else { break }
+            app.abrirAba("valeAPena")
+            _ = titulo.waitForExistence(timeout: 5)
+        }
+        XCTAssertTrue(titulo.exists, "a aba abriu pela cápsula")
         let aba = app.buttons["aba-valeAPena"]
         XCTAssertTrue(aba.isSelected)
         XCTAssertEqual(aba.label, "Vale a pena?")

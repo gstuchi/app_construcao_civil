@@ -103,14 +103,15 @@ struct SimulacaoNaTelaTests {
         #expect(t.conta?.alvo == "2036-10-12")
     }
 
-    @Test func osTextosEAFaixaSaoOsDaContaComAAreaDaObra() throws {
+    /// Também com outra taxa que não 1: só com a taxa 1, a conta, os textos e o veredito presos em 1 passavam (Lupa, fatia 5).
+    @Test(arguments: [1.0, 1.5]) func osTextosEAFaixaSaoOsDaContaComAAreaDaObra(taxa: Double) throws {
         let a = obra("a", estimada: 300_000, area: 120)
-        let t = tela(CamposDoSimulador(), [a])
+        let t = simulacaoNaTela(CamposDoSimulador(), obras: [a], hoje: hoje, taxa: taxa)
         let conta = try #require(t.conta)
-        #expect(conta == contaSimulador(a, venda: 300_000, meses: 0, hoje: hoje, taxa: 1))
-        #expect(t.textos == textosSimulador(conta, taxa: 1, area: 120))
+        #expect(conta == contaSimulador(a, venda: 300_000, meses: 0, hoje: hoje, taxa: taxa))
+        #expect(t.textos == textosSimulador(conta, taxa: taxa, area: 120))
         #expect(t.textos?.tabela.last?.rotulo == "Preço por m² (120 m²)")
         #expect(t.faixa == faixaSimulador(conta))
-        #expect(t.veredito == vereditoNaTela(conta, taxa: 1))
+        #expect(t.veredito == vereditoNaTela(conta, taxa: taxa))
     }
 }

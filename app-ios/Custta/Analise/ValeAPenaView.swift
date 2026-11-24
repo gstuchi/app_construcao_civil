@@ -2,8 +2,8 @@ import SwiftUI
 import CusttaNucleo
 
 /* A aba "Vale a pena?" (etapa 4, PR 4a; mockup aprovado, parte 2, `telaSimula`): o simulador do site na identidade nova. O
-   título solto em mono e o bloco dos campos (a obra, o preço e os meses, com a nota do site); o que a conta diz chega nos
-   próximos commits. Os campos moram no PrincipalView, e não aqui: só a aba escolhida fica montada, e eles têm de durar
+   título solto em mono, o bloco dos campos (a obra, o preço e os meses, com a nota do site) e o veredito no bloco sólido;
+   a faixa e a tabela chegam nos próximos commits. Os campos moram no PrincipalView, e não aqui: só a aba escolhida fica montada, e eles têm de durar
    enquanto o app está aberto (spec, "Dados e estado"). O que a tela mostra sai inteiro do núcleo (`simulacaoNaTela`), com
    as obras e a taxa de agora: uma mudança vinda de outro aparelho redesenha a aba na hora. */
 struct ValeAPenaView: View {
@@ -22,6 +22,12 @@ struct ValeAPenaView: View {
                     TituloMono(texto: "Será que vale a pena?", identificador: "tituloValeAPena")
                         .padding(.bottom, 2)
                     CamposDoValeAPena(campos: $campos, tela: tela)
+                    // Sem obra elegível, só os campos, como no site. Com obra e sem preço, a frase do site no lugar da conta.
+                    if let veredito = tela.veredito {
+                        VereditoDoValeAPena(veredito: veredito)
+                    } else if tela.obra != nil {
+                        SemPrecoDoValeAPena()
+                    }
                 }
                 .padding(.horizontal, Grade.externa)
                 .padding(.bottom, 24)
@@ -138,6 +144,49 @@ struct CamposDoValeAPena: View {
                 campos.andarMeses(1)
             }
             .disabled(!tela.podeMais)
+        }
+    }
+}
+
+/// O veredito, o bloco sólido da aba: verde com "Vale a pena" ou âmbar com "Rende menos que o banco", a taxa ao mês com o
+/// número em mono grande (40 pt; 56 na letra máxima) e a unidade na metade, e as linhas do site embaixo. A taxa quebra em
+/// vez de encolher. Para o VoiceOver, o bloco é um elemento só, com a frase inteira.
+struct VereditoDoValeAPena: View {
+    let veredito: VereditoNaTela
+    @Environment(\.dynamicTypeSize) private var tamanho
+    @ScaledMetric(relativeTo: .subheadline) private var icone: CGFloat = 18
+
+    var body: some View {
+        let numero = crescendoComALetra(de: 40, ate: 56, corpo: corpoDoTexto(tamanho))
+        BlocoSolido(cor: veredito.vale ? .verde : .ambar) {
+            HStack(spacing: 6) {
+                Image(decorative: veredito.vale ? "Icones/check" : "Icones/alerta").resizable().frame(width: icone, height: icone)
+                RotuloDoBloco(texto: veredito.titulo)
+            }
+            Text("\(Text(veredito.numero).font(.system(size: numero, weight: .semibold, design: .monospaced)).tracking(-0.035 * numero))\(Text(veredito.unidade ?? "").font(.system(size: numero / 2, weight: .bold, design: .monospaced)))")
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 4)
+                .padding(.bottom, 2)
+            ForEach(veredito.linhas, id: \.self) { NotaDoBloco(texto: $0) }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(veredito.falado)
+        .accessibilityIdentifier("simVeredito")
+    }
+}
+
+/// Com obra e sem preço: a frase do site, num bloco de vidro.
+struct SemPrecoDoValeAPena: View {
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+
+    var body: some View {
+        BlocoDeVidro {
+            Text("Digite o preço de venda pra ver a conta.")
+                .font(.subheadline)
+                .foregroundStyle(paleta.cor(vidro.secundario))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("simSemPreco")
         }
     }
 }

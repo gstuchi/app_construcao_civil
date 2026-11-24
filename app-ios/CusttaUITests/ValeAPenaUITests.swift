@@ -84,11 +84,34 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertEqual(app.elemento("simMeses").value as? String, "2 meses")
     }
 
+    /// Com a obra e o preço, o veredito aparece no bloco sólido, num elemento só para o VoiceOver, e acompanha os meses.
+    /// Sem preço (o Sobrado não tem venda estimada), a frase do site toma o lugar dele.
+    @MainActor func testOVereditoAcompanhaOsCampos() {
+        let app = abrirAAba()
+        let veredito = app.elemento("simVeredito")
+        XCTAssertTrue(veredito.waitForExistence(timeout: 5), "a Casa Alphaville tem venda estimada: a conta já aparece")
+        XCTAssertTrue(veredito.label.hasPrefix("Vale a pena, "), veredito.label)
+        XCTAssertTrue(veredito.label.contains("% ao mês, vendendo hoje, banco paga 1%"), veredito.label)
+        XCTAssertFalse(app.elemento("simSemPreco").exists)
+        app.buttons["simMais"].tap()
+        XCTAssertTrue(veredito.label.contains(", vendendo daqui a 1 mês, "), veredito.label)
+        app.buttons["simObra"].tap()
+        let sobrado = app.buttons["Sobrado Granja Viana"]
+        XCTAssertTrue(sobrado.waitForExistence(timeout: 5))
+        sobrado.tap()
+        let semPreco = app.elemento("simSemPreco")
+        XCTAssertTrue(semPreco.waitForExistence(timeout: 5))
+        XCTAssertEqual(semPreco.label, "Digite o preço de venda pra ver a conta.")
+        XCTAssertFalse(veredito.exists, "sem preço não há veredito")
+    }
+
     /// Sem nenhuma obra elegível, a linha da obra diz o que fazer, como no site, e não há lista para abrir.
     @MainActor func testSemObraElegivelALinhaDizOQueFazer() {
         let app = abrirApp(conta: "senha", dados: "vazio", abrir: "aba:valeAPena")
         XCTAssertTrue(app.elemento("tituloValeAPena").waitForExistence(timeout: 10))
         XCTAssertEqual(app.elemento("simSemObra").label, "— crie uma obra com gastos —")
         XCTAssertFalse(app.buttons["simObra"].exists)
+        XCTAssertFalse(app.elemento("simVeredito").exists, "sem obra, só os campos")
+        XCTAssertFalse(app.elemento("simSemPreco").exists)
     }
 }

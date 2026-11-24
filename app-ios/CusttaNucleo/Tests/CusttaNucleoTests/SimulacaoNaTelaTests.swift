@@ -28,7 +28,7 @@ struct SimulacaoNaTelaTests {
             #expect(t.elegiveis.isEmpty)
             #expect(t.obra == nil)
             #expect(t.preco == nil)
-            #expect(t.conta == nil && t.textos == nil && t.faixa == nil)
+            #expect(t.conta == nil && t.veredito == nil && t.textos == nil && t.faixa == nil)
         }
     }
 
@@ -111,5 +111,6 @@ struct SimulacaoNaTelaTests {
         #expect(t.textos == textosSimulador(conta, taxa: 1, area: 120))
         #expect(t.textos?.tabela.last?.rotulo == "Preço por m² (120 m²)")
         #expect(t.faixa == faixaSimulador(conta))
+        #expect(t.veredito == vereditoNaTela(conta, taxa: 1))
     }
 }

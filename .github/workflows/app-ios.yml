@@ -55,6 +55,7 @@ concurrency:
 jobs:
   nucleo:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -73,6 +74,7 @@ jobs:
 
   app:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
     # lenta, 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No
@@ -160,6 +162,7 @@ jobs:
 
   app-etapa3:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
     # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
     # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
@@ -211,6 +214,7 @@ jobs:
 
   app-etapa3-b:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
     # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests. As suítes de tela do PR 3
     # (~22 min de testes no run 39878786962) o levariam a ~50 min e vão para o app-etapa3-c.
@@ -287,8 +291,8 @@ jobs:
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/testes-etapa3-c.xcresult" \
-            -only-testing:CusttaUITests/BuscaUITests \
-            -only-testing:CusttaUITests/AfazeresUITests \
+            -only-testing:CusttaUITests/ValeAPenaUITests \
+            -test-iterations 3 \
             CODE_SIGNING_ALLOWED=NO
 
       # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
@@ -302,6 +306,7 @@ jobs:
 
   laudo:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
     # 718 s e ~7 min de build e simulador, 54 min; a folha do gasto soma ~1150 s de leitura e ~320 s de auditoria (perto
     # do dobro do Mac), 75–79 min. A leitura da folha, a mais pesada, roda no job auditoria: ~35 min de testes e ~43 min de
@@ -364,6 +369,7 @@ jobs:
 
   laudo-parte3:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
     # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
     # no job laudo.
@@ -414,6 +420,7 @@ jobs:
 
   laudo-etapa3:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
     # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
@@ -469,6 +476,7 @@ jobs:
 
   laudo-etapa3-b:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # As leituras e as auditorias da etapa 3 que não cabem no laudo-etapa3: ele foi a 52 min no run 40125911713 e a 46 no
     # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
     # lá e abrem este job, com o laudo da busca e dos afazeres (PR 3), que o laudo pula. O mesmo preparo do laudo-etapa3, em
@@ -519,6 +527,7 @@ jobs:
 
   auditoria:
     runs-on: macos-26
+    if: false   # sonda S3: só o job dela roda
     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3 e no
     # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
     # as 14 auditorias em 19,1 e a leitura em 11,2 (run 40125911713).

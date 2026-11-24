@@ -8,7 +8,7 @@
 
 **Architecture:**
 - **Corte:** uma função em projeto próprio recebe os avisos do orçamento e do alerta de leituras. **Direção de 17/11:** em R$ 60, ou no alerta, ela tira a cobrança do projeto e confere; se a retirada não se confirmar em cerca de 1 minuto, desliga a API do Firestore, como reserva (modo `oficial-alerta`). O gasto de fora do Firestore, medido por um segundo orçamento, tira a cobrança em R$ 100. Cada ação tem um interruptor próprio. O modo novo é construído desarmado e só é armado no G14, com o teste de 31 dias sem cobrança e a M5 aprovados. Se um dos dois reprovar, arma-se o modo de 09/11, que continua no código (`dois-tempos`: R$ 60 ou o alerta desligam a API; R$ 100 só tira a cobrança se a API não desligou, com falha por 6 h).
-- **App Check:** o site usa reCAPTCHA Enterprise, só nos endereços publicados, e o app usa App Attest, só no Release. Entram observando. A exigência é ligada depois, no console, só para o Firestore.
+- **App Check:** o site usa reCAPTCHA Enterprise, só nos endereços publicados, e o app usa App Attest, só no Release. Entram observando, e observar não vem ligado: cada serviço nasce em `OFF`, que não exige nem mede, e só passa a medir em `UNENFORCED` (G10, item 3). O Firestore ficou em `OFF`, sem medição, de 10/11 a 23/11/2026. A exigência é ligada depois, só para o Firestore (G13).
 - **Chaves:** restrição só no console.
 - O formato do estado e as `firestore.rules` não mudam. O cron do push, com Admin SDK, não muda.
 
@@ -64,7 +64,7 @@ Passaram pelo conselho (3 Opus, crítica às cegas): as linhas de 1 a 8, em 09/1
 1. **Três PRs, um risco cada,** na ordem abaixo. A ordem geral do trabalho está em "Passos do Giovani". Antes deles, este plano vai ao repo em `docs/plans/2026-11-09-blindagem4-custo.md`, por PR próprio, como o #105: o `corte/README.md` e o e-mail do corte apontam para ele.
 2. **PR 1, o corte:** sem efeito no app, porque nada roda antes do G4. A volta para a opção oficial já vem no código, desarmada.
 3. **PR 2, site:** só faz merge depois do G9, com a chave real no lugar de `CHAVE_RECAPTCHA_DO_SITE`. Conferir a prévia da Vercel contra a produção, com login e sincronização, e colar o link e o "como testar" no PR. Na prévia, o App Check vai observar e a página tem de abrir sem violação nova de CSP.
-4. **PR 3, app:** só faz merge depois do G11. Abre o TestFlight da Blindagem 4, que só sai com o OK dele. Depois de instalar: entrar, lançar, sincronizar, e ver o tráfego aparecer em App Check → **APIs** → **Cloud Firestore** como verificado. Essa é a única prova real do App Attest.
+4. **PR 3, app:** entrou em 11/11 (#110, `6fc1683`), com o OK dele e antes do G11. O merge não depende do G11: o envio ao TestFlight só roda pelo botão (`workflow_dispatch`), e a CI do app compila sem assinar. O que o G11 destrava é o envio. O TestFlight da Blindagem 4 só sai com o OK dele, e saiu em 23/11 (run 45211102003, versão 2.0, build 11.1). Depois de instalar: entrar, lançar, sincronizar, e ler pela API do Monitoring os pedidos do app iOS ao Firestore como verificados (G12). Essa é a única prova real do App Attest. Ela existe desde 23/11: 20 pedidos do app iOS ao Firestore entre 19:28 e 20:03 UTC, todos válidos.
 5. **Prova do Swift 6.3.3:** ramo `proto/b4-ios-swift63`, run 42698765597, Xcode 26.6. Compilou, e os 10 jobs ficaram verdes na tentativa 2, sem mudar código. Na tentativa 1, `testVarreduraDoProximoNas71LinhasNaMaiorLetra` e `testContrasteDoOrcamentoNosDoisTemas` reprovaram (testes de tela do iOS 26, com serviços falsos) e o job `app` foi cortado pelo teto de 90 min. Na tentativa 2 o `app` levou 85 min, contra 66 da base 41246db, com os mesmos 121 casos. A abertura do app subiu 0,2 s por teste (mediana), 88% do aumento veio de depois dela, e o log não tem nenhuma linha de App Check durante os testes: é compatível com a variação da VM, que já chegou a 60% entre rodadas, mas o teto ficou perto. **No PR 3, contar com rerun do `app` se ele bater no teto.** Apagar o ramo depois do merge do PR 3.
 6. **O que o Lupa não precisa provar de novo:** as mutações e os tempos anotados em cada tarefa, salvo se o código mudar.
 
@@ -3108,7 +3108,9 @@ FIM
 
 ## PR 3: App Check no app
 
-**Ramo:** `feat/blindagem4-app-check-app`, a partir da `main`. **Risco:** Assinatura e App Attest. Só faz merge depois do G11. Fecha o marco do TestFlight, que sai com o OK dele. Linhas de produção: ~60.
+**Ramo:** `feat/blindagem4-app-check-app`, a partir da `main`. **Risco:** Assinatura e App Attest. O envio ao TestFlight depende do G11; o merge, não. Fecha o marco do TestFlight, que sai com o OK dele. Linhas de produção: ~60.
+
+> **Como o PR 3 entrou (11/11 e 23/11).** O #110 foi mesclado em 11/11 às 14h59 (`6fc1683`), com o OK do Giovani e antes do G11, fora da ordem que este plano dava. Não havia risco nisso: o `app-ios-testflight` só roda pelo botão, e a CI do app compila sem assinar. Além da Tarefa 15, o PR levou dois commits: o App Attest na política de privacidade e no manifesto de privacidade do app, e o teste de que o Release registra o App Attest antes do `configure`. O G11 só aconteceu em 23/11. No mesmo dia saiu o TestFlight (run 45211102003, 2.0, build 11.1, no commit `acedc24`), e o Giovani instalou, entrou, lançou e sincronizou.
 
 ### Tarefa 15: feat: App Check só observando, com App Attest, no Release do app nativo
 
@@ -3339,7 +3341,7 @@ FIM
 
 O corte não fica armado antes disto. O Orquestrador conduz, e um agente roda os comandos com o login do Giovani. Nada aqui toca em `app-construcao-civil`, salvo a leitura do G2.
 
-**Datas.** O T3 começou em 12/11 e fecha em 13/12/2026. O T1 longo deixou de ser condição do G14 em 17/11: começa até 02/12 se o projeto A ficar livre, como seguro da volta ao modo `dois-tempos`. A M5 leva 3 dias de relógio, mais 2 para ler o custo. O G15 continua até 04/01/2027, e nunca acontece com o corte desarmado.
+**Datas.** O T3 começou em 12/11 e fecha em 13/12/2026. O T1 longo deixou de ser condição do G14 em 17/11: começa até 02/12 se o projeto A ficar livre, como seguro da volta ao modo `dois-tempos`. A M5 começou em 17/11: a parte 3 rodou em 22/11, o segundo religar foi em 23/11, e a leitura do custo que decide é a de 25/11, 48 h depois dele. O G15 continua até 04/01/2027, e nunca acontece com o corte desarmado.
 
 **O T2 reprovou em 12/11:** com a API desligada, o site perdeu lançamentos de quem estava conectado (defeito do SDK web, consertado no site pelo PR #117) e, na volta, o último aparelho a subir levou uma conta de 146 para 4 gastos. A regra "reprovou, volta à oficial" não foi aplicada no automático. O conselho de 17/11 recomendou a oficial com reserva (`--modo-oficial-alerta`), armada só com o T3 de 31 dias e a M5 aprovados. O `--modo-oficial` da Tarefa 8, que só age pelo orçamento, fica no código sem uso previsto.
 
@@ -3406,7 +3408,7 @@ Comando no Mac: ele digita `! <comando>` no terminal do Orquestrador, para o log
 
 **ID literal em todo comando.** No lugar de `CORTE`, `A` e `B` vai o ID digitado, nunca uma variável de shell como `$A` ou `$CORTE`. O `implantar.sh` e o `religar.sh` leem `${PROJETO_ALVO:-app-construcao-civil}`: variável vazia ou ausente cai no padrão, que é a produção. Por isso, nas provas, o `PROJETO_ALVO` nunca fica de fora do comando. O pior caso é `implantar.sh --armar-api` sem `PROJETO_ALVO`, que arma o corte contra a produção. Só o G7, o G14 e "Se o corte agir" deixam o `PROJETO_ALVO` de fora, porque lá o alvo é a produção. Os outros padrões dos scripts (`custta-corte` e `custta-corte-estado`) também não são os IDs reais.
 
-Ninguém toca na aba **APIs** do App Check antes do G13: é lá que fica o botão de exigir.
+A aba **APIs** do App Check não é tela de leitura. É lá que fica o botão de exigir, e ela grava sozinha: em 23/11, aberta por um agente de navegador numa tarefa de leitura, o console gravou `UNENFORCED` em três serviços em 136 ms (três `UpdateService` no log de auditoria, na conta do Giovani; o log não diz se foi ao abrir a aba ou num clique). Naquele dia era a gravação que faltava (G10, item 3). **Antes do G13 ninguém abre essa aba, nem para olhar:** o modo de cada serviço se lê por `GET` (G10), e a medição, pela API do Monitoring (G12).
 
 | Passo | O quê | Quando |
 |---|---|---|
@@ -3419,10 +3421,10 @@ Ninguém toca na aba **APIs** do App Check antes do G13: é lá que fica o botã
 | G7 | Função em produção, simulando | Depois de o T3 publicar a mensagem |
 | G8 | Restringir as chaves | Depois do G5 |
 | G9 | Chave do reCAPTCHA | Antes do merge do PR 2 |
-| G10 | Registrar site e app no App Check | Com o G9 |
-| G11 | App Attest na Apple | Antes do merge do PR 3 |
-| G12 | Medir por 2 semanas | Depois do TestFlight com App Check |
-| G13 | Exigir, só no Firestore | Medição boa |
+| G10 | Registrar site e app no App Check e pôr os serviços em observação | Registro feito em 10/11, com o G9. Observação gravada só em 23/11 |
+| G11 | App Attest na Apple | Feito em 23/11. Destrava o envio ao TestFlight (o PR 3 entrou em 11/11, antes dele) |
+| G12 | Medir por 2 semanas | Começou em 23/11/2026, às 16h24 de Brasília. As 2 semanas fecham em 07/12 |
+| G13 | Exigir, só no Firestore | Não antes de 07/12/2026, e só com a medição boa |
 | G14 | Armar o corte | Depois do T3 de 31 dias (13/12) e da M5 |
 | G15 | Ativar a conta completa | **Até 04/01/2027** |
 
@@ -3545,30 +3547,53 @@ Desfazer: **Nenhuma** → **Salvar**, poucos minutos (prazo não documentado).
 
 Mudança na lista leva até 30 min.
 
-### G10. Registrar site e app no App Check
+### G10. Registrar site e app no App Check e pôr os serviços em observação
 
-Só observa, nada é bloqueado. `console.firebase.google.com/project/app-construcao-civil/appcheck`, aba **Apps**.
+Nada é bloqueado. Os itens 1 e 2 são da aba **Apps** de `console.firebase.google.com/project/app-construcao-civil/appcheck`, e foram feitos em 10/11, pela API. O item 3 faltava neste plano até 23/11.
 1. App web → **reCAPTCHA Enterprise** → chave do G9 → validade (TTL) de **1 dia** → **Save**. Não mexer no limiar (0,5).
 2. App iOS `br.com.custta.app` → **App Attest** → validade de **1 dia**. Se pedir o Team ID: `4S7JKDKN27`.
+3. **Pôr o Firestore e o login em observação.** Registrar os apps não liga a medição: cada serviço nasce em `OFF`, que não exige e **não mede**. Só `UNENFORCED` mede sem exigir. Primeiro ler o que está gravado (só leitura; sem o cabeçalho `x-goog-user-project` a API responde 403):
+   `curl -sS -H "Authorization: Bearer $(gcloud auth print-access-token)" -H 'x-goog-user-project: app-construcao-civil' https://firebaseappcheck.googleapis.com/v1/projects/app-construcao-civil/services`
+   A resposta só lista serviço já configurado: lista vazia, ou sem `firestore.googleapis.com`, quer dizer `OFF`. Para gravar a observação, um pedido por serviço, com o OK dele, porque escreve na produção (`111188093030` é o número do projeto):
+   `curl -sS -X PATCH -H "Authorization: Bearer $(gcloud auth print-access-token)" -H 'x-goog-user-project: app-construcao-civil' -H 'Content-Type: application/json' -d '{"enforcementMode":"UNENFORCED"}' 'https://firebaseappcheck.googleapis.com/v1/projects/111188093030/services/firestore.googleapis.com?updateMask=enforcementMode'`
+   O mesmo com `identitytoolkit.googleapis.com` no lugar de `firestore.googleapis.com`, para o login. Depois, o `GET` de novo: os dois têm de voltar com `"enforcementMode": "UNENFORCED"`. Nunca `ENFORCED` aqui: isso é o G13.
+
+**O que aconteceu.** Em 10/11 só os itens 1 e 2 foram feitos. A leitura de volta mostrou a lista de serviços vazia, e isso foi lido como "nenhuma exigência ligada". Era também nenhuma medição ligada: de 10/11 a 23/11 o Firestore não teve um ponto de medição, com o site no ar desde 10/11. O login foi medido nesse período mesmo sem configuração (31 pedidos do site em 5 dias, todos válidos), o que a documentação não explica. Em 23/11, às 19:24:42Z (16h24 de Brasília), o console gravou `UNENFORCED` no Firestore, no login e em `oauth2.googleapis.com` (o login com Google do iOS), com a aba **APIs** aberta por um agente de navegador. O primeiro ponto do Firestore é das 19:28Z. O item 3 está feito desde então: em 23/11 o `GET` acima devolveu os três serviços em `UNENFORCED`. O `PATCH` nunca rodou por nós: a forma vem da referência da API (`projects.services.patch`).
 
 ### G11. App Attest na Apple
 
-Sem isto, a CI cai em "Arquivar" e nada vai ao TestFlight.
+**Feito em 23/11.** Sem isto, o envio ao TestFlight cai em "Arquivar". O merge do PR 3 não depende dele: entrou em 11/11.
 1. `developer.apple.com/account` → **Certificates, IDs & Profiles** → **Identifiers** → `br.com.custta.app` → marcar **App Attest** → **Save**.
-2. **Profiles** → `Custta App Store` → **Edit** → **Save** → **Download**. Guardar em `~/Documents/custta-chaves/`.
-3. `! base64 -i ~/Documents/custta-chaves/<arquivo>.mobileprovision | gh secret set PERFIL_APP_STORE -R gstuchi/app_construcao_civil`.
+2. **Profiles** → `Custta App Store` → **Edit** → **Save** → **Download**. Guardar em `~/Documents/custta-chaves/`. O arquivo baixado chama `Custta_App_Store.mobileprovision`. A pasta tem perfis antigos de nome parecido (`custta-app-store.mobileprovision`, de 30/09), sem o App Attest.
+3. Conferir que o arquivo é o novo, antes de enviar: `security cms -D -i ~/Documents/custta-chaves/Custta_App_Store.mobileprovision | grep -c appattest-environment` tem de dar `1`. Nos perfis antigos dá `0`.
+4. `! if p=$(base64 -i ~/Documents/custta-chaves/Custta_App_Store.mobileprovision) && test -n "$p"; then printf '%s' "$p" | gh secret set PERFIL_APP_STORE -R gstuchi/app_construcao_civil && echo "gravado"; else echo "NADA gravado"; fi`. O `!` é só o prefixo do Claude Code: ele digita a linha no terminal do Orquestrador (regra no início desta seção). Colada direto num terminal, a linha vai sem o `!`, e funciona dos dois jeitos. Fora de um terminal, o `gh secret set` não imprime nada, nem quando grava; por isso a linha termina com `gravado` ou `NADA gravado`. `NADA gravado` quer dizer que o arquivo não existe com esse nome, está vazio ou não se lê, e que o `gh` não foi chamado. Se o `gh` for chamado e falhar, não sai nenhum dos dois, só o erro dele.
+
+**Nunca rodar esse comando com um nome entre `<` e `>`.** Em 23/11 a linha antiga deste plano, com `<arquivo>` no lugar do nome, gravou o segredo **vazio**. O shell lê `<arquivo` como "entrada vinda do arquivo `arquivo`" e falha, o `base64` nem roda, e o `gh secret set`, do outro lado do `|`, grava a entrada vazia. `gh secret list` só mostra a data, não o conteúdo. Um envio com o segredo vazio para no passo "Os secrets de assinatura existem", o 3º do `app-ios-testflight`, antes de qualquer build. Em 23/11 foi consertado em 2 minutos, antes de qualquer envio.
+
+Pronto quando: o `app-ios-testflight` passa de "Arquivar" e envia. Em 23/11: run 45211102003, verde, 2.0 build 11.1.
 
 ### G12. Medir por 2 semanas
 
-Depois do TestFlight com App Check e do site no ar. App Check → **APIs** → **Cloud Firestore**, só olhar. Ir ao G13 com 7 dias seguidos em que quase tudo aparece verificado, e o que sobra é build antigo conhecido. Rever o prazo de 4 s do site com esses números.
+**A medição do Firestore começou em 23/11/2026, às 19:24:44Z (16h24 de Brasília), e não em 10/11:** até ali o serviço estava em `OFF` e não media (G10). O TestFlight com App Check saiu no mesmo dia. As 2 semanas fecham em **07/12/2026**.
+
+**No 1º dia, conferir que há dado.** Gráfico vazio não é "tudo verificado": é nada medido. A leitura é pela API do Monitoring, nunca pela aba **APIs** do console (regra no início desta seção). Um pedido por métrica: com um filtro que case mais de uma, a API responde 400.
+`curl -sS -G -H "Authorization: Bearer $(gcloud auth print-access-token)" -H 'x-goog-user-project: app-construcao-civil' --data-urlencode 'filter=metric.type="firebaseappcheck.googleapis.com/services/verification_count"' --data-urlencode 'interval.startTime=2026-11-23T19:00:00Z' --data-urlencode "interval.endTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" https://monitoring.googleapis.com/v3/projects/app-construcao-civil/timeSeries`
+Cada série traz o serviço (`resource.labels.service_id`), o app (`metric.labels.app_id`) e o veredito (`metric.labels.security`; `VALID` é o verificado). Tem de haver série de `firestore.googleapis.com` para o app web e para o app iOS. As outras duas métricas, `firebaseappcheck.googleapis.com/resources/verification_count` e `firebaseappcheck.googleapis.com/services/verdict_count` (esta marcada como descontinuada), contam o mesmo e só servem de conferência. Conferido em 23/11, às 20:03Z: 56 pedidos do site e 20 do app iOS ao Firestore, todos `VALID`.
+
+**Daí em diante, ler pela API, somando por dia:** `python3 -I g12-medir.py`, em `prumo-blindagem4/provas/` (só `GET`; imprime o modo de cada serviço e, por dia, verificados e não verificados por app). O que não é `VALID` tem quatro tipos. Três podem aparecer no Custta: `MISSING_OUTDATED_CLIENT`, sem ficha e vindo de um SDK do Firebase (o esperado para build antigo do TestFlight, o app Capacitor, o app aberto pelo Xcode em Debug e o site em `localhost`); `MISSING_UNKNOWN_ORIGIN`, sem ficha e sem SDK (`curl`, script); e `INVALID`, ficha inválida (no site, o esperado quando o reCAPTCHA não responde em 4 s). O quarto, `CONSUMED`, não é esperado no Custta; se aparecer, o `g12-medir.py` conta como não verificado.
+
+Ir ao G13 com 7 dias seguidos em que quase tudo do Firestore aparece verificado, e o que sobra é build antigo conhecido. Rever o prazo de 4 s do site com os `INVALID` do app web: depois do G13, cada um deles é um pedido recusado.
 
 ### G13. Exigir, só no Firestore
 
-1. Avisar quem usa: abrir o site e atualizar o TestFlight antes.
-2. App Check → **APIs** → **Cloud Firestore** → **Enforce** → confirmar. Autenticação fica de fora, porque é Preview. Leva até 15 min.
-3. Depois: site e app (entrar, lançar, sincronizar), prévia da Vercel, e Actions → `push-diario` → **Run workflow**. É este último que prova que o cron fica fora do App Check.
+**Não antes de 07/12/2026**, e só com a medição boa do G12. É a data mais cedo, não um prazo: sem medição boa, o G13 espera. Pela tabela, o G14 e o G15 têm condição própria e não esperam por ele, e o limite de 04/01/2027 segue cabendo: de 07/12 a 04/01 são 28 dias.
 
-Desfazer: mesma linha → **Unenforced (monitoring only)**.
+1. Avisar quem usa: abrir o site e atualizar o TestFlight antes. O build com App Check é o 2.0 (11.1), de 23/11, ou mais novo.
+2. App Check → **APIs** → **Cloud Firestore** → **Enforce** → confirmar. Só o Giovani, e só nessa linha: a aba grava sozinha (regra no início desta seção). O login e o `oauth2.googleapis.com` ficam em `UNENFORCED`: a autenticação fica de fora, porque é Preview. Leva até 15 min.
+3. Ler de volta, pela API: o `GET` do G10, item 3. `firestore.googleapis.com` em `ENFORCED`, os outros dois em `UNENFORCED`.
+4. Depois: site e app (entrar, lançar, sincronizar), prévia da Vercel, e Actions → `push-diario` → **Run workflow**. É este último que prova que o cron fica fora do App Check. No dia seguinte, `python3 -I g12-medir.py`: a coluna `recusados` do Firestore mostra quem ficou de fora.
+
+Desfazer: mesma linha → **Unenforced (monitoring only)**, e o `GET` de novo.
 
 ### G14. Armar o corte
 
@@ -3613,7 +3638,7 @@ A hora dita é o mínimo: a métrica atrasa uns 4 minutos. Rodar antes da hora n
    `rm -rf app_construcao_civil; git clone https://github.com/gstuchi/app_construcao_civil && cd app_construcao_civil && BUCKET_ESTADO=CORTE-estado bash corte/religar.sh --folga 0`
    Grava a base e a hora da volta, e imprime em quanto o corte age de novo e o prazo da conferência dos dados.
    No modo oficial a API segue ligada, e quem atacou pode continuar lendo dentro do nível gratuito. Enquanto o ataque não para, as somas não caem e a hora que a trava imprime anda a cada rodada: ela é sempre um mínimo, nunca uma promessa. Se a hora seguir andando por mais de uma rodada, o ataque não parou: siga o item 7.
-4. Religar a cobrança: `console.cloud.google.com/billing/projects` → **Change billing** no projeto `app-construcao-civil`. De 40 minutos a mais de um dia, sem garantia (a M5 mede).
+4. Religar a cobrança: `console.cloud.google.com/billing/projects` → **Change billing** no projeto `app-construcao-civil`. Na M5 o vínculo voltou em 1 a 2 segundos, nas duas vezes (22 e 23/11, pela API), num projeto que seguia respondendo depois de quase 5 dias, e depois de 19 horas, sem conta. Se o Google já tiver parado algum serviço, a volta pode levar mais, sem garantia: isso a M5 não viu.
 5. Conferir que o site e o app leem e gravam. `gcloud firestore databases describe --project app-construcao-civil` (PITR e proteção), `gcloud firestore backups schedules list --database '(default)' --project app-construcao-civil` e `gcloud firestore backups list --project app-construcao-civil`. Recriar o que faltar; ligar o PITR de novo antes de restaurar.
 6. **No dia seguinte, a conferência dos dados**, em até 7 dias da volta: um agente compara, conta por conta, o número de gastos com o backup do dia do corte. Conta que perdeu lançamento: ler pelo PITR o instante de antes da volta e restaurar num banco novo. Depois de 7 dias o PITR não desfaz.
 7. **Passaram 72 h e o ataque continua** (é o caminho normal quando o ataque não para): desligar a API do Firestore e religar a cobrança. O app sai do ar, e o banco volta a ter conta. Bloqueie antes a conta que ataca; só então rode o `religar.sh` com `--forcar "<motivo>"`, porque a trava não vai soltar sozinha enquanto as leituras continuarem.

@@ -87,3 +87,50 @@ do marco 1 nas mesmas obras.
 - [ ] Controle por Voz ("Mostrar nomes"): "Tocar Orçamento", "Tocar A pagar", "Tocar Afazeres" e o nome de um lançamento.
 - [ ] Com Reduzir movimento, Aumentar contraste e Reduzir transparência ligados nos Ajustes do iPhone (não no app), a obra
   continua como no marco 1.
+
+## Marco 2: o "Vale a pena?" e os Gráficos
+
+**A aba "Vale a pena?"** (PR 4a; mockup aprovado, parte 2)
+
+- [ ] A cápsula tem três abas: Obras, Vale a pena? e Ajustes. A nova fica no meio, e o + some nela, como em Ajustes. A
+  cápsula continua a 16 pt da borda e não pula ao trocar de aba.
+- [ ] A aba abre com a primeira obra em andamento que tem gastos, o preço na venda estimada dela e os meses em 0. A conta já
+  aparece: o bloco verde "Vale a pena" ou o âmbar "Rende menos que o banco", com a taxa ao mês em mono. Com a mesma obra,
+  o mesmo preço e os mesmos meses, os números são os do simulador do site.
+- [ ] "Obra": a lista traz só as obras não vendidas que têm gastos. Trocar de obra troca o preço, enquanto você não digitou.
+- [ ] Toque em "Se eu vender por": as teclas tomam o lugar da cápsula, com o valor ainda à vista. O primeiro dígito
+  substitui o valor (não emenda nele), os centavos entram pela direita, e a conta acompanha cada tecla. "OK" fecha as
+  teclas, e a cápsula volta. Abrir e dar "OK" sem digitar deixa tudo como estava. Diga se o valor à vista, com o cursor
+  depois dele, deixa claro que o próximo dígito substitui (o mockup só desenha o campo vazio).
+- [ ] Apague o preço até o fim: o campo fica com "R$ 0,00" apagado, e aparece "Digite o preço de venda pra ver a conta.". Ele
+  não volta para a venda estimada, nem trocando de obra. Fechando e abrindo o app, volta.
+- [ ] O − e o + andam de um em um mês; o − para em 0 e o + em 120, e a frase do bloco acompanha ("vendendo hoje", "vendendo
+  daqui a 6 meses").
+- [ ] A faixa "Onde a sua venda cai": o custo numa barra, o tracejado do empate com o banco e a venda numa barra com um
+  ponto em cima; a parte hachurada é o lado "acima do banco". A etiqueta diz de que lado a venda caiu, e os três valores
+  vêm embaixo, cada um com o marcador dele.
+- [ ] A tabela "Relatório da simulação", pelo bruto e pelo corrigido; na obra com área, a última linha é o preço por m². Um
+  preço abaixo do custo mostra o prejuízo em âmbar, nunca em vermelho.
+- [ ] Numa obra que começou há menos de 1 mês: a taxa vira "—", e aparece "obra com menos de 1 mês — % ao mês ainda não diz
+  muito".
+- [ ] Vá a Ajustes e volte: a obra, o preço e os meses continuam. Lance um gasto na obra escolhida e volte à aba: a conta já
+  mudou.
+
+**Texto Maior no máximo**
+
+- [ ] O título quebra em duas linhas; cada campo fica com o valor embaixo do nome; o − e o + crescem.
+- [ ] Toque no preço: a linha "Se eu vender por" sobe e fica inteira acima das teclas. As teclas param de crescer antes do
+  máximo, como as do orçamento, e a barra delas ("Preço de venda" e "OK") também: tocar e segurar no "OK" mostra o texto
+  grande no meio da tela.
+- [ ] O veredito, a faixa com os três valores e a tabela, com um valor por linha, sem nada cortado.
+
+**Acessibilidade**
+
+- [ ] VoiceOver, nos campos: "Obra, Casa Alphaville", "Se eu vender por, R$ …, botão" e "Daqui a, 6 meses", com "Um mês a
+  menos" e "Um mês a mais". Nas teclas, cada toque fala o valor novo; o gesto de sair (o Z com dois dedos) as fecha.
+- [ ] VoiceOver, na conta: o veredito é um elemento só, com a frase inteira; a faixa é uma imagem com os três valores; cada
+  linha da tabela fala o nome e os dois valores.
+- [ ] Controle por Voz ("Mostrar nomes"): "Tocar Obra", "Tocar Se eu vender por", "Tocar Um mês a mais" e "Tocar OK".
+- [ ] No escuro e no claro, nos vidros Transparente e Fosco: as três marcas da faixa se distinguem do trilho e da parte
+  hachurada, e o "OK" das teclas se lê. Com Reduzir transparência, os blocos e as teclas ficam sólidos.
+- [ ] Com Aumentar contraste, a aba inteira continua legível, e os blocos verde e âmbar não mudam de cor.

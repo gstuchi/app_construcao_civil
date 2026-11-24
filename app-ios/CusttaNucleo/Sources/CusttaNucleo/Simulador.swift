@@ -223,7 +223,7 @@ public struct CamposDoSimulador: Equatable, Sendable {
     }
 }
 
-/* O preço nas teclas do "Vale a pena?" (decisão do Giovani de 24/11/2026; o mockup só desenha as teclas com o campo vazio).
+/* O preço nas teclas do "Vale a pena?" (decisões do Giovani de 24/11/2026; o mockup só desenha as teclas com o campo vazio).
    As teclas abrem com o valor do campo à vista; a primeira tecla o substitui: a digitação parte do zero, e não do valor que
    estava, que quase sempre é a venda estimada (com os centavos entrando pela direita, um dígito a mais faria de
    R$ 1.450.000,00 R$ 14.500.000,0X). O OK sem digitar deixa os campos como estavam, com o preço ainda acompanhando a venda
@@ -236,6 +236,16 @@ public struct PrecoNasTeclas: Equatable, Sendable {
     public private(set) var digitou = false
 
     public init() {}
+
+    /// Uma tecla: devolve o preço novo, em reais, para o campo, ou nil quando a tecla não muda nada. O apagar como primeira
+    /// tecla limpa o campo ("apagar limpa o campo", decisão do Giovani de 24/11); as outras seguem a regra do teclado de
+    /// valor, a partir do zero. O 0 e o 00 como primeira tecla não mudam nada: sobre eles, ele não decidiu.
+    public mutating func tocar(_ tecla: TeclaDeValor) -> Double? {
+        if tecla == .apagar && !digitou { return digitar(0) }
+        let novo = aplicarTecla(centavos, tecla)
+        guard novo != centavos else { return nil }
+        return digitar(novo)
+    }
 
     /// As teclas mudaram o valor: guarda os centavos e devolve o preço, em reais, para o campo. Zero é o campo apagado.
     public mutating func digitar(_ centavos: Int) -> Double {

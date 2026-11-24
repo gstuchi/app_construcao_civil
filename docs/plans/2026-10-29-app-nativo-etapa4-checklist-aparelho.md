@@ -102,6 +102,8 @@ do marco 1 nas mesmas obras.
   substitui o valor (não emenda nele), os centavos entram pela direita, e a conta acompanha cada tecla. "OK" fecha as
   teclas, e a cápsula volta. Abrir e dar "OK" sem digitar deixa tudo como estava. Diga se o valor à vista, com o cursor
   depois dele, deixa claro que o próximo dígito substitui (o mockup só desenha o campo vazio).
+- [ ] Com o valor à vista, toque em apagar antes de qualquer dígito: o campo fica vazio, com a frase do site, e continua
+  vazio depois do "OK" (decisão de 24/11). O 0 e o 00 como primeira tecla não fazem nada.
 - [ ] Apague o preço até o fim: o campo fica com "R$ 0,00" apagado, e aparece "Digite o preço de venda pra ver a conta.". Ele
   não volta para a venda estimada, nem trocando de obra. Fechando e abrindo o app, volta.
 - [ ] O − e o + andam de um em um mês; o − para em 0 e o + em 120, e a frase do bloco acompanha ("vendendo hoje", "vendendo

@@ -4,10 +4,10 @@ import CusttaNucleo
 /* As teclas do preço do "Vale a pena?" (etapa 4, PR 4a; mockup aprovado, parte 2, `sim-teclado`): tomam o lugar da cápsula de
    abas enquanto a pessoa digita o "Se eu vender por". Uma faixa da Folha com os cantos de cima redondos, a barra ("Preço de
    venda" e "OK") e as teclas do teclado de valor da etapa 3 (a GradeDeTeclas encaixada: os centavos entram pela direita, com
-   "00" e apagar), num campo só, sem ‹ ›. O que a digitação faz com o campo é do núcleo (`PrecoNasTeclas`, decisão do Giovani
-   de 24/11): o valor fica à vista, a primeira tecla o substitui e o OK sem digitar deixa tudo como estava. A conta da tela
-   acompanha cada tecla, como no site. Entram na área segura de baixo da tela da aba (`safeAreaInset`), como o "Salvar" das
-   folhas: é por ela que a rolagem sabe onde as teclas começam. */
+   "00" e apagar), num campo só, sem ‹ ›. O que cada tecla faz com o campo é do núcleo (`PrecoNasTeclas`, decisões do Giovani
+   de 24/11): o valor fica à vista, a primeira tecla o substitui, o apagar como primeira tecla limpa o campo e o OK sem
+   digitar deixa tudo como estava. A conta da tela acompanha cada tecla, como no site. Entram na área segura de baixo da tela
+   da aba (`safeAreaInset`), como o "Salvar" das folhas: é por ela que a rolagem sabe onde as teclas começam. */
 struct TeclasDoPreco: View {
     @Binding var campos: CamposDoSimulador
     let ok: () -> Void
@@ -40,8 +40,11 @@ struct TeclasDoPreco: View {
             }
             .padding(.horizontal, 8)
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            GradeDeTeclas(centavos: Binding(get: { preco.centavos }, set: { campos.precoDigitado = preco.digitar($0) }),
-                          tamanho: .encaixado)
+            GradeDeTeclas(centavos: .constant(preco.centavos), tamanho: .encaixado) { tecla in
+                guard let reais = preco.tocar(tecla) else { return nil }
+                campos.precoDigitado = reais
+                return preco.centavos
+            }
         }
         .padding(.horizontal, 12)
         .padding(.top, 4)

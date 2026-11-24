@@ -239,6 +239,22 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertEqual(preco.value as? String, "sem preço", "nem trocando para uma obra com venda estimada")
     }
 
+    /// "Apagar limpa o campo" (decisão do Giovani de 24/11): com o valor à vista, o apagar como primeira tecla deixa o campo
+    /// vazio, com a frase do site, e o OK mantém o campo vazio.
+    @MainActor func testOApagarNaPrimeiraTeclaLimpaOCampo() {
+        let app = abrirAAba()
+        let preco = app.elemento("simPreco"), ok = app.buttons["teclasDoPreco-ok"]
+        preco.tap()
+        XCTAssertTrue(ok.waitForExistence(timeout: 5), "as teclas do preço")
+        XCTAssertEqual(preco.value as? String, "R$\u{00A0}1.450.000,00", "o valor à vista")
+        app.buttons["tecla-del"].tap()
+        XCTAssertEqual(preco.value as? String, "sem preço", "o apagar como primeira tecla limpa o campo")
+        XCTAssertTrue(app.elemento("simSemPreco").waitForExistence(timeout: 5), "sem preço, a frase do site")
+        ok.tap()
+        XCTAssertTrue(app.buttons["aba-valeAPena"].waitForExistence(timeout: 5), "o OK devolve a cápsula")
+        XCTAssertEqual(preco.value as? String, "sem preço", "o campo limpo fica limpo depois do OK")
+    }
+
     /// Escolhe a obra no menu logo depois do OK das teclas. O OK devolve a cápsula antes de a rolagem assentar, e o toque no
     /// menu nesse meio se perdia; e a escolha chega depois de o menu fechar, então a leitura sem espera pegava a obra de antes
     /// (Lupa, no iOS 26.5: 1 queda em 25 e 2 em 40). Espera as teclas saírem, toca de novo se o item não aparecer, como o

@@ -1,9 +1,10 @@
 import Testing
 @testable import CusttaNucleo
 
-/* O preço nas teclas do "Vale a pena?" (decisão do Giovani de 24/11/2026): as teclas abrem com o valor do campo à vista, a
-   primeira tecla o substitui e o OK sem digitar deixa os campos como estavam. Cada teste toca as teclas como a grade do app
-   faz: aplica a regra do teclado aos centavos das teclas e só entrega o valor quando ele muda. */
+/* O preço nas teclas do "Vale a pena?" (decisões do Giovani de 24/11/2026): as teclas abrem com o valor do campo à vista, a
+   primeira tecla o substitui, o apagar como primeira tecla limpa o campo e o OK sem digitar deixa os campos como estavam.
+   Cada teste toca as teclas como a grade do app faz: pergunta ao `PrecoNasTeclas` o que a tecla faz e só grava o preço
+   quando ele devolve um. */
 struct PrecoNasTeclasTests {
     private let hoje = "2026-10-12"
 
@@ -20,11 +21,9 @@ struct PrecoNasTeclasTests {
         simulacaoNaTela(campos, obras: obras, hoje: hoje, taxa: 1).preco
     }
 
-    /// Uma tecla, como a `GradeDeTeclas`: a regra do teclado sobre os centavos das teclas, e o campo só muda se o valor mudou.
+    /// Uma tecla, como as `TeclasDoPreco`: o campo só muda quando a tecla devolve um preço.
     private func tocar(_ tecla: TeclaDeValor, _ teclas: inout PrecoNasTeclas, _ campos: inout CamposDoSimulador) {
-        let novo = aplicarTecla(teclas.centavos, tecla)
-        guard novo != teclas.centavos else { return }
-        campos.precoDigitado = teclas.digitar(novo)
+        if let preco = teclas.tocar(tecla) { campos.precoDigitado = preco }
     }
 
     @Test func oOkSemDigitarDeixaOsCamposComoEstavam() {
@@ -70,15 +69,40 @@ struct PrecoNasTeclasTests {
         #expect(campos.precoDigitado == 145_000)
     }
 
-    @Test func oZeroEOApagarNaPrimeiraTeclaNaoMudamNada() {
+    /// O 0 e o 00 como primeira tecla seguem sem fazer nada: o Giovani decidiu só o apagar (24/11).
+    @Test func oZeroEOZeroZeroNaPrimeiraTeclaNaoMudamNada() {
         let a = obra("a", estimada: 300_000)
-        for tecla in [TeclaDeValor.digito(0), .duploZero, .apagar] {
+        for tecla in [TeclaDeValor.digito(0), .duploZero] {
             var campos = CamposDoSimulador(), teclas = PrecoNasTeclas()
             tocar(tecla, &teclas, &campos)
             #expect(!teclas.digitou, "\(tecla.nome)")
             #expect(campos.precoDigitado == nil, "\(tecla.nome)")
             #expect(precoNaTela(campos, [a]) == 300_000, "\(tecla.nome)")
         }
+    }
+
+    /// "Apagar limpa o campo" (decisão do Giovani de 24/11): com o valor à vista, o apagar como primeira tecla deixa o campo
+    /// vazio, como apagar tudo; a tecla seguinte parte do zero, e outro apagar no campo vazio não faz nada.
+    @Test func oApagarNaPrimeiraTeclaLimpaOCampo() {
+        let a = obra("a", estimada: 300_000), b = obra("b", estimada: 180_000)
+        var campos = CamposDoSimulador(), teclas = PrecoNasTeclas()
+        tocar(.apagar, &teclas, &campos)
+        #expect(teclas.digitou)
+        #expect(teclas.centavos == 0)
+        #expect(campos.precoDigitado == 0)
+        #expect(precoNaTela(campos, [a, b]) == nil)
+        campos.obraId = "b"
+        #expect(precoNaTela(campos, [a, b]) == nil, "campo tocado: não volta para a venda estimada")
+        #expect(teclas.tocar(.apagar) == nil, "o apagar no campo vazio não faz nada")
+        tocar(.digito(5), &teclas, &campos)
+        #expect(campos.precoDigitado == 0.05)
+    }
+
+    @Test func tambemLimpaOPrecoQueAPessoaJaTinhaDigitado() {
+        var campos = CamposDoSimulador(), teclas = PrecoNasTeclas()
+        campos.precoDigitado = 250_000
+        tocar(.apagar, &teclas, &campos)
+        #expect(campos.precoDigitado == 0)
     }
 
     @Test func digitarEApagarTudoDeixaOCampoVazio() {

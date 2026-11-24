@@ -48,10 +48,14 @@ enum TamanhoDasTeclas: Sendable {
 }
 
 /// As doze teclas do teclado de valor e o que cada uma faz com os centavos: a regra do núcleo (o teto e a tecla ignorada) e
-/// o valor novo falado pelo VoiceOver a cada tecla. Serve ao TecladoDeValor e ao TecladoEncaixado.
+/// o valor novo falado pelo VoiceOver a cada tecla. Serve ao TecladoDeValor, ao TecladoEncaixado e às teclas do preço do
+/// "Vale a pena?", que trazem regra própria.
 struct GradeDeTeclas: View {
     @Binding var centavos: Int
     let tamanho: TamanhoDasTeclas
+    /// A regra de quem usa, no lugar da do teclado de valor: devolve os centavos novos, ou nil quando a tecla não muda nada.
+    /// Com ela, os centavos do binding não são lidos: quem usa guarda os seus.
+    var regra: ((TeclaDeValor) -> Int?)? = nil
 
     static let linhas: [[TeclaDeValor]] = [
         [.digito(1), .digito(2), .digito(3)],
@@ -76,6 +80,10 @@ struct GradeDeTeclas: View {
     }
 
     private func tocar(_ tecla: TeclaDeValor) {
+        if let regra {
+            if let novo = regra(tecla) { AccessibilityNotification.Announcement(fmtCentavos(novo)).post() }
+            return
+        }
         let novo = aplicarTecla(centavos, tecla)
         guard novo != centavos else { return }
         centavos = novo

@@ -149,9 +149,14 @@ final class LeituraDaAnaliseUITests: XCTestCase, LaudoDeLeitura {
     private static let rolagemDoVeredito = 50
     private static let rolagemDaFaixa = 300
     private static let rolagemDaTabela = 605
-    private static let rolagemDoVereditoNaMaiorLetra = 1440
-    private static let rolagemDaFaixaNaMaiorLetra = 2080
-    private static let rolagemDaTabelaNaMaiorLetra = 2760
-    private static let rolagemDoLucroNaMaiorLetra = 3340
+    // As da maior letra servem nos dois iPhones (medidas no 17 Pro do iOS 26.5, a largura da CI, e no Pro Max): no Pro Max o
+    // texto quebra menos e tudo sobe, 178 pt do veredito à 1ª linha da tabela e 236 nas linhas de baixo, e o assunto tem de
+    // caber entre a barra de status (70 pt) e a borda de baixo (734 no 18 Pro, 816 no Pro Max). Cada uma fica no meio do vão
+    // comum aos dois; as medidas só no 18 Pro (1440, 2080, 2760 e 3340) deixavam o assunto de 25 a 83 pt acima da barra no
+    // Pro Max.
+    private static let rolagemDoVereditoNaMaiorLetra = 1310
+    private static let rolagemDaFaixaNaMaiorLetra = 1840
+    private static let rolagemDaTabelaNaMaiorLetra = 2580
+    private static let rolagemDoLucroNaMaiorLetra = 3100
     private static let rolagemDoPrecoNaMaiorLetra = 250
 }

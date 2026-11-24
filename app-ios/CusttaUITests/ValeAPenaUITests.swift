@@ -105,6 +105,32 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertFalse(veredito.exists, "sem preço não há veredito")
     }
 
+    /// A faixa "Onde a sua venda cai": uma imagem com a frase dos três valores para o VoiceOver, a pílula do lado em que a
+    /// venda caiu e a lista com o custo, o empate e a venda. A Casa Alphaville custou R$ 842.317,45 e tem a venda estimada em
+    /// R$ 1.450.000,00: cai acima do banco. Sem preço, a faixa some com o veredito.
+    @MainActor func testAFaixaMostraOndeAVendaCai() {
+        let app = abrirAAba()
+        let faixa = app.elemento("simFaixa")
+        XCTAssertTrue(faixa.waitForExistence(timeout: 5))
+        XCTAssertTrue(faixa.label.hasPrefix("Custo R$\u{00A0}842.317,45, empata com o banco em R$\u{00A0}"), faixa.label)
+        XCTAssertTrue(faixa.label.hasSuffix(", sua venda R$\u{00A0}1.450.000,00"), faixa.label)
+        XCTAssertEqual(app.elemento("simPilula").label, "acima do banco")
+        XCTAssertEqual(app.elemento("simFaixa-custo").label, "custo (bruto)")
+        XCTAssertEqual(app.elemento("simFaixa-custo").value as? String, "R$\u{00A0}842.317,45")
+        XCTAssertEqual(app.elemento("simFaixa-empate").label, "empata com o banco")
+        XCTAssertEqual(app.elemento("simFaixa-venda").value as? String, "R$\u{00A0}1.450.000,00")
+        // As três linhas ficam embaixo da faixa, na ordem do custo, do empate e da venda.
+        let linhas = ["custo", "empate", "venda"].map { app.elemento("simFaixa-\($0)").frame.minY }
+        XCTAssertEqual(linhas, linhas.sorted())
+        XCTAssertGreaterThan(linhas[0], faixa.frame.maxY)
+        app.buttons["simObra"].tap()
+        let sobrado = app.buttons["Sobrado Granja Viana"]
+        XCTAssertTrue(sobrado.waitForExistence(timeout: 5))
+        sobrado.tap()
+        XCTAssertTrue(app.elemento("simSemPreco").waitForExistence(timeout: 5))
+        XCTAssertFalse(faixa.exists, "sem preço não há faixa")
+    }
+
     /// Sem nenhuma obra elegível, a linha da obra diz o que fazer, como no site, e não há lista para abrir.
     @MainActor func testSemObraElegivelALinhaDizOQueFazer() {
         let app = abrirApp(conta: "senha", dados: "vazio", abrir: "aba:valeAPena")

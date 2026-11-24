@@ -38,7 +38,9 @@ struct ValeAPenaView: View {
                         }
                     }
                     .padding(.horizontal, Grade.externa)
-                    .padding(.bottom, 24)
+                    // A folga das telas que rolam por baixo da cápsula (62 de altura, 22 da borda e 14 de respiro): a barra de
+                    // baixo do PrincipalView não entra na área segura da rolagem, e com 24 a última linha da tabela parava atrás dela.
+                    .padding(.bottom, 98)
                 }
                 .scrollIndicators(.hidden)
                 // Quando as teclas entram, a área de baixo da rolagem cresce: a linha do preço sobe só o que falta para ficar à

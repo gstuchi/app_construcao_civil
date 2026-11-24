@@ -13,6 +13,8 @@ struct PrincipalView: View {
     /// Os campos do "Vale a pena?": moram aqui, e não na tela da aba, que sai da árvore quando a pessoa troca de aba. Assim
     /// duram enquanto o app está aberto (spec da etapa 4, "Dados e estado").
     @State private var simulador = CamposDoSimulador()
+    /// As teclas do preço do "Vale a pena?" estão abertas, e a cápsula de abas sai (mockup da etapa 4, `sim-teclado`).
+    @State private var teclasDoPreco = false
     @State private var folhas = Folhas()
     /// O + da lista avisou em vez de abrir "Nova obra": o teto de obras ou os dados ainda não vistos.
     @State private var avisoDoMais: AvisoDoMais?
@@ -24,13 +26,18 @@ struct PrincipalView: View {
         Group {
             switch aba {
             case .obras: ObrasView(caminho: $caminhoDeObras)
-            case .valeAPena: ValeAPenaView(campos: $simulador)
+            case .valeAPena: ValeAPenaView(campos: $simulador, teclasAbertas: $teclasDoPreco)
             case .ajustes: AjustesView()
             }
         }
         .environment(folhas)
         // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
-        .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
+        .safeAreaBar(edge: .bottom, spacing: 0) {
+            // As teclas do preço tomam o lugar da cápsula; elas são da tela da aba, que as põe na área segura da rolagem.
+            if !(aba == .valeAPena && teclasDoPreco) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
+        }
+        // Fora do "Vale a pena?" não há teclas do preço: quem volta a ela encontra a cápsula.
+        .onChange(of: aba) { teclasDoPreco = false }
         .sheet(item: $folhas.aberta, onDismiss: folhas.fechou) { qual in
             Group {
                 switch qual {
@@ -72,7 +79,8 @@ struct PrincipalView: View {
         #endif
         // A cápsula se mede da borda da tela, como a barra de abas do sistema, e não acompanha o teclado: ao
         // entrar com ele aberto, o teclado da entrada ainda está fechando quando esta tela aparece, e a barra
-        // nascia em cima dele, no meio da tela, e saltava. As telas das abas não têm campo de texto.
+        // nascia em cima dele, no meio da tela, e saltava. Nas telas das abas, o teclado do sistema só aparece na busca da
+        // obra; o preço do "Vale a pena?" usa as teclas do app, e não ele.
         .ignoresSafeArea(edges: .bottom)
     }
 }

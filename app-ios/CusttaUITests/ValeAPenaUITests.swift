@@ -149,6 +149,80 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertFalse(app.elemento("simTabela-7").exists, "sete linhas")
     }
 
+    /// As teclas do preço (decisão do Giovani de 24/11): o toque na linha do preço troca a cápsula de abas pelas teclas, com
+    /// o valor à vista. O OK sem digitar devolve a cápsula e deixa tudo como estava: o preço segue acompanhando a venda
+    /// estimada (o Sobrado não tem, e o campo fica vazio).
+    @MainActor func testAsTeclasAbremComOValorEOOkSemDigitarNaoMudaNada() {
+        let app = abrirAAba()
+        let preco = app.elemento("simPreco"), teclas = app.elemento("teclasDoPreco"), ok = app.buttons["teclasDoPreco-ok"]
+        XCTAssertFalse(teclas.exists, "fechadas até o toque no preço")
+        preco.tap()
+        XCTAssertTrue(ok.waitForExistence(timeout: 5), "as teclas do preço")
+        XCTAssertEqual(app.elemento("teclasDoPreco-titulo").label, "Preço de venda")
+        XCTAssertEqual(ok.label, "OK")
+        XCTAssertTrue(app.abasDaCapsula.isEmpty, "as teclas tomam o lugar da cápsula de abas")
+        XCTAssertEqual(preco.value as? String, "R$\u{00A0}1.450.000,00", "o valor fica à vista")
+        XCTAssertLessThanOrEqual(preco.frame.maxY, teclas.frame.minY, "a linha do preço fica acima das teclas")
+        ok.tap()
+        XCTAssertTrue(app.buttons["aba-valeAPena"].waitForExistence(timeout: 5), "o OK devolve a cápsula")
+        XCTAssertFalse(ok.exists)
+        XCTAssertEqual(preco.value as? String, "R$\u{00A0}1.450.000,00")
+        app.buttons["simObra"].tap()
+        let sobrado = app.buttons["Sobrado Granja Viana"]
+        XCTAssertTrue(sobrado.waitForExistence(timeout: 5))
+        sobrado.tap()
+        XCTAssertEqual(preco.value as? String, "sem preço", "nada foi digitado: o preço ainda acompanha a venda estimada")
+    }
+
+    /// A primeira tecla substitui o valor à vista, e as seguintes entram pela direita, com a conta acompanhando cada uma:
+    /// R$ 800.000,00 na Casa Alphaville (custou R$ 842.317,45) rende menos que o banco. Apagado até o fim, o campo fica vazio
+    /// e a frase do site volta; depois do OK ele não retorna à venda estimada, nem trocando de obra (campo tocado, como no site).
+    @MainActor func testAPrimeiraTeclaSubstituiOValorEAContaAcompanha() {
+        let app = abrirAAba()
+        let preco = app.elemento("simPreco"), ok = app.buttons["teclasDoPreco-ok"]
+        preco.tap()
+        XCTAssertTrue(ok.waitForExistence(timeout: 5))
+        app.buttons["tecla-8"].tap()
+        XCTAssertEqual(preco.value as? String, "R$\u{00A0}0,08", "parte do zero, e não do R$ 1.450.000,00 que estava à vista")
+        for tecla in ["tecla-0", "tecla-00", "tecla-00", "tecla-00"] { app.buttons[tecla].tap() }
+        XCTAssertEqual(preco.value as? String, "R$\u{00A0}800.000,00")
+        let veredito = app.elemento("simVeredito")
+        XCTAssertTrue(veredito.label.hasPrefix("Rende menos que o banco, "), veredito.label)
+        XCTAssertEqual(app.elemento("simPilula").label, "abaixo do banco")
+        for _ in 1...9 { app.buttons["tecla-del"].tap() }
+        XCTAssertEqual(preco.value as? String, "sem preço")
+        XCTAssertTrue(app.elemento("simSemPreco").waitForExistence(timeout: 5), "sem preço, a frase do site")
+        XCTAssertFalse(veredito.exists)
+        ok.tap()
+        XCTAssertTrue(app.buttons["aba-valeAPena"].waitForExistence(timeout: 5))
+        XCTAssertEqual(preco.value as? String, "sem preço", "o campo apagado não volta para a venda estimada")
+        app.buttons["simObra"].tap()
+        let vilaNova = app.buttons["Sobrado Vila Nova"]
+        XCTAssertTrue(vilaNova.waitForExistence(timeout: 5))
+        vilaNova.tap()
+        XCTAssertEqual(app.buttons["simObra"].value as? String, "Sobrado Vila Nova")
+        XCTAssertEqual(preco.value as? String, "sem preço", "nem trocando para uma obra com venda estimada")
+    }
+
+    /// Na letra máxima, a linha do preço nasce mais embaixo, e as teclas são mais altas que a cápsula: ao abrir, a linha
+    /// sobe o que falta para ficar inteira acima delas, e abaixo da barra de cima.
+    @MainActor func testNaLetraMaximaALinhaDoPrecoFicaAcimaDasTeclas() {
+        let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena",
+                           argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        XCTAssertTrue(app.elemento("tituloValeAPena").waitForExistence(timeout: 10))
+        let preco = app.elemento("simPreco"), teclas = app.elemento("teclasDoPreco")
+        app.rolarAte(preco)
+        preco.tap()
+        XCTAssertTrue(app.buttons["teclasDoPreco-ok"].waitForExistence(timeout: 5), "as teclas do preço")
+        // A rolagem que põe a linha à vista termina depois de as teclas aparecerem: espera o quadro assentar.
+        let acima = NSPredicate { _, _ in preco.frame.maxY <= teclas.frame.minY + 0.5 }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: acima, object: nil)], timeout: 5), .completed,
+                       "a linha do preço (\(preco.frame)) acima das teclas (\(teclas.frame))")
+        XCTAssertGreaterThanOrEqual(preco.frame.minY, app.navigationBars.firstMatch.frame.maxY, "e abaixo da barra de cima")
+        app.buttons["tecla-5"].tap()
+        XCTAssertEqual(preco.value as? String, "R$\u{00A0}0,05")
+    }
+
     /// Sem nenhuma obra elegível, a linha da obra diz o que fazer, como no site, e não há lista para abrir.
     @MainActor func testSemObraElegivelALinhaDizOQueFazer() {
         let app = abrirApp(conta: "senha", dados: "vazio", abrir: "aba:valeAPena")

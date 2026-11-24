@@ -2,8 +2,8 @@ import SwiftUI
 import CusttaNucleo
 
 /* A aba "Vale a pena?" (etapa 4, PR 4a; mockup aprovado, parte 2, `telaSimula`): o simulador do site na identidade nova. O
-   título solto em mono, o bloco dos campos (a obra, o preço e os meses, com a nota do site), o veredito no bloco sólido e a
-   faixa "Onde a sua venda cai"; a tabela chega no próximo commit. Os campos moram no PrincipalView, e não aqui: só a aba escolhida fica montada, e eles têm de durar
+   título solto em mono, o bloco dos campos (a obra, o preço e os meses, com a nota do site), o veredito no bloco sólido, a
+   faixa "Onde a sua venda cai" e a tabela do site, pelo bruto e pelo corrigido. Os campos moram no PrincipalView, e não aqui: só a aba escolhida fica montada, e eles têm de durar
    enquanto o app está aberto (spec, "Dados e estado"). O que a tela mostra sai inteiro do núcleo (`simulacaoNaTela`), com
    as obras e a taxa de agora: uma mudança vinda de outro aparelho redesenha a aba na hora. */
 struct ValeAPenaView: View {
@@ -26,6 +26,7 @@ struct ValeAPenaView: View {
                     if let veredito = tela.veredito {
                         VereditoDoValeAPena(veredito: veredito)
                         if let faixa = tela.faixa { FaixaDoValeAPena(faixa: faixa) }
+                        if let textos = tela.textos { TabelaDoValeAPena(linhas: textos.tabela) }
                     } else if tela.obra != nil {
                         SemPrecoDoValeAPena()
                     }
@@ -316,6 +317,83 @@ private struct LinhaDaLegendaDaFaixa: View {
             .stroke(tinta, style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
         case .venda: Circle().fill(tinta).frame(width: 12, height: 12)
         }
+    }
+}
+
+/// A tabela do site, "Relatório da simulação" (mockup da etapa 4, parte2.css:100-107; decisão 7 da parte 2): em pares, com
+/// o rótulo em cima e os dois valores embaixo, "Pelo bruto" e "Pelo corrigido"; na letra de acessibilidade, um valor por
+/// linha, cada um com o nome da coluna em cima. O lucro vai em negrito. O que é negativo vai em âmbar, nunca em vermelho
+/// (nota do quadro `sim-abaixo-baixo`). Para o VoiceOver, cada linha é um elemento, com os dois valores.
+struct TabelaDoValeAPena: View {
+    static let colunas = ["Pelo bruto", "Pelo corrigido"]
+    let linhas: [LinhaDaSimulacao]
+    @Environment(\.paleta) private var paleta
+    @Environment(\.vidro) private var vidro
+    @Environment(\.dynamicTypeSize) private var tamanho
+
+    /// A cor de um valor pelo sinal: positivo no verde dos números, negativo no âmbar, sem sinal no texto.
+    static func cor(_ sinal: SinalDaSimulacao?) -> Token {
+        switch sinal {
+        case .positivo: return .positivoNoVidro
+        case .negativo: return .alertaNoVidro
+        case nil: return .texto
+        }
+    }
+
+    var body: some View {
+        let grande = tamanho.isAccessibilitySize
+        BlocoDeVidro {
+            Text("Relatório da simulação")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(paleta.cor(.texto))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.bottom, 8)
+            if !grande {
+                HStack(spacing: 12) {
+                    ForEach(Self.colunas, id: \.self) { coluna in
+                        Text(coluna)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(paleta.cor(vidro.secundario))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.bottom, 6)
+                .accessibilityHidden(true)
+                LinhaFina()
+            }
+            ForEach(Array(linhas.enumerated()), id: \.offset) { indice, linha in
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(linha.rotulo)
+                        .font(.subheadline)
+                        .foregroundStyle(paleta.cor(vidro.secundario))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 9)
+                    let par = grande ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6)) : AnyLayout(HStackLayout(spacing: 12))
+                    par {
+                        valor(linha.bruto, linha.sinalBruto, coluna: grande ? Self.colunas[0] : nil, forte: linha.destaque)
+                        valor(linha.corrigido, linha.sinalCorrigido, coluna: grande ? Self.colunas[1] : nil, forte: linha.destaque)
+                    }
+                    .padding(.top, 2)
+                    .padding(.bottom, 8)
+                    if indice < linhas.count - 1 { LinhaFina() }
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(linha.rotulo)
+                .accessibilityValue("\(Self.colunas[0]) \(linha.bruto), \(Self.colunas[1].lowercased()) \(linha.corrigido)")
+                .accessibilityIdentifier("simTabela-\(indice)")
+            }
+        }
+    }
+
+    private func valor(_ texto: String, _ sinal: SinalDaSimulacao?, coluna: String?, forte: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let coluna {
+                Text(coluna).font(.footnote.weight(.medium)).foregroundStyle(paleta.cor(vidro.secundario))
+            }
+            ValorEmDinheiro(texto, mono: .miudo, cor: Self.cor(sinal)).fontWeight(forte ? .bold : nil)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

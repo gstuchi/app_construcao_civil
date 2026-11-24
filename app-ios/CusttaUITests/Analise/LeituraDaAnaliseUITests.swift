@@ -123,8 +123,15 @@ final class LeituraDaAnaliseUITests: XCTestCase, LaudoDeLeitura {
                     XCTFail("\(nome): \(error)")
                     continue
                 }
-                // O custo, a venda (a barra com o ponto) e os traços do empate.
-                XCTAssertGreaterThanOrEqual(marcas.count, 3, "\(nome): \(marcas.map(\.corHex))")
+                // As três marcas, cada uma pela forma (caixas em pontos; a faixa tem 46 de altura): a venda é a barra com o
+                // ponto de 12 pt, 69 de altura; o custo, a barra fina de 58; o empate, os traços de 5 pt. Só contar manchas
+                // não basta: os traços do empate sozinhos já dão sete, e a venda sumida passaria.
+                let formas = marcas.map { "\(Int($0.caixa.width))×\(Int($0.caixa.height))" }
+                XCTAssertEqual(marcas.filter { $0.caixa.width >= 10 && $0.caixa.height >= 60 }.count, 1, "\(nome): a venda, em \(formas)")
+                XCTAssertEqual(marcas.filter { $0.caixa.width <= 5 && (50..<60).contains($0.caixa.height) }.count, 1,
+                               "\(nome): o custo, em \(formas)")
+                XCTAssertGreaterThanOrEqual(marcas.filter { $0.caixa.width <= 5 && $0.caixa.height <= 6 }.count, 5,
+                                            "\(nome): os traços do empate, em \(formas)")
                 anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
                 Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
                 falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in

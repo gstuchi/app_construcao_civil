@@ -27,7 +27,7 @@ O PR #126 aplica estas tarefas, com quatro diferenças:
 - o conserto do trilho (tarefa 10 aqui) entrou lá antes das teclas (tarefa 9);
 - lá há um commit a mais, `de3a3c7 test: menores da revisão do "Vale a pena?"` (a taxa de 1,5% no `SimulacaoNaTelaTests` e o `abrirAAba` pelo gancho no `ValeAPenaUITests`), que não está aqui;
 - as rolagens das cenas da maior letra no Pro Max, que o Forja acerta num commit próprio lá;
-- as tarefas 18 a 20 (a zona recortada, o apagar e o laudo das marcas pela forma) chegam lá pelos patches do Prumo.
+- as tarefas 18 a 22 (a zona recortada, o apagar, o laudo das marcas pela forma, a fala do campo limpo e a cena da venda abaixo do banco) chegam lá pelos patches do Prumo.
 
 ## Decisões
 
@@ -69,10 +69,7 @@ Nenhuma decisão deste plano passou pelo conselho: nenhuma muda a cara do app, a
 5. **O que este plano não prova:** o laudo inteiro comparado palavra por palavra com o da `main` (a cápsula mudou em toda tela); o Pro Max (as rolagens das cenas novas foram medidas só no 18 Pro; o Forja mediu as da maior letra passando do ponto lá, de 25 a 83 pt, e as acerta num commit próprio no #126); o filtro de portões rodando na CI (os níveis `telas` e `nucleo` só rodam no botão ou no primeiro PR que não mexa em arquivo compartilhado).
 6. **As sondas S1, S2 e S4** (o arrasto nos meses, os toques no anel e o contraste das marcas dos gráficos na CI) dependem de código do 2a e do 2b, que ainda não existe. A S3 (as teclas e a lista "Obra" na VM do iOS 26) foi disparada num ramo `proto/` e não chegou a pegar máquina; o `ValeAPenaUITests` roda no iOS 26 pelo próprio #126.
 
-7. **Da revisão das tarefas 18 a 20** (menores, para a revisão do #126):
-   - depois do apagar que limpa, o VoiceOver fala o valor zerado ("0,00"), enquanto o campo diz "sem preço";
-   - o laudo das marcas roda só com a venda dentro da zona (Casa Alphaville); a venda abaixo do banco e a venda logo depois do empate (a fenda sobre o vão) não têm cena;
-   - o laudo pela forma provou por mutação só a venda sumida (o custo sumido, não), e as alturas das caixas foram medidas só no 18 Pro e no 26.5.
+7. **Os menores da revisão das tarefas 18 a 20** estão fechados: a fala do campo limpo (tarefa 21), a cena com a venda abaixo do banco (tarefa 22) e as mutações do custo e do empate no laudo pela forma (Prova da tarefa 20).
 
 ## PR 4a: "Vale a pena?"
 
@@ -84,7 +81,7 @@ As do marco 1 valem aqui, e estas o 4a toca:
 - **Swift 6 estrito**, sem nenhum aviso de compilador novo; nada que só exista no SDK do iOS 27.
 - **Cores só por token** (`scripts/cores-app-ios.mjs`, conferido por `tests/app-ios.test.cjs`); `lineLimit` e `minimumScaleFactor` só nos componentes da lista fixa da guarda.
 - **Nenhuma dependência nova.** O formato do blob, as `firestore.rules`, os arquivos do site e o `sw.js` (`CACHE`) não mudam. Fora do app, o 4a só mexe no `package.json` (o `test:unit` ganha o `portoes-app-ios.test.mjs`), no `app-ios.yml`, nos testes Node e no checklist.
-- **Ganchos só no Debug:** o `CUSTTA_ABRIR=aba:<nome>` (tarefa 3), o `-custta.simMeses` e a rolagem fixa das cenas (tarefa 14) não podem chegar ao Release (ponto de controle, abaixo).
+- **Ganchos só no Debug:** o `CUSTTA_ABRIR=aba:<nome>` (tarefa 3), o `-custta.simMeses` e a rolagem fixa das cenas (tarefa 14) e o `-custta.simPreco` (tarefa 22) não podem chegar ao Release (ponto de controle, abaixo).
 - **Commits:** autor só `Giovani Stuchi <stuchigiovani@gmail.com>`, sem `Co-Authored-By` e sem rodapé; título conventional em português com acento, corpo em prosa, um commit por tarefa.
 - **Simuladores:** um por agente (`CUSTTA_SIMULADOR=<udid>`), testes de tela com `-collect-test-diagnostics never`, e nunca compilar no `DerivedData` de uma rodada em curso.
 
@@ -118,7 +115,7 @@ Os alvos da análise: `CusttaTests` (a pasta `Analise` vai junto), `CusttaUITest
    PROD=$(xcodebuild "${XB[@]}" -showBuildSettings 2>/dev/null | awk -F' = ' '/^ *BUILD_DIR = /{print $2; exit}')
    for s in doGancho rolagemFixaSoComOArgumento marcasApagadas RaizView; do echo "$s release=$(nm -a "$PROD/Release-iphonesimulator/Custta.app/Custta" | grep -c $s) debug=$(nm -a "$PROD/Debug-iphonesimulator/Custta.app/Custta.debug.dylib" | grep -c $s)"; done
    ```
-   Expected (medido no clone, na tarefa 20): `doGancho release=0 debug=2`, `rolagemFixaSoComOArgumento release=0 debug=224`, `marcasApagadas release=0 debug=60` e o controle `RaizView release=90 debug=400`. O `-custta.simMeses` é uma chave de texto dentro de `#if DEBUG` no `simuladorInicial`, sem símbolo próprio: confere-se lendo o código.
+   Expected (medido no clone, na tarefa 20): `doGancho release=0 debug=2`, `rolagemFixaSoComOArgumento release=0 debug=224`, `marcasApagadas release=0 debug=60` e o controle `RaizView release=90 debug=400`. O `-custta.simMeses` e o `-custta.simPreco` são chaves de texto dentro do `#if DEBUG` do `simuladorInicial`, sem símbolo próprio: conferem-se lendo o código.
 4. **A CI no nível `tudo`:** o 4a mexe no `app-ios.yml`, então o filtro dá `tudo` e rodam todos os jobs. O tempo do job `app` vai no texto do PR.
 
 ### Tarefa 1: faixa do "Vale a pena?" no núcleo
@@ -4789,7 +4786,7 @@ index b69f863..0be9aa1 100644
 
 O laudo das marcas da faixa do "Vale a pena?" só pedia três manchas ou mais, e os traços do tracejado do empate sozinhos já dão sete: com a venda sumida, ele passaria. Agora confere cada marca pela forma da caixa: a venda (a barra com o ponto de 12 pt), o custo (a barra fina que passa a faixa) e os traços do empate. Achado da Lupa na revisão da zona recortada.
 
-**Prova:** Verde no iOS 27 e no 26.5; com a venda escondida, o teste cai ("a venda": 0 em vez de 1).
+**Prova:** Verde no iOS 27 e no 26.5. Três mutações pegas, uma por marca: a venda escondida ("a venda": 0 em vez de 1), o custo escondido ("o custo": 0 em vez de 1) e o tracejado escondido ("os traços do empate": 0, mínimo 5). As faixas de altura das caixas foram medidas no 18 Pro e no 26.5, não no Pro Max.
 
 **Arquivos:**
 
@@ -4823,6 +4820,297 @@ index a2b4934..be00419 100644
                  anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
                  Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
                  falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in
+```
+
+### Tarefa 21: VoiceOver fala "sem preço" quando as teclas limpam o preço do "Vale a pena?"
+
+**Commit das fatias:** `a163cc8` · **Mensagem:** `fix: VoiceOver fala "sem preço" quando as teclas limpam o preço do "Vale a pena?"`
+
+Depois do apagar que limpa o campo, ou de apagar tudo, o VoiceOver falava "0,00", o valor do teclado de valor, enquanto a linha do preço dizia "sem preço". Agora a fala acompanha a linha: o campo vazio fala "sem preço", o mesmo texto do valor dela, numa constante só.
+
+O que cada tecla grava nos campos e o que ela fala ficam em TeclasDoPreco.tocar, com teste de unidade próprio; a regra opcional da GradeDeTeclas passa a devolver o texto falado. Sem regra, o teclado de valor fala como antes.
+
+**Prova:** `TeclasDoPrecoTests` (4 testes): vermelho com a fala de antes ("0,00" no lugar de "sem preço"), verde depois, no iOS 27 e no 26.5; `testOApagarNaPrimeiraTeclaLimpaOCampo` e `testAPrimeiraTeclaSubstituiOValorEAContaAcompanha` verdes nos dois; guardas Node 71 de 71. O anúncio em si não é lido por teste: o teste prova o texto que a grade recebe.
+
+**Arquivos:**
+
+```
+ app-ios/Custta/Analise/TeclasDoPreco.swift         | 17 +++++++----
+ app-ios/Custta/Analise/ValeAPenaView.swift         |  2 +-
+ app-ios/Custta/Identidade/TecladoDeValor.swift     |  8 ++---
+ .../CusttaTests/Analise/TeclasDoPrecoTests.swift   | 35 ++++++++++++++++++++++
+ 4 files changed, 52 insertions(+), 10 deletions(-)
+```
+
+**Mudança:**
+
+```diff
+diff --git a/app-ios/Custta/Analise/TeclasDoPreco.swift b/app-ios/Custta/Analise/TeclasDoPreco.swift
+index 914df73..d6c570b 100644
+--- a/app-ios/Custta/Analise/TeclasDoPreco.swift
++++ b/app-ios/Custta/Analise/TeclasDoPreco.swift
+@@ -40,11 +40,7 @@ struct TeclasDoPreco: View {
+             }
+             .padding(.horizontal, 8)
+             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+-            GradeDeTeclas(centavos: .constant(preco.centavos), tamanho: .encaixado) { tecla in
+-                guard let reais = preco.tocar(tecla) else { return nil }
+-                campos.precoDigitado = reais
+-                return preco.centavos
+-            }
++            GradeDeTeclas(centavos: .constant(preco.centavos), tamanho: .encaixado) { Self.tocar($0, &preco, &campos) }
+         }
+         .padding(.horizontal, 12)
+         .padding(.top, 4)
+@@ -57,6 +53,17 @@ struct TeclasDoPreco: View {
+         .accessibilityIdentifier("teclasDoPreco")
+     }
+ 
++    /// O valor da linha do preço com o campo vazio, e o que o VoiceOver fala quando uma tecla o deixa assim.
++    static let semPreco = "sem preço"
++
++    /// Uma tecla: o que o núcleo faz com o campo, gravado nos campos, e o que o VoiceOver fala; nil quando a tecla não muda
++    /// nada. O campo que fica vazio fala o mesmo que a linha do preço diz, e não o "0,00" do teclado de valor.
++    static func tocar(_ tecla: TeclaDeValor, _ preco: inout PrecoNasTeclas, _ campos: inout CamposDoSimulador) -> String? {
++        guard let reais = preco.tocar(tecla) else { return nil }
++        campos.precoDigitado = reais
++        return reais > 0 ? fmtCentavos(preco.centavos) : semPreco
++    }
++
+     /// A Folha, como a das folhas do app: a cor do token sobre o desfoque do que rola atrás; com "Reduzir transparência",
+     /// opaca, sobre o Fundo. Sem a sombra de cima do mockup (preto a 35%): o app não tem token de sombra de painel, e cor
+     /// solta não entra.
+diff --git a/app-ios/Custta/Analise/ValeAPenaView.swift b/app-ios/Custta/Analise/ValeAPenaView.swift
+index 27e9d56..f8b2902 100644
+--- a/app-ios/Custta/Analise/ValeAPenaView.swift
++++ b/app-ios/Custta/Analise/ValeAPenaView.swift
+@@ -157,7 +157,7 @@ struct CamposDoValeAPena: View {
+         .buttonStyle(.plain)
+         .accessibilityElement(children: .ignore)
+         .accessibilityLabel("Se eu vender por")
+-        .accessibilityValue(tela.preco.map { moeda($0) } ?? "sem preço")
++        .accessibilityValue(tela.preco.map { moeda($0) } ?? TeclasDoPreco.semPreco)
+         .accessibilityAddTraits(.isButton)
+         .accessibilityIdentifier("simPreco")
+     }
+diff --git a/app-ios/Custta/Identidade/TecladoDeValor.swift b/app-ios/Custta/Identidade/TecladoDeValor.swift
+index be1def7..2a714eb 100644
+--- a/app-ios/Custta/Identidade/TecladoDeValor.swift
++++ b/app-ios/Custta/Identidade/TecladoDeValor.swift
+@@ -53,9 +53,9 @@ enum TamanhoDasTeclas: Sendable {
+ struct GradeDeTeclas: View {
+     @Binding var centavos: Int
+     let tamanho: TamanhoDasTeclas
+-    /// A regra de quem usa, no lugar da do teclado de valor: devolve os centavos novos, ou nil quando a tecla não muda nada.
+-    /// Com ela, os centavos do binding não são lidos: quem usa guarda os seus.
+-    var regra: ((TeclaDeValor) -> Int?)? = nil
++    /// A regra de quem usa, no lugar da do teclado de valor: faz o que a tecla faz e devolve o que o VoiceOver fala, ou nil
++    /// quando a tecla não muda nada. Com ela, os centavos do binding não são lidos: quem usa guarda os seus.
++    var regra: ((TeclaDeValor) -> String?)? = nil
+ 
+     static let linhas: [[TeclaDeValor]] = [
+         [.digito(1), .digito(2), .digito(3)],
+@@ -81,7 +81,7 @@ struct GradeDeTeclas: View {
+ 
+     private func tocar(_ tecla: TeclaDeValor) {
+         if let regra {
+-            if let novo = regra(tecla) { AccessibilityNotification.Announcement(fmtCentavos(novo)).post() }
++            if let fala = regra(tecla) { AccessibilityNotification.Announcement(fala).post() }
+             return
+         }
+         let novo = aplicarTecla(centavos, tecla)
+diff --git a/app-ios/CusttaTests/Analise/TeclasDoPrecoTests.swift b/app-ios/CusttaTests/Analise/TeclasDoPrecoTests.swift
+new file mode 100644
+index 0000000..44169c7
+--- /dev/null
++++ b/app-ios/CusttaTests/Analise/TeclasDoPrecoTests.swift
+@@ -0,0 +1,35 @@
++import Testing
++import CusttaNucleo
++@testable import Custta
++
++/* O que as teclas do preço do "Vale a pena?" gravam nos campos e o que o VoiceOver fala a cada tecla. A fala acompanha a
++   linha do preço: com o campo vazio, "sem preço", como o valor dela, e não o "0,00" do teclado de valor. */
++@MainActor
++struct TeclasDoPrecoTests {
++    @Test func oApagarQueLimpaFalaSemPreco() {
++        var preco = PrecoNasTeclas(), campos = CamposDoSimulador()
++        #expect(TeclasDoPreco.tocar(.apagar, &preco, &campos) == "sem preço")
++        #expect(campos.precoDigitado == 0)
++        #expect(TeclasDoPreco.semPreco == "sem preço", "o mesmo texto do valor da linha do preço")
++    }
++
++    @Test func apagarTudoTambemFalaSemPreco() {
++        var preco = PrecoNasTeclas(), campos = CamposDoSimulador()
++        #expect(TeclasDoPreco.tocar(.digito(7), &preco, &campos) == "0,07")
++        #expect(TeclasDoPreco.tocar(.apagar, &preco, &campos) == "sem preço")
++    }
++
++    @Test func cadaDigitoFalaOValorNovo() {
++        var preco = PrecoNasTeclas(), campos = CamposDoSimulador()
++        for tecla in [TeclaDeValor.digito(8), .duploZero, .duploZero, .duploZero] { _ = TeclasDoPreco.tocar(tecla, &preco, &campos) }
++        #expect(campos.precoDigitado == 80_000)
++        #expect(TeclasDoPreco.tocar(.digito(0), &preco, &campos) == "800.000,00")
++    }
++
++    @Test func aTeclaQueNaoMudaNadaNaoFala() {
++        var preco = PrecoNasTeclas(), campos = CamposDoSimulador()
++        #expect(TeclasDoPreco.tocar(.digito(0), &preco, &campos) == nil)
++        #expect(TeclasDoPreco.tocar(.duploZero, &preco, &campos) == nil)
++        #expect(campos.precoDigitado == nil)
++    }
++}
+```
+
+### Tarefa 22: laudo das marcas da faixa com a venda abaixo do banco
+
+**Commit das fatias:** `7818ea5` · **Mensagem:** `test: laudo das marcas da faixa com a venda abaixo do banco`
+
+O laudo das marcas da faixa do "Vale a pena?" só fotografava a venda dentro da zona hachurada. Agora roda também a cena com a venda abaixo do banco, fora da zona, sobre o trilho, com o mesmo portão de 3:1 nos dois temas e nos dois vidros. A cena confere a pílula ("abaixo do banco") antes do print, para não passar com a cena errada.
+
+O preço da cena entra por um gancho de Debug novo, -custta.simPreco, ao lado do -custta.simMeses no simuladorInicial: sem ele, o laudo teria de tocar nas teclas antes de cada print.
+
+**Prova:** As duas cenas (venda na zona e abaixo do banco) verdes no iOS 27 (pior nota 4,96:1) e no 26.5 (5,72:1); no print, a venda à esquerda do custo, sobre o trilho. Com o gancho `-custta.simPreco` ignorado, a cena cai pela pílula ("acima do banco").
+
+**Arquivos:**
+
+```
+ app-ios/Custta/Telas/PrincipalView.swift           |  5 +-
+ .../Analise/LeituraDaAnaliseUITests.swift          | 95 ++++++++++++----------
+ 2 files changed, 56 insertions(+), 44 deletions(-)
+```
+
+**Mudança:**
+
+```diff
+diff --git a/app-ios/Custta/Telas/PrincipalView.swift b/app-ios/Custta/Telas/PrincipalView.swift
+index 9de8787..327591d 100644
+--- a/app-ios/Custta/Telas/PrincipalView.swift
++++ b/app-ios/Custta/Telas/PrincipalView.swift
+@@ -193,11 +193,14 @@ extension PrincipalView {
+     #endif
+ 
+     /// Os campos com que o "Vale a pena?" abre: os do núcleo, com os meses em 0. Em Debug, `-custta.simMeses <n>` já abre
+-    /// com os meses andados, para o teste de tela chegar ao limite de 120 sem 120 toques.
++    /// com os meses andados, para o teste de tela chegar ao limite de 120 sem 120 toques, e `-custta.simPreco <reais>`, com
++    /// o preço digitado, para o laudo fotografar a venda abaixo do banco sem tocar nas teclas.
+     static var simuladorInicial: CamposDoSimulador {
+         var campos = CamposDoSimulador()
+         #if DEBUG
+         campos.andarMeses(UserDefaults.standard.integer(forKey: "custta.simMeses"))
++        let preco = UserDefaults.standard.double(forKey: "custta.simPreco")
++        if preco > 0 { campos.precoDigitado = preco }
+         #endif
+         return campos
+     }
+diff --git a/app-ios/CusttaUITests/Analise/LeituraDaAnaliseUITests.swift b/app-ios/CusttaUITests/Analise/LeituraDaAnaliseUITests.swift
+index be00419..9a9c489 100644
+--- a/app-ios/CusttaUITests/Analise/LeituraDaAnaliseUITests.swift
++++ b/app-ios/CusttaUITests/Analise/LeituraDaAnaliseUITests.swift
+@@ -92,51 +92,60 @@ final class LeituraDaAnaliseUITests: XCTestCase, LaudoDeLeitura {
+     /// O laudo das marcas da faixa "Onde a sua venda cai" (spec da etapa 4, "Laudo das marcas"): o custo, o empate e a venda a
+     /// 3:1 com o que fica atrás deles, nos dois temas e nos vidros Transparente e Fosco. Cada cena sai em dois prints, um
+     /// normal e um com as marcas apagadas (`-custta.marcasApagadas`, só Debug); a zona, com o recorte em volta das marcas, é
+-    /// fundo e fica nos dois. Na Casa Alphaville a venda cai dentro da zona: a fenda está no print.
++    /// fundo e fica nos dois. Duas cenas na Casa Alphaville: com a venda estimada, a venda cai dentro da zona (a fenda está
++    /// no print); com o preço de R$ 800.000,00 (`-custta.simPreco`, só Debug), abaixo do banco, sobre o trilho, fora da zona.
+     @MainActor func testMarcasDaFaixaDoValeAPena() {
+         var falhas: [String] = []
+-        for tema in temas {
+-            for vidro in ["transparente", "fosco"] {
+-                let nome = "marcas, faixa do vale a pena, \(tema), \(vidro)"
+-                let argumentos = ["-custta.tema", tema, "-custta.vidro", vidro, "-custta.rolagem", "\(Self.rolagemDaFaixa)"] + piorMomento
+-                func fotografar(apagadas: Bool) -> (XCUIScreenshot, CGRect, CGFloat) {
+-                    let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena",
+-                                       argumentos: argumentos + (apagadas ? ["-custta.marcasApagadas", "YES"] : []))
+-                    let faixa = app.elemento("simFaixa")
+-                    XCTAssertTrue(faixa.waitForExistence(timeout: 30), "\(nome): a aba não abriu")
+-                    Thread.sleep(forTimeInterval: 2)                   // o vidro e a rolagem assentam
+-                    let foto = XCUIScreen.main.screenshot()
+-                    // As marcas passam da faixa: 8 pt em cima e embaixo, e o ponto da venda, 15 em cima.
+-                    let quadro = faixa.frame.insetBy(dx: -4, dy: -18), largura = app.frame.width
+-                    app.terminate()
+-                    return (foto, quadro, largura)
+-                }
+-                let (normal, quadro, largura) = fotografar(apagadas: false)
+-                let (semMarcas, _, _) = fotografar(apagadas: true)
+-                let imagem = normal.image.cgImage!
+-                let escala = CGFloat(imagem.width) / largura
+-                let marcas: [LaudoDeContraste.Palavra]
+-                do {
+-                    marcas = try LaudoDeContraste.medirMarcas(normal: Retrato(imagem), semMarcas: Retrato(semMarcas.image.cgImage!),
+-                                                              escala: escala, em: [quadro])
+-                } catch {
+-                    XCTFail("\(nome): \(error)")
+-                    continue
+-                }
+-                // As três marcas, cada uma pela forma (caixas em pontos; a faixa tem 46 de altura): a venda é a barra com o
+-                // ponto de 12 pt, 69 de altura; o custo, a barra fina de 58; o empate, os traços de 5 pt. Só contar manchas
+-                // não basta: os traços do empate sozinhos já dão sete, e a venda sumida passaria.
+-                let formas = marcas.map { "\(Int($0.caixa.width))×\(Int($0.caixa.height))" }
+-                XCTAssertEqual(marcas.filter { $0.caixa.width >= 10 && $0.caixa.height >= 60 }.count, 1, "\(nome): a venda, em \(formas)")
+-                XCTAssertEqual(marcas.filter { $0.caixa.width <= 5 && (50..<60).contains($0.caixa.height) }.count, 1,
+-                               "\(nome): o custo, em \(formas)")
+-                XCTAssertGreaterThanOrEqual(marcas.filter { $0.caixa.width <= 5 && $0.caixa.height <= 6 }.count, 5,
+-                                            "\(nome): os traços do empate, em \(formas)")
+-                anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
+-                Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
+-                falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in
+-                    "\(nome): marca \(m.corHex) em \(Int(m.caixa.minX)),\(Int(m.caixa.minY)) fica em "
+-                        + String(format: "%.2f:1 (pior pixel %.2f:1)", m.nota, m.minimo)
++        let cenas: [(nome: String, pilula: String, argumentos: [String])] = [
++            ("venda na zona", "acima do banco", []),
++            ("venda abaixo do banco", "abaixo do banco", ["-custta.simPreco", "800000"]),
++        ]
++        for cena in cenas {
++            for tema in temas {
++                for vidro in ["transparente", "fosco"] {
++                    let nome = "marcas, faixa do vale a pena, \(cena.nome), \(tema), \(vidro)"
++                    let argumentos = ["-custta.tema", tema, "-custta.vidro", vidro, "-custta.rolagem", "\(Self.rolagemDaFaixa)"]
++                        + piorMomento + cena.argumentos
++                    func fotografar(apagadas: Bool) -> (XCUIScreenshot, CGRect, CGFloat) {
++                        let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena",
++                                           argumentos: argumentos + (apagadas ? ["-custta.marcasApagadas", "YES"] : []))
++                        let faixa = app.elemento("simFaixa")
++                        XCTAssertTrue(faixa.waitForExistence(timeout: 30), "\(nome): a aba não abriu")
++                        XCTAssertEqual(app.elemento("simPilula").label, cena.pilula, "\(nome): a cena")
++                        Thread.sleep(forTimeInterval: 2)                   // o vidro e a rolagem assentam
++                        let foto = XCUIScreen.main.screenshot()
++                        // As marcas passam da faixa: 8 pt em cima e embaixo, e o ponto da venda, 15 em cima.
++                        let quadro = faixa.frame.insetBy(dx: -4, dy: -18), largura = app.frame.width
++                        app.terminate()
++                        return (foto, quadro, largura)
++                    }
++                    let (normal, quadro, largura) = fotografar(apagadas: false)
++                    let (semMarcas, _, _) = fotografar(apagadas: true)
++                    let imagem = normal.image.cgImage!
++                    let escala = CGFloat(imagem.width) / largura
++                    let marcas: [LaudoDeContraste.Palavra]
++                    do {
++                        marcas = try LaudoDeContraste.medirMarcas(normal: Retrato(imagem), semMarcas: Retrato(semMarcas.image.cgImage!),
++                                                                  escala: escala, em: [quadro])
++                    } catch {
++                        XCTFail("\(nome): \(error)")
++                        continue
++                    }
++                    // As três marcas, cada uma pela forma (caixas em pontos; a faixa tem 46 de altura): a venda é a barra com o
++                    // ponto de 12 pt, 69 de altura; o custo, a barra fina de 58; o empate, os traços de 5 pt. Só contar manchas
++                    // não basta: os traços do empate sozinhos já dão sete, e a venda sumida passaria.
++                    let formas = marcas.map { "\(Int($0.caixa.width))×\(Int($0.caixa.height))" }
++                    XCTAssertEqual(marcas.filter { $0.caixa.width >= 10 && $0.caixa.height >= 60 }.count, 1, "\(nome): a venda, em \(formas)")
++                    XCTAssertEqual(marcas.filter { $0.caixa.width <= 5 && (50..<60).contains($0.caixa.height) }.count, 1,
++                                   "\(nome): o custo, em \(formas)")
++                    XCTAssertGreaterThanOrEqual(marcas.filter { $0.caixa.width <= 5 && $0.caixa.height <= 6 }.count, 5,
++                                                "\(nome): os traços do empate, em \(formas)")
++                    anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
++                    Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
++                    falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in
++                        "\(nome): marca \(m.corHex) em \(Int(m.caixa.minX)),\(Int(m.caixa.minY)) fica em "
++                            + String(format: "%.2f:1 (pior pixel %.2f:1)", m.nota, m.minimo)
++                    }
+                 }
+             }
+         }
 ```
 
 ## Depois do 4a

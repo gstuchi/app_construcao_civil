@@ -12,24 +12,28 @@ import UIKit
    escuro sobre a pílula sólida do segmentado, e os mesmos textos com tinta de 6% ou de 50%). Aqui as cores
    são conferidas com "Reduzir transparência" (superfícies sólidas, sem o vidro na frente da aurora), também
    na maior letra; a leitura sobre o vidro de verdade é medida pixel a pixel pelo LeituraNoVidroUITests. */
-final class AuditoriaUITests: XCTestCase {
-    private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-    private let tiposDeAuditoria: XCUIAccessibilityAuditType = [.dynamicType, .textClipped, .sufficientElementDescription, .hitRegion]
+/// A máquina das auditorias: os argumentos, o que fica de fora e a rolagem. Adota quem audita: o AuditoriaUITests e a
+/// auditoria de cada área que mora em arquivo próprio (a da análise, em CusttaUITests/Analise).
+protocol AuditoriaDeTela: XCTestCase {}
+
+extension AuditoriaDeTela {
+    var maiorLetra: [String] { ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
+    var tiposDeAuditoria: XCUIAccessibilityAuditType { [.dynamicType, .textClipped, .sufficientElementDescription, .hitRegion] }
     /// Fundo parado: aurora no quadro inicial, globo no ângulo de partida, logo pronto.
-    private let parado = ["-custta.reduzirMovimento", "YES"]
-    private let solido = ["-custta.reduzirTransparencia", "YES"]
-    private let temas = ["escuro", "claro"]
+    var parado: [String] { ["-custta.reduzirMovimento", "YES"] }
+    var solido: [String] { ["-custta.reduzirTransparencia", "YES"] }
+    var temas: [String] { ["escuro", "claro"] }
     /// A borda de rolagem (`BordaDeRolagem`): o véu do fundo cobre 140 pt no alto, depois de rolar, e embaixo,
     /// nas telas com a cápsula de abas (88% e 80% com "Reduzir transparência").
-    private let borda: CGFloat = 140
+    var borda: CGFloat { 140 }
 
     /// Deixa fora o que não cresce de propósito (dinâmico: a cápsula de abas e o texto do botão do Google,
     /// pelo rótulo, porque a auditoria rola a tela sozinha) e o conteúdo que passa por baixo da barra de
     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
     /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste. Com `corteSemElemento`, deixa passar
     /// também o "Text clipped" sem elemento, e só ele: o ponto cego do ViewThatFits na maior letra (T34), nas cenas com um à vista.
-    @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
-                                    corteSemElemento: Bool = false) throws {
+    @MainActor func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
+                            corteSemElemento: Bool = false) throws {
         // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
         let folha = app.elemento("tituloDaFolha").exists
         let abas = folha ? [] : (app.abasDaCapsula + [app.buttons["botaoMais"]]).filter(\.exists).map(\.frame)
@@ -115,12 +119,14 @@ final class AuditoriaUITests: XCTestCase {
     }
 
     /// Rola e espera a rolagem parar antes de auditar.
-    @MainActor private func rolar(_ app: XCUIApplication) {
+    @MainActor func rolar(_ app: XCUIApplication) {
         app.swipeUp()
         app.swipeUp()
         Thread.sleep(forTimeInterval: 1.5)
     }
+}
 
+final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
     @MainActor func testEntrarNoMaiorTamanho() throws {
         let app = abrirApp(argumentos: maiorLetra + parado)
         XCTAssertTrue(app.textFields["email"].waitForExistence(timeout: 10))
@@ -254,37 +260,6 @@ final class AuditoriaUITests: XCTestCase {
             try auditar(app, [.contrast])
             rolar(app)
             try auditar(app, [.contrast])
-            app.terminate()
-        }
-    }
-
-    /// O "Vale a pena?" na maior letra, com a conta inteira (a Casa Alphaville tem venda estimada): os campos um embaixo do
-    /// outro, o veredito, a faixa com a lista e a tabela com um valor por linha, rolada até o fim; também com "Aumentar
-    /// contraste" e com "Reduzir transparência".
-    @MainActor func testValeAPenaNoMaiorTamanho() throws {
-        for opcao in [[], ["-custta.aumentarContraste", "YES"], solido] {
-            let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena", argumentos: maiorLetra + parado + opcao)
-            XCTAssertTrue(app.elemento("tituloValeAPena").waitForExistence(timeout: 10))
-            try auditar(app, tiposDeAuditoria)
-            for _ in 0..<6 {
-                rolar(app)
-                try auditar(app, tiposDeAuditoria)
-            }
-            app.terminate()
-        }
-    }
-
-    /// O "Vale a pena?" com superfícies sólidas, no escuro e no claro: os campos, o veredito no sólido, a faixa e a tabela.
-    @MainActor func testContrasteDoValeAPenaNosDoisTemas() throws {
-        for tema in temas {
-            let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena",
-                               argumentos: ["-custta.tema", tema] + solido + parado)
-            XCTAssertTrue(app.elemento("tituloValeAPena").waitForExistence(timeout: 10))
-            try auditar(app, [.contrast])
-            for _ in 0..<2 {
-                rolar(app)
-                try auditar(app, [.contrast])
-            }
             app.terminate()
         }
     }

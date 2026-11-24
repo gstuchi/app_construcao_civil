@@ -13,47 +13,56 @@ import UIKit
    (decisão do Giovani em 09/10). Na CI (iOS 26) o laudo também é portão: o simulador de lá desenha o
    vidro diferente do Mac, mas igual de uma rodada para outra (as 47 cenas deram as mesmas notas em quatro
    rodadas do PR 3, todas acima de 4,5). */
-final class LeituraNoVidroUITests: XCTestCase {
+/// A máquina do laudo de leitura: as constantes, a cena e a medida. Adota quem mede: o LeituraNoVidroUITests e o laudo de
+/// cada área que mora em arquivo próprio (o da análise, em CusttaUITests/Analise).
+protocol LaudoDeLeitura: XCTestCase {}
+
+/// Uma cena do laudo: a tela, o estado e o que ela mede.
+struct CenaDoLaudo {
+    let nome: String
+    let conta: String
+    let argumentos: [String]
+    /// Elemento que diz que a tela abriu.
+    let espera: String
+    /// "tudo" mede o conteúdo (da cápsula de abas para baixo fica de fora); "navegacao" mede só os rótulos
+    /// da cápsula, com o conteúdo que passa por baixo dela intacto nos dois prints.
+    let escopo: String
+    /// Dados dos falsos e tela aberta pelo gancho (`obra:v1`, a obra do mockup na vitrine; `aba:ajustes`, a aba).
+    var dados = "exemplo"
+    var abrir: String? = nil
+    /// Folha aberta pelo gancho quando os dados chegam (`novaObra`, `venda:v2`; etapa 2, parte 3).
+    var folha: String? = nil
+    /// Tela rolada: o texto que passa por baixo da barra é borrado pela borda de rolagem e muda quando é apagado, a
+    /// mais de 5 pt das letras; os 140 pt de cima (a borda) ficam de fora, como os de baixo.
+    var rolada = false
+    /// Toques depois de a tela abrir e antes do print, os mesmos nos dois (a busca, o mês, os Feitos, a linha arrastada;
+    /// etapa 3, PR 3): o estado a que se chega pelo toque, sem gancho de teste.
+    var toques: (@MainActor (XCUIApplication) -> Void)? = nil
+    /// O que a cena mede: identificadores (ou o texto, sem identificador) conferidos à vista antes de cada print, abaixo da
+    /// barra de status e acima da faixa de baixo (`conferirAssunto`). Toda cena com rolagem fixa tem o seu: o laudo passa
+    /// com a rolagem medindo outra coisa (com a obra em blocos da etapa 4, a "busca, nada achado" em 596 media os blocos
+    /// do alto, com o vazio sob a cápsula).
+    var assunto: [String] = []
+}
+
+extension LaudoDeLeitura {
+    typealias Cena = CenaDoLaudo
+
     /// Fundo parado no pior momento: Reduzir movimento (globo em 1,2 e logo pronto) e a aurora no pior ponto
     /// da deriva inteira, que também cobre o quadro em que ela para com Reduzir movimento.
-    private let piorMomento = ["-custta.reduzirMovimento", "YES", "-custta.auroraPiorCaso", "YES", "-custta.semSimbolos", "YES"]
-    private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-    private let temas = ["escuro", "claro"]
-    private static let portao = 4.5
+    var piorMomento: [String] { ["-custta.reduzirMovimento", "YES", "-custta.auroraPiorCaso", "YES", "-custta.semSimbolos", "YES"] }
+    var maiorLetra: [String] { ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
+    var temas: [String] { ["escuro", "claro"] }
+    static var portao: Double { 4.5 }
     /// O mínimo das marcas de gráfico (spec da etapa 4, "Laudo das marcas"), o do mockup.
-    private static let portaoDasMarcas = 3.0
+    static var portaoDasMarcas: Double { 3.0 }
     /// A barra de status fica de fora: a hora muda entre os dois prints.
-    private static let barraDeStatus: CGFloat = 70
+    static var barraDeStatus: CGFloat { 70 }
     /// Rolagens da lista sob a cápsula de abas: no Mac, de 10 em 10 pt até 60 e o fim (260); na CI
     /// (`CUSTTA_VARREDURA=curta`), 0, 20, 40 e 260, para o job caber em 45 min.
-    private static let rolagens = ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta"
-        ? [0, 20, 40, 260] : Array(stride(from: 0, through: 60, by: 10)) + [260]
-
-    private struct Cena {
-        let nome: String
-        let conta: String
-        let argumentos: [String]
-        /// Elemento que diz que a tela abriu.
-        let espera: String
-        /// "tudo" mede o conteúdo (da cápsula de abas para baixo fica de fora); "navegacao" mede só os rótulos
-        /// da cápsula, com o conteúdo que passa por baixo dela intacto nos dois prints.
-        let escopo: String
-        /// Dados dos falsos e tela aberta pelo gancho (`obra:v1`, a obra do mockup na vitrine; `aba:ajustes`, a aba).
-        var dados = "exemplo"
-        var abrir: String? = nil
-        /// Folha aberta pelo gancho quando os dados chegam (`novaObra`, `venda:v2`; etapa 2, parte 3).
-        var folha: String? = nil
-        /// Tela rolada: o texto que passa por baixo da barra é borrado pela borda de rolagem e muda quando é apagado, a
-        /// mais de 5 pt das letras; os 140 pt de cima (a borda) ficam de fora, como os de baixo.
-        var rolada = false
-        /// Toques depois de a tela abrir e antes do print, os mesmos nos dois (a busca, o mês, os Feitos, a linha arrastada;
-        /// etapa 3, PR 3): o estado a que se chega pelo toque, sem gancho de teste.
-        var toques: (@MainActor (XCUIApplication) -> Void)? = nil
-        /// O que a cena mede: identificadores (ou o texto, sem identificador) conferidos à vista antes de cada print, abaixo da
-        /// barra de status e acima da faixa de baixo (`conferirAssunto`). Toda cena com rolagem fixa tem o seu: o laudo passa
-        /// com a rolagem medindo outra coisa (com a obra em blocos da etapa 4, a "busca, nada achado" em 596 media os blocos
-        /// do alto, com o vazio sob a cápsula).
-        var assunto: [String] = []
+    static var rolagens: [Int] {
+        ProcessInfo.processInfo.environment["CUSTTA_VARREDURA"] == "curta"
+            ? [0, 20, 40, 260] : Array(stride(from: 0, through: 60, by: 10)) + [260]
     }
 
     /// A tabela de exceções do laudo: a cena e a figura que sai dos dois prints dela (`foraDoLaudo(_:)` no app, com
@@ -65,9 +74,9 @@ final class LeituraNoVidroUITests: XCTestCase {
     ///   mudam até 204: viram "letra" com o próprio triângulo de fundo (1,33:1). Nenhuma folga inteira casa (a melhor é
     ///   0 px). Só o ícone sai: a frase do aviso, na mesma cor (alertaNoVidro), segue medida nesta cena, nas outras e no
     ///   18 Pro (decisão do Prumo, 21/10).
-    private static let excecoes = ["obra com orçamento por tópico, na maior letra": "iconeDoAviso"]
+    static var excecoes: [String: String] { ["obra com orçamento por tópico, na maior letra": "iconeDoAviso"] }
 
-    @MainActor private func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect], [CGRect]) {
+    @MainActor func fotografar(_ cena: Cena, textoApagado: Bool) -> (XCUIScreenshot, [CGRect], CGFloat, [CGRect], [CGRect]) {
         let excecao = Self.excecoes[cena.nome].map { ["-custta.foraDoLaudo", $0] } ?? []
         let app = abrirApp(conta: cena.conta, dados: cena.dados, abrir: cena.abrir, folha: cena.folha,
                            argumentos: cena.argumentos + excecao + (textoApagado ? ["-custta.textoApagado", cena.escopo] : []))
@@ -92,7 +101,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     /// O assunto da cena à vista antes do print: abaixo da barra de status e acima da faixa de baixo, a borda de 140 pt ou a
     /// cápsula de abas, o que vier antes (a mesma de `conferir`). Pelo identificador ou, sem ele, pelo texto (a frase do aviso
     /// dos tópicos, dentro do bloco do orçamento).
-    @MainActor private func conferirAssunto(_ cena: Cena, _ app: XCUIApplication) {
+    @MainActor func conferirAssunto(_ cena: Cena, _ app: XCUIApplication) {
         let altura = app.frame.height
         let capsula = app.buttons["aba-obras"]
         let fim = min(capsula.exists ? capsula.frame.minY - 10 : altura, altura - 140)
@@ -112,7 +121,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     /// medido. Sai a caixa do campo vazio e, embaixo dela, as linhas do exemplo, medidas como na AuditoriaUITests (letra
     /// do corpo na largura do campo). Com texto digitado o exemplo some e nada sai; o texto do campo, como o prompt, o
     /// UIKit desenha e o laudo não vê (mutação no terciário passa): o Texto sobre a LinhaDaFolha fica no PARES_SOLIDOS.
-    @MainActor private func exemploDaDescricao(_ app: XCUIApplication, _ cena: Cena) -> [CGRect] {
+    @MainActor func exemploDaDescricao(_ app: XCUIApplication, _ cena: Cena) -> [CGRect] {
         let campo = app.textFields["descricao"]
         guard campo.exists, let exemplo = campo.placeholderValue else { return [] }
         let valor = campo.value as? String ?? ""
@@ -129,7 +138,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     }
 
     /// Mede as cenas e cobra o portão de cada uma.
-    @MainActor private func cobrar(_ cenas: [Cena]) {
+    @MainActor func cobrar(_ cenas: [Cena]) {
         for cena in cenas {
             let falhas: [String]
             do { falhas = try conferir(cena) } catch {
@@ -141,7 +150,7 @@ final class LeituraNoVidroUITests: XCTestCase {
     }
 
     /// Mede uma cena, anexa o print anotado e a tabela e devolve as palavras abaixo do portão.
-    @MainActor private func conferir(_ cena: Cena) throws -> [String] {
+    @MainActor func conferir(_ cena: Cena) throws -> [String] {
         let (normal, abas, largura, informativo, voltar) = fotografar(cena, textoApagado: false)
         let (semTexto, _, _, _, _) = fotografar(cena, textoApagado: true)
         let imagem = normal.image.cgImage!
@@ -176,8 +185,8 @@ final class LeituraNoVidroUITests: XCTestCase {
 
     /// As marcas saem com o prefixo "marcas" e o portão delas: o comparador do laudo (`scripts/compara-laudo.mjs`) lê só as
     /// tabelas "leitura — …", com o portão de 4,5.
-    @MainActor private func anexar(_ nome: String, _ imagem: UIImage, _ palavras: [LaudoDeContraste.Palavra], _ escala: CGFloat,
-                                   portao: Double = LeituraNoVidroUITests.portao, tipo: String = "leitura") {
+    @MainActor func anexar(_ nome: String, _ imagem: UIImage, _ palavras: [LaudoDeContraste.Palavra], _ escala: CGFloat,
+                                   portao: Double = Self.portao, tipo: String = "leitura") {
         let formato = UIGraphicsImageRendererFormat()
         formato.scale = 1
         let tamanho = CGSize(width: imagem.size.width * imagem.scale, height: imagem.size.height * imagem.scale)
@@ -209,7 +218,9 @@ final class LeituraNoVidroUITests: XCTestCase {
         tabela.lifetime = .keepAlways
         add(tabela)
     }
+}
 
+final class LeituraNoVidroUITests: XCTestCase, LaudoDeLeitura {
     /// Entrar (Fosco), Obras (Transparente, com o aviso de e-mail) e os rótulos da cápsula de abas sobre a
     /// lista rolada, no escuro e no claro.
     @MainActor func testLeituraNosDoisTemas() {

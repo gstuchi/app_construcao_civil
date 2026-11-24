@@ -53,9 +53,9 @@ enum TamanhoDasTeclas: Sendable {
 struct GradeDeTeclas: View {
     @Binding var centavos: Int
     let tamanho: TamanhoDasTeclas
-    /// A regra de quem usa, no lugar da do teclado de valor: devolve os centavos novos, ou nil quando a tecla não muda nada.
-    /// Com ela, os centavos do binding não são lidos: quem usa guarda os seus.
-    var regra: ((TeclaDeValor) -> Int?)? = nil
+    /// A regra de quem usa, no lugar da do teclado de valor: faz o que a tecla faz e devolve o que o VoiceOver fala, ou nil
+    /// quando a tecla não muda nada. Com ela, os centavos do binding não são lidos: quem usa guarda os seus.
+    var regra: ((TeclaDeValor) -> String?)? = nil
 
     static let linhas: [[TeclaDeValor]] = [
         [.digito(1), .digito(2), .digito(3)],
@@ -81,7 +81,7 @@ struct GradeDeTeclas: View {
 
     private func tocar(_ tecla: TeclaDeValor) {
         if let regra {
-            if let novo = regra(tecla) { AccessibilityNotification.Announcement(fmtCentavos(novo)).post() }
+            if let fala = regra(tecla) { AccessibilityNotification.Announcement(fala).post() }
             return
         }
         let novo = aplicarTecla(centavos, tecla)

@@ -40,11 +40,7 @@ struct TeclasDoPreco: View {
             }
             .padding(.horizontal, 8)
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            GradeDeTeclas(centavos: .constant(preco.centavos), tamanho: .encaixado) { tecla in
-                guard let reais = preco.tocar(tecla) else { return nil }
-                campos.precoDigitado = reais
-                return preco.centavos
-            }
+            GradeDeTeclas(centavos: .constant(preco.centavos), tamanho: .encaixado) { Self.tocar($0, &preco, &campos) }
         }
         .padding(.horizontal, 12)
         .padding(.top, 4)
@@ -55,6 +51,17 @@ struct TeclasDoPreco: View {
         // O gesto de sair do VoiceOver (o Z) fecha as teclas, como o "OK". Só existe com elas abertas: não engole o de mais ninguém.
         .accessibilityAction(.escape, ok)
         .accessibilityIdentifier("teclasDoPreco")
+    }
+
+    /// O valor da linha do preço com o campo vazio, e o que o VoiceOver fala quando uma tecla o deixa assim.
+    static let semPreco = "sem preço"
+
+    /// Uma tecla: o que o núcleo faz com o campo, gravado nos campos, e o que o VoiceOver fala; nil quando a tecla não muda
+    /// nada. O campo que fica vazio fala o mesmo que a linha do preço diz, e não o "0,00" do teclado de valor.
+    static func tocar(_ tecla: TeclaDeValor, _ preco: inout PrecoNasTeclas, _ campos: inout CamposDoSimulador) -> String? {
+        guard let reais = preco.tocar(tecla) else { return nil }
+        campos.precoDigitado = reais
+        return reais > 0 ? fmtCentavos(preco.centavos) : semPreco
     }
 
     /// A Folha, como a das folhas do app: a cor do token sobre o desfoque do que rola atrás; com "Reduzir transparência",

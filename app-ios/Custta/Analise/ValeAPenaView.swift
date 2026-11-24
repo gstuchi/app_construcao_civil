@@ -157,7 +157,7 @@ struct CamposDoValeAPena: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Se eu vender por")
-        .accessibilityValue(tela.preco.map { moeda($0) } ?? "sem preço")
+        .accessibilityValue(tela.preco.map { moeda($0) } ?? TeclasDoPreco.semPreco)
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("simPreco")
     }

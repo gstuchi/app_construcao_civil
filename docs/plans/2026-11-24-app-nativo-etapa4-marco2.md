@@ -71,6 +71,8 @@ Nenhuma decisão deste plano passou pelo conselho: nenhuma muda a cara do app, a
 
 7. **Os menores da revisão das tarefas 18 a 20** estão fechados: a fala do campo limpo (tarefa 21), a cena com a venda abaixo do banco (tarefa 22) e as mutações do custo e do empate no laudo pela forma (Prova da tarefa 20).
 
+8. **A auditoria da maior letra passa mesmo sem achar o teclado** (ponto cego, visto na prova do Forja, `6254c52` no #126); o contraste pega. Fica anotado; não se conserta no 4a.
+
 ## PR 4a: "Vale a pena?"
 
 **Risco único:** a terceira aba, que muda a cápsula de todas as telas. **Portões:** tudo, com a comparação do laudo inteiro. **Escondido na `main`:** nada (a aba entra completa).

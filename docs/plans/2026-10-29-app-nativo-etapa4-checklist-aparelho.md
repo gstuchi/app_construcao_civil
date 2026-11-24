@@ -131,6 +131,8 @@ do marco 1 nas mesmas obras.
 - [ ] VoiceOver, na conta: o veredito é um elemento só, com a frase inteira; a faixa é uma imagem com os três valores; cada
   linha da tabela fala o nome e os dois valores.
 - [ ] Controle por Voz ("Mostrar nomes"): "Tocar Obra", "Tocar Se eu vender por", "Tocar Um mês a mais" e "Tocar OK".
-- [ ] No escuro e no claro, nos vidros Transparente e Fosco: as três marcas da faixa se distinguem do trilho e da parte
-  hachurada, e o "OK" das teclas se lê. Com Reduzir transparência, os blocos e as teclas ficam sólidos.
+- [ ] No escuro e no claro, nos vidros Transparente e Fosco: as três marcas da faixa se distinguem do trilho, e o "OK" das
+  teclas se lê. A parte hachurada começa um pouco depois do tracejado e abre uma fenda onde passa a venda (decisão de
+  24/11): diga se a venda ainda se lê como "dentro" da parte hachurada. Com Reduzir transparência, os blocos e as teclas
+  ficam sólidos.
 - [ ] Com Aumentar contraste, a aba inteira continua legível, e os blocos verde e âmbar não mudam de cor.

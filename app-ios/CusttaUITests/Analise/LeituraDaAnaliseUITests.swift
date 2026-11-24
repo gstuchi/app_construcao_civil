@@ -89,6 +89,53 @@ final class LeituraDaAnaliseUITests: XCTestCase, LaudoDeLeitura {
         ])
     }
 
+    /// O laudo das marcas da faixa "Onde a sua venda cai" (spec da etapa 4, "Laudo das marcas"): o custo, o empate e a venda a
+    /// 3:1 com o que fica atrás deles, nos dois temas e nos vidros Transparente e Fosco. Cada cena sai em dois prints, um
+    /// normal e um com as marcas apagadas (`-custta.marcasApagadas`, só Debug); a zona, com o recorte em volta das marcas, é
+    /// fundo e fica nos dois. Na Casa Alphaville a venda cai dentro da zona: a fenda está no print.
+    @MainActor func testMarcasDaFaixaDoValeAPena() {
+        var falhas: [String] = []
+        for tema in temas {
+            for vidro in ["transparente", "fosco"] {
+                let nome = "marcas, faixa do vale a pena, \(tema), \(vidro)"
+                let argumentos = ["-custta.tema", tema, "-custta.vidro", vidro, "-custta.rolagem", "\(Self.rolagemDaFaixa)"] + piorMomento
+                func fotografar(apagadas: Bool) -> (XCUIScreenshot, CGRect, CGFloat) {
+                    let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena",
+                                       argumentos: argumentos + (apagadas ? ["-custta.marcasApagadas", "YES"] : []))
+                    let faixa = app.elemento("simFaixa")
+                    XCTAssertTrue(faixa.waitForExistence(timeout: 30), "\(nome): a aba não abriu")
+                    Thread.sleep(forTimeInterval: 2)                   // o vidro e a rolagem assentam
+                    let foto = XCUIScreen.main.screenshot()
+                    // As marcas passam da faixa: 8 pt em cima e embaixo, e o ponto da venda, 15 em cima.
+                    let quadro = faixa.frame.insetBy(dx: -4, dy: -18), largura = app.frame.width
+                    app.terminate()
+                    return (foto, quadro, largura)
+                }
+                let (normal, quadro, largura) = fotografar(apagadas: false)
+                let (semMarcas, _, _) = fotografar(apagadas: true)
+                let imagem = normal.image.cgImage!
+                let escala = CGFloat(imagem.width) / largura
+                let marcas: [LaudoDeContraste.Palavra]
+                do {
+                    marcas = try LaudoDeContraste.medirMarcas(normal: Retrato(imagem), semMarcas: Retrato(semMarcas.image.cgImage!),
+                                                              escala: escala, em: [quadro])
+                } catch {
+                    XCTFail("\(nome): \(error)")
+                    continue
+                }
+                // O custo, a venda (a barra com o ponto) e os traços do empate.
+                XCTAssertGreaterThanOrEqual(marcas.count, 3, "\(nome): \(marcas.map(\.corHex))")
+                anexar(nome, normal.image, marcas, escala, portao: Self.portaoDasMarcas, tipo: "marcas")
+                Swift.print(String(format: "marcas | %@ | %d marcas | pior nota %.2f", nome, marcas.count, marcas.map(\.nota).min() ?? 0))
+                falhas += marcas.filter { $0.nota < Self.portaoDasMarcas }.map { m in
+                    "\(nome): marca \(m.corHex) em \(Int(m.caixa.minX)),\(Int(m.caixa.minY)) fica em "
+                        + String(format: "%.2f:1 (pior pixel %.2f:1)", m.nota, m.minimo)
+                }
+            }
+        }
+        XCTAssertTrue(falhas.isEmpty, "Abaixo de \(Self.portaoDasMarcas):1:\n" + falhas.joined(separator: "\n"))
+    }
+
     // As rolagens das cenas, em pontos, medidas no 18 Pro (402 × 874): cada uma deixa o assunto inteiro entre a borda de cima
     // (140 pt) e a de baixo (734), e o `assunto` de cada cena confere isso antes do print, em qualquer aparelho. A do
     // veredito deixa a obra e o preço à vista, para o toque; a da tabela é quase o fim da tela.

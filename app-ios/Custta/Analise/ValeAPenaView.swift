@@ -258,6 +258,10 @@ struct FaixaDoValeAPena: View {
 /// O desenho da faixa, em formas (sem texto): cada marca no x que o núcleo deu, como fração da largura.
 struct DesenhoDaFaixa: View {
     static let altura: CGFloat = 46
+    /// Do tracejado do empate ao começo da zona: o tracejado tem 2 pt, e sobram 2 de trilho entre ele e a hachura.
+    static let vaoDoEmpate: CGFloat = 4
+    /// A fenda da zona onde passa a venda: a barra tem 4 pt, e sobram 2 de trilho de cada lado.
+    static let fendaDaVenda: CGFloat = 8
     let faixa: FaixaDoSimulador
     @Environment(\.paleta) private var paleta
     #if DEBUG
@@ -280,13 +284,27 @@ struct DesenhoDaFaixa: View {
                 // O trilho: o texto a 14%, como o da barra do orçamento. A altura vai escrita: a pilha cresce até a marca mais
                 // alta (a venda, 16 pt a mais), e um trilho sem altura cresceria com ela, para 62 pt, e sobraria embaixo da zona.
                 RoundedRectangle(cornerRadius: 12).fill(tinta.opacity(0.14)).frame(height: altura)
+                // A zona "acima do banco", hachurada, com o contorno no destaque, recortada em volta das marcas (decisão do
+                // Giovani de 24/11, saída (c) do Croqui): o contorno sob o empate e a venda as deixava em 1,90:1 no escuro e
+                // 2,96:1 no claro. Ela começa 4 pt depois do tracejado e abre uma fenda de 8 pt onde passa a venda; atrás das
+                // marcas fica o trilho, como atrás do custo. É fundo, e não marca: fica no print das marcas apagadas.
+                let inicio = empate + Self.vaoDoEmpate
+                zona.fill(paleta.cor(.positivoFundo))
+                    .overlay { Hachura(traco: 2, passo: 6).fill(paleta.cor(.destaque).opacity(0.55)).clipShape(zona) }
+                    .overlay { zona.strokeBorder(paleta.cor(.destaque), lineWidth: 1.5) }
+                    .frame(width: max(0, largura - inicio), height: altura)
+                    // A fenda fora da zona (a venda abaixo do banco) não recorta nada.
+                    .mask(alignment: .leading) {
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                            Rectangle().frame(width: Self.fendaDaVenda)
+                                .offset(x: venda - inicio - Self.fendaDaVenda / 2)
+                                .blendMode(.destinationOut)
+                        }
+                        .compositingGroup()
+                    }
+                    .offset(x: inicio)
                 Group {
-                    // A zona "acima do banco": do empate até o fim, hachurada, com o contorno no destaque.
-                    zona.fill(paleta.cor(.positivoFundo))
-                        .overlay { Hachura(traco: 2, passo: 6).fill(paleta.cor(.destaque).opacity(0.55)).clipShape(zona) }
-                        .overlay { zona.strokeBorder(paleta.cor(.destaque), lineWidth: 1.5) }
-                        .frame(width: max(0, largura - empate), height: altura)
-                        .offset(x: empate)
                     // O custo: uma barra de 3 pt, 6 acima e 6 abaixo da faixa.
                     RoundedRectangle(cornerRadius: 2).fill(tinta).frame(width: 3, height: altura + 12).offset(x: custo, y: -6)
                     // O empate com o banco: o tracejado.

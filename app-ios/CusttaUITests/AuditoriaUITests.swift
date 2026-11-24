@@ -32,8 +32,10 @@ extension AuditoriaDeTela {
     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
     /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste. Com `corteSemElemento`, deixa passar
     /// também o "Text clipped" sem elemento, e só ele: o ponto cego do ViewThatFits na maior letra (T34), nas cenas com um à vista.
+    /// Com `soEm`, só contam os achados nos elementos cujo identificador começa por ele (as pílulas das ações da fase,
+    /// `acao-`): os outros, e os sem elemento, vão para o log e não reprovam.
     @MainActor func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
-                            corteSemElemento: Bool = false) throws {
+                            corteSemElemento: Bool = false, soEm: String? = nil) throws {
         // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
         let folha = app.elemento("tituloDaFolha").exists
         let abas = folha ? [] : (app.abasDaCapsula + [app.buttons["botaoMais"]]).filter(\.exists).map(\.frame)
@@ -64,6 +66,10 @@ extension AuditoriaDeTela {
         let totalMudaDeLugar = app.launchArguments.contains { $0.hasPrefix("UICTContentSizeCategoryAccessibility") }
             && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
         try app.performAccessibilityAudit(for: tipos) { achado in
+            if let soEm, achado.element?.identifier.hasPrefix(soEm) != true {
+                Swift.print("auditoria | \(achado.compactDescription) | \(achado.element?.identifier ?? "sem elemento") | fora de \(soEm)")
+                return true
+            }
             guard let elemento = achado.element else {
                 // O arranjo que o ViewThatFits descartou dá "Text clipped" sem elemento, com a tela mostrando o outro inteiro.
                 // Qualquer outro achado sem elemento reprova, também nessas cenas.
@@ -167,6 +173,35 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
     }
+
+    /// As ações da fase na maior letra (achado 9 do marco 1): o "Desfazer venda" da obra vendida e o "Registrar venda" com o
+    /// "Voltar pra construção" da pronta, que a auditoria da parte 3 deixou de alcançar com a obra em blocos. Numa obra de
+    /// lista longa (a Casa Alphaville dos falsos da análise, com 46 gastos: a1, vendida, e a9, pronta), numa rolagem fixa com
+    /// as pílulas à vista: com conteúdo de sobra embaixo, a rolagem não passa do fim nos tamanhos menores que a auditoria
+    /// experimenta. Só contam os achados nas pílulas (`acao-`): os blocos em volta têm a auditoria deles no alto e no fim da
+    /// obra, e a troca de letra da auditoria dá neles achados que a tela parada não tem (problema conhecido, 03/11).
+    @MainActor func testAcoesDaFaseNoMaiorTamanho() throws {
+        for (obra, rolagem, acoes) in [("a1", Self.rolagemDasAcoesDaVendida, ["desfazerVenda"]),
+                                       ("a9", Self.rolagemDasAcoesDaPronta, ["registrarVenda", "voltarConstrucao"])] {
+            let app = abrirApp(conta: "senha", dados: "analise", abrir: "obra:\(obra)",
+                               argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
+            XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)
+            // As pílulas inteiras à vista, abaixo da borda de cima e acima da cápsula: é nelas que a auditoria conta.
+            let capsula = app.buttons["aba-obras"].frame
+            for acao in acoes {
+                let pilula = app.buttons["acao-\(acao)"]
+                XCTAssertTrue(pilula.waitForExistence(timeout: 5) && pilula.frame.minY >= borda && pilula.frame.maxY <= capsula.minY,
+                              "\(obra): a pílula \(acao) à vista (\(pilula.frame); de \(borda) a \(capsula.minY))")
+            }
+            try auditar(app, tiposDeAuditoria, soEm: "acao-")
+            app.terminate()
+        }
+    }
+    // Medidas no 18 Pro, na maior letra: a 3050, o "Desfazer venda" fica de 245 a 394 pt; a 2500, o "Registrar venda" de 260 a
+    // 409 e o "Voltar pra construção" de 419 a 568.
+    private static let rolagemDasAcoesDaVendida = 3050
+    private static let rolagemDasAcoesDaPronta = 2500
 
     /// O bloco A pagar da obra na maior letra, inteiro: a etiqueta dos vencimentos e a nota "Parcelas e gastos futuros". Na
     /// obra, ele fica abaixo da dobra, e a auditoria olha só o topo; rolado, numa List ou numa ScrollView, a troca de letra

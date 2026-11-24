@@ -127,7 +127,7 @@ struct DadosDeExemploTests {
             return dataLocalISO(calendario.date(byAdding: .day, value: dia - 1, to: alvo)!, fuso: .current)
         }
         let estado = Estado.de(DadosDeExemplo.vitrineDaAnalise(hoje: hoje))
-        #expect(estado.obras.map(\.id) == ["v1", "v2", "v3", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"])
+        #expect(estado.obras.map(\.id) == ["v1", "v2", "v3", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"])
         #expect(Array(estado.obras.prefix(3)) == Estado.de(DadosDeExemplo.vitrine(hoje: hoje)).obras, "a vitrine de sempre na frente")
         let obra = Dictionary(uniqueKeysWithValues: estado.obras.map { ($0.id, $0) })
         let ids = estado.obras.flatMap { $0.gastos.map(\.id) }
@@ -180,6 +180,10 @@ struct DadosDeExemploTests {
         #expect(semVenda.nome == "Casa Alphaville" && semVenda.fase == .construcao && semVenda.venda == nil)
         #expect(semVenda.valorEstimadoVenda == nil && casa.valorEstimadoVenda == 1_450_000)
         #expect(semVenda.gastos.map(\.valor) == casa.gastos.map(\.valor) && semVenda.gastos.map(\.data) == casa.gastos.map(\.data))
+        // a9: a Casa Alphaville pronta, com os mesmos gastos e a venda estimada.
+        let pronta = try #require(obra["a9"])
+        #expect(pronta.nome == "Casa Alphaville" && pronta.fase == .pronta && pronta.venda == nil && pronta.valorEstimadoVenda == 1_450_000)
+        #expect(pronta.gastos.map(\.valor) == casa.gastos.map(\.valor))
     }
 
     /// A conta de mês para trás dos falsos no fim do mês: o dia que o mês não tem fica no último dele, sem transbordar para 1º de

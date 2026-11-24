@@ -43,6 +43,10 @@ struct ValeAPenaView: View {
                     .padding(.bottom, 98)
                 }
                 .scrollIndicators(.hidden)
+                #if DEBUG
+                // O laudo de leitura mede o veredito, a faixa e a tabela com a tela parada numa rolagem dada.
+                .rolagemFixaSoComOArgumento()
+                #endif
                 // Quando as teclas entram, a área de baixo da rolagem cresce: a linha do preço sobe só o que falta para ficar à
                 // vista acima delas (na letra máxima ela nasce mais embaixo). O gatilho é a medida, e não um tempo.
                 .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.bottom } action: { antes, depois in
@@ -230,6 +234,7 @@ struct FaixaDoValeAPena: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: grande ? nil : .infinity, alignment: .leading)
                     .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("simTituloDaFaixa")
                 EtiquetaDoIndicador(texto: faixa.pilula, cor: faixa.acima ? .positivo : .alerta)
                     .accessibilityIdentifier("simPilula")
             }
@@ -381,6 +386,7 @@ struct TabelaDoValeAPena: View {
                 .foregroundStyle(paleta.cor(.texto))
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("simTituloDaTabela")
                 .padding(.bottom, 8)
             if !grande {
                 HStack(spacing: 12) {

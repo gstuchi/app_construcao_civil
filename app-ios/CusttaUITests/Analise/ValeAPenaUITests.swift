@@ -149,6 +149,39 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertFalse(app.elemento("simTabela-7").exists, "sete linhas")
     }
 
+    /// O + para em 120 meses, como o campo do site. O app abre já em 119 pelo gancho de Debug (`-custta.simMeses`), para
+    /// o teste não dar 120 toques.
+    @MainActor func testOsMesesParamEm120() {
+        let app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena", argumentos: ["-custta.simMeses", "119"])
+        let meses = app.elemento("simMeses"), mais = app.buttons["simMais"]
+        XCTAssertTrue(meses.waitForExistence(timeout: 10))
+        XCTAssertEqual(meses.value as? String, "119 meses")
+        XCTAssertTrue(mais.isEnabled)
+        mais.tap()
+        XCTAssertEqual(meses.value as? String, "120 meses")
+        XCTAssertFalse(mais.isEnabled, "em 120, o + não anda")
+        XCTAssertTrue(app.elemento("simVeredito").label.contains(", vendendo daqui a 120 meses, "), app.elemento("simVeredito").label)
+        app.buttons["simMenos"].tap()
+        XCTAssertEqual(meses.value as? String, "119 meses")
+        XCTAssertTrue(mais.isEnabled)
+    }
+
+    /// A obra com menos de 1 mês (o Sobrado Vila Nova começou neste mês): não há taxa ao mês, e o veredito sai pelo preço
+    /// contra o custo corrigido, com a frase do site (decisão 5 da parte 2: manter o site).
+    @MainActor func testObraComMenosDeUmMesNaoTemTaxa() {
+        let app = abrirAAba()
+        app.buttons["simObra"].tap()
+        let vilaNova = app.buttons["Sobrado Vila Nova"]
+        XCTAssertTrue(vilaNova.waitForExistence(timeout: 5))
+        vilaNova.tap()
+        XCTAssertEqual(app.buttons["simObra"].value as? String, "Sobrado Vila Nova")
+        XCTAssertEqual(app.elemento("simPreco").value as? String, "R$\u{00A0}1.100.000,00", "a venda estimada dela")
+        let veredito = app.elemento("simVeredito")
+        XCTAssertTrue(veredito.waitForExistence(timeout: 5))
+        XCTAssertTrue(veredito.label.hasPrefix("Vale a pena, sem taxa ao mês, "), veredito.label)
+        XCTAssertTrue(veredito.label.contains("menos de 1 mês"), veredito.label)
+    }
+
     /// As teclas do preço (decisão do Giovani de 24/11): o toque na linha do preço troca a cápsula de abas pelas teclas, com
     /// o valor à vista. O OK sem digitar devolve a cápsula e deixa tudo como estava: o preço segue acompanhando a venda
     /// estimada (o Sobrado não tem, e o campo fica vazio).
@@ -233,6 +266,35 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(preco.frame.minY, app.navigationBars.firstMatch.frame.maxY, "e abaixo da barra de cima")
         app.buttons["tecla-5"].tap()
         XCTAssertEqual(preco.value as? String, "R$\u{00A0}0,05")
+    }
+
+    /// O que a auditoria do Xcode não vê nesta tela (prova da Lupa na fatia 8, com defeito plantado): o alvo pequeno e o
+    /// título preso numa linha. Os alvos se medem pelo quadro: 44 pt, e o − e o + com 72 na maior letra. Nela, os títulos
+    /// da faixa e da tabela não cabem numa linha de 53 pt e têm de quebrar: o quadro passa de duas linhas.
+    @MainActor func testOsAlvosTem44PontosEOsTitulosQuebramNaMaiorLetra() {
+        var app = abrirAAba()
+        for id in ["simObra", "simPreco", "simMenos", "simMais"] {
+            let alvo = app.elemento(id).frame
+            XCTAssertGreaterThanOrEqual(min(alvo.width, alvo.height), 44, "\(id): \(alvo)")
+        }
+        app.elemento("simPreco").tap()
+        let ok = app.buttons["teclasDoPreco-ok"]
+        XCTAssertTrue(ok.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(min(ok.frame.width, ok.frame.height), 44, "o OK das teclas: \(ok.frame)")
+        app.terminate()
+        app = abrirApp(conta: "senha", dados: "analise", abrir: "aba:valeAPena",
+                       argumentos: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        XCTAssertTrue(app.elemento("tituloValeAPena").waitForExistence(timeout: 10))
+        for id in ["simMenos", "simMais"] {
+            let alvo = app.elemento(id).frame
+            XCTAssertGreaterThanOrEqual(min(alvo.width, alvo.height), 72, "\(id) na maior letra: \(alvo)")
+        }
+        for id in ["simTituloDaFaixa", "simTituloDaTabela"] {
+            let titulo = app.elemento(id)
+            XCTAssertTrue(titulo.exists, id)
+            XCTAssertGreaterThanOrEqual(titulo.frame.height, 106, "\(id) em duas linhas ou mais na maior letra: \(titulo.frame)")
+            XCTAssertLessThanOrEqual(titulo.frame.width, app.frame.width - 68, "\(id) dentro das bordas de 34 pt: \(titulo.frame)")
+        }
     }
 
     /// Sem nenhuma obra elegível, a linha da obra diz o que fazer, como no site, e não há lista para abrir.

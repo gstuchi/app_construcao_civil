@@ -412,6 +412,11 @@ struct RolagemFixaDoTeste: ViewModifier {
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
                 if segurando, abs(y - rolagemFixa) > 0.5 { posicao.scrollTo(y: rolagemFixa) }
             }
+            // A tela que cresce depois de a rolagem ser pedida (o "Vale a pena?", quando os dados chegam e a conta aparece): a
+            // rolagem tinha parado no fim do conteúdo curto, e o conteúdo novo não a mexe. Vai de novo até a pedida.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { _, _ in
+                if segurando { posicao.scrollTo(y: rolagemFixa) }
+            }
             .onScrollPhaseChange { _, fase in if fase == .interacting { segurando = false } }
     }
 }

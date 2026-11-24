@@ -45,7 +45,8 @@ extension AuditoriaDeTela {
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         // Com as teclas encaixadas abertas (folha do orçamento), a lista termina onde a faixa delas começa: o que a lista tem
         // embaixo da faixa está escondido (montado pela lista preguiçosa, mas fora da vista). As teclas e a barra entram.
-        let teclas = app.elemento("tecladoEncaixado")
+        // As teclas do preço do "Vale a pena?" (etapa 4) cobrem a tela da aba do mesmo jeito.
+        let teclas = app.elemento(app.elemento("teclasDoPreco").exists ? "teclasDoPreco" : "tecladoEncaixado")
         let topoDasTeclas = teclas.exists ? teclas.frame.minY : .infinity
         let dasTeclas = teclas.exists ? teclas.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         // E começa embaixo do cabeçalho fixo da folha (o segmentado e o total): o que a lista tem em cima dele foi rolado para
@@ -92,7 +93,7 @@ extension AuditoriaDeTela {
                 fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
                     || elemento.identifier.hasPrefix("tituloDaFolha") || elemento.identifier.hasPrefix("visorDoValor")
                     || elemento.identifier.hasPrefix("tecla-") || elemento.identifier.hasPrefix("apagar-")
-                    || elemento.identifier.hasPrefix("barraDasTeclas-")
+                    || elemento.identifier.hasPrefix("barraDasTeclas-") || elemento.identifier.hasPrefix("teclasDoPreco-")
                     || abas.contains { $0.contains(centro) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula

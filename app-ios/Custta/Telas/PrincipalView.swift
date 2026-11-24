@@ -12,7 +12,7 @@ struct PrincipalView: View {
     @State private var caminhoDeObras = PrincipalView.caminhoInicial
     /// Os campos do "Vale a pena?": moram aqui, e não na tela da aba, que sai da árvore quando a pessoa troca de aba. Assim
     /// duram enquanto o app está aberto (spec da etapa 4, "Dados e estado").
-    @State private var simulador = CamposDoSimulador()
+    @State private var simulador = PrincipalView.simuladorInicial
     /// As teclas do preço do "Vale a pena?" estão abertas, e a cápsula de abas sai (mockup da etapa 4, `sim-teclado`).
     @State private var teclasDoPreco = false
     @State private var folhas = Folhas()
@@ -191,6 +191,16 @@ extension PrincipalView {
         return TelaDaAnalise(gancho: abrir).map { .analise($0) }
     }
     #endif
+
+    /// Os campos com que o "Vale a pena?" abre: os do núcleo, com os meses em 0. Em Debug, `-custta.simMeses <n>` já abre
+    /// com os meses andados, para o teste de tela chegar ao limite de 120 sem 120 toques.
+    static var simuladorInicial: CamposDoSimulador {
+        var campos = CamposDoSimulador()
+        #if DEBUG
+        campos.andarMeses(UserDefaults.standard.integer(forKey: "custta.simMeses"))
+        #endif
+        return campos
+    }
 
     /// A aba em que o app abre: Obras. Em Debug, `CUSTTA_ABRIR=aba:<nome>` abre noutra (`aba:ajustes`), para os testes de
     /// tela, o laudo de leitura e a conferência visual chegarem a uma aba sem tocar na cápsula.

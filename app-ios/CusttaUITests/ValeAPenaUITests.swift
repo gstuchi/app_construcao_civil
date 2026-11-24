@@ -131,6 +131,24 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertFalse(faixa.exists, "sem preço não há faixa")
     }
 
+    /// A tabela do site, "Relatório da simulação": sete linhas na Casa Alphaville (a última é o preço por m², porque ela tem
+    /// área), cada uma um elemento com os dois valores, pelo bruto e pelo corrigido. Sem preço, a tabela some.
+    @MainActor func testATabelaDaSimulacao() {
+        let app = abrirAAba()
+        let custo = app.elemento("simTabela-0")
+        app.rolarAte(custo)
+        XCTAssertEqual(custo.label, "Custo até a venda")
+        XCTAssertTrue((custo.value as? String ?? "").hasPrefix("Pelo bruto R$\u{00A0}842.317,45, pelo corrigido R$\u{00A0}"), "\(String(describing: custo.value))")
+        XCTAssertEqual(app.elemento("simTabela-1").label, "Venda")
+        XCTAssertEqual(app.elemento("simTabela-1").value as? String, "Pelo bruto R$\u{00A0}1.450.000,00, pelo corrigido R$\u{00A0}1.450.000,00")
+        XCTAssertEqual(app.elemento("simTabela-2").label, "Lucro")
+        XCTAssertTrue((app.elemento("simTabela-2").value as? String ?? "").hasPrefix("Pelo bruto R$\u{00A0}607.682,55, "))
+        XCTAssertEqual((3...6).map { app.elemento("simTabela-\($0)").label },
+                       ["% sobre o custo", "% sobre a venda", "Rendimento ao mês", "Preço por m² (300 m²)"])
+        XCTAssertEqual(app.elemento("simTabela-6").value as? String, "Pelo bruto R$\u{00A0}4.833,33, pelo corrigido R$\u{00A0}4.833,33")
+        XCTAssertFalse(app.elemento("simTabela-7").exists, "sete linhas")
+    }
+
     /// Sem nenhuma obra elegível, a linha da obra diz o que fazer, como no site, e não há lista para abrir.
     @MainActor func testSemObraElegivelALinhaDizOQueFazer() {
         let app = abrirApp(conta: "senha", dados: "vazio", abrir: "aba:valeAPena")

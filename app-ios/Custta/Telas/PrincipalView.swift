@@ -193,11 +193,14 @@ extension PrincipalView {
     #endif
 
     /// Os campos com que o "Vale a pena?" abre: os do núcleo, com os meses em 0. Em Debug, `-custta.simMeses <n>` já abre
-    /// com os meses andados, para o teste de tela chegar ao limite de 120 sem 120 toques.
+    /// com os meses andados, para o teste de tela chegar ao limite de 120 sem 120 toques, e `-custta.simPreco <reais>`, com
+    /// o preço digitado, para o laudo fotografar a venda abaixo do banco sem tocar nas teclas.
     static var simuladorInicial: CamposDoSimulador {
         var campos = CamposDoSimulador()
         #if DEBUG
         campos.andarMeses(UserDefaults.standard.integer(forKey: "custta.simMeses"))
+        let preco = UserDefaults.standard.double(forKey: "custta.simPreco")
+        if preco > 0 { campos.precoDigitado = preco }
         #endif
         return campos
     }

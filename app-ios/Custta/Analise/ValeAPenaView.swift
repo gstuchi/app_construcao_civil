@@ -240,8 +240,9 @@ struct DesenhoDaFaixa: View {
             let tinta = paleta.cor(.texto)
             let zona = UnevenRoundedRectangle(bottomTrailingRadius: 12, topTrailingRadius: 12)
             ZStack(alignment: .topLeading) {
-                // O trilho: o texto a 14%, como o da barra do orçamento.
-                RoundedRectangle(cornerRadius: 12).fill(tinta.opacity(0.14))
+                // O trilho: o texto a 14%, como o da barra do orçamento. A altura vai escrita: a pilha cresce até a marca mais
+                // alta (a venda, 16 pt a mais), e um trilho sem altura cresceria com ela, para 62 pt, e sobraria embaixo da zona.
+                RoundedRectangle(cornerRadius: 12).fill(tinta.opacity(0.14)).frame(height: altura)
                 Group {
                     // A zona "acima do banco": do empate até o fim, hachurada, com o contorno no destaque.
                     zona.fill(paleta.cor(.positivoFundo))

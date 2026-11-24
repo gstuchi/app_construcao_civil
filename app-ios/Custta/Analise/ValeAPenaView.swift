@@ -5,9 +5,14 @@ import CusttaNucleo
    título solto em mono, o bloco dos campos (a obra, o preço e os meses, com a nota do site), o veredito no bloco sólido, a
    faixa "Onde a sua venda cai" e a tabela do site, pelo bruto e pelo corrigido. Os campos moram no PrincipalView, e não aqui: só a aba escolhida fica montada, e eles têm de durar
    enquanto o app está aberto (spec, "Dados e estado"). O que a tela mostra sai inteiro do núcleo (`simulacaoNaTela`), com
-   as obras e a taxa de agora: uma mudança vinda de outro aparelho redesenha a aba na hora. */
+   as obras e a taxa de agora: uma mudança vinda de outro aparelho redesenha a aba na hora. O toque no preço abre as teclas
+   (`TeclasDoPreco`) no lugar da cápsula de abas. As teclas são desta tela, na área segura da rolagem, para a linha do preço
+   subir acima delas; a cápsula é do PrincipalView, que a tira enquanto o `teclasAbertas` vale: daí ele vir de lá. */
 struct ValeAPenaView: View {
+    /// A linha do preço na rolagem: com as teclas abertas, ela fica à vista acima delas.
+    static let linhaDoPreco = "simLinhaDoPreco"
     @Binding var campos: CamposDoSimulador
+    @Binding var teclasAbertas: Bool
     @Environment(ModeloApp.self) private var modelo
     @State private var confirmarSaida = false
     @State private var barra = BarraDaObra()
@@ -17,36 +22,47 @@ struct ValeAPenaView: View {
         let tela = simulacaoNaTela(campos, obras: estado.obras, hoje: dataLocalISO(.now, fuso: .current),
                                    taxa: estado.config.taxaMensal)
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Grade.entreBlocos) {
-                    TituloMono(texto: "Será que vale a pena?", identificador: "tituloValeAPena")
-                        .padding(.bottom, 2)
-                    CamposDoValeAPena(campos: $campos, tela: tela)
-                    // Sem obra elegível, só os campos, como no site. Com obra e sem preço, a frase do site no lugar da conta.
-                    if let veredito = tela.veredito {
-                        VereditoDoValeAPena(veredito: veredito)
-                        if let faixa = tela.faixa { FaixaDoValeAPena(faixa: faixa) }
-                        if let textos = tela.textos { TabelaDoValeAPena(linhas: textos.tabela) }
-                    } else if tela.obra != nil {
-                        SemPrecoDoValeAPena()
+            ScrollViewReader { leitor in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Grade.entreBlocos) {
+                        TituloMono(texto: "Será que vale a pena?", identificador: "tituloValeAPena")
+                            .padding(.bottom, 2)
+                        CamposDoValeAPena(campos: $campos, tela: tela, teclasAbertas: $teclasAbertas)
+                        // Sem obra elegível, só os campos, como no site. Com obra e sem preço, a frase do site no lugar da conta.
+                        if let veredito = tela.veredito {
+                            VereditoDoValeAPena(veredito: veredito)
+                            if let faixa = tela.faixa { FaixaDoValeAPena(faixa: faixa) }
+                            if let textos = tela.textos { TabelaDoValeAPena(linhas: textos.tabela) }
+                        } else if tela.obra != nil {
+                            SemPrecoDoValeAPena()
+                        }
                     }
+                    .padding(.horizontal, Grade.externa)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, Grade.externa)
-                .padding(.bottom, 24)
+                .scrollIndicators(.hidden)
+                // Quando as teclas entram, a área de baixo da rolagem cresce: a linha do preço sobe só o que falta para ficar à
+                // vista acima delas (na letra máxima ela nasce mais embaixo). O gatilho é a medida, e não um tempo.
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.bottom } action: { antes, depois in
+                    if teclasAbertas, depois > antes { leitor.scrollTo(Self.linhaDoPreco) }
+                }
+                .tituloPequenoAoRolar(barra)
+                .background { LeitorDaLetra(barra: barra) }
+                .pausaOFundoAoRolar()
+                .bordaDeRolagem(abas: true)
+                // Por fora da borda de rolagem, que fica atrás das teclas. Os 8 pt são o respiro entre a linha do preço e elas.
+                .safeAreaInset(edge: .bottom, spacing: 8) {
+                    if teclasAbertas { TeclasDoPreco(campos: $campos) { teclasAbertas = false } }
+                }
+                .containerBackground(.clear, for: .navigation)
+                .navigationTitle("Vale a pena?")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: "Vale a pena?", mono: true) }
+                    BarraDoApp(confirmarSaida: $confirmarSaida)
+                }
+                .confirmaSaida($confirmarSaida)
             }
-            .scrollIndicators(.hidden)
-            .tituloPequenoAoRolar(barra)
-            .background { LeitorDaLetra(barra: barra) }
-            .pausaOFundoAoRolar()
-            .bordaDeRolagem(abas: true)
-            .containerBackground(.clear, for: .navigation)
-            .navigationTitle("Vale a pena?")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) { TituloDaBarraDaObra(barra: barra, nome: "Vale a pena?", mono: true) }
-                BarraDoApp(confirmarSaida: $confirmarSaida)
-            }
-            .confirmaSaida($confirmarSaida)
         }
     }
 }
@@ -57,6 +73,7 @@ struct ValeAPenaView: View {
 struct CamposDoValeAPena: View {
     @Binding var campos: CamposDoSimulador
     let tela: SimulacaoNaTela
+    @Binding var teclasAbertas: Bool
     @Environment(\.paleta) private var paleta
     @Environment(\.vidro) private var vidro
     @Environment(\.dynamicTypeSize) private var tamanho
@@ -65,7 +82,7 @@ struct CamposDoValeAPena: View {
         BlocoDeVidro(recuoVertical: 4) {
             LinhaDoCampo(rotulo: "Obra") { obra }
             LinhaFina()
-            LinhaDoCampo(rotulo: "Se eu vender por") { preco }
+            preco.id(ValeAPenaView.linhaDoPreco)
             LinhaFina()
             LinhaDoCampo(rotulo: "Daqui a (meses)") { passo }
             LinhaFina()
@@ -111,18 +128,31 @@ struct CamposDoValeAPena: View {
         }
     }
 
-    /// O preço: o digitado ou, sem digitar, a venda estimada da obra; vazio, "R$ 0,00" apagado, como o campo do site.
+    /// O preço: o digitado ou, sem digitar, a venda estimada da obra; vazio, "R$ 0,00" apagado, como o campo do site. A linha
+    /// inteira é o botão que abre as teclas; com elas abertas, o cursor do mockup vem depois do valor (vazio, só o cursor).
     private var preco: some View {
-        Group {
-            if let valor = tela.preco {
-                ValorEmDinheiro(moeda(valor), mono: .linha)
-            } else {
-                ValorEmDinheiro(moeda(0), mono: .linha, cor: vidro.secundario)
+        Button { teclasAbertas = true } label: {
+            LinhaDoCampo(rotulo: "Se eu vender por") {
+                HStack(spacing: 3) {
+                    if let valor = tela.preco {
+                        ValorEmDinheiro(moeda(valor), mono: .linha)
+                    } else if !teclasAbertas {
+                        ValorEmDinheiro(moeda(0), mono: .linha, cor: vidro.secundario)
+                    }
+                    if teclasAbertas {
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(paleta.cor(.destaque))
+                            .frame(width: 2, height: 1.1 * crescendoComALetra(de: 17, ate: 34, corpo: corpoDoTexto(tamanho)))
+                    }
+                }
             }
+            .contentShape(.rect)
         }
+        .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Se eu vender por")
         .accessibilityValue(tela.preco.map { moeda($0) } ?? "sem preço")
+        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("simPreco")
     }
 

@@ -223,6 +223,28 @@ public struct CamposDoSimulador: Equatable, Sendable {
     }
 }
 
+/* O preço nas teclas do "Vale a pena?" (decisão do Giovani de 24/11/2026; o mockup só desenha as teclas com o campo vazio).
+   As teclas abrem com o valor do campo à vista; a primeira tecla o substitui: a digitação parte do zero, e não do valor que
+   estava, que quase sempre é a venda estimada (com os centavos entrando pela direita, um dígito a mais faria de
+   R$ 1.450.000,00 R$ 14.500.000,0X). O OK sem digitar deixa os campos como estavam, com o preço ainda acompanhando a venda
+   estimada da obra: enquanto a pessoa não digita, nada é gravado nos campos. Vale enquanto as teclas estão abertas; ao abrir
+   de novo, começa outro. */
+public struct PrecoNasTeclas: Equatable, Sendable {
+    /// Os centavos digitados desde que as teclas abriram: zero até a primeira tecla, e é dele que ela parte.
+    public private(set) var centavos = 0
+    /// A pessoa já digitou desde que as teclas abriram.
+    public private(set) var digitou = false
+
+    public init() {}
+
+    /// As teclas mudaram o valor: guarda os centavos e devolve o preço, em reais, para o campo. Zero é o campo apagado.
+    public mutating func digitar(_ centavos: Int) -> Double {
+        self.centavos = max(0, centavos)
+        digitou = true
+        return centavosParaReais(self.centavos)
+    }
+}
+
 /// O que a tela do "Vale a pena?" mostra.
 public struct SimulacaoNaTela: Equatable, Sendable {
     /// As obras da lista "Obra", na ordem do documento; vazia, a tela diz "— crie uma obra com gastos —".

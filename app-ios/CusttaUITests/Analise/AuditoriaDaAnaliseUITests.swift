@@ -45,10 +45,11 @@ final class AuditoriaDaAnaliseUITests: XCTestCase, AuditoriaDeTela {
         app.rolarAte(preco)
         preco.tap()
         XCTAssertTrue(ok.waitForExistence(timeout: 5), "as teclas do preço")
-        // A rolagem que põe a linha do preço à vista vem depois das teclas: a auditoria espera a linha parar acima delas.
+        // A rolagem que põe a linha do preço à vista vem depois das teclas: a auditoria espera a linha parar acima delas. O
+        // teto é o da VM do iOS 26: na CI, os 5 s venceram com a linha já acima das teclas (run 45494341107).
         let teclas = app.elemento("teclasDoPreco")
         let aVista = NSPredicate { _, _ in preco.frame.maxY <= teclas.frame.minY }
-        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: aVista, object: nil)], timeout: 5), .completed,
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: aVista, object: nil)], timeout: 20), .completed,
                        "a linha do preço acima das teclas: \(preco.frame), \(teclas.frame)")
         try auditar(app, tipos)
         ok.tap()

@@ -167,10 +167,7 @@ final class ValeAPenaUITests: XCTestCase {
         XCTAssertTrue(app.buttons["aba-valeAPena"].waitForExistence(timeout: 5), "o OK devolve a cápsula")
         XCTAssertFalse(ok.exists)
         XCTAssertEqual(preco.value as? String, "R$\u{00A0}1.450.000,00")
-        app.buttons["simObra"].tap()
-        let sobrado = app.buttons["Sobrado Granja Viana"]
-        XCTAssertTrue(sobrado.waitForExistence(timeout: 5))
-        sobrado.tap()
+        escolherObraDepoisDasTeclas(app, "Sobrado Granja Viana")
         XCTAssertEqual(preco.value as? String, "sem preço", "nada foi digitado: o preço ainda acompanha a venda estimada")
     }
 
@@ -196,12 +193,27 @@ final class ValeAPenaUITests: XCTestCase {
         ok.tap()
         XCTAssertTrue(app.buttons["aba-valeAPena"].waitForExistence(timeout: 5))
         XCTAssertEqual(preco.value as? String, "sem preço", "o campo apagado não volta para a venda estimada")
-        app.buttons["simObra"].tap()
-        let vilaNova = app.buttons["Sobrado Vila Nova"]
-        XCTAssertTrue(vilaNova.waitForExistence(timeout: 5))
-        vilaNova.tap()
-        XCTAssertEqual(app.buttons["simObra"].value as? String, "Sobrado Vila Nova")
+        escolherObraDepoisDasTeclas(app, "Sobrado Vila Nova")
         XCTAssertEqual(preco.value as? String, "sem preço", "nem trocando para uma obra com venda estimada")
+    }
+
+    /// Escolhe a obra no menu logo depois do OK das teclas. O OK devolve a cápsula antes de a rolagem assentar, e o toque no
+    /// menu nesse meio se perdia; e a escolha chega depois de o menu fechar, então a leitura sem espera pegava a obra de antes
+    /// (Lupa, no iOS 26.5: 1 queda em 25 e 2 em 40). Espera as teclas saírem, toca de novo se o item não aparecer, como o
+    /// `digitarComFoco`, e espera a obra trocar.
+    @MainActor private func escolherObraDepoisDasTeclas(_ app: XCUIApplication, _ nome: String) {
+        XCTAssertTrue(app.elemento("teclasDoPreco").waitForNonExistence(timeout: 5), "as teclas fecharam")
+        let obra = app.buttons["simObra"], item = app.buttons[nome]
+        for _ in 0..<3 {
+            guard !item.exists else { break }
+            obra.tap()
+            _ = item.waitForExistence(timeout: 3)
+        }
+        XCTAssertTrue(item.exists, "\(nome) no menu da obra")
+        item.tap()
+        let trocou = NSPredicate { _, _ in obra.value as? String == nome }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: trocou, object: nil)], timeout: 5), .completed,
+                       "a obra escolhida: \(String(describing: obra.value))")
     }
 
     /// Na letra máxima, a linha do preço nasce mais embaixo, e as teclas são mais altas que a cápsula: ao abrir, a linha

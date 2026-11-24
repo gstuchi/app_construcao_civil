@@ -169,6 +169,40 @@ public func faixaSimulador(_ conta: ContaDoSimulador) -> FaixaDoSimulador {
         falado: "Custo \(moeda(conta.bruto)), empata com o banco em \(moeda(conta.corrigido)), sua venda \(moeda(conta.venda))")
 }
 
+/* O veredito no app (mockup da etapa 4, parte2.js, `telaSimula`): os textos são os do site (`textosSimulador`), arrumados
+   para o bloco sólido. A taxa vem partida em número e unidade, porque o número é o protagonista do bloco; e os detalhes,
+   que o site junta com " · ", vêm em linhas: quando vende, o banco com o "rende N× o banco" e, na obra com menos de 1 mês,
+   o aviso numa linha só dele. */
+public struct VereditoNaTela: Equatable, Sendable {
+    /// A venda passa do custo corrigido: o bloco é o verde; senão, o âmbar.
+    public let vale: Bool
+    /// "Vale a pena" ou "Rende menos que o banco".
+    public let titulo: String
+    /// "3,52", ou "—" na obra com menos de 1 mês.
+    public let numero: String
+    /// "% ao mês"; nil sem taxa.
+    public let unidade: String?
+    public let linhas: [String]
+    /// O bloco inteiro para o VoiceOver, num elemento só.
+    public let falado: String
+}
+
+public func vereditoNaTela(_ conta: ContaDoSimulador, taxa: Double) -> VereditoNaTela {
+    let site = textosSimulador(conta, taxa: taxa, area: nil)
+    // "3,52% ao mês" vira "3,52" e "% ao mês"; o "—" da obra com menos de 1 mês fica inteiro, sem unidade.
+    let corte = site.taxa.firstIndex(of: "%")
+    let numero = corte.map { String(site.taxa[..<$0]) } ?? site.taxa
+    let unidade = corte.map { String(site.taxa[$0...]) }
+    // Os detalhes do site, na ordem: quando vende, o banco, o "rende N× o banco" (só quando rende) e o aviso da obra nova.
+    var detalhes = site.detalhes
+    let aviso = conta.novaDemais ? detalhes.popLast() : nil
+    let doBanco = detalhes.dropFirst().joined(separator: " · ")
+    let linhas = Array(detalhes.prefix(1)) + (doBanco.isEmpty ? [] : [doBanco]) + (aviso.map { [$0] } ?? [])
+    return VereditoNaTela(vale: conta.vale, titulo: site.veredito, numero: numero, unidade: unidade, linhas: linhas,
+                          falado: ([site.veredito, unidade == nil ? "sem taxa ao mês" : site.taxa] + site.detalhes)
+                              .joined(separator: ", "))
+}
+
 /* Os campos do "Vale a pena?" e o que a tela mostra com eles. Moram na aba enquanto o app está aberto (spec da etapa 4,
    "Dados e estado"), e o comportamento é o do site (app.js, `simulaCompute`): enquanto a pessoa não digitou, o preço
    acompanha a venda estimada da obra escolhida; depois de digitar, vale o digitado, mesmo trocando de obra; os meses
@@ -203,6 +237,7 @@ public struct SimulacaoNaTela: Equatable, Sendable {
     public let podeMais: Bool
     /// nil sem obra ou sem preço: a tela diz "Digite o preço de venda pra ver a conta."
     public let conta: ContaDoSimulador?
+    public let veredito: VereditoNaTela?
     public let textos: TextosDoSimulador?
     public let faixa: FaixaDoSimulador?
 }
@@ -216,5 +251,6 @@ public func simulacaoNaTela(_ campos: CamposDoSimulador, obras: [Obra], hoje: St
     let conta = obra.flatMap { o in preco.flatMap { contaSimulador(o, venda: $0, meses: campos.meses, hoje: hoje, taxa: taxa) } }
     return SimulacaoNaTela(elegiveis: lista.elegiveis, obra: obra, preco: preco, meses: campos.meses, podeMenos: campos.meses > 0,
                            podeMais: campos.meses < mesesSimulador, conta: conta,
+                           veredito: conta.map { vereditoNaTela($0, taxa: taxa) },
                            textos: conta.map { textosSimulador($0, taxa: taxa, area: obra?.areaM2) }, faixa: conta.map(faixaSimulador))
 }

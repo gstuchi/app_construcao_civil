@@ -14,7 +14,15 @@ name: app-ios
 # - laudo, laudo-parte3, laudo-etapa3 e auditoria: o laudo de leitura sobre o vidro e as auditorias de acessibilidade,
 #   cada um num simulador próprio, em paralelo com o app (o app com os dois passava dos 65 min com as telas da etapa 2,
 #   os dois num job só chegavam a 75 min com a folha do gasto, a parte 3 da etapa 2 levava o laudo ao teto, e as telas da
-#   etapa 3 moram no laudo-etapa3 desde a primeira).
+#   etapa 3 moram no laudo-etapa3 desde a primeira);
+# - app-etapa4, laudo-etapa4 e auditoria-etapa4: os testes de tela, o laudo e as auditorias das telas da análise (etapa 4),
+#   que moram nas pastas Analise dos testes.
+#
+# Portões por superfície (spec da etapa 4): o job portoes, no Ubuntu, lê o diff do PR e escolhe o nível
+# (scripts/portoes-app-ios.mjs). No nível tudo rodam todos os jobs, menos o unidade (o app já compila e roda os testes de
+# unidade); no telas, o nucleo, o unidade e os três da etapa 4; no nucleo, o nucleo e o unidade. Na dúvida, tudo: o job que
+# roda em todo nível tudo só é pulado quando o portoes disse nucleo ou telas, e roda se ele falhar. No botão, o nível é o
+# pedido (tudo, se ninguém escolher).
 # Os testes contra os emuladores do Firebase e a conferência cruzada com o site rodam no Mac
 # (npm run test:app-ios:emuladores e npm run test:app-ios:cruzado): precisam de Java, dos
 # emuladores e da assinatura de simulador para o keychain do Firebase Auth.
@@ -41,6 +49,14 @@ on:
         description: 'Resolver os pacotes Swift do app nativo de novo e mostrar o Package.resolved novo no resumo'
         type: boolean
         default: false
+      nivel:
+        description: 'Portões: tudo (todos os jobs), telas (núcleo, unidade e os jobs da etapa 4) ou nucleo (núcleo e unidade)'
+        type: choice
+        default: tudo
+        options:
+          - tudo
+          - telas
+          - nucleo
 
 permissions:
   contents: read
@@ -53,6 +69,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  portoes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      nivel: ${{ steps.nivel.outputs.nivel }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No PR, o checkout é o merge com a base, e a base é o 1º pai: com dois commits, o HEAD^1 existe para o diff.
+          fetch-depth: 2
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      # O nível sai do diff do PR; no botão, do nível pedido. O script grava `nivel` na saída do passo e o porquê no resumo.
+      - name: Nível dos portões
+        id: nivel
+        env:
+          EVENTO: ${{ github.event_name }}
+          NIVEL: ${{ inputs.nivel }}
+        run: |
+          if [ "$EVENTO" = pull_request ]; then
+            node scripts/portoes-app-ios.mjs
+          else
+            node scripts/portoes-app-ios.mjs --nivel "$NIVEL"
+          fi
+
   nucleo:
     runs-on: macos-26
     timeout-minutes: 20
@@ -73,6 +116,8 @@ jobs:
 
   app:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
     # lenta, 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No
@@ -123,8 +168,9 @@ jobs:
             build
 
       # Testes com os serviços falsos (nada de rede): unidade e tela. Os que dependem dos emuladores pulam
-      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, e os
-      # testes de tela da etapa 3, no app-etapa3, no app-etapa3-b e no app-etapa3-c.
+      # sozinhos aqui; o laudo de leitura e as auditorias de acessibilidade rodam nos jobs laudo e auditoria, os
+      # testes de tela da etapa 3, no app-etapa3, no app-etapa3-b e no app-etapa3-c, e os das telas da análise, com o laudo e
+      # as auditorias delas, no app-etapa4, no laudo-etapa4 e no auditoria-etapa4.
       - name: Testes de unidade e de tela no simulador
         run: |
           set -o pipefail
@@ -146,6 +192,10 @@ jobs:
             -skip-testing:CusttaUITests/DetalheDoTopicoUITests \
             -skip-testing:CusttaUITests/BuscaUITests \
             -skip-testing:CusttaUITests/AfazeresUITests \
+            -skip-testing:CusttaUITests/ValeAPenaUITests \
+            -skip-testing:CusttaUITests/AnaliseUITests \
+            -skip-testing:CusttaUITests/LeituraDaAnaliseUITests \
+            -skip-testing:CusttaUITests/AuditoriaDaAnaliseUITests \
             CODE_SIGNING_ALLOWED=NO
 
       # Unidade ou tela reprovadas: o resultado dos testes fica 7 dias no artefato. Também quando o job é cancelado: o run
@@ -160,6 +210,8 @@ jobs:
 
   app-etapa3:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
     # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
     # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
@@ -211,6 +263,8 @@ jobs:
 
   app-etapa3-b:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
     # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests. As suítes de tela do PR 3
     # (~22 min de testes no run 39878786962) o levariam a ~50 min e vão para o app-etapa3-c.
@@ -258,6 +312,8 @@ jobs:
 
   app-etapa3-c:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
     # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
     # paralelo com ele. Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
@@ -302,6 +358,8 @@ jobs:
 
   laudo:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
     # 718 s e ~7 min de build e simulador, 54 min; a folha do gasto soma ~1150 s de leitura e ~320 s de auditoria (perto
     # do dobro do Mac), 75–79 min. A leitura da folha, a mais pesada, roda no job auditoria: ~35 min de testes e ~43 min de
@@ -364,6 +422,8 @@ jobs:
 
   laudo-parte3:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # As leituras e as auditorias da parte 3 da etapa 2: as ações da fase, a lista vazia, as folhas da obra e da venda,
     # o gasto numa vendida, a obra vendida com lucro e com prejuízo e o alerta de "Não salvou". A conta do tempo está
     # no job laudo.
@@ -414,6 +474,8 @@ jobs:
 
   laudo-etapa3:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # As leituras e as auditorias das telas da etapa 3 do app nativo (conselho de 19/10, decisão 3: o job nasce com elas, sem
     # esperar um job passar de ~50 min). No PR 1, o orçamento: a linha na obra, a tela Orçamento e a folha com as teclas
     # encaixadas, no escuro, no claro e na maior letra. No PR 2, as folhas de origem (o A pagar e o detalhe do tópico), no
@@ -469,6 +531,8 @@ jobs:
 
   laudo-etapa3-b:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # As leituras e as auditorias da etapa 3 que não cabem no laudo-etapa3: ele foi a 52 min no run 40125911713 e a 46 no
     # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
     # lá e abrem este job, com o laudo da busca e dos afazeres (PR 3), que o laudo pula. O mesmo preparo do laudo-etapa3, em
@@ -519,6 +583,8 @@ jobs:
 
   auditoria:
     runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # As auditorias de acessibilidade (as da parte 3 rodam no laudo-parte3, e as da etapa 3, no laudo-etapa3 e no
     # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
     # as 14 auditorias em 19,1 e a leitura em 11,2 (run 40125911713).
@@ -567,4 +633,199 @@ jobs:
         with:
           name: auditoria-app-ios
           path: ${{ runner.temp }}/auditoria.xcresult
+          retention-days: 7
+
+  unidade:
+    runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && (needs.portoes.outputs.nivel == 'nucleo' || needs.portoes.outputs.nivel == 'telas') }}
+    # Nos níveis nucleo e telas, no lugar do app: o build Release sem assinatura e os testes de unidade, sem os de tela.
+    # Sem medida ainda: o primeiro PR que rodar neste nível anota aqui o tempo do job.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # O mesmo build do job app: a Release compila sem segredo nenhum.
+      - name: Compilar (Release, sem assinatura)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY= \
+            build
+
+      # Os testes de unidade do app, com os serviços falsos. Os de tela ficam com os jobs da etapa 4 (no nível telas).
+      - name: Testes de unidade no simulador
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/unidade.xcresult" \
+            -only-testing:CusttaTests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Unidade reprovada: o resultado fica 7 dias no artefato, também quando o job é cortado no teto.
+      - name: Resultado dos testes de unidade quando reprovam ou o job é cortado
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unidade-app-ios
+          path: ${{ runner.temp }}/unidade.xcresult
+          retention-days: 7
+
+  app-etapa4:
+    runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' }}
+    # Os testes de tela das telas da análise (etapa 4): as suítes da pasta CusttaUITests/Analise. Roda nos níveis telas e
+    # tudo. O mesmo preparo do app-etapa3; como lá, cada PR da etapa anota aqui o tempo do job. Sem medida ainda (4a).
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # Os mesmos serviços falsos do job app, que pula estas suítes.
+      - name: Testes de tela da etapa 4 no simulador
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/testes-etapa4.xcresult" \
+            -only-testing:CusttaUITests/ValeAPenaUITests \
+            -only-testing:CusttaUITests/AnaliseUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Tela reprovada: o resultado dos testes fica 7 dias no artefato, também quando o job é cortado no teto.
+      - name: Resultado dos testes da etapa 4 quando reprovam ou o job é cortado
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testes-etapa4-app-ios
+          path: ${{ runner.temp }}/testes-etapa4.xcresult
+          retention-days: 7
+
+  laudo-etapa4:
+    runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' }}
+    # O laudo de leitura das telas da análise (etapa 4), com o laudo das marcas: o LeituraDaAnaliseUITests, que mora na
+    # pasta CusttaUITests/Analise. Roda nos níveis telas e tudo. Sem medida ainda (4a): cada PR da etapa anota aqui o tempo.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # A mesma varredura curta do job laudo.
+      - name: Laudo de leitura da etapa 4 no simulador
+        env:
+          TEST_RUNNER_CUSTTA_VARREDURA: curta
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/laudo-etapa4.xcresult" \
+            -only-testing:CusttaUITests/LeituraDaAnaliseUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
+      - name: Resultado do laudo da etapa 4 quando reprova
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: laudo-etapa4-app-ios
+          path: ${{ runner.temp }}/laudo-etapa4.xcresult
+          retention-days: 7
+
+  auditoria-etapa4:
+    runs-on: macos-26
+    needs: portoes
+    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' }}
+    # As auditorias de acessibilidade das telas da análise (etapa 4): o AuditoriaDaAnaliseUITests, que mora na pasta
+    # CusttaUITests/Analise. Roda nos níveis telas e tudo. Sem medida ainda (4a): cada PR da etapa anota aqui o tempo.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Versão do Xcode
+        run: xcodebuild -version
+
+      # A mesma varredura curta do job laudo: uma auditoria troca de job sem mudar o que mede.
+      - name: Auditorias de acessibilidade da etapa 4 no simulador
+        env:
+          TEST_RUNNER_CUSTTA_VARREDURA: curta
+        run: |
+          set -o pipefail
+          DESTINO="$(node scripts/simulador-ios.mjs)"
+          echo "Simulador: $DESTINO"
+          xcodebuild test \
+            -project app-ios/Custta.xcodeproj \
+            -scheme Custta \
+            -destination "$DESTINO" \
+            -derivedDataPath app-ios/build \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            -onlyUsePackageVersionsFromResolvedFile \
+            -resultBundlePath "$RUNNER_TEMP/auditoria-etapa4.xcresult" \
+            -only-testing:CusttaUITests/AuditoriaDaAnaliseUITests \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Auditoria reprovada: o resultado e os prints anotados ficam 7 dias no artefato.
+      - name: Resultado das auditorias da etapa 4 quando reprovam
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: auditoria-etapa4-app-ios
+          path: ${{ runner.temp }}/auditoria-etapa4.xcresult
           retention-days: 7

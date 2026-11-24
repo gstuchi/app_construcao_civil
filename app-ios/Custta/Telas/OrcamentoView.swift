@@ -76,10 +76,10 @@ struct OrcamentoView: View {
                 }
             }
             .padding(.horizontal, 20)
-            // O fim da lista à vista acima da cápsula de abas, como na tela da obra.
-            .padding(.bottom, 98)
         }
         .scrollIndicators(.hidden)
+        // O fim da lista à vista acima da cápsula de abas, como na tela da obra.
+        .fimAcimaDaCapsula(ar: 48)
         .tituloPequenoAoRolar(barra)
         #if DEBUG
         .rolagemFixaSemFolha()

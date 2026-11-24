@@ -18,6 +18,8 @@ struct PrincipalView: View {
     @State private var folhas = Folhas()
     /// O + da lista avisou em vez de abrir "Nova obra": o teto de obras ou os dados ainda não vistos.
     @State private var avisoDoMais: AvisoDoMais?
+    /// Do topo da cápsula de abas à borda de baixo da tela, medida (a cápsula e os 22 até a borda).
+    @State private var alturaDaCapsula: CGFloat = 0
     @Environment(ModeloApp.self) private var modelo
     @Environment(\.opcoes) private var opcoes
     @Environment(\.paleta) private var paleta
@@ -31,10 +33,16 @@ struct PrincipalView: View {
             }
         }
         .environment(folhas)
+        // As listas das abas terminam acima da cápsula por esta medida (fimAcimaDaCapsula): a altura da barra não chega
+        // à rolagem de dentro do NavigationStack pela área segura.
+        .environment(\.alturaDaCapsula, alturaDaCapsula)
         // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
         .safeAreaBar(edge: .bottom, spacing: 0) {
             // As teclas do preço tomam o lugar da cápsula; elas são da tela da aba, que as põe na área segura da rolagem.
-            if !(aba == .valeAPena && teclasDoPreco) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
+            if !(aba == .valeAPena && teclasDoPreco) {
+                CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { alturaDaCapsula = $0 }
+            }
         }
         // Fora do "Vale a pena?" não há teclas do preço: quem volta a ela encontra a cápsula.
         .onChange(of: aba) { teclasDoPreco = false }
@@ -415,4 +423,37 @@ private struct ConfirmacaoDeSaida: ViewModifier {
             }
             .pausaOFundo(enquanto: confirmar || erro != nil)
     }
+}
+
+extension EnvironmentValues {
+    /// Do topo da cápsula de abas à borda de baixo da tela (medida no PrincipalView); 0 fora das abas.
+    @Entry var alturaDaCapsula: CGFloat = 0
+}
+
+/// O fim da lista `ar` pt acima da cápsula de abas: a margem de baixo do conteúdo é a altura da cápsula mais o ar, menos o
+/// que a rolagem já desconta sozinha, que é a área segura de baixo da janela (o indicador de início; 0 no SE). A da janela não
+/// inclui o teclado e vale igual para a List e a ScrollView; é relida quando a rolagem muda, e só muda a margem se mudar.
+private struct FimAcimaDaCapsula: ViewModifier {
+    let ar: CGFloat
+    @Environment(\.alturaDaCapsula) private var capsula
+    @State private var inferior: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .contentMargins(.bottom, max(0, capsula + ar - inferior), for: .scrollContent)
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.bottom + $0.containerSize.height } action: { _, _ in
+                let agora = Self.inferiorDaJanela
+                if agora != inferior { inferior = agora }
+            }
+    }
+
+    @MainActor private static var inferiorDaJanela: CGFloat {
+        let janelas = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
+        return (janelas.first(where: \.isKeyWindow) ?? janelas.first)?.safeAreaInsets.bottom ?? 0
+    }
+}
+
+extension View {
+    /// O fim da lista acima da cápsula de abas, com `ar` pt entre a última linha e a cápsula.
+    func fimAcimaDaCapsula(ar: CGFloat) -> some View { modifier(FimAcimaDaCapsula(ar: ar)) }
 }

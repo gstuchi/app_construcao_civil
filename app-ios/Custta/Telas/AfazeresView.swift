@@ -216,14 +216,14 @@ struct AfazeresView: View {
                 }
             }
             .padding(.horizontal, 20)
-            // O fim da lista fica à vista acima da cápsula de abas, como na tela da obra.
-            .padding(.bottom, 98)
             .haloDoTituloDaBarra()
             // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
             .contentShape(.rect)
             .onTapGesture { if linhaAberta != nil { fecharLinha() } }
         }
         .scrollIndicators(.hidden)
+        // O fim da lista fica à vista acima da cápsula de abas, como na tela da obra.
+        .fimAcimaDaCapsula(ar: 48)
         .scrollDismissesKeyboard(.interactively)
         .onScrollPhaseChange { _, fase in if fase != .idle, linhaAberta != nil { fecharLinha() } }
         .onDisappear { linhaAberta = nil }

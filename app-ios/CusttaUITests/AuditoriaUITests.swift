@@ -422,6 +422,44 @@ final class AuditoriaUITests: XCTestCase {
         }
     }
 
+    /// O gancho da rolagem fixa da obra (RolagemFixaDaLista) põe duas vistas vazias na lista. A âncora, no fundo da 1ª linha,
+    /// sempre apareceu na árvore de acessibilidade, como um elemento de tamanho zero. A que ajusta a rolagem depois do passe de
+    /// layout da lista não pode aparecer: a árvore é o que o laudo e a auditoria leem. A obra aberta com `-custta.rolagem 0` (o
+    /// gancho segura a lista no alto, onde ela já está) tem a lista da obra aberta sem o argumento, elemento por elemento e na
+    /// mesma ordem, mais a âncora, e só ela.
+    @MainActor func testOGanchoDaRolagemSoPoeAAncoraNaListaDaObra() throws {
+        struct Elemento: Equatable {
+            let texto: String
+            let vazio: Bool
+        }
+        func lista(_ argumentos: [String]) throws -> [Elemento] {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", argumentos: parado + argumentos)
+            defer { app.terminate() }
+            XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)
+            var elementos: [Elemento] = []
+            func descer(_ no: XCUIElementSnapshot, _ nivel: Int) {
+                elementos.append(Elemento(texto: "\(nivel) \(no.elementType.rawValue) \"\(no.label)\" \(no.identifier) \(no.frame)",
+                                          vazio: no.elementType == .other && no.label.isEmpty && no.identifier.isEmpty && no.frame.size == .zero))
+                no.children.forEach { descer($0, nivel + 1) }
+            }
+            descer(try app.collectionViews.firstMatch.snapshot(), 0)
+            return elementos
+        }
+        let semOGancho = try lista([]), comOGancho = try lista(["-custta.rolagem", "0"])
+        // O que o gancho pôs: o que sobra da lista com ele, tirando na ordem os elementos da lista sem ele.
+        var postos: [Elemento] = [], falta = semOGancho[...]
+        for elemento in comOGancho {
+            if elemento == falta.first { falta = falta.dropFirst() } else { postos.append(elemento) }
+        }
+        Swift.print("gancho da rolagem | a lista da obra: \(semOGancho.count) elementos sem o gancho, \(comOGancho.count) com ele | "
+                    + "postos pelo gancho: \(postos.map(\.texto))")
+        XCTAssertGreaterThan(semOGancho.count, 20, "a lista da obra com as linhas dela")
+        XCTAssertTrue(falta.isEmpty, "com o gancho, a lista tem os elementos de sem ele, na mesma ordem: faltaram \(falta.map(\.texto))")
+        XCTAssertEqual(postos.count, 1, "o gancho só põe a âncora na árvore: \(postos.map(\.texto))")
+        XCTAssertTrue(postos.allSatisfy(\.vazio), "a âncora é um elemento vazio, de tamanho zero: \(postos.map(\.texto))")
+    }
+
     /// As mesmas telas no escuro e no claro, com superfícies sólidas.
     @MainActor func testContrasteDaParte3NosDoisTemas() throws {
         for tema in temas {

@@ -193,6 +193,10 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
                 let pilula = app.buttons["acao-\(acao)"]
                 XCTAssertTrue(pilula.waitForExistence(timeout: 5) && pilula.frame.minY >= borda && pilula.frame.maxY <= capsula.minY,
                               "\(obra): a pílula \(acao) à vista (\(pilula.frame); de \(borda) a \(capsula.minY))")
+                // A pílula cresce com a letra. Com fonte fixa no rótulo, o achado de tipo dinâmico vem sem elemento e o `soEm`
+                // só o registra no log, onde o vaivém da letra do iOS 26 já põe 6 deles com a tela parada: a altura pega.
+                XCTAssertGreaterThanOrEqual(pilula.frame.height, Self.pilulaNaMaiorLetra,
+                                            "\(obra): a pílula \(acao) cresce com a letra (\(pilula.frame))")
             }
             try auditar(app, tiposDeAuditoria, soEm: "acao-")
             app.terminate()
@@ -204,6 +208,8 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
     // em 267; o "Registrar venda" em 440 e em 181, e o "Voltar pra construção" termina em 748 e em 489.
     private static let rolagemDasAcoesDaVendida = 2770
     private static let rolagemDasAcoesDaPronta = 2320
+    // A pílula na maior letra, com o rótulo em duas linhas: 149,3 pt no 18 Pro, no Pro Max e no 17 Pro do iOS 26.5.
+    private static let pilulaNaMaiorLetra: CGFloat = 145
 
     /// O bloco A pagar da obra na maior letra, inteiro: a etiqueta dos vencimentos e a nota "Parcelas e gastos futuros". Na
     /// obra, ele fica abaixo da dobra, e a auditoria olha só o topo; rolado, numa List ou numa ScrollView, a troca de letra

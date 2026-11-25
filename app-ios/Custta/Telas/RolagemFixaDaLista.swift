@@ -61,13 +61,14 @@ final class AncoraDaRolagemFixa: UIView {
             .compactMap { indice in lista.layoutAttributesForItem(at: indice).map { (indice, $0.frame) } })
         let indice = ancora?.indice
         let fracao = ancora?.fracao ?? 0
+        // Os avisos só marcam: o ajuste roda depois do passe de layout da lista (DepoisDoLayoutDaLista).
+        let depois = DepoisDoLayoutDaLista { [weak lista] in
+            if let lista, !observacoes.isEmpty { ajustar(lista, y: y, ancora: indice, fracao: fracao) }
+        }
+        lista.addSubview(depois)
         observacoes = [
-            lista.observe(\.contentOffset, options: [.new]) { rolada, _ in
-                MainActor.assumeIsolated { ajustar(rolada, y: y, ancora: indice, fracao: fracao) }
-            },
-            lista.observe(\.contentSize, options: [.new]) { rolada, _ in
-                MainActor.assumeIsolated { ajustar(rolada, y: y, ancora: indice, fracao: fracao) }
-            },
+            lista.observe(\.contentOffset, options: [.new]) { _, _ in MainActor.assumeIsolated { depois.setNeedsLayout() } },
+            lista.observe(\.contentSize, options: [.new]) { _, _ in MainActor.assumeIsolated { depois.setNeedsLayout() } },
         ]
         ajustar(lista, y: y, ancora: indice, fracao: fracao)
     }
@@ -88,6 +89,30 @@ final class AncoraDaRolagemFixa: UIView {
         // Preso ao fim do conteúdo, como o scrollTo(y:) da ScrollView: a busca que acha pouco encolhe a lista.
         let alvo = min(topo - lista.adjustedContentInset.top, fim(lista))
         if abs(lista.contentOffset.y - alvo) > 0.5 { lista.contentOffset.y = alvo }
+    }
+}
+
+/* O ajuste da rolagem fixa depois do passe de layout da lista. Feito de dentro do aviso (KVO), ele mexia na rolagem no meio do
+   `_updateVisibleCellsNow`, que a acerta por conta própria quando as linhas mudam de altura. Com a auditoria trocando a letra, a
+   lista repunha o acerto dela a cada volta e o gancho o desfazia: o UIKit registrava laço de layout (80 passes seguidos,
+   UICollectionViewFeedbackLoopDebugger), o app deixava de responder e a auditoria caía com "Audit failed to complete in time"
+   (-56) na VM do iOS 26. Esta vista vazia mora dentro da lista: o aviso só a marca para layout, e o `layoutSubviews` dela roda
+   depois do da lista, no mesmo passe, antes de a tela ser desenhada ou lida. No fim da volta do laço de eventos não serve: a
+   auditoria lê a tela entre o layout e o ajuste, e acusa texto cortado onde não há (obra a 700 pt, 8 de 8 no iOS 26.5). */
+private final class DepoisDoLayoutDaLista: UIView {
+    private let ajuste: () -> Void
+
+    init(_ ajuste: @escaping () -> Void) {
+        self.ajuste = ajuste
+        super.init(frame: .zero)
+        isUserInteractionEnabled = false
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        ajuste()
     }
 }
 

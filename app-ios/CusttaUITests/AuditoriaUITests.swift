@@ -154,7 +154,7 @@ final class AuditoriaUITests: XCTestCase {
     /// vencimentos", "Parcelas e gastos futuros") saíam como cortados, com a tela mostrando os dois inteiros (problema
     /// conhecido, 03/11; a LazyVStack também não era firme nesse teste no iOS 27, 1 de 2). Abaixo da dobra, a auditoria na
     /// maior letra fica assim: o A pagar na testAPagarNoMaiorTamanho; a v2 a 800 e no fim e a v3 no fim na
-    /// testParte3NoMaiorTamanho; as peças da vitrine no alto dela e numa tela rolada na testVitrineDasPecasNoMaiorTamanho. As
+    /// testParte3DaObraNoMaiorTamanho; as peças da vitrine no alto dela e numa tela rolada na testVitrineDasPecasNoMaiorTamanho. As
     /// ações, os afazeres, a pílula e o A vencer da v1 rolada ficam sem auditoria na maior letra (problema conhecido).
     @MainActor func testObraNoMaiorTamanho() throws {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado)
@@ -377,11 +377,12 @@ final class AuditoriaUITests: XCTestCase {
     /// As peças do meio (blocos, número mono, cabeçalhos) seguem na maior letra na testVitrineDasPecasNoMaiorTamanho, no alto
     /// dela e numa tela rolada. Prova no PR #99. Na List (03/11), a rolagem fixa é o gancho da List (RolagemFixaDaLista): anda
     /// até a rolagem pedida, presa ao fim do conteúdo que ela mede, e segura a linha do alto; no fim (99999), antes de
-    /// auditar, o teste confere que a última linha de gasto (a mais antiga, g0) está à vista, e não o vazio.
-    @MainActor func testParte3NoMaiorTamanho() throws {
-        var app: XCUIApplication
+    /// auditar, o teste confere que a última linha de gasto (a mais antiga, g0) está à vista, e não o vazio. A parte 3 vem em
+    /// três testes (a obra; a lista vazia e as folhas da obra; as folhas da venda), mais curtos que o de antes, de 14 auditorias:
+    /// uma cena que cai não esconde as outras.
+    @MainActor func testParte3DaObraNoMaiorTamanho() throws {
         for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 99_999), ("v3", 0), ("v3", 99_999)] {
-            app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)",
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)",
                            argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1.5)
@@ -393,14 +394,24 @@ final class AuditoriaUITests: XCTestCase {
             try auditar(app, tiposDeAuditoria)
             app.terminate()
         }
-        app = abrirApp(conta: "senha", dados: "vazio", argumentos: maiorLetra + parado)
+    }
+
+    @MainActor func testParte3DasFolhasDaObraNoMaiorTamanho() throws {
+        let app = abrirApp(conta: "senha", dados: "vazio", argumentos: maiorLetra + parado)
         XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
         app.terminate()
-        for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("editarObra:v1", "apagarObra", "obra:v1"),
-                                       ("venda:v2", "confirmarVenda", "obra:v2"),
-                                       ("gastoDeVendida:v3", "linhaObra", "obra:v3")] {
-            app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
+        try auditarFolhasDaParte3([("novaObra", "nomeDaObra", nil), ("editarObra:v1", "apagarObra", "obra:v1")])
+    }
+
+    @MainActor func testParte3DaVendaNoMaiorTamanho() throws {
+        try auditarFolhasDaParte3([("venda:v2", "confirmarVenda", "obra:v2"), ("gastoDeVendida:v3", "linhaObra", "obra:v3")])
+    }
+
+    /// Cada folha no alto e rolada.
+    @MainActor private func auditarFolhasDaParte3(_ folhas: [(String, String, String?)]) throws {
+        for (folha, espera, abrir) in folhas {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
                            argumentos: maiorLetra + parado + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
             XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)
             try auditar(app, tiposDeAuditoria)

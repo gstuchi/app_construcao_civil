@@ -198,10 +198,12 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
             app.terminate()
         }
     }
-    // Medidas no 18 Pro, na maior letra: a 3050, o "Desfazer venda" fica de 245 a 394 pt; a 2500, o "Registrar venda" de 260 a
-    // 409 e o "Voltar pra construção" de 419 a 568.
-    private static let rolagemDasAcoesDaVendida = 3050
-    private static let rolagemDasAcoesDaPronta = 2500
+    // Na maior letra, cada pílula tem 149 pt e fica entre a borda (140 pt) e a cápsula (876 no Pro Max). Medidas a 3050 e
+    // 2500: o "Desfazer venda" começava em 245 no 18 Pro e em -13 no Pro Max; o "Registrar venda", em 260 e em 1, com o
+    // "Voltar pra construção" 159 pt abaixo. As rolagens ficam no meio do vão comum aos dois: o "Desfazer venda" em 525 e
+    // em 267; o "Registrar venda" em 440 e em 181, e o "Voltar pra construção" termina em 748 e em 489.
+    private static let rolagemDasAcoesDaVendida = 2770
+    private static let rolagemDasAcoesDaPronta = 2320
 
     /// O bloco A pagar da obra na maior letra, inteiro: a etiqueta dos vencimentos e a nota "Parcelas e gastos futuros". Na
     /// obra, ele fica abaixo da dobra, e a auditoria olha só o topo; rolado, numa List ou numa ScrollView, a troca de letra

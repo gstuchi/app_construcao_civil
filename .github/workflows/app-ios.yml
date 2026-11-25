@@ -399,7 +399,9 @@ jobs:
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraVendida \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3NaMaiorLetra \
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
-            -only-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
+            -only-testing:CusttaUITests/AuditoriaUITests/testParte3DaObraNoMaiorTamanho \
+            -only-testing:CusttaUITests/AuditoriaUITests/testParte3DasFolhasDaObraNoMaiorTamanho \
+            -only-testing:CusttaUITests/AuditoriaUITests/testParte3DaVendaNoMaiorTamanho \
             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
@@ -551,7 +553,9 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/auditoria.xcresult" \
             -only-testing:CusttaUITests/AuditoriaUITests \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3NoMaiorTamanho \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3DaObraNoMaiorTamanho \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3DasFolhasDaObraNoMaiorTamanho \
+            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3DaVendaNoMaiorTamanho \
             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
             -skip-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
             -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \

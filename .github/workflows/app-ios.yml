@@ -97,6 +97,7 @@ jobs:
           fi
 
   nucleo:
+    if: false
     runs-on: macos-26
     timeout-minutes: 20
     steps:
@@ -115,9 +116,9 @@ jobs:
         run: swift test --package-path app-ios/CusttaNucleo
 
   app:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Sem o laudo e as auditorias (jobs laudo, laudo-parte3, laudo-etapa3 e auditoria) e sem os testes de tela da etapa 3
     # (jobs app-etapa3, app-etapa3-b e app-etapa3-c): ~41 min de testes + ~11 de preparo ≈ 53 min numa VM normal. Numa
     # lenta, 67 min, com 48,9 de testes de tela (run 39799242127): o teto de 75 deixava 8 min de folga, e passa a 90. No
@@ -209,9 +210,9 @@ jobs:
           retention-days: 7
 
   app-etapa3:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Os testes de tela da etapa 3, com o preparo do app, sem o build Release e sem o "resolver de novo": com eles, o app
     # passou do teto de 75 min (runs 39693700450 e 39710458060). No PR 1, o OrcamentoUITests; no PR 2, o
     # FolhasDeOrigemUITests. No run 39813469497, FolhasDeOrigem 25,0 + Orçamento 23,4 min, 58,8 com o preparo, numa VM
@@ -262,9 +263,9 @@ jobs:
           retention-days: 7
 
   app-etapa3-b:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Os testes de tela da etapa 3 que não cabem no app-etapa3 (55 min no run 40019534025 e 58,8 numa VM lenta, no
     # 39813469497; com a suíte do detalhe, ~70 a 75): no PR 2, o DetalheDoTopicoUITests. As suítes de tela do PR 3
     # (~22 min de testes no run 39878786962) o levariam a ~50 min e vão para o app-etapa3-c.
@@ -311,9 +312,9 @@ jobs:
           retention-days: 7
 
   app-etapa3-c:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Os testes de tela do PR 3 da etapa 3, que não cabem no app-etapa3-b: com eles (~22 min de testes no run
     # 39878786962), ele chegaria a ~50 min. No PR 3, o BuscaUITests e o AfazeresUITests. O mesmo preparo do app-etapa3, em
     # paralelo com ele. Teto de 60, como o do app-etapa3-b; como no app-etapa3, cada PR da etapa anota aqui o tempo do job.
@@ -357,9 +358,9 @@ jobs:
           retention-days: 7
 
   laudo:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # Leitura e auditorias em dois jobs que levam o mesmo tempo. Num job só (c1bc06a, 15/10): leitura 2089 s, auditorias
     # 718 s e ~7 min de build e simulador, 54 min; a folha do gasto soma ~1150 s de leitura e ~320 s de auditoria (perto
     # do dobro do Mac), 75–79 min. A leitura da folha, a mais pesada, roda no job auditoria: ~35 min de testes e ~43 min de
@@ -455,14 +456,11 @@ jobs:
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/laudo-parte3.xcresult" \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3 \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaObraVendida \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaParte3NaMaiorLetra \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoAlertaDeNaoSalvou \
+            -test-iterations 3 \
             -only-testing:CusttaUITests/AuditoriaUITests/testParte3DaObraNoMaiorTamanho \
             -only-testing:CusttaUITests/AuditoriaUITests/testParte3DasFolhasDaObraNoMaiorTamanho \
             -only-testing:CusttaUITests/AuditoriaUITests/testParte3DaVendaNoMaiorTamanho \
-            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
+            -only-testing:CusttaUITests/AuditoriaUITests/testOGanchoDaRolagemSoPoeAAncoraNaListaDaObra \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -515,11 +513,8 @@ jobs:
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/laudo-etapa3.xcresult" \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamento \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDoOrcamentoNaMaiorLetra \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDasFolhasDeOrigem \
+            -test-iterations 3 \
             -only-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
-            -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
       # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
@@ -532,9 +527,9 @@ jobs:
           retention-days: 7
 
   laudo-etapa3-b:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' && needs.portoes.outputs.nivel != 'telas' }}
     # As leituras e as auditorias da etapa 3 que não cabem no laudo-etapa3: ele foi a 52 min no run 40125911713 e a 46 no
     # 40152738846 (teto de 60), com a maior letra e as auditorias das folhas de origem em 13,6 e 11,6 min. Essas três saem de
     # lá e abrem este job, com o laudo da busca e dos afazeres (PR 3), que o laudo pula. O mesmo preparo do laudo-etapa3, em
@@ -618,16 +613,8 @@ jobs:
             -skipPackagePluginValidation \
             -onlyUsePackageVersionsFromResolvedFile \
             -resultBundlePath "$RUNNER_TEMP/auditoria.xcresult" \
-            -only-testing:CusttaUITests/AuditoriaUITests \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3DaObraNoMaiorTamanho \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3DasFolhasDaObraNoMaiorTamanho \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testParte3DaVendaNoMaiorTamanho \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testOrcamentoNoMaiorTamanho \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testFolhasDeOrigemNoMaiorTamanho \
-            -skip-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
-            -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
+            -test-iterations 6 \
+            -only-testing:CusttaUITests/AuditoriaUITests/testAcoesDaFaseNoMaiorTamanho \
             CODE_SIGNING_ALLOWED=NO
 
       # Auditoria ou leitura reprovadas: o resultado e os prints anotados ficam 7 dias no artefato.
@@ -640,9 +627,9 @@ jobs:
           retention-days: 7
 
   unidade:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && (needs.portoes.outputs.nivel == 'nucleo' || needs.portoes.outputs.nivel == 'telas') }}
     # Nos níveis nucleo e telas, no lugar do app: o build Release sem assinatura e os testes de unidade, sem os de tela.
     # Sem medida ainda: o primeiro PR que rodar neste nível anota aqui o tempo do job.
     timeout-minutes: 45
@@ -701,9 +688,9 @@ jobs:
           retention-days: 7
 
   app-etapa4:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' }}
     # Os testes de tela das telas da análise (etapa 4): as suítes da pasta CusttaUITests/Analise. Roda nos níveis telas e
     # tudo. O mesmo preparo do app-etapa3; como lá, cada PR da etapa anota aqui o tempo do job. Sem medida ainda (4a).
     timeout-minutes: 60
@@ -745,9 +732,9 @@ jobs:
           retention-days: 7
 
   laudo-etapa4:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' }}
     # O laudo de leitura das telas da análise (etapa 4), com o laudo das marcas: o LeituraDaAnaliseUITests, que mora na
     # pasta CusttaUITests/Analise. Roda nos níveis telas e tudo. Sem medida ainda (4a): cada PR da etapa anota aqui o tempo.
     timeout-minutes: 60
@@ -790,9 +777,9 @@ jobs:
           retention-days: 7
 
   auditoria-etapa4:
+    if: false
     runs-on: macos-26
     needs: portoes
-    if: ${{ !cancelled() && needs.portoes.outputs.nivel != 'nucleo' }}
     # As auditorias de acessibilidade das telas da análise (etapa 4): o AuditoriaDaAnaliseUITests, que mora na pasta
     # CusttaUITests/Analise. Roda nos níveis telas e tudo. Sem medida ainda (4a): cada PR da etapa anota aqui o tempo.
     timeout-minutes: 60

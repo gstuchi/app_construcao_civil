@@ -58,7 +58,8 @@ final class AuditoriaUITests: XCTestCase {
         // cortam é o OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar.
         let totalMudaDeLugar = app.launchArguments.contains { $0.hasPrefix("UICTContentSizeCategoryAccessibility") }
             && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
-        try app.performAccessibilityAudit(for: tipos) { achado in
+        // Em duas leituras (SegundaLeituraDaAuditoria): reprova o achado que se repete na mesma cena.
+        try auditarEmDuasLeituras(app, tipos) { achado in
             guard let elemento = achado.element else {
                 // O arranjo que o ViewThatFits descartou dá "Text clipped" sem elemento, com a tela mostrando o outro inteiro.
                 // Qualquer outro achado sem elemento reprova, também nessas cenas.

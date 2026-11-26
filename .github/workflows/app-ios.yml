@@ -591,7 +591,9 @@ jobs:
     # laudo-etapa3-b) e a leitura da folha do gasto; a conta do tempo está no job laudo. No fim do PR 2 da etapa 3, 37,8 min:
     # as 14 auditorias em 19,1 e a leitura em 11,2 (run 40125911713).
     # No fim do PR 3, 39,4 min: as 14 auditorias em 18,8 e a leitura em 12,5 (run 40526951027, 2ª tentativa).
-    timeout-minutes: 60
+    # Teto de 75 min desde o PR 4a da etapa 4: o job leva de 40 a 45 min, e numa VM 1,5x mais lenta, sem teste travado, foi
+    # cortado aos 62, no fim da leitura da folha (run 45863923045: as auditorias em 2090 s, contra 1387 s no 45838128547).
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

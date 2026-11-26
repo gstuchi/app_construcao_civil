@@ -88,7 +88,11 @@ final class AncoraDaRolagemFixa: UIView {
         }
         // Preso ao fim do conteúdo, como o scrollTo(y:) da ScrollView: a busca que acha pouco encolhe a lista.
         let alvo = min(topo - lista.adjustedContentInset.top, fim(lista))
-        if abs(lista.contentOffset.y - alvo) > 0.5 { lista.contentOffset.y = alvo }
+        // Ao pixel: com meio ponto de folga, a rolagem que a lista deixava 1 px ao lado do alvo ficava lá, e o print da cena saía
+        // 1 px mais alto de vez em quando (a "busca, em repouso" do laudo, logo depois do boot do simulador: 688,33 por 688).
+        let escala = lista.traitCollection.displayScale
+        let noPixel = (alvo * escala).rounded() / escala
+        if abs(lista.contentOffset.y - noPixel) > 0.5 / escala { lista.contentOffset.y = noPixel }
     }
 }
 

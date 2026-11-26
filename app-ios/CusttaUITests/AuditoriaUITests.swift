@@ -641,7 +641,7 @@ extension AuditoriaUITests {
     /// coluna inteira. Com a coluna no lugar do ViewThatFits, nenhum achado; nem identificador nem .contain dão elemento a ele,
     /// então não há exceção por identificador. O corte com elemento segue reprovando nessas cenas: o "3 vencimentos · a partir
     /// de amanhã" numa linha só reprova depois do arrasto (a mutação da T34). O corte dentro do .ignore da linha do gasto tem a
-    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3-b.
+    /// guarda Node; as edições ficam sem a tolerância. Roda no job laudo-etapa3-b.
     @MainActor func testFolhasDeOrigemNoMaiorTamanho() throws {
         for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
                                                      ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
@@ -655,7 +655,11 @@ extension AuditoriaUITests {
             if edicao.isEmpty {
                 app.swipeUp()
                 Thread.sleep(forTimeInterval: 1.5)
-                try auditar(app, tiposDeAuditoria, corteSemElemento: folha.hasPrefix("aPagar"))
+                // No detalhe, o "No orçamento" rola para cima da barra, mas segue montado, e o ponto cego dele vai junto conforme
+                // onde a rolagem para: no iPhone 18 Pro (o bloco de -214 a 64 pt) a auditoria não acha nada; no 18 Pro Max (de
+                // -187 a 91 pt, a rolagem acaba antes) acha os mesmos dois "Text clipped" sem elemento do topo.
+                let noOrcamentoMontado = app.elemento("orcamentoDoTopico").exists
+                try auditar(app, tiposDeAuditoria, corteSemElemento: folha.hasPrefix("aPagar") || noOrcamentoMontado)
             }
             app.terminate()
         }

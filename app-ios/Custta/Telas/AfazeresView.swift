@@ -151,18 +151,20 @@ struct AfazeresView: View {
     @State private var aceso: String?
     @State private var naoCarregado = false
     #if DEBUG
-    /// Testes de tela: a espera entre o toque e a mudança de lugar, em ms (`-custta.esperaDoAfazer 3000`), para o teste ver o
-    /// círculo trocado (e o VoiceOver ouvir o estado novo) antes de a linha sair, e tocar de novo nesse meio-tempo.
-    @AppStorage("custta.esperaDoAfazer") private var esperaDeTeste = 500
+    /// Testes de tela: com `-custta.afazerEsperaOAviso YES`, a linha só muda de lugar quando o teste avisa (notify_post de
+    /// "br.com.custta.teste.afazerMudaDeLugar"), para o teste ver o círculo trocado (e o VoiceOver ouvir o estado novo) antes
+    /// de a linha sair, e tocar de novo nesse meio-tempo. Era um relógio de 10 s, e a VM do iOS 26 da CI chegou a dar o
+    /// segundo toque 16 s depois do primeiro, com o afazer já nos Feitos.
+    @AppStorage("custta.afazerEsperaOAviso") private var esperaOAviso = false
     #endif
 
-    /// Meio segundo entre o círculo trocar e a linha mudar de lugar (mockup: "o círculo enche na hora; meio segundo depois…").
-    private var espera: Duration {
+    /// Meio segundo entre o círculo trocar e a linha mudar de lugar (mockup: "o círculo enche na hora; meio segundo depois…");
+    /// com o gancho dos testes de tela, o aviso do teste.
+    private func esperarParaMudar() async {
         #if DEBUG
-        return .milliseconds(esperaDeTeste)
-        #else
-        return .milliseconds(500)
+        if esperaOAviso { await TransporteFalsoApp.esperarOAviso("br.com.custta.teste.afazerMudaDeLugar"); return }
         #endif
+        try? await Task.sleep(for: .milliseconds(500))
     }
 
     var body: some View {
@@ -293,7 +295,7 @@ struct AfazeresView: View {
         if linhaAberta != nil { fecharLinha(); return }
         guard trocando.tocar(afazer.id) else { return }
         Task { @MainActor in
-            try? await Task.sleep(for: espera)
+            await esperarParaMudar()
             let resultado = withAnimation(opcoes.reduzirMovimento ? nil : .spring(duration: 0.4, bounce: 0)) { () -> ModeloApp.ResultadoDaGravacao? in
                 guard trocando.confirmar(afazer.id) else { return nil }
                 return modelo.gravar { $0.alternandoAfazer(afazer.id, naObra: obraId) }

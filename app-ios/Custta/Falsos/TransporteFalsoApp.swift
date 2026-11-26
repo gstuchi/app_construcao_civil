@@ -63,8 +63,9 @@ final class TransporteFalsoApp: TransporteDados {
         return Nada()
     }
 
-    /// Espera o aviso do teste (notify_post), que atravessa do processo do XCUITest ao app no simulador.
-    private static func esperarOAviso(_ nome: String) async {
+    /// Espera o aviso do teste (notify_post), que atravessa do processo do XCUITest ao app no simulador. O gancho dos afazeres
+    /// (AfazeresView) também o usa.
+    static func esperarOAviso(_ nome: String) async {
         await withCheckedContinuation { (avisado: CheckedContinuation<Void, Never>) in
             var token: Int32 = 0
             notify_register_dispatch(nome, &token, .main) { t in

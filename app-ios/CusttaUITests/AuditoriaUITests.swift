@@ -561,15 +561,26 @@ extension AuditoriaUITests {
     /// auditoria diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, com o gancho da rolagem fixa ou
     /// sem ele, e os achados saem sem elemento (ponto cego, 21/10); o que só o fim tem, a dica, tem guarda Node. Roda no job
     /// laudo-etapa3.
+    ///
+    /// A linha na obra fica a 700 pt, e a obra é uma List: rolada, ela se mede de novo enquanto a auditoria troca a letra
+    /// (testObraNoMaiorTamanho). No iOS 26 da CI, a auditoria de tipo dinâmico lia os quatro textos da linha antes de a lista
+    /// refazer o layout de um dos tamanhos e acusava "partially unsupported" em perto de metade das leituras, com o gancho da
+    /// rolagem de antes ou com o de agora, e em 1 de 4 dessas também na segunda leitura (sondas de 26/11, 9 iterações por run).
+    /// Por isso o tipo dinâmico (e o corte) da linha são auditados com ela no alto da vitrine das peças, sem rolar, como o A
+    /// pagar (`-custta.vitrineOrcamento`); na obra a 700 pt ficam os outros tipos.
     @MainActor func testOrcamentoNoMaiorTamanho() throws {
-        var app: XCUIApplication
+        var app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas", argumentos: maiorLetra + parado + ["-custta.vitrineOrcamento", "YES"])
+        XCTAssertTrue(app.elemento("indicadorOrcamento").waitForExistence(timeout: 10), "a linha do orçamento no alto da vitrine")
+        Thread.sleep(forTimeInterval: 1.5)
+        try auditar(app, [.dynamicType, .textClipped])
+        app.terminate()
         for (dados, abrir, rolagem, espera) in [("porTopico", "obra:v1", 700, "editarObra"), ("porTopico", "orcamento:v1", 0, "editarOrcamento"),
                                                 ("porTopico", "orcamento:v1", 3000, "editarOrcamento"),
                                                 ("vitrine", "orcamento:v1", 2200, "editarOrcamento")] {
             app = abrirApp(conta: "senha", dados: dados, abrir: abrir, argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons[espera].waitForExistence(timeout: 10), "\(abrir) em \(rolagem)")
             Thread.sleep(forTimeInterval: 1.5)
-            try auditar(app, tiposDeAuditoria)
+            try auditar(app, abrir == "obra:v1" ? tiposDeAuditoria.subtracting(.dynamicType) : tiposDeAuditoria)
             app.terminate()
         }
         for (dados, abrir, passo, espera) in [("porTopico", "orcamento:v1", "topicos", "linhaOrc-terreno"),

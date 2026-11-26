@@ -18,6 +18,11 @@ struct VitrineDasPecas: View {
     /// Com `-custta.vitrineAPagar`, a vitrine abre com o bloco A pagar da obra no alto, para a auditoria na maior letra o ver
     /// sem rolar (AuditoriaUITests.testAPagarNoMaiorTamanho).
     @AppStorage("custta.vitrineAPagar") private var aPagarNoAlto = false
+    /// Com `-custta.vitrineOrcamento`, a linha do orçamento da obra no alto, com o orçamento por tópico do mockup (o nível, o
+    /// "sobra", o aviso dos tópicos e o que está fora), para a auditoria na maior letra a ver sem rolar
+    /// (AuditoriaUITests.testOrcamentoNoMaiorTamanho).
+    @AppStorage("custta.vitrineOrcamento") private var orcamentoNoAlto = false
+    private static let orcamentoPorTopico = orcamentoObra(Estado.de(DadosDeExemplo.vitrineDoOrcamento("porTopico")).obras[0])
 
     var body: some View {
         let casa = estado.obras[0]
@@ -26,6 +31,7 @@ struct VitrineDasPecas: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Grade.entreBlocos) {
                 if aPagarNoAlto { aPagar(indicadores) }
+                if orcamentoNoAlto, let orcamento = Self.orcamentoPorTopico { LinhaDoOrcamento(resumo: orcamento, comSeta: true) }
                 TituloMono(texto: casa.nome, identificador: "vitrine-titulo")
                 CapsulaDeMetadados {
                     EtiquetaDeFase(fase: casa.fase, grande: true)

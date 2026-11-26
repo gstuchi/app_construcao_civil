@@ -617,8 +617,15 @@ extension AuditoriaUITests {
             rolar(app)
             try auditar(app, [.contrast])
             app.terminate()
+            // As teclas no primeiro tópico, com a lista no alto. Com um tópico do meio em foco (era a Elétrica), no iPhone 18 Pro
+            // Max (iOS 27) a auditoria de contraste desta cena não termina: "Audit failed to complete in time" (-56) nas duas
+            // tentativas, sempre, com o app parado a 0% de CPU. Quem trava é a detecção de contraste no testmanagerd do
+            // simulador, que fica com uma thread a 100% por auditoria estourada e atrasa as rodadas seguintes, até o simulador ser
+            // desligado. Medido em 26/11: com a Elétrica, a Cerâmica ou a Mão de obra em foco, a lista monta linhas acima do topo
+            // da tela e a auditoria estoura (3 de 3); com o Terreno, não monta e passa em 0,7 s; no 18 Pro, passa com os quatro.
+            // O que exatamente a faz travar não foi isolado: outras cenas têm texto acima do topo da tela e passam.
             app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
-                           argumentos: combo + ["-custta.folha", "teclas:eletrica"])
+                           argumentos: combo + ["-custta.folha", "teclas:terreno"])
             XCTAssertTrue(app.elemento("barraDasTeclas-nome").waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1)
             try auditar(app, [.contrast])

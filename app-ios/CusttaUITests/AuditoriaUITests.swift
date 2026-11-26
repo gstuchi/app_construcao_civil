@@ -65,7 +65,8 @@ extension AuditoriaDeTela {
         // cortam é o OrcamentoUITests.testNaMaiorLetraOTotalCresceSemCortar.
         let totalMudaDeLugar = app.launchArguments.contains { $0.hasPrefix("UICTContentSizeCategoryAccessibility") }
             && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
-        try app.performAccessibilityAudit(for: tipos) { achado in
+        // Em duas leituras (SegundaLeituraDaAuditoria): reprova o achado que se repete na mesma cena.
+        try auditarEmDuasLeituras(app, tipos) { achado in
             if let soEm, achado.element?.identifier.hasPrefix(soEm) != true {
                 Swift.print("auditoria | \(achado.compactDescription) | \(achado.element?.identifier ?? "sem elemento") | fora de \(soEm)")
                 return true
@@ -166,7 +167,7 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
     /// vencimentos", "Parcelas e gastos futuros") saíam como cortados, com a tela mostrando os dois inteiros (problema
     /// conhecido, 03/11; a LazyVStack também não era firme nesse teste no iOS 27, 1 de 2). Abaixo da dobra, a auditoria na
     /// maior letra fica assim: o A pagar na testAPagarNoMaiorTamanho; a v2 a 800 e no fim e a v3 no fim na
-    /// testParte3NoMaiorTamanho; as peças da vitrine no alto dela e numa tela rolada na testVitrineDasPecasNoMaiorTamanho. As
+    /// testParte3DaObraNoMaiorTamanho; as peças da vitrine no alto dela e numa tela rolada na testVitrineDasPecasNoMaiorTamanho. As
     /// ações, os afazeres, a pílula e o A vencer da v1 rolada ficam sem auditoria na maior letra (problema conhecido).
     @MainActor func testObraNoMaiorTamanho() throws {
         let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v1", argumentos: maiorLetra + parado)
@@ -426,12 +427,13 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
     /// As peças do meio (blocos, número mono, cabeçalhos) seguem na maior letra na testVitrineDasPecasNoMaiorTamanho, no alto
     /// dela e numa tela rolada. Prova no PR #99. Na List (03/11), a rolagem fixa é o gancho da List (RolagemFixaDaLista): anda
     /// até a rolagem pedida, presa ao fim do conteúdo que ela mede, e segura a linha do alto; no fim (99999), antes de
-    /// auditar, o teste confere que a última linha de gasto (a mais antiga, g0) está à vista, e não o vazio.
-    @MainActor func testParte3NoMaiorTamanho() throws {
-        var app: XCUIApplication
+    /// auditar, o teste confere que a última linha de gasto (a mais antiga, g0) está à vista, e não o vazio. A parte 3 vem em
+    /// três testes (a obra; a lista vazia e as folhas da obra; as folhas da venda), mais curtos que o de antes, de 14 auditorias:
+    /// uma cena que cai não esconde as outras.
+    @MainActor func testParte3DaObraNoMaiorTamanho() throws {
         for (obra, rolagem) in [("v2", 0), ("v2", 800), ("v2", 99_999), ("v3", 0), ("v3", 99_999)] {
-            app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)",
-                           argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:\(obra)",
+                               argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1.5)
             if rolagem == 99_999 {
@@ -442,15 +444,25 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
             try auditar(app, tiposDeAuditoria)
             app.terminate()
         }
-        app = abrirApp(conta: "senha", dados: "vazio", argumentos: maiorLetra + parado)
+    }
+
+    @MainActor func testParte3DasFolhasDaObraNoMaiorTamanho() throws {
+        let app = abrirApp(conta: "senha", dados: "vazio", argumentos: maiorLetra + parado)
         XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
         app.terminate()
-        for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("editarObra:v1", "apagarObra", "obra:v1"),
-                                       ("venda:v2", "confirmarVenda", "obra:v2"),
-                                       ("gastoDeVendida:v3", "linhaObra", "obra:v3")] {
-            app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
-                           argumentos: maiorLetra + parado + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
+        try auditarFolhasDaParte3([("novaObra", "nomeDaObra", nil), ("editarObra:v1", "apagarObra", "obra:v1")])
+    }
+
+    @MainActor func testParte3DaVendaNoMaiorTamanho() throws {
+        try auditarFolhasDaParte3([("venda:v2", "confirmarVenda", "obra:v2"), ("gastoDeVendida:v3", "linhaObra", "obra:v3")])
+    }
+
+    /// Cada folha no alto e rolada.
+    @MainActor private func auditarFolhasDaParte3(_ folhas: [(String, String, String?)]) throws {
+        for (folha, espera, abrir) in folhas {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
+                               argumentos: maiorLetra + parado + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
             XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)
             try auditar(app, tiposDeAuditoria)
             app.swipeUp()
@@ -458,6 +470,44 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
             try auditar(app, tiposDeAuditoria)
             app.terminate()
         }
+    }
+
+    /// O gancho da rolagem fixa da obra (RolagemFixaDaLista) põe duas vistas vazias na lista. A âncora, no fundo da 1ª linha,
+    /// sempre apareceu na árvore de acessibilidade, como um elemento de tamanho zero. A que ajusta a rolagem depois do passe de
+    /// layout da lista não pode aparecer: a árvore é o que o laudo e a auditoria leem. A obra aberta com `-custta.rolagem 0` (o
+    /// gancho segura a lista no alto, onde ela já está) tem a lista da obra aberta sem o argumento, elemento por elemento e na
+    /// mesma ordem, mais a âncora, e só ela.
+    @MainActor func testOGanchoDaRolagemSoPoeAAncoraNaListaDaObra() throws {
+        struct Elemento: Equatable {
+            let texto: String
+            let vazio: Bool
+        }
+        func lista(_ argumentos: [String]) throws -> [Elemento] {
+            let app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", argumentos: parado + argumentos)
+            defer { app.terminate() }
+            XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)
+            var elementos: [Elemento] = []
+            func descer(_ no: XCUIElementSnapshot, _ nivel: Int) {
+                elementos.append(Elemento(texto: "\(nivel) \(no.elementType.rawValue) \"\(no.label)\" \(no.identifier) \(no.frame)",
+                                          vazio: no.elementType == .other && no.label.isEmpty && no.identifier.isEmpty && no.frame.size == .zero))
+                no.children.forEach { descer($0, nivel + 1) }
+            }
+            descer(try app.collectionViews.firstMatch.snapshot(), 0)
+            return elementos
+        }
+        let semOGancho = try lista([]), comOGancho = try lista(["-custta.rolagem", "0"])
+        // O que o gancho pôs: o que sobra da lista com ele, tirando na ordem os elementos da lista sem ele.
+        var postos: [Elemento] = [], falta = semOGancho[...]
+        for elemento in comOGancho {
+            if elemento == falta.first { falta = falta.dropFirst() } else { postos.append(elemento) }
+        }
+        Swift.print("gancho da rolagem | a lista da obra: \(semOGancho.count) elementos sem o gancho, \(comOGancho.count) com ele | "
+                    + "postos pelo gancho: \(postos.map(\.texto))")
+        XCTAssertGreaterThan(semOGancho.count, 20, "a lista da obra com as linhas dela")
+        XCTAssertTrue(falta.isEmpty, "com o gancho, a lista tem os elementos de sem ele, na mesma ordem: faltaram \(falta.map(\.texto))")
+        XCTAssertEqual(postos.count, 1, "o gancho só põe a âncora na árvore: \(postos.map(\.texto))")
+        XCTAssertTrue(postos.allSatisfy(\.vazio), "a âncora é um elemento vazio, de tamanho zero: \(postos.map(\.texto))")
     }
 
     /// As mesmas telas no escuro e no claro, com superfícies sólidas.
@@ -511,15 +561,26 @@ extension AuditoriaUITests {
     /// auditoria diminui a letra, a lista longa encolhe para cima da rolagem e a tela fica vazia, com o gancho da rolagem fixa ou
     /// sem ele, e os achados saem sem elemento (ponto cego, 21/10); o que só o fim tem, a dica, tem guarda Node. Roda no job
     /// laudo-etapa3.
+    ///
+    /// A linha na obra fica a 700 pt, e a obra é uma List: rolada, ela se mede de novo enquanto a auditoria troca a letra
+    /// (testObraNoMaiorTamanho). No iOS 26 da CI, a auditoria de tipo dinâmico lia os quatro textos da linha antes de a lista
+    /// refazer o layout de um dos tamanhos e acusava "partially unsupported" em perto de metade das leituras, com o gancho da
+    /// rolagem de antes ou com o de agora, e em 1 de 4 dessas também na segunda leitura (sondas de 26/11, 9 iterações por run).
+    /// Por isso o tipo dinâmico (e o corte) da linha são auditados com ela no alto da vitrine das peças, sem rolar, como o A
+    /// pagar (`-custta.vitrineOrcamento`); na obra a 700 pt ficam os outros tipos.
     @MainActor func testOrcamentoNoMaiorTamanho() throws {
-        var app: XCUIApplication
+        var app = abrirApp(conta: "senha", dados: "vitrine", abrir: "pecas", argumentos: maiorLetra + parado + ["-custta.vitrineOrcamento", "YES"])
+        XCTAssertTrue(app.elemento("indicadorOrcamento").waitForExistence(timeout: 10), "a linha do orçamento no alto da vitrine")
+        Thread.sleep(forTimeInterval: 1.5)
+        try auditar(app, [.dynamicType, .textClipped])
+        app.terminate()
         for (dados, abrir, rolagem, espera) in [("porTopico", "obra:v1", 700, "editarObra"), ("porTopico", "orcamento:v1", 0, "editarOrcamento"),
                                                 ("porTopico", "orcamento:v1", 3000, "editarOrcamento"),
                                                 ("vitrine", "orcamento:v1", 2200, "editarOrcamento")] {
             app = abrirApp(conta: "senha", dados: dados, abrir: abrir, argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
             XCTAssertTrue(app.buttons[espera].waitForExistence(timeout: 10), "\(abrir) em \(rolagem)")
             Thread.sleep(forTimeInterval: 1.5)
-            try auditar(app, tiposDeAuditoria)
+            try auditar(app, abrir == "obra:v1" ? tiposDeAuditoria.subtracting(.dynamicType) : tiposDeAuditoria)
             app.terminate()
         }
         for (dados, abrir, passo, espera) in [("porTopico", "orcamento:v1", "topicos", "linhaOrc-terreno"),

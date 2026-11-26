@@ -510,23 +510,26 @@ final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
         XCTAssertTrue(postos.allSatisfy(\.vazio), "a âncora é um elemento vazio, de tamanho zero: \(postos.map(\.texto))")
     }
 
-    /// As mesmas telas no escuro e no claro, com superfícies sólidas.
+    /// As mesmas telas no escuro e no claro, com superfícies sólidas. Cada cena espera até 60 s: na CI do fc47363 (run
+    /// 45838128547), as consultas do XCUITest ficaram 54 s sem resposta logo depois de abrir a folha de venda no claro, e a
+    /// espera de 10 s venceu com a folha já aberta. Quando a cena vem, a espera sai em 1 ou 2 s.
     @MainActor func testContrasteDaParte3NosDoisTemas() throws {
+        let cena: TimeInterval = 60
         for tema in temas {
             let combo = ["-custta.tema", tema] + solido + parado
             var app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", argumentos: combo + ["-custta.rolagem", "250"])
-            XCTAssertTrue(app.buttons["acao-voltarConstrucao"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["acao-voltarConstrucao"].waitForExistence(timeout: cena))
             Thread.sleep(forTimeInterval: 1)
             try auditar(app, [.contrast])
             app.terminate()
             app = abrirApp(conta: "senha", dados: "vazio", argumentos: combo)
-            XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 10))
+            XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: cena))
             try auditar(app, [.contrast])
             app.terminate()
             for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("venda:v2", "confirmarVenda", "obra:v2")] {
                 app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
                                argumentos: combo + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
-                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)
+                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: cena), folha)
                 Thread.sleep(forTimeInterval: 1)
                 try auditar(app, [.contrast])
                 app.terminate()

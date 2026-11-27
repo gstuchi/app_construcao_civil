@@ -217,10 +217,10 @@ struct AfazeresView: View {
             }
             .padding(.horizontal, 20)
             .haloDoTituloDaBarra()
-            // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque).
-            .contentShape(.rect)
-            .onTapGesture { if linhaAberta != nil { fecharLinha() } }
         }
+        // Tocar fora da linha aberta fecha (o "Apagar" é um botão e vence este toque). Na rolagem inteira, e não só no
+        // conteúdo: o vazio entre o fim da lista e a cápsula é a margem da rolagem (fimAcimaDaCapsula), fora do conteúdo.
+        .onTapGesture { if linhaAberta != nil { fecharLinha() } }
         .scrollIndicators(.hidden)
         // O fim da lista fica à vista acima da cápsula de abas, como na tela da obra.
         .fimAcimaDaCapsula(ar: 48)

@@ -299,6 +299,12 @@ const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobEtapa3b, jobAu
 const daEtapa4 = [jobAppEtapa4, jobLaudoEtapa4, jobAuditoriaEtapa4].flatMap(job => suitesInteiras(job, 'only'));
 assert.deepStrictEqual([...nosLaudos, ...[jobAppEtapa3, jobAppEtapa3b, jobAppEtapa3c].flatMap(job => suitesInteiras(job, 'only')), ...daEtapa4].sort(), [...puladasNoApp].sort(),
   'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3, no app-etapa3-b, no app-etapa3-c ou num job da etapa 4, uma vez só, e eles rodam só o que o app pula');
+// O app passou de 85 min e foi cortado no teto de 90 três vezes, em 26 e 27/11 (33f611c, #129 e #131):
+// o GastoUITests, a maior suíte dele (25 testes, 20 a 23 min), roda no app-etapa3-b, que levava de 26 a 29 min, com teto de 75.
+assert.deepStrictEqual(suitesInteiras(jobAppEtapa3b, 'only').sort(), ['DetalheDoTopicoUITests', 'GastoUITests'],
+  'o app-etapa3-b roda o detalhe do tópico e o GastoUITests, que saiu do app');
+assert.match(jobAppEtapa3b, /\n    timeout-minutes: 75\n/, 'o app-etapa3-b, com o GastoUITests, tem teto de 75 min');
+assert.match(jobApp, /\n    timeout-minutes: 90\n/, 'o app, sem o GastoUITests, fica no teto de 90 min');
 // As telas da análise: toda suíte de tela da pasta CusttaUITests/Analise roda num job da etapa 4, e eles só rodam as dela. No
 // nível telas, o app não roda: a suíte da análise que ficasse com ele não rodaria em PR nenhum que só mexe na análise.
 const pastaDaAnalise = join(__dirname, '..', 'app-ios', 'CusttaUITests', 'Analise');

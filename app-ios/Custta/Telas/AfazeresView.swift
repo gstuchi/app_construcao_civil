@@ -184,7 +184,11 @@ struct AfazeresView: View {
         let pendentes = obra.afazeres.filter { !$0.feito }
         let feitos = obra.afazeres.filter(\.feito)
         return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            // Pilha comum, e não preguiçosa: as linhas já são montadas todas, dentro do cartão dos pendentes e do dos feitos,
+            // e a pilha de fora só tem o campo, as pílulas e os cartões. No iOS 26, a LazyVStack com o cartão dos pendentes
+            // como um filho só e alto prendia a thread principal no arrasto que chegava ao fim, na maior letra (como a obra
+            // no #99).
+            VStack(alignment: .leading, spacing: 0) {
                 CampoDoAfazer(texto: $texto, foco: $noCampo) { adicionar() }
                     .padding(.top, 16)
                 if !pendentes.isEmpty {

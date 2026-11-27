@@ -273,4 +273,27 @@ final class AfazeresUITests: XCTestCase {
         mais.tap()
         XCTAssertTrue(app.elemento("visorDoValor").waitForExistence(timeout: 5), "a folha do gasto abre")
     }
+
+    /// Na maior letra, os afazeres passam da tela, e rolar até o fim não trava. No iOS 26 da CI, com a pilha preguiçosa de
+    /// fora (`LazyVStack`) e o cartão dos pendentes como um filho só e alto dela, o arrasto que chegava ao fim prendia a
+    /// thread principal do app ("main thread busy for 30.0s"; sondas 46061615607, 46061618851 e 46061622394: 16 de 27).
+    /// Cada leitura é uma consulta à árvore: com a thread presa, ela esgota o tempo, e o teste cai aqui.
+    func testMaiorLetraRolaAteOFimSemTravar() {
+        let app = abrirAfazeres(argumentos: ["-custta.reduzirMovimento", "YES",
+                                             "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let feitos = app.elemento("feitos"), capsula = app.buttons["aba-obras"]
+        // Arrasta até o cartão dos feitos, o último, ficar parado em três leituras seguidas (um arrasto se perde na VM).
+        var antes: CGFloat = -1, parados = 0
+        for _ in 0..<20 {
+            app.swipeUp(velocity: .fast)
+            Thread.sleep(forTimeInterval: 1)
+            guard feitos.exists else { parados = 0; continue }
+            let agora = feitos.frame.maxY
+            parados = abs(agora - antes) < 0.5 ? parados + 1 : 0
+            antes = agora
+            if parados == 2 { break }
+        }
+        XCTAssertEqual(parados, 2, "a rolagem para no fim")
+        XCTAssertLessThan(feitos.frame.maxY, capsula.frame.minY, "o fim da lista acima da cápsula")
+    }
 }

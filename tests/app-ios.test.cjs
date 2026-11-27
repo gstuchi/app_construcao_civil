@@ -1051,6 +1051,17 @@ test('lista da folha de origem: os ganchos do laudo só em DEBUG e só com o arg
                'sem o -custta.origem, nada; e a lista que volta da edição não empurra de novo');
 });
 
+test('tela Orçamento: a rolagem fixa do laudo só em DEBUG, só com o argumento do teste e sem folha aberta', () => {
+  // Sem o argumento, a tela levava o gancho parado (o `.scrollPosition` e os observadores da rolagem que o Release não tem),
+  // e na CI do iOS 26 o 2º arrasto nela prendeu a thread principal por 154 s ou mais (DetalheDoTopicoUITests, run
+  // 45863923045). Com uma folha aberta pelo gancho, a rolagem é só da folha.
+  assert.match(ler('app-ios/Custta/Telas/OrcamentoView.swift'), /\n\s*#if DEBUG\n\s*\.rolagemFixaSemFolha\(\)\n\s*#endif\n/,
+               'a rolagem fixa na tela Orçamento, só em DEBUG');
+  assert.match(ler('app-ios/Custta/Identidade/Componentes.swift'),
+               /#if DEBUG\n(?:(?!#endif)[\s\S])*func rolagemFixaSemFolha\(\) -> some View \{\n\s*let comFolha = ProcessInfo\.processInfo\.environment\["CUSTTA_FOLHA"\] != nil\n\s*if !comFolha, UserDefaults\.standard\.object\(forKey: "custta\.rolagem"\) != nil \{ modifier\(RolagemFixaDoTeste\(\)\) \} else \{ self \}\n/,
+               'sem o -custta.rolagem, ou com uma folha aberta, a tela Orçamento fica sem o .scrollPosition');
+});
+
 test('scripts dos testes locais do app: emuladores e conferência cruzada', () => {
   const s = JSON.parse(ler('package.json')).scripts;
   for(const nome of ['test:app-ios:emuladores', 'test:app-ios:cruzado']){

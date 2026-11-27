@@ -278,8 +278,6 @@ for(const [nome, job] of [['laudo', jobLaudo], ['laudo-parte3', jobParte3], ['la
   ['laudo-etapa4', jobLaudoEtapa4], ['auditoria-etapa4', jobAuditoriaEtapa4]]){
   assert.match(job, /\n    runs-on: macos-26\n/, `o job ${nome} roda no macOS 26 fixo`);
   assert.match(job, /\n\s+TEST_RUNNER_CUSTTA_VARREDURA: curta\n/, `o job ${nome} usa a varredura curta (a lista sob a cápsula só em 0, 20, 40 e 260 pt)`);
-  assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${nome}\\.xcresult"[\\s\\S]*if: failure\\(\\)[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${nome}\\.xcresult`),
-    `o job ${nome} guarda o próprio resultado quando reprova`);
 }
 // Os testes de tela da etapa 3 rodam no app-etapa3, no app-etapa3-b e no app-etapa3-c (o app-etapa3 não cresce mais: 55 a
 // 58,8 min; o app-etapa3-b, com as suítes do PR 3, chegaria a ~50), em paralelo com o app, que passou do teto de 75 min com
@@ -301,6 +299,12 @@ const nosLaudos = [...new Set([jobLaudo, jobParte3, jobEtapa3, jobEtapa3b, jobAu
 const daEtapa4 = [jobAppEtapa4, jobLaudoEtapa4, jobAuditoriaEtapa4].flatMap(job => suitesInteiras(job, 'only'));
 assert.deepStrictEqual([...nosLaudos, ...[jobAppEtapa3, jobAppEtapa3b, jobAppEtapa3c].flatMap(job => suitesInteiras(job, 'only')), ...daEtapa4].sort(), [...puladasNoApp].sort(),
   'a suíte de tela que o app pula roda nos laudos, no auditoria, no app-etapa3, no app-etapa3-b, no app-etapa3-c ou num job da etapa 4, uma vez só, e eles rodam só o que o app pula');
+// O app passou de 85 min e foi cortado no teto de 90 três vezes, em 26 e 27/11 (33f611c, #129 e #131):
+// o GastoUITests, a maior suíte dele (25 testes, 20 a 23 min), roda no app-etapa3-b, que levava de 26 a 29 min, com teto de 75.
+assert.deepStrictEqual(suitesInteiras(jobAppEtapa3b, 'only').sort(), ['DetalheDoTopicoUITests', 'GastoUITests'],
+  'o app-etapa3-b roda o detalhe do tópico e o GastoUITests, que saiu do app');
+assert.match(jobAppEtapa3b, /\n    timeout-minutes: 75\n/, 'o app-etapa3-b, com o GastoUITests, tem teto de 75 min');
+assert.match(jobApp, /\n    timeout-minutes: 90\n/, 'o app, sem o GastoUITests, fica no teto de 90 min');
 // As telas da análise: toda suíte de tela da pasta CusttaUITests/Analise roda num job da etapa 4, e eles só rodam as dela. No
 // nível telas, o app não roda: a suíte da análise que ficasse com ele não rodaria em PR nenhum que só mexe na análise.
 const pastaDaAnalise = join(__dirname, '..', 'app-ios', 'CusttaUITests', 'Analise');
@@ -314,9 +318,13 @@ const telas = readdirSync(join(__dirname, '..', 'app-ios', 'CusttaUITests'), { r
   .map(f => readFileSync(join(__dirname, '..', 'app-ios', 'CusttaUITests', f), 'utf8')).join('\n');
 for(const suite of puladasNoApp)
   assert.match(telas, new RegExp(`\\bclass ${suite}\\b`), `o app-ios.yml divide ${suite}, que não existe no CusttaUITests`);
-// O resultado sobe também quando o job é cancelado: o run 39710458060 foi cortado no teto e ficou sem xcresult.
+// O resultado sobe também quando o job é cancelado: o run 39710458060 foi cortado no teto e ficou sem xcresult. Os laudos e
+// as auditorias também: no run 45863923045, o auditoria foi cortado aos 62 min e o xcresult dele não subiu.
 for(const [nome, job, resultado] of [['app', jobApp, 'testes'], ['app-etapa3', jobAppEtapa3, 'testes-etapa3'], ['app-etapa3-b', jobAppEtapa3b, 'testes-etapa3-b'],
-  ['app-etapa3-c', jobAppEtapa3c, 'testes-etapa3-c'], ['app-etapa4', jobAppEtapa4, 'testes-etapa4'], ['unidade', jobUnidade, 'unidade']])
+  ['app-etapa3-c', jobAppEtapa3c, 'testes-etapa3-c'], ['app-etapa4', jobAppEtapa4, 'testes-etapa4'], ['unidade', jobUnidade, 'unidade'],
+  ['laudo', jobLaudo, 'laudo'], ['laudo-parte3', jobParte3, 'laudo-parte3'], ['laudo-etapa3', jobEtapa3, 'laudo-etapa3'],
+  ['laudo-etapa3-b', jobEtapa3b, 'laudo-etapa3-b'], ['laudo-etapa4', jobLaudoEtapa4, 'laudo-etapa4'], ['auditoria', jobAuditoria, 'auditoria'],
+  ['auditoria-etapa4', jobAuditoriaEtapa4, 'auditoria-etapa4']])
   assert.match(job, new RegExp(`-resultBundlePath "\\$RUNNER_TEMP/${resultado}\\.xcresult"[\\s\\S]*\\n\\s+if: failure\\(\\) \\|\\| cancelled\\(\\)\\n[\\s\\S]*path: \\$\\{\\{ runner\\.temp \\}\\}/${resultado}\\.xcresult`),
     `o job ${nome} guarda o próprio resultado quando reprova e quando é cortado no teto`);
 /* Portões por superfície (spec da etapa 4): o job portoes escolhe o nível pelo diff do PR, e cada job diz em que nível roda.

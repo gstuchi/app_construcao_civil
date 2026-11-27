@@ -3,8 +3,8 @@ import XCTest
 /* O fim das listas acima da cápsula de abas. A cápsula entra por uma barra própria, e a altura dela não chega à área segura
    da rolagem de dentro do NavigationStack: com só os 34 pt do indicador de início descontados, a última linha de Obras e
    de Ajustes parava 26 pt atrás dela (Verniz, 24/11). Cada tela rola até o fim, e o teste mede o ar entre o fim do
-   conteúdo (o elemento mais baixo da rolagem) e o topo da cápsula: 24 pt em Obras e Ajustes, 48 na obra, nos Afazeres e
-   no Orçamento, na letra padrão e na maior. E a busca da obra com o teclado: a cápsula e a lista ficam paradas. */
+   conteúdo (o elemento mais baixo da rolagem) e o topo da cápsula: 24 pt em Obras e Ajustes, 48 na obra, nos Afazeres, no
+   Orçamento e no "Vale a pena?", na letra padrão e na maior. E a busca da obra com o teclado: a cápsula e a lista ficam paradas. */
 final class FolgaDaCapsulaUITests: XCTestCase {
     private let parado = ["-custta.reduzirMovimento", "YES"]
     private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
@@ -24,7 +24,9 @@ final class FolgaDaCapsulaUITests: XCTestCase {
         let lista = app.collectionViews.firstMatch
         if !lista.exists {
             let retrato = try app.scrollViews.firstMatch.snapshot()
-            return retrato.children.filter { $0.frame.height > 0 && $0.frame != retrato.frame }.map(\.frame.maxY).max() ?? 0
+            // Pela altura, com 1 pt de folga: o contêiner da altura da tela pode vir com o topo em -1e-13.
+            return retrato.children.filter { $0.frame.height > 0 && abs($0.frame.height - retrato.frame.height) > 1 }
+                .map(\.frame.maxY).max() ?? 0
         }
         let retrato = try lista.snapshot()
         let borda = retrato.frame.maxY - 1
@@ -96,6 +98,11 @@ final class FolgaDaCapsulaUITests: XCTestCase {
         // Na maior letra, os tópicos passam de 6.000 pt: a rolagem fixa leva perto do fim, e os arrastos assentam.
         try conferir("Orçamento", ar: 48, dados: "muitosTopicos", abrir: "orcamento:v1", espera: "editarOrcamento",
                      argumentos: ["-custta.rolagem", "99999"])
+    }
+
+    @MainActor func testValeAPenaTerminaAcimaDaCapsula() throws {
+        // A obra da análise com o preço da venda estimada: o veredito, a faixa e a tabela passam da tela.
+        try conferir("Vale a pena?", ar: 48, dados: "analise", abrir: "aba:valeAPena", espera: "tituloValeAPena")
     }
 
     /// A busca da obra com o teclado aberto: a cápsula não sobe com ele, e a lista não salta.

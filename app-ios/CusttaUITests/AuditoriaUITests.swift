@@ -617,8 +617,15 @@ extension AuditoriaUITests {
             rolar(app)
             try auditar(app, [.contrast])
             app.terminate()
+            // As teclas no primeiro tópico, com a lista no alto. Com um tópico do meio em foco (era a Elétrica), no iPhone 18 Pro
+            // Max (iOS 27) a auditoria de contraste desta cena não termina: "Audit failed to complete in time" (-56) nas duas
+            // tentativas, sempre, com o app parado a 0% de CPU. Quem trava é a detecção de contraste no testmanagerd do
+            // simulador, que fica com uma thread a 100% por auditoria estourada e atrasa as rodadas seguintes, até o simulador ser
+            // desligado. Medido em 26/11: com a Elétrica, a Cerâmica ou a Mão de obra em foco, a lista monta linhas acima do topo
+            // da tela e a auditoria estoura (3 de 3); com o Terreno, não monta e passa em 0,7 s; no 18 Pro, passa com os quatro.
+            // O que exatamente a faz travar não foi isolado: outras cenas têm texto acima do topo da tela e passam.
             app = abrirApp(conta: "senha", dados: "porTopico", abrir: "orcamento:v1", folha: "orcamento:v1",
-                           argumentos: combo + ["-custta.folha", "teclas:eletrica"])
+                           argumentos: combo + ["-custta.folha", "teclas:terreno"])
             XCTAssertTrue(app.elemento("barraDasTeclas-nome").waitForExistence(timeout: 10))
             Thread.sleep(forTimeInterval: 1)
             try auditar(app, [.contrast])
@@ -634,7 +641,7 @@ extension AuditoriaUITests {
     /// coluna inteira. Com a coluna no lugar do ViewThatFits, nenhum achado; nem identificador nem .contain dão elemento a ele,
     /// então não há exceção por identificador. O corte com elemento segue reprovando nessas cenas: o "3 vencimentos · a partir
     /// de amanhã" numa linha só reprova depois do arrasto (a mutação da T34). O corte dentro do .ignore da linha do gasto tem a
-    /// guarda Node; o detalhe rolado e as edições ficam sem a tolerância. Roda no job laudo-etapa3-b.
+    /// guarda Node; as edições ficam sem a tolerância. Roda no job laudo-etapa3-b.
     @MainActor func testFolhasDeOrigemNoMaiorTamanho() throws {
         for (dados, abrir, folha, edicao, espera) in [("vitrine", "obra:v1", "aPagar:v1", "", "resumoDoAPagar"),
                                                      ("porTopico", "orcamento:v1", "topico:v1:revest", "", "orcamentoDoTopico"),
@@ -648,7 +655,11 @@ extension AuditoriaUITests {
             if edicao.isEmpty {
                 app.swipeUp()
                 Thread.sleep(forTimeInterval: 1.5)
-                try auditar(app, tiposDeAuditoria, corteSemElemento: folha.hasPrefix("aPagar"))
+                // No detalhe, o "No orçamento" rola para cima da barra, mas segue montado, e o ponto cego dele vai junto conforme
+                // onde a rolagem para: no iPhone 18 Pro (o bloco de -214 a 64 pt) a auditoria não acha nada; no 18 Pro Max (de
+                // -187 a 91 pt, a rolagem acaba antes) acha os mesmos dois "Text clipped" sem elemento do topo.
+                let noOrcamentoMontado = app.elemento("orcamentoDoTopico").exists
+                try auditar(app, tiposDeAuditoria, corteSemElemento: folha.hasPrefix("aPagar") || noOrcamentoMontado)
             }
             app.terminate()
         }

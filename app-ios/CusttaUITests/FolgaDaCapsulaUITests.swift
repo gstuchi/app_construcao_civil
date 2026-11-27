@@ -42,14 +42,15 @@ final class FolgaDaCapsulaUITests: XCTestCase {
         return fim
     }
 
-    /// Rola até o fim: arrasta para cima até o fim do conteúdo ficar parado em dois arrastos seguidos.
+    /// Rola até o fim: arrasta para cima até o fim do conteúdo ficar parado em três leituras seguidas. Com duas, um arrasto
+    /// perdido na VM do iOS 26 parava a obra no meio da lista (26.5 do Mac, 4 em 21; o arrasto seguinte voltava a rolar).
     @MainActor private func rolarAteOFim(_ app: XCUIApplication) throws {
-        var antes: CGFloat = -1
+        var antes: CGFloat = -1, parados = 0
         for _ in 0..<40 {
             app.swipeUp(velocity: .fast)
             Thread.sleep(forTimeInterval: 1)
             let agora = try fimDoConteudo(app)
-            if abs(agora - antes) < 0.5 { return }
+            if abs(agora - antes) < 0.5 { parados += 1; if parados == 2 { return } } else { parados = 0 }
             antes = agora
         }
         XCTFail("a rolagem não parou no fim")

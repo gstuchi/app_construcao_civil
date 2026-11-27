@@ -411,9 +411,10 @@ jobs:
             -skip-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaBuscaEDosAfazeres \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-      - name: Resultado do laudo quando reprova
-        if: failure()
+      # Laudo reprovado ou cortado no teto: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz
+      # as notas).
+      - name: Resultado do laudo quando reprova ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: laudo-app-ios
@@ -465,9 +466,10 @@ jobs:
             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDaParte3NosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-      - name: Resultado do laudo da parte 3 quando reprova
-        if: failure()
+      # Laudo reprovado ou cortado no teto: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz
+      # as notas).
+      - name: Resultado do laudo da parte 3 quando reprova ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: laudo-parte3-app-ios
@@ -522,9 +524,10 @@ jobs:
             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDoOrcamentoNosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-      - name: Resultado do laudo da etapa 3 quando reprova
-        if: failure()
+      # Laudo reprovado ou cortado no teto: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz
+      # as notas).
+      - name: Resultado do laudo da etapa 3 quando reprova ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: laudo-etapa3-app-ios
@@ -574,9 +577,10 @@ jobs:
             -only-testing:CusttaUITests/AuditoriaUITests/testContrasteDasFolhasDeOrigemNosDoisTemas \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-      - name: Resultado do laudo da etapa 3 (parte b) quando reprova
-        if: failure()
+      # Laudo reprovado ou cortado no teto: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz
+      # as notas).
+      - name: Resultado do laudo da etapa 3 (parte b) quando reprova ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: laudo-etapa3-b-app-ios
@@ -632,9 +636,10 @@ jobs:
             -only-testing:CusttaUITests/LeituraNoVidroUITests/testLeituraDaFolhaDoGasto \
             CODE_SIGNING_ALLOWED=NO
 
-      # Auditoria ou leitura reprovadas: o resultado e os prints anotados ficam 7 dias no artefato.
-      - name: Resultado das auditorias quando reprovam
-        if: failure()
+      # Auditoria ou leitura reprovadas, ou o job cortado no teto: o resultado e os prints anotados ficam 7 dias no
+      # artefato (o run 45863923045 cortou este job aos 62 min, e o xcresult não subiu).
+      - name: Resultado das auditorias quando reprovam ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: auditoria-app-ios
@@ -782,9 +787,10 @@ jobs:
             -only-testing:CusttaUITests/LeituraDaAnaliseUITests \
             CODE_SIGNING_ALLOWED=NO
 
-      # Laudo reprovado: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz as notas).
-      - name: Resultado do laudo da etapa 4 quando reprova
-        if: failure()
+      # Laudo reprovado ou cortado no teto: o resultado e os prints anotados ficam 7 dias no artefato (o log só traz
+      # as notas).
+      - name: Resultado do laudo da etapa 4 quando reprova ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: laudo-etapa4-app-ios
@@ -827,9 +833,9 @@ jobs:
             -only-testing:CusttaUITests/AuditoriaDaAnaliseUITests \
             CODE_SIGNING_ALLOWED=NO
 
-      # Auditoria reprovada: o resultado e os prints anotados ficam 7 dias no artefato.
-      - name: Resultado das auditorias da etapa 4 quando reprovam
-        if: failure()
+      # Auditoria reprovada ou cortada no teto: o resultado e os prints anotados ficam 7 dias no artefato.
+      - name: Resultado das auditorias da etapa 4 quando reprovam ou o job é cortado
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: auditoria-etapa4-app-ios

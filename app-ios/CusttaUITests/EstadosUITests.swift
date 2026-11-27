@@ -211,7 +211,7 @@ final class EstadosUITests: XCTestCase {
         return linha
     }
 
-    /// "Apagar obra" pelo lápis da obra aberta; volta à lista sem ela.
+    /// "Apagar obra" pelo lápis da obra aberta; volta à lista sem ela e espera a lista assentar.
     private func apagarPeloLapis(_ app: XCUIApplication, _ id: String) {
         let lapis = app.buttons["editarObra"]
         XCTAssertTrue(lapis.waitForExistence(timeout: 10))
@@ -223,6 +223,42 @@ final class EstadosUITests: XCTestCase {
         XCTAssertTrue(alerta.waitForExistence(timeout: 5))
         alerta.buttons["Apagar obra"].tap()
         XCTAssertTrue(app.elemento("obra-\(id)").waitForNonExistence(timeout: 10), "a obra sai da lista")
+        esperarAListaAssentar(app)
+    }
+
+    /// A lista de obras parada e sem buraco: a contagem ("2 obras") e as linhas, cada uma logo abaixo da anterior, nos
+    /// mesmos quadros em duas leituras a 0,3 s uma da outra (teto de 10 s). A obra apagada sai da árvore assim que os dados
+    /// mudam, e as de baixo só sobem depois, com a animação, que o "Wait for idle" do XCUITest não espera. Na CI do iOS 26
+    /// (run 45892167230), a obra-v2 ficou mais de 1 s parada na vaga antiga depois de a v1 sair da árvore: duas leituras
+    /// iguais ali não bastam, daí o buraco. O toque nela, calculado na vaga antiga, abriu e apagou a Casa Tamboré 4, que
+    /// tinha subido para o lugar.
+    private func esperarAListaAssentar(_ app: XCUIApplication) {
+        var antes = quadrosDaLista(app)
+        let ate = Date.now.addingTimeInterval(10)
+        repeat {
+            usleep(300_000)
+            let agora = quadrosDaLista(app)
+            let semBuraco = zip(agora, agora.dropFirst()).allSatisfy { $1.minY - $0.maxY < 40 }
+            if agora.count > 1, agora == antes, semBuraco { return }
+            antes = agora
+        } while Date.now < ate
+        XCTFail("a lista de obras não assentou em 10 s: \(antes)")
+    }
+
+    /// A contagem das obras e as linhas delas, de cima para baixo, de uma leitura só da árvore.
+    private func quadrosDaLista(_ app: XCUIApplication) -> [CGRect] {
+        guard let raiz = try? app.snapshot() else { return [] }
+        var contagem: [CGRect] = [], linhas: [CGRect] = []
+        var pilha = [raiz]
+        while let s = pilha.popLast() {
+            if s.identifier.hasPrefix("obra-") {
+                linhas.append(s.frame)
+            } else if s.elementType == .staticText, s.label.range(of: "^[0-9]+ obras?$", options: .regularExpression) != nil {
+                contagem.append(s.frame)
+            }
+            pilha += s.children
+        }
+        return contagem.prefix(1) + linhas.sorted { $0.minY < $1.minY }
     }
 
     func testSemConexaoGravarContinua() {

@@ -99,12 +99,20 @@ extension LaudoDeLeitura {
         return (foto, abas, largura, informativo, doVoltar + doSair)
     }
 
-    /// O sair do topo (`BotaoSairDoTopo`, na barra de Obras e de Ajustes) fica fora como o voltar: é só o ícone, sem texto
-    /// para o laudo ler, e o vidro dele (no Fosco, o `.regular` do sistema) assenta em degraus depois de a tela abrir, com a
-    /// sombra crescendo e o disco mudando de tom. Na VM do iOS 26, o print sem texto saiu no degrau de antes e o laudo acusou
-    /// 9521 pixels longe das letras, todos no disco e até 10 pt em volta (runs 45863923045 e 46018948937). A folga de 12 pt
-    /// sai do quadro lido do botão, só onde ele existe, e nenhum texto que o laudo mediria pode cair nela: abaixo da barra
-    /// de status ou, na cena rolada, da borda de 140 pt, onde o texto que passa por baixo da barra já fica de fora.
+    /// O sair do topo (`BotaoSairDoTopo`, na barra de Obras, de Ajustes e do "Vale a pena?") fica fora como o voltar: é só o
+    /// ícone, sem texto para o laudo ler, e o vidro dele (no Fosco, o `.regular` do sistema) assenta em degraus depois de a
+    /// tela abrir, com a sombra crescendo e o disco mudando de tom. Na VM do iOS 26, o print sem texto saiu no degrau de antes
+    /// e o laudo acusou 9521 pixels longe das letras, todos no disco e até 10 pt em volta (runs 45863923045 e 46018948937).
+    /// A folga de 12 pt sai do quadro lido do botão, só onde ele existe, abaixo da barra de status ou, na cena rolada, da
+    /// borda de 140 pt (o que fica acima já está fora da conta).
+    ///
+    /// Um texto que o laudo mede pode entrar até 2 pt na folga, e a guarda mede a menor dimensão do cruzamento (a largura ou
+    /// a altura do pedaço do quadro do texto que fica dentro dela). Os 2 pt são o título do "Vale a pena?": ele começa 10 pt
+    /// abaixo do disco, e a sombra vai além disso (na CI, a mudança do degrau chegou a 10,6 pt; no iOS 26.5, a pegada do botão
+    /// inteiro cobre a faixa do título, com 497 pixels longe das letras na cena "claro, Fosco", contra o limite de 632).
+    /// Devolver a faixa à conta traria essa sombra; deixá-la fora não perde letra, porque nenhum pixel de letra cai nela no
+    /// 17 Pro do iOS 26.5, no 18 Pro, no Pro Max e no SE. Mais de 2 pt reprova. De um botão com rótulo, conta o quadro do botão
+    /// inteiro, que é o que a árvore dá: o erro possível é reprovar a mais, nunca deixar texto de fora sem aviso.
     @MainActor func sairDoTopo(_ app: XCUIApplication, _ cena: Cena, conferirVizinhos: Bool) -> [CGRect] {
         let sair = app.buttons["sairTopo"]
         guard sair.exists else { return [] }
@@ -112,13 +120,19 @@ extension LaudoDeLeitura {
         let medida = folga.intersection(CGRect(x: 0, y: cena.rolada ? 140 : Self.barraDeStatus,
                                                width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude))
         if conferirVizinhos, !medida.isNull, let raiz = try? app.snapshot() {
-            var vizinhos: [String] = [], pilha = [raiz]
+            var vizinhos: [String] = [], rentes: [String] = [], pilha = [raiz]
             while let s = pilha.popLast() {
                 let texto = s.elementType == .staticText || (s.elementType == .button && s.identifier != "sairTopo")
-                if texto, !s.label.isEmpty, s.frame.intersects(medida) { vizinhos.append("\(s.label) \(s.frame)") }
+                if texto, !s.label.isEmpty, s.frame.intersects(medida) {
+                    let cruzamento = s.frame.intersection(medida)
+                    // 2 pt, com 0,01 a mais para o arredondamento dos quadros: o título cruza 2 pt exatos.
+                    if min(cruzamento.width, cruzamento.height) > 2.01 { vizinhos.append("\(s.label) \(s.frame)") }
+                    else { rentes.append("\(s.label) \(s.frame)") }
+                }
                 pilha += s.children
             }
-            XCTAssertTrue(vizinhos.isEmpty, "\(cena.nome): texto na folga do sair do topo, que fica fora do laudo: \(vizinhos)")
+            if !rentes.isEmpty { Swift.print("leitura | \(cena.nome) | texto até 2 pt na folga do sair, faixa fora da conta: \(rentes)") }
+            XCTAssertTrue(vizinhos.isEmpty, "\(cena.nome): texto mais de 2 pt dentro da folga do sair do topo, que fica fora do laudo: \(vizinhos)")
         }
         return [folga]
     }

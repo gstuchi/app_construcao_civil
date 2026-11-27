@@ -83,10 +83,10 @@ struct AjustesView: View {
                 .padding(.horizontal, 16)
                 // O painel começa 18 pt abaixo de onde começa a lista de Obras, como no mockup.
                 .padding(.top, 18)
-                .padding(.bottom, 24)
                 .haloDoTituloDaBarra()
             }
             .scrollIndicators(.hidden)
+            .fimAcimaDaCapsula(ar: 24)
             #if DEBUG
             // O laudo de leitura mede a Conta e a versão na maior letra, abaixo da Aparência.
             .modifier(RolagemFixaDoTeste())

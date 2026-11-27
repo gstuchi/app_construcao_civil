@@ -38,11 +38,12 @@ struct ValeAPenaView: View {
                         }
                     }
                     .padding(.horizontal, Grade.externa)
-                    // A folga das telas que rolam por baixo da cápsula (62 de altura, 22 da borda e 14 de respiro): a barra de
-                    // baixo do PrincipalView não entra na área segura da rolagem, e com 24 a última linha da tabela parava atrás dela.
-                    .padding(.bottom, 98)
                 }
                 .scrollIndicators(.hidden)
+                // A tabela termina 48 pt acima da cápsula, pela altura medida dela (a última linha ficava atrás com 24): 40 aqui e
+                // os 8 do espaçamento do safeAreaInset das teclas, que valem também com elas fechadas. Com as teclas abertas a
+                // cápsula sai, a medida fica a da última vez, e as teclas entram na área segura por cima dela.
+                .fimAcimaDaCapsula(ar: 40)
                 #if DEBUG
                 // O laudo de leitura mede o veredito, a faixa e a tabela com a tela parada numa rolagem dada.
                 .rolagemFixaSoComOArgumento()

@@ -194,9 +194,8 @@ struct ObraView: View {
             // A linha do gasto na forma mono da identidade nova (as folhas ficam com a da etapa 3).
             .environment(\.linhaMono, true)
             .contentMargins(.horizontal, Grade.externa, for: .scrollContent)
-            // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 132 pt da borda de baixo (a cápsula, de
-            // 62 a 22 da borda, e 48 de folga), menos os 34 do indicador de início, que a rolagem já desconta.
-            .contentMargins(.bottom, 98, for: .scrollContent)
+            // O fim da lista fica à vista acima da cápsula de abas, como no mockup: 48 pt de folga.
+            .fimAcimaDaCapsula(ar: 48)
             // Só com a obra à vista: o gasto lançado pelo + da tela Orçamento não rola nem leva o foco aqui, por baixo dela.
             .onChange(of: folhas.destaque) { _, d in if let d, caminho.last == .obra(obra.id) { mostrar(d, lista: lista, leitor: leitor) } }
         }

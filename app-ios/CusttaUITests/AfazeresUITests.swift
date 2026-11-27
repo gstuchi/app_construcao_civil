@@ -214,6 +214,26 @@ final class AfazeresUITests: XCTestCase {
         XCTAssertEqual(pendentes(app), "Pendentes, 2")
     }
 
+    /// Com uma linha aberta, o toque no vazio abaixo do fim da lista a fecha, como no resto da tela: o fim da lista acima da
+    /// cápsula é uma margem da rolagem, fora do conteúdo, e o toque que fecha fica na rolagem inteira (Lupa, menor 3 do #131).
+    func testToqueAbaixoDaListaFechaALinhaAberta() {
+        let app = abrirAfazeres()
+        let feitos = app.elemento("feitos"), a3 = app.elemento("afazer-a3")
+        XCTAssertTrue(feitos.waitForExistence(timeout: 5) && a3.exists)
+        let topoDaCapsula = app.buttons["aba-obras"].frame.minY - 4
+        for abaixo: CGFloat in [30, 60] {
+            a3.swipeLeft()
+            let apagar = app.buttons["apagar-a3"]
+            XCTAssertTrue(apagar.waitForExistence(timeout: 3), "arrastar para a esquerda mostra Apagar")
+            // Abaixo do cartão dos feitos (fechado), no vazio entre o fim da lista e a cápsula.
+            let y = feitos.frame.maxY + abaixo
+            XCTAssertLessThan(y, topoDaCapsula - 8, "o toque fica acima da cápsula")
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: y)).tap()
+            XCTAssertTrue(apagar.waitForNonExistence(timeout: 3), "o toque \(Int(abaixo)) pt abaixo da lista fecha a linha")
+            XCTAssertTrue(a3.exists, "e não apaga")
+        }
+    }
+
     /// O pendente longo (213 caracteres) se lê inteiro, quebrando linha.
     func testTextoLongoSeLeInteiro() {
         let app = abrirAfazeres()

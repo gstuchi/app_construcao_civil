@@ -94,8 +94,33 @@ extension LaudoDeLeitura {
         // (12–64 × 58–110), onde hoje só há o × do sistema, sem texto; um texto novo ali ficaria fora do laudo.
         let doVoltar = app.navigationBars.buttons.matching(identifier: "BackButton").allElementsBoundByIndex.filter(\.exists)
             .map { $0.frame.insetBy(dx: -4, dy: -4) }
+        let doSair = sairDoTopo(app, cena, conferirVizinhos: !textoApagado && cena.escopo == "tudo")
         app.terminate()
-        return (foto, abas, largura, informativo, doVoltar)
+        return (foto, abas, largura, informativo, doVoltar + doSair)
+    }
+
+    /// O sair do topo (`BotaoSairDoTopo`, na barra de Obras e de Ajustes) fica fora como o voltar: é só o ícone, sem texto
+    /// para o laudo ler, e o vidro dele (no Fosco, o `.regular` do sistema) assenta em degraus depois de a tela abrir, com a
+    /// sombra crescendo e o disco mudando de tom. Na VM do iOS 26, o print sem texto saiu no degrau de antes e o laudo acusou
+    /// 9521 pixels longe das letras, todos no disco e até 10 pt em volta (runs 45863923045 e 46018948937). A folga de 12 pt
+    /// sai do quadro lido do botão, só onde ele existe, e nenhum texto que o laudo mediria pode cair nela: abaixo da barra
+    /// de status ou, na cena rolada, da borda de 140 pt, onde o texto que passa por baixo da barra já fica de fora.
+    @MainActor func sairDoTopo(_ app: XCUIApplication, _ cena: Cena, conferirVizinhos: Bool) -> [CGRect] {
+        let sair = app.buttons["sairTopo"]
+        guard sair.exists else { return [] }
+        let folga = sair.frame.insetBy(dx: -12, dy: -12)
+        let medida = folga.intersection(CGRect(x: 0, y: cena.rolada ? 140 : Self.barraDeStatus,
+                                               width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude))
+        if conferirVizinhos, !medida.isNull, let raiz = try? app.snapshot() {
+            var vizinhos: [String] = [], pilha = [raiz]
+            while let s = pilha.popLast() {
+                let texto = s.elementType == .staticText || (s.elementType == .button && s.identifier != "sairTopo")
+                if texto, !s.label.isEmpty, s.frame.intersects(medida) { vizinhos.append("\(s.label) \(s.frame)") }
+                pilha += s.children
+            }
+            XCTAssertTrue(vizinhos.isEmpty, "\(cena.nome): texto na folga do sair do topo, que fica fora do laudo: \(vizinhos)")
+        }
+        return [folga]
     }
 
     /// O assunto da cena à vista antes do print: abaixo da barra de status e acima da faixa de baixo, a borda de 140 pt ou a
@@ -151,7 +176,7 @@ extension LaudoDeLeitura {
 
     /// Mede uma cena, anexa o print anotado e a tabela e devolve as palavras abaixo do portão.
     @MainActor func conferir(_ cena: Cena) throws -> [String] {
-        let (normal, abas, largura, informativo, voltar) = fotografar(cena, textoApagado: false)
+        let (normal, abas, largura, informativo, botoes) = fotografar(cena, textoApagado: false)
         let (semTexto, _, _, _, _) = fotografar(cena, textoApagado: true)
         let imagem = normal.image.cgImage!
         let escala = CGFloat(imagem.width) / largura
@@ -167,12 +192,13 @@ extension LaudoDeLeitura {
         let indicador = [CGRect(x: 0, y: altura - 34, width: largura, height: 34)]
         // O voltar também: é do sistema, sem texto do app, e o vidro dele se adapta ao que tem atrás e assenta depois de a
         // tela abrir. Na obra em List, com o texto apagado, assenta de 1 a 8 s, e o print sai aos 2 s: o vidro diferente
-        // virava "texto" a 1,63:1. Nas cenas roladas, a borda de cima já o deixa de fora.
+        // virava "texto" a 1,63:1. Nas cenas roladas, a borda de cima já o deixa de fora. O sair do topo, pelo mesmo
+        // motivo (`sairDoTopo`).
         let borda = cena.rolada ? [CGRect(x: 0, y: 0, width: largura, height: 140)] : []
         let palavras = try LaudoDeContraste.medir(normal: Retrato(imagem), semTexto: Retrato(semTexto.image.cgImage!),
                                                   escala: escala, topo: Self.barraDeStatus,
                                                   somenteEm: cena.escopo == "navegacao" ? regiao : nil,
-                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + voltar + borda + informativo)
+                                                  ignorar: (cena.escopo == "tudo" ? abaixo : []) + indicador + botoes + borda + informativo)
         XCTAssertFalse(palavras.isEmpty, "\(cena.nome): nenhum texto medido")
         anexar(cena.nome, normal.image, palavras, escala)
         Swift.print(String(format: "leitura | %@ | %d palavras, %d abaixo | pior nota %.2f", cena.nome, palavras.count,

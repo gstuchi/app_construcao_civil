@@ -16,6 +16,7 @@ import CusttaNucleo
    a6  Casa Granja Viana, com Outros (0,25%) e Extras (0,05%) abaixo de 1% (o piso e o "<1%")
    a7  Casa Morumbi, 30 meses de gastos, com 3 meses parados no meio (os últimos 24 meses)
    a8  a Casa Alphaville sem a venda estimada (o Relatório e o PDF sem venda)
+   a9  a Casa Alphaville pronta, com os 46 gastos (as ações da fase numa obra de lista longa, para a auditoria na maior letra)
    A Cotia, o Terreno Granja e o Sobrado Vila Nova começam no dia 1º deste mês, e os gastos deles caem neste mês: o dia do
    mockup, sem passar de hoje (no dia 1º, todos caem nele). */
 extension DadosDeExemplo {
@@ -98,6 +99,7 @@ extension DadosDeExemplo {
                 gasto(String(format: "k%02d", i + 1), g.1, g.2, g.3, meses(-g.0))
             }),
             copiaDaCasa("a8", ["valorEstimadoVenda": .nulo]),
+            copiaDaCasa("a9", ["fase": .texto("pronta")]),
         ])
         return .objeto(raiz)
     }

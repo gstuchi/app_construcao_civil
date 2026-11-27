@@ -84,6 +84,13 @@ extension XCUIApplication {
         }
     }
 
+    /// Os botões da cápsula de abas, quantos forem: cada aba é um botão com o identificador `aba-<nome>`. Quem precisa do
+    /// lugar da cápsula (o laudo de leitura, a auditoria) pergunta aqui, e uma aba nova não fica de fora de uma lista
+    /// escrita à mão.
+    var abasDaCapsula: [XCUIElement] {
+        buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'aba-'")).allElementsBoundByIndex
+    }
+
     /// Troca de aba pela cápsula de abas (aba-obras, aba-ajustes).
     func abrirAba(_ aba: String) {
         let botao = buttons["aba-\(aba)"]

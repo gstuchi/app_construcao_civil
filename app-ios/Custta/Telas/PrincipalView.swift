@@ -1,15 +1,20 @@
 import SwiftUI
 import CusttaNucleo
 
-/* O app por dentro: as abas (Obras e Ajustes; "Vale a pena?" chega na etapa 4) com a cápsula de abas
+/* O app por dentro: as abas (Obras, "Vale a pena?" e Ajustes) com a cápsula de abas
    própria, e a barra de cada tela com a sincronização e o sair do topo, em vidro, como no site. Sair pede
    confirmação pelo alerta do sistema (decisão do Giovani). Só a aba escolhida fica montada: o TabView do
    sistema pinta um fundo opaco por trás das abas no iOS 26 (esconderia a aurora), e uma aba só escondida
    continuaria na árvore do VoiceOver pela barra de navegação. Por isso o caminho dentro de Obras mora aqui:
    quem vai a Ajustes e volta encontra a obra que tinha aberto. */
 struct PrincipalView: View {
-    @State private var aba = Aba.obras
+    @State private var aba = PrincipalView.abaInicial
     @State private var caminhoDeObras = PrincipalView.caminhoInicial
+    /// Os campos do "Vale a pena?": moram aqui, e não na tela da aba, que sai da árvore quando a pessoa troca de aba. Assim
+    /// duram enquanto o app está aberto (spec da etapa 4, "Dados e estado").
+    @State private var simulador = PrincipalView.simuladorInicial
+    /// As teclas do preço do "Vale a pena?" estão abertas, e a cápsula de abas sai (mockup da etapa 4, `sim-teclado`).
+    @State private var teclasDoPreco = false
     @State private var folhas = Folhas()
     /// O + da lista avisou em vez de abrir "Nova obra": o teto de obras ou os dados ainda não vistos.
     @State private var avisoDoMais: AvisoDoMais?
@@ -21,12 +26,18 @@ struct PrincipalView: View {
         Group {
             switch aba {
             case .obras: ObrasView(caminho: $caminhoDeObras)
+            case .valeAPena: ValeAPenaView(campos: $simulador, teclasAbertas: $teclasDoPreco)
             case .ajustes: AjustesView()
             }
         }
         .environment(folhas)
         // Barra própria: o que rola por baixo dela passa pela borda suave de cada tela (BordaDeRolagem).
-        .safeAreaBar(edge: .bottom, spacing: 0) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
+        .safeAreaBar(edge: .bottom, spacing: 0) {
+            // As teclas do preço tomam o lugar da cápsula; elas são da tela da aba, que as põe na área segura da rolagem.
+            if !(aba == .valeAPena && teclasDoPreco) { CapsulaDeAbas(escolhida: $aba, mais: acaoDoMais) }
+        }
+        // Fora do "Vale a pena?" não há teclas do preço: quem volta a ela encontra a cápsula.
+        .onChange(of: aba) { teclasDoPreco = false }
         .sheet(item: $folhas.aberta, onDismiss: folhas.fechou) { qual in
             Group {
                 switch qual {
@@ -68,7 +79,8 @@ struct PrincipalView: View {
         #endif
         // A cápsula se mede da borda da tela, como a barra de abas do sistema, e não acompanha o teclado: ao
         // entrar com ele aberto, o teclado da entrada ainda está fechando quando esta tela aparece, e a barra
-        // nascia em cima dele, no meio da tela, e saltava. As telas das abas não têm campo de texto.
+        // nascia em cima dele, no meio da tela, e saltava. Nas telas das abas, o teclado do sistema só aparece na busca da
+        // obra; o preço do "Vale a pena?" usa as teclas do app, e não ele.
         .ignoresSafeArea(edges: .bottom)
     }
 }
@@ -76,7 +88,7 @@ struct PrincipalView: View {
 extension PrincipalView {
     /// O + da cápsula, como o do site: na lista, "Nova obra"; dentro de uma obra (e no orçamento e nos afazeres dela), lança
     /// gasto nela. Obra vendida não recebe gasto novo: o + abre a folha do gasto com a linha "Obra", para escolher entre as
-    /// abertas; sem nenhuma aberta, cria obra. Em Ajustes, some.
+    /// abertas; sem nenhuma aberta, cria obra. No "Vale a pena?" e em Ajustes, some.
     private var acaoDoMais: AcaoDoMais? {
         guard aba == .obras else { return nil }
         let obras = modelo.sincronizador.estado.obras
@@ -177,6 +189,37 @@ extension PrincipalView {
         guard let abrir = ProcessInfo.processInfo.environment["CUSTTA_ABRIR"] else { return nil }
         if abrir.hasPrefix("afazeres:") { return .afazeres(String(abrir.dropFirst(9))) }
         return TelaDaAnalise(gancho: abrir).map { .analise($0) }
+    }
+    #endif
+
+    /// Os campos com que o "Vale a pena?" abre: os do núcleo, com os meses em 0. Em Debug, `-custta.simMeses <n>` já abre
+    /// com os meses andados, para o teste de tela chegar ao limite de 120 sem 120 toques, e `-custta.simPreco <reais>`, com
+    /// o preço digitado, para o laudo fotografar a venda abaixo do banco sem tocar nas teclas.
+    static var simuladorInicial: CamposDoSimulador {
+        var campos = CamposDoSimulador()
+        #if DEBUG
+        campos.andarMeses(UserDefaults.standard.integer(forKey: "custta.simMeses"))
+        let preco = UserDefaults.standard.double(forKey: "custta.simPreco")
+        if preco > 0 { campos.precoDigitado = preco }
+        #endif
+        return campos
+    }
+
+    /// A aba em que o app abre: Obras. Em Debug, `CUSTTA_ABRIR=aba:<nome>` abre noutra (`aba:ajustes`), para os testes de
+    /// tela, o laudo de leitura e a conferência visual chegarem a uma aba sem tocar na cápsula.
+    static var abaInicial: Aba {
+        #if DEBUG
+        return aba(doGancho: ProcessInfo.processInfo.environment["CUSTTA_ABRIR"])
+        #else
+        return .obras
+        #endif
+    }
+
+    #if DEBUG
+    /// A aba do gancho de abertura: `aba:<nome>`; com qualquer outro gancho, ou sem ele, Obras.
+    static func aba(doGancho abrir: String?) -> Aba {
+        guard let abrir, abrir.hasPrefix("aba:") else { return .obras }
+        return Aba(rawValue: String(abrir.dropFirst(4))) ?? .obras
     }
     #endif
 

@@ -149,26 +149,29 @@ final class AfazeresUITests: XCTestCase {
     }
 
     /// O círculo troca na hora (e o VoiceOver já ouve "feito"), e o afazer só muda de lugar depois; um segundo toque nesse
-    /// meio-tempo desiste. A espera passa de meio segundo para dez (gancho do Debug), para o teste ver o meio do caminho: no
-    /// iOS 26 da CI, o segundo toque saiu 4,2 s depois do primeiro, e com três o afazer já tinha ido para os Feitos.
+    /// meio-tempo desiste. No gancho do Debug, a linha só muda de lugar quando o teste avisa, e não num relógio: com a espera
+    /// de 10 s, a VM do iOS 26 da CI chegou a dar o segundo toque 16 s depois do primeiro, com o afazer já nos Feitos (runs
+    /// 45494341107 e 45838128547).
     func testCirculoTrocaNaHoraESegundoToqueDesiste() {
-        let app = abrirAfazeres(argumentos: ["-custta.esperaDoAfazer", "10000"])
+        let app = abrirAfazeres(argumentos: ["-custta.afazerEsperaOAviso", "YES"])
         let a1 = app.elemento("afazer-a1"), a3 = app.elemento("afazer-a3")
+        let mudaDeLugar = "br.com.custta.teste.afazerMudaDeLugar"
         XCTAssertTrue(a1.waitForExistence(timeout: 5))
         a1.tap()
         XCTAssertEqual(a1.value as? String, "feito", "o círculo troca na hora")
         XCTAssertEqual(pendentes(app), "Pendentes, 3", "e o afazer ainda não saiu dos pendentes")
         a1.tap()
         XCTAssertEqual(a1.value as? String, "pendente", "o segundo toque desiste")
-        sleep(12)                                         // passados os 10 s: antes deles, nada mudaria mesmo sem desistir
-        XCTAssertEqual(pendentes(app), "Pendentes, 3", "nada mudou de lugar")
-        XCTAssertEqual(ordem(app).first, "Pagar a quinzena do pedreiro na sexta")
         a3.tap()
         XCTAssertEqual(a3.value as? String, "feito")
-        let ate = Date.now.addingTimeInterval(14)
+        XCTAssertEqual(pendentes(app), "Pendentes, 3", "sem o aviso, nada mudou de lugar")
+        XCTAssertEqual(ordem(app).first, "Pagar a quinzena do pedreiro na sexta")
+        notify_post(mudaDeLugar)                          // a hora de mudar chega para os dois: só o a3 continua pedido
+        let ate = Date.now.addingTimeInterval(10)
         while pendentes(app) != "Pendentes, 2" && Date.now < ate { usleep(200_000) }
-        XCTAssertEqual(pendentes(app), "Pendentes, 2", "passada a espera, o marcado vai para os Feitos")
+        XCTAssertEqual(pendentes(app), "Pendentes, 2", "com o aviso, o marcado vai para os Feitos")
         XCTAssertEqual(app.elemento("feitos").label, "Feitos, 5")
+        XCTAssertEqual(ordem(app).first, "Pagar a quinzena do pedreiro na sexta", "e o desistido segue no alto dos pendentes")
     }
 
     /// Na linha da obra, o primeiro pendente para em duas linhas (o texto inteiro está na tela Afazeres e no VoiceOver).

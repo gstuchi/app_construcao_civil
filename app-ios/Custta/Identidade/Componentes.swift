@@ -412,6 +412,11 @@ struct RolagemFixaDoTeste: ViewModifier {
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
                 if segurando, abs(y - rolagemFixa) > 0.5 { posicao.scrollTo(y: rolagemFixa) }
             }
+            // A tela que cresce depois de a rolagem ser pedida (o "Vale a pena?", quando os dados chegam e a conta aparece): a
+            // rolagem tinha parado no fim do conteúdo curto, e o conteúdo novo não a mexe. Vai de novo até a pedida.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { _, _ in
+                if segurando { posicao.scrollTo(y: rolagemFixa) }
+            }
             .onScrollPhaseChange { _, fase in if fase == .interacting { segurando = false } }
     }
 }
@@ -424,13 +429,16 @@ extension View {
         if UserDefaults.standard.object(forKey: "custta.rolagem") != nil { modifier(RolagemFixaDoTeste()) } else { self }
     }
 
-    /// A rolagem fixa da tela de baixo das folhas em ScrollView (a tela Orçamento). Na cena que abre uma folha
-    /// (`CUSTTA_FOLHA`) com o `-custta.rolagem`, a rolagem é só da folha, e a tela de baixo fica sem o gancho: na VM do
-    /// iOS 26, rolar também a obra atrás da folha parava a thread principal de 14 a 21 s, e a cena do fim do A pagar
-    /// passava dos 10 s de espera do laudo (sonda do run 40590390423).
+    /// A rolagem fixa da tela de baixo das folhas em ScrollView (a tela Orçamento): também só com o `-custta.rolagem`, como a
+    /// das folhas, e sem folha aberta. Sem o argumento, a tela levava o gancho parado, com o `.scrollPosition` e os
+    /// observadores da rolagem que o Release não tem; na CI do iOS 26, o 2º arrasto nela, logo depois de a folha do detalhe
+    /// descer, deixou a thread principal presa por 154 s ou mais (DetalheDoTopicoUITests, em 4 de 7 runs do PR 4a; run
+    /// 45863923045). Na cena que abre uma folha (`CUSTTA_FOLHA`) com o `-custta.rolagem`, a rolagem é só da folha, e a tela
+    /// de baixo fica sem o gancho: na VM do iOS 26, rolar também a obra atrás da folha parava a thread principal de 14 a 21 s,
+    /// e a cena do fim do A pagar passava dos 10 s de espera do laudo (sonda do run 40590390423).
     @ViewBuilder func rolagemFixaSemFolha() -> some View {
         let comFolha = ProcessInfo.processInfo.environment["CUSTTA_FOLHA"] != nil
-        if comFolha, UserDefaults.standard.object(forKey: "custta.rolagem") != nil { self } else { modifier(RolagemFixaDoTeste()) }
+        if !comFolha, UserDefaults.standard.object(forKey: "custta.rolagem") != nil { modifier(RolagemFixaDoTeste()) } else { self }
     }
 }
 #endif

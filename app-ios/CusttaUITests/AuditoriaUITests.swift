@@ -12,27 +12,33 @@ import UIKit
    escuro sobre a pílula sólida do segmentado, e os mesmos textos com tinta de 6% ou de 50%). Aqui as cores
    são conferidas com "Reduzir transparência" (superfícies sólidas, sem o vidro na frente da aurora), também
    na maior letra; a leitura sobre o vidro de verdade é medida pixel a pixel pelo LeituraNoVidroUITests. */
-final class AuditoriaUITests: XCTestCase {
-    private let maiorLetra = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-    private let tiposDeAuditoria: XCUIAccessibilityAuditType = [.dynamicType, .textClipped, .sufficientElementDescription, .hitRegion]
+/// A máquina das auditorias: os argumentos, o que fica de fora e a rolagem. Adota quem audita: o AuditoriaUITests e a
+/// auditoria de cada área que mora em arquivo próprio (a da análise, em CusttaUITests/Analise).
+protocol AuditoriaDeTela: XCTestCase {}
+
+extension AuditoriaDeTela {
+    var maiorLetra: [String] { ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
+    var tiposDeAuditoria: XCUIAccessibilityAuditType { [.dynamicType, .textClipped, .sufficientElementDescription, .hitRegion] }
     /// Fundo parado: aurora no quadro inicial, globo no ângulo de partida, logo pronto.
-    private let parado = ["-custta.reduzirMovimento", "YES"]
-    private let solido = ["-custta.reduzirTransparencia", "YES"]
-    private let temas = ["escuro", "claro"]
+    var parado: [String] { ["-custta.reduzirMovimento", "YES"] }
+    var solido: [String] { ["-custta.reduzirTransparencia", "YES"] }
+    var temas: [String] { ["escuro", "claro"] }
     /// A borda de rolagem (`BordaDeRolagem`): o véu do fundo cobre 140 pt no alto, depois de rolar, e embaixo,
     /// nas telas com a cápsula de abas (88% e 80% com "Reduzir transparência").
-    private let borda: CGFloat = 140
+    var borda: CGFloat { 140 }
 
     /// Deixa fora o que não cresce de propósito (dinâmico: a cápsula de abas e o texto do botão do Google,
     /// pelo rótulo, porque a auditoria rola a tela sozinha) e o conteúdo que passa por baixo da barra de
     /// navegação, da cápsula, do indicador de início ou da borda de rolagem (contraste: ele é auditado quando
     /// está à vista). Os rótulos da própria cápsula entram na auditoria de contraste. Com `corteSemElemento`, deixa passar
     /// também o "Text clipped" sem elemento, e só ele: o ponto cego do ViewThatFits na maior letra (T34), nas cenas com um à vista.
-    @MainActor private func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
-                                    corteSemElemento: Bool = false) throws {
+    /// Com `soEm`, só contam os achados nos elementos cujo identificador começa por ele (as pílulas das ações da fase,
+    /// `acao-`): os outros, e os sem elemento, vão para o log e não reprovam.
+    @MainActor func auditar(_ app: XCUIApplication, _ tipos: XCUIAccessibilityAuditType,
+                            corteSemElemento: Bool = false, soEm: String? = nil) throws {
         // Com a folha aberta, a cápsula fica atrás dela: nada da folha é cortado pela regra da cápsula.
         let folha = app.elemento("tituloDaFolha").exists
-        let abas = folha ? [] : ["aba-obras", "aba-ajustes", "botaoMais"].map { app.buttons[$0] }.filter(\.exists).map(\.frame)
+        let abas = folha ? [] : (app.abasDaCapsula + [app.buttons["botaoMais"]]).filter(\.exists).map(\.frame)
         let fundoDaTela = abas.isEmpty ? app.frame.maxY : min(abas.map(\.minY).min()!, app.frame.maxY - borda)
         // Com a folha aberta, a barra é a da folha, e não a da tela por trás dela (a primeira da árvore); e a folha não tem a
         // borda de rolagem das telas: o conteúdo dela começa onde a barra acaba.
@@ -41,7 +47,8 @@ final class AuditoriaUITests: XCTestCase {
         let daBarra = barra.exists ? barra.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         // Com as teclas encaixadas abertas (folha do orçamento), a lista termina onde a faixa delas começa: o que a lista tem
         // embaixo da faixa está escondido (montado pela lista preguiçosa, mas fora da vista). As teclas e a barra entram.
-        let teclas = app.elemento("tecladoEncaixado")
+        // As teclas do preço do "Vale a pena?" (etapa 4) cobrem a tela da aba do mesmo jeito.
+        let teclas = app.elemento(app.elemento("teclasDoPreco").exists ? "teclasDoPreco" : "tecladoEncaixado")
         let topoDasTeclas = teclas.exists ? teclas.frame.minY : .infinity
         let dasTeclas = teclas.exists ? teclas.descendants(matching: .any).allElementsBoundByIndex.map(\.frame) : []
         // E começa embaixo do cabeçalho fixo da folha (o segmentado e o total): o que a lista tem em cima dele foi rolado para
@@ -60,6 +67,10 @@ final class AuditoriaUITests: XCTestCase {
             && !ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
         // Em duas leituras (SegundaLeituraDaAuditoria): reprova o achado que se repete na mesma cena.
         try auditarEmDuasLeituras(app, tipos) { achado in
+            if let soEm, achado.element?.identifier.hasPrefix(soEm) != true {
+                Swift.print("auditoria | \(achado.compactDescription) | \(achado.element?.identifier ?? "sem elemento") | fora de \(soEm)")
+                return true
+            }
             guard let elemento = achado.element else {
                 // O arranjo que o ViewThatFits descartou dá "Text clipped" sem elemento, com a tela mostrando o outro inteiro.
                 // Qualquer outro achado sem elemento reprova, também nessas cenas.
@@ -89,7 +100,7 @@ final class AuditoriaUITests: XCTestCase {
                 fora = elemento.label == "Continuar com o Google" || elemento.identifier == "tituloPequenoDaBarra"
                     || elemento.identifier.hasPrefix("tituloDaFolha") || elemento.identifier.hasPrefix("visorDoValor")
                     || elemento.identifier.hasPrefix("tecla-") || elemento.identifier.hasPrefix("apagar-")
-                    || elemento.identifier.hasPrefix("barraDasTeclas-")
+                    || elemento.identifier.hasPrefix("barraDasTeclas-") || elemento.identifier.hasPrefix("teclasDoPreco-")
                     || abas.contains { $0.contains(centro) }
             case .contrast:
                 if elemento.identifier.hasPrefix("aba-") { fora = false }   // o rótulo da própria cápsula
@@ -116,12 +127,14 @@ final class AuditoriaUITests: XCTestCase {
     }
 
     /// Rola e espera a rolagem parar antes de auditar.
-    @MainActor private func rolar(_ app: XCUIApplication) {
+    @MainActor func rolar(_ app: XCUIApplication) {
         app.swipeUp()
         app.swipeUp()
         Thread.sleep(forTimeInterval: 1.5)
     }
+}
 
+final class AuditoriaUITests: XCTestCase, AuditoriaDeTela {
     @MainActor func testEntrarNoMaiorTamanho() throws {
         let app = abrirApp(argumentos: maiorLetra + parado)
         XCTAssertTrue(app.textFields["email"].waitForExistence(timeout: 10))
@@ -161,6 +174,43 @@ final class AuditoriaUITests: XCTestCase {
         XCTAssertTrue(app.elemento("tituloDaObra").waitForExistence(timeout: 10))
         try auditar(app, tiposDeAuditoria)
     }
+
+    /// As ações da fase na maior letra (achado 9 do marco 1): o "Desfazer venda" da obra vendida e o "Registrar venda" com o
+    /// "Voltar pra construção" da pronta, que a auditoria da parte 3 deixou de alcançar com a obra em blocos. Numa obra de
+    /// lista longa (a Casa Alphaville dos falsos da análise, com 46 gastos: a1, vendida, e a9, pronta), numa rolagem fixa com
+    /// as pílulas à vista: com conteúdo de sobra embaixo, a rolagem não passa do fim nos tamanhos menores que a auditoria
+    /// experimenta. Só contam os achados nas pílulas (`acao-`): os blocos em volta têm a auditoria deles no alto e no fim da
+    /// obra, e a troca de letra da auditoria dá neles achados que a tela parada não tem (problema conhecido, 03/11).
+    @MainActor func testAcoesDaFaseNoMaiorTamanho() throws {
+        for (obra, rolagem, acoes) in [("a1", Self.rolagemDasAcoesDaVendida, ["desfazerVenda"]),
+                                       ("a9", Self.rolagemDasAcoesDaPronta, ["registrarVenda", "voltarConstrucao"])] {
+            let app = abrirApp(conta: "senha", dados: "analise", abrir: "obra:\(obra)",
+                               argumentos: maiorLetra + parado + ["-custta.rolagem", "\(rolagem)"])
+            XCTAssertTrue(app.buttons["editarObra"].waitForExistence(timeout: 10))
+            Thread.sleep(forTimeInterval: 1.5)
+            // As pílulas inteiras à vista, abaixo da borda de cima e acima da cápsula: é nelas que a auditoria conta.
+            let capsula = app.buttons["aba-obras"].frame
+            for acao in acoes {
+                let pilula = app.buttons["acao-\(acao)"]
+                XCTAssertTrue(pilula.waitForExistence(timeout: 5) && pilula.frame.minY >= borda && pilula.frame.maxY <= capsula.minY,
+                              "\(obra): a pílula \(acao) à vista (\(pilula.frame); de \(borda) a \(capsula.minY))")
+                // A pílula cresce com a letra. Com fonte fixa no rótulo, o achado de tipo dinâmico vem sem elemento e o `soEm`
+                // só o registra no log, onde o vaivém da letra do iOS 26 já põe 6 deles com a tela parada: a altura pega.
+                XCTAssertGreaterThanOrEqual(pilula.frame.height, Self.pilulaNaMaiorLetra,
+                                            "\(obra): a pílula \(acao) cresce com a letra (\(pilula.frame))")
+            }
+            try auditar(app, tiposDeAuditoria, soEm: "acao-")
+            app.terminate()
+        }
+    }
+    // Na maior letra, cada pílula tem 149 pt e fica entre a borda (140 pt) e a cápsula (876 no Pro Max). Medidas a 3050 e
+    // 2500: o "Desfazer venda" começava em 245 no 18 Pro e em -13 no Pro Max; o "Registrar venda", em 260 e em 1, com o
+    // "Voltar pra construção" 159 pt abaixo. As rolagens ficam no meio do vão comum aos dois: o "Desfazer venda" em 525 e
+    // em 267; o "Registrar venda" em 440 e em 181, e o "Voltar pra construção" termina em 748 e em 489.
+    private static let rolagemDasAcoesDaVendida = 2770
+    private static let rolagemDasAcoesDaPronta = 2320
+    // A pílula na maior letra, com o rótulo em duas linhas: 149,3 pt no 18 Pro, no Pro Max e no 17 Pro do iOS 26.5.
+    private static let pilulaNaMaiorLetra: CGFloat = 145
 
     /// O bloco A pagar da obra na maior letra, inteiro: a etiqueta dos vencimentos e a nota "Parcelas e gastos futuros". Na
     /// obra, ele fica abaixo da dobra, e a auditoria olha só o topo; rolado, numa List ou numa ScrollView, a troca de letra
@@ -460,23 +510,26 @@ final class AuditoriaUITests: XCTestCase {
         XCTAssertTrue(postos.allSatisfy(\.vazio), "a âncora é um elemento vazio, de tamanho zero: \(postos.map(\.texto))")
     }
 
-    /// As mesmas telas no escuro e no claro, com superfícies sólidas.
+    /// As mesmas telas no escuro e no claro, com superfícies sólidas. Cada cena espera até 60 s: na CI do fc47363 (run
+    /// 45838128547), as consultas do XCUITest ficaram 54 s sem resposta logo depois de abrir a folha de venda no claro, e a
+    /// espera de 10 s venceu com a folha já aberta. Quando a cena vem, a espera sai em 1 ou 2 s.
     @MainActor func testContrasteDaParte3NosDoisTemas() throws {
+        let cena: TimeInterval = 60
         for tema in temas {
             let combo = ["-custta.tema", tema] + solido + parado
             var app = abrirApp(conta: "senha", dados: "vitrine", abrir: "obra:v2", argumentos: combo + ["-custta.rolagem", "250"])
-            XCTAssertTrue(app.buttons["acao-voltarConstrucao"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["acao-voltarConstrucao"].waitForExistence(timeout: cena))
             Thread.sleep(forTimeInterval: 1)
             try auditar(app, [.contrast])
             app.terminate()
             app = abrirApp(conta: "senha", dados: "vazio", argumentos: combo)
-            XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: 10))
+            XCTAssertTrue(app.elemento("obrasVazio").waitForExistence(timeout: cena))
             try auditar(app, [.contrast])
             app.terminate()
             for (folha, espera, abrir) in [("novaObra", "nomeDaObra", nil), ("venda:v2", "confirmarVenda", "obra:v2")] {
                 app = abrirApp(conta: "senha", dados: "vitrine", abrir: abrir, folha: folha,
                                argumentos: combo + ["-custta.folha", folha == "novaObra" ? "preenchida" : "detalhes"])
-                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: 10), folha)
+                XCTAssertTrue(app.elemento(espera).waitForExistence(timeout: cena), folha)
                 Thread.sleep(forTimeInterval: 1)
                 try auditar(app, [.contrast])
                 app.terminate()
